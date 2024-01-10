@@ -10,7 +10,7 @@
 * Windows Subsystem for Linux
     * `sudo apt install xorriso`
     * `sudo apt install grub-pc`
-* 剩余交叉编译工具链已包含在项目中
+* 您需要下载`i686_elf_tools`编译工具链到项目目录
 
 ## 如何构建
 
