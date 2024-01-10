@@ -1,0 +1,9 @@
+vmware/
+.idea/
+.vscode/
+*.sw*
+
+i686_elf_tools/
+grub-2.02-for-windows/
+
+cpos.qcow2
