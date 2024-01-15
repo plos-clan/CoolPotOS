@@ -1,6 +1,8 @@
 # CrashPowerDOS for x86
 
 This operating system only runs on x86 platforms.
+<br>
+The new Python script build system replaces the old Makefile
 
 > The source code has been rewritten because the memory management was completely broken in the previous version of the code.
 
@@ -10,8 +12,8 @@ This operating system only runs on x86 platforms.
 
 * Download python
 * Start your shell application
-* Type `python build.py`
-* Type `grub-mkrescue -o cpos.iso isodir`
+* Enter `python build.py` in your shell
+* `grub-mkrescue -o cpos.iso isodir`
 
 ## How to run
 
