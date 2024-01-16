@@ -10,7 +10,7 @@ The new Python script build system replaces the old Makefile
 
 ## How to build
 
-* Download python
+* Download python and i686_elf_tools
 * Start your shell application
 * Enter `python build.py` in your shell
 * `grub-mkrescue -o cpos.iso isodir`
