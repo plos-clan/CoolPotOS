@@ -29,7 +29,7 @@ def build_boot(): #构建引导程序
             return -1
     return 0
 
-def build_driver(): #构建内核内置驱动程序
+def build_driver(): #构建内置驱动程序
     print("Building driver source code...")
     for file in os.listdir(cd + '\\driver'):
         cmd = cd + gcc +" " + "driver\\"+file + " -o "+"target\\"+file.split(".")[0]+".o"
@@ -56,7 +56,16 @@ def build_data(): #构建数据结构实现
             return -1
     return 0
 
-def linker():
+def build_sysapp(): #构建内置系统应用
+    print("Building sysapp source code...")
+    for file in os.listdir(cd + '\\sysapp'):
+        cmd = cd + gcc +" " + "sysapp\\"+file + " -o "+"target\\"+file.split(".")[0]+".o"
+        e = os.system(cmd)
+        if e != 0 :
+            return -1
+    return 0
+
+def linker(): #交叉编译链接
     print("Linking IR...")
     source_file = ""
     for file in os.listdir(cd + '\\target'):
@@ -74,6 +83,9 @@ a = build_kernel()
 if a != 0:
     exit(-1)
 a = build_data()
+if a != 0:
+    exit(-1)
+a = build_sysapp()
 if a != 0:
     exit(-1)
 a = linker()
