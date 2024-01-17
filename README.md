@@ -11,11 +11,10 @@ The new Python script build system replaces the old Makefile
 ## How to build
 
 * Download python and i686_elf_tools
-* Start your shell application
 * Enter `python build.py` in your shell
-* `grub-mkrescue -o cpos.iso isodir`
+* Enter `grub-mkrescue -o cpos.iso isodir`
 
 ## How to run
 
-* Type `qemu-system-i386 -cdrom cpos.iso`
+* Enter `qemu-system-i386 -cdrom cpos.iso` in your shell to boot CrashPowerDOS
 
