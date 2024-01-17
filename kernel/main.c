@@ -3,6 +3,8 @@
 #include "../include/description_table.h"
 #include "../include/multiboot.h"
 #include "../include/memory.h"
+#include "../include/shell.h"
+#include "../include/keyboard.h"
 
 extern uint32_t end;
 uint32_t placement_address = (uint32_t) & end;
@@ -14,12 +16,9 @@ void kernel_main(unsigned long magic,struct multiboot_info *mbi){
     install_gdt();
 
     init_page();
+    init_keyboard();
 
     asm("sti");
 
-    printf("CrashPowerDOS for x86 [Version %s] \n",VERSION);
-
-
-
-    for(;;) io_hlt();
+    setup_shell();
 }

@@ -58,6 +58,7 @@ void vga_putchar(char c);
 void vga_write(const char* data, size_t size);
 void vga_writestring(const char* data);
 void vga_write_dec(uint32_t dec);
+void vga_clear();
 void move_cursor();
 void printf(const char *formet, ...);
 

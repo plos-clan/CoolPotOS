@@ -48,6 +48,18 @@ void vga_install(void)
 	}
 }
 
+void vga_clear(){
+    for (size_t y = 0; y < VGA_HEIGHT; y++) {
+		for (size_t x = 0; x < VGA_WIDTH; x++) {
+			const size_t index = y * VGA_WIDTH + x;
+			terminal_buffer[index] = vga_entry(' ', terminal_color);
+		}
+	}
+    cursor_x =0;
+    cursor_y =0;
+    move_cursor();
+}
+
 void move_cursor() {
     uint16_t cursorLocation = cursor_y * 80 + cursor_x; 
     outb(0x3D4, 14); 

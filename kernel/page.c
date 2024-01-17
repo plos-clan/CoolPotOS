@@ -6,7 +6,7 @@ page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
 
 uint32_t *frames;
-uint32_t nframes; // 两者共同组成了一个bitset，用于管理frame
+uint32_t nframes; 
 
 extern uint32_t placement_address;
 extern void *program_break, *program_break_end;
@@ -30,27 +30,25 @@ static uint32_t test_frame(uint32_t frame_addr) {
     uint32_t idx = INDEX_FROM_BIT(frame); // 找到对应位置
     uint32_t off = OFFSET_FROM_BIT(frame);
     return (frames[idx] & (0x1 << off)); // 只取出off位对应的值
-    // 原理类似clear_frame，但是把off位以外的清0
 }
 
-static uint32_t first_frame() // 第一个空frame在哪里？
+static uint32_t first_frame() 
 {
     for (int i = 0; i < INDEX_FROM_BIT(nframes); i++) {
-        if (frames[i] != 0xffffffff) { // 0xffffffff，已经分完了，不必细看
-            for (int j = 0; j < 32; j++) { // 至少有一位是空着的
-                uint32_t toTest = 0x1 << j; // 把1推到第j位
-                if (!(frames[i] & toTest)) { // 若此时检查出来为0，则找到空处，直接返回
-                    return i * 4 * 8 + j; // 第i个索引第j位，转化为正常索引
+        if (frames[i] != 0xffffffff) { 
+            for (int j = 0; j < 32; j++) { 
+                uint32_t toTest = 0x1 << j; 
+                if (!(frames[i] & toTest)) {
+                    return i * 4 * 8 + j; 
                 }
             }
         }
     }
-    return (uint32_t) - 1; // 都没有，返回-1
+    return (uint32_t) - 1; 
 }
 
-// bitset结束，下面该运用bitset来分配和释放frame了
 void alloc_frame(page_t *page, int is_kernel, int is_writable) {
-    if (page->frame) return; // 传入的page已经有frame，无需分配
+    if (page->frame) return; 
     else {
         uint32_t idx = first_frame();
         if (idx == (uint32_t) - 1) {
@@ -58,34 +56,32 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
 			asm("cli");
 			for(;;)io_hlt();
         }
-        set_frame(idx * 0x1000); // 标记当前frame，现在是我的了
+        set_frame(idx * 0x1000); 
         page->present = 1; // 现在这个页存在了
         page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
         page->user = is_kernel ? 0 : 1; // 是否为用户态由is_kernel决定
-        page->frame = idx; // 得到的frame索引，记录
+        page->frame = idx; 
     }
 }
 
 void free_frame(page_t *page) {
     uint32_t frame = page->frame;
-    if (!frame) return; // 当前页没有frame，无需处理
+    if (!frame) return;
     else {
-        clear_frame(frame); // 现在这个frame不归我管了
-        page->frame = 0x0; // 页也没有frame了
+        clear_frame(frame); 
+        page->frame = 0x0; 
     }
 }
 
-// 最后的最后，正式的分页代码
 void init_page() {
-    uint32_t mem_end_page = 0xFFFFFFFF; // 内存最大到何处，假定为4GB
+    uint32_t mem_end_page = 0xFFFFFFFF; // 4GB Page
 
-    nframes = mem_end_page / 0x1000; // frames多少
-    frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes)); // 为bitset分配空间
-    memset(frames, 0, INDEX_FROM_BIT(nframes)); // 全部置0
+    nframes = mem_end_page / 0x1000; 
+    frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
+    memset(frames, 0, INDEX_FROM_BIT(nframes)); 
 
-    // 初始化页目录
     kernel_directory = (page_directory_t *) kmalloc_a(sizeof(page_directory_t)); //kmalloc: 无分页情况自动在内核后方分配 | 有分页从内核堆分配
-    // 页目录要求page-aligned，因此用kmalloc_a
+
     memset(kernel_directory, 0, sizeof(page_directory_t));
     current_directory = kernel_directory;
     int i = 0;
@@ -116,29 +112,29 @@ void switch_page_directory(page_directory_t *dir) {
 }
 
 page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
-    address /= 0x1000; // 将地址转化为bitset索引
-    uint32_t table_idx = address / 1024; // 找到包含这一索引的页表
-    if (dir->tables[table_idx]) return &dir->tables[table_idx]->pages[address % 1024]; // 已经被赋值了，返回现成的
-    else if (make) { // 没有，但可以造页
+    address /= 0x1000; 
+    uint32_t table_idx = address / 1024; 
+    if (dir->tables[table_idx]) return &dir->tables[table_idx]->pages[address % 1024]; 
+    else if (make) { 
         uint32_t tmp;
-        dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp); // 直接创造一个页表，tmp为其物理地址
-        memset(dir->tables[table_idx], 0, 0x1000); // 页表清空
-        dir->tablesPhysical[table_idx] = tmp | 0x7; // 存在，可读写，用户态
-        return &dir->tables[table_idx]->pages[address % 1024]; // 新鲜出炉的页
-    } else return 0; // 否则啥也干不了，只能返回0
+        dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp); 
+        memset(dir->tables[table_idx], 0, 0x1000); 
+        dir->tablesPhysical[table_idx] = tmp | 0x7; 
+        return &dir->tables[table_idx]->pages[address % 1024]; 
+    } else return 0; 
 }
 
 void page_fault(registers_t *regs) {
     // 现在一个#PE错误出现，根据标准，错误地址在cr2寄存器中。
 	asm("cli");
     uint32_t faulting_address;
-    asm volatile("mov %%cr2, %0" : "=r" (faulting_address)); // 将cr2赋给faulting_address
-    // error code中有更详细的信息
-    int present = !(regs->err_code & 0x1); // 页不存在？
-    int rw = regs->err_code & 0x2; // 只读页被写入？
-    int us = regs->err_code & 0x4; // 用户态写入内核页？
-    int reserved = regs->err_code & 0x8; // 写入CPU保留位？
-    int id = regs->err_code & 0x10; // 由取指引起？
+    asm volatile("mov %%cr2, %0" : "=r" (faulting_address)); //
+   
+    int present = !(regs->err_code & 0x1); // 页不存在
+    int rw = regs->err_code & 0x2; // 只读页被写入
+    int us = regs->err_code & 0x4; // 用户态写入内核页
+    int reserved = regs->err_code & 0x8; // 写入CPU保留位
+    int id = regs->err_code & 0x10; // 由取指引起
 
     printf("[ERROR]: Page fault |");
 	if(present)
@@ -149,6 +145,8 @@ void page_fault(registers_t *regs) {
 		printf("Type: user-mode;\n\taddres: %x",faulting_address);
 	else if(reserved)
 		printf("Type: reserved;\n\taddress: %x",faulting_address);
+	else if(id)
+		printf("Type: decode address;\n\taddress: %x",faulting_address);
 	
 
 	for(;;) io_hlt();
