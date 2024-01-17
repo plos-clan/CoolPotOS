@@ -5,17 +5,17 @@ asm = '/i686_elf_tools/bin/i686-elf-as.exe'
 nasm = "nasm -f elf32"
 ld = '/i686_elf_tools/bin/i686-elf-ld.exe'
 
-cd = os.getcwd()
+cd = os.getcwd() # 获取当前执行目录 'D:\CrashPowerDOS-main\'
 
 out = "target"
 
 def clean():
     print("Clean target flolder")
-    for file in os.listdir(cd + "\\target"):
+    for file in os.listdir(cd + "\\target"):  # 遍历指定文件夹下所有文件
         os.remove(cd + "\\target\\" + file)
     return 0
 
-def build_boot():
+def build_boot(): #构建引导程序
     print("Building boot source code...")
     status = True
     for file in os.listdir(cd + '\\boot'):
@@ -24,12 +24,12 @@ def build_boot():
             status = False
         else :
             cmd = nasm +" " + cd+"\\boot\\"+file + " -o "+cd+"\\target\\"+file.split(".")[0]+".o"
-        e = os.system(cmd)
+        e = os.system(cmd) # os.system 执行命令 e为返回值(非0即不正常退出,可做判断终止构建流程)
         if e != 0 :
             return -1
     return 0
 
-def build_driver():
+def build_driver(): #构建内核内置驱动程序
     print("Building driver source code...")
     for file in os.listdir(cd + '\\driver'):
         cmd = cd + gcc +" " + "driver\\"+file + " -o "+"target\\"+file.split(".")[0]+".o"
@@ -38,7 +38,7 @@ def build_driver():
             return -1
     return 0
 
-def build_kernel():
+def build_kernel(): #构建内核本体
     print("Building kernel source code...")
     for file in os.listdir(cd + '\\kernel'):
         cmd = cd + gcc +" " + "kernel\\"+file + " -o "+"target\\"+file.split(".")[0]+".o"
@@ -47,7 +47,7 @@ def build_kernel():
             return -1
     return 0
 
-def build_data():
+def build_data(): #构建数据结构实现
     print("Building data source code...")
     for file in os.listdir(cd + '\\data'):
         cmd = cd + gcc +" " + "data\\"+file + " -o "+"target\\"+file.split(".")[0]+".o"
