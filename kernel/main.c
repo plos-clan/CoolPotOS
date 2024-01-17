@@ -7,12 +7,6 @@
 extern uint32_t end;
 uint32_t placement_address = (uint32_t) & end;
 
-typedef struct 
-{
-    char* data;
-}DEBUG;
-
-
 void kernel_main(unsigned long magic,struct multiboot_info *mbi){
 
     vga_install();
@@ -25,7 +19,7 @@ void kernel_main(unsigned long magic,struct multiboot_info *mbi){
 
     printf("CrashPowerDOS for x86 [Version %s] \n",VERSION);
 
-    
+
 
     for(;;) io_hlt();
 }
