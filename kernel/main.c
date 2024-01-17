@@ -4,16 +4,28 @@
 #include "../include/multiboot.h"
 #include "../include/memory.h"
 
-void kernel_main(){
+extern uint32_t end;
+uint32_t placement_address = (uint32_t) & end;
+
+typedef struct 
+{
+    char* data;
+}DEBUG;
+
+
+void kernel_main(unsigned long magic,struct multiboot_info *mbi){
+
     vga_install();
     install_idt();
     install_gdt();
 
-    install_page();
+    init_page();
 
     asm("sti");
+
+    printf("CrashPowerDOS for x86 [Version %s] \n",VERSION);
+
     
-    printf("CrashPowerDOS for x86 [Version %s]",VERSION);
 
     for(;;) io_hlt();
 }
