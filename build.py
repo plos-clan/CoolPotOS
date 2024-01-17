@@ -92,5 +92,5 @@ a = linker()
 if a != 0:
     exit(-1)
 
-os.system("qemu-system-i386 -kernel isodir\\sys\\kernel.elf")
+os.system("qemu-system-i386 -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")
 
