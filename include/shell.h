@@ -13,5 +13,7 @@ void end_echo(int argc,char **argv);
 void cmd_ls();
 void cmd_cat(int argc,char **argv);
 void cmd_read(int argc,char **argv);
+void cmd_mkdir(int argc,char **argv);
+void cmd_del(int argc,char **argv);
 
 #endif

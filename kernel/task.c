@@ -5,40 +5,30 @@
 #include "../include/io.h"
 #include "../include/description_table.h"
 
-task_t *kernel_task;
-uint32_t pid_index;
+task_t *curror_task;
+struct tss_entry tss_e;
 
-static int tss_init_ring0(task_t *task,uint32_t entry,uint32_t esp)
-{
-
-    
-    memset(&task->tss,0,sizeof(tss_t));
-    task->tss.eip = entry;
-    task->tss.esp = task->tss.esp0 = esp;
-    task->tss.ss = task->tss.ss0 = KERNEL_SECTION_DS;
-    task->tss.es = task->tss.ds = task->tss.fs = task->tss.gs = KERNEL_SECTION_DS;
-    task->tss.cs = KERNEL_SECTION_CS;
-    task->tss.eflags = EFLAGES_IF | EFLAGES_DEFAULT;
-    return 0;
+void tss_install() {
+    asm volatile("ltr %%ax" : : "a"((SEL_TSS << 3)));
 }
 
-task_t *create_task_ring0(uint32_t entry,uint32_t esp)
-{
-    task_t *task = (task_t*)kmalloc(sizeof(task_t));
-    tss_init_ring0(task,entry,esp);
-    task->pid = pid_index++;
-    return task;
+void tss_set(uint16_t ss0, uint32_t esp0) {
+    // 清空TSS
+    memset((void *)&tss_e, 0, sizeof(struct tss_entry));
+    tss_e.ss0 = ss0;
+    tss_e.esp0 = esp0;
+    tss_e.iopb_off = sizeof(struct tss_entry);
 }
 
-void debug(){
-    for(;;)
-        printf("Hello!");
+// 重置当前进程的TSS
+void tss_reset() {
+    // TSS用于当切换到ring0时设置堆栈
+    // 每个进程有一个内核堆栈
+    tss_set(SEL_KDATA << 3, (uint32_t)curror_task->stack + PAGE_SIZE);
 }
 
 void init_task(){
     io_cli();
-    kernel_task = create_task_ring0(0,0);
-    task_t* debug_task = create_task_ring0(debug,kmalloc(1024));
-    //write_tss(kernel_task->tss);
+    
     io_sti();
 }

@@ -95,7 +95,7 @@ void cmd_ls()
         index++;
         size += file.size;
     }
-    printf("    All File: %d  | All Size: %d\n",index,size);
+    printf("    All File: %d  | All Size: %dByte\n",index,size);
     kfree(root);
 }
 
@@ -111,7 +111,16 @@ void cmd_cat(int argc,char **argv)
         return;
     }
 
-    save_file(file,argv[2]);
+    char* buffer[1024] = {0};
+
+    for(int i = 2;i < argc;i++)
+    {
+        if(i==2) strcat(buffer,"");
+        else strcat(buffer," ");
+        strcat(buffer,argv[i]);
+    }
+
+    save_file(file,buffer);
     kfree(file);
 }
 
@@ -122,7 +131,7 @@ void cmd_read(int argc,char **argv)
         return;
     }
     struct File *file = open_file(argv[1]);
-    char* buffer = (char*) kmalloc(4096);
+    char* buffer = (char*) kmalloc(sizeof(char)*4096);
     if(file == NULL){
         printf("[Shell-READ]: Not found [%s] \n",argv[1]);
         return;
@@ -132,6 +141,35 @@ void cmd_read(int argc,char **argv)
     printf("%s\n",buffer);
     kfree(buffer);
     kfree(file);
+}
+
+void cmd_mkdir(int argc,char **argv)
+{
+    if(argc == 1) {
+        printf("[Shell-MKDIR]: If there are too few parameters, please specify the directory name");
+        return;
+    }
+    struct File *dir = create_dir(argv[0]);
+    if(dir == NULL){
+        printf("[Shell-MKDIR]: Cannot create directory '%s'.",argv[0]);
+        return;
+    }
+    kfree(dir);
+}
+
+void cmd_del(int argc,char **argv)
+{
+    if(argc == 1) {
+        vga_writestring("[Shell-DEL]: If there are too few parameters, please specify the folder name.\n");
+        return;
+    }
+    struct File *info = open_file(argv[1]);
+    if(info == NULL){
+        printf("[Shell-DEL]: Not found [%s] \n",argv[1]);
+        return;
+    }
+    delete_file(info);
+    kfree(info);
 }
 
 void setup_shell()
@@ -168,15 +206,21 @@ void setup_shell()
             cmd_cat(argc,argv);
         else if(!strcmp("read",argv[0]))
             cmd_read(argc,argv);
+        else if(!strcmp("mkdir",argv[0]))
+            cmd_mkdir(argc,argv);
+        else if(!strcmp("del",argv[0]) || !strcmp("rm",argv[0]))
+            cmd_del(argc,argv);
         else if(!strcmp("help",argv[0])||!strcmp("?",argv[0])||!strcmp("h",argv[0]))
         {
             vga_writestring("-=[CrashPowerShell Helper]=-\n");
-            vga_writestring("help ? h   |empty  Print shell help info.\n");
-            vga_writestring("version    |empty  Print os version.\n");
+            vga_writestring("help ? h           Print shell help info.\n");
+            vga_writestring("version            Print os version.\n");
             vga_writestring("echo       <msg>   Print message.\n");
-            vga_writestring("ls         |empty  List all files.\n");
+            vga_writestring("ls                 List all files.\n");
             vga_writestring("cat <name> <data>  Edit a file\n");
             vga_writestring("read       <name>  Read a file\n");
+            vga_writestring("mkdir      <name>  Make a directory\n");
+            vga_writestring("del rm     <name>  Delete a file\n");
         }
         else printf("[Shell]: Unknown command '%s'.\n",argv[0]);
     }

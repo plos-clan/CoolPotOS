@@ -4,64 +4,90 @@
 
 static char num_str_buf[BUF_SIZE];
 
-size_t strlen(const char* str) 
+size_t strlen(const char *str)
 {
-	size_t len = 0;
-	while (str[len])
-		len++;
-	return len;
+    size_t len = 0;
+    while (str[len])
+        len++;
+    return len;
 }
 
-int strcmp(const char *s1, const char *s2) {
+int strcmp(const char *s1, const char *s2)
+{
     char is_equal = 1;
 
-    for (; (*s1 != '\0') && (*s2 != '\0'); s1++, s2++) {
-        if (*s1 != *s2) {
+    for (; (*s1 != '\0') && (*s2 != '\0'); s1++, s2++)
+    {
+        if (*s1 != *s2)
+        {
             is_equal = 0;
             break;
         }
     }
 
-    if (is_equal) {
-        if (*s1 != '\0') {
+    if (is_equal)
+    {
+        if (*s1 != '\0')
+        {
             return 1;
-        } else if (*s2 != '\0') {
+        }
+        else if (*s2 != '\0')
+        {
             return -1;
-        } else {
+        }
+        else
+        {
             return 0;
         }
-    } else {
-        return (int) (*s1 - *s2);
+    }
+    else
+    {
+        return (int)(*s1 - *s2);
     }
 }
 
-char *strcpy(char *dest, const char *src) {
-    do {
+char *strcpy(char *dest, const char *src)
+{
+    do
+    {
         *dest++ = *src++;
     } while (*src != 0);
 }
 
-int isspace(int c) {
+char *strcat(char *dest, const char *src)
+{
+    char *temp = dest;
+    while (*temp != '\0')
+        temp++;
+    while ((*temp++ = *src++) != '\0');
+}
+
+int isspace(int c)
+{
     return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
             c == '\v');
 }
 
 // isdigit
-int isdigit(int c) {
+int isdigit(int c)
+{
     return (c >= '0' && c <= '9');
 }
 
 // isalpha
-int isalpha(int c) {
+int isalpha(int c)
+{
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 // isupper
-int isupper(int c) {
+int isupper(int c)
+{
     return (c >= 'A' && c <= 'Z');
 }
 
-char *int32_to_str_dec(int32_t num, int flag, int width) {
+char *int32_to_str_dec(int32_t num, int flag, int width)
+{
     int32_t num_tmp = num;
     char *p = num_str_buf;
     char *q = NULL;
@@ -74,26 +100,36 @@ char *int32_to_str_dec(int32_t num, int flag, int width) {
 
     char dic[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
-    if (num_tmp < 0) {
+    if (num_tmp < 0)
+    {
         *p++ = '-';
-    } else if (flag & FLAG_SIGN) {
+    }
+    else if (flag & FLAG_SIGN)
+    {
         *p++ = '+';
-    } else {
+    }
+    else
+    {
         *p++ = ' ';
     }
     str_first = num_str_buf;
 
-    if (num_tmp >= 0 && !(flag & FLAG_SIGN)) {
+    if (num_tmp >= 0 && !(flag & FLAG_SIGN))
+    {
         str_first++;
     }
 
-    if (num_tmp == 0) {
+    if (num_tmp == 0)
+    {
         *p++ = '0';
-    } else {
+    }
+    else
+    {
         if (num_tmp < 0)
             num_tmp = -num_tmp;
 
-        while (num_tmp) {
+        while (num_tmp)
+        {
             *p++ = dic[num_tmp % 10];
             num_tmp /= 10;
         }
@@ -105,7 +141,8 @@ char *int32_to_str_dec(int32_t num, int flag, int width) {
 
     q = num_str_buf + 1;
     p--;
-    while (q < p) {
+    while (q < p)
+    {
         ch = *q;
         *q = *p;
         *p = ch;
@@ -113,25 +150,34 @@ char *int32_to_str_dec(int32_t num, int flag, int width) {
         q++;
     }
 
-    if (len < width) {
+    if (len < width)
+    {
         p = str_end;
 
-        if (flag & FLAG_LEFT_ADJUST) {
+        if (flag & FLAG_LEFT_ADJUST)
+        {
             for (int i = 0; i < width - len; i++)
                 *p++ = ' ';
             *p = '\0';
             str_end = p;
-        } else {
-            while (p >= str_first) {
+        }
+        else
+        {
+            while (p >= str_first)
+            {
                 *(p + width - len) = *p;
                 p--;
             }
 
-            if (flag & FLAG_ZERO_PAD) {
-                for (int i = 0; i < width - len; i++) {
+            if (flag & FLAG_ZERO_PAD)
+            {
+                for (int i = 0; i < width - len; i++)
+                {
                     num_str_buf[i + 1] = '0';
                 }
-            } else {
+            }
+            else
+            {
                 for (int i = 0; i < width - len; i++)
                     str_first[i] = ' ';
             }
@@ -141,11 +187,13 @@ char *int32_to_str_dec(int32_t num, int flag, int width) {
     return str_first;
 }
 
-char *int64_to_str_dec(int64_t num, int flag, int width) {
+char *int64_to_str_dec(int64_t num, int flag, int width)
+{
     return 0;
 }
 
-char *uint32_to_str_hex(uint32_t num, int flag, int width) {
+char *uint32_to_str_hex(uint32_t num, int flag, int width)
+{
     uint32_t num_tmp = num;
     char *p = num_str_buf;
     char *q = NULL;
@@ -167,11 +215,13 @@ char *uint32_to_str_hex(uint32_t num, int flag, int width) {
     *p++ = '0';
     *p++ = (flag & FLAG_LOWER) ? 'x' : 'X';
 
-    if (!(flag & FLAG_ALTNT_FORM)) {
+    if (!(flag & FLAG_ALTNT_FORM))
+    {
         str_first += 2;
     }
 
-    do {
+    do
+    {
         *p++ = dic[num_tmp % 16];
         num_tmp /= 16;
     } while (num_tmp);
@@ -182,7 +232,8 @@ char *uint32_to_str_hex(uint32_t num, int flag, int width) {
 
     q = num_str_buf + 2;
     p--;
-    while (q < p) {
+    while (q < p)
+    {
         ch = *q;
         *q = *p;
         *p = ch;
@@ -190,27 +241,36 @@ char *uint32_to_str_hex(uint32_t num, int flag, int width) {
         q++;
     }
 
-    if (len < width) {
+    if (len < width)
+    {
         p = str_end;
 
-        if (flag & FLAG_LEFT_ADJUST) {
+        if (flag & FLAG_LEFT_ADJUST)
+        {
             for (int i = 0; i < width - len; i++)
                 *p++ = ' ';
             *p = '\0';
             str_end = p;
-        } else {
-            while (p >= str_first) {
+        }
+        else
+        {
+            while (p >= str_first)
+            {
                 *(p + width - len) = *p;
                 p--;
             }
             if (flag & FLAG_ALTNT_FORM)
                 str_first[1] = (flag & FLAG_LOWER) ? 'x' : 'X';
 
-            if (flag & FLAG_ZERO_PAD) {
-                for (int i = 0; i < width - len; i++) {
+            if (flag & FLAG_ZERO_PAD)
+            {
+                for (int i = 0; i < width - len; i++)
+                {
                     num_str_buf[i + 2] = '0';
                 }
-            } else {
+            }
+            else
+            {
                 for (int i = 0; i < width - len; i++)
                     str_first[i] = ' ';
             }
@@ -223,7 +283,8 @@ char *uint32_to_str_hex(uint32_t num, int flag, int width) {
     return str_first;
 }
 
-char *uint64_to_str_hex(uint64_t num, int flag, int width) {
+char *uint64_to_str_hex(uint64_t num, int flag, int width)
+{
     uint64_t num_tmp = num;
     char *p = num_str_buf;
     char *q = NULL;
@@ -245,11 +306,13 @@ char *uint64_to_str_hex(uint64_t num, int flag, int width) {
     *p++ = '0';
     *p++ = (flag & FLAG_LOWER) ? 'x' : 'X';
 
-    if (!(flag & FLAG_ALTNT_FORM)) {
+    if (!(flag & FLAG_ALTNT_FORM))
+    {
         str_first += 2;
     }
 
-    while (num_tmp) {
+    while (num_tmp)
+    {
         *p++ = dic[num_tmp % 16];
         num_tmp /= 16;
     }
@@ -260,7 +323,8 @@ char *uint64_to_str_hex(uint64_t num, int flag, int width) {
 
     q = num_str_buf + 2;
     p--;
-    while (q < p) {
+    while (q < p)
+    {
         ch = *q;
         *q = *p;
         *p = ch;
@@ -268,19 +332,25 @@ char *uint64_to_str_hex(uint64_t num, int flag, int width) {
         q++;
     }
 
-    if (len < width) {
+    if (len < width)
+    {
         p = str_end;
 
-        while (p >= str_first) {
+        while (p >= str_first)
+        {
             *(p + width - len) = *p;
             p--;
         }
 
-        if (flag & FLAG_ZERO_PAD) {
-            for (int i = 0; i < width - len; i++) {
+        if (flag & FLAG_ZERO_PAD)
+        {
+            for (int i = 0; i < width - len; i++)
+            {
                 num_str_buf[i + 2] = '0';
             }
-        } else {
+        }
+        else
+        {
             for (int i = 0; i < width - len; i++)
                 str_first[i] = ' ';
         }
@@ -289,7 +359,8 @@ char *uint64_to_str_hex(uint64_t num, int flag, int width) {
     return str_first;
 }
 
-char *uint32_to_str_oct(uint32_t num, int flag, int width) {
+char *uint32_to_str_oct(uint32_t num, int flag, int width)
+{
     uint32_t num_tmp = num;
     char *p = num_str_buf;
     char *q = NULL;
@@ -306,11 +377,13 @@ char *uint32_to_str_oct(uint32_t num, int flag, int width) {
 
     *p++ = '0';
 
-    if (!(flag & FLAG_ALTNT_FORM)) {
+    if (!(flag & FLAG_ALTNT_FORM))
+    {
         str_first += 1;
     }
 
-    while (num_tmp) {
+    while (num_tmp)
+    {
         *p++ = dic[num_tmp % 8];
         num_tmp /= 8;
     }
@@ -321,7 +394,8 @@ char *uint32_to_str_oct(uint32_t num, int flag, int width) {
 
     q = num_str_buf + 1;
     p--;
-    while (q < p) {
+    while (q < p)
+    {
         ch = *q;
         *q = *p;
         *p = ch;
@@ -329,25 +403,34 @@ char *uint32_to_str_oct(uint32_t num, int flag, int width) {
         q++;
     }
 
-    if (len < width) {
+    if (len < width)
+    {
         p = str_end;
 
-        if (flag & FLAG_LEFT_ADJUST) {
+        if (flag & FLAG_LEFT_ADJUST)
+        {
             for (int i = 0; i < width - len; i++)
                 *p++ = ' ';
             *p = '\0';
             str_end = p;
-        } else {
-            while (p >= str_first) {
+        }
+        else
+        {
+            while (p >= str_first)
+            {
                 *(p + width - len) = *p;
                 p--;
             }
 
-            if (flag & FLAG_ZERO_PAD) {
-                for (int i = 0; i < width - len; i++) {
+            if (flag & FLAG_ZERO_PAD)
+            {
+                for (int i = 0; i < width - len; i++)
+                {
                     num_str_buf[i + 1] = '0';
                 }
-            } else {
+            }
+            else
+            {
                 for (int i = 0; i < width - len; i++)
                     str_first[i] = ' ';
             }
@@ -357,17 +440,20 @@ char *uint32_to_str_oct(uint32_t num, int flag, int width) {
     return str_first;
 }
 
-char *insert_str(char *buf, const char *str) {
+char *insert_str(char *buf, const char *str)
+{
     char *p = buf;
 
-    while (*str) {
+    while (*str)
+    {
         *p++ = *str++;
     }
 
     return p;
 }
 
-int vsprintf(char *buf, const char *fmt, va_list args) {
+int vsprintf(char *buf, const char *fmt, va_list args)
+{
     char *str = buf;
     int flag = 0;
     int int_type = INT_TYPE_INT;
@@ -385,8 +471,10 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
     int64_t num_64 = 0;
     uint64_t num_u64 = 0;
 
-    for (const char *p = fmt; *p; p++) {
-        if (*p != '%') {
+    for (const char *p = fmt; *p; p++)
+    {
+        if (*p != '%')
+        {
             *str++ = *p;
             continue;
         }
@@ -400,144 +488,175 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
 
         while (*p == FLAG_ALTNT_FORM_CH || *p == FLAG_ZERO_PAD_CH ||
                *p == FLAG_LEFT_ADJUST_CH || *p == FLAG_SPACE_BEFORE_POS_NUM_CH ||
-               *p == FLAG_SIGN_CH) {
-            if (*p == FLAG_ALTNT_FORM_CH) {
+               *p == FLAG_SIGN_CH)
+        {
+            if (*p == FLAG_ALTNT_FORM_CH)
+            {
                 flag |= FLAG_ALTNT_FORM;
-            } else if (*p == FLAG_ZERO_PAD_CH) {
+            }
+            else if (*p == FLAG_ZERO_PAD_CH)
+            {
                 flag |= FLAG_ZERO_PAD;
-            } else if (*p == FLAG_LEFT_ADJUST_CH) {
+            }
+            else if (*p == FLAG_LEFT_ADJUST_CH)
+            {
                 flag |= FLAG_LEFT_ADJUST;
                 flag &= ~FLAG_ZERO_PAD;
-            } else if (*p == FLAG_SPACE_BEFORE_POS_NUM_CH) {
+            }
+            else if (*p == FLAG_SPACE_BEFORE_POS_NUM_CH)
+            {
                 flag |= FLAG_SPACE_BEFORE_POS_NUM;
-            } else if (*p == FLAG_SIGN_CH) {
+            }
+            else if (*p == FLAG_SIGN_CH)
+            {
                 flag |= FLAG_SIGN;
-            } else {
+            }
+            else
+            {
             }
 
             p++;
         }
 
-        if (*p == '*') {
+        if (*p == '*')
+        {
             tot_width = va_arg(args,
-            int);
+                               int);
             if (tot_width < 0)
                 tot_width = 0;
             p++;
-        } else {
-            while (isdigit(*p)) {
+        }
+        else
+        {
+            while (isdigit(*p))
+            {
                 tot_width = tot_width * 10 + *p - '0';
                 p++;
             }
         }
-        if (*p == '.') {
-            if (*p == '*') {
+        if (*p == '.')
+        {
+            if (*p == '*')
+            {
                 sub_width = va_arg(args,
-                int);
+                                   int);
                 if (sub_width < 0)
                     sub_width = 0;
                 p++;
-            } else {
-                while (isdigit(*p)) {
+            }
+            else
+            {
+                while (isdigit(*p))
+                {
                     sub_width = sub_width * 10 + *p - '0';
                     p++;
                 }
             }
         }
 
-        LOOP_switch:
-        switch (*p) {
-            case 'h':
-                p++;
-                if (int_type >= INT_TYPE_MIN) {
-                    int_type >>= 1;
-                    goto LOOP_switch;
-                } else {
-                    *str++ = '%';
-                    break;
-                }
-            case 'l':
-                p++;
-                if (int_type <= INT_TYPE_MAX) {
-                    int_type <<= 1;
-                    goto LOOP_switch;
-                } else {
-                    *str++ = '%';
-                    break;
-                }
-            case 's':
-                s = va_arg(args,
-                char*);
-                str = insert_str(str, s);
+    LOOP_switch:
+        switch (*p)
+        {
+        case 'h':
+            p++;
+            if (int_type >= INT_TYPE_MIN)
+            {
+                int_type >>= 1;
+                goto LOOP_switch;
+            }
+            else
+            {
+                *str++ = '%';
                 break;
-            case 'c':
-                ch = (char) (va_arg(args,
-                int) &0xFF);
-                *str++ = ch;
+            }
+        case 'l':
+            p++;
+            if (int_type <= INT_TYPE_MAX)
+            {
+                int_type <<= 1;
+                goto LOOP_switch;
+            }
+            else
+            {
+                *str++ = '%';
                 break;
-            case 'd':
-                switch (int_type) {
-                    case INT_TYPE_CHAR:
-                        num_8 = (int8_t) va_arg(args, int32_t);
-                        str = insert_str(str, int32_to_str_dec(num_8, flag, tot_width));
-                        break;
-                    case INT_TYPE_SHORT:
-                        num_16 = (int16_t) va_arg(args, int32_t);
-                        str = insert_str(str, int32_to_str_dec(num_16, flag, tot_width));
-                        break;
-                    case INT_TYPE_INT:
-                        num_32 = va_arg(args, int32_t);
-                        str = insert_str(str, int32_to_str_dec(num_32, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG:
-                        num_64 = va_arg(args, int64_t);
-                        str = insert_str(str, int64_to_str_dec(num_64, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG_LONG:
-                        num_64 = va_arg(args, int64_t);
-                        str = insert_str(str, int64_to_str_dec(num_64, flag, tot_width));
-                        break;
-                }
+            }
+        case 's':
+            s = va_arg(args,
+                       char *);
+            str = insert_str(str, s);
+            break;
+        case 'c':
+            ch = (char)(va_arg(args,
+                               int) &
+                        0xFF);
+            *str++ = ch;
+            break;
+        case 'd':
+            switch (int_type)
+            {
+            case INT_TYPE_CHAR:
+                num_8 = (int8_t)va_arg(args, int32_t);
+                str = insert_str(str, int32_to_str_dec(num_8, flag, tot_width));
                 break;
-            case 'x':
-                flag |= FLAG_LOWER;
-            case 'X':
-                switch (int_type) {
-                    case INT_TYPE_CHAR:
-                        num_u8 = (uint8_t)
-                        va_arg(args, uint32_t);
-                        str = insert_str(str, uint32_to_str_hex(num_u8, flag, tot_width));
-                        break;
-                    case INT_TYPE_SHORT:
-                        num_u16 = (uint16_t)
-                        va_arg(args, uint32_t);
-                        str = insert_str(str, uint32_to_str_hex(num_u16, flag, tot_width));
-                        break;
-                    case INT_TYPE_INT:
-                        num_u32 = va_arg(args, uint32_t);
-                        str = insert_str(str, uint32_to_str_hex(num_u32, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG:
-                        num_u64 = va_arg(args, uint64_t);
-                        str = insert_str(str, uint64_to_str_hex(num_u64, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG_LONG:
-                        num_u64 = va_arg(args, uint64_t);
-                        str = insert_str(str, uint64_to_str_hex(num_u64, flag, tot_width));
-                        break;
-                }
+            case INT_TYPE_SHORT:
+                num_16 = (int16_t)va_arg(args, int32_t);
+                str = insert_str(str, int32_to_str_dec(num_16, flag, tot_width));
                 break;
-            case 'o':
+            case INT_TYPE_INT:
+                num_32 = va_arg(args, int32_t);
+                str = insert_str(str, int32_to_str_dec(num_32, flag, tot_width));
+                break;
+            case INT_TYPE_LONG:
+                num_64 = va_arg(args, int64_t);
+                str = insert_str(str, int64_to_str_dec(num_64, flag, tot_width));
+                break;
+            case INT_TYPE_LONG_LONG:
+                num_64 = va_arg(args, int64_t);
+                str = insert_str(str, int64_to_str_dec(num_64, flag, tot_width));
+                break;
+            }
+            break;
+        case 'x':
+            flag |= FLAG_LOWER;
+        case 'X':
+            switch (int_type)
+            {
+            case INT_TYPE_CHAR:
+                num_u8 = (uint8_t)
+                    va_arg(args, uint32_t);
+                str = insert_str(str, uint32_to_str_hex(num_u8, flag, tot_width));
+                break;
+            case INT_TYPE_SHORT:
+                num_u16 = (uint16_t)
+                    va_arg(args, uint32_t);
+                str = insert_str(str, uint32_to_str_hex(num_u16, flag, tot_width));
+                break;
+            case INT_TYPE_INT:
                 num_u32 = va_arg(args, uint32_t);
-                str = insert_str(str, uint32_to_str_oct(num_u32, flag, tot_width));
+                str = insert_str(str, uint32_to_str_hex(num_u32, flag, tot_width));
                 break;
-            case '%':
-                *str++ = '%';
+            case INT_TYPE_LONG:
+                num_u64 = va_arg(args, uint64_t);
+                str = insert_str(str, uint64_to_str_hex(num_u64, flag, tot_width));
                 break;
-            default:
-                *str++ = '%';
-                *str++ = *p;
+            case INT_TYPE_LONG_LONG:
+                num_u64 = va_arg(args, uint64_t);
+                str = insert_str(str, uint64_to_str_hex(num_u64, flag, tot_width));
                 break;
+            }
+            break;
+        case 'o':
+            num_u32 = va_arg(args, uint32_t);
+            str = insert_str(str, uint32_to_str_oct(num_u32, flag, tot_width));
+            break;
+        case '%':
+            *str++ = '%';
+            break;
+        default:
+            *str++ = '%';
+            *str++ = *p;
+            break;
         }
     }
     *str = '\0';
