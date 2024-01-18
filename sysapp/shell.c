@@ -7,6 +7,7 @@
 #include "../include/common.h"
 #include "../include/fat16.h"
 #include "../include/memory.h"
+#include "../include/config.h"
 
 extern Queue *key_char_queue;
 

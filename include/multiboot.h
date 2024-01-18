@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-#define VERSION "0.0.2"
 #define LOADER_SAVE_GRAPHICS_ADDRESS 0xB8000 // loader中保存显存地址的地址
 #define VARTUAL_GRAPHICS_ADDRESS 0xe0000000
 

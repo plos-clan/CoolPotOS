@@ -4,7 +4,7 @@ extern void gdt_flush(uint32_t);
 gdt_entry_t gdt_entries[6];
 gdt_ptr_t   gdt_ptr;
 
-static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
+void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
 {
     gdt_entries[num].base_low    = (base & 0xFFFF);
     gdt_entries[num].base_middle = (base >> 16) & 0xFF;
@@ -28,7 +28,6 @@ void install_gdt()
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // 数据段
     gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // 用户代码段
     gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // 用户数据段
-    //write_tss(5, 0x10, 0x0);
 
     gdt_flush((uint32_t)&gdt_ptr);
 }
