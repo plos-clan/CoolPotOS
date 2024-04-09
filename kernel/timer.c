@@ -5,6 +5,7 @@
 #include "../include/task.h"
 
 uint32_t tick = 0;
+extern struct task_struct *current;
 
 static void timer_handle(registers_t *regs) {
     io_cli();

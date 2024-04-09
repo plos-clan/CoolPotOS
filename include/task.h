@@ -9,6 +9,7 @@ enum task_state {
     TASK_SLEEPING = 1,  // 睡眠中
     TASK_RUNNABLE = 2,  // 可运行(也许正在运行)
     TASK_ZOMBIE = 3,    // 僵尸状态
+    TASK_DEATH = 4     // 终止状态
 } task_state;
 
 struct context {

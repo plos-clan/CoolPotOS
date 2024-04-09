@@ -25,6 +25,9 @@ void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur){
             case TASK_ZOMBIE:
                 printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
                 break;
+            case TASK_DEATH:
+                printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
+                break;
         }
         (*i)++;
     } else{
@@ -40,6 +43,9 @@ void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur){
                 break;
             case TASK_ZOMBIE:
                 printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
+                break;
+            case TASK_DEATH:
+                printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
                 break;
         }
         (*i)++;
@@ -107,9 +113,8 @@ int32_t kernel_thread(int (*fn)(void *), void *arg,char* name) {
 
 void kthread_exit() {
     register uint32_t val asm ("eax");
-
-    printf("Thread exited with value %d\n", val);
-
+    printf("Task exited with value %d\n", val);
+    current->state = TASK_DEATH;
     while (1);
 }
 
