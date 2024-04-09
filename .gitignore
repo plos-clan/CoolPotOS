@@ -1,0 +1,7 @@
+.vscode/
+
+i686_elf_tools/
+
+cmake-build-debug/
+
+isodir/
