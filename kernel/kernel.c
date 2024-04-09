@@ -8,6 +8,7 @@
 #include "../include/cmos.h"
 #include "../include/keyboard.h"
 #include "../include/shell.h"
+#include "../include/date.h"
 
 extern uint32_t end;
 uint32_t placement_address = (uint32_t) & end;
@@ -33,7 +34,7 @@ void kernel_main() {
     clock_sleep(25);
 
     kernel_thread(setup_shell,NULL,"CPOS-Shell");
-
+    kernel_thread(setup_date,NULL,"CPOS-Date");
 
     for (;;){
         io_hlt();

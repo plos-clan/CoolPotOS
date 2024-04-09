@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+
 #define FLAG_ALTNT_FORM 0x01
 #define FLAG_ALTNT_FORM_CH '#'
 
@@ -58,6 +61,7 @@ void vga_putchar(char c);
 void vga_write(const char* data, size_t size);
 void vga_writestring(const char* data);
 void vga_write_dec(uint32_t dec);
+uint16_t vga_entry(unsigned char uc, uint8_t color);
 void vga_clear();
 void move_cursor();
 void printf(const char *formet, ...);
