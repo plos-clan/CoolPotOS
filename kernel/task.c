@@ -6,6 +6,8 @@ struct task_struct *running_proc_head = NULL;
 struct task_struct *wait_proc_head = NULL;
 struct task_struct *current = NULL;
 
+extern page_directory_t *kernel_directory;
+
 extern void switch_to(struct context *prev, struct context *next);
 
 int now_pid = 0;
@@ -62,7 +64,10 @@ void print_proc(){
 
 void schedule() {
     if (current) {
-        change_task_to(current->next);
+        volatile task_state state = current->next->state;
+        if(state == TASK_RUNNABLE || state == TASK_SLEEPING ){
+            change_task_to(current->next);
+        }
     }
 }
 
@@ -70,6 +75,7 @@ void change_task_to(struct task_struct *next) {
     if (current != next) {
         struct task_struct *prev = current;
         current = next;
+        //switch_page_directory(current->pgd_dir);
         switch_to(&(prev->context), &(current->context));
     }
 }
@@ -84,7 +90,8 @@ int32_t kernel_thread(int (*fn)(void *), void *arg,char* name) {
     new_task->state = TASK_RUNNABLE;
     new_task->stack = current;
     new_task->pid = now_pid++;
-    new_task->mm = NULL;
+    new_task->pgd_dir = (page_directory_t *) kmalloc_a(sizeof(page_directory_t));
+
     new_task->name = name;
 
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
@@ -125,7 +132,7 @@ void init_sched() {
     current->state = TASK_RUNNABLE;
     current->pid = now_pid++;
     current->stack = current;   // 该成员指向栈低地址
-    current->mm = NULL;         // 内核线程不需要该成员
+    current->pgd_dir = kernel_directory;
     current->name = "CPOS-System";
 
     current->next = current;

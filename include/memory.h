@@ -6,7 +6,7 @@
 #include "isr.h"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
-#define KHEAP_START 0xc0000000
+#define KHEAP_START      0xc0000000
 #define STACK_SIZE 32768
 
 #define INDEX_FROM_BIT(a) (a / (8*4))
@@ -42,6 +42,8 @@ typedef union header {
     } s;
     ALIGN stub;
 } header_t;
+
+uint32_t memory_usage();
 
 void *memcpy(void *dst_, const void *src_, uint32_t size);
 

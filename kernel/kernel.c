@@ -13,7 +13,6 @@
 extern uint32_t end;
 uint32_t placement_address = (uint32_t) & end;
 
-
 void kernel_main() {
     io_cli();
     vga_install();
@@ -28,6 +27,7 @@ void kernel_main() {
     printf("[kernel]: PCB load success!\n");
     init_keyboard();
     printf("[kernel]: Keyboard driver load success!\n");
+
     print_cpu_id();
     io_sti();
 

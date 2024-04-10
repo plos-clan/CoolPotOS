@@ -12,5 +12,11 @@ void setup_shell();
 void cmd_echo(int argc,char **argv);
 void cmd_proc();
 void cmd_date();
+void cmd_reset();
+void cmd_del(int argc, char **argv);
+void cmd_mkdir(int argc, char **argv);
+void cmd_read(int argc, char **argv);
+void cmd_cat(int argc, char **argv);
+void cmd_ls();
 
 #endif //CRASHPOWEROS_SHELL_H

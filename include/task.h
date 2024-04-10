@@ -21,17 +21,13 @@ struct context {
     uint32_t eflags;
 };
 
-struct mm_struct {
-    page_directory_t *pgd_dir;     // 进程页表
-};
-
 // 进程控制块 PCB
 struct task_struct {
     volatile task_state state;  // 进程当前状态
     int pid;           // 进程标识符
     char *name;        // 进程名
     void *stack;         // 进程的内核栈地址
-    struct mm_struct *mm;       // 当前进程的内存地址映像
+    page_directory_t *pgd_dir;     // 进程页表
     struct context context;     // 进程切换需要的上下文信息
     struct task_struct *next;   // 链表指针
 };

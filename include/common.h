@@ -2,7 +2,7 @@
 #define CRASHPOWEROS_COMMON_H
 
 #define OS_NAME "CrashPowerDOS"
-#define OS_VERSION "v0.2.0"
+#define OS_VERSION "v0.2.1"
 
 #include <stddef.h>
 #include <stdint.h>
