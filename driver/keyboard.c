@@ -102,9 +102,15 @@ int handle_keyboard_input(){
     int release = key & 0xb10000000;
     char c = key_status->is_shift ? shift_keyboard_map[(unsigned char )key] : keyboard_map[(unsigned char )key];
 
+
     if(!release) {
         if(c == -1) {
             key_status->is_shift = 1;
+            return 0;
+        }
+
+        if(key == 29){
+            key_status->is_ctrl = 1;
             return 0;
         }
 
@@ -114,6 +120,11 @@ int handle_keyboard_input(){
     } else {
         if(c == -1){
             key_status->is_shift = 0;
+        }
+
+        if(key == 29){
+            key_status->is_ctrl = 0;
+            return 0;
         }
     }
 
