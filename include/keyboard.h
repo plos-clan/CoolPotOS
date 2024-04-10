@@ -6,6 +6,8 @@
 
 typedef struct {
     int is_shift;
+    int is_ctrl;
+    int is_esc;
 }KEY_STATUS;
 
 typedef struct {
