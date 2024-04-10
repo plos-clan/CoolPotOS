@@ -6,6 +6,18 @@ extern uint32_t end; // declared in linker.ld
 static uint32_t placement_address = (uint32_t) &end;
 void *program_break, *program_break_end;
 
+uint32_t memory_usage(){
+    header_t *curr = head;
+    uint32_t size;
+    while (curr) {
+        if(!curr->s.is_free){
+            size += curr->s.size;
+        }
+        curr = curr->s.next;
+    }
+    return size;
+}
+
 static uint32_t kmalloc_int(uint32_t sz, uint32_t align, uint32_t *phys) {
     if (program_break) {
         // 有内存堆
@@ -24,6 +36,7 @@ static uint32_t kmalloc_int(uint32_t sz, uint32_t align, uint32_t *phys) {
     if (phys) *phys = placement_address;
     uint32_t tmp = placement_address;
     placement_address += sz;
+
     return tmp;
 }
 

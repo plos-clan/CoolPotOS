@@ -13,7 +13,7 @@ int setup_date(){
         clock_sleep(5);
         date_info = get_date_time(); //11
         i = 0;
-        for(size_t x = VGA_WIDTH - 17; x < VGA_WIDTH ; x++){
+        for(size_t x = VGA_WIDTH - 19; x < VGA_WIDTH ; x++){
             const size_t index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
             terminal_buffer[index] = vga_entry(date_info[i],terminal_color);
             i++;

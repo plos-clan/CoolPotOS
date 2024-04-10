@@ -2,17 +2,17 @@
 #include "../include/queue.h"
 #include "../include/vga.h"
 #include "../include/common.h"
-#include "../include/io.h"
 #include "../include/task.h"
 #include "../include/cmos.h"
 #include "../include/fat16.h"
+#include "../include/timer.h"
+#include "../include/io.h"
 
 extern Queue *key_char_queue;
 
 char getc() {
     while (key_char_queue->size == 0x00) {
-        io_hlt();
-
+        printf("");
     }
     return queue_pop(key_char_queue);
 }
@@ -73,7 +73,9 @@ void cmd_proc(){
 
 void cmd_date(){
     printf("System Time:           %s\n",get_date_time());
+    printf("Memory Usage: %dKB | All Size: %dMB\n",memory_usage()/1024,(KHEAP_START+KHEAP_INITIAL_SIZE)/1024/1024);
     print_cpu_id();
+    vga_writestring("\n");
 }
 
 void cmd_ls() {
@@ -161,6 +163,12 @@ void cmd_del(int argc, char **argv) {
     kfree(info);
 }
 
+void cmd_reset(){
+    printf("Restart %s for x86...");
+    clock_sleep(10);
+    outb(0x64,0xfe);
+}
+
 void setup_shell(){
     vga_clear();
     printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
@@ -200,6 +208,8 @@ void setup_shell(){
             cmd_mkdir(argc, argv);
         else if (!strcmp("del", argv[0]) || !strcmp("rm", argv[0]))
             cmd_del(argc, argv);
+        else if (!strcmp("reset", argv[0]))
+            cmd_reset();
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             vga_writestring("-=[CrashPowerShell Helper]=-\n");
             vga_writestring("help ? h           Print shell help info.\n");
@@ -212,6 +222,7 @@ void setup_shell(){
             vga_writestring("del rm     <name>  Delete a file\n");
             vga_writestring("sysinfo            Print system info.\n");
             vga_writestring("proc               Lists all running processes.\n");
+            vga_writestring("reset              Reset OS.\n");
         } else printf("[Shell]: Unknown command '%s'.\n", argv[0]);
     }
 }
