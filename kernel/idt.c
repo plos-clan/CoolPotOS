@@ -1,8 +1,7 @@
 #include "../include/description_table.h"
 #include "../include/memory.h"
 #include "../include/io.h"
-#include "../include/isr.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 
 static isr_t interrupt_handlers[256];
 idt_entry_t idt_entries[256]; // IDT有256个描述符
@@ -49,6 +48,7 @@ void idt_install() {
 
     memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
 
+    // 初始化PIC
     outb(0x20, 0x11);
     outb(0xA0, 0x11);
     outb(0x21, 0x20);

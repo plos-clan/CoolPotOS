@@ -1,5 +1,6 @@
+#include "../include/multiboot.h"
 #include "../include/common.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/description_table.h"
 #include "../include/io.h"
 #include "../include/memory.h"
@@ -11,22 +12,23 @@
 #include "../include/date.h"
 
 extern uint32_t end;
+extern int status;
 uint32_t placement_address = (uint32_t) & end;
 
-void kernel_main() {
+void kernel_main(multiboot_t *multiboot) {
     io_cli();
     vga_install();
-    printf("[kernel]: VGA driver load success!\n");
+    printf("[\035kernel\036]: VGA driver load success!\n");
     gdt_install();
     idt_install();
-    printf("[kernel]: description table config success!\n");
+    printf("[\035kernel\036]: description table config success!\n");
     init_timer(10);
     init_page();
-    printf("[kernel]: page set success!\n");
+    printf("[\035kernel\036]: page set success!\n");
     init_sched();
-    printf("[kernel]: PCB load success!\n");
+    printf("[\035kernel\036]: PCB load success!\n");
     init_keyboard();
-    printf("[kernel]: Keyboard driver load success!\n");
+    printf("[\035kernel\036]: Keyboard driver load success!\n");
 
     print_cpu_id();
     io_sti();
@@ -34,7 +36,7 @@ void kernel_main() {
     clock_sleep(25);
 
     kernel_thread(setup_shell,NULL,"CPOS-Shell");
-    kernel_thread(setup_date,NULL,"CPOS-Date");
+    if(!status) kernel_thread(setup_date,NULL,"CPOS-Date");
 
     for (;;){
         io_hlt();

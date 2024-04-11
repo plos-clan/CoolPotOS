@@ -1,6 +1,6 @@
 #include "../include/queue.h"
 #include "../include/memory.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/io.h"
 
 Queue *create_queue() {

@@ -1,6 +1,6 @@
 #include "../include/task.h"
 #include "../include/common.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 
 struct task_struct *running_proc_head = NULL;
 struct task_struct *wait_proc_head = NULL;

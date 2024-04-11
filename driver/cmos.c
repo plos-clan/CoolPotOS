@@ -1,7 +1,7 @@
 #include "../include/cmos.h"
 #include "../include/memory.h"
 #include "../include/io.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/common.h"
 
 static void cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx) {
