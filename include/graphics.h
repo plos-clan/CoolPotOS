@@ -5,6 +5,15 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+/*
+ * \032 DARK GRAY
+ * \033 LIGHT RED
+ * \034 LIGHT BLUE
+ * \035 LIGHT GREEN
+ * \036 LIGHT GRAY
+ * \037 LIGHT CYAN
+ */
+
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
@@ -65,5 +74,8 @@ uint16_t vga_entry(unsigned char uc, uint8_t color);
 void vga_clear();
 void move_cursor();
 void printf(const char *formet, ...);
+
+void vbe_putchar(char c);
+void vbe_clear();
 
 #endif

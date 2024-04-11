@@ -1,12 +1,15 @@
 #include "../include/memory.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/io.h"
+#include "../include/task.h"
 
 page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
 
 uint32_t *frames;
 uint32_t nframes;
+
+extern struct task_struct *current;
 
 extern uint32_t placement_address;
 extern void *program_break, *program_break_end;
@@ -106,19 +109,56 @@ void page_fault(registers_t *regs) {
     int id = regs->err_code & 0x10; // 由取指引起
 
     printf("[ERROR]: Page fault |");
-    if (present)
+    if (present) {
         printf("Type: present;\n\taddress: %x  ", faulting_address);
-    else if (rw)
+        if(current->pid == 0){
+            printf(" ======= Kernel Error ======= ");
+            while (1) io_hlt();
+        } else{
+            current->state = TASK_ZOMBIE;
+            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+        }
+    }
+    else if (rw) {
         printf("Type: read-only;\n\taddress: %x", faulting_address);
-    else if (us)
+        if(current->pid == 0){
+            printf(" ======= Kernel Error ======= ");
+            while (1) io_hlt();
+        } else{
+            current->state = TASK_ZOMBIE;
+            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+        }
+    }
+    else if (us) {
         printf("Type: user-mode;\n\taddres: %x", faulting_address);
-    else if (reserved)
+        if(current->pid == 0){
+            printf(" ======= Kernel Error ======= ");
+            while (1) io_hlt();
+        } else{
+            current->state = TASK_ZOMBIE;
+            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+        }
+    }
+    else if (reserved) {
         printf("Type: reserved;\n\taddress: %x", faulting_address);
-    else if (id)
+        if(current->pid == 0){
+            printf(" ======= Kernel Error ======= ");
+            while (1) io_hlt();
+        } else{
+            current->state = TASK_ZOMBIE;
+            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+        }
+    }
+    else if (id) {
         printf("Type: decode address;\n\taddress: %x", faulting_address);
-
-
-    for (;;) io_hlt();
+        if(current->pid == 0){
+            printf(" ======= Kernel Error ======= ");
+            while (1) io_hlt();
+        } else{
+            current->state = TASK_ZOMBIE;
+            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+        }
+    }
 }
 
 void init_page() {

@@ -1,12 +1,13 @@
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/common.h"
 #include "../include/io.h"
-
 
 size_t terminal_row;
 size_t terminal_column;
 uint8_t terminal_color;
 uint16_t *terminal_buffer;
+
+int status = 0;
 
 static uint16_t cursor_x = 0, cursor_y = 0; // 光标位置
 
@@ -31,9 +32,10 @@ static void scroll() {
 }
 
 void vga_install(void) {
+    status = 0;
     terminal_row = 0;
     terminal_column = 0;
-    terminal_color = vga_entry_color(VGA_COLOR_DARK_GREY, VGA_COLOR_BLACK);
+    terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
     terminal_buffer = (uint16_t *) 0xB8000;
     //terminal_buffer = (uint16_t*) 0xA0000;
     for (size_t y = 0; y < VGA_HEIGHT ; y++) {
@@ -45,6 +47,10 @@ void vga_install(void) {
 }
 
 void vga_clear() {
+    if(status){
+        vbe_clear();
+        return;
+    }
     for (size_t y = 0; y < VGA_HEIGHT; y++) {
         for (size_t x = 0; x < VGA_WIDTH; x++) {
             const size_t index = y * VGA_WIDTH + x;
@@ -74,8 +80,11 @@ void vga_putentryat(char c, uint8_t color, size_t x, size_t y) {
 }
 
 void vga_putchar(char c) {
-    uint8_t backColor = 0, foreColor = 15;
-    uint8_t attributeByte = (backColor << 4) | (foreColor & 0x07); // 黑底白字
+    if(status){
+        vbe_putchar(c);
+        return;
+    }
+    uint8_t attributeByte = terminal_color; // 黑底白字
     uint16_t attribute = attributeByte << 8;
     uint16_t *location;
 
@@ -92,6 +101,24 @@ void vga_putchar(char c) {
     } else if (c == '\n') {
         cursor_x = 0; // 光标回首
         cursor_y++; // 下一行
+    } else if( c == '\033') {
+        terminal_color = vga_entry_color(VGA_COLOR_LIGHT_RED, VGA_COLOR_BLACK);
+        return;
+    }else if( c == '\034') {
+        terminal_color = vga_entry_color(VGA_COLOR_LIGHT_BLUE, VGA_COLOR_BLACK);
+        return;
+    }else if( c == '\035') {
+        terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK);
+        return;
+    }else if( c == '\036') {
+        terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+        return;
+    }else if( c == '\037') {
+        terminal_color = vga_entry_color(VGA_COLOR_LIGHT_CYAN, VGA_COLOR_BLACK);
+        return;
+    }else if( c == '\032') {
+        terminal_color = vga_entry_color(VGA_COLOR_DARK_GREY, VGA_COLOR_BLACK);
+        return;
     } else if (c >= ' ' && c <= '~') {
         location = terminal_buffer + (cursor_y * 80 + cursor_x);
         *location = c | attribute;

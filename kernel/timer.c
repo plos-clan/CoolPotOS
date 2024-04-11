@@ -1,6 +1,6 @@
 #include "../include/timer.h"
 #include "../include/io.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/isr.h"
 #include "../include/task.h"
 

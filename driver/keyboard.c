@@ -1,6 +1,5 @@
 #include "../include/keyboard.h"
-
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/memory.h"
 #include "../include/queue.h"
 #include "../include/io.h"

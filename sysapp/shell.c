@@ -1,6 +1,6 @@
 #include "../include/shell.h"
 #include "../include/queue.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/common.h"
 #include "../include/task.h"
 #include "../include/cmos.h"
@@ -96,12 +96,12 @@ void cmd_ls() {
 
 void cmd_cat(int argc, char **argv) {
     if (argc <= 2) {
-        printf("[Shell-CAT]: If there are too few parameters, please specify the filename and data.");
+        printf("\033[Shell-CAT]: If there are too few parameters, please specify the filename and data.\036\n");
         return;
     }
     struct File *file = open_file(argv[1]);
     if (file == NULL) {
-        printf("[Shell-CAT]: Not found [%s] \n", argv[1]);
+        printf("\033[Shell-CAT]: Not found [%s]\036 \n", argv[1]);
         return;
     }
 
@@ -119,13 +119,13 @@ void cmd_cat(int argc, char **argv) {
 
 void cmd_read(int argc, char **argv) {
     if (argc == 1) {
-        printf("[Shell-READ]: If there are too few parameters, please specify the filename");
+        printf("\033[Shell-READ]: If there are too few parameters, please specify the filename.\036\n");
         return;
     }
     struct File *file = open_file(argv[1]);
     char *buffer = (char *) kmalloc(sizeof(char) * 4096);
     if (file == NULL) {
-        printf("[Shell-READ]: Not found [%s] \n", argv[1]);
+        printf("\033[Shell-READ]: Not found [%s]\036 \n", argv[1]);
         return;
     }
 
@@ -137,13 +137,13 @@ void cmd_read(int argc, char **argv) {
 
 void cmd_mkdir(int argc, char **argv) {
     if (argc == 1) {
-        printf("[Shell-MKDIR]: If there are too few parameters, please specify the directory name");
+        printf("\033[Shell-MKDIR]: If there are too few parameters, please specify the directory name.\036\n");
         return;
     }
     printf("Create directory: %s\n",argv[1]);
     struct File *dir = create_dir(argv[1]);
     if (dir == NULL) {
-        printf("[Shell-MKDIR]: Cannot create directory '%s'.", argv[1]);
+        printf("\033[Shell-MKDIR]: Cannot create directory '%s'.\036\n", argv[1]);
         return;
     }
     kfree(dir);
@@ -151,12 +151,12 @@ void cmd_mkdir(int argc, char **argv) {
 
 void cmd_del(int argc, char **argv) {
     if (argc == 1) {
-        vga_writestring("[Shell-DEL]: If there are too few parameters, please specify the folder name.\n");
+        vga_writestring("\033[Shell-DEL]: If there are too few parameters, please specify the folder name.\036\n");
         return;
     }
     struct File *info = open_file(argv[1]);
     if (info == NULL) {
-        printf("[Shell-DEL]: Not found [%s] \n", argv[1]);
+        printf("\033[Shell-DEL]: Not found [%s]\036 \n", argv[1]);
         return;
     }
     delete_file(info);
@@ -172,14 +172,14 @@ void cmd_reset(){
 void setup_shell(){
     vga_clear();
     printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
-    printf("Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n");
+    printf("\032Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\036\n");
 
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
     int argc = -1;
 
     while (1) {
-        printf("CPOS/> ");
+        printf("\035CPOS/>\036 ");
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         argc = cmd_parse(com, argv, ' ');
 
@@ -211,18 +211,18 @@ void setup_shell(){
         else if (!strcmp("reset", argv[0]))
             cmd_reset();
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
-            vga_writestring("-=[CrashPowerShell Helper]=-\n");
-            vga_writestring("help ? h           Print shell help info.\n");
-            vga_writestring("version            Print os version.\n");
-            vga_writestring("echo       <msg>   Print message.\n");
-            vga_writestring("ls                 List all files.\n");
-            vga_writestring("cat <name> <data>  Edit a file\n");
-            vga_writestring("read       <name>  Read a file\n");
-            vga_writestring("mkdir      <name>  Make a directory\n");
-            vga_writestring("del rm     <name>  Delete a file\n");
-            vga_writestring("sysinfo            Print system info.\n");
-            vga_writestring("proc               Lists all running processes.\n");
-            vga_writestring("reset              Reset OS.\n");
+            vga_writestring("-=[\037CrashPowerShell Helper\036]=-\n");
+            vga_writestring("help ? h           \032Print shell help info.\036\n");
+            vga_writestring("version            \032Print os version.\036\n");
+            vga_writestring("echo       <msg>   \032Print message.\036\n");
+            vga_writestring("ls                 \032List all files.\036\n");
+            vga_writestring("cat <name> <data>  \032Edit a file.\036\n");
+            vga_writestring("read       <name>  \032Read a file.\036\n");
+            vga_writestring("mkdir      <name>  \032Make a directory.\036\n");
+            vga_writestring("del rm     <name>  \032Delete a file.\036\n");
+            vga_writestring("sysinfo            \032Print system info.\036\n");
+            vga_writestring("proc               \032Lists all running processes.\036\n");
+            vga_writestring("reset              \032Reset OS.\036\n");
         } else printf("[Shell]: Unknown command '%s'.\n", argv[0]);
     }
 }

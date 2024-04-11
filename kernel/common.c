@@ -1,5 +1,5 @@
 #include "../include/common.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/memory.h"
 #include "../include/io.h"
 

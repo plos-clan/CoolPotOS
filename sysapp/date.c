@@ -1,6 +1,6 @@
 #include "../include/date.h"
 #include "../include/cmos.h"
-#include "../include/vga.h"
+#include "../include/graphics.h"
 #include "../include/timer.h"
 
 extern uint16_t *terminal_buffer;
