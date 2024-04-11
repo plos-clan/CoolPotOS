@@ -96,7 +96,7 @@ void cmd_ls() {
 
 void cmd_cat(int argc, char **argv) {
     if (argc <= 2) {
-        printf("\033[Shell-CAT]: If there are too few parameters, please specify the filename and data.\036\n");
+        printf("\033[Shell-CAT]: If there are too few parameters, please specify the filename and util.\036\n");
         return;
     }
     struct File *file = open_file(argv[1]);
@@ -216,7 +216,7 @@ void setup_shell(){
             vga_writestring("version            \032Print os version.\036\n");
             vga_writestring("echo       <msg>   \032Print message.\036\n");
             vga_writestring("ls                 \032List all files.\036\n");
-            vga_writestring("cat <name> <data>  \032Edit a file.\036\n");
+            vga_writestring("cat <name> <util>  \032Edit a file.\036\n");
             vga_writestring("read       <name>  \032Read a file.\036\n");
             vga_writestring("mkdir      <name>  \032Make a directory.\036\n");
             vga_writestring("del rm     <name>  \032Delete a file.\036\n");

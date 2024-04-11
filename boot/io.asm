@@ -100,21 +100,21 @@ io_in32:	; int io_in32(int port);
 		IN		EAX,DX
 		RET
 
-io_out8:	; void io_out8(int port, int data);
+io_out8:	; void io_out8(int port, int util);
 		MOV		EDX,[ESP+4]		; port
-		MOV		AL,[ESP+8]		; data
+		MOV		AL,[ESP+8]		; util
 		OUT		DX,AL
 		RET
 
-io_out16:	; void io_out16(int port, int data);
+io_out16:	; void io_out16(int port, int util);
 		MOV		EDX,[ESP+4]		; port
-		MOV		EAX,[ESP+8]		; data
+		MOV		EAX,[ESP+8]		; util
 		OUT		DX,AX
 		RET
 
-io_out32:	; void io_out32(int port, int data);
+io_out32:	; void io_out32(int port, int util);
 		MOV		EDX,[ESP+4]		; port
-		MOV		EAX,[ESP+8]		; data
+		MOV		EAX,[ESP+8]		; util
 		OUT		DX,EAX
 		RET
 
