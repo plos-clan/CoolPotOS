@@ -53,9 +53,9 @@ def build_kernel():  # 构建内核本体
 
 
 def build_data():  # 构建数据结构实现
-    print("Building data source code...")
-    for file in os.listdir(cd + '\\data'):
-        cmd = cd + gcc + " " + "data\\" + file + " -o " + "target\\" + file.split(".")[0] + ".o"
+    print("Building util source code...")
+    for file in os.listdir(cd + '\\util'):
+        cmd = cd + gcc + " " + "util\\" + file + " -o " + "target\\" + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1

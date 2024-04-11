@@ -1,9 +1,7 @@
 #ifndef CPOS_VGA_H
 #define CPOS_VGA_H
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdarg.h>
+#include "printf.h"
 
 /*
  * \032 DARK GRAY

@@ -5,13 +5,14 @@
 
 static char num_str_buf[BUF_SIZE];
 
-int sprintf(char *buf, const char *fmt, ...) {
-    va_list args;
-    int retval;
-    va_start(args, fmt);
-    retval = vsprintf(buf, fmt, args);
-    va_end(args);
-    return retval;
+size_t strnlen(const char *s, size_t maxlen) {
+    const char *es = s;
+    while (*es && maxlen) {
+        es++;
+        maxlen--;
+    }
+
+    return (es - s);
 }
 
 size_t strlen(const char *str) {
@@ -383,196 +384,17 @@ char *insert_str(char *buf, const char *str) {
     return p;
 }
 
-int vsprintf(char *buf, const char *fmt, va_list args) {
-    char *str = buf;
-    int flag = 0;
-    int int_type = INT_TYPE_INT;
-    int tot_width = 0;
-    int sub_width = 0;
-    char buf2[64] = {0};
-    char *s = NULL;
-    char ch = 0;
-    int8_t num_8 = 0;
-    uint8_t num_u8 = 0;
-    int16_t num_16 = 0;
-    uint16_t num_u16 = 0;
-    int32_t num_32 = 0;
-    uint32_t num_u32 = 0;
-    int64_t num_64 = 0;
-    uint64_t num_u64 = 0;
-
-    for (const char *p = fmt; *p; p++) {
-        if (*p != '%') {
-            *str++ = *p;
-            continue;
-        }
-
-        flag = 0;
-        tot_width = 0;
-        sub_width = 0;
-        int_type = INT_TYPE_INT;
-
-        p++;
-
-        while (*p == FLAG_ALTNT_FORM_CH || *p == FLAG_ZERO_PAD_CH ||
-               *p == FLAG_LEFT_ADJUST_CH || *p == FLAG_SPACE_BEFORE_POS_NUM_CH ||
-               *p == FLAG_SIGN_CH) {
-            if (*p == FLAG_ALTNT_FORM_CH) {
-                flag |= FLAG_ALTNT_FORM;
-            } else if (*p == FLAG_ZERO_PAD_CH) {
-                flag |= FLAG_ZERO_PAD;
-            } else if (*p == FLAG_LEFT_ADJUST_CH) {
-                flag |= FLAG_LEFT_ADJUST;
-                flag &= ~FLAG_ZERO_PAD;
-            } else if (*p == FLAG_SPACE_BEFORE_POS_NUM_CH) {
-                flag |= FLAG_SPACE_BEFORE_POS_NUM;
-            } else if (*p == FLAG_SIGN_CH) {
-                flag |= FLAG_SIGN;
-            } else {
-            }
-
-            p++;
-        }
-
-        if (*p == '*') {
-            tot_width = va_arg(args,
-            int);
-            if (tot_width < 0)
-                tot_width = 0;
-            p++;
-        } else {
-            while (isdigit(*p)) {
-                tot_width = tot_width * 10 + *p - '0';
-                p++;
-            }
-        }
-        if (*p == '.') {
-            if (*p == '*') {
-                sub_width = va_arg(args,
-                int);
-                if (sub_width < 0)
-                    sub_width = 0;
-                p++;
-            } else {
-                while (isdigit(*p)) {
-                    sub_width = sub_width * 10 + *p - '0';
-                    p++;
-                }
-            }
-        }
-
-        LOOP_switch:
-        switch (*p) {
-            case 'h':
-                p++;
-                if (int_type >= INT_TYPE_MIN) {
-                    int_type >>= 1;
-                    goto LOOP_switch;
-                } else {
-                    *str++ = '%';
-                    break;
-                }
-            case 'l':
-                p++;
-                if (int_type <= INT_TYPE_MAX) {
-                    int_type <<= 1;
-                    goto LOOP_switch;
-                } else {
-                    *str++ = '%';
-                    break;
-                }
-            case 's':
-                s = va_arg(args,
-                char *);
-                str = insert_str(str, s);
-                break;
-            case 'c':
-                ch = (char) (va_arg(args,
-                int) &
-                0xFF);
-                *str++ = ch;
-                break;
-            case 'd':
-                switch (int_type) {
-                    case INT_TYPE_CHAR:
-                        num_8 = (int8_t) va_arg(args, int32_t);
-                        str = insert_str(str, int32_to_str_dec(num_8, flag, tot_width));
-                        break;
-                    case INT_TYPE_SHORT:
-                        num_16 = (int16_t) va_arg(args, int32_t);
-                        str = insert_str(str, int32_to_str_dec(num_16, flag, tot_width));
-                        break;
-                    case INT_TYPE_INT:
-                        num_32 = va_arg(args, int32_t);
-                        str = insert_str(str, int32_to_str_dec(num_32, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG:
-                        num_64 = va_arg(args, int64_t);
-                        str = insert_str(str, int64_to_str_dec(num_64, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG_LONG:
-                        num_64 = va_arg(args, int64_t);
-                        str = insert_str(str, int64_to_str_dec(num_64, flag, tot_width));
-                        break;
-                }
-                break;
-            case 'x':
-                flag |= FLAG_LOWER;
-            case 'X':
-                switch (int_type) {
-                    case INT_TYPE_CHAR:
-                        num_u8 = (uint8_t)
-                                va_arg(args, uint32_t);
-                        str = insert_str(str, uint32_to_str_hex(num_u8, flag, tot_width));
-                        break;
-                    case INT_TYPE_SHORT:
-                        num_u16 = (uint16_t)
-                                va_arg(args, uint32_t);
-                        str = insert_str(str, uint32_to_str_hex(num_u16, flag, tot_width));
-                        break;
-                    case INT_TYPE_INT:
-                        num_u32 = va_arg(args, uint32_t);
-                        str = insert_str(str, uint32_to_str_hex(num_u32, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG:
-                        num_u64 = va_arg(args, uint64_t);
-                        str = insert_str(str, uint64_to_str_hex(num_u64, flag, tot_width));
-                        break;
-                    case INT_TYPE_LONG_LONG:
-                        num_u64 = va_arg(args, uint64_t);
-                        str = insert_str(str, uint64_to_str_hex(num_u64, flag, tot_width));
-                        break;
-                }
-                break;
-            case 'o':
-                num_u32 = va_arg(args, uint32_t);
-                str = insert_str(str, uint32_to_str_oct(num_u32, flag, tot_width));
-                break;
-            case '%':
-                *str++ = '%';
-                break;
-            default:
-                *str++ = '%';
-                *str++ = *p;
-                break;
-        }
-    }
-    *str = '\0';
-
-    return str - buf;
-}
-
-void assert(int b,char* message){
-    if(!b){
-        printf("[KERNEL-PANIC]: %s",message);
+void assert(int b, char *message) {
+    if (!b) {
+        printf("[KERNEL-PANIC]: %s", message);
         while (1) io_hlt();
     }
 }
 
-void trim(char *s){
+void trim(char *s) {
     char *p = s;
     int len = strlen(p);
     while (isspace(p[len - 1])) p[--len] = 0;
-    while (*p && isspace(*p)) ++p,--len;
-    memmove(s,p,len+1);
+    while (*p && isspace(*p)) ++p, --len;
+    memmove(s, p, len + 1);
 }
