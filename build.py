@@ -101,4 +101,4 @@ a = linker()
 if a != 0:
     exit(-1)
 print("Launching i386 vm...")
-os.system("qemu-system-i386 -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")
+os.system("qemu-system-i386 -vga std -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")

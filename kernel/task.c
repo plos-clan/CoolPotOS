@@ -65,7 +65,7 @@ void print_proc(){
 void schedule() {
     if (current) {
         volatile task_state state = current->next->state;
-        if(state == TASK_RUNNABLE || state == TASK_SLEEPING ){
+        if(state == TASK_RUNNABLE || state == TASK_SLEEPING){
             change_task_to(current->next);
         }
     }
