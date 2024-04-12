@@ -34,6 +34,8 @@ void load_gdtr(int limit, int addr);
 
 void load_idtr(int limit, int addr);
 
+uint16_t inw(uint16_t port);
+
 extern char read_port(unsigned short port);
 
 static inline void outb(uint16_t port, uint8_t data) {

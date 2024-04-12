@@ -164,7 +164,7 @@ void cmd_del(int argc, char **argv) {
 }
 
 void cmd_reset(){
-    printf("Restart %s for x86...");
+    printf("Restart %s for x86...",OS_NAME);
     clock_sleep(10);
     outb(0x64,0xfe);
 }
@@ -223,6 +223,6 @@ void setup_shell(){
             vga_writestring("sysinfo            \032Print system info.\036\n");
             vga_writestring("proc               \032Lists all running processes.\036\n");
             vga_writestring("reset              \032Reset OS.\036\n");
-        } else printf("[Shell]: Unknown command '%s'.\n", argv[0]);
+        } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
     }
 }

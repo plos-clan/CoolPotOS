@@ -34,6 +34,17 @@ switch_to:
 
         ret
 
+[global inw]
+
+inw:
+    xor eax, eax
+    push dx
+
+    mov dx, [esp + 4]
+    in ax, dx
+    pop dx
+    ret
+
 [global read_port]
 
 read_port:
