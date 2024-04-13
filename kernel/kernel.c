@@ -15,6 +15,16 @@ extern uint32_t end;
 extern int status;
 uint32_t placement_address = (uint32_t) & end;
 
+void reset_kernel(){
+    printf("Restart %s for x86...",OS_NAME);
+    clock_sleep(10);
+    outb(0x64,0xfe);
+}
+
+void shutdown_kernel(){
+    //TODO ACPI Driver
+}
+
 void kernel_main(multiboot_t *multiboot) {
     io_cli();
     vga_install();

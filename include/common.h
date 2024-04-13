@@ -32,4 +32,7 @@ int vsprintf(char *buf, const char *fmt, va_list args);
 int sprintf(char *buf, const char *fmt, ...);
 long int strtol(const char *str,char **endptr,int base);
 
+void reset_kernel();
+void shutdown_kernel();
+
 #endif //CRASHPOWEROS_COMMON_H
