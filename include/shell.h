@@ -10,7 +10,7 @@ void setup_shell();
 
 //内置命令
 void cmd_echo(int argc,char **argv);
-void cmd_proc();
+void cmd_proc(int argc, char **argv);
 void cmd_date();
 void cmd_reset();
 void cmd_del(int argc, char **argv);

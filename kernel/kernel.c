@@ -10,7 +10,6 @@
 #include "../include/keyboard.h"
 #include "../include/shell.h"
 #include "../include/date.h"
-#include "../include/acpi.h"
 
 extern uint32_t end;
 extern int status;
@@ -37,7 +36,6 @@ void kernel_main(multiboot_t *multiboot) {
     printf("[\035kernel\036]: PCB load success!\n");
     init_keyboard();
     printf("[\035kernel\036]: Keyboard driver load success!\n");
-    //init_acpi();printf("[\035kernel\036]: ACPI enabled!\n");
 
     print_cpu_id();
     io_sti();
