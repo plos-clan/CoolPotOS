@@ -62,12 +62,66 @@ void print_proc(){
     printf("Name          Pid     Status [All Proc: %d]\n\n",index);
 }
 
+static void found_task(int pid,struct task_struct *base,struct task_struct *argv){
+    struct task_struct *t = base;
+    if(t == NULL){
+        argv = NULL;
+        return;
+    }
+    if(t->pid == pid){
+        *argv = *t;
+        return;
+    } else{
+        found_task(pid,t->next,argv);
+    }
+}
+
+void task_kill(int pid){
+    struct task_struct *argv;
+    found_task(pid,running_proc_head,argv);
+    if(argv == NULL){
+        printf("Cannot found task Pid:[%d].\n",pid);
+        return;
+    }
+    if(argv->pid == 0){
+        printf("[\033kernel\036]: Taskkill cannot terminate kernel processes.\n");
+        return;
+    }
+    argv->state = TASK_DEATH;
+    switch (argv->state) {
+        case TASK_RUNNABLE:
+            printf("%s      %d     %s\n",argv->name,argv->pid,"Running");
+            break;
+        case TASK_SLEEPING:
+            printf("%s      %d     %s\n",argv->name,argv->pid,"Sleeping");
+            break;
+        case TASK_UNINIT:
+            printf("%s      %d     %s\n",argv->name,argv->pid,"Init");
+            break;
+        case TASK_ZOMBIE:
+            printf("%s      %d     %s\n",argv->name,argv->pid,"Zombie");
+            break;
+        case TASK_DEATH:
+            printf("%s      %d     %s\n",argv->name,argv->pid,"Death");
+            break;
+    }
+    printf("Task [%s] exit code: -130.\n",argv->name);
+
+    struct task_struct *head = running_proc_head;
+    struct task_struct *last = NULL;
+    while (1){
+        if(head->pid == argv->pid){
+            last->next = argv->next;
+            return;
+        }
+        last = head;
+        head = head->next;
+    }
+}
+
 void schedule() {
     if (current) {
-        volatile task_state state = current->next->state;
-        if(state == TASK_RUNNABLE || state == TASK_SLEEPING){
-            change_task_to(current->next);
-        }
+        change_task_to(current->next);
     }
 }
 
@@ -75,6 +129,7 @@ void change_task_to(struct task_struct *next) {
     if (current != next) {
         struct task_struct *prev = current;
         current = next;
+
         //switch_page_directory(current->pgd_dir);
         switch_to(&(prev->context), &(current->context));
     }

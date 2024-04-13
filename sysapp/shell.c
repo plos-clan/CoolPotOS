@@ -67,8 +67,25 @@ void cmd_echo(int argc, char **argv) {
     vga_putchar('\n');
 }
 
-void cmd_proc(){
-    print_proc();
+void cmd_proc(int argc, char **argv){
+    if (argc <= 1) {
+        printf("\033[Shell-PROC]: If there are too few parameters.\036\n");
+        return;
+    }
+
+    if(!strcmp("list",argv[1])){
+        print_proc();
+    } else if(!strcmp("kill",argv[1])){
+        if (argc <= 2) {
+            printf("\033[Shell-PROC-kill]: If there are too few parameters.\036\n");
+            return;
+        }
+        int pid = strtol(argv[2],NULL,10);
+        task_kill(pid);
+    } else{
+        printf("\033[Shell-[PROC]]: Unknown parameter\036\n");
+        return;
+    }
 }
 
 void cmd_date(){
@@ -195,7 +212,7 @@ void setup_shell(){
         else if (!strcmp("clear", argv[0]))
             vga_clear();
         else if (!strcmp("proc", argv[0]))
-            cmd_proc();
+            cmd_proc(argc, argv);
         else if (!strcmp("sysinfo", argv[0]))
             cmd_date();
         else if (!strcmp("ls", argv[0]))
@@ -212,17 +229,17 @@ void setup_shell(){
             cmd_reset();
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             vga_writestring("-=[\037CrashPowerShell Helper\036]=-\n");
-            vga_writestring("help ? h           \032Print shell help info.\036\n");
-            vga_writestring("version            \032Print os version.\036\n");
-            vga_writestring("echo       <msg>   \032Print message.\036\n");
-            vga_writestring("ls                 \032List all files.\036\n");
-            vga_writestring("cat <name> <util>  \032Edit a file.\036\n");
-            vga_writestring("read       <name>  \032Read a file.\036\n");
-            vga_writestring("mkdir      <name>  \032Make a directory.\036\n");
-            vga_writestring("del rm     <name>  \032Delete a file.\036\n");
-            vga_writestring("sysinfo            \032Print system info.\036\n");
-            vga_writestring("proc               \032Lists all running processes.\036\n");
-            vga_writestring("reset              \032Reset OS.\036\n");
+            vga_writestring("help ? h              \032Print shell help info.\036\n");
+            vga_writestring("version               \032Print os version.\036\n");
+            vga_writestring("echo       <msg>      \032Print message.\036\n");
+            vga_writestring("ls                    \032List all files.\036\n");
+            vga_writestring("cat <name> <util>     \032Edit a file.\036\n");
+            vga_writestring("read       <name>     \032Read a file.\036\n");
+            vga_writestring("mkdir      <name>     \032Make a directory.\036\n");
+            vga_writestring("del rm     <name>     \032Delete a file.\036\n");
+            vga_writestring("sysinfo               \032Print system info.\036\n");
+            vga_writestring("proc [kill<pid>|list] \032Lists all running processes.\036\n");
+            vga_writestring("reset                 \032Reset OS.\036\n");
         } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
     }
 }

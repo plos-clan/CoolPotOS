@@ -44,4 +44,6 @@ void schedule();
 
 void change_task_to(struct task_struct *next);
 
+void task_kill(int pid);
+
 #endif //CRASHPOWEROS_TASK_H

@@ -2,7 +2,10 @@
 #define CRASHPOWEROS_COMMON_H
 
 #define OS_NAME "CrashPowerDOS"
-#define OS_VERSION "v0.2.2"
+#define OS_VERSION "v0.2.3"
+
+#define LONG_MAX 9223372036854775807L
+#define LONG_MIN -9223372036854775808L
 
 #include <stddef.h>
 #include <stdint.h>
@@ -27,5 +30,6 @@ char *uint32_to_str_oct(uint32_t num, int flag, int width);
 char *insert_str(char *buf, const char *str);
 int vsprintf(char *buf, const char *fmt, va_list args);
 int sprintf(char *buf, const char *fmt, ...);
+long int strtol(const char *str,char **endptr,int base);
 
 #endif //CRASHPOWEROS_COMMON_H
