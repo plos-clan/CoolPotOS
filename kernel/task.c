@@ -62,7 +62,7 @@ void print_proc(){
     printf("Name          Pid     Status [All Proc: %d]\n\n",index);
 }
 
-static void found_task(int pid,struct task_struct *base,struct task_struct *argv){
+static void found_task(int pid,struct task_struct *head,struct task_struct *base,struct task_struct *argv,int first){
     struct task_struct *t = base;
     if(t == NULL){
         argv = NULL;
@@ -72,13 +72,18 @@ static void found_task(int pid,struct task_struct *base,struct task_struct *argv
         *argv = *t;
         return;
     } else{
-        found_task(pid,t->next,argv);
+        if(!first)
+            if(head->pid == t->pid){
+                argv = NULL;
+                return;
+            }
+        found_task(pid,head,t->next,argv,0);
     }
 }
 
 void task_kill(int pid){
     struct task_struct *argv;
-    found_task(pid,running_proc_head,argv);
+    found_task(pid,running_proc_head,running_proc_head,argv,1);
     if(argv == NULL){
         printf("Cannot found task Pid:[%d].\n",pid);
         return;

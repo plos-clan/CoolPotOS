@@ -181,9 +181,7 @@ void cmd_del(int argc, char **argv) {
 }
 
 void cmd_reset(){
-    printf("Restart %s for x86...",OS_NAME);
-    clock_sleep(10);
-    outb(0x64,0xfe);
+    reset_kernel();
 }
 
 void setup_shell(){
