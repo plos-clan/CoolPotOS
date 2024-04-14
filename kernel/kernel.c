@@ -15,6 +15,7 @@
 extern uint32_t end;
 extern int status;
 uint32_t placement_address = (uint32_t) & end;
+multiboot_t *multiboot_all;
 
 void reset_kernel(){
     printf("Restart %s for x86...\n",OS_NAME);
@@ -30,7 +31,12 @@ void shutdown_kernel(){
     power_off();
 }
 
+uint32_t memory_all(){
+    return (multiboot_all->mem_upper + multiboot_all->mem_lower);
+}
+
 void kernel_main(multiboot_t *multiboot) {
+    multiboot_all = multiboot;
     io_cli();
     vga_install();
     if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 16) {

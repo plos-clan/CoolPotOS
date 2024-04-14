@@ -19,6 +19,9 @@ uint16_t SCI_EN;
 acpi_rsdt_t *rsdt; // root system descript table
 acpi_facp_t *facp; // fixed ACPI table
 
+int acpi_enable_flag;
+uint8_t *rsdp_address;
+
 int acpi_enable() {
     int i;
 
@@ -167,6 +170,7 @@ uint8_t *AcpiCheckRSDPtr(void *ptr) {
     // check signature
     if (!memcmp(sign, bptr, 8)) {
         printf("[acpi] rsdp found at %0x\n", bptr);
+        rsdp_address = bptr;
         for (i = 0; i < sizeof(acpi_rsdptr_t); i++) {
             check += *bptr;
             bptr++;
@@ -272,7 +276,7 @@ static int AcpiSysInit() {
 
 void acpi_install() {
     AcpiSysInit();
-    acpi_enable();
+    acpi_enable_flag = !acpi_enable();
     // power init
     // AcpiPowerInit();
 }

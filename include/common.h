@@ -34,5 +34,6 @@ long int strtol(const char *str,char **endptr,int base);
 
 void reset_kernel();
 void shutdown_kernel();
+uint32_t memory_all();
 
 #endif //CRASHPOWEROS_COMMON_H

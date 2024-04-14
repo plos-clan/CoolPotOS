@@ -90,7 +90,7 @@ void cmd_proc(int argc, char **argv){
 
 void cmd_date(){
     printf("System Time:           %s\n",get_date_time());
-    printf("Memory Usage: %dKB | All Size: %dMB\n",memory_usage()/1024,(KHEAP_START+KHEAP_INITIAL_SIZE)/1024/1024);
+    printf("Memory Usage: [%dKB] | All Size: [%dMB]\n",memory_usage()/1024,(KHEAP_START+KHEAP_INITIAL_SIZE)/1024/1024);
     print_cpu_id();
     vga_writestring("\n");
 }
@@ -188,6 +188,29 @@ void cmd_shutdown(){
     shutdown_kernel();
 }
 
+void cmd_debug(){
+    vga_clear();
+    printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
+    printf("\032Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\036\n");
+    extern int acpi_enable_flag;
+    extern uint8_t *rsdp_address;
+    printf("ACPI: Enable: %s | RSDP Address: 0x%08x\n",acpi_enable_flag?"\035ENABLE\036":"\033DISABLE\036",rsdp_address);
+    int index = 0;
+    print_proc_t(&index,get_current(),get_current()->next,0);
+    printf("Process Runnable: %d\n",index);
+    cmd_date();
+    printf("            > > > > ====[Registers Info]==== < < < <\n");
+    register uint32_t eax asm("eax"),
+    ecx asm("ecx"),
+    esp asm("esp"),
+    ebp asm("ebp"),
+    ebx asm("ebx"),
+    esi asm("esi"),
+    edi asm("edi");
+    printf("EAX: 0x%08x | EBX 0x%08x | ECX 0x%08x | ESP 0x%08x \n",eax,ebx,ecx,esp);
+    printf("ESI: 0x%08x | EDI 0x%08x | EBP 0x%08x | EFLAGS 0x%08x\n",esi,edi,ebp,get_current()->context.eflags);
+}
+
 void setup_shell(){
     vga_clear();
     printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
@@ -231,6 +254,8 @@ void setup_shell(){
             cmd_reset();
         else if (!strcmp("shutdown", argv[0])||!strcmp("exit", argv[0]))
             cmd_shutdown();
+        else if (!strcmp("debug", argv[0]))
+            cmd_debug();
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             vga_writestring("-=[\037CrashPowerShell Helper\036]=-\n");
             vga_writestring("help ? h              \032Print shell help info.\036\n");
@@ -245,6 +270,7 @@ void setup_shell(){
             vga_writestring("proc [kill<pid>|list] \032Lists all running processes.\036\n");
             vga_writestring("reset                 \032Reset OS.\036\n");
             vga_writestring("shutdown exit         \032Shutdown OS.\036\n");
+            vga_writestring("debug                 \032Print os debug info.\036\n");
         } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
     }
 }
