@@ -10,19 +10,24 @@
 #include "../include/keyboard.h"
 #include "../include/shell.h"
 #include "../include/date.h"
+#include "../include/acpi.h"
 
 extern uint32_t end;
 extern int status;
 uint32_t placement_address = (uint32_t) & end;
 
 void reset_kernel(){
-    printf("Restart %s for x86...",OS_NAME);
+    printf("Restart %s for x86...\n",OS_NAME);
+    kill_all_task();
     clock_sleep(10);
-    outb(0x64,0xfe);
+    power_reset();
 }
 
 void shutdown_kernel(){
-    //TODO ACPI Driver
+    printf("Shutdown %s for x86...\n",OS_NAME);
+    kill_all_task();
+    clock_sleep(10);
+    power_off();
 }
 
 void kernel_main(multiboot_t *multiboot) {
@@ -40,10 +45,12 @@ void kernel_main(multiboot_t *multiboot) {
     idt_install();
     printf("[\035kernel\036]: description table config success!\n");
     init_timer(10);
+    acpi_install();
+    printf("[\035kernel\036]: ACPI enable success!\n");
     init_page();
     printf("[\035kernel\036]: page set success!\n");
     init_sched();
-    printf("[\035kernel\036]: PCB load success!\n");
+    printf("[\035kernel\036]: task load success!\n");
     init_keyboard();
     printf("[\035kernel\036]: Keyboard driver load success!\n");
 

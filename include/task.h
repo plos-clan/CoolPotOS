@@ -28,7 +28,7 @@ struct task_struct {
     char *name;        // 进程名
     void *stack;         // 进程的内核栈地址
     page_directory_t *pgd_dir;     // 进程页表
-    struct context context;     // 进程切换需要的上下文信息
+    struct context context;     // 上下文信息
     struct task_struct *next;   // 链表指针
 };
 
@@ -45,5 +45,7 @@ void schedule();
 void change_task_to(struct task_struct *next);
 
 void task_kill(int pid);
+
+void kill_all_task();
 
 #endif //CRASHPOWEROS_TASK_H

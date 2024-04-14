@@ -184,6 +184,10 @@ void cmd_reset(){
     reset_kernel();
 }
 
+void cmd_shutdown(){
+    shutdown_kernel();
+}
+
 void setup_shell(){
     vga_clear();
     printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
@@ -225,6 +229,8 @@ void setup_shell(){
             cmd_del(argc, argv);
         else if (!strcmp("reset", argv[0]))
             cmd_reset();
+        else if (!strcmp("shutdown", argv[0])||!strcmp("exit", argv[0]))
+            cmd_shutdown();
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             vga_writestring("-=[\037CrashPowerShell Helper\036]=-\n");
             vga_writestring("help ? h              \032Print shell help info.\036\n");
@@ -238,6 +244,7 @@ void setup_shell(){
             vga_writestring("sysinfo               \032Print system info.\036\n");
             vga_writestring("proc [kill<pid>|list] \032Lists all running processes.\036\n");
             vga_writestring("reset                 \032Reset OS.\036\n");
+            vga_writestring("shutdown exit         \032Shutdown OS.\036\n");
         } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
     }
 }
