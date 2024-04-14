@@ -9,6 +9,7 @@ global tss_flush, gdt_flush, switch_to
 
 section .text
 
+
 switch_to:
         mov eax, [esp+4]
 

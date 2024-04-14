@@ -1,6 +1,7 @@
 #include "../include/task.h"
 #include "../include/common.h"
 #include "../include/graphics.h"
+#include "../include/io.h"
 
 struct task_struct *running_proc_head = NULL;
 struct task_struct *wait_proc_head = NULL;
@@ -111,7 +112,8 @@ void task_kill(int pid){
             break;
     }
     printf("Task [%s] exit code: -130.\n",argv->name);
-
+    io_sti();
+    kfree(argv);
     struct task_struct *head = running_proc_head;
     struct task_struct *last = NULL;
     while (1){
@@ -122,6 +124,7 @@ void task_kill(int pid){
         last = head;
         head = head->next;
     }
+    io_cli();
 }
 
 void schedule() {
@@ -137,6 +140,7 @@ void change_task_to(struct task_struct *next) {
 
         //switch_page_directory(current->pgd_dir);
         switch_to(&(prev->context), &(current->context));
+
     }
 }
 
@@ -183,6 +187,18 @@ void kthread_exit() {
     printf("Task exited with value %d\n", val);
     current->state = TASK_DEATH;
     while (1);
+}
+
+void kill_all_task(){
+    struct task_struct *head = running_proc_head;
+    while (1){
+        head = head->next;
+        if(head == NULL || head->pid == running_proc_head->pid){
+            return;
+        }
+        if(head->pid == current->pid) continue;
+        task_kill(head->pid);
+    }
 }
 
 void init_sched() {

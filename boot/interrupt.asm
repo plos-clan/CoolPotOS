@@ -52,7 +52,7 @@ ISR_NOERRCODE 31
 
 ; 通用中断处理程序
 isr_common_stub:
-    pusha ; 存储所有寄存器
+    pusha
 
     mov ax, ds
     push eax ; 存储ds
@@ -62,17 +62,17 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    call isr_handler ; 调用C语言处理函数
-    pop eax ; 恢复各段
+    call isr_handler ; call isr_headler(registers_t reg);
+    pop eax ; 恢复
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
 
-    popa ; 弹出所有寄存器
+    popa
 
     add esp, 8 ; 弹出错误码和中断ID
-    iret ; 从中断返回
+    iret
 
 %macro IRQ 2
 global irq%1
