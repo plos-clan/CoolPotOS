@@ -13,64 +13,72 @@ extern void switch_to(struct context *prev, struct context *next);
 
 int now_pid = 0;
 
-void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur){
+struct task_struct* get_current(){
+    return current;
+}
+
+void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print){
     if(cur->pid == base->pid){
-        switch (cur->state) {
-            case TASK_RUNNABLE:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Running");
-                break;
-            case TASK_SLEEPING:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Sleeping");
-                break;
-            case TASK_UNINIT:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Init");
-                break;
-            case TASK_ZOMBIE:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
-                break;
-            case TASK_DEATH:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
-                break;
+        if(is_print){
+            switch (cur->state) {
+                case TASK_RUNNABLE:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Running");
+                    break;
+                case TASK_SLEEPING:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Sleeping");
+                    break;
+                case TASK_UNINIT:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Init");
+                    break;
+                case TASK_ZOMBIE:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
+                    break;
+                case TASK_DEATH:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
+                    break;
+            }
         }
         (*i)++;
     } else{
-        switch (cur->state) {
-            case TASK_RUNNABLE:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Running");
-                break;
-            case TASK_SLEEPING:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Sleeping");
-                break;
-            case TASK_UNINIT:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Init");
-                break;
-            case TASK_ZOMBIE:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
-                break;
-            case TASK_DEATH:
-                printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
-                break;
+        if(is_print){
+            switch (cur->state) {
+                case TASK_RUNNABLE:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Running");
+                    break;
+                case TASK_SLEEPING:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Sleeping");
+                    break;
+                case TASK_UNINIT:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Init");
+                    break;
+                case TASK_ZOMBIE:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
+                    break;
+                case TASK_DEATH:
+                    printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
+                    break;
+            }
         }
         (*i)++;
-        print_proc_t(i,base,cur->next);
+        print_proc_t(i,base,cur->next,is_print);
     }
 }
 
 void print_proc(){
     printf("====--------[Processes]---------===\n");
     int index = 0;
-    print_proc_t(&index,current,current->next);
+    print_proc_t(&index,current,current->next,1);
     printf("Name          Pid     Status [All Proc: %d]\n\n",index);
 }
 
-static void found_task(int pid,struct task_struct *head,struct task_struct *base,struct task_struct *argv,int first){
+static void found_task(int pid,struct task_struct *head,struct task_struct *base,struct task_struct **argv,int first){
     struct task_struct *t = base;
     if(t == NULL){
         argv = NULL;
         return;
     }
     if(t->pid == pid){
-        *argv = *t;
+        *argv = t;
         return;
     } else{
         if(!first)
@@ -82,9 +90,26 @@ static void found_task(int pid,struct task_struct *head,struct task_struct *base
     }
 }
 
+struct task_struct* found_task_pid(int pid){
+    struct task_struct *argv = NULL;
+    found_task(pid,running_proc_head,running_proc_head,&argv,1);
+    if(argv == NULL){
+        printf("Cannot found task Pid:[%d].\n",pid);
+        return;
+    }
+    return argv;
+}
+
+void wait_task(struct task_struct *task){
+    task->state = TASK_SLEEPING;
+}
+
+void start_task(struct  task_struct *task){
+    task->state = TASK_RUNNABLE;
+}
+
 void task_kill(int pid){
-    struct task_struct *argv;
-    found_task(pid,running_proc_head,running_proc_head,argv,1);
+    struct task_struct *argv = found_task_pid(pid);
     if(argv == NULL){
         printf("Cannot found task Pid:[%d].\n",pid);
         return;
@@ -129,6 +154,10 @@ void task_kill(int pid){
 
 void schedule() {
     if (current) {
+        if(current->next->state == TASK_SLEEPING){
+            change_task_to(current->next->next);
+            return;
+        }
         change_task_to(current->next);
     }
 }

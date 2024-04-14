@@ -19,5 +19,6 @@ void cmd_read(int argc, char **argv);
 void cmd_cat(int argc, char **argv);
 void cmd_ls();
 void cmd_shutdown();
+void cmd_debug();
 
 #endif //CRASHPOWEROS_SHELL_H
