@@ -6,6 +6,7 @@
 
 static KEY_STATUS *key_status;
 Queue *key_char_queue;
+struct key_listener* head_listener;
 
 unsigned char keyboard_map[128] =
         {
@@ -87,21 +88,7 @@ unsigned char shift_keyboard_map[128] =
                 0,	/* All other keys are undefined */
         };
 
-void init_keyboard(){
-    key_status = (KEY_STATUS*) alloc(sizeof(KEY_STATUS));
-    key_status->is_shift = 0;
-
-    key_char_queue = create_queue();
-    register_interrupt_handler(0x21,handle_keyboard_input);
-}
-
-int handle_keyboard_input(){
-    unsigned char status = read_port(KEYBOARD_STATUS_PORT);
-    uint32_t key = read_port(KEYBOARD_DATA_PORT);
-    int release = key & 0xb10000000;
-    char c = key_status->is_shift ? shift_keyboard_map[(unsigned char )key] : keyboard_map[(unsigned char )key];
-
-
+static void default_handle(uint32_t key,int release,char c){
     if(!release) {
         if(c == -1) {
             key_status->is_shift = 1;
@@ -126,6 +113,45 @@ int handle_keyboard_input(){
             return 0;
         }
     }
+}
+
+void init_keyboard(){
+    key_status = (KEY_STATUS*) alloc(sizeof(KEY_STATUS));
+    key_status->is_shift = 0;
+
+    key_char_queue = create_queue();
+    head_listener = (struct key_listener*) kmalloc(sizeof(struct key_listener));
+    head_listener->func = default_handle;
+
+    register_interrupt_handler(0x21,handle_keyboard_input);
+}
+
+int handle_keyboard_input(){
+    unsigned char status = read_port(KEYBOARD_STATUS_PORT);
+    uint32_t key = read_port(KEYBOARD_DATA_PORT);
+    int release = key & 0xb10000000;
+    char c = key_status->is_shift ? shift_keyboard_map[(unsigned char )key] : keyboard_map[(unsigned char )key];
+
+    struct key_listener* h = head_listener;
+    while (1){
+        h->func(key,release,c);
+        h = h->next;
+        if(h == NULL) break;
+    }
 
     return 0;
+}
+
+void add_listener(struct key_listener* listener){
+    if(listener == NULL) return;
+
+    struct key_listener* h = head_listener,*buf = NULL;
+    while (1){
+        buf = h;
+        h = h->next;
+        if(h == NULL){
+            buf->next = listener;
+            break;
+        }
+    }
 }
