@@ -4,6 +4,8 @@
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
 
+#include <stdint.h>
+
 typedef struct {
     int is_shift;
     int is_ctrl;
@@ -15,7 +17,13 @@ typedef struct {
     unsigned char *shift_keyboard_map[128];
 }KEY_MAP;
 
+typedef struct key_listener{
+    void (*func)(uint32_t key,int release,char c);
+    struct key_listener *next;
+}kl_t;
+
 void init_keyboard();
 int handle_keyboard_input();
+void add_listener(struct key_listener* listener);
 
 #endif //CRASHPOWEROS_KEYBOARD_H
