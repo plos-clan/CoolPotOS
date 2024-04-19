@@ -95,7 +95,7 @@ struct task_struct* found_task_pid(int pid){
     found_task(pid,running_proc_head,running_proc_head,&argv,1);
     if(argv == NULL){
         printf("Cannot found task Pid:[%d].\n",pid);
-        return;
+        return NULL;
     }
     return argv;
 }
@@ -167,7 +167,7 @@ void change_task_to(struct task_struct *next) {
         struct task_struct *prev = current;
         current = next;
 
-        //switch_page_directory(current->pgd_dir);
+        switch_page_directory(current->pgd_dir);
         switch_to(&(prev->context), &(current->context));
 
     }
@@ -183,7 +183,7 @@ int32_t kernel_thread(int (*fn)(void *), void *arg,char* name) {
     new_task->state = TASK_RUNNABLE;
     new_task->stack = current;
     new_task->pid = now_pid++;
-    new_task->pgd_dir = (page_directory_t *) kmalloc_a(sizeof(page_directory_t));
+    new_task->pgd_dir = kernel_directory;
 
     new_task->name = name;
 

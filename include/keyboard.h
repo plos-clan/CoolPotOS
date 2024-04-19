@@ -18,6 +18,7 @@ typedef struct {
 }KEY_MAP;
 
 typedef struct key_listener{
+    int lid;
     void (*func)(uint32_t key,int release,char c);
     struct key_listener *next;
 }kl_t;
@@ -25,5 +26,6 @@ typedef struct key_listener{
 void init_keyboard();
 int handle_keyboard_input();
 void add_listener(struct key_listener* listener);
+void remove_listener(int lid);
 
 #endif //CRASHPOWEROS_KEYBOARD_H

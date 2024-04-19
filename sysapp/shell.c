@@ -5,8 +5,7 @@
 #include "../include/task.h"
 #include "../include/cmos.h"
 #include "../include/fat16.h"
-#include "../include/timer.h"
-#include "../include/io.h"
+#include "../include/pcat.h"
 
 extern Queue *key_char_queue;
 
@@ -211,6 +210,23 @@ void cmd_debug(){
     printf("ESI: 0x%08x | EDI 0x%08x | EBP 0x%08x | EFLAGS 0x%08x\n",esi,edi,ebp,get_current()->context.eflags);
 }
 
+void cmd_pcat(int argc,char **argv){
+    if (argc == 1) {
+
+        return;
+    }
+    char name[8] = {0};
+    char ext[3] = {0};
+    analyse_fullname(argv[1], name, ext);
+    int isfind = find_file(name, ext, 0);
+    struct File* file;
+    if(isfind){
+        file = open_file(argv[1]);
+    } else file = create_file(argv[1]);
+
+    pcat_launch(get_current(),file);
+}
+
 void setup_shell(){
     vga_clear();
     printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
@@ -256,6 +272,8 @@ void setup_shell(){
             cmd_shutdown();
         else if (!strcmp("debug", argv[0]))
             cmd_debug();
+        else if (!strcmp("pcat", argv[0]))
+            cmd_pcat(argc,argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             vga_writestring("-=[\037CrashPowerShell Helper\036]=-\n");
             vga_writestring("help ? h              \032Print shell help info.\036\n");
@@ -271,6 +289,7 @@ void setup_shell(){
             vga_writestring("reset                 \032Reset OS.\036\n");
             vga_writestring("shutdown exit         \032Shutdown OS.\036\n");
             vga_writestring("debug                 \032Print os debug info.\036\n");
+            vga_writestring("pcat [filename]       \032Launch pcat application.\036\n");
         } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
     }
 }

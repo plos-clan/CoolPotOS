@@ -46,14 +46,14 @@ uint32_t first_frame() {
             }
         }
     }
-    return (uint32_t) -1;
+    return (uint32_t) - 1;
 }
 
 void alloc_frame(page_t *page, int is_kernel, int is_writable) {
     if (page->frame) return;
     else {
         uint32_t idx = first_frame();
-        if (idx == (uint32_t) -1) {
+        if (idx == (uint32_t) - 1) {
             printf("FRAMES_FREE_ERROR: Cannot free frames!\n");
             asm("cli");
             for (;;)io_hlt();
@@ -110,55 +110,93 @@ void page_fault(registers_t *regs) {
 
     printf("[ERROR]: Page fault |");
     if (present) {
-        printf("Type: present;\n\taddress: %x  ", faulting_address);
-        if(current->pid == 0){
-            printf(" ======= Kernel Error ======= ");
+        printf("Type: present;\n\taddress: %x  \n", faulting_address);
+        if (current->pid == 0) {
+            printf(" ======= Kernel Error ======= \n");
             while (1) io_hlt();
-        } else{
+        } else {
             current->state = TASK_ZOMBIE;
-            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+            printf("Taskkill process PID:%d Name:%s\n", current->pid, current->name);
         }
-    }
-    else if (rw) {
+    } else if (rw) {
         printf("Type: read-only;\n\taddress: %x", faulting_address);
-        if(current->pid == 0){
+        if (current->pid == 0) {
             printf(" ======= Kernel Error ======= ");
             while (1) io_hlt();
-        } else{
+        } else {
             current->state = TASK_ZOMBIE;
-            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+            printf("Taskkill process PID:%d Name:%s", current->pid, current->name);
         }
-    }
-    else if (us) {
+    } else if (us) {
         printf("Type: user-mode;\n\taddres: %x", faulting_address);
-        if(current->pid == 0){
+        if (current->pid == 0) {
             printf(" ======= Kernel Error ======= ");
             while (1) io_hlt();
-        } else{
+        } else {
             current->state = TASK_ZOMBIE;
-            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+            printf("Taskkill process PID:%d Name:%s", current->pid, current->name);
         }
-    }
-    else if (reserved) {
+    } else if (reserved) {
         printf("Type: reserved;\n\taddress: %x", faulting_address);
-        if(current->pid == 0){
+        if (current->pid == 0) {
             printf(" ======= Kernel Error ======= ");
             while (1) io_hlt();
-        } else{
+        } else {
             current->state = TASK_ZOMBIE;
-            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+            printf("Taskkill process PID:%d Name:%s", current->pid, current->name);
         }
-    }
-    else if (id) {
-        printf("Type: decode address;\n\taddress: %x", faulting_address);
-        if(current->pid == 0){
-            printf(" ======= Kernel Error ======= ");
+    } else if (id) {
+        printf("Type: decode address;\n\taddress: %x\n", faulting_address);
+        if (current->pid == 0) {
+            printf(" ======= Kernel Error ======= \n");
             while (1) io_hlt();
-        } else{
+        } else {
             current->state = TASK_ZOMBIE;
-            printf("Taskkill process PID:%d Name:%s",current->pid,current->name);
+            printf("Taskkill process PID:%d Name:%s\n", current->pid, current->name);
         }
     }
+}
+
+static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
+    page_table_t *table = (page_table_t *) kmalloc_ap(sizeof(page_table_t), physAddr);
+    memset(table, 0, sizeof(page_directory_t));
+
+    int i;
+    for (i = 0; i < 1024; i++) {
+        if (!src->pages[i].frame)
+            continue;
+        alloc_frame(&table->pages[i], 0, 0);
+        if (src->pages[i].present) table->pages[i].present = 1;
+        if (src->pages[i].rw) table->pages[i].rw = 1;
+        if (src->pages[i].user) table->pages[i].user = 1;
+        if (src->pages[i].accessed)table->pages[i].accessed = 1;
+        if (src->pages[i].dirty) table->pages[i].dirty = 1;
+        copy_page_physical(src->pages[i].frame * 0x1000, table->pages[i].frame * 0x1000);
+    }
+    return table;
+}
+
+page_directory_t *clone_directory(page_directory_t *src) {
+    uint32_t phys;
+    page_directory_t *dir = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phys);
+    memset(dir, 0, sizeof(page_directory_t));
+
+    uint32_t offset = (uint32_t) dir->tablesPhysical - (uint32_t) dir;
+    dir->physicalAddr = phys + offset;
+    int i;
+    for (i = 0; i < 1024; i++) {
+        if (!src->tables[i])
+            continue;
+        if (kernel_directory->tables[i] == src->tables[i]) {
+            dir->tables[i] = src->tables[i];
+            dir->tablesPhysical[i] = src->tablesPhysical[i];
+        } else {
+            uint32_t phys;
+            dir->tables[i] = clone_table(src->tables[i], &phys);
+            dir->tablesPhysical[i] = phys | 0x07;
+        }
+    }
+    return dir;
 }
 
 void init_page() {
