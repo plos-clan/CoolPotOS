@@ -63,6 +63,8 @@ uint32_t first_frame();
 
 void page_fault(registers_t *regs);
 
+page_directory_t *clone_directory(page_directory_t *src);
+
 void flush_tlb();
 
 void *ksbrk(int incr);

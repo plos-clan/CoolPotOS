@@ -4,7 +4,7 @@
 #include "../include/queue.h"
 #include "../include/io.h"
 
-static KEY_STATUS *key_status;
+KEY_STATUS *key_status;
 Queue *key_char_queue;
 struct key_listener* head_listener;
 
@@ -122,6 +122,7 @@ void init_keyboard(){
     key_char_queue = create_queue();
     head_listener = (struct key_listener*) kmalloc(sizeof(struct key_listener));
     head_listener->func = default_handle;
+    head_listener->lid = 0;
 
     register_interrupt_handler(0x21,handle_keyboard_input);
 }
@@ -140,6 +141,59 @@ int handle_keyboard_input(){
     }
 
     return 0;
+}
+
+static void found_listener(int lid,struct key_listener *head,struct key_listener *base,struct key_listener **argv,int first){
+    struct key_listener *t = base;
+    if(t == NULL){
+        argv = NULL;
+        return;
+    }
+    if(t->lid == lid){
+        *argv = t;
+        return;
+    } else{
+        if(!first)
+            if(head->lid == t->lid){
+                argv = NULL;
+                return;
+            }
+        found_listener(lid,head,t->next,argv,0);
+    }
+}
+
+struct key_listener* found_listener_id(int lid){
+    struct task_struct *argv = NULL;
+    found_listener(lid,head_listener,head_listener,&argv,1);
+    if(argv == NULL){
+        printf("Cannot found key listener id:[%d].\n",lid);
+        return NULL;
+    }
+    return argv;
+}
+
+void remove_listener(int lid){
+    struct key_listener *argv = found_listener_id(lid);
+    if(argv == NULL){
+        printf("Cannot found listener id:[%d].\n",lid);
+        return;
+    }
+    if(argv->lid == 0){
+        printf("[\033driver\036]: Cannot remove default listener.\n");
+        return;
+    }
+
+    kfree(argv);
+    struct key_listener *head = head_listener;
+    struct key_listener *last = NULL;
+    while (1){
+        if(head->lid == argv->lid){
+            last->next = argv->next;
+            return;
+        }
+        last = head;
+        head = head->next;
+    }
 }
 
 void add_listener(struct key_listener* listener){

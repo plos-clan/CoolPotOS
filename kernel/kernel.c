@@ -11,6 +11,7 @@
 #include "../include/shell.h"
 #include "../include/date.h"
 #include "../include/acpi.h"
+#include "../include/syscall.h"
 
 extern uint32_t end;
 extern int status;
@@ -60,6 +61,7 @@ void kernel_main(multiboot_t *multiboot) {
     init_keyboard();
     printf("[\035kernel\036]: Keyboard driver load success!\n");
 
+    syscall_install();
     print_cpu_id();
     io_sti();
 
