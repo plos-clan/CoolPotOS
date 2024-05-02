@@ -9,9 +9,9 @@ uint16_t *terminal_buffer;
 
 int status = 0;
 
-static uint16_t cursor_x = 0, cursor_y = 0; // 光标位置
+uint16_t cursor_x = 0, cursor_y = 0; // 光标位置
 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
+uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
     return fg | bg << 4;
 }
 

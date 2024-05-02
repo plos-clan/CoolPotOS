@@ -1,22 +1,16 @@
 import os
 
-gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -I include/ -std=gnu99 -ffreestanding -O2 -c -Wincompatible-pointer-types'
+gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -std=gnu99 -I include/ -std=gnu99 -ffreestanding -O2 -c -Wincompatible-pointer-types'
 asm = '/i686_elf_tools/bin/i686-elf-as.exe'
 nasm = "nasm -f elf32"
 ld = '/i686_elf_tools/bin/i686-elf-ld.exe'
-
 cd = os.getcwd()  # 获取当前执行目录 'D:\CrashPowerDOS-main\'
-
 out = "target"
-
-
 def clean():
-    print("Clean target flolder")
+    print("Clean target folder")
     for file in os.listdir(cd + "\\target"):  # 遍历指定文件夹下所有文件
         os.remove(cd + "\\target\\" + file)
     return 0
-
-
 def build_boot():  # 构建引导程序
     print("Building boot source code...")
     status = True

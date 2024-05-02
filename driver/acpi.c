@@ -4,6 +4,7 @@
 #include "../include/io.h"
 #include "../include/isr.h"
 #include "../include/timer.h"
+#include "../include/common.h"
 
 uint16_t SLP_TYPa;
 uint16_t SLP_TYPb;
@@ -146,6 +147,46 @@ void power_off() {
     }
 }
 
+static int AcpiPowerHandler(registers_t *irq) {
+    uint16_t status = io_in16((uint32_t) facp->PM1a_EVT_BLK);
+    // check if power button press
+    if (status & (1 << 8)) {
+        io_out16((uint32_t) facp->PM1a_EVT_BLK, status &= ~(1 << 8)); // clear bits
+        printf("Shutdown OS...");
+        shutdown_kernel();
+        return 0;
+    }
+    if (!facp->PM1b_EVT_BLK)
+        return -1;
+    // check if power button press
+    status = io_in16((uint32_t) facp->PM1b_EVT_BLK);
+    if (status & (1 << 8)) {
+        io_out16((uint32_t) facp->PM1b_EVT_BLK, status &= ~(1 << 8));
+        printf("Shutdown OS...");
+        shutdown_kernel();
+        return 0;
+    }
+    return -1;
+}
+
+static void AcpiPowerInit() {
+    uint32_t len = facp->PM1_EVT_LEN / 2;
+    uint32_t *PM1a_ENABLE_REG = facp->PM1a_EVT_BLK + len;
+    uint32_t *PM1b_ENABLE_REG = facp->PM1b_EVT_BLK + len;
+
+    if (!facp)
+        return;
+
+    io_out16((uint16_t)PM1a_ENABLE_REG, (uint8_t)(1 << 8));
+    if (PM1b_ENABLE_REG) {
+        io_out16((uint16_t)PM1b_ENABLE_REG, (uint8_t)(1 << 8));
+    }
+
+    printf("ACPI : SCI_INT %08x\n",(uint8_t)facp->SCI_INT);
+
+    register_interrupt_handler(facp->SCI_INT, AcpiPowerHandler);
+}
+
 int AcpiCheckHeader(void *ptr, uint8_t *sign) {
     uint8_t * bptr = ptr;
     uint32_t len = *(bptr + 4);
@@ -278,5 +319,5 @@ void acpi_install() {
     AcpiSysInit();
     acpi_enable_flag = !acpi_enable();
     // power init
-    // AcpiPowerInit();
+    AcpiPowerInit();
 }

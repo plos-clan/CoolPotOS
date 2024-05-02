@@ -6,6 +6,12 @@
 extern uint16_t *terminal_buffer;
 extern uint8_t terminal_color;
 
+int date_pid;
+
+void launch_date(){
+    date_pid = kernel_thread(setup_date, NULL, "CPOS-Date");
+}
+
 int setup_date(){
     char* date_info;
     int i;

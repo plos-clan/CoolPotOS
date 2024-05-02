@@ -224,7 +224,7 @@ void cmd_pcat(int argc,char **argv){
         file = open_file(argv[1]);
     } else file = create_file(argv[1]);
 
-    pcat_launch(get_current(),file);
+    pcat_launch(file);
 }
 
 void setup_shell(){
@@ -275,7 +275,7 @@ void setup_shell(){
         else if (!strcmp("pcat", argv[0]))
             cmd_pcat(argc,argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
-            vga_writestring("-=[\037CrashPowerShell Helper\036]=-\n");
+            vga_writestring("-=[\037CoolPotShell Helper\036]=-\n");
             vga_writestring("help ? h              \032Print shell help info.\036\n");
             vga_writestring("version               \032Print os version.\036\n");
             vga_writestring("echo       <msg>      \032Print message.\036\n");

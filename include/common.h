@@ -1,7 +1,7 @@
 #ifndef CRASHPOWEROS_COMMON_H
 #define CRASHPOWEROS_COMMON_H
 
-#define OS_NAME "CrashPowerDOS"
+#define OS_NAME "CoolPotOS"
 #define OS_VERSION "v0.2.4"
 
 #define LONG_MAX 9223372036854775807L
