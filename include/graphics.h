@@ -69,7 +69,16 @@ struct color_rgba {
     uint8_t a;
 };
 
+typedef struct {
+    unsigned short di, si, bp, sp, bx, dx, cx, ax;
+    unsigned short gs, fs, es, ds, eflags;
+} regs16_t;
+
+
+
 typedef struct color_rgba color_rgba;
+
+uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
 
 void vga_install(void);
 

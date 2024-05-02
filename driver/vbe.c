@@ -1,4 +1,5 @@
 #include "../include/graphics.h"
+#include "../include/io.h"
 
 unsigned int vesa_fb_width, vesa_fb_height, vesa_fb_bpp, vesa_fb_pitch;
 uint8_t *vesa_fb_addr;

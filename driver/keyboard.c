@@ -102,6 +102,8 @@ static void default_handle(uint32_t key,int release,char c){
 
         if(c == 0) return 0;
 
+        if(key == 0x81) queue_push(key_char_queue,-5);
+
         queue_push(key_char_queue,(char)c);
     } else {
         if(c == -1){

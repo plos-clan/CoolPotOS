@@ -4,6 +4,27 @@
 
 #include <stdint.h>
 
+struct tty {
+    int using1;                              // 使用标志
+    void *vram;                              // 显存（也可以当做图层）
+    int x, y;                                // 目前的 x y 坐标
+    int xsize, ysize;                        // x 坐标大小 y 坐标大小
+    int Raw_y;                               // 换行次数
+    int cur_moving;                          // 光标需要移动吗
+    unsigned char color;                     // 颜色
+    void (*putchar)(struct tty *res, int c); // putchar函数
+    void (*MoveCursor)(struct tty *res, int x, int y);  // MoveCursor函数
+    void (*clear)(struct tty *res);                     // clear函数
+    void (*screen_ne)(struct tty *res);                 // screen_ne函数
+    void (*gotoxy)(struct tty *res, int x, int y);      // gotoxy函数
+    void (*print)(struct tty *res, const char *string); // print函数
+    void (*Draw_Box)(struct tty *res, int x, int y, int x1, int y1,
+                     unsigned char color); // Draw_Box函数
+    int (*fifo_status)(struct tty *res);
+    int (*fifo_get)(struct tty *res);
+    unsigned int reserved[4]; // 保留项
+};
+
 void gdt_flush(uint32_t gdtr);
 
 void io_hlt(void);

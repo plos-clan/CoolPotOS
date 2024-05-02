@@ -5,9 +5,14 @@
 #include "fat16.h"
 
 struct pcat_process{
-    uint8_t is_e;
+    uint32_t line;
+    uint32_t chars;
+    uint32_t buf_x,buf_y;
+    uint32_t buffer_screen;
+    int keys;
+    struct File *file;
 };
 
-void pcat_launch(struct task_struct *father,struct File *file);
+void pcat_launch(struct File *file);
 
 #endif
