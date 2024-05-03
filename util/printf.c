@@ -1,5 +1,6 @@
 #include "../include/printf.h"
 #include "../include/common.h"
+#include "../include/graphics.h"
 
 static int skip_atoi(const char **s) {
     int i = 0;
@@ -278,4 +279,19 @@ int sprintf(char *buf, const char *fmt, ...) {
     i = vsprintf(buf, fmt, args);
     va_end(args);
     return i;
+}
+
+
+void printf(const char *formet, ...) {
+    int len;
+    va_list ap;
+    va_start(ap, formet);
+    char *buf[1024] = {0};
+    len = vsprintf(buf, formet, ap);
+    print(buf);
+    va_end(ap);
+}
+
+void print(char *message) {
+    vga_writestring(message);
 }

@@ -12,11 +12,15 @@
 #include "../include/date.h"
 #include "../include/acpi.h"
 #include "../include/syscall.h"
+#include "../include/vdisk.h"
+#include "../include/pci.h"
+#include "../include/pcnet.h"
 
 extern uint32_t end;
 extern int status;
 uint32_t placement_address = (uint32_t) & end;
 multiboot_t *multiboot_all;
+
 
 void reset_kernel(){
     printf("Restart %s for x86...\n",OS_NAME);
@@ -37,7 +41,6 @@ uint32_t memory_all(){
 }
 
 void kernel_main(multiboot_t *multiboot) {
-    multiboot_all = multiboot;
     io_cli();
     vga_install();
     if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 16) {
@@ -60,8 +63,15 @@ void kernel_main(multiboot_t *multiboot) {
     printf("[\035kernel\036]: task load success!\n");
     init_keyboard();
     printf("[\035kernel\036]: Keyboard driver load success!\n");
-
+    multiboot_all = multiboot;
+    init_vdisk();
+    init_pci();
     syscall_install();
+
+    if(pcnet_find_card()){
+        init_pcnet_card();
+    } else printf("[\035kernel\036]: \033Cannot found pcnet.\036\n");
+
     print_cpu_id();
     io_sti();
 
@@ -69,7 +79,7 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-    kernel_thread(setup_shell, NULL, "CPOS-Shell");
+    //kernel_thread(setup_shell, NULL, "CPOS-Shell");
     launch_date();
 
     for (;;) {

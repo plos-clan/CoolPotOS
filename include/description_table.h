@@ -126,4 +126,6 @@ void write_tss(int32_t num, uint16_t ss0, uint32_t esp0);
 void gdt_install();
 void idt_install();
 
+void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
+
 #endif //CRASHPOWEROS_DESCRIPTION_TABLE_H
