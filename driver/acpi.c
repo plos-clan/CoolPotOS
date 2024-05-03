@@ -170,14 +170,18 @@ static int AcpiPowerHandler(registers_t *irq) {
 }
 
 static void AcpiPowerInit() {
-    uint32_t len = facp->PM1_EVT_LEN / 2;
+    if(!facp) return;
+
+    uint8_t len = facp->PM1_EVT_LEN / 2;
     uint32_t *PM1a_ENABLE_REG = facp->PM1a_EVT_BLK + len;
     uint32_t *PM1b_ENABLE_REG = facp->PM1b_EVT_BLK + len;
 
-    if (!facp)
-        return;
+    if(PM1b_ENABLE_REG == len)
+        PM1b_ENABLE_REG = 0;
 
-    io_out16((uint16_t)PM1a_ENABLE_REG, (uint8_t)(1 << 8));
+    printf("[acpi]: Setting Power event listener...\n");
+
+    io_out16(PM1a_ENABLE_REG, (1 << 8));
     if (PM1b_ENABLE_REG) {
         io_out16((uint16_t)PM1b_ENABLE_REG, (uint8_t)(1 << 8));
     }

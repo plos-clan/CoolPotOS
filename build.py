@@ -1,4 +1,5 @@
 import os
+import sys
 
 gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -std=gnu99 -I include/ -std=gnu99 -ffreestanding -O2 -c -Wincompatible-pointer-types'
 asm = '/i686_elf_tools/bin/i686-elf-as.exe'
@@ -6,11 +7,15 @@ nasm = "nasm -f elf32"
 ld = '/i686_elf_tools/bin/i686-elf-ld.exe'
 cd = os.getcwd()  # 获取当前执行目录 'D:\CrashPowerDOS-main\'
 out = "target"
+
+
 def clean():
     print("Clean target folder")
     for file in os.listdir(cd + "\\target"):  # 遍历指定文件夹下所有文件
         os.remove(cd + "\\target\\" + file)
     return 0
+
+
 def build_boot():  # 构建引导程序
     print("Building boot source code...")
     status = True
@@ -95,4 +100,10 @@ a = linker()
 if a != 0:
     exit(-1)
 print("Launching i386 vm...")
-os.system("qemu-system-i386 -vga std -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")
+
+if len(sys.argv) == 0 or sys.argv[1] == 'vga':
+    print("Graphics MODE [VGA]")
+    os.system("qemu-system-i386 -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")
+elif sys.argv[1] == 'vbe':
+    print("Graphics MODE [VBE]")
+    os.system("qemu-system-i386 -vga std -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")

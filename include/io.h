@@ -4,6 +4,11 @@
 
 #include <stdint.h>
 
+typedef struct {
+    unsigned short di, si, bp, sp, bx, dx, cx, ax;
+    unsigned short gs, fs, es, ds, eflags;
+} regs16_t;
+
 struct tty {
     int using1;                              // 使用标志
     void *vram;                              // 显存（也可以当做图层）

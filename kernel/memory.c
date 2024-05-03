@@ -1,5 +1,13 @@
 #include "../include/memory.h"
 
+void memclean(char *s, int len) {
+    // 清理某个内存区域（全部置0）
+    int i;
+    for (i = 0; i != len; i++) {
+        s[i] = 0;
+    }
+    return;
+}
 
 void *memcpy(void *dst_, const void *src_, uint32_t size) {
     uint8_t *dst = dst_;

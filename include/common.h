@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+typedef int bool;
+
 void assert(int b,char* message);
 size_t strlen(const char* str);
 int strcmp(const char *s1, const char *s2);

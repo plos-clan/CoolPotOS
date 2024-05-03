@@ -18,14 +18,6 @@
 
 typedef struct multiboot_t {
     uint32_t flags; // Multiboot 的版本信息
-    /**
-     * 从 BIOS 获知的可用内存
-     *
-     * mem_lower和mem_upper分别指出了低端和高端内存的大小，单位是K。
-     * 低端内存的首地址是0，高端内存的首地址是1M。
-     * 低端内存的最大可能值是640K。
-     * 高端内存的最大可能值是最大值减去1M。但并不保证是这个值。
-     */
     uint32_t mem_lower;
     uint32_t mem_upper;
 

@@ -69,13 +69,6 @@ struct color_rgba {
     uint8_t a;
 };
 
-typedef struct {
-    unsigned short di, si, bp, sp, bx, dx, cx, ax;
-    unsigned short gs, fs, es, ds, eflags;
-} regs16_t;
-
-
-
 typedef struct color_rgba color_rgba;
 
 uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
@@ -99,15 +92,5 @@ uint16_t vga_entry(unsigned char uc, uint8_t color);
 void vga_clear();
 
 void move_cursor();
-
-void printf(const char *formet, ...);
-
-void vbe_putchar(char c);
-
-void vbe_clear();
-
-void initVBE(multiboot_t *mboot);
-
-void putPix(unsigned int x, unsigned int y, uint32_t color);
 
 #endif

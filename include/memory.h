@@ -83,4 +83,6 @@ uint32_t kmalloc_ap(uint32_t size, uint32_t *phys);
 
 void init_page();
 
+void memclean(char *s, int len);
+
 #endif //CRASHPOWEROS_MEMORY_H

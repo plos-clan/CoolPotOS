@@ -47,10 +47,6 @@ void vga_install(void) {
 }
 
 void vga_clear() {
-    if(status){
-        vbe_clear();
-        return;
-    }
     for (size_t y = 0; y < VGA_HEIGHT; y++) {
         for (size_t x = 0; x < VGA_WIDTH; x++) {
             const size_t index = y * VGA_WIDTH + x;
@@ -80,10 +76,6 @@ void vga_putentryat(char c, uint8_t color, size_t x, size_t y) {
 }
 
 void vga_putchar(char c) {
-    if(status){
-        vbe_putchar(c);
-        return;
-    }
     uint8_t attributeByte = terminal_color; // 黑底白字
     uint16_t attribute = attributeByte << 8;
     uint16_t *location;
@@ -147,14 +139,4 @@ void vga_write(const char *data, size_t size) {
 
 void vga_writestring(const char *data) {
     vga_write(data, strlen(data));
-}
-
-void printf(const char *formet, ...) {
-    int len;
-    va_list ap;
-    va_start(ap, formet);
-    char *buf[1024] = {0};
-    len = vsprintf(buf, formet, ap);
-    vga_writestring(buf);
-    va_end(ap);
 }
