@@ -10,6 +10,8 @@ uint8_t bus = 255, dev = 255, func = 255;
 
 extern unsigned int PCI_ADDR_BASE;
 extern idt_ptr_t idt_ptr;
+extern uint32_t gateway, submask, dns, ip, dhcp_ip;
+
 static int io_base = 0;
 static uint8_t sendBufferDescMemory[2048 + 15];
 static uint8_t sendBuffers[8][2048 + 15];
@@ -66,31 +68,23 @@ void Activate() {
 }
 
 int pcnet_find_card() {
-    //printk("pcnet_find:");
     PCI_GET_DEVICE(CARD_VENDOR_ID, CARD_DEVICE_ID, &bus, &dev, &func);
     if (bus == 255) {
-        //printk("false\n");
         return 0;
     }
-    //printk("true");
     return 1;
 }
-/*
+
 static void init_Card_all() {
     currentSendBuffer = 0;
     currentRecvBuffer = 0;
 
-    // 获取MAC地址并保存
     mac0 = io_in8(io_base + APROM0);
     mac1 = io_in8(io_base + APROM1);
     mac2 = io_in8(io_base + APROM2);
     mac3 = io_in8(io_base + APROM3);
     mac4 = io_in8(io_base + APROM4);
     mac5 = io_in8(io_base + APROM5);
-    // printk("MAC Address: %02x:%02x:%02x:%02x:%02x:%02x\n", mac0, mac1, mac2,
-    // mac3,
-    //        mac4, mac5);
-    // 这里约等于 into_16bitsRW();
     reset_card();
     clock_sleep(1);
 
@@ -99,9 +93,6 @@ static void init_Card_all() {
     io_out16(io_base + RAP16, CSR0);
     io_out16(io_base + RDP16, 0x0004);  // 暂时停止所有传输（用于初始化PCNET网卡
 
-    // initBlock传输初始化（CSR1=IB地址低16位，CSR2=IB地址高16位）
-    // &
-    // Send/Recv环形缓冲区的初始化
     initBlock.mode = 0;
     initBlock.reserved1numSendBuffers =
             (0 << 4) | 3;  // 高4位是reserved1 低4位是numSendBuffers
@@ -165,7 +156,7 @@ static void init_Card_all() {
     //   "来自Powerint DOS 386的消息：我是周志昊！！！", strlen("来自Powerint DOS
     //   386的消息：我是周志昊！！！"));
 }
-*/
+
 void init_pcnet_card() {
     printf("[\035kernel\036]: Loading pcnet driver.\n");
     // 允许PCNET网卡产生中断
@@ -177,7 +168,7 @@ void init_pcnet_card() {
     conf |= 0x7;         // 设置第0~2位（允许PCNET网卡产生中断
     pci_write_command_status(bus, dev, func, conf);
     io_base = pci_get_port_base(bus, dev, func);
-    //init_Card_all();
+    init_Card_all();
 }
 
 void PCNET_IRQ(registers_t *reg) {

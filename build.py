@@ -71,6 +71,15 @@ def build_sysapp():  # 构建内置系统应用
     return 0
 
 
+def build_network():  # 构建网络系统
+    print("Building network source code...")
+    for file in os.listdir(cd + '\\network'):
+        cmd = cd + gcc + " " + "network\\" + file + " -o " + "target\\" + file.split(".")[0] + ".o"
+        e = os.system(cmd)
+        if e != 0:
+            return -1
+    return 0
+
 def linker():  # 交叉编译链接
     print("Linking object files...")
     source_file = ""
@@ -94,6 +103,9 @@ a = build_data()
 if a != 0:
     exit(-1)
 a = build_sysapp()
+if a != 0:
+    exit(-1)
+a = build_network()
 if a != 0:
     exit(-1)
 a = linker()

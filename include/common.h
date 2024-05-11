@@ -7,6 +7,11 @@
 #define LONG_MAX 9223372036854775807L
 #define LONG_MIN -9223372036854775808L
 
+#define swap32(x)                                                              \
+  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) |                    \
+   (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
+#define swap16(x) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8))
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdarg.h>

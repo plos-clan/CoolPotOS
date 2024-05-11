@@ -5,6 +5,8 @@
 
 #include "../include/vdisk.h"
 #include "../include/printf.h"
+#include "../include/fifo.h"
+#include "../include/task.h"
 
 int getReadyDisk();
 
@@ -110,4 +112,53 @@ void Disk_Write(unsigned int lba, unsigned int number, void *buffer,
             rw_vdisk(drive, lba + i, buffer + i * 512, sectors, 0);
         }
     }
+}
+
+static unsigned char *drive_name[16] = {NULL, NULL, NULL, NULL, NULL, NULL,
+                                        NULL, NULL, NULL, NULL, NULL, NULL,
+                                        NULL, NULL, NULL, NULL};
+static struct FIFO8 drive_fifo[16];
+static unsigned char drive_buf[16][256];
+
+bool SetDrive(unsigned char *name) {
+    for (int i = 0; i != 16; i++) {
+        if (drive_name[i] == NULL) {
+            drive_name[i] = name;
+            fifo8_init(&drive_fifo[i], 256, drive_buf[i]);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+unsigned int GetDriveCode(unsigned char *name) {
+    for (int i = 0; i != 16; i++) {
+        if (strcmp((char *)drive_name[i], (char *)name) == 0) {
+            return i;
+        }
+    }
+    return 16;
+}
+
+bool DriveSemaphoreTake(unsigned int drive_code) {
+    if (drive_code >= 16) {
+        return 1;
+    }
+    fifo8_put(&drive_fifo[drive_code], get_current()->pid);
+    // printk("FIFO: %d PUT: %d STATUS: %d\n", drive_code, Get_Tid(current_task()),
+    //        fifo8_status(&drive_fifo[drive_code]));
+    while (drive_buf[drive_code][drive_fifo[drive_code].q] !=
+           get_current()->pid) {
+        // printk("Waiting....\n");
+    }
+    return 1;
+}
+void DriveSemaphoreGive(unsigned int drive_code) {
+    if (drive_code >= 16) {
+        return;
+    }
+    if (drive_buf[drive_code][drive_fifo[drive_code].q] != get_current()->pid) {
+        return;
+    }
+    fifo8_get(&drive_fifo[drive_code]);
 }
