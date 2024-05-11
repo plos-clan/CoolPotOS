@@ -3,6 +3,8 @@
 
 #define SECTORS_ONCE 8
 
+#include "../include/common.h"
+
 typedef struct {
     void (*Read)(char drive, unsigned char *buffer, unsigned int number,
                  unsigned int lba);
@@ -42,5 +44,9 @@ int disk_Size(char drive);
 int DiskReady(char drive);
 void Disk_Write(unsigned int lba, unsigned int number, void *buffer,
                 char drive);
+unsigned int GetDriveCode(unsigned char *name);
+bool SetDrive(unsigned char *name);
+void DriveSemaphoreGive(unsigned int drive_code);
+bool DriveSemaphoreTake(unsigned int drive_code);
 
 #endif
