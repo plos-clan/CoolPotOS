@@ -5,6 +5,7 @@
 #include "../include/timer.h"
 #include "../include/memory.h"
 #include "../include/printf.h"
+#include "../include/dhcp.h"
 
 uint8_t bus = 255, dev = 255, func = 255;
 
@@ -56,7 +57,10 @@ void reset_card() {
 void Activate() {
     // 激活PCNET IRQ中断
     io_out16(io_base + RAP16, CSR0);
+
+    printf("[pcnet]: io\n");
     io_out16(io_base + RDP16, 0x41);
+    printf("[pcnet]: success.\n");
 
     io_out16(io_base + RAP16, CSR4);
     uint32_t temp = io_in16(io_base + RDP16);
@@ -65,6 +69,7 @@ void Activate() {
 
     io_out16(io_base + RAP16, CSR0);
     io_out16(io_base + RDP16, 0x42);
+
 }
 
 int pcnet_find_card() {
@@ -87,6 +92,8 @@ static void init_Card_all() {
     mac5 = io_in8(io_base + APROM5);
     reset_card();
     clock_sleep(1);
+
+
 
     io_out16(io_base + RAP16, BCR20);
     io_out16(io_base + BDP16, 0x102);
@@ -146,28 +153,19 @@ static void init_Card_all() {
            ip == 0xFFFFFFFF) {
         initBlock.logicalAddress = ip;
     }
-
-    // 初始化ARP表
-
-
-    // DNSParseIP("baidu.com");
-
-    // UDPProviderSend(0x761ff8d7, initBlock.logicalAddress, 52949, 38,
-    //   "来自Powerint DOS 386的消息：我是周志昊！！！", strlen("来自Powerint DOS
-    //   386的消息：我是周志昊！！！"));
 }
 
 void init_pcnet_card() {
     printf("[\035kernel\036]: Loading pcnet driver.\n");
-    // 允许PCNET网卡产生中断
-    // 1.注册中断
     register_interrupt_handler(pci_get_drive_irq(bus, dev, func),PCNET_IRQ);
     // 2,写COMMAND和STATUS寄存器
     uint32_t conf = pci_read_command_status(bus, dev, func);
     conf &= 0xffff0000;  // 保留STATUS寄存器，清除COMMAND寄存器
     conf |= 0x7;         // 设置第0~2位（允许PCNET网卡产生中断
+
     pci_write_command_status(bus, dev, func, conf);
     io_base = pci_get_port_base(bus, dev, func);
+
     init_Card_all();
 }
 

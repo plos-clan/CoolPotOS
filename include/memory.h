@@ -85,4 +85,6 @@ void init_page();
 
 void memclean(char *s, int len);
 
+void *realloc(void *ptr, uint32_t size);
+
 #endif //CRASHPOWEROS_MEMORY_H

@@ -5,6 +5,42 @@
 
 static char num_str_buf[BUF_SIZE];
 
+void insert_char(char* str, int pos, char ch) {
+    int i;
+    for (i = strlen(str); i >= pos; i--) {
+        str[i + 1] = str[i];
+    }
+    str[pos] = ch;
+}
+void delete_char(char* str, int pos) {
+    int i;
+    for (i = pos; i < strlen(str); i++) {
+        str[i] = str[i + 1];
+    }
+}
+
+void strtoupper(char* str) {
+    while (*str != '\0') {
+        if (*str >= 'a' && *str <= 'z') {
+            *str -= 32;
+        }
+        str++;
+    }
+}
+
+int strncmp(const char* s1, const char* s2, size_t n) {
+    const unsigned char *p1 = (const unsigned char*)s1,
+            *p2 = (const unsigned char*)s2;
+    while (n-- > 0) {
+        if (*p1 != *p2)
+            return *p1 - *p2;
+        if (*p1 == '\0')
+            return 0;
+        p1++, p2++;
+    }
+    return 0;
+}
+
 long int strtol(const char *str,char **endptr,int base){
     const char *s;
     unsigned long acc;

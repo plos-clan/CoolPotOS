@@ -62,35 +62,35 @@ uint8_t read_cmos(uint8_t p) {
     return data;
 }
 
-static uint32_t get_hour() {
+uint32_t get_hour() {
     return bcd2hex(read_cmos(CMOS_CUR_HOUR));
 }
 
-;static uint32_t get_min() {
+uint32_t get_min() {
     return bcd2hex(read_cmos(CMOS_CUR_MIN));
 }
 
-static uint32_t get_sec() {
+uint32_t get_sec() {
     return bcd2hex(read_cmos(CMOS_CUR_SEC));
 }
 
-static uint32_t get_day_of_month() {
+uint32_t get_day_of_month() {
     return bcd2hex(read_cmos(CMOS_MON_DAY));
 }
 
-static uint32_t get_day_of_week() {
+uint32_t get_day_of_week() {
     return bcd2hex(read_cmos(CMOS_WEEK_DAY));
 }
 
-static uint32_t get_mon() {
+uint32_t get_mon() {
     return bcd2hex(read_cmos(CMOS_CUR_MON));
 }
 
-static uint32_t get_year() {
+uint32_t get_year() {
     return (bcd2hex(read_cmos(CMOS_CUR_CEN)) * 100) + bcd2hex(read_cmos(CMOS_CUR_YEAR)) + 1980;
 }
 
-static int is_leap_year(int year) {
+int is_leap_year(int year) {
     if (year % 4 != 0) return 0;
     if (year % 400 == 0) return 1;
     return year % 100 != 0;

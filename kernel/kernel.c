@@ -15,6 +15,8 @@
 #include "../include/vdisk.h"
 #include "../include/pci.h"
 #include "../include/pcnet.h"
+#include "../include/fat.h"
+#include "../include/floppy.h"
 
 extern uint32_t end;
 extern int status;
@@ -64,22 +66,26 @@ void kernel_main(multiboot_t *multiboot) {
     init_keyboard();
     printf("[\035kernel\036]: Keyboard driver load success!\n");
     multiboot_all = multiboot;
+    io_sti();
+    init_pit();
     init_vdisk();
     init_pci();
+    init_vfs();
+    //init_floppy();
+    Register_fat_fileSys();
     syscall_install();
 
     if(pcnet_find_card()){
-        init_pcnet_card();
+        //init_pcnet_card();
     } else printf("[\035kernel\036]: \033Cannot found pcnet.\036\n");
 
     print_cpu_id();
-    io_sti();
 
     printf("Memory: %dMB.",(multiboot->mem_upper + multiboot->mem_lower)/1024/1024);
 
     clock_sleep(25);
 
-    //kernel_thread(setup_shell, NULL, "CPOS-Shell");
+    kernel_thread(setup_shell, NULL, "CPOS-Shell");
     launch_date();
 
     for (;;) {

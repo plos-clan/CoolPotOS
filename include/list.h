@@ -20,5 +20,10 @@ typedef struct List List;
 
 struct List* FindForCount(size_t count, struct List* Obj);
 int GetLastCount(struct List* Obj);
+void DeleteList(struct List* Obj);
+struct List* NewList();
+void Change(size_t count, struct List* Obj, uintptr_t val);
+void DeleteVal(size_t count, struct List* Obj);
+void AddVal(uintptr_t val, struct List* Obj);
 
 #endif
