@@ -80,6 +80,15 @@ def build_network():  # 构建网络系统
             return -1
     return 0
 
+def build_fs():  # 构建文件系统
+    print("Building fs source code...")
+    for file in os.listdir(cd + '\\fs'):
+        cmd = cd + gcc + " " + "fs\\" + file + " -o " + "target\\" + file.split(".")[0] + ".o"
+        e = os.system(cmd)
+        if e != 0:
+            return -1
+    return 0
+
 def linker():  # 交叉编译链接
     print("Linking object files...")
     source_file = ""
@@ -106,6 +115,9 @@ a = build_sysapp()
 if a != 0:
     exit(-1)
 a = build_network()
+if a != 0:
+    exit(-1)
+a = build_fs()
 if a != 0:
     exit(-1)
 a = linker()

@@ -50,3 +50,13 @@ void *memmove(void *dest, const void *src, size_t num) {
     }
     return ret;
 }
+
+
+void *realloc(void *ptr, uint32_t size) {
+    void *new = kmalloc(size);
+    if (ptr) {
+        memcpy(new, ptr, *(int *)((int)ptr - 4));
+        kfree(ptr);
+    }
+    return new;
+}

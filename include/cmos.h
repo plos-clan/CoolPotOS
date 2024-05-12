@@ -30,4 +30,13 @@ uint8_t read_cmos(uint8_t p);
 char *get_date_time();
 void print_cpu_id();
 
+uint32_t get_hour();
+uint32_t get_min();
+uint32_t get_sec();
+uint32_t get_day_of_month();
+uint32_t get_day_of_week();
+uint32_t get_mon();
+uint32_t get_year();
+int is_leap_year(int year);
+
 #endif //CRASHPOWEROS_CMOS_H

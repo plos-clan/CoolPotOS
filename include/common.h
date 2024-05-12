@@ -7,6 +7,9 @@
 #define LONG_MAX 9223372036854775807L
 #define LONG_MIN -9223372036854775808L
 
+#define UINT32_MAX 0xffffffff
+#define INT32_MAX 0x7fffffff
+
 #define swap32(x)                                                              \
   ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) |                    \
    (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
@@ -17,7 +20,16 @@
 #include <stdarg.h>
 
 typedef int bool;
+#define true 1
+#define false 0
+#define EOF -1
 
+unsigned int rand(void);
+void srand(unsigned long seed);
+void insert_char(char* str, int pos, char ch);
+void delete_char(char* str, int pos);
+void strtoupper(char* str);
+int strncmp(const char* s1, const char* s2, size_t n);
 void assert(int b,char* message);
 size_t strlen(const char* str);
 int strcmp(const char *s1, const char *s2);
