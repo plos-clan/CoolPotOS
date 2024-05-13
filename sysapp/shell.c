@@ -4,7 +4,6 @@
 #include "../include/common.h"
 #include "../include/task.h"
 #include "../include/cmos.h"
-#include "../include/fat16.h"
 #include "../include/pcat.h"
 
 extern Queue *key_char_queue;
@@ -95,60 +94,7 @@ void cmd_date(){
 }
 
 void cmd_ls() {
-    struct File *root = (struct File *) kmalloc(sizeof(struct File) * MAX_FILE_NUM);
-    int files = read_root_dir(root);
-    int index = 0, size = 0;
 
-    for (int i = 0; i < files; ++i) {
-        struct File file = root[i];
-        if (!strcmp(file.name, "\0")) continue;
-        printf("%s   %s  %d\n", file.name, file.type == 0x20 ? "<FILE>" : " <DIR> ", file.size);
-        index++;
-        size += file.size;
-    }
-    printf("    All File: %d  | All Size: %dByte\n", index, size);
-    kfree(root);
-}
-
-void cmd_cat(int argc, char **argv) {
-    if (argc <= 2) {
-        printf("\033[Shell-CAT]: If there are too few parameters, please specify the filename and util.\036\n");
-        return;
-    }
-    struct File *file = open_file(argv[1]);
-    if (file == NULL) {
-        printf("\033[Shell-CAT]: Not found [%s]\036 \n", argv[1]);
-        return;
-    }
-
-    char *buffer[1024] = {0};
-
-    for (int i = 2; i < argc; i++) {
-        if (i == 2) strcat(buffer, "");
-        else strcat(buffer, " ");
-        strcat(buffer, argv[i]);
-    }
-
-    save_file(file, buffer);
-    kfree(file);
-}
-
-void cmd_read(int argc, char **argv) {
-    if (argc == 1) {
-        printf("\033[Shell-READ]: If there are too few parameters, please specify the filename.\036\n");
-        return;
-    }
-    struct File *file = open_file(argv[1]);
-    char *buffer = (char *) kmalloc(sizeof(char) * 4096);
-    if (file == NULL) {
-        printf("\033[Shell-READ]: Not found [%s]\036 \n", argv[1]);
-        return;
-    }
-
-    read_file(file, buffer);
-    printf("%s\n", buffer);
-    kfree(buffer);
-    kfree(file);
 }
 
 void cmd_mkdir(int argc, char **argv) {
@@ -157,12 +103,7 @@ void cmd_mkdir(int argc, char **argv) {
         return;
     }
     printf("Create directory: %s\n",argv[1]);
-    struct File *dir = create_dir(argv[1]);
-    if (dir == NULL) {
-        printf("\033[Shell-MKDIR]: Cannot create directory '%s'.\036\n", argv[1]);
-        return;
-    }
-    kfree(dir);
+
 }
 
 void cmd_del(int argc, char **argv) {
@@ -170,13 +111,7 @@ void cmd_del(int argc, char **argv) {
         vga_writestring("\033[Shell-DEL]: If there are too few parameters, please specify the folder name.\036\n");
         return;
     }
-    struct File *info = open_file(argv[1]);
-    if (info == NULL) {
-        printf("\033[Shell-DEL]: Not found [%s]\036 \n", argv[1]);
-        return;
-    }
-    delete_file(info);
-    kfree(info);
+
 }
 
 void cmd_reset(){
@@ -215,16 +150,7 @@ void cmd_pcat(int argc,char **argv){
 
         return;
     }
-    char name[8] = {0};
-    char ext[3] = {0};
-    analyse_fullname(argv[1], name, ext);
-    int isfind = find_file(name, ext, 0);
-    struct File* file;
-    if(isfind){
-        file = open_file(argv[1]);
-    } else file = create_file(argv[1]);
 
-    pcat_launch(file);
 }
 
 void setup_shell(){
@@ -258,10 +184,6 @@ void setup_shell(){
             cmd_date();
         else if (!strcmp("ls", argv[0]))
             cmd_ls();
-        else if (!strcmp("cat", argv[0]))
-            cmd_cat(argc, argv);
-        else if (!strcmp("read", argv[0]))
-            cmd_read(argc, argv);
         else if (!strcmp("mkdir", argv[0]))
             cmd_mkdir(argc, argv);
         else if (!strcmp("del", argv[0]) || !strcmp("rm", argv[0]))
@@ -280,8 +202,6 @@ void setup_shell(){
             vga_writestring("version               \032Print os version.\036\n");
             vga_writestring("echo       <msg>      \032Print message.\036\n");
             vga_writestring("ls                    \032List all files.\036\n");
-            vga_writestring("cat <name> <util>     \032Edit a file.\036\n");
-            vga_writestring("read       <name>     \032Read a file.\036\n");
             vga_writestring("mkdir      <name>     \032Make a directory.\036\n");
             vga_writestring("del rm     <name>     \032Delete a file.\036\n");
             vga_writestring("sysinfo               \032Print system info.\036\n");

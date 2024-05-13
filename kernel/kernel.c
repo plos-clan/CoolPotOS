@@ -15,8 +15,8 @@
 #include "../include/vdisk.h"
 #include "../include/pci.h"
 #include "../include/pcnet.h"
-#include "../include/fat.h"
-#include "../include/floppy.h"
+#include "../include/ide.h"
+#include "../include/vfs.h"
 
 extern uint32_t end;
 extern int status;
@@ -71,8 +71,7 @@ void kernel_main(multiboot_t *multiboot) {
     init_vdisk();
     init_pci();
     init_vfs();
-    //init_floppy();
-    Register_fat_fileSys();
+    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     syscall_install();
 
     if(pcnet_find_card()){
@@ -85,7 +84,7 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-    kernel_thread(setup_shell, NULL, "CPOS-Shell");
+    //kernel_thread(setup_shell, NULL, "CPOS-Shell");
     launch_date();
 
     for (;;) {

@@ -281,6 +281,15 @@ int sprintf(char *buf, const char *fmt, ...) {
     return i;
 }
 
+void printk(const char *formet, ...) {
+    int len;
+    va_list ap;
+    va_start(ap, formet);
+    char *buf[1024] = {0};
+    len = vsprintf(buf, formet, ap);
+    print(buf);
+    va_end(ap);
+}
 
 void printf(const char *formet, ...) {
     int len;
