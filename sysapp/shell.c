@@ -4,9 +4,10 @@
 #include "../include/common.h"
 #include "../include/task.h"
 #include "../include/cmos.h"
-#include "../include/pcat.h"
+#include "../include/vdisk.h"
 
 extern Queue *key_char_queue;
+extern vdisk vdisk_ctl[10];
 
 char getc() {
     while (key_char_queue->size == 0x00) {
@@ -133,6 +134,13 @@ void cmd_debug(){
     print_proc_t(&index,get_current(),get_current()->next,0);
     printf("Process Runnable: %d\n",index);
     cmd_date();
+    for (int i = 0; i < 10; i++) {
+        if (vdisk_ctl[i].flag) {
+            vdisk vd = vdisk_ctl[i];
+            char id = i + ('A');
+            printf("[DISK-%c]: Size: %dMB | Name: %s\n",id,vd.size,vd.DriveName);
+        }
+    }
     printf("            > > > > ====[Registers Info]==== < < < <\n");
     register uint32_t eax asm("eax"),
     ecx asm("ecx"),
@@ -145,12 +153,52 @@ void cmd_debug(){
     printf("ESI: 0x%08x | EDI 0x%08x | EBP 0x%08x | EFLAGS 0x%08x\n",esi,edi,ebp,get_current()->context.eflags);
 }
 
-void cmd_pcat(int argc,char **argv){
-    if (argc == 1) {
+void cmd_disk(int argc,char **argv){
+    if(argc > 1){
+        if(!strcmp("list",argv[1])){
+            printf("[Disk]: Loaded disk - ");
+            for (int i = 0; i < 10; i++) {
+                if (vdisk_ctl[i].flag) {
+                    vdisk vd = vdisk_ctl[i];
+                    char id = i + ('A');
+                    printf("(%c) ",id,vd.size,vd.DriveName);
+                }
+            }
+            printf("\n");
+            return;
+        }
 
+        if(strlen(argv[1]) > 1){
+            printf("\033[DISK]: Cannot found disk.\036\n");
+            return;
+        }
+
+        for (int i = 0; i < 10; i++) {
+            if (vdisk_ctl[i].flag) {
+                vdisk vd = vdisk_ctl[i];
+                char id = i + ('A');
+                if(id == (argv[1][0])){
+                    printf("[Disk(%c)]: \n"
+                           "    Size: %dMB\n"
+                           "    Name: %s\n"
+                           "    WriteAddress: 0x%08x\n"
+                           "    ReadAddress: 0x%08x\n",id,vd.size,vd.DriveName,vd.Write,vd.Read);
+                    return;
+                }
+            }
+        }
+        printf("\033[DISK]: Cannot found disk.\036\n");
         return;
     }
-
+    printf("[Disk]: Loaded disk - ");
+    for (int i = 0; i < 10; i++) {
+        if (vdisk_ctl[i].flag) {
+            vdisk vd = vdisk_ctl[i];
+            char id = i + ('A');
+            printf("(%c) ",id,vd.size,vd.DriveName);
+        }
+    }
+    printf("\n");
 }
 
 void setup_shell(){
@@ -194,8 +242,8 @@ void setup_shell(){
             cmd_shutdown();
         else if (!strcmp("debug", argv[0]))
             cmd_debug();
-        else if (!strcmp("pcat", argv[0]))
-            cmd_pcat(argc,argv);
+        else if (!strcmp("disk", argv[0]))
+            cmd_disk(argc,argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             vga_writestring("-=[\037CoolPotShell Helper\036]=-\n");
             vga_writestring("help ? h              \032Print shell help info.\036\n");
@@ -209,7 +257,7 @@ void setup_shell(){
             vga_writestring("reset                 \032Reset OS.\036\n");
             vga_writestring("shutdown exit         \032Shutdown OS.\036\n");
             vga_writestring("debug                 \032Print os debug info.\036\n");
-            vga_writestring("pcat [filename]       \032Launch pcat application.\036\n");
+            vga_writestring("disk  [list|<ID>]     \032List or view disks.\036\n");
         } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
     }
 }

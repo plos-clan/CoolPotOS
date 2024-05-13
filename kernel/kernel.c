@@ -84,7 +84,7 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-    //kernel_thread(setup_shell, NULL, "CPOS-Shell");
+    kernel_thread(setup_shell, NULL, "CPOS-Shell");
     launch_date();
 
     for (;;) {
