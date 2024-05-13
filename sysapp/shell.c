@@ -201,7 +201,30 @@ void cmd_disk(int argc,char **argv){
     printf("\n");
 }
 
+char* user(){
+    printf("\n\nPlease type your username and password.\n");
+    char com[MAX_COMMAND_LEN];
+    char* username = "admin";
+    char* password = "12345678";
+    while (1){
+        print("username/> ");
+        if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
+        if(!strcmp(username,com)){
+            break;
+        } else printf("Cannot found username, Please check your info.\n");
+    }
+    while (1){
+        print("password/> ");
+        if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
+        if(!strcmp(password,com)){
+            break;
+        } else printf("Unknown password, Please check your info.\n");
+    }
+    return username;
+}
+
 void setup_shell(){
+    char* user1 = user();
     vga_clear();
     printf("%s for x86 [Version %s] \n",OS_NAME, OS_VERSION);
     printf("\032Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\036\n");
@@ -211,7 +234,7 @@ void setup_shell(){
     int argc = -1;
 
     while (1) {
-        printf("\035CPOS/>\036 ");
+        printf("\035%s/>\036 ",user1);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         argc = cmd_parse(com, argv, ' ');
 
