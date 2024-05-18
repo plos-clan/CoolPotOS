@@ -22,5 +22,5 @@ struct ARPMessage {
 uint64_t IPParseMAC(uint32_t dstIP);
 uint8_t *ARP_Packet(uint64_t dest_mac, uint32_t dest_ip, uint64_t src_mac,
                     uint32_t src_ip, uint16_t command);
-
+void arp_handler(void *base);
 #endif

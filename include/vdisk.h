@@ -40,7 +40,7 @@ int rw_vdisk(char drive, unsigned int lba, unsigned char *buffer,
 int have_vdisk(char drive);
 void Disk_Read(unsigned int lba, unsigned int number, void *buffer,
                char drive);
-int disk_Size(char drive);
+unsigned int disk_Size(char drive);
 int DiskReady(char drive);
 void Disk_Write(unsigned int lba, unsigned int number, void *buffer,
                 char drive);

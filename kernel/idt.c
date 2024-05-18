@@ -29,9 +29,10 @@ void isr_handler(registers_t regs) {
 }
 
 void irq_handler(registers_t regs) {
-    if (regs.int_no >= 40) outb(0xA0, 0x20); // 中断号 >= 40，来自从片，发送EOI给从片
-    outb(0x20, 0x20); // 发送EOI给主片
-
+    if(regs.int_no != 0x2b) {
+        if (regs.int_no >= 40) outb(0xA0, 0x20); // 中断号 >= 40，来自从片，发送EOI给从片
+        outb(0x20, 0x20); // 发送EOI给主片
+    }
     if (interrupt_handlers[regs.int_no]) {
         isr_t handler = interrupt_handlers[regs.int_no]; // 有自定义处理程序，调用之
         handler(&regs); // 传入寄存器

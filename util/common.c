@@ -152,6 +152,7 @@ char *strcpy(char *dest, const char *src) {
     do {
         *dest++ = *src++;
     } while (*src != 0);
+    *dest = 0;
 }
 
 char *strcat(char *dest, const char *src) {
@@ -477,14 +478,10 @@ char *uint32_to_str_oct(uint32_t num, int flag, int width) {
     return str_first;
 }
 
-char *insert_str(char *buf, const char *str) {
-    char *p = buf;
-
-    while (*str) {
-        *p++ = *str++;
+void insert_str(char *str, char *insert_str, int pos) {
+    for (int i = 0; i < strlen(insert_str); i++) {
+        insert_char(str, pos + i, insert_str[i]);
     }
-
-    return p;
 }
 
 void assert(int b, char *message) {

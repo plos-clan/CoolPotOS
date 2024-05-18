@@ -17,6 +17,8 @@
 #include "../include/pcnet.h"
 #include "../include/ide.h"
 #include "../include/vfs.h"
+#include "../include/fat.h"
+#include "../include/iso9660.h"
 
 extern uint32_t end;
 extern int status;
@@ -68,12 +70,20 @@ void kernel_main(multiboot_t *multiboot) {
     multiboot_all = multiboot;
     io_sti();
     init_pit();
-    init_vdisk();
     init_pci();
-    init_vfs();
+    init_vdisk();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    init_vfs();
+    Register_fat_fileSys();
+    init_iso9660();
     syscall_install();
 
+    vfs_mount_disk('A','A');
+    if(vfs_change_disk('A'))
+        printf("[FileSystem]: Chang disk win!");
+    else {
+        for(;;);
+    }
     if(pcnet_find_card()){
         //init_pcnet_card();
     } else printf("[\035kernel\036]: \033Cannot found pcnet.\036\n");

@@ -50,6 +50,9 @@ typedef struct vfs_t {
     int flag;
 } vfs_t;
 
+bool vfs_change_path(char *dictName);
+void vfs_getPath(char *buffer);
+void vfs_getPath_no_drive(char *buffer);
 bool vfs_mount_disk(uint8_t disk_number, uint8_t drive);
 bool vfs_unmount_disk(uint8_t drive);
 bool vfs_readfile(char *path, char *buffer);
@@ -67,5 +70,6 @@ vfs_file *vfs_fileinfo(char *filename);
 bool vfs_change_disk(uint8_t drive);
 bool vfs_register_fs(vfs_t vfs);
 void init_vfs();
+vfs_file *get_cur_file(char* filename);
 
 #endif

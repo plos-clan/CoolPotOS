@@ -1,7 +1,7 @@
 #include "../include/arp.h"
 #include "../include/etherframe.h"
 #include "../include/memory.h"
-
+#include "../include/pcnet.h"
 uint8_t ARP_flags = 1;
 uint64_t ARP_mac_address[MAX_ARP_TABLE];
 uint32_t ARP_ip_address[MAX_ARP_TABLE];
@@ -69,4 +69,41 @@ uint64_t IPParseMAC(uint32_t dstIP) {
     }
      */
     return ARP_mac_address[ARP_write_pointer - 1];
+}
+void arp_handler(void *base) {
+    extern uint32_t ip;
+    extern uint8_t mac0;
+    struct EthernetFrame_head *header = (struct EthernetFrame_head *)(base);
+    if ((*(uint64_t *)&header->dest_mac[0] & 0xffffffffffff) ==
+        (*(uint64_t *)&mac0 & 0xffffffffffff)) { // ARP广播回应
+        struct ARPMessage *arp =
+                (struct ARPMessage *)(base + sizeof(struct EthernetFrame_head));
+        if (arp->command == 0x0200) {
+            // printk("ARP MAC Address Reply\n");
+            if (ARP_write_pointer < MAX_ARP_TABLE) {
+                ARP_mac_address[ARP_write_pointer] =
+                        *(uint64_t *)&header->src_mac[0] & 0xffffffffffff;
+                ARP_ip_address[ARP_write_pointer] = swap32(arp->src_ip);
+                ARP_write_pointer++;
+                ARP_flags = 0;
+            }
+        }
+        // 如果发送方不知道我们的MAC地址
+        // 要发ARP数据包返回给发送方 告诉发送方我的MAC地址（确立联系）
+    } else if ((*(uint64_t *)&header->dest_mac[0] & 0xffffffffffff) ==
+               0xffffffffffff) { // dest_mac = 0xffffffffffff && ARP广播请求
+        struct ARPMessage *arp =
+                (struct ARPMessage *)(base + sizeof(struct EthernetFrame_head));
+        if (arp->command == 0x0100 && arp->dest_ip == swap32(ip)) {
+            // printk("ARP MAC Address request\n");
+            uint32_t src_ip = ((arp->src_ip << 24) & 0xff000000) |
+                              ((arp->src_ip << 8) & 0x00ff0000) |
+                              ((arp->src_ip >> 8) & 0xff00) |
+                              ((arp->src_ip >> 24) & 0xff);
+            ether_frame_provider_send(*(uint64_t *)&header->src_mac[0], 0x0806,
+                                      ARP_Packet(*(uint64_t *)&header->src_mac[0],
+                                                 src_ip, *(uint64_t *)&mac0, ip, 2),
+                                      sizeof(struct ARPMessage));
+        }
+    }
 }

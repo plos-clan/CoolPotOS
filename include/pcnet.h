@@ -28,7 +28,16 @@
 #define RAP32 0x14
 #define RESET32 0x18
 #define BDP32 0x1c
-
+#define MTU 1500
+#define ARP_PROTOCOL 0x806
+#define IP_PROTOCOL 0x0800
+#define IP_MF 13
+#define IP_DF 14
+#define IP_OFFSET 0
+#define swap32(x)                                                              \
+  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) |                    \
+   (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
+#define swap16(x) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8))
 #include <stdint.h>
 #include "isr.h"
 
@@ -58,5 +67,6 @@ int pcnet_find_card();
 void init_pcnet_card();
 void PCNET_IRQ(registers_t *reg);
 void Recv();
+void PcnetSend(uint8_t* buffer, int size);
 
 #endif
