@@ -90,7 +90,7 @@ unsigned char shift_keyboard_map[128] =
 
 static void default_handle(uint32_t key,int release,char c){
     if(!release) {
-        if(c == -1) {
+        if(key == 42) {
             key_status->is_shift = 1;
             return 0;
         }
@@ -106,7 +106,7 @@ static void default_handle(uint32_t key,int release,char c){
 
         queue_push(key_char_queue,(char)c);
     } else {
-        if(c == -1){
+        if(key == -86){
             key_status->is_shift = 0;
         }
 
@@ -125,6 +125,7 @@ void init_keyboard(){
     head_listener = (struct key_listener*) kmalloc(sizeof(struct key_listener));
     head_listener->func = default_handle;
     head_listener->lid = 0;
+    head_listener->next = NULL;
 
     register_interrupt_handler(0x21,handle_keyboard_input);
 }

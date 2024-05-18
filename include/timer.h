@@ -27,6 +27,7 @@ void timer_free(struct TIMER *timer);
 void timer_init(struct TIMER *timer, struct FIFO8 *fifo, unsigned char data);
 void timer_settime(struct TIMER *timer, unsigned int timeout);
 void clock_sleep(uint32_t timer);
+void sleep(uint32_t timer);
 struct TIMER *timer_alloc(void);
 unsigned int time(void);
 void init_pit(void);

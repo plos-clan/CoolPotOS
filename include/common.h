@@ -46,7 +46,7 @@ char *int64_to_str_dec(int64_t num, int flag, int width);
 char *uint32_to_str_hex(uint32_t num, int flag, int width);
 char *uint64_to_str_hex(uint64_t num, int flag, int width);
 char *uint32_to_str_oct(uint32_t num, int flag, int width);
-char *insert_str(char *buf, const char *str);
+void insert_str(char *str, char *insert_str, int pos);
 int vsprintf(char *buf, const char *fmt, va_list args);
 int sprintf(char *buf, const char *fmt, ...);
 long int strtol(const char *str,char **endptr,int base);

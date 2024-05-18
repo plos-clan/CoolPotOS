@@ -65,6 +65,7 @@ int dhcp_discovery(uint8_t *mac) {
 }
 
 void dhcp_handler(void *base) {
+    printf("DHCP\n");
     struct IPV4Message *ipv4 =
             (struct IPV4Message *)(base + sizeof(struct EthernetFrame_head));
     struct UDPMessage *udp =
@@ -74,9 +75,10 @@ void dhcp_handler(void *base) {
             (struct DHCPMessage *)(base + sizeof(struct EthernetFrame_head) +
                                    sizeof(struct IPV4Message) +
                                    sizeof(struct UDPMessage));
+    printf("%d %d %d\n",dhcp->bp_options[0],dhcp->bp_options[1],dhcp->bp_options[2]);
     if (dhcp->bp_options[0] == 53 && dhcp->bp_options[1] == 1 &&
-        dhcp->bp_options[2] == DHCP_OPTION_OFFER) {
-        // printk("DHCP Offer\n");
+        dhcp->opcode == 2) {
+         printf("DHCP Offer\n");
         ip = dhcp->yiaddr;
         uint8_t nip1 = ip;
         uint8_t nip2 = ip >> 8;
@@ -86,22 +88,22 @@ void dhcp_handler(void *base) {
         //        (uint8_t)(ipv4->srcIP >> 8), (uint8_t)(ipv4->srcIP >> 16),
         //        (uint8_t)(ipv4->srcIP >> 24));
         dhcp_ip = swap32(ipv4->srcIP);
-        //printk("IP: %d.%d.%d.%d\n", nip1, nip2, nip3, nip4);
+        printf("IP: %d.%d.%d.%d\n", nip1, nip2, nip3, nip4);
         ip = swap32(ip);
 
         unsigned char *options = &dhcp->bp_options[0];
         while (options[0] != 0xff) {
             if (options[0] == MESSAGE_TYPE_DNS) {
-                // printk("DNS: %d.%d.%d.%d\n", options[2], options[3], options[4],
-                //     options[5]);
+                 printf("DNS: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                     options[5]);
                 dns = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_REQ_SUBNET_MASK) {
-                // printk("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4],
-                //      options[5]);
+                 printf("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                      options[5]);
                 submask = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_ROUTER) {
-                // printk("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4],
-                //      options[5]);
+                 printf("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                      options[5]);
                 gateway = swap32(*(uint32_t *)&options[2]);
             }
             options += options[1] + 2;

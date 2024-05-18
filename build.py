@@ -1,7 +1,7 @@
 import os
 import sys
 
-gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -std=gnu99 -I include/ -std=gnu99 -ffreestanding -O2 -c -Wincompatible-pointer-types'
+gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -O0 -c -Wincompatible-pointer-types'
 asm = '/i686_elf_tools/bin/i686-elf-as.exe'
 nasm = "nasm -f elf32"
 ld = '/i686_elf_tools/bin/i686-elf-ld.exe'
@@ -127,7 +127,7 @@ print("Launching i386 vm...")
 
 if len(sys.argv) == 0 or sys.argv[1] == 'vga':
     print("Graphics MODE [VGA]")
-    os.system("qemu-system-i386 -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")
+    os.system("qemu-system-i386 -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -hda diskx.img")
 elif sys.argv[1] == 'vbe':
     print("Graphics MODE [VBE]")
-    os.system("qemu-system-i386 -vga std -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -drive format=qcow2,file=cpos.qcow2")
+    os.system("qemu-system-i386 -vga std -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -hda diskx.img")

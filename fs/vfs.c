@@ -83,9 +83,10 @@ bool vfs_mount_disk(uint8_t disk_number, uint8_t drive) {
         printf("can not find a seat of vfsMount_Stl(it's full)\n");
         return false;
     }
+
     vfs_t *fs = check_disk_fs(disk_number);
     if (!fs) {
-        printf("unknow file system.\n");
+        printf("[FileSystem]: Unknown file system.\n");
         return false;
     }
     *seat = *fs;
@@ -178,6 +179,41 @@ bool vfs_delfile(char *filename) {
     return result;
 }
 
+bool vfs_change_path(char *dictName) {
+    char *buf = kmalloc(strlen(dictName) + 1);
+    char *r = buf;
+    memcpy(buf, dictName, strlen(dictName) + 1);
+    int i = 0;
+    if (buf[i] == '/' || buf[i] == '\\') {
+        if (!vfs_now->cd(vfs_now, "/")) {
+            kfree(r);
+            return false;
+        }
+        i++;
+        buf++;
+    }
+
+    for (;; i++) {
+        if (buf[i] == '/' || buf[i] == '\\') {
+            buf[i] = 0;
+            if (!vfs_now->cd(vfs_now, buf)) {
+                kfree(r);
+                return false;
+            }
+            buf += strlen(buf) + 1;
+        }
+        if (buf[i] == 0) {
+            if (!vfs_now->cd(vfs_now, buf)) {
+                kfree(r);
+                return false;
+            }
+            break;
+        }
+    }
+    kfree(r);
+    return true;
+}
+
 bool vfs_deldir(char *dictname) {
     char *new_path = kmalloc(strlen(dictname) + 1);
     strcpy(new_path, dictname);
@@ -206,6 +242,7 @@ bool vfs_createfile(char *filename) {
 
 bool vfs_createdict(char *filename) {
     char *new_path = kmalloc(strlen(filename) + 1);
+    memclean(new_path, strlen(filename) + 1);
     strcpy(new_path, filename);
     vfs_t *vfs = ParsePath(new_path);
     if (vfs == NULL) {
@@ -254,15 +291,39 @@ bool vfs_format(uint8_t disk_number, char *FSName) {
 
 vfs_file *vfs_fileinfo(char *filename) {
     char *new_path = kmalloc(strlen(filename) + 1);
+    memclean(new_path,strlen(filename) + 1);
     strcpy(new_path, filename);
     vfs_t *vfs = ParsePath(new_path);
     if (vfs == NULL) {
         kfree(new_path);
         return false;
     }
+
+
+
     vfs_file *result = vfs->FileInfo(vfs, new_path);
     kfree(new_path);
     return result;
+}
+
+vfs_file *get_cur_file(char* filename){
+    vfs_file *file = NULL;
+    List *ls = vfs_listfile("");
+    strtoupper(filename);
+    for (int i = 1; FindForCount(i, ls) != NULL; i++) {
+        vfs_file *d = (vfs_file *) FindForCount(i, ls)->val;
+        if(strcmp(d->name, filename) == 0){
+            file = d;
+            break;
+        }
+        kfree(d);
+    }
+    DeleteList(ls);
+    kfree(ls);
+
+
+
+    return file;
 }
 
 bool vfs_change_disk(uint8_t drive) {
@@ -275,16 +336,56 @@ bool vfs_change_disk(uint8_t drive) {
         DeleteList(vfs_now->path);
         kfree(vfs_now);
     }
+
     vfs_t *f;
     if (!(f = drive2fs(drive))) {
         return false; // 没有mount
     }
+
     vfs_now = kmalloc(sizeof(vfs_t));
     memcpy(vfs_now, f, sizeof(vfs_t));
     f->CopyCache(vfs_now, f);
     vfs_now->path = NewList();
     vfs_now->cd(vfs_now, "/");
     return true;
+}
+
+void vfs_getPath(char *buffer) {
+    char *path;
+    List *l;
+    buffer[0] = 0;
+    insert_char(buffer, 0, vfs_now->drive);
+    insert_char(buffer, 1, ':');
+    insert_char(buffer, 2, '\\');
+    int pos = strlen(buffer);
+    for (int i = 1; FindForCount(i, vfs_now->path) != NULL; i++) {
+        l = FindForCount(i, vfs_now->path);
+        path = (char *)l->val;
+        insert_str(buffer, path, pos);
+        pos += strlen(path);
+        insert_char(buffer, pos, '\\');
+        pos++;
+    }
+    delete_char(buffer, pos - 1);
+}
+
+void vfs_getPath_no_drive(char *buffer) {
+    char *path;
+    List *l;
+    buffer[0] = 0;
+    int pos = strlen(buffer);
+    int i;
+    for (i = 1; FindForCount(i, vfs_now->path) != NULL; i++) {
+        l = FindForCount(i, vfs_now->path);
+        path = (char *)l->val;
+        insert_char(buffer, pos, '/');
+        pos++;
+        insert_str(buffer, path, pos);
+        pos += strlen(path);
+    }
+    if (i == 1) {
+        insert_char(buffer, 0, '/');
+    }
 }
 
 void init_vfs() {

@@ -1,7 +1,7 @@
 #include "../include/etherframe.h"
 #include "../include/memory.h"
 #include "../include/net.h"
-
+#include "../include/pcnet.h"
 extern uint8_t mac0, mac1, mac2, mac3, mac4, mac5;
 // 以太网帧
 void ether_frame_provider_send(uint64_t dest_mac, uint16_t type, uint8_t *buffer,
@@ -31,7 +31,7 @@ void ether_frame_provider_send(uint64_t dest_mac, uint16_t type, uint8_t *buffer
     uint8_t *dst = buffer2 + sizeof(struct EthernetFrame_head);
     for (uint32_t i = 0; i < size; i++)
         dst[i] = src[i];
-    netcard_send(buffer2, sizeof(struct EthernetFrame_head) + size +
+   PcnetSend(buffer2, sizeof(struct EthernetFrame_head) + size +
                           sizeof(struct EthernetFrame_tail));
     kfree(buffer2);
 }
