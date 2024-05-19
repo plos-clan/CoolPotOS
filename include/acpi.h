@@ -205,6 +205,64 @@ typedef struct
 } madt_processor_localAPIC_t;
 #pragma pack(pop)
 
+typedef struct {
+    char sign[4];
+    uint32_t len;
+    char revision;
+    char checksum;
+    char oemid[6];
+    uint64_t oem_table_id;
+    uint32_t oem_revision;
+    uint32_t creator_id;
+    uint32_t creator_revision;
+} __attribute__((packed)) MADT;
+typedef struct {
+    uint64_t configurationAndCapability;
+    uint64_t comparatorValue;
+    uint64_t fsbInterruptRoute;
+    uint64_t unused;
+} __attribute__((packed)) HpetTimer;
+
+typedef struct {
+    uint64_t generalCapabilities;
+    uint64_t reserved0;
+    uint64_t generalConfiguration;
+    uint64_t reserved1;
+    uint64_t generalIntrruptStatus;
+    uint8_t reserved3[0xc8];
+    uint64_t mainCounterValue;
+    uint64_t reserved4;
+    HpetTimer timers[0];
+} __attribute__((packed)) HpetInfo;
+typedef struct {
+    uint8_t addressSpaceID;
+    uint8_t registerBitWidth;
+    uint8_t registerBitOffset;
+    uint8_t accessWidth;  //  acpi 3.0
+    uintptr_t address;
+} __attribute__((packed)) AcpiAddress;
+typedef struct {
+    uint32_t signature;
+    uint32_t length;
+    uint8_t revision;
+    uint8_t checksum;
+    uint8_t oem[6];
+    uint8_t oemTableID[8];
+    uint32_t oemVersion;
+    uint32_t creatorID;
+    uint32_t creatorVersion;
+    uint8_t hardwareRevision;
+    uint8_t comparatorCount : 5;
+    uint8_t counterSize : 1;
+    uint8_t reserved : 1;
+    uint8_t legacyReplacement : 1;
+    uint16_t pciVendorId;
+    AcpiAddress hpetAddress;
+    uint8_t hpetNumber;
+    uint16_t minimumTick;
+    uint8_t pageProtection;
+} __attribute__((packed)) HPET;
+
 uint8_t *AcpiGetRSDPtr();
 int AcpiCheckHeader(void *ptr, uint8_t *sign);
 uint8_t *AcpiCheckRSDPtr(void *ptr);
@@ -214,5 +272,8 @@ void power_reset();
 int acpi_enable();
 int acpi_disable();
 void acpi_install();
+void hpet_initialize();
+uint32_t nanoTime();
+void usleep(uint32_t nano);
 
 #endif //CRASHPOWEROS_ACPI_H

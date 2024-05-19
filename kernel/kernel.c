@@ -44,6 +44,20 @@ uint32_t memory_all(){
     return (multiboot_all->mem_upper + multiboot_all->mem_lower);
 }
 
+int check_task(int *pid){
+    struct task_struct *shell = found_task_pid(*pid);
+    while (1){
+        if(shell->state == TASK_DEATH){
+            printf("\033\n[Task-Check]: Task was throw exception.\036\n");
+            printf("Enter any key to restart kernel.> ");
+            getc();
+            printf("\n");
+            reset_kernel();
+        }
+    }
+    return 0;
+}
+
 void kernel_main(multiboot_t *multiboot) {
     io_cli();
     vga_install();
@@ -52,13 +66,13 @@ void kernel_main(multiboot_t *multiboot) {
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
         while (1) io_hlt();
     }
-    initVBE(multiboot);
+    //initVBE(multiboot);
 
     printf("[\035kernel\036]: VGA driver load success!\n");
     gdt_install();
     idt_install();
     printf("[\035kernel\036]: description table config success!\n");
-    init_timer(10);
+    init_timer(1);
     acpi_install();
     printf("[\035kernel\036]: ACPI enable success!\n");
     init_page();
@@ -80,7 +94,7 @@ void kernel_main(multiboot_t *multiboot) {
 
     vfs_mount_disk('A','A');
     if(vfs_change_disk('A'))
-        printf("[FileSystem]: Chang disk win!");
+        printf("[FileSystem]: Change disk win!\n");
     else {
         for(;;);
     }
@@ -94,7 +108,8 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-    kernel_thread(setup_shell, NULL, "CPOS-Shell");
+    int pid = kernel_thread(setup_shell, NULL, "CPOS-Shell");
+    kernel_thread(check_task,&pid,"CPOS-SHELL-CHECK");
     launch_date();
 
     for (;;) {

@@ -175,6 +175,13 @@ void cmd_shutdown() {
 
 void cmd_debug() {
     vga_clear();
+
+    /*
+    extern multiboot_t *multiboot_all;
+    svga_mode_info_t *vbe_info = multiboot_all->vbe_mode_info;
+    printf("%08x\n",vbe_info->screen_height);
+     */
+
     printf("%s for x86 [Version %s] \n", OS_NAME, OS_VERSION);
     printf("\032Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\036\n");
     extern int acpi_enable_flag;

@@ -20,6 +20,7 @@ uint16_t SCI_EN;
 acpi_rsdt_t *rsdt; // root system descript table
 acpi_facp_t *facp; // fixed ACPI table
 
+
 int acpi_enable_flag;
 uint8_t *rsdp_address;
 
@@ -170,23 +171,25 @@ static int AcpiPowerHandler(registers_t *irq) {
 }
 
 static void AcpiPowerInit() {
-    if(!facp) return;
+    if (!facp) return;
 
     uint8_t len = facp->PM1_EVT_LEN / 2;
     uint32_t *PM1a_ENABLE_REG = facp->PM1a_EVT_BLK + len;
     uint32_t *PM1b_ENABLE_REG = facp->PM1b_EVT_BLK + len;
 
-    if(PM1b_ENABLE_REG == len)
+    if (PM1b_ENABLE_REG == len)
         PM1b_ENABLE_REG = 0;
 
     printf("[acpi]: Setting Power event listener...\n");
 
     io_out16(PM1a_ENABLE_REG, (1 << 8));
     if (PM1b_ENABLE_REG) {
-        io_out16((uint16_t)PM1b_ENABLE_REG, (uint8_t)(1 << 8));
+        io_out16((uint16_t)
+        PM1b_ENABLE_REG, (uint8_t)(1 << 8));
     }
 
-    printf("ACPI : SCI_INT %08x\n",(uint8_t)facp->SCI_INT);
+    printf("ACPI : SCI_INT %08x\n", (uint8_t)
+    facp->SCI_INT);
 
     register_interrupt_handler(facp->SCI_INT, AcpiPowerHandler);
 }
@@ -323,5 +326,68 @@ void acpi_install() {
     AcpiSysInit();
     acpi_enable_flag = !acpi_enable();
     // power init
+    hpet_initialize();
     AcpiPowerInit();
+}
+
+static HpetInfo *hpetInfo = NULL;
+static uint32_t hpetPeriod = 0;
+
+uint32_t nanoTime() {
+    uint32_t mcv =  hpetInfo->mainCounterValue;
+
+    while (1)asm("hlt");
+
+    return mcv * hpetPeriod;
+}
+
+void usleep(uint32_t nano) {
+    uint32_t targetTime = nanoTime();
+    uint32_t after = 0;
+    while (1) {
+        uint64_t n = nanoTime();
+        if (n < targetTime) {
+            after += 0xffffffff - targetTime + n;
+            targetTime = n;
+        } else {
+            after += n - targetTime;
+            targetTime = n;
+        }
+        if (after >= nano) {
+            return;
+        }
+    }
+}
+
+unsigned int acpi_find_table(char *Signature) {
+    uint8_t * ptr, *ptr2;
+    uint32_t len;
+    uint8_t * rsdt_t = (uint8_t * )
+    rsdt;
+    // iterate on ACPI table pointers
+    for (len = *((uint32_t * )(rsdt_t + 4)), ptr2 = rsdt_t + 36; ptr2 < rsdt_t + len;
+         ptr2 += (char *) rsdt_t[0] == 'X' ? 8 : 4) {
+        ptr = (uint8_t * )(uintptr_t)(rsdt_t[0] == 'X' ? *((uint64_t *) ptr2)
+                                                       : *((uint32_t *) ptr2));
+        if (!memcmp(ptr, Signature, 4)) {
+            return (unsigned) ptr;
+        }
+    }
+    // printk("not found.\n");
+    return 0;
+}
+
+void hpet_initialize() {
+    HPET *hpet = acpi_find_table("HPET");
+    if (!hpet) {
+        printf("can not found acpi hpet table\n");
+    }
+    hpetInfo = (HpetInfo *) hpet->hpetAddress.address;
+
+    uint32_t counterClockPeriod = hpetInfo->generalCapabilities >> 32;
+    hpetPeriod = counterClockPeriod / 1000000;
+
+    hpetInfo->generalConfiguration |= 1;  //  启用hpet
+
+    printf("[acpi]: hpet successfully enabled.\n");
 }
