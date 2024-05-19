@@ -2,6 +2,7 @@
 #include "../include/io.h"
 #include "../include/graphics.h"
 #include "../include/cmos.h"
+#include "../include/acpi.h"
 
 uint32_t tick = 0;
 extern struct task_struct *current;
@@ -24,6 +25,7 @@ static void timer_handle(registers_t *regs) {
 
 void sleep(uint32_t timer){
     clock_sleep(timer);
+    //usleep(timer*1000000);
 }
 
 void clock_sleep(uint32_t timer){

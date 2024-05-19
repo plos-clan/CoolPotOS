@@ -130,4 +130,4 @@ if len(sys.argv) == 0 or sys.argv[1] == 'vga':
     os.system("qemu-system-i386 -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -hda diskx.img")
 elif sys.argv[1] == 'vbe':
     print("Graphics MODE [VBE]")
-    os.system("qemu-system-i386 -vga std -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -hda diskx.img")
+    os.system("qemu-system-i386 -vga vmware -net nic,model=pcnet -net user -kernel isodir\\sys\\kernel.elf -hda diskx.img")

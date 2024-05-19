@@ -22,19 +22,19 @@ void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is
         if(is_print){
             switch (cur->state) {
                 case TASK_RUNNABLE:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Running");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Running");
                     break;
                 case TASK_SLEEPING:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Sleeping");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Sleeping");
                     break;
                 case TASK_UNINIT:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Init");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Init");
                     break;
                 case TASK_ZOMBIE:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Zombie");
                     break;
                 case TASK_DEATH:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Death");
                     break;
             }
         }
@@ -43,19 +43,19 @@ void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is
         if(is_print){
             switch (cur->state) {
                 case TASK_RUNNABLE:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Running");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Running");
                     break;
                 case TASK_SLEEPING:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Sleeping");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Sleeping");
                     break;
                 case TASK_UNINIT:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Init");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Init");
                     break;
                 case TASK_ZOMBIE:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Zombie");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Zombie");
                     break;
                 case TASK_DEATH:
-                    printf("%s      %d     %s\n",cur->name,cur->pid,"Death");
+                    printf("%-17s      %-2d     %s\n",cur->name,cur->pid,"Death");
                     break;
             }
         }
@@ -65,10 +65,10 @@ void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is
 }
 
 void print_proc(){
-    printf("====--------[Processes]---------===\n");
     int index = 0;
     print_proc_t(&index,current,current->next,1);
-    printf("Name          Pid     Status [All Proc: %d]\n\n",index);
+    printf("====---------------[Processes]----------------====\n");
+    printf("Name                  Pid     Status [All Proc: %d]\n\n",index);
 }
 
 static void found_task(int pid,struct task_struct *head,struct task_struct *base,struct task_struct **argv,int first){
@@ -119,23 +119,7 @@ void task_kill(int pid){
         return;
     }
     argv->state = TASK_DEATH;
-    switch (argv->state) {
-        case TASK_RUNNABLE:
-            printf("%s      %d     %s\n",argv->name,argv->pid,"Running");
-            break;
-        case TASK_SLEEPING:
-            printf("%s      %d     %s\n",argv->name,argv->pid,"Sleeping");
-            break;
-        case TASK_UNINIT:
-            printf("%s      %d     %s\n",argv->name,argv->pid,"Init");
-            break;
-        case TASK_ZOMBIE:
-            printf("%s      %d     %s\n",argv->name,argv->pid,"Zombie");
-            break;
-        case TASK_DEATH:
-            printf("%s      %d     %s\n",argv->name,argv->pid,"Death");
-            break;
-    }
+    printf("Taskkill process PID:%d Name:%s\n", current->pid, current->name);
     printf("Task [%s] exit code: -130.\n",argv->name);
     io_sti();
     kfree(argv);

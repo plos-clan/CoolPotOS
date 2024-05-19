@@ -1003,7 +1003,6 @@ void fat_InitFS(struct vfs_t *vfs, uint8_t disk_number) {
                    get_dm(vfs).SectorBytes;
     get_dm(vfs).ADR_DISKIMG = (unsigned int)kmalloc(get_dm(vfs).RootDictAddress +
                                                    get_dm(vfs).RootMaxFiles * 32);
-    printf("DISK NUMBER :%x %d\n",disk_number,sec);
     Disk_Read(0, sec, (void *)get_dm(vfs).ADR_DISKIMG, disk_number);
 
 
@@ -1196,7 +1195,7 @@ bool Fat_Check(uint8_t disk_number) {
     uint8_t *boot_sec = kmalloc(512);
     Disk_Read(0, 1, boot_sec, disk_number);
  //   logk("disk number = %02x\n", disk_number);
- for(int i = 0;i<0x200;i++) printf("%02x ",boot_sec[i]);
+ //for(int i = 0;i<0x200;i++) printf("%02x ",boot_sec[i]);
     if (memcmp(boot_sec + BS_FileSysType, "FAT12   ", 8) == 0 ||
         memcmp(boot_sec + BS_FileSysType, "FAT16   ", 8) == 0 ||
         memcmp(boot_sec + BS_FileSysType + BPB_Fat32ExtByts, "FAT32   ", 8) ==
