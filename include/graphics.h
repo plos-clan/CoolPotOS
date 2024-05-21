@@ -103,6 +103,7 @@ void vbe_writestring(const char *data);
 void vbe_scroll();
 int cur_task();
 void vbe_draw_char(char c,int32_t x,int32_t y);
+void draw_rect(int x0, int y0, int x1, int y1, int c);
 void initVBE(multiboot_t *multiboot);
 
 
