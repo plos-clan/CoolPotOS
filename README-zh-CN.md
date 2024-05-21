@@ -22,7 +22,7 @@
 
 - 在终端上运行 `python build.py`，项目将开始构建
 - 运行 `grub-mkrescue -o cpos.iso isodir` 来打包 iso 文件
-- 运行 `qemu-system-i386 -cdrom cpos.iso` 就可以使用这个系统了！
+- 运行 `qemu-system-i386 -cdrom cpos.iso  -serial stdio -hda diskx.img -boot d` 就可以使用这个系统了！
 
 ## 更新
 
