@@ -59,6 +59,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
             asm("cli");
             for (;;)io_hlt();
         }
+
         set_frame(idx * 0x1000);
         page->present = 1; // 现在这个页存在了
         page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
@@ -66,7 +67,15 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
         page->frame = idx;
     }
 }
+void alloc_frame_line(page_t *page, unsigned line,int is_kernel, int is_writable) {
+   // logk("%08x\n",line);
+    set_frame(line);
+    page->present = 1; // 现在这个页存在了
+    page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
+    page->user = is_kernel ? 0 : 1; // 是否为用户态由is_kernel决定
+    page->frame = line / 0x1000;
 
+}
 void free_frame(page_t *page) {
     uint32_t frame = page->frame;
     if (!frame) return;
@@ -86,6 +95,7 @@ void switch_page_directory(page_directory_t *dir) {
 }
 
 page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
+
     address /= 0x1000;
     uint32_t table_idx = address / 1024;
     if (dir->tables[table_idx]) return &dir->tables[table_idx]->pages[address % 1024];
@@ -97,6 +107,7 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
         return &dir->tables[table_idx]->pages[address % 1024];
     } else return 0;
 }
+
 
 void page_fault(registers_t *regs) {
     asm("cli");
@@ -175,7 +186,7 @@ page_directory_t *clone_directory(page_directory_t *src) {
     return dir;
 }
 
-void init_page() {
+void init_page(multiboot_t *mboot) {
     uint32_t mem_end_page = 0xFFFFFFFF; // 4GB Page
 
     nframes = mem_end_page / 0x1000;
@@ -187,12 +198,19 @@ void init_page() {
     memset(kernel_directory, 0, sizeof(page_directory_t));
     current_directory = kernel_directory;
     int i = 0;
+
     while (i < placement_address) {
         // 内核部分对ring3而言可读不可写 | 无偏移页表映射
         alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
         i += 0x1000;
     }
 
+    unsigned int j = mboot->framebuffer_addr,size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
+
+    while (j <= mboot->framebuffer_addr + size){
+        alloc_frame_line(get_page(j,1,kernel_directory),j,0,0);
+        j += 0x1000;
+    }
     for (int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i++) {
         alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
     }

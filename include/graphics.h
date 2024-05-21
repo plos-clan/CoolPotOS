@@ -43,7 +43,6 @@
 
 #define BUF_SIZE 4096
 
-#define SVGA_DEFAULT_MODE 0x117
 // RRRRR GGGGGG BBBBB
 #define SVGA_24TO16BPP(x) ((x & 0xF80000) >> 8) | ((x & 0xFC00) >> 5) | ((x & 0xF8) >> 3)
 
@@ -73,35 +72,6 @@ struct color_rgba {
     uint8_t a;
 };
 
-typedef struct svga_mode_info {
-    uint16_t attributes;
-    uint8_t windowA, windowB;
-    uint16_t granularity;
-    uint16_t windowSize;
-    uint16_t segmentA, segmentB;
-    uint32_t winFuncPtr; // ptr to INT 0x10 Function 0x4F05
-    uint16_t pitch; // bytes per scan line
-
-    uint16_t screen_width, screen_height; // resolution
-    uint8_t wChar, yChar, planes, bpp, banks; // number of banks
-    uint8_t memoryModel, bankSize, imagePages;
-    uint8_t reserved0;
-
-    // color masks
-    uint8_t readMask, redPosition;
-    uint8_t greenMask, greenPosition;
-    uint8_t blueMask, bluePosition;
-    uint8_t reservedMask, reservedPosition;
-    uint8_t directColorAttributes;
-
-    uint32_t physbase; //pointer to LFB in LFB modes
-    uint32_t offScreenMemOff;
-    uint16_t offScreenMemSize;
-    uint8_t reserved1[206];
-} __attribute__((packed)) svga_mode_info_t;
-
-svga_mode_info_t* svga_mode_get_info(multiboot_t *sys_multiboot_info,uint16_t mode);
-
 typedef struct color_rgba color_rgba;
 
 uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
@@ -126,6 +96,14 @@ void vga_clear();
 
 void move_cursor();
 
-void initVBE(multiboot_t *mboot);
+void vbe_putchar(char c);
+void vbe_clear();
+void vbe_write(const char *data, size_t size);
+void vbe_writestring(const char *data);
+void vbe_scroll();
+int cur_task();
+void vbe_draw_char(char c,int32_t x,int32_t y);
+void initVBE(multiboot_t *multiboot);
+
 
 #endif

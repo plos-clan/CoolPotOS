@@ -281,6 +281,8 @@ int sprintf(char *buf, const char *fmt, ...) {
     return i;
 }
 
+extern bool vbe_status;
+
 void printk(const char *formet, ...) {
     int len;
     va_list ap;
@@ -301,6 +303,20 @@ void printf(const char *formet, ...) {
     va_end(ap);
 }
 
+void screen_clear(){
+    if(vbe_status){
+        vbe_clear();
+    } else vga_clear();
+}
+
+void putchar(char c){
+    if(vbe_status){
+        vbe_putchar(c);
+    } else vga_putchar(c);
+}
+
 void print(char *message) {
-    vga_writestring(message);
+    if(vbe_status){
+        vbe_writestring(message);
+    } else vga_writestring(message);
 }

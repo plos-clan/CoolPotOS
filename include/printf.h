@@ -10,5 +10,7 @@ int sprintf(char *buf, const char *fmt, ...);
 void printf(const char *formet, ...);
 void print(char *message);
 void printk(const char *formet, ...);
+void putchar(char c);
+void screen_clear();
 
 #endif //CRASHPOWEROS_PRINTF_H

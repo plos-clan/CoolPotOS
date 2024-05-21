@@ -14,6 +14,8 @@
 
 typedef char ALIGN[16];
 
+#include "multiboot.h"
+
 typedef struct page {
     uint32_t present: 1;
     uint32_t rw: 1;
@@ -81,10 +83,12 @@ uint32_t kmalloc(size_t size);
 
 uint32_t kmalloc_ap(uint32_t size, uint32_t *phys);
 
-void init_page();
+void init_page(multiboot_t *mboot);
 
 void memclean(char *s, int len);
 
 void *realloc(void *ptr, uint32_t size);
+
+page_t *get_phy_page(uint32_t address, int make, page_directory_t *dir);
 
 #endif //CRASHPOWEROS_MEMORY_H

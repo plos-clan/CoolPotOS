@@ -1,68 +1,157 @@
 #include "../include/graphics.h"
 #include "../include/memory.h"
 #include "../include/io.h"
+#include "../include/common.h"
+#include "../include/multiboot2.h"
+#include "../include/timer.h"
 
-extern page_directory_t *kernel_directory;
-uint32_t video_base, video_size;
+uint32_t width, height;
+uint32_t c_width, c_height; // 字符绘制总宽高
+int32_t x, y;
+int32_t cx, cy; // 字符坐标
+uint32_t color, back_color;
+uint32_t *screen;
+uint32_t *char_buffer;
+extern uint8_t ascfont[];
+extern uint8_t plfont[];
 
-svga_mode_info_t* svga_mode_get_info(multiboot_t *sys_multiboot_info,uint16_t mode) {
-    return (svga_mode_info_t *) sys_multiboot_info->vbe_mode_info;
-}
-/*
-uint32_t svga_map_fb(uint32_t real_addr, uint32_t fb_length) {
-    int i = 0;
-    uint32_t fb_addr;
+bool vbe_status;
 
-    // Align framebuffer length to page boundaries
-    fb_length += 0x1000;
-    fb_length &= 0x0FFFF000;
+void vbe_scroll() {
+    if (cx > c_width) {
+        cx = 0;
+        cy++;
+    } else cx++;
 
-    // Map enough framebuffer
-    for(i = 0xD0000000; i < 0xD0000000 + fb_length; i += 0x1000) {
-        page_t* page = paging_get_page(i, true, kernel_directory);
-
-        fb_addr = (i & 0x0FFFF000) + real_addr;
-
-        page->present = 1;
-        page->rw = 1;
-        page->user = 1;
-        page->frame = fb_addr >> 12;
-    }
-
-    // Convert the kernel directory addresses to physical if needed
-    for(i = 0x340; i < 0x340 + (fb_length / 0x400000); i++) {
-        uint32_t physAddr = kernel_directory->tablesPhysical[i];
-
-        if((physAddr & 0xC0000000) == 0xC0000000) {
-            physAddr &= 0x0FFFFFFF; // get rid of high nybble
-
-            kernel_directory->tablesPhysical[i] = physAddr;
+    if (cy >= c_height) {
+        cy = c_height - 1;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                screen[j + i * width] = screen[j + (i + 16) * width];
+            }
         }
     }
-
-    return 0xD0000000;
-}
- */
-
-int isVBEDisplayMode(uint16_t vbe_mode_info) {
-    if (vbe_mode_info & (1 << 12)) {
-        return 1;
-    } else {
-        return 0;
+    if (y == height - height % 16) {
+        cy = c_height - 1;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                (screen)[j + i * width] = (screen)[j + (i + 16 - height % 16) * width];
+            }
+        }
+    }
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < 28; j++) {
+            screen[height * (width + j) + i] = back_color;
+        }
     }
 }
 
-void initVBE(multiboot_t *mboot) {
-    svga_mode_info_t *vbe_info = svga_mode_get_info(mboot,SVGA_DEFAULT_MODE);
-    if(vbe_info->bpp == 32 || vbe_info->bpp == 16){
-        printf("VBE LOAD SUCCESS!");
+void vbe_draw_char(char c, int32_t x, int32_t y) {
+    if (c == ' ') {
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 9; j++) {
+                screen[(y + i) * width + x + j] = back_color;
+            }
+        }
+        return;
     }
 
-    printf("[VBE]: Bass: %08x | PITCH: %d | HEIGHT: %d\n",vbe_info->physbase,
-           vbe_info->pitch,
-           vbe_info->screen_height);
+    unsigned char *font;
+    font = plfont;
+    font += c * 16;
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < 9; j++) {
+            if (font[i] & (0x80 >> j)) {
+                screen[(y + i) * width + x + j] = color;
+            } else screen[(y + i) * width + x + j] = back_color;
+        }
+    }
+}
 
-    //video_base = svga_map_fb(svga_mode_info->physbase, svga_mode_info->pitch * svga_mode_info->screen_height);
+int cur_task() {
+    return 0;
+    while (1) {
+        vbe_draw_char('_', x, y);
+        clock_sleep(5);
+        vbe_draw_char(' ', x, y);
+        clock_sleep(5);
+    }
+}
+
+void draw_rect(int x0, int y0, int x1, int y1, int c) {
+    int x, y;
+    for (y = y0; y <= y1; y++) {
+        for (x = x0; x <= x1; x++) {
+            (screen)[y * width + x] = c;
+        }
+    }
+}
+
+void vbe_putchar(char ch) {
+
+    if (ch == '\n') {
+        cx = 0;
+        cy++;
+        return;
+    } else if (ch == '\r') {
+        cx = 0;
+    } else if (ch == '\b' && cx > 0) {
+        cx -= 1;
+        if (cx == 0) {
+            cx = c_width - 1;
+            if (cy != 0) cy -= 1;
+            if (cy == 0) cx = 0, cy = 0;
+        }
+        draw_rect(x, y, x + 9, y + 16, 0);
+        return;
+    }
+
+    vbe_scroll();
+
+    vbe_draw_char(ch, cx * 9 - 7, cy * 16);
+
+}
+
+void vbe_write(const char *data, size_t size) {
+    for (size_t i = 0; i < size; i++)
+        vbe_putchar(data[i]);
+}
+
+void vbe_writestring(const char *data) {
+    vbe_write(data, strlen(data));
+}
+
+void vbe_clear() {
+    for (uint32_t i = 0; i < (width * (height)); i++) {
+        screen[i] = back_color;
+    }
+    x = 2;
+    y = 0;
+    cx = cy = 0;
+}
+
+void initVBE(multiboot_t *info) {
+    printf("Loading VBE...\n");
+    vbe_status = true;
+
+    x = 2;
+    y = cx = cy = 0;
+    screen = (uint32_t) info->framebuffer_addr;
+    width = info->framebuffer_width;
+    height = info->framebuffer_height;
+    color = 0xFFFFFF;
+    back_color = 0x310924;
+    c_width = width / 9;
+    c_height = height / 16;
+
+    vbe_clear();
+
+    /*
+    for (int i = 0; i < c_height; i++){
+        vbe_putchar('A');
+        vbe_putchar('\n');
+    }
 
     while (1) io_hlt();
+     */
 }

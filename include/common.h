@@ -55,4 +55,6 @@ void reset_kernel();
 void shutdown_kernel();
 uint32_t memory_all();
 
+uint32_t ALIGN_F(const uint32_t addr, const uint32_t _align);
+
 #endif //CRASHPOWEROS_COMMON_H

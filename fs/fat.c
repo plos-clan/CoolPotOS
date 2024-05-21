@@ -529,6 +529,11 @@ int mkdir(char *dictname, int last_clust, vfs_t *vfs) {
             dictname:目录名
             last_clust:上一级目录的簇号
     */
+
+    struct FAT_FILEINFO *check_info = dict_search(
+            dictname, get_now_dir(vfs), get_directory_max(get_now_dir(vfs), vfs));
+    if(check_info != 0) return 0;
+
     int r = mkfile(dictname, vfs);
     if (!r)
         return 0;
@@ -737,6 +742,7 @@ int mkfile(char *name, vfs_t *vfs) {
 //    logk("mkfile : %s\n", name);
     char s[12];
     int i, j;
+
     struct FAT_FILEINFO *finfo = Get_dictaddr(name, vfs);
  //   logk("finfo = %08x\n", finfo);
     if (finfo == NULL) {
@@ -841,7 +847,6 @@ int mkfile(char *name, vfs_t *vfs) {
 int changedict(char *dictname, vfs_t *vfs) {
     // cd命令的依赖函数
     strtoupper(dictname);
-    printf("%s\n",dictname);
     if (strcmp(dictname, "/") == 0) {
         while (vfs->path->ctl->all != 0) {
             kfree((FindForCount(vfs->path->ctl->all, vfs->path)->val));

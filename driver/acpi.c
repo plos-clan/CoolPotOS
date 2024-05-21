@@ -382,6 +382,9 @@ void hpet_initialize() {
     if (!hpet) {
         printf("can not found acpi hpet table\n");
     }
+
+    printf("[acpi-hpet]: OEM: %s | Version: %d\n",hpet->oem,hpet->oemVersion);
+
     hpetInfo = (HpetInfo *) hpet->hpetAddress.address;
 
     uint32_t counterClockPeriod = hpetInfo->generalCapabilities >> 32;
