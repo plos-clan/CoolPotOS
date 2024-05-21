@@ -64,6 +64,12 @@ void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is
     }
 }
 
+int get_procs(){
+    int index = 0;
+    print_proc_t(&index,current,current->next,0);
+    return index;
+}
+
 void print_proc(){
     int index = 0;
     print_proc_t(&index,current,current->next,1);

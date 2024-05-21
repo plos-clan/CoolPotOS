@@ -286,8 +286,25 @@ char *user() {
 void setup_shell() {
     char *user1 = "default";//user();
     screen_clear();
-    printf("%s for x86 [Version %s] \n", OS_NAME, OS_VERSION);
-    printf("Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n");
+
+    printf("Welcome to %s %s (CPOS Kernel x86_64)\n"
+           "\n"
+           " * SourceCode:     https://github.com/xiaoyi1212/CoolPotOS\n"
+           " * Website:        https://github.com/plos-clan\n"
+           "\n"
+           " System information as of %s \n"
+           "\n"
+           "  Processes:             %d\n"
+           "  Users logged in:       %s\n"
+           "  Memory usage:          %d B        \n"
+           "\n"
+           "Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n"
+           ,OS_NAME
+           ,OS_VERSION
+           ,get_date_time()
+           ,get_procs()
+           ,user1
+           ,memory_usage());
 
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
@@ -296,7 +313,7 @@ void setup_shell() {
 
     while (1) {
         vfs_getPath(buffer);
-        printf("%s %s\\> ", user1, buffer);
+        printf("%s@localhost: %s\\$ ", user1, buffer);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         argc = cmd_parse(com, argv, ' ');
 
