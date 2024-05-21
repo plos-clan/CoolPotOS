@@ -22,7 +22,7 @@ You need to install them on your computer:
 
 - Run `python build.py` on your terminal then it is going to build
 - Run `grub-mkrescue -o cpos.iso isodir` to package the iso file
-- Run `qemu-system-i386 -cdrom cpos.iso` and you can use the system!
+- Run `qemu-system-i386 -cdrom cpos.iso -serial stdio -hda diskx.img -boot d` and you can use the system!
 
 ## Update
 
