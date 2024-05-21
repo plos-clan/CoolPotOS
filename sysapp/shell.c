@@ -24,15 +24,15 @@ int gets(char *buf, int buf_size) {
         if (c == '\b') {
             if (index > 0) {
                 index--;
-                vga_writestring("\b \b");
+                print("\b \b");
             }
         } else {
             buf[index++] = c;
-            vga_putchar(c);
+            putchar(c);
         }
     }
     buf[index] = '\0';
-    vga_putchar(c);
+    putchar(c);
     return index;
 }
 
@@ -60,16 +60,16 @@ int cmd_parse(char *cmd_str, char **argv, char token) {
 
 void cmd_echo(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
-        if (i == 1) vga_writestring("");
-        else vga_writestring(" ");
-        vga_writestring(argv[i]);
+        if (i == 1) print("");
+        else print(" ");
+        print(argv[i]);
     }
-    vga_putchar('\n');
+    print("\n");
 }
 
 void cmd_proc(int argc, char **argv) {
     if (argc <= 1) {
-        printf("\033[Shell-PROC]: If there are too few parameters.\036\n");
+        printf("[Shell-PROC]: If there are too few parameters.\n");
         return;
     }
 
@@ -77,13 +77,13 @@ void cmd_proc(int argc, char **argv) {
         print_proc();
     } else if (!strcmp("kill", argv[1])) {
         if (argc <= 2) {
-            printf("\033[Shell-PROC-kill]: If there are too few parameters.\036\n");
+            printf("[Shell-PROC-kill]: If there are too few parameters.\n");
             return;
         }
         int pid = strtol(argv[2], NULL, 10);
         task_kill(pid);
     } else {
-        printf("\033[Shell-[PROC]]: Unknown parameter\036\n");
+        printf("[Shell-[PROC]]: Unknown parameter\n");
         return;
     }
 }
@@ -94,7 +94,7 @@ void cmd_date() {
            (KHEAP_START + KHEAP_INITIAL_SIZE) / 1024 / 1024);
     print_cpu_id();
 
-    vga_writestring("\n");
+    print("\n");
 }
 
 void cmd_ls() {
@@ -127,7 +127,7 @@ void cmd_ls() {
 
 void cmd_mkdir(int argc, char **argv) {
     if (argc == 1) {
-        printf("\033[Shell-MKDIR]: If there are too few parameters, please specify the directory name.\036\n");
+        printf("[Shell-MKDIR]: If there are too few parameters, please specify the directory name.\n");
         return;
     }
 
@@ -145,7 +145,7 @@ void cmd_mkdir(int argc, char **argv) {
 
 void cmd_del(int argc, char **argv) {
     if (argc == 1) {
-        vga_writestring("\033[Shell-DEL]: If there are too few parameters, please specify the folder name.\036\n");
+        print("[Shell-DEL]: If there are too few parameters, please specify the folder name.\n");
         return;
     }
 
@@ -174,19 +174,13 @@ void cmd_shutdown() {
 }
 
 void cmd_debug() {
-    vga_clear();
-
-    /*
-    extern multiboot_t *multiboot_all;
-    svga_mode_info_t *vbe_info = multiboot_all->vbe_mode_info;
-    printf("%08x\n",vbe_info->screen_height);
-     */
+    screen_clear();
 
     printf("%s for x86 [Version %s] \n", OS_NAME, OS_VERSION);
-    printf("\032Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\036\n");
+    printf("Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n");
     extern int acpi_enable_flag;
     extern uint8_t *rsdp_address;
-    printf("ACPI: Enable: %s | RSDP Address: 0x%08x\n", acpi_enable_flag ? "\035ENABLE\036" : "\033DISABLE\036",
+    printf("ACPI: Enable: %s | RSDP Address: 0x%08x\n", acpi_enable_flag ? "ENABLE" : "DISABLE",
            rsdp_address);
     int index = 0;
     print_proc_t(&index, get_current(), get_current()->next, 0);
@@ -213,7 +207,7 @@ void cmd_debug() {
 
 void cmd_cd(int argc, char **argv) {
     if (argc == 1) {
-        vga_writestring("\033[Shell-CD]: If there are too few parameters, please specify the path.\036\n");
+        print("[Shell-CD]: If there are too few parameters, please specify the path.\n");
         return;
     }
     if (vfs_change_path(argv[1]) == 0) printf("Invalid path.\n");
@@ -235,7 +229,7 @@ void cmd_disk(int argc, char **argv) {
         }
 
         if (strlen(argv[1]) > 1) {
-            printf("\033[DISK]: Cannot found disk.\036\n");
+            printf("[DISK]: Cannot found disk.\n");
             return;
         }
 
@@ -253,7 +247,7 @@ void cmd_disk(int argc, char **argv) {
                 }
             }
         }
-        printf("\033[DISK]: Cannot found disk.\036\n");
+        printf("[DISK]: Cannot found disk.\n");
         return;
     }
     printf("[Disk]: Loaded disk - ");
@@ -291,9 +285,9 @@ char *user() {
 
 void setup_shell() {
     char *user1 = "default";//user();
-    vga_clear();
+    screen_clear();
     printf("%s for x86 [Version %s] \n", OS_NAME, OS_VERSION);
-    printf("\032Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\036\n");
+    printf("Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n");
 
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
@@ -302,12 +296,12 @@ void setup_shell() {
 
     while (1) {
         vfs_getPath(buffer);
-        printf("\035%s %s\\>\036 ", user1, buffer);
+        printf("%s %s\\> ", user1, buffer);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         argc = cmd_parse(com, argv, ' ');
 
         if (argc == -1) {
-            vga_writestring("[Shell]: Error: out of arguments buffer\n");
+            print("[Shell]: Error: out of arguments buffer\n");
             continue;
         }
 
@@ -316,7 +310,7 @@ void setup_shell() {
         else if (!strcmp("echo", argv[0]))
             cmd_echo(argc, argv);
         else if (!strcmp("clear", argv[0]))
-            vga_clear();
+            screen_clear();
         else if (!strcmp("proc", argv[0]))
             cmd_proc(argc, argv);
         else if (!strcmp("sysinfo", argv[0]))
@@ -338,20 +332,20 @@ void setup_shell() {
         else if (!strcmp("cd", argv[0]))
             cmd_cd(argc, argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
-            vga_writestring("-=[\037CoolPotShell Helper\036]=-\n");
-            vga_writestring("help ? h              \032Print shell help info.\036\n");
-            vga_writestring("version               \032Print os version.\036\n");
-            vga_writestring("echo       <msg>      \032Print message.\036\n");
-            vga_writestring("ls                    \032List all files.\036\n");
-            vga_writestring("mkdir      <name>     \032Make a directory.\036\n");
-            vga_writestring("del rm     <name>     \032Delete a file.\036\n");
-            vga_writestring("sysinfo               \032Print system info.\036\n");
-            vga_writestring("proc [kill<pid>|list] \032Lists all running processes.\036\n");
-            vga_writestring("reset                 \032Reset OS.\036\n");
-            vga_writestring("shutdown exit         \032Shutdown OS.\036\n");
-            vga_writestring("debug                 \032Print os debug info.\036\n");
-            vga_writestring("disk  [list|<ID>]     \032List or view disks.\036\n");
-            vga_writestring("cd  <path>            \032Change shell top directory.\036\n");
-        } else printf("\033[Shell]: Unknown command '%s'.\036\n", argv[0]);
+            print("-=[CoolPotShell Helper]=-\n");
+            print("help ? h              Print shell help info.\n");
+            print("version               Print os version.\n");
+            print("echo       <msg>      Print message.\n");
+            print("ls                    List all files.\n");
+            print("mkdir      <name>     Make a directory.\n");
+            print("del rm     <name>     Delete a file.\n");
+            print("sysinfo               Print system info.\n");
+            print("proc [kill<pid>|list] Lists all running processes.\n");
+            print("reset                 Reset OS.\n");
+            print("shutdown exit         Shutdown OS.\n");
+            print("debug                 Print os debug info.\n");
+            print("disk  [list|<ID>]     List or view disks.\n");
+            print("cd  <path>            Change shell top directory.\n");
+        } else printf("\033[Shell]: Unknown command '%s'.\n", argv[0]);
     }
 }

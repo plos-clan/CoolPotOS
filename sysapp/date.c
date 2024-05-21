@@ -2,14 +2,17 @@
 #include "../include/cmos.h"
 #include "../include/graphics.h"
 #include "../include/timer.h"
+#include "../include/common.h"
 
 extern uint16_t *terminal_buffer;
 extern uint8_t terminal_color;
+extern bool vbe_status;
 
 int date_pid;
 
 void launch_date(){
-    date_pid = kernel_thread(setup_date, NULL, "CPOS-Date");
+    if(!vbe_status)
+        date_pid = kernel_thread(setup_date, NULL, "CPOS-Date");
 }
 
 int setup_date(){

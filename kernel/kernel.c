@@ -23,8 +23,6 @@
 extern uint32_t end;
 extern int status;
 uint32_t placement_address = (uint32_t) & end;
-multiboot_t *multiboot_all;
-
 
 void reset_kernel(){
     printf("Restart %s for x86...\n",OS_NAME);
@@ -41,7 +39,7 @@ void shutdown_kernel(){
 }
 
 uint32_t memory_all(){
-    return (multiboot_all->mem_upper + multiboot_all->mem_lower);
+    return 0;
 }
 
 int check_task(int *pid){
@@ -59,30 +57,36 @@ int check_task(int *pid){
 }
 
 void kernel_main(multiboot_t *multiboot) {
+
     io_cli();
     vga_install();
+
     if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 16) {
         printf("[kernel] Minimal RAM amount for CPOS is 16 MB, but you have only %d MB.\n",
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
         while (1) io_hlt();
     }
-    //initVBE(multiboot);
 
-    printf("[\035kernel\036]: VGA driver load success!\n");
+    initVBE(multiboot);
+
+    printf("[kernel]: VGA driver load success!\n");
     gdt_install();
     idt_install();
-    printf("[\035kernel\036]: description table config success!\n");
+    printf("[kernel]: description table config success!\n");
     init_timer(1);
     acpi_install();
-    printf("[\035kernel\036]: ACPI enable success!\n");
-    init_page();
-    printf("[\035kernel\036]: page set success!\n");
+    printf("[kernel]: ACPI enable success!\n");
+    init_page(multiboot);
+
+    printf("[kernel]: page set success!\n");
     init_sched();
-    printf("[\035kernel\036]: task load success!\n");
+    printf("[kernel]: task load success!\n");
     init_keyboard();
-    printf("[\035kernel\036]: Keyboard driver load success!\n");
-    multiboot_all = multiboot;
+    printf("[kernel]: Keyboard driver load success!\n");
     io_sti();
+
+    kernel_thread(cur_task,NULL,"CPOS-VBE-SERVICE");
+
     init_pit();
     init_pci();
     init_vdisk();
@@ -100,11 +104,11 @@ void kernel_main(multiboot_t *multiboot) {
     }
     if(pcnet_find_card()){
         //init_pcnet_card();
-    } else printf("[\035kernel\036]: \033Cannot found pcnet.\036\n");
+    } else printf("[kernel]: Cannot found pcnet.\n");
 
     print_cpu_id();
 
-    printf("Memory: %dMB.",(multiboot->mem_upper + multiboot->mem_lower)/1024/1024);
+    //printf("Memory: %dMB.",(multiboot->mem_upper + multiboot->mem_lower)/1024/1024);
 
     clock_sleep(25);
 

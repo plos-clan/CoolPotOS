@@ -102,7 +102,7 @@ static int check_exit(){
 }
 
 void pcat_launch(struct File *file){
-    vga_clear(); task_kill(date_pid); vga_clear();
+    screen_clear(); task_kill(date_pid); vga_clear();
     this_process = (struct pcat_process*) kmalloc(sizeof(struct pcat_process));
     this_process->buf_x = this_process->buf_y = 0;
     this_process->line = 1;
@@ -121,6 +121,6 @@ void pcat_launch(struct File *file){
         input_handler();
     }
     task_kill(pid);
-    vga_clear();
+    screen_clear();
     date_pid = kernel_thread(setup_date, NULL, "CPOS-Date");
 }

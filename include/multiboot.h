@@ -60,6 +60,8 @@ typedef struct multiboot_t {
     uint32_t framebuffer_width;
 	uint32_t framebuffer_height;
     char framebuffer_bpp;
+    uint8_t type;
+    uint8_t color_info[5];
 } __attribute__((packed)) multiboot_t;
 
 /**

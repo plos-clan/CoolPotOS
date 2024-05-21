@@ -5,21 +5,26 @@
 
 static char num_str_buf[BUF_SIZE];
 
-void insert_char(char* str, int pos, char ch) {
+uint32_t ALIGN_F(const uint32_t addr, const uint32_t _align) {
+    return (uint32_t)((addr + _align - 1) & (~(_align - 1)));
+}
+
+void insert_char(char *str, int pos, char ch) {
     int i;
     for (i = strlen(str); i >= pos; i--) {
         str[i + 1] = str[i];
     }
     str[pos] = ch;
 }
-void delete_char(char* str, int pos) {
+
+void delete_char(char *str, int pos) {
     int i;
     for (i = pos; i < strlen(str); i++) {
         str[i] = str[i + 1];
     }
 }
 
-void strtoupper(char* str) {
+void strtoupper(char *str) {
     while (*str != '\0') {
         if (*str >= 'a' && *str <= 'z') {
             *str -= 32;
@@ -28,9 +33,9 @@ void strtoupper(char* str) {
     }
 }
 
-int strncmp(const char* s1, const char* s2, size_t n) {
-    const unsigned char *p1 = (const unsigned char*)s1,
-            *p2 = (const unsigned char*)s2;
+int strncmp(const char *s1, const char *s2, size_t n) {
+    const unsigned char *p1 = (const unsigned char *) s1,
+            *p2 = (const unsigned char *) s2;
     while (n-- > 0) {
         if (*p1 != *p2)
             return *p1 - *p2;
@@ -41,7 +46,7 @@ int strncmp(const char* s1, const char* s2, size_t n) {
     return 0;
 }
 
-long int strtol(const char *str,char **endptr,int base){
+long int strtol(const char *str, char **endptr, int base) {
     const char *s;
     unsigned long acc;
     char c;
@@ -50,7 +55,7 @@ long int strtol(const char *str,char **endptr,int base){
     s = str;
     do {
         c = *s++;
-    } while (isspace((unsigned char)c));
+    } while (isspace((unsigned char) c));
     if (c == '-') {
         neg = 1;
         c = *s++;
@@ -74,11 +79,11 @@ long int strtol(const char *str,char **endptr,int base){
     if (base < 2 || base > 36)
         goto noconv;
 
-    cutoff = neg ? (unsigned long)-(LONG_MIN + LONG_MAX) + LONG_MAX
+    cutoff = neg ? (unsigned long) -(LONG_MIN + LONG_MAX) + LONG_MAX
                  : LONG_MAX;
     cutlim = cutoff % base;
     cutoff /= base;
-    for ( ; ; c = *s++) {
+    for (;; c = *s++) {
         if (c >= '0' && c <= '9')
             c -= '0';
         else if (c >= 'A' && c <= 'Z')
@@ -104,7 +109,7 @@ long int strtol(const char *str,char **endptr,int base){
     } else if (neg)
         acc = -acc;
     if (endptr != NULL)
-        *endptr = (char *)(any ? s - 1 : str);
+        *endptr = (char *) (any ? s - 1 : str);
     return (acc);
 }
 
