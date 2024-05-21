@@ -14,7 +14,7 @@ def check_os():
 
 
 if check_os() == "Windows":
-    gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -O2 -c -Wincompatible-pointer-types'
+    gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
     asm = '/i686_elf_tools/bin/i686-elf-as.exe'
     nasm = "nasm -f elf32"
     ld = '/i686_elf_tools/bin/i686-elf-g++.exe'
@@ -22,7 +22,7 @@ if check_os() == "Windows":
     out = "target"
     dir_ = "\\"
 elif check_os() == "Linux":
-    gcc = 'gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -O0 -c -Wincompatible-pointer-types'
+    gcc = 'gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
     asm = 'gcc.exe'
     nasm = "nasm -f elf32"
     ld = 'g++.exe'
@@ -58,7 +58,7 @@ def build_boot():  # 构建引导程序
 def build_driver():  # 构建内置驱动程序
     print("Building driver source code...")
     for file in os.listdir(cd + dir_ + 'driver'):
-        cmd = cd + gcc + " " + "driver" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-O2 " + "driver" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -68,17 +68,17 @@ def build_driver():  # 构建内置驱动程序
 def build_kernel():  # 构建内核本体
     print("Building kernel source code...")
     for file in os.listdir(cd + dir_ + 'kernel'):
-        cmd = cd + gcc + " " + "kernel" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-O2 " + "kernel" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
     return 0
 
 
-def build_data():  # 构建数据结构实现
+def build_data():  # 构建常用工具
     print("Building util source code...")
     for file in os.listdir(cd + dir_ + 'util'):
-        cmd = cd + gcc + " " + "util" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-O2 " + "util" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -88,7 +88,7 @@ def build_data():  # 构建数据结构实现
 def build_sysapp():  # 构建内置系统应用
     print("Building sysapp source code...")
     for file in os.listdir(cd + dir_ + 'sysapp'):
-        cmd = cd + gcc + " " + "sysapp" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-O2 " + "sysapp" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -98,7 +98,7 @@ def build_sysapp():  # 构建内置系统应用
 def build_network():  # 构建网络系统
     print("Building network source code...")
     for file in os.listdir(cd + dir_ + 'network'):
-        cmd = cd + gcc + " " + "network" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-O2 " + "network" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
