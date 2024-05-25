@@ -21,6 +21,7 @@ if check_os() == "Windows":
     cd = os.getcwd()  # 获取当前执行目录 'D:\CrashPowerDOS-main\'
     out = "target"
     dir_ = "\\"
+    src = "src\\"
 elif check_os() == "Linux":
     gcc = 'gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
     asm = 'gcc.exe'
@@ -29,6 +30,7 @@ elif check_os() == "Linux":
     cd = os.getcwd()  # 获取当前执行目录 '\mnt\d\CrashPowerDOS-main\'
     out = "target"
     dir_ = "/"
+    src = "./src/"
 
 
 def clean():
@@ -41,13 +43,13 @@ def clean():
 def build_boot():  # 构建引导程序
     print("Building boot source code...")
     status = True
-    for file in os.listdir(cd + dir_ + 'boot'):
+    for file in os.listdir(cd + dir_ + src + 'boot'):
         if status and file == 'boot.asm':
-            cmd = cd + asm + " " + cd + dir_ + "boot" + dir_ + file + " -o " + cd + dir_ + "target" + dir_ + \
+            cmd = cd + asm + " " + cd + dir_ + src + "boot" + dir_ + file + " -o " + cd + dir_ + "target" + dir_ + \
                   file.split(".")[0] + ".o"
             status = False
         else:
-            cmd = nasm + " " + cd + dir_ + "boot" + dir_ + file + " -o " + cd + dir_ + "target" + dir_ + \
+            cmd = nasm + " " + cd + dir_ + src + "boot" + dir_ + file + " -o " + cd + dir_ + "target" + dir_ + \
                   file.split(".")[0] + ".o"
         e = os.system(cmd)  # os.system 执行命令 e为返回值(非0即不正常退出,可做判断终止构建流程)
         if e != 0:
@@ -57,8 +59,17 @@ def build_boot():  # 构建引导程序
 
 def build_driver():  # 构建内置驱动程序
     print("Building driver source code...")
-    for file in os.listdir(cd + dir_ + 'driver'):
-        cmd = cd + gcc + "-O2 " + "driver" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+    status_pci = True
+    status_ide = True
+    for file in os.listdir(cd + dir_ + src + 'driver'):
+        if status_pci and (file == 'pci.c'):
+            cmd = cd + gcc + "-O0 " + src + "driver" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+            status_pci = False
+        elif status_ide and (file == 'ide.c'):
+            cmd = cd + gcc + "-O0 " + src + "driver" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+            status_ide = False
+        else:
+            cmd = cd + gcc + "-O0 " + src + "driver" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -67,8 +78,8 @@ def build_driver():  # 构建内置驱动程序
 
 def build_kernel():  # 构建内核本体
     print("Building kernel source code...")
-    for file in os.listdir(cd + dir_ + 'kernel'):
-        cmd = cd + gcc + "-O2 " + "kernel" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+    for file in os.listdir(cd + dir_ + src + 'kernel'):
+        cmd = cd + gcc + "-O0 " + src + "kernel" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -77,8 +88,8 @@ def build_kernel():  # 构建内核本体
 
 def build_data():  # 构建常用工具
     print("Building util source code...")
-    for file in os.listdir(cd + dir_ + 'util'):
-        cmd = cd + gcc + "-O2 " + "util" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+    for file in os.listdir(cd + dir_ + src + 'util'):
+        cmd = cd + gcc + "-O2 " + src + "util" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -87,8 +98,8 @@ def build_data():  # 构建常用工具
 
 def build_sysapp():  # 构建内置系统应用
     print("Building sysapp source code...")
-    for file in os.listdir(cd + dir_ + 'sysapp'):
-        cmd = cd + gcc + "-O2 " + "sysapp" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+    for file in os.listdir(cd + dir_ + src + 'sysapp'):
+        cmd = cd + gcc + "-O0 " + src + "sysapp" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -97,8 +108,8 @@ def build_sysapp():  # 构建内置系统应用
 
 def build_network():  # 构建网络系统
     print("Building network source code...")
-    for file in os.listdir(cd + dir_ + 'network'):
-        cmd = cd + gcc + "-O2 " + "network" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+    for file in os.listdir(cd + dir_ + src + 'network'):
+        cmd = cd + gcc + "-O0 " + src + "network" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -107,8 +118,8 @@ def build_network():  # 构建网络系统
 
 def build_fs():  # 构建文件系统
     print("Building fs source code...")
-    for file in os.listdir(cd + dir_ + 'fs'):
-        cmd = cd + gcc + " " + "fs" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+    for file in os.listdir(cd + dir_ + src + 'fs'):
+        cmd = cd + gcc + " " + src + "fs" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -162,3 +173,5 @@ a = linker()
 if a != 0:
     exit(-1)
 print("Launching i386 vm...")
+
+# launch()

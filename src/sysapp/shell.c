@@ -213,6 +213,27 @@ void cmd_cd(int argc, char **argv) {
     if (vfs_change_path(argv[1]) == 0) printf("Invalid path.\n");
 }
 
+void cmd_type(int argc,char ** argv){
+    if (argc == 1) {
+        print("[Shell-TYPE]: If there are too few parameters, please specify the path.\n");
+        return;
+    }
+    char *buffer;
+    buffer = (char*) kmalloc(vfs_filesize(argv[1]));
+
+    if(buffer == NULL){
+        printf("Cannot read file.\n");
+        return;
+    }
+
+    if(vfs_readfile(argv[1],buffer))
+        printf("%s",buffer);
+    else printf("Cannot read file.\n");
+
+    kfree(buffer);
+    print("\n");
+}
+
 void cmd_disk(int argc, char **argv) {
     if (argc > 1) {
         if (!strcmp("list", argv[1])) {
@@ -285,6 +306,7 @@ char *user() {
 
 void setup_shell() {
     char *user1 = "default";//user();
+
     screen_clear();
 
     printf("Welcome to %s %s (CPOS Kernel x86_64)\n"
@@ -324,8 +346,8 @@ void setup_shell() {
 
         if (!strcmp("version", argv[0]))
             printf("%s for x86 [%s]\n", OS_NAME, OS_VERSION);
-        else if (!strcmp("echo", argv[0]))
-            cmd_echo(argc, argv);
+        else if (!strcmp("type", argv[0]))
+            cmd_type(argc, argv);
         else if (!strcmp("clear", argv[0]))
             screen_clear();
         else if (!strcmp("proc", argv[0]))
@@ -352,7 +374,7 @@ void setup_shell() {
             print("-=[CoolPotShell Helper]=-\n");
             print("help ? h              Print shell help info.\n");
             print("version               Print os version.\n");
-            print("echo       <msg>      Print message.\n");
+            print("type       <name>     Read a file.\n");
             print("ls                    List all files.\n");
             print("mkdir      <name>     Make a directory.\n");
             print("del rm     <name>     Delete a file.\n");

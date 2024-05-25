@@ -76,6 +76,7 @@ void alloc_frame_line(page_t *page, unsigned line,int is_kernel, int is_writable
     page->frame = line / 0x1000;
 
 }
+
 void free_frame(page_t *page) {
     uint32_t frame = page->frame;
     if (!frame) return;
@@ -211,6 +212,8 @@ void init_page(multiboot_t *mboot) {
         alloc_frame_line(get_page(j,1,kernel_directory),j,0,0);
         j += 0x1000;
     }
+
+
     for (int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i++) {
         alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
     }

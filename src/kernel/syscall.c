@@ -1,4 +1,5 @@
 #include "../include/syscall.h"
+#include "../include/printf.h"
 #include "../include/isr.h"
 
 void syscall_handler(registers_t *regs){
@@ -6,6 +7,8 @@ void syscall_handler(registers_t *regs){
         return;
 
     void *location = NULL;//syscalls[regs->eax];
+
+    printf("Syscall Win: %08x\n",regs->eax);
 
     int ret;
     asm volatile (" \

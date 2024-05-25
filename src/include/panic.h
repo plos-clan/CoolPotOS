@@ -1,0 +1,4 @@
+#ifndef CRASHPOWEROS_PANIC_H
+#define CRASHPOWEROS_PANIC_H
+
+#endif

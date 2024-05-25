@@ -17,12 +17,35 @@ extern uint8_t plfont[];
 
 bool vbe_status;
 
+static void copy_char(uint32_t *vram, int off_x, int off_y, int x, int y, int x1,
+                      int y1, int xsize) {
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < 8; j++) {
+            vram[(y + i + off_y) * xsize + (j + x + off_x)] =
+                    vram[(y1 + i + off_y) * xsize + (j + x1 + off_x)];
+        }
+    }
+}
+
 void vbe_scroll() {
     if (cx > c_width) {
         cx = 0;
         cy++;
     } else cx++;
 
+    if (cy >= c_height){
+        cy = c_height - 1;
+        memcpy((void *)screen,
+               (void *)screen + width * 16 * sizeof(uint32_t),
+               width * (height - 16) * sizeof(uint32_t));
+        for (int i = (width * (height - 16));
+             i != (width * height); i++)  {
+            screen[i] = back_color;
+        }
+    }
+
+
+    /*
     if (cy >= c_height) {
         cy = c_height - 1;
         for (int i = 0; i < height; i++) {
@@ -44,6 +67,7 @@ void vbe_scroll() {
             screen[height * (width + j) + i] = back_color;
         }
     }
+     */
 }
 
 void vbe_draw_char(char c, int32_t x, int32_t y) {
@@ -56,8 +80,9 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
         return;
     }
 
-    unsigned char *font;
-    font = plfont;
+
+    uint8_t *font = ascfont;
+
     font += c * 16;
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < 9; j++) {
@@ -95,6 +120,10 @@ void vbe_putchar(char ch) {
         return;
     } else if (ch == '\r') {
         cx = 0;
+        return;
+    } else if(ch == '\t'){
+        vbe_putchar("  ");
+        return;
     } else if (ch == '\b' && cx > 0) {
         cx -= 1;
         if (cx == 0) {
@@ -139,19 +168,10 @@ void initVBE(multiboot_t *info) {
     screen = (uint32_t) info->framebuffer_addr;
     width = info->framebuffer_width;
     height = info->framebuffer_height;
-    color = 0xFFFFFF;
-    back_color = 0x310924;
+    color = 0xc6c6c6;
+    back_color = 0x191f42;
     c_width = width / 9;
     c_height = height / 16;
 
     vbe_clear();
-
-    /*
-    for (int i = 0; i < c_height; i++){
-        vbe_putchar('A');
-        vbe_putchar('\n');
-    }
-
-    while (1) io_hlt();
-     */
 }

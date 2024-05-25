@@ -159,7 +159,6 @@ void change_task_to(struct task_struct *next) {
 
         switch_page_directory(current->pgd_dir);
         switch_to(&(prev->context), &(current->context));
-
     }
 }
 
