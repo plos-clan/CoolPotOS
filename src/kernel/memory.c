@@ -9,11 +9,12 @@ void memclean(char *s, int len) {
     return;
 }
 
-void *memcpy(void *dst_, const void *src_, uint32_t size) {
-    uint8_t *dst = dst_;
-    const uint8_t *src = src_;
-    while (size-- > 0) *dst++ = *src++;
-    return (void *) src_;
+void* memcpy(void* s, const void* ct, size_t n) {
+    if (NULL == s || NULL == ct || n <= 0)
+        return NULL;
+    while (n--)
+        *(char*)s++ = *(char*)ct++;
+    return s;
 }
 
 int memcmp(const void *a_, const void *b_, uint32_t size) {

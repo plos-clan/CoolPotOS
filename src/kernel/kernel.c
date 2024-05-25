@@ -9,7 +9,6 @@
 #include "../include/cmos.h"
 #include "../include/keyboard.h"
 #include "../include/shell.h"
-#include "../include/date.h"
 #include "../include/acpi.h"
 #include "../include/syscall.h"
 #include "../include/vdisk.h"
@@ -85,7 +84,7 @@ void kernel_main(multiboot_t *multiboot) {
     printf("[kernel]: Keyboard driver load success!\n");
     io_sti();
 
-    kernel_thread(cur_task,NULL,"CPOS-VBE-SERVICE");
+    //kernel_thread(cur_task,NULL,"CPOS-VBE-SERVICE");
 
     init_pit();
     init_pci();
@@ -99,22 +98,17 @@ void kernel_main(multiboot_t *multiboot) {
     vfs_mount_disk('A','A');
     if(vfs_change_disk('A'))
         printf("[FileSystem]: Change disk win!\n");
-    else {
-        for(;;);
-    }
+
     if(pcnet_find_card()){
         //init_pcnet_card();
     } else printf("[kernel]: Cannot found pcnet.\n");
 
     print_cpu_id();
 
-    //printf("Memory: %dMB.",(multiboot->mem_upper + multiboot->mem_lower)/1024/1024);
-
     clock_sleep(25);
 
     int pid = kernel_thread(setup_shell, NULL, "CPOS-Shell");
     kernel_thread(check_task,&pid,"CPOS-SHELL-CHECK");
-    launch_date();
 
     for (;;) {
         io_hlt();

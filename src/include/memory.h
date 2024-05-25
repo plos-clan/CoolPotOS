@@ -47,7 +47,7 @@ typedef union header {
 
 uint32_t memory_usage();
 
-void *memcpy(void *dst_, const void *src_, uint32_t size);
+void* memcpy(void* s, const void* ct, size_t n);
 
 int memcmp(const void *a_, const void *b_, uint32_t size);
 
@@ -89,6 +89,8 @@ void memclean(char *s, int len);
 
 void *realloc(void *ptr, uint32_t size);
 
-page_t *get_phy_page(uint32_t address, int make, page_directory_t *dir);
+void alloc_frame_line(page_t *page, unsigned line,int is_kernel, int is_writable);
+
+void free_frame(page_t *page);
 
 #endif //CRASHPOWEROS_MEMORY_H

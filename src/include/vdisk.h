@@ -3,7 +3,7 @@
 
 #define SECTORS_ONCE 8
 
-#include "../include/common.h"
+#include "common.h"
 
 typedef struct {
     void (*Read)(char drive, unsigned char *buffer, unsigned int number,

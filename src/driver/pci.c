@@ -105,6 +105,7 @@ void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsign
 
 void init_pci(){
     printf("[\035kernel\036]: Loading pci device...\n");
+    int PCI_NUM = 0;
 
     PCI_ADDR_BASE = kmalloc(1 * 1024 * 1024);
     unsigned int i, BUS, Equipment, F, ADDER, *i1;
@@ -144,7 +145,7 @@ void init_pci(){
                                 PCI_DATA1 += 4;
                                 int i = ((uint32_t)(bar.address));
                                 memcpy(PCI_DATA1, &i, 4);
-                                printf("[pci]: Device Address: %08x Size: %d\n",bar.address,bar.size);
+                                PCI_NUM++;
                             }
                         }
                         PCI_DATA = PCI_DATA + 0x110 + 4;
@@ -154,4 +155,6 @@ void init_pci(){
             }
         }
     }
+
+    printf("[pci]: Device Loaded: %d\n",PCI_NUM);
 }

@@ -1,7 +1,7 @@
 #ifndef CRASHPOWEROS_NET_H
 #define CRASHPOWEROS_NET_H
 
-#include "../include/common.h"
+#include "common.h"
 
 typedef struct {
     bool (*find)();
