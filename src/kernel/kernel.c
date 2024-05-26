@@ -19,8 +19,11 @@
 #include "../include/fat.h"
 #include "../include/iso9660.h"
 
+#define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
+
 extern uint32_t end;
 extern int status;
+extern vdisk vdisk_ctl[10];
 uint32_t placement_address = (uint32_t) & end;
 
 void reset_kernel(){
@@ -68,7 +71,7 @@ void kernel_main(multiboot_t *multiboot) {
 
     initVBE(multiboot);
 
-    printf("[kernel]: VGA driver load success!\n");
+    printf("[kernel]: VBE driver load success!\n");
     gdt_install();
     idt_install();
     printf("[kernel]: description table config success!\n");
@@ -76,26 +79,37 @@ void kernel_main(multiboot_t *multiboot) {
     acpi_install();
     printf("[kernel]: ACPI enable success!\n");
     init_page(multiboot);
-
     printf("[kernel]: page set success!\n");
     init_sched();
     printf("[kernel]: task load success!\n");
     init_keyboard();
     printf("[kernel]: Keyboard driver load success!\n");
-    io_sti();
-
-    //kernel_thread(cur_task,NULL,"CPOS-VBE-SERVICE");
-
     init_pit();
+    io_sti();
     init_pci();
+    printf("[kernel]: PCI driver load success!\n");
     init_vdisk();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    printf("[kernel]: Disk driver load success!\n");
     init_vfs();
     Register_fat_fileSys();
+    printf("iso\n");
     init_iso9660();
+    printf("[kernel]: FileSystem load success!\n");
     syscall_install();
 
-    vfs_mount_disk('A','A');
+
+
+    for (int i = 0; i < 10; i++) {
+        if (vdisk_ctl[i].flag) {
+            vdisk vd = vdisk_ctl[i];
+            char id = i + ('A');
+            vfs_mount_disk(id,id);
+        }
+    }
+
+
+    //vfs_mount_disk('A','A');
     if(vfs_change_disk('A'))
         printf("[FileSystem]: Change disk win!\n");
 

@@ -4,13 +4,10 @@
 #include "../include/vdisk.h"
 #include "../include/timer.h"
 #include "../include/pci.h"
+#include "../include/printf.h"
 
-static inline nul(char *f, ...) {}
-
-#define logk nul
 #define inb io_in8
 #define outb io_out8
-
 struct IDEChannelRegisters {
     unsigned short base;  // I/O Base.
     unsigned short ctrl;  // Control Base
@@ -55,6 +52,8 @@ static void Write(char drive, unsigned char *buffer, unsigned int number,
 
 void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
                     unsigned int BAR3, unsigned int BAR4) {
+    register_interrupt_handler(0x2f,ide_irq);
+    register_interrupt_handler(0x2e,ide_irq);
     int j, k, count = 0;
     for (int i = 0; i < 4; i++) {
         ide_devices[i].Reserved = 0;
@@ -162,16 +161,21 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
     vdisk vd;
     for (int i = 0; i < 4; i++)
         if (ide_devices[i].Reserved == 1) {
-            logk(" %d Found %s Drive %dMB - %s\n", i,
+            logkf(" %d Found %s Drive %dMB - %s\n", i,
                  (const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], /* Type */
                     ide_devices[i].Size / 1024 / 2,                        /* Size */
                     ide_devices[i].Model);
             strcpy(vd.DriveName, ide_devices[i].Model);
-            vd.flag = 1;
+            if(ide_devices[i].Type == IDE_ATAPI) {
+                vd.flag = 2;
+            } else {
+                vd.flag = 1;
+            }
+
             vd.Read = Read;
             vd.Write = Write;
             vd.size = ide_devices[i].Size;
-            printf("[Disk-(%c)]: Size: %dMB | Name: %s\n", register_vdisk(vd), vd.size, vd.DriveName);
+            printf("[Disk-(%c)]: Size: %dMB | %s | Name: %s\n", register_vdisk(vd), vd.size,(const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], vd.DriveName);
         }
 }
 
@@ -241,7 +245,7 @@ unsigned char ide_polling(unsigned char channel, unsigned int advanced_check) {
     logk("II\n");
     int a = ide_read(channel, ATA_REG_STATUS);
     while (a & ATA_SR_BSY) {
-        logk("a=%d\n", a & ATA_SR_BSY); // Wait for BSY to be zero.
+        logkf("a=%d\n", a & ATA_SR_BSY); // Wait for BSY to be zero.
         a = ide_read(channel, ATA_REG_STATUS);
         sleep(1);
     }
@@ -352,7 +356,7 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
     ide_write(channel, ATA_REG_CONTROL,
               channels[channel].nIEN = (ide_irq_invoked = 0x0) + 0x02);
     // (I) Select one from LBA28, LBA48 or CHS;
-    logk("I %02x\n", channels[channel].nIEN);
+    logkf("I %02x\n", channels[channel].nIEN);
     if (lba >= 0x10000000) { // Sure Drive should support LBA in this case, or
         // you are giving a wrong LBA.
         // LBA48:
@@ -453,7 +457,7 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
             if (err = ide_polling(channel, 1))
                 return err; // Polling, set error and exit if there is.
 
-            logk("words=%d bus=%d\n", words, bus);
+            logkf("words=%d bus=%d\n", words, bus);
             for (int h = 0; h < words; h++) {
               unsigned short a = io_in16(bus);
                word_[i * words + h] = a;
@@ -465,7 +469,7 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
         // PIO Write.
         uint16_t *word_ = edi;
         for (i = 0; i < numsects; i++) {
-            logk("write %d\n", i);
+            logkf("write %d\n", i);
             ide_polling(channel, 0); // Polling.
             // asm("pushw %ds");
             // asm("mov %%ax, %%ds" ::"a"(selector));
@@ -485,8 +489,10 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
 }
 
 void ide_wait_irq() {
+    logk("WAITING\n");
     while (!ide_irq_invoked);
     ide_irq_invoked = 0;
+    logk("IDE_WAIT_IRQ!\n");
 }
 
 void ide_irq() {
@@ -510,7 +516,7 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
               channels[channel].nIEN = ide_irq_invoked = 0x0);
     // (I): Setup SCSI Packet:
     // ------------------------------------------------------------------
-    logk("I\n");
+    logk("CDROM I\n");
     atapi_packet[0] = ATAPI_CMD_READ;
     atapi_packet[1] = 0x0;
     atapi_packet[2] = (lba >> 24) & 0xFF;
@@ -525,12 +531,12 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
     atapi_packet[11] = 0x0; // (II): Select the drive:
     // ------------------------------------------------------------------
     ide_write(channel, ATA_REG_HDDEVSEL, slavebit << 4);
-    logk("II\n");
+    logk("CDROM II\n");
     // (III): Delay 400 nanoseconds for select to complete:
     for (int i = 0; i < 4000; i++);
-    logk("III\n");
+    logk("CDROM III\n");
     // ------------------------------------------------------------------
-    logk("IV\n");
+    logk("CDROM IV\n");
     for (int i = 0; i < 4; i++)
         ide_read(channel,
                  ATA_REG_ALTSTATUS); // Reading the Alternate Status port wastes
@@ -541,7 +547,7 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
               0); // PIO mode.
     // (V): Tell the Controller the size of buffer:
     // ------------------------------------------------------------------
-    logk("V\n");
+    logk("CDROM V\n");
     ide_write(channel, ATA_REG_LBA1,
               (words * 2) & 0xFF); // Lower Byte of Sector Size.
     ide_write(channel, ATA_REG_LBA2,
@@ -557,24 +563,22 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
 
     // (VIII): Sending the packet data:
     // ------------------------------------------------------------------
-    logk("VIII\n");
+    logk("CDROM VIII\n");
     uint16_t *_atapi_packet = atapi_packet;
     for (int i = 0; i < 6; i++) {
         io_out16(bus, _atapi_packet[i]);
     }
     // (IX): Receiving Data:
     // ------------------------------------------------------------------
-    logk("IX\n");
+    logk("CDROM IX\n");
     uint16_t *_word = edi;
     for (i = 0; i < numsects; i++) {
         ide_wait_irq(); // Wait for an IRQ.
         if (err = ide_polling(channel, 1))
             return err; // Polling and return if error.
-        logk("words = %d\n", words);
-        for (int h = 0; h < words; h++) {
-            uint16_t a = io_in16(bus);
-            _word[i * words + h] = a;
-        }
+        logkf("CDROM words = %d\n", words);
+
+        insl(bus, _word + i * words, words / 2);
     }
     // (X): Waiting for an IRQ:
     // ------------------------------------------------------------------

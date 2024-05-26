@@ -6,6 +6,7 @@
 #include "../include/cmos.h"
 #include "../include/vdisk.h"
 #include "../include/vfs.h"
+#include "../include/sb16.h"
 
 extern Queue *key_char_queue;
 extern vdisk vdisk_ctl[10];
@@ -213,6 +214,14 @@ void cmd_cd(int argc, char **argv) {
     if (vfs_change_path(argv[1]) == 0) printf("Invalid path.\n");
 }
 
+void cmd_sb3(int argc, char **argv) {
+    if (argc == 1) {
+        print("[Shell-SB3]: If there are too few parameters, please specify the path.\n");
+        return;
+    }
+    wav_player(argv[1]);
+}
+
 void cmd_type(int argc,char ** argv){
     if (argc == 1) {
         print("[Shell-TYPE]: If there are too few parameters, please specify the path.\n");
@@ -246,6 +255,19 @@ void cmd_disk(int argc, char **argv) {
                 }
             }
             printf("\n");
+            return;
+        } else if(!strcmp("cg", argv[1])){
+            if(argc < 2){
+                printf("Please type disk ID\n");
+                return;
+            }
+            if (strlen(argv[2]) > 1) {
+                printf("[DISK]: Cannot found disk.\n");
+                return;
+            }
+            if(have_vdisk(argv[2][0])){
+                vfs_change_disk(argv[2][0]);
+            } else printf("[DISK]: Cannot found disk.\n");
             return;
         }
 
@@ -370,6 +392,8 @@ void setup_shell() {
             cmd_disk(argc, argv);
         else if (!strcmp("cd", argv[0]))
             cmd_cd(argc, argv);
+        else if (!strcmp("sb3", argv[0]))
+            cmd_sb3(argc, argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print("-=[CoolPotShell Helper]=-\n");
             print("help ? h              Print shell help info.\n");
@@ -383,8 +407,9 @@ void setup_shell() {
             print("reset                 Reset OS.\n");
             print("shutdown exit         Shutdown OS.\n");
             print("debug                 Print os debug info.\n");
-            print("disk  [list|<ID>]     List or view disks.\n");
+            print("disk[list|<ID>|cg<ID>]List or view disks.\n");
             print("cd  <path>            Change shell top directory.\n");
+            print("sb3       <name>      Player a wav sound file.\n");
         } else printf("\033[Shell]: Unknown command '%s'.\n", argv[0]);
     }
 }

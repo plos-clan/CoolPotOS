@@ -40,12 +40,16 @@ int rw_vdisk(char drive, unsigned int lba, unsigned char *buffer,
 int have_vdisk(char drive);
 void Disk_Read(unsigned int lba, unsigned int number, void *buffer,
                char drive);
+bool CDROM_Read(unsigned int lba, unsigned int number, void *buffer,
+               char drive);
 unsigned int disk_Size(char drive);
 int DiskReady(char drive);
 void Disk_Write(unsigned int lba, unsigned int number, void *buffer,
                 char drive);
 unsigned int GetDriveCode(unsigned char *name);
 bool SetDrive(unsigned char *name);
+void Disk_Read2048(unsigned int lba, unsigned int number, void *buffer,
+                   char drive);
 void DriveSemaphoreGive(unsigned int drive_code);
 bool DriveSemaphoreTake(unsigned int drive_code);
 

@@ -138,6 +138,7 @@ typedef struct l9660_fs {
 
     /* read_sector func */
     bool (*read_sector)(struct l9660_fs *fs, void *buf, uint32_t sector);
+    int disk_number;
 } l9660_fs;
 
 typedef struct {
@@ -163,7 +164,7 @@ l9660_status l9660_openat(l9660_file *child, l9660_dir *parent, const char *name
 l9660_status l9660_readdir(l9660_dir *dir, l9660_dirent **pdirent);
 l9660_status l9660_opendirat(l9660_dir *dir, l9660_dir *parent, const char *path);
 l9660_status l9660_fs_open_root(l9660_dir *dir, l9660_fs *fs);
-l9660_status l9660_openfs(l9660_fs *fs, bool (*read_sector)(l9660_fs *fs, void *buf, uint32_t sector,uint8_t disk_number),uint8_t disk_number);
+l9660_status l9660_openfs(l9660_fs *fs, bool (*read_sector)(l9660_fs *fs, void *buf, uint32_t sector),uint8_t disk_number);
 void init_iso9660();
 
 #endif

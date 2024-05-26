@@ -14,8 +14,9 @@ uint32_t *screen;
 uint32_t *char_buffer;
 extern uint8_t ascfont[];
 extern uint8_t plfont[];
+extern uint8_t bafont[];
 
-bool vbe_status;
+bool vbe_status = false;
 
 static void copy_char(uint32_t *vram, int off_x, int off_y, int x, int y, int x1,
                       int y1, int xsize) {
@@ -81,9 +82,10 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
     }
 
 
-    uint8_t *font = ascfont;
+    uint8_t *font = bafont;
 
     font += c * 16;
+
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < 9; j++) {
             if (font[i] & (0x80 >> j)) {
@@ -91,14 +93,17 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
             } else screen[(y + i) * width + x + j] = back_color;
         }
     }
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < 9; j++) {
+            if (font[i] & (0x80 >> j)) {
+                screen[(y + i) * width + x + j] = color;
+            } else screen[(y + i) * width + x + j + 1] = back_color;
+        }
+    }
 }
 
 int cur_task() {
-    return 0;
     while (1) {
-        vbe_draw_char('_', x, y);
-        clock_sleep(5);
-        vbe_draw_char(' ', x, y);
         clock_sleep(5);
     }
 }
@@ -131,14 +136,13 @@ void vbe_putchar(char ch) {
             if (cy != 0) cy -= 1;
             if (cy == 0) cx = 0, cy = 0;
         }
-        draw_rect(x, y, x + 9, y + 16, 0);
+        //draw_rect(x, y, x + 9, y + 16, back_color);
         return;
     }
 
     vbe_scroll();
 
     vbe_draw_char(ch, cx * 9 - 7, cy * 16);
-
 }
 
 void vbe_write(const char *data, size_t size) {
@@ -169,7 +173,7 @@ void initVBE(multiboot_t *info) {
     width = info->framebuffer_width;
     height = info->framebuffer_height;
     color = 0xc6c6c6;
-    back_color = 0x191f42;
+    back_color = 0x343541;
     c_width = width / 9;
     c_height = height / 16;
 

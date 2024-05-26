@@ -1,6 +1,7 @@
 #include "../include/printf.h"
 #include "../include/common.h"
 #include "../include/graphics.h"
+#include "../include/serial.h"
 
 static int skip_atoi(const char **s) {
     int i = 0;
@@ -319,4 +320,19 @@ void print(char *message) {
     if(vbe_status){
         vbe_writestring(message);
     } else vga_writestring(message);
+}
+
+void logkf(char *formet,...){
+    int len;
+    va_list ap;
+    va_start(ap, formet);
+    char *buf[1024] = {0};
+    len = vsprintf(buf, formet, ap);
+    logk(buf);
+    va_end(ap);
+}
+
+void logk(char *message){
+    for (size_t i = 0; i < strlen(message); i++)
+        write_serial(message[i]);
 }

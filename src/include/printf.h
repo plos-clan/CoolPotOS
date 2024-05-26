@@ -11,6 +11,8 @@ void printf(const char *formet, ...);
 void print(char *message);
 void printk(const char *formet, ...);
 void putchar(char c);
+void logk(char *message);
+void logkf(char *formet,...);
 void screen_clear();
 
 #endif //CRASHPOWEROS_PRINTF_H
