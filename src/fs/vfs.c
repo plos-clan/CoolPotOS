@@ -60,6 +60,7 @@ static vfs_t *check_disk_fs(uint8_t disk_number) {
             }
         }
     }
+
     return NULL;
 }
 
@@ -78,12 +79,12 @@ bool vfs_mount_disk(uint8_t disk_number, uint8_t drive) {
             return false;
         }
     }
+
     vfs_t *seat = findSeat(vfsMount_Stl);
     if (!seat) {
         printf("can not find a seat of vfsMount_Stl(it's full)\n");
         return false;
     }
-
     vfs_t *fs = check_disk_fs(disk_number);
     if (!fs) {
         printf("[FileSystem]: Unknown file system.\n");

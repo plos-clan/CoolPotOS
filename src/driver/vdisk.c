@@ -102,9 +102,27 @@ void DriveSemaphoreGive(unsigned int drive_code) {
     return;
 }
 
+void Disk_Read2048(unsigned int lba, unsigned int number, void *buffer,
+                   char drive){
+    if(have_vdisk(drive)){
+        if (DriveSemaphoreTake(GetDriveCode((unsigned char *)"DISK_DRIVE"))) {
+            for (int i = 0; i < number; i+=SECTORS_ONCE) {
+                int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
+                rw_vdisk(drive, lba + i, buffer + i * 2048, sectors, 1);
+            }
+            DriveSemaphoreGive(GetDriveCode((unsigned char *)"DISK_DRIVE"));
+        }
+    }
+}
+
 void Disk_Read(unsigned int lba, unsigned int number, void *buffer,
                char drive) {
     if (have_vdisk(drive)) {
+        int indx = drive - ('A');
+        if(vdisk_ctl[indx].flag != 1) {
+            memset(buffer,0,number*512);
+            return;
+        }
         if (DriveSemaphoreTake(GetDriveCode((unsigned char *)"DISK_DRIVE"))) {
             for (int i = 0; i < number; i += SECTORS_ONCE) {
                 int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
@@ -113,6 +131,24 @@ void Disk_Read(unsigned int lba, unsigned int number, void *buffer,
             DriveSemaphoreGive(GetDriveCode((unsigned char *)"DISK_DRIVE"));
         }
     }
+}
+bool CDROM_Read(unsigned int lba, unsigned int number, void *buffer,
+               char drive) {
+    if (have_vdisk(drive)) {
+        int indx = drive - ('A');
+        if(vdisk_ctl[indx].flag != 2) {
+            return false;
+        }
+        if (DriveSemaphoreTake(GetDriveCode((unsigned char *)"DISK_DRIVE"))) {
+            for (int i = 0; i < number; i += SECTORS_ONCE) {
+                int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
+                rw_vdisk(drive, lba + i, buffer + i * 2048, sectors, 1);
+            }
+            DriveSemaphoreGive(GetDriveCode((unsigned char *)"DISK_DRIVE"));
+        }
+        return  true;
+    }
+    return false;
 }
 unsigned int disk_Size(char drive) {
     unsigned char drive1 = drive;
