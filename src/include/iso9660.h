@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "common.h"
+#include "list.h"
 
 typedef enum {
     /*! Success! */
@@ -121,10 +122,8 @@ typedef union {
     char _bits[2048];
 } l9660_vdesc;
 
-/* File system structure.
- * Stick this inside your own structure and cast/offset as appropriate to store
- * private data
- */
+typedef struct l9660_file ;
+
 typedef struct l9660_fs {
 #ifdef L9660_SINGLEBUFFER
     union {
@@ -156,6 +155,13 @@ typedef struct {
     /* directories are mostly just files with special accessors, but we like type safetey */
     l9660_file file;
 } l9660_dir;
+
+typedef struct l9660_fs_status{
+    l9660_fs *fs;
+    l9660_dir root_dir;
+    l9660_dir now_dir;
+
+}l9660_fs_status_t;
 
 uint32_t l9660_tell(l9660_file *f);
 l9660_status l9660_read(l9660_file *f, void *buf, size_t size, size_t *read);
