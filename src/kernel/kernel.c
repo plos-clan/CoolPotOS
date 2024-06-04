@@ -48,7 +48,7 @@ int check_task(int *pid){
     struct task_struct *shell = found_task_pid(*pid);
     while (1){
         if(shell->state == TASK_DEATH){
-            printf("\033\n[Task-Check]: Task was throw exception.\036\n");
+            printf("\n[Task-Check]: Task was throw exception.\n");
             printf("Enter any key to restart kernel.> ");
             getc();
             printf("\n");
