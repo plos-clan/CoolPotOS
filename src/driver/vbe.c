@@ -146,8 +146,33 @@ void vbe_putchar(char ch) {
 }
 
 void vbe_write(const char *data, size_t size) {
-    for (size_t i = 0; i < size; i++)
-        vbe_putchar(data[i]);
+    static const long hextable[] = {
+            [0 ... 255] = -1, // bit aligned access into this table is considerably
+            ['0'] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // faster for most modern processors,
+            ['A'] = 10, 11, 12, 13, 14, 15,       // for the space conscious, reduce to
+            ['a'] = 10, 11, 12, 13, 14, 15        // signed char.
+    };
+
+    for (;*data; ++data){
+        char c = *data;
+        if(c == '\033'){
+            uint32_t text_color = 0;
+            ++data;
+            while (*data && text_color >= 0) {
+                text_color = (text_color << 4) | hextable[*data++];
+                if(*data == ';')break;
+            }
+            color = text_color;
+        }else if(c == '\034'){
+            uint32_t text_color = 0,a = 0;
+            ++data;
+            while (*data && text_color >= 0) {
+                text_color = (text_color << 4) | hextable[*data++];
+                if(*data == ';')break;
+            }
+            back_color = text_color;
+        } else vbe_putchar(c);
+    }
 }
 
 void vbe_writestring(const char *data) {
@@ -173,7 +198,7 @@ void initVBE(multiboot_t *info) {
     width = info->framebuffer_width;
     height = info->framebuffer_height;
     color = 0xc6c6c6;
-    back_color = 0x343541;
+    back_color = 0x1c1c1c;
     c_width = width / 9;
     c_height = height / 16;
 

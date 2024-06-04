@@ -357,7 +357,7 @@ void setup_shell() {
 
     while (1) {
         vfs_getPath(buffer);
-        printf("%s@localhost: %s\\$ ", user1, buffer);
+        printf("\03343cd80;%s@localhost: \0334169E1;%s\\\033c6c6c6;$ ", user1, buffer);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         argc = cmd_parse(com, argv, ' ');
 
