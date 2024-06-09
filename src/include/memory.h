@@ -93,4 +93,6 @@ void alloc_frame_line(page_t *page, unsigned line,int is_kernel, int is_writable
 
 void free_frame(page_t *page);
 
+void page_flush(page_directory_t *dir);
+
 #endif //CRASHPOWEROS_MEMORY_H

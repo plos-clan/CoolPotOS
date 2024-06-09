@@ -2,6 +2,7 @@
 #include "../include/common.h"
 #include "../include/graphics.h"
 #include "../include/io.h"
+#include "../include/description_table.h"
 
 struct task_struct *running_proc_head = NULL;
 struct task_struct *wait_proc_head = NULL;
@@ -157,7 +158,8 @@ void change_task_to(struct task_struct *next) {
         struct task_struct *prev = current;
         current = next;
 
-        switch_page_directory(current->pgd_dir);
+        page_flush(current->pgd_dir);
+        set_kernel_stack(current->stack);
         switch_to(&(prev->context), &(current->context));
     }
 }
@@ -172,7 +174,7 @@ int32_t kernel_thread(int (*fn)(void *), void *arg,char* name) {
     new_task->state = TASK_RUNNABLE;
     new_task->stack = current;
     new_task->pid = now_pid++;
-    new_task->pgd_dir = kernel_directory;
+    new_task->pgd_dir = clone_directory(kernel_directory) ;
 
     new_task->name = name;
 

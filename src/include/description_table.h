@@ -122,6 +122,7 @@ typedef struct tss_table {
 } tss_entry;
 
 void write_tss(int32_t num, uint16_t ss0, uint32_t esp0);
+void set_kernel_stack(uintptr_t stack);
 
 void gdt_install();
 void idt_install();

@@ -6,7 +6,9 @@
 #include "../include/cmos.h"
 #include "../include/vdisk.h"
 #include "../include/vfs.h"
+#include "../include/common.h"
 #include "../include/sb16.h"
+#include "../include/elf.h"
 
 extern Queue *key_char_queue;
 extern vdisk vdisk_ctl[10];
@@ -238,6 +240,8 @@ void cmd_type(int argc,char ** argv){
     if(vfs_readfile(argv[1],buffer))
         printf("%s",buffer);
     else printf("Cannot read file.\n");
+
+
 
     kfree(buffer);
     print("\n");
