@@ -86,6 +86,12 @@ void free_frame(page_t *page) {
     }
 }
 
+void page_flush(page_directory_t *dir){
+    asm volatile("invlpg (%0)" ::"r"(&dir->tablesPhysical));
+    current_directory = dir;
+    //asm volatile("mov %0, %%cr3" : : "r"(&dir->physicalAddr));
+}
+
 void switch_page_directory(page_directory_t *dir) {
     current_directory = dir;
     asm volatile("mov %0, %%cr3" : : "r"(&dir->tablesPhysical));
@@ -200,7 +206,7 @@ void init_page(multiboot_t *mboot) {
     current_directory = kernel_directory;
     int i = 0;
 
-    while (i < placement_address) {
+    while (i < placement_address + 0x30000) {
         // 内核部分对ring3而言可读不可写 | 无偏移页表映射
         alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
         i += 0x1000;
