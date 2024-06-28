@@ -158,7 +158,7 @@ void change_task_to(struct task_struct *next) {
         struct task_struct *prev = current;
         current = next;
 
-        page_flush(current->pgd_dir);
+        page_switch(current->pgd_dir);
         set_kernel_stack(current->stack);
         switch_to(&(prev->context), &(current->context));
     }
@@ -174,7 +174,7 @@ int32_t kernel_thread(int (*fn)(void *), void *arg,char* name) {
     new_task->state = TASK_RUNNABLE;
     new_task->stack = current;
     new_task->pid = now_pid++;
-    new_task->pgd_dir = clone_directory(kernel_directory) ;
+    new_task->pgd_dir = clone_directory(current->pgd_dir) ;
 
     new_task->name = name;
 
