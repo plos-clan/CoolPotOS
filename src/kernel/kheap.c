@@ -18,18 +18,30 @@ uint32_t memory_usage(){
     return size;
 }
 
-static uint32_t kmalloc_int(uint32_t sz, uint32_t align, uint32_t *phys) {
+uint32_t kmalloc_i_ap(uint32_t size, uint32_t *phys){
+    if ((placement_address & 0x00000FFF)) {
+        placement_address &= 0xFFFFF000;
+        placement_address += 0x1000;
+    }
+    if (phys) *phys = placement_address;
+    uint32_t tmp = placement_address;
+    placement_address += size;
+
+    return tmp;
+}
+
+static uint32_t kmalloc_int(size_t sz, uint32_t align, uint32_t *phys) {
     if (program_break) {
         // 有内存堆
         void *addr = alloc(sz); // 直接malloc，align丢掉了
         if (phys) {
             // 需要物理地址，先找到对应页
             page_t *page = get_page((uint32_t) addr, 0, current_directory);
-            *phys = page->frame * 0x1000 + ((uint32_t) addr & 0xfff);
+            *phys = page->frame * 0x1000 + ((uint32_t) addr & 0x00000FFF);
         }
         return (uint32_t) addr;
     }
-    if (align && (placement_address & 0x00000FFF)) {
+    if (align == 1 && (placement_address & 0x00000FFF)) {
         placement_address &= 0xFFFFF000;
         placement_address += 0x1000;
     }
@@ -65,7 +77,7 @@ void *ksbrk(int incr) {
 }
 
 // 寻找一个符合条件的指定大小的空闲内存块
-static header_t *get_free_block(uint32_t size) {
+static header_t *get_free_block(size_t size) {
     header_t *curr = head;
     while (curr) {
         if (curr->s.is_free && curr->s.size >= size) return curr;
@@ -74,7 +86,7 @@ static header_t *get_free_block(uint32_t size) {
     return NULL;
 }
 
-void *alloc(uint32_t size) {
+void *alloc(size_t size) {
     uint32_t total_size;
     void *block;
     header_t *header;

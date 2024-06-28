@@ -92,9 +92,19 @@ void page_flush(page_directory_t *dir){
     //asm volatile("mov %0, %%cr3" : : "r"(&dir->physicalAddr));
 }
 
+void page_switch(page_directory_t *dir){
+    io_cli();
+    current_directory = dir;
+    logkf("TablePhy: %08x | KERPhy: %08x\n",(&dir->tablesPhysical),kernel_directory->tablesPhysical);
+    asm volatile("mov %0, %%cr3" : : "r"(&dir->tablesPhysical)); // 设置cr3寄存器切换页表
+    logk("Switch directory win!\n");
+    io_sti();
+}
+
 void switch_page_directory(page_directory_t *dir) {
     current_directory = dir;
     asm volatile("mov %0, %%cr3" : : "r"(&dir->tablesPhysical));
+
     uint32_t cr0;
     asm volatile("mov %%cr0, %0" : "=r"(cr0));
     cr0 |= 0x80000000;
@@ -172,7 +182,7 @@ static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
 
 page_directory_t *clone_directory(page_directory_t *src) {
     uint32_t phys;
-    page_directory_t *dir = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t), &phys);
+    page_directory_t *dir = (page_directory_t *) kmalloc_i_ap(sizeof(page_directory_t), &phys);
     memset(dir, 0, sizeof(page_directory_t));
 
     uint32_t offset = (uint32_t) dir->tablesPhysical - (uint32_t) dir;
@@ -200,7 +210,9 @@ void init_page(multiboot_t *mboot) {
     frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
     memset(frames, 0, INDEX_FROM_BIT(nframes));
 
-    kernel_directory = (page_directory_t *) kmalloc_a(sizeof(page_directory_t)); //kmalloc: 无分页情况自动在内核后方分配 | 有分页从内核堆分配
+    uint32_t physical_addr;
+    kernel_directory = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t),&physical_addr); //kmalloc: 无分页情况自动在内核后方分配 | 有分页从内核堆分配
+    kernel_directory->physicalAddr = physical_addr;
 
     memset(kernel_directory, 0, sizeof(page_directory_t));
     current_directory = kernel_directory;
@@ -225,7 +237,7 @@ void init_page(multiboot_t *mboot) {
     }
 
     register_interrupt_handler(14, page_fault);
-    switch_page_directory(kernel_directory);
+    switch_page_directory(clone_directory(kernel_directory));
 
     program_break = (void *) KHEAP_START;
     program_break_end = (void *) (KHEAP_START + KHEAP_INITIAL_SIZE);
