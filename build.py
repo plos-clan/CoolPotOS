@@ -89,7 +89,7 @@ def build_kernel():  # 构建内核本体
 def build_data():  # 构建常用工具
     print("Building util source code...")
     for file in os.listdir(cd + dir_ + src + 'util'):
-        cmd = cd + gcc + "-O2 " + src + "util" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-O0 " + src + "util" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1
@@ -132,7 +132,7 @@ def linker():  # 交叉编译链接
     for file in os.listdir(cd + dir_ + 'target'):
         source_file = source_file + " target" + dir_ + file
     return os.system(
-        cd + "/i686_elf_tools/bin/i686-elf-g++.exe -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "kernel.elf -ffreestanding -O2 -nostdlib " + source_file + " -lgcc")
+        cd + "/i686_elf_tools/bin/i686-elf-g++.exe -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "kernel.elf -ffreestanding -nostdlib " + source_file + " -lgcc")
 
 
 def launch():

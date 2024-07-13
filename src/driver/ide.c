@@ -68,7 +68,6 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
     // 2- Disable IRQs:
     ide_write(ATA_PRIMARY, ATA_REG_CONTROL, 2);
     ide_write(ATA_SECONDARY, ATA_REG_CONTROL, 2);
-    logk("w1\n");
     // 3- Detect ATA-ATAPI Devices:
     for (int i = 0; i < 2; i++)
         for (j = 0; j < 2; j++) {
@@ -78,20 +77,15 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
             // (I) Select Drive:
             ide_write(i, ATA_REG_HDDEVSEL, 0xA0 | (j << 4)); // Select Drive.
             sleep(1); // Wait 1ms for drive select to work.
-            logk("I\n");
             // (II) Send ATA Identify Command:
             ide_write(i, ATA_REG_COMMAND, ATA_CMD_IDENTIFY);
             sleep(1); // This function should be implemented in your OS. which waits
             // for 1 ms. it is based on System Timer Device Driver.
-            logk("II\n");
             // (III) Polling:
             if (ide_read(i, ATA_REG_STATUS) == 0)
                 continue; // If Status = 0, No Device.
-            logk("III\n");
             while (1) {
-                logk("read ide....\n");
                 status = ide_read(i, ATA_REG_STATUS);
-                logk("read ok\n");
                 if ((status & ATA_SR_ERR)) {
                     err = 1;
                     break;
@@ -101,7 +95,6 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
             }
 
             // (IV) Probe for ATAPI Devices:
-            logk("IV\n");
             if (err != 0) {
                 unsigned char cl = ide_read(i, ATA_REG_LBA1);
                 unsigned char ch = ide_read(i, ATA_REG_LBA2);
@@ -118,11 +111,9 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
             }
 
             // (V) Read Identification Space of the Device:
-            logk("V\n");
             ide_read_buffer(i, ATA_REG_DATA, (unsigned int) ide_buf, 128);
 
             // (VI) Read Device Parameters:
-            logk("VI\n");
             ide_devices[count].Reserved = 1;
             ide_devices[count].Type = type;
             ide_devices[count].Channel = i;
@@ -135,7 +126,6 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
                     *((unsigned int *) (ide_buf + ATA_IDENT_COMMANDSETS));
 
             // (VII) Get Size:
-            logk("VII\n");
             if (ide_devices[count].CommandSets & (1 << 26))
                 // Device uses 48-Bit Addressing:
                 ide_devices[count].Size =
@@ -147,7 +137,6 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
 
             // (VIII) String indicates model of device (like Western Digital HDD and
             // SONY DVD-RW...):
-            logk("VIII\n");
             for (k = 0; k < 40; k += 2) {
                 ide_devices[count].Model[k] = ide_buf[ATA_IDENT_MODEL + k + 1];
                 ide_devices[count].Model[k + 1] = ide_buf[ATA_IDENT_MODEL + k];
@@ -161,10 +150,12 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
     vdisk vd;
     for (int i = 0; i < 4; i++)
         if (ide_devices[i].Reserved == 1) {
+            /*
             logkf(" %d Found %s Drive %dMB - %s\n", i,
-                 (const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], /* Type */
-                    ide_devices[i].Size / 1024 / 2,                        /* Size */
+                 (const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type],
+                    ide_devices[i].Size / 1024 / 2,
                     ide_devices[i].Model);
+                    */
             strcpy(vd.DriveName, ide_devices[i].Model);
             if(ide_devices[i].Type == IDE_ATAPI) {
                 vd.flag = 2;
@@ -175,7 +166,7 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
             vd.Read = Read;
             vd.Write = Write;
             vd.size = ide_devices[i].Size;
-            printf("[Disk-(%c)]: Size: %dMB | %s | Name: %s\n", register_vdisk(vd), vd.size,(const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], vd.DriveName);
+            klogf(true,"Disk-(%c) Size: %dMB | %s | Name: %s\n", register_vdisk(vd), vd.size,(const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], vd.DriveName);
         }
 }
 
@@ -242,21 +233,17 @@ unsigned char ide_polling(unsigned char channel, unsigned int advanced_check) {
 
     // (II) Wait for BSY to be cleared:
     // -------------------------------------------------
-    logk("II\n");
     int a = ide_read(channel, ATA_REG_STATUS);
     while (a & ATA_SR_BSY) {
-        logkf("a=%d\n", a & ATA_SR_BSY); // Wait for BSY to be zero.
         a = ide_read(channel, ATA_REG_STATUS);
         sleep(1);
     }
-    logk("II OK\n");
     if (advanced_check) {
         unsigned char state =
                 ide_read(channel, ATA_REG_STATUS); // Read Status Register.
 
         // (III) Check For Errors:
         // -------------------------------------------------
-        logk("III\n");
         if (state & ATA_SR_ERR)
             return 2; // Error.
 
@@ -356,7 +343,6 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
     ide_write(channel, ATA_REG_CONTROL,
               channels[channel].nIEN = (ide_irq_invoked = 0x0) + 0x02);
     // (I) Select one from LBA28, LBA48 or CHS;
-    logkf("I %02x\n", channels[channel].nIEN);
     if (lba >= 0x10000000) { // Sure Drive should support LBA in this case, or
         // you are giving a wrong LBA.
         // LBA48:
@@ -393,14 +379,11 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
                (63); // Head number is written to HDDEVSEL lower 4-bits.
     }
     // (II) See if drive supports DMA or not;
-    logk("II\n");
     dma = 0; // We don't support DMA
     // (III) Wait if the drive is busy;
-    logk("III\n");
     while (ide_read(channel, ATA_REG_STATUS) & ATA_SR_BSY) {
     } // Wait if busy.
     // (IV) Select Drive from the controller;
-    logk("IV\n");
     if (lba_mode == 0)
         ide_write(channel, ATA_REG_HDDEVSEL,
                   0xA0 | (slavebit << 4) | head); // Drive & CHS.
@@ -443,7 +426,6 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
     if (lba_mode == 2 && dma == 1 && direction == 1)
         cmd = ATA_CMD_WRITE_DMA_EXT;
     ide_write(channel, ATA_REG_COMMAND, cmd); // Send the Command.
-    logk("IV1\n");
     if (dma)
         if (direction == 0);
             // DMA Read.
@@ -457,7 +439,6 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
             if (err = ide_polling(channel, 1))
                 return err; // Polling, set error and exit if there is.
 
-            logkf("words=%d bus=%d\n", words, bus);
             for (int h = 0; h < words; h++) {
               unsigned short a = io_in16(bus);
                word_[i * words + h] = a;
@@ -489,21 +470,17 @@ unsigned char ide_ata_access(unsigned char direction, unsigned char drive,
 }
 
 void ide_wait_irq() {
-    logk("WAITING\n");
     while (!ide_irq_invoked);
     ide_irq_invoked = 0;
-    logk("IDE_WAIT_IRQ!\n");
 }
 
 void ide_irq() {
-    logk("ide irq.\n");
     ide_irq_invoked = 1;
 }
 
 unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
                              unsigned char numsects, unsigned short selector,
                              unsigned int edi) {
-    logk("cdrom read.\n");
     unsigned int channel = ide_devices[drive].Channel;
     unsigned int slavebit = ide_devices[drive].Drive;
     unsigned int bus = channels[channel].base;
@@ -516,7 +493,6 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
               channels[channel].nIEN = ide_irq_invoked = 0x0);
     // (I): Setup SCSI Packet:
     // ------------------------------------------------------------------
-    logk("CDROM I\n");
     atapi_packet[0] = ATAPI_CMD_READ;
     atapi_packet[1] = 0x0;
     atapi_packet[2] = (lba >> 24) & 0xFF;
@@ -531,12 +507,9 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
     atapi_packet[11] = 0x0; // (II): Select the drive:
     // ------------------------------------------------------------------
     ide_write(channel, ATA_REG_HDDEVSEL, slavebit << 4);
-    logk("CDROM II\n");
     // (III): Delay 400 nanoseconds for select to complete:
     for (int i = 0; i < 4000; i++);
-    logk("CDROM III\n");
     // ------------------------------------------------------------------
-    logk("CDROM IV\n");
     for (int i = 0; i < 4; i++)
         ide_read(channel,
                  ATA_REG_ALTSTATUS); // Reading the Alternate Status port wastes
@@ -547,7 +520,6 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
               0); // PIO mode.
     // (V): Tell the Controller the size of buffer:
     // ------------------------------------------------------------------
-    logk("CDROM V\n");
     ide_write(channel, ATA_REG_LBA1,
               (words * 2) & 0xFF); // Lower Byte of Sector Size.
     ide_write(channel, ATA_REG_LBA2,
@@ -563,20 +535,17 @@ unsigned char ide_atapi_read(unsigned char drive, unsigned int lba,
 
     // (VIII): Sending the packet data:
     // ------------------------------------------------------------------
-    logk("CDROM VIII\n");
     uint16_t *_atapi_packet = atapi_packet;
     for (int i = 0; i < 6; i++) {
         io_out16(bus, _atapi_packet[i]);
     }
     // (IX): Receiving Data:
     // ------------------------------------------------------------------
-    logk("CDROM IX\n");
     uint16_t *_word = edi;
     for (i = 0; i < numsects; i++) {
         ide_wait_irq(); // Wait for an IRQ.
         if (err = ide_polling(channel, 1))
             return err; // Polling and return if error.
-        logkf("CDROM words = %d\n", words);
 
         insl(bus, _word + i * words, words / 2);
     }
@@ -609,7 +578,6 @@ void ide_read_sectors(unsigned char drive, unsigned char numsects,
     else {
         unsigned char err;
         if (ide_devices[drive].Type == IDE_ATA) {
-            logk("Will Read.\n");
             err = ide_ata_access(ATA_READ, drive, lba, numsects, es, edi);
 
         } else if (ide_devices[drive].Type == IDE_ATAPI)

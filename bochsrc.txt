@@ -1,0 +1,12 @@
+megs: 2048
+vga: extension=vbe, update_freq=15
+
+ata1-master: type=cdrom, path=cpos.iso, status=inserted
+#ata0-master: type=disk, path=disk.img, mode=flat, cylinders=2, heads=16, spt=63
+ata2: enabled=false
+ata3: enabled=false
+boot: cdrom
+
+display_library: win32, options="gui_debug"
+
+#vgaromimage: file=/usr/share/vgabios/vgabios.bin

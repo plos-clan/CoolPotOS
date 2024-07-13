@@ -2,7 +2,11 @@
 #define CRASHPOWEROS_COMMON_H
 
 #define OS_NAME "CoolPotOS"
-#define OS_VERSION "v0.2.5"
+#define OS_VERSION "v0.2.9"
+
+// b 0x211972
+// b 0x20d0a6
+
 
 #define LONG_MAX 9223372036854775807L
 #define LONG_MIN -9223372036854775808L

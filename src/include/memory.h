@@ -6,8 +6,15 @@
 #include "isr.h"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
-#define KHEAP_START      0xc0000000
+#define KHEAP_START      0xa0000000
 #define STACK_SIZE 32768
+
+#define USER_START 0xb0000000
+#define USER_END (USER_START + 0xf00000)
+#define USER_HEAP_END (USER_END - STACK_SIZE)
+
+#define US_B_START 0xe0000000
+#define US_B_END 0xe1000000
 
 #define INDEX_FROM_BIT(a) (a / (8*4))
 #define OFFSET_FROM_BIT(a) (a % (8*4))
@@ -15,6 +22,7 @@
 typedef char ALIGN[16];
 
 #include "multiboot.h"
+#include "common.h"
 
 typedef struct page {
     uint32_t present: 1;
@@ -24,17 +32,17 @@ typedef struct page {
     uint32_t dirty: 1;
     uint32_t unused: 7;
     uint32_t frame: 20;
-} page_t;
+}__attribute__((packaged)) page_t;
 
 typedef struct page_table {
     page_t pages[1024];
-} page_table_t;
+}__attribute__((packaged)) page_table_t;
 
 typedef struct page_directory {
     page_table_t *tables[1024];
     uint32_t tablesPhysical[1024];
     uint32_t physicalAddr;
-} page_directory_t;
+}__attribute__((packaged)) page_directory_t;
 
 typedef union header {
     struct {
@@ -57,7 +65,7 @@ void *memmove(void *dest, const void *src, size_t num);
 
 void switch_page_directory(page_directory_t *dir);
 
-page_t *get_page(uint32_t address, int make, page_directory_t *dir);
+page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist);
 
 void alloc_frame(page_t *page, int is_kernel, int is_writable);
 

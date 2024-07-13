@@ -45,6 +45,10 @@ void set_kernel_stack(uintptr_t stack) {
     tss.esp0 = stack;
 }
 
+void set_tss_ss0(uintptr_t ss){
+    tss.ss0 = ss;
+}
+
 void gdt_install() {
     gdt_ptr.limit = sizeof(gdt_entry_t) * GDT_LENGTH - 1;
     gdt_ptr.base = (uint32_t)&gdt_entries;

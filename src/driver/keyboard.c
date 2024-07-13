@@ -119,18 +119,25 @@ static void default_handle(uint32_t key,int release,char c){
 
 void init_keyboard(){
     key_status = (KEY_STATUS*) alloc(sizeof(KEY_STATUS));
+    if(key_status == NULL) goto error;
     key_status->is_shift = 0;
 
     key_char_queue = create_queue();
     head_listener = (struct key_listener*) kmalloc(sizeof(struct key_listener));
+    if(head_listener == NULL) goto error;
     head_listener->func = default_handle;
     head_listener->lid = 0;
     head_listener->next = NULL;
 
     register_interrupt_handler(0x21,handle_keyboard_input);
+
+    klogf(true,"Load PS/2 Keyboard device.\n");
+    return;
+    error:
+    klogf(false,"Load PS/2 Keyboard device.\n");
 }
 
-int handle_keyboard_input(){
+int handle_keyboard_input(registers_t *reg){
     unsigned char status = read_port(KEYBOARD_STATUS_PORT);
     uint32_t key = read_port(KEYBOARD_DATA_PORT);
     int release = key & 0xb10000000;

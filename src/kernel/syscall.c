@@ -1,32 +1,16 @@
 #include "../include/syscall.h"
 #include "../include/printf.h"
 #include "../include/isr.h"
+#include "../include/description_table.h"
+#include "../include/graphics.h"
 
-void syscall_handler(registers_t *regs){
-    if (regs->eax >= SYSCALL_NUM)
-        return;
-
-    void *location = NULL;//syscalls[regs->eax];
-
-    printf("Syscall Win: %08x\n",regs->eax);
-
-    int ret;
-    asm volatile (" \
-      push %1; \
-      push %2; \
-      push %3; \
-      push %4; \
-      push %5; \
-      call *%6; \
-      pop %%ebx; \
-      pop %%ebx; \
-      pop %%ebx; \
-      pop %%ebx; \
-      pop %%ebx; \
-    " : "=a" (ret) : "r" (regs->edi), "r" (regs->esi), "r" (regs->edx), "r" (regs->ecx), "r" (regs->ebx), "r" (location));
-    regs->eax = ret;
+void syscall_handler(registers_t regs){
+    if(regs.eax == 0x01){
+        putchar((regs.edx));
+    }
+    return;
 }
 
 void syscall_install(){
-    register_interrupt_handler(0x80,syscall_handler);
+    idt_use_reg(80, syscall_handler);
 }

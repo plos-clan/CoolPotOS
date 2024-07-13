@@ -51,7 +51,9 @@ uint32_t first_frame() {
 }
 
 void alloc_frame(page_t *page, int is_kernel, int is_writable) {
-    if (page->frame) return;
+    if (page->present) {
+        return;
+    }
     else {
         uint32_t idx = first_frame();
         if (idx == (uint32_t) - 1) {
@@ -61,6 +63,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
         }
 
         set_frame(idx * 0x1000);
+        memset(page,0,4);
         page->present = 1; // 现在这个页存在了
         page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
         page->user = is_kernel ? 0 : 1; // 是否为用户态由is_kernel决定
@@ -93,12 +96,9 @@ void page_flush(page_directory_t *dir){
 }
 
 void page_switch(page_directory_t *dir){
-    io_cli();
     current_directory = dir;
-    logkf("TablePhy: %08x | KERPhy: %08x\n",(&dir->tablesPhysical),kernel_directory->tablesPhysical);
-    asm volatile("mov %0, %%cr3" : : "r"(&dir->tablesPhysical)); // 设置cr3寄存器切换页表
-    logk("Switch directory win!\n");
-    io_sti();
+    asm volatile("mov %0, %%cr3" : : "r"(&dir->tablesPhysical));
+
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -111,17 +111,23 @@ void switch_page_directory(page_directory_t *dir) {
     asm volatile("mov %0, %%cr0" : : "r"(cr0));
 }
 
-page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
+page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
 
     address /= 0x1000;
+
     uint32_t table_idx = address / 1024;
-    if (dir->tables[table_idx]) return &dir->tables[table_idx]->pages[address % 1024];
+
+    if (dir->tables[table_idx]){
+        page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
+        return pgg;
+    }
     else if (make) {
         uint32_t tmp;
-        dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t), &tmp);
+        dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
         memset(dir->tables[table_idx], 0, 0x1000);
         dir->tablesPhysical[table_idx] = tmp | 0x7;
-        return &dir->tables[table_idx]->pages[address % 1024];
+        page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
+        return pgg;
     } else return 0;
 }
 
@@ -141,11 +147,11 @@ void page_fault(registers_t *regs) {
     if (present) {
         printf("Type: present;\n\taddress: %x  \n", faulting_address);
     } else if (rw) {
-        printf("Type: read-only;\n\taddress: %x", faulting_address);
+        printf("Type: read-only;\n\taddress: %x\n", faulting_address);
     } else if (us) {
-        printf("Type: user-mode;\n\taddres: %x", faulting_address);
+        printf("Type: user-mode;\n\taddres: %x\n", faulting_address);
     } else if (reserved) {
-        printf("Type: reserved;\n\taddress: %x", faulting_address);
+        printf("Type: reserved;\n\taddress: %x\n", faulting_address);
     } else if (id) {
         printf("Type: decode address;\n\taddress: %x\n", faulting_address);
     }
@@ -162,7 +168,7 @@ void page_fault(registers_t *regs) {
 }
 
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
-    page_table_t *table = (page_table_t *) kmalloc_ap(sizeof(page_table_t), physAddr);
+    page_table_t *table = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), physAddr);
     memset(table, 0, sizeof(page_directory_t));
 
     int i;
@@ -220,25 +226,35 @@ void init_page(multiboot_t *mboot) {
 
     while (i < placement_address + 0x30000) {
         // 内核部分对ring3而言可读不可写 | 无偏移页表映射
-        alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
+        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
         i += 0x1000;
     }
 
     unsigned int j = mboot->framebuffer_addr,size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
 
     while (j <= mboot->framebuffer_addr + size){
-        alloc_frame_line(get_page(j,1,kernel_directory),j,0,0);
+        alloc_frame_line(get_page(j,1,kernel_directory,false),j,1,1);
         j += 0x1000;
     }
 
-
     for (int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i++) {
-        alloc_frame(get_page(i, 1, kernel_directory), 0, 0);
+        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
     }
 
+
     register_interrupt_handler(14, page_fault);
-    switch_page_directory(clone_directory(kernel_directory));
+    switch_page_directory(kernel_directory);
 
     program_break = (void *) KHEAP_START;
     program_break_end = (void *) (KHEAP_START + KHEAP_INITIAL_SIZE);
+
+    klogf(true,"Memory manager is enable\n"
+               "Kernel: 0x00 - 0x%08x "
+               "Framebuffer: 0x%08x - 0x%08x "
+               "KernelHeap: 0x%08x - 0x%08x "
+               "BaseFrame: 0x%08x\n",
+          placement_address + 0x30000,
+          mboot->framebuffer_addr,mboot->framebuffer_addr + size,
+          KHEAP_START,KHEAP_START + KHEAP_INITIAL_SIZE,
+          frames);
 }

@@ -1,10 +1,13 @@
 #include "../include/memory.h"
+#include "../include/task.h"
+#include "../include/printf.h"
 
 header_t *head = NULL, *tail = NULL; // 内存块链表
 extern page_directory_t *current_directory;
 extern uint32_t end; // declared in linker.ld
 static uint32_t placement_address = (uint32_t) &end;
 void *program_break, *program_break_end;
+extern struct task_struct *current;
 
 uint32_t memory_usage(){
     header_t *curr = head;
@@ -36,7 +39,7 @@ static uint32_t kmalloc_int(size_t sz, uint32_t align, uint32_t *phys) {
         void *addr = alloc(sz); // 直接malloc，align丢掉了
         if (phys) {
             // 需要物理地址，先找到对应页
-            page_t *page = get_page((uint32_t) addr, 0, current_directory);
+            page_t *page = get_page((uint32_t) addr, 0, current_directory,false);
             *phys = page->frame * 0x1000 + ((uint32_t) addr & 0x00000FFF);
         }
         return (uint32_t) addr;
@@ -113,7 +116,6 @@ void kfree(void *block) {
     header_t *header, *tmp;
     if (!block) return;
     header = (header_t *) block - 1;
-
     if ((char *) block + header->s.size == program_break) {
         if (head == tail) head = tail = NULL;
         else {

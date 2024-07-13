@@ -9,6 +9,15 @@ idt_ptr_t idt_ptr;
 
 extern void idt_flush(uint32_t);
 
+void idt_use_reg(uint8_t num,uint32_t base){
+    idt_entries[num].base_low = base & 0xFFFF;
+    idt_entries[num].base_high = (base >> 16) & 0xFFFF; // 拆成低位和高位
+
+    idt_entries[num].sel = 0x08;
+    idt_entries[num].always0 = 0;
+    idt_entries[num].flags = 0x8E | 0x60;
+}
+
 void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     idt_entries[num].base_low = base & 0xFFFF;
     idt_entries[num].base_high = (base >> 16) & 0xFFFF; // 拆成低位和高位

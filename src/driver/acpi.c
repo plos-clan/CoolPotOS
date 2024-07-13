@@ -56,10 +56,8 @@ int acpi_enable() {
         }
         // check enable status
         if (i < 300) {
-            printf("[acpi]: Enable ACPI\n");
             return 0;
         } else {
-            printf("Counld't enable ACPI\n");
             return -1;
         }
     }
@@ -89,10 +87,8 @@ int acpi_disable() {
         }
 
         if (i < 300) {
-            printf("ACPI Disable!\n");
             return 0;
         } else {
-            printf("Could't disable ACPI\n");
             return -1;
         }
     }
@@ -140,7 +136,6 @@ void power_off() {
     if (!SCI_EN)
         return;
     while (1) {
-        printf("[acpi] send power off command!\n");
         io_out16((uint32_t) PM1a_CNT, SLP_TYPa | SLP_EN);
         if (!PM1b_CNT) {
             io_out16((uint32_t) PM1b_CNT, SLP_TYPb | SLP_EN);
@@ -180,16 +175,11 @@ static void AcpiPowerInit() {
     if (PM1b_ENABLE_REG == len)
         PM1b_ENABLE_REG = 0;
 
-    printf("[acpi]: Setting Power event listener...\n");
-
     io_out16(PM1a_ENABLE_REG, (1 << 8));
     if (PM1b_ENABLE_REG) {
         io_out16((uint16_t)
         PM1b_ENABLE_REG, (uint8_t)(1 << 8));
     }
-
-    printf("ACPI : SCI_INT %08x\n", (uint8_t)
-    facp->SCI_INT);
 
     register_interrupt_handler(facp->SCI_INT, AcpiPowerHandler);
 }
@@ -217,7 +207,6 @@ uint8_t *AcpiCheckRSDPtr(void *ptr) {
 
     // check signature
     if (!memcmp(sign, bptr, 8)) {
-        printf("[acpi] rsdp found at %0x\n", bptr);
         rsdp_address = bptr;
         for (i = 0; i < sizeof(acpi_rsdptr_t); i++) {
             check += *bptr;
@@ -255,7 +244,7 @@ static int AcpiSysInit() {
     rsdt = (acpi_rsdt_t *) AcpiGetRSDPtr();
     if (!rsdt || AcpiCheckHeader(rsdt, "RSDT") < 0) {
         printf("No ACPI\n");
-        return -1;
+        return false;
     }
 
     entrys = rsdt->length - HEADER_SIZE / 4;
@@ -315,7 +304,7 @@ static int AcpiSysInit() {
             } else {
                 printf("[acpi] no found DSDT table\n");
             }
-            return 0;
+            return true;
         }
         ++p;
     }
@@ -323,9 +312,8 @@ static int AcpiSysInit() {
 }
 
 void acpi_install() {
-    AcpiSysInit();
+    klogf(AcpiSysInit(),"Load acpi driver.\n");
     acpi_enable_flag = !acpi_enable();
-    // power init
     hpet_initialize();
     AcpiPowerInit();
 }
@@ -383,14 +371,10 @@ void hpet_initialize() {
         printf("can not found acpi hpet table\n");
     }
 
-    printf("[acpi-hpet]: OEM: %s | Version: %d\n",hpet->oem,hpet->oemVersion);
-
     hpetInfo = (HpetInfo *) hpet->hpetAddress.address;
 
     uint32_t counterClockPeriod = hpetInfo->generalCapabilities >> 32;
     hpetPeriod = counterClockPeriod / 1000000;
 
     hpetInfo->generalConfiguration |= 1;  //  启用hpet
-
-    printf("[acpi]: hpet successfully enabled.\n");
 }

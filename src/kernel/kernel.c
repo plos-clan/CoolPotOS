@@ -18,12 +18,16 @@
 #include "../include/vfs.h"
 #include "../include/fat.h"
 #include "../include/iso9660.h"
+#include "../include/panic.h"
+#include "../include/mouse.h"
+#include "../include/desktop.h"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
 extern uint32_t end;
 extern int status;
 extern vdisk vdisk_ctl[10];
+extern bool hasFS;
 uint32_t placement_address = (uint32_t) & end;
 
 void reset_kernel(){
@@ -38,6 +42,8 @@ void shutdown_kernel(){
     kill_all_task();
     clock_sleep(10);
     power_off();
+
+
 }
 
 uint32_t memory_all(){
@@ -70,59 +76,72 @@ void kernel_main(multiboot_t *multiboot) {
     }
 
     initVBE(multiboot);
-
-    printf("[kernel]: VBE driver load success!\n");
+    printf("CPOS_Kernel %s (GRUB Multiboot) on an i386.\n",OS_VERSION);
+    printf("Memory Size: %dMB\n",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+    printf("Graphics[ width: %d | height: %d | address: %08x ]\n",multiboot->framebuffer_width,multiboot->framebuffer_height,multiboot->framebuffer_addr);
     gdt_install();
     idt_install();
-    printf("[kernel]: description table config success!\n");
     init_timer(1);
     acpi_install();
-    printf("[kernel]: ACPI enable success!\n");
     init_page(multiboot);
-    printf("[kernel]: page set success!\n");
+
     init_sched();
-    printf("[kernel]: task load success!\n");
     init_keyboard();
-    printf("[kernel]: Keyboard driver load success!\n");
+
     init_pit();
     io_sti();
     init_pci();
-    printf("[kernel]: PCI driver load success!\n");
     init_vdisk();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
-    printf("[kernel]: Disk driver load success!\n");
     init_vfs();
     Register_fat_fileSys();
-    printf("iso\n");
     init_iso9660();
-    printf("[kernel]: FileSystem load success!\n");
     syscall_install();
 
-
+    char disk_id = '0';
 
     for (int i = 0; i < 10; i++) {
         if (vdisk_ctl[i].flag) {
             vdisk vd = vdisk_ctl[i];
             char id = i + ('A');
-            vfs_mount_disk(id,id);
+            if(vfs_mount_disk(id,id)){
+                disk_id = id;
+                klogf(true,"Mount disk: %c\n",disk_id);
+            }
         }
     }
+    init_eh();
+    hasFS = false;
+    if(disk_id != '0'){
+        if(vfs_change_disk(disk_id)){
+            klogf(true,"Chang default mounted disk.\n");
+            hasFS = true;
+        }
+    } else klogf(false,"Unable to find available IDE devices.\n");
 
-
-    //vfs_mount_disk('A','A');
-    if(vfs_change_disk('A'))
-        printf("[FileSystem]: Change disk win!\n");
-
-    if(pcnet_find_card()){
+    bool pcnet_init = pcnet_find_card();
+    klogf(pcnet_init,"Enable network device pcnet.\n");
+    if(pcnet_init){
         //init_pcnet_card();
-    } else printf("[kernel]: Cannot found pcnet.\n");
-
-    print_cpu_id();
-
+    }
+    klogf(true,"Kernel load done!\n");
+    printf("\n\n");
     clock_sleep(25);
 
-    int pid = kernel_thread(setup_shell, NULL, "CPOS-Shell");
-    kernel_thread(check_task,&pid,"CPOS-SHELL-CHECK");
+   // vfs_change_disk('B');
+    vfs_change_path("apps");
+
+    user_process("init.bin","User-Init");
+    user_process("service.bin","Service");
+
+    print_proc();
+
+    //menu_sel();
+
+    //uint32_t pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
+    //kernel_thread(check_task,&pid,"CPOS-SC");
+
+    //panic_pane("Proccess out of memory error!",OUT_OF_MEMORY);
 
     for (;;) {
         io_hlt();

@@ -12,6 +12,7 @@
 
 extern Queue *key_char_queue;
 extern vdisk vdisk_ctl[10];
+extern bool hasFS;
 
 char getc() {
     while (key_char_queue->size == 0x00) {
@@ -134,6 +135,11 @@ void cmd_mkdir(int argc, char **argv) {
         return;
     }
 
+    if(!hasFS){
+        printf("Cannot find fs in this disk.\n");
+        return;
+    }
+
     vfs_file *file = get_cur_file(argv[1]);
 
     if(file != NULL){
@@ -149,6 +155,11 @@ void cmd_mkdir(int argc, char **argv) {
 void cmd_del(int argc, char **argv) {
     if (argc == 1) {
         print("[Shell-DEL]: If there are too few parameters, please specify the folder name.\n");
+        return;
+    }
+
+    if(!hasFS){
+        printf("Cannot find fs in this disk.\n");
         return;
     }
 
@@ -213,6 +224,10 @@ void cmd_cd(int argc, char **argv) {
         print("[Shell-CD]: If there are too few parameters, please specify the path.\n");
         return;
     }
+    if(!hasFS){
+        printf("Cannot find fs in this disk.\n");
+        return;
+    }
     if (vfs_change_path(argv[1]) == 0) printf("Invalid path.\n");
 }
 
@@ -229,6 +244,11 @@ void cmd_type(int argc,char ** argv){
         print("[Shell-TYPE]: If there are too few parameters, please specify the path.\n");
         return;
     }
+    if(!hasFS){
+        printf("Cannot find fs in this disk.\n");
+        return;
+    }
+
     char *buffer;
     buffer = (char*) kmalloc(vfs_filesize(argv[1]));
 
@@ -335,7 +355,7 @@ void setup_shell() {
 
     screen_clear();
 
-    printf("Welcome to %s %s (CPOS Kernel x86_64)\n"
+    printf("Welcome to %s %s (CPOS Kernel i386)\n"
            "\n"
            " * SourceCode:     https://github.com/xiaoyi1212/CoolPotOS\n"
            " * Website:        https://github.com/plos-clan\n"
@@ -360,7 +380,15 @@ void setup_shell() {
     char *buffer[255];
 
     while (1) {
-        vfs_getPath(buffer);
+        if(hasFS) vfs_getPath(buffer);
+        else{
+            buffer[0] = 'n';
+            buffer[1] = 'o';
+            buffer[2] = '_';
+            buffer[3] = 'f';
+            buffer[4] = 's';
+            buffer[5] = '\0';
+        }
         printf("\03343cd80;%s@localhost: \0334169E1;%s\\\033c6c6c6;$ ", user1, buffer);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         argc = cmd_parse(com, argv, ' ');
@@ -414,6 +442,6 @@ void setup_shell() {
             print("disk[list|<ID>|cg<ID>]List or view disks.\n");
             print("cd  <path>            Change shell top directory.\n");
             print("sb3       <name>      Player a wav sound file.\n");
-        } else printf("\033[Shell]: Unknown command '%s'.\n", argv[0]);
+        } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
     }
 }
