@@ -28,6 +28,16 @@ static void copy_char(uint32_t *vram, int off_x, int off_y, int x, int y, int x1
     }
 }
 
+void drawPixel(uint32_t x, uint32_t y, uint32_t color) {
+    if (x >= width
+        || y >= height) {
+        return;
+    }
+    color = (color & 0xff) << 16 | (color & 0xff00) | (color & 0xff0000) >> 16;
+    uint32_t  *p = (uint32_t *)screen + y * width + x;
+    *p = color;
+}
+
 void vbe_scroll() {
     if (cx > c_width) {
         cx = 0;
@@ -198,7 +208,8 @@ void initVBE(multiboot_t *info) {
     width = info->framebuffer_width;
     height = info->framebuffer_height;
     color = 0xc6c6c6;
-    back_color = 0x1c1c1c;
+    //back_color = 0x1c1c1c;
+    back_color = 0x000000;
     c_width = width / 9;
     c_height = height / 16;
 

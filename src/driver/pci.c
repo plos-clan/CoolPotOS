@@ -104,7 +104,6 @@ void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsign
 }
 
 void init_pci(){
-    printf("[\035kernel\036]: Loading pci device...\n");
     int PCI_NUM = 0;
 
     PCI_ADDR_BASE = kmalloc(1 * 1024 * 1024);
@@ -155,6 +154,5 @@ void init_pci(){
             }
         }
     }
-
-    printf("[pci]: Device Loaded: %d\n",PCI_NUM);
+    klogf(true,"PCI device loaded: %d\n",PCI_NUM);
 }

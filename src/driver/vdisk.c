@@ -16,6 +16,7 @@ int init_vdisk() {
     for (int i = 0; i < 26; i++) {
         vdisk_ctl[i].flag = 0; // 设置为未使用
     }
+    klogf(true,"VDisk interface initialize.\n");
 }
 
 int register_vdisk(vdisk vd) {

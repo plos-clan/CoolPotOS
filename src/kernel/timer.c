@@ -58,7 +58,6 @@ void init_pit(void) {
 }
 
 void init_timer(uint32_t timer) {
-    printf("REG TIMER INT: %d, function address: %08x.\n",IRQ0, &timer_handle);
     register_interrupt_handler(IRQ0, &timer_handle);
     uint32_t divisor = 1193180 / timer;
 

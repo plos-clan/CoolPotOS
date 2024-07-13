@@ -5,6 +5,8 @@
 
 #define GDT_LENGTH 6
 
+#define SA_RPL3 3
+
 typedef struct gdt_entry_t {
     uint16_t limit_low;           // 段基址 | 低16位置
     uint16_t base_low;            // 段基址 | 高16位置
@@ -121,12 +123,38 @@ typedef struct tss_table {
     uint16_t iomap_base;
 } tss_entry;
 
+typedef struct intr_frame_t {
+    unsigned edi;
+    unsigned esi;
+    unsigned ebp;
+    // 虽然 pushad 把 esp 也压入，但 esp 是不断变化的，所以会被 popad 忽略
+    unsigned esp_dummy;
+
+    unsigned ebx;
+    unsigned edx;
+    unsigned ecx;
+    unsigned eax;
+
+    unsigned gs;
+    unsigned fs;
+    unsigned es;
+    unsigned ds;
+
+    unsigned eip;
+    unsigned cs;
+    unsigned eflags;
+    unsigned esp;
+    unsigned ss;
+} intr_frame_t;
+
 void write_tss(int32_t num, uint16_t ss0, uint32_t esp0);
 void set_kernel_stack(uintptr_t stack);
+void set_tss_ss0(uintptr_t ss);
 
 void gdt_install();
 void idt_install();
 
+void idt_use_reg(uint8_t num,uint32_t base);
 void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
 
 #endif //CRASHPOWEROS_DESCRIPTION_TABLE_H

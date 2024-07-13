@@ -85,6 +85,7 @@ int get_directory_max(struct FAT_FILEINFO *directory, vfs_t *vfs) {
         }
     }
 }
+
 void file_loadfile(int clustno, int size, char *buf, int *fat, vfs_t *vfs) {
     if (!size) {
         return;
@@ -168,15 +169,7 @@ void file_savefile(int clustno, int size, char *buf, int *fat,
     }
     void *img = kmalloc(alloc_size);
     memclean((char *)img, alloc_size);
-    memcpy(img, buf, size); // 把要写入的数据复制到新请求的内存地址
-    // for (int i = 0; i != (alloc_size / get_dm(vfs).ClustnoBytes); i++) {
-    //   uint32_t sec = (get_dm(vfs).FileDataAddress +
-    //                   (clustno - 2) * get_dm(vfs).ClustnoBytes) /
-    //                  get_dm(vfs).SectorBytes;
-    //   Disk_Write(sec, get_dm(vfs).ClustnoBytes / get_dm(vfs).SectorBytes,
-    //              img + i * get_dm(vfs).ClustnoBytes, vfs->disk_number);
-    //   clustno = fat[clustno];
-    // }
+    memcpy(img, buf, size);
     int flag = 0, a, num = 0, sec_start = 0;
     for (int i = 0; i != (alloc_size / get_dm(vfs).ClustnoBytes); i++) {
         uint32_t sec = (get_dm(vfs).FileDataAddress +

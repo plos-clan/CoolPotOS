@@ -304,6 +304,20 @@ void printf(const char *formet, ...) {
     va_end(ap);
 }
 
+
+void klogf(bool isok,char* fmt,...){
+    int len;
+    va_list ap;
+    va_start(ap, fmt);
+    char *buf[1024] = {0};
+    len = vsprintf(buf, fmt, ap);
+    if(isok){
+        printf("[  \03300ee76;OK\033c6c6c6;  ]: %s",buf);
+    } else{
+        printf("[\033ee6363;FAILED\033c6c6c6;]: %s",buf);
+    }
+}
+
 void screen_clear(){
     if(vbe_status){
         vbe_clear();
@@ -333,6 +347,6 @@ void logkf(char *formet,...){
 }
 
 void logk(char *message){
-    for (size_t i = 0; i < strlen(message); i++)
-        write_serial(message[i]);
+    for (size_t i = 0; i < strlen(message); i++);
+        //write_serial(message[i]);
 }

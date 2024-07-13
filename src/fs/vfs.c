@@ -10,6 +10,7 @@
 vfs_t vfsstl[26];
 vfs_t vfsMount_Stl[26];
 vfs_t *vfs_now;
+bool hasFS;
 
 static vfs_t *drive2fs(uint8_t drive) {
     for (int i = 0; i < 26; i++) {
@@ -71,7 +72,6 @@ static void insert_str1(char *str, char *insert_str1, int pos) {
 }
 
 bool vfs_mount_disk(uint8_t disk_number, uint8_t drive) {
-    printf("Mount DISK ---- %02x\n", disk_number);
     for (int i = 0; i < 26; i++) {
         if (vfsMount_Stl[i].flag == 1 &&
             (vfsMount_Stl[i].drive == drive ||
@@ -95,6 +95,9 @@ bool vfs_mount_disk(uint8_t disk_number, uint8_t drive) {
     seat->drive = drive;
     seat->disk_number = disk_number;
     seat->flag = 1;
+
+    printf("Disk %c mount success!\n",disk_number);
+
     return true;
 }
 
@@ -400,10 +403,10 @@ void init_vfs() {
         // PDEBUG("Set vfsstl[%d] & vfsMount_Stl[%d] OK.", i, i);
     }
     vfs_now = NULL;
+    klogf(true,"Virtual File System initialize.\n");
 }
 
 bool vfs_register_fs(vfs_t vfs) {
-    printf("Register file system: %s\n", vfs.FSName);
     vfs_t *seat;
     seat = findSeat(vfsstl);
     if (!seat) {
@@ -411,5 +414,6 @@ bool vfs_register_fs(vfs_t vfs) {
         return false;
     }
     *seat = vfs;
+    klogf(true,"Register file system: %s\n",vfs.FSName);
     return true;
 }

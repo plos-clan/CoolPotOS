@@ -2,6 +2,11 @@
 #define CRASHPOWEROS_TASK_H
 
 #include "memory.h"
+#include "vfs.h"
+
+typedef struct {
+    int (*main)(int argc,char* * argv);
+}user_func_t;
 
 typedef
 enum task_state {
@@ -25,8 +30,14 @@ struct context {
 struct task_struct {
     volatile task_state state;  // 进程当前状态
     int pid;           // 进程标识符
+    int mem_size; //内存利用率
     char *name;        // 进程名
     void *stack;         // 进程的内核栈地址
+    header_t *head;
+    header_t *tail;
+    bool isUser;
+    uint32_t program_break;
+    uint32_t program_break_end;
     page_directory_t *pgd_dir;     // 进程页表
     struct context context;     // 上下文信息
     struct task_struct *next;   // 链表指针
@@ -60,4 +71,7 @@ void start_task(struct  task_struct *task);
 
 int get_procs();
 
+void switch_to_user_mode(uint32_t func);
+
+int32_t user_process(char* path, char *name);
 #endif //CRASHPOWEROS_TASK_H
