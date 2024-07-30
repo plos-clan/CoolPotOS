@@ -13,9 +13,6 @@
 #define USER_END (USER_START + 0xf00000)
 #define USER_HEAP_END (USER_END - STACK_SIZE)
 
-#define US_B_START 0xe0000000
-#define US_B_END 0xe1000000
-
 #define INDEX_FROM_BIT(a) (a / (8*4))
 #define OFFSET_FROM_BIT(a) (a % (8*4))
 
@@ -97,7 +94,7 @@ void memclean(char *s, int len);
 
 void *realloc(void *ptr, uint32_t size);
 
-void alloc_frame_line(page_t *page, unsigned line,int is_kernel, int is_writable);
+void alloc_frame_line(page_t *page, uint32_t line,int is_kernel, int is_writable);
 
 void free_frame(page_t *page);
 

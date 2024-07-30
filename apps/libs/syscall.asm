@@ -5,7 +5,7 @@ put_char:
     push	eax
     mov edx,[ss:esp+12]
     mov eax,0x01
-    int 80h
+    int 31h
     pop	eax
     pop	edx
     ret

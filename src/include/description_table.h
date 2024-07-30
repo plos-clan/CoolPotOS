@@ -73,6 +73,8 @@ DECLARE_IRQ(12)
 DECLARE_IRQ(13)
 DECLARE_IRQ(14)
 DECLARE_IRQ(15)
+
+DECLARE_IRQ(80)
 #undef DECLARE_IRQ
 
 struct idt_entry_struct {

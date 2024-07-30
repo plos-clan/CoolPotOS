@@ -1,7 +1,11 @@
 #include "../include/stdio.h"
 
+void putc(char c){
+
+}
+
 int main(){
+    putc('A');
     while (1);
-    put_char('A');
     return 0;
 }

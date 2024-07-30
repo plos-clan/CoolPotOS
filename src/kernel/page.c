@@ -22,7 +22,7 @@ static void set_frame(uint32_t frame_addr) {
     frames[idx] |= (0x1 << off);
 }
 
-static void clear_frame(uint32_t frame_addr) {
+static void clear_frame(uint32_t frame_addr) { //释放物理块
     uint32_t frame = frame_addr / 0x1000;
     uint32_t idx = INDEX_FROM_BIT(frame);
     uint32_t off = OFFSET_FROM_BIT(frame);
@@ -70,9 +70,9 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
         page->frame = idx;
     }
 }
-void alloc_frame_line(page_t *page, unsigned line,int is_kernel, int is_writable) {
-   // logk("%08x\n",line);
+void alloc_frame_line(page_t *page, uint32_t line,int is_kernel, int is_writable) {
     set_frame(line);
+    memset(page,0,4);
     page->present = 1; // 现在这个页存在了
     page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
     page->user = is_kernel ? 0 : 1; // 是否为用户态由is_kernel决定
@@ -133,7 +133,7 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
 
 
 void page_fault(registers_t *regs) {
-    asm("cli");
+    io_cli();
     uint32_t faulting_address;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address)); //
 
@@ -163,8 +163,8 @@ void page_fault(registers_t *regs) {
         task_kill(current->pid);
     }
 
-    io_sti();
     sleep(1);
+    io_sti();
 }
 
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
@@ -225,7 +225,11 @@ void init_page(multiboot_t *mboot) {
     int i = 0;
 
     while (i < placement_address + 0x30000) {
-        // 内核部分对ring3而言可读不可写 | 无偏移页表映射
+        /*
+         * 内核部分对ring3而言不可读不可写
+         * 无偏移页表映射
+         * 因为刚开始分配, 所以内核线性地址与物理地址对应
+         */
         alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
         i += 0x1000;
     }
@@ -233,7 +237,7 @@ void init_page(multiboot_t *mboot) {
     unsigned int j = mboot->framebuffer_addr,size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
 
     while (j <= mboot->framebuffer_addr + size){
-        alloc_frame_line(get_page(j,1,kernel_directory,false),j,1,1);
+        alloc_frame_line(get_page(j,1,kernel_directory,false),j,0,1);
         j += 0x1000;
     }
 
@@ -248,13 +252,9 @@ void init_page(multiboot_t *mboot) {
     program_break = (void *) KHEAP_START;
     program_break_end = (void *) (KHEAP_START + KHEAP_INITIAL_SIZE);
 
-    klogf(true,"Memory manager is enable\n"
-               "Kernel: 0x00 - 0x%08x "
-               "Framebuffer: 0x%08x - 0x%08x "
-               "KernelHeap: 0x%08x - 0x%08x "
-               "BaseFrame: 0x%08x\n",
-          placement_address + 0x30000,
-          mboot->framebuffer_addr,mboot->framebuffer_addr + size,
-          KHEAP_START,KHEAP_START + KHEAP_INITIAL_SIZE,
-          frames);
+    klogf(true,"Memory manager is enable\n");
+    printf("Kernel: 0x%08x | ",placement_address + 0x30000);
+    printf("GraphicsBuffer: 0x%08x - 0x%08x \n",(mboot->framebuffer_addr),(mboot->framebuffer_addr + size));
+    printf("KernelHeap: 0x%08x - 0x%08x | ",(KHEAP_START),(KHEAP_START + KHEAP_INITIAL_SIZE));
+    printf("BaseFrame: 0x%08x\n",frames);
 }

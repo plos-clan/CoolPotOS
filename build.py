@@ -99,7 +99,7 @@ def build_data():  # 构建常用工具
 def build_sysapp():  # 构建内置系统应用
     print("Building sysapp source code...")
     for file in os.listdir(cd + dir_ + src + 'sysapp'):
-        cmd = cd + gcc + "-O0 " + src + "sysapp" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        cmd = cd + gcc + "-Og " + src + "sysapp" + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
         e = os.system(cmd)
         if e != 0:
             return -1

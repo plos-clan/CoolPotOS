@@ -4,8 +4,8 @@
 /*.set FLAGS, 3 */
 .set CHECKSUM, -(MAGIC + FLAGS)
 .set MODE_TYPE, 0
-.set WIDTH, 1280  /* requested width */
-.set HEIGHT, 720  /* requested height */
+.set WIDTH, 1024  /* requested width */
+.set HEIGHT, 768  /* requested height */
 /* .set WIDTH, 640
 .set HEIGHT, 480 */
 .set DEPTH, 32    /* requested bits per pixel BPP */

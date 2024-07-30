@@ -61,7 +61,9 @@ void gdt_install() {
 
     gdt_flush((uint32_t)&gdt_ptr);
 
-    write_tss(5, 0x10, 0x0);
+    register uint32_t esp asm("esp");
+
+    write_tss(5, 0x10, esp);
     tss_flush();
 }
 

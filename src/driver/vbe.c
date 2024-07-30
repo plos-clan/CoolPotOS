@@ -93,6 +93,7 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
 
 
     uint8_t *font = bafont;
+    //uint8_t *font = ascfont;
 
     font += c * 16;
 
@@ -100,14 +101,14 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
         for (int j = 0; j < 9; j++) {
             if (font[i] & (0x80 >> j)) {
                 screen[(y + i) * width + x + j] = color;
-            } else screen[(y + i) * width + x + j] = back_color;
+            } //else screen[(y + i) * width + x + j] = back_color;
         }
     }
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < 9; j++) {
             if (font[i] & (0x80 >> j)) {
                 screen[(y + i) * width + x + j] = color;
-            } else screen[(y + i) * width + x + j + 1] = back_color;
+            } //else screen[(y + i) * width + x + j + 1] = back_color;
         }
     }
 }
