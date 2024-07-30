@@ -24,6 +24,7 @@ char getc() {
 int gets(char *buf, int buf_size) {
     int index = 0;
     char c;
+    logk("GETS DEBUG I\n");
     while ((c = getc()) != '\n') {
         if (c == '\b') {
             if (index > 0) {
@@ -35,6 +36,7 @@ int gets(char *buf, int buf_size) {
             putchar(c);
         }
     }
+    logk("GETS DEBUG II\n");
     buf[index] = '\0';
     putchar(c);
     return index;
@@ -73,7 +75,7 @@ void cmd_echo(int argc, char **argv) {
 
 void cmd_proc(int argc, char **argv) {
     if (argc <= 1) {
-        printf("[Shell-PROC]: If there are too few parameters.\n");
+        print_proc();
         return;
     }
 
@@ -236,7 +238,7 @@ void cmd_sb3(int argc, char **argv) {
         print("[Shell-SB3]: If there are too few parameters, please specify the path.\n");
         return;
     }
-    wav_player(argv[1]);
+   // wav_player(argv[1]);
 }
 
 void cmd_type(int argc,char ** argv){
@@ -261,10 +263,23 @@ void cmd_type(int argc,char ** argv){
         printf("%s",buffer);
     else printf("Cannot read file.\n");
 
-
-
     kfree(buffer);
     print("\n");
+}
+
+void cmd_exec(int argc,char** argv){
+    if (argc == 1) {
+        print("[Shell-EXEC]: If there are too few parameters, please specify the path.\n");
+        return;
+    }
+    if(vfs_filesize(argv[1]) == -1){
+        print("Cannot found exec file.\n");
+        return;
+    }
+    char buf[1024];
+    sprintf(buf,"User-%s ",argv[1]);
+    int32_t pid = user_process(argv[1],buf);
+    klogf(pid != -1,"Launching user task PID:%d Name:%s\n",pid,buf);
 }
 
 void cmd_disk(int argc, char **argv) {
@@ -351,10 +366,6 @@ char *user() {
 }
 
 void setup_shell() {
-    char *user1 = "default";//user();
-
-    screen_clear();
-
     printf("Welcome to %s %s (CPOS Kernel i386)\n"
            "\n"
            " * SourceCode:     https://github.com/xiaoyi1212/CoolPotOS\n"
@@ -363,7 +374,7 @@ void setup_shell() {
            " System information as of %s \n"
            "\n"
            "  Processes:             %d\n"
-           "  Users logged in:       %s\n"
+           "  Users logged in:       default\n"
            "  Memory usage:          %d B        \n"
            "\n"
            "Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n"
@@ -371,15 +382,14 @@ void setup_shell() {
            ,OS_VERSION
            ,get_date_time()
            ,get_procs()
-           ,user1
            ,memory_usage());
-
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
     int argc = -1;
     char *buffer[255];
 
     while (1) {
+        logk("DEBUG I\n");
         if(hasFS) vfs_getPath(buffer);
         else{
             buffer[0] = 'n';
@@ -389,8 +399,12 @@ void setup_shell() {
             buffer[4] = 's';
             buffer[5] = '\0';
         }
-        printf("\03343cd80;%s@localhost: \0334169E1;%s\\\033c6c6c6;$ ", user1, buffer);
+        logk("DEBUG II\n");
+        printf("\03343cd80;default@localhost: \0334169E1;%s\\\033c6c6c6;$ ", buffer);
+        logk("DEBUG III\n");
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
+        logk("DEBUG IIII\n");
+
         argc = cmd_parse(com, argv, ' ');
 
         if (argc == -1) {
@@ -426,6 +440,8 @@ void setup_shell() {
             cmd_cd(argc, argv);
         else if (!strcmp("sb3", argv[0]))
             cmd_sb3(argc, argv);
+        else if (!strcmp("exec",argv[0]))
+            cmd_exec(argc,argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print("-=[CoolPotShell Helper]=-\n");
             print("help ? h              Print shell help info.\n");
@@ -442,6 +458,7 @@ void setup_shell() {
             print("disk[list|<ID>|cg<ID>]List or view disks.\n");
             print("cd  <path>            Change shell top directory.\n");
             print("sb3       <name>      Player a wav sound file.\n");
+            print("exec <path>           Execute a application.\n");
         } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
     }
 }

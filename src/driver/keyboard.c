@@ -3,6 +3,7 @@
 #include "../include/memory.h"
 #include "../include/queue.h"
 #include "../include/io.h"
+#include "../include/klog.h"
 
 KEY_STATUS *key_status;
 Queue *key_char_queue;
@@ -142,6 +143,10 @@ int handle_keyboard_input(registers_t *reg){
     uint32_t key = read_port(KEYBOARD_DATA_PORT);
     int release = key & 0xb10000000;
     char c = key_status->is_shift ? shift_keyboard_map[(unsigned char )key] : keyboard_map[(unsigned char )key];
+
+    io_cli();
+
+    info("PS/2 Keyboard: %c : %08x",c,key);
 
     struct key_listener* h = head_listener;
     while (1){

@@ -70,7 +70,6 @@ void idt_install() {
     outb(0x21, 0x0);
     outb(0xA1, 0x0);
 
-
 #define REGISTER_ISR(id) idt_set_gate(id, (uint32_t) isr##id, 0x08, 0x8E)
     REGISTER_ISR(0);
     REGISTER_ISR(1);
@@ -103,8 +102,8 @@ void idt_install() {
     REGISTER_ISR(28);
     REGISTER_ISR(29);
     REGISTER_ISR(30);
-    REGISTER_ISR(31);
 #undef REGISTER_ISR
+    idt_use_reg(31, (uint32_t) isr31);
 #define REGISTER_IRQ(id, irq_id) idt_set_gate(id, (uint32_t) irq##irq_id, 0x08, 0x8E)
     REGISTER_IRQ(32, 0);
     REGISTER_IRQ(33, 1);

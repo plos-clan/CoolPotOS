@@ -19,7 +19,7 @@ unsigned int time(void) {
 static void timer_handle(registers_t *regs) {
     io_cli();
     tick++;
-    schedule();
+    schedule(regs);
     io_sti();
 }
 

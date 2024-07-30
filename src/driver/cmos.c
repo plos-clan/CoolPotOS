@@ -18,7 +18,7 @@ static void cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx, unsigne
 
 static void get_vendor_name(cpu_t *c) {
     int cpuid_level;
-    char x86_vendor_id[16] = {0};
+    static char x86_vendor_id[16] = {0};
     cpuid(0x00000000, (unsigned int *) &cpuid_level,
           (unsigned int *) &x86_vendor_id[0],
           (unsigned int *) &x86_vendor_id[8],

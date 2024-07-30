@@ -16,11 +16,10 @@
 #include "../include/pcnet.h"
 #include "../include/ide.h"
 #include "../include/vfs.h"
-#include "../include/fat.h"
-#include "../include/iso9660.h"
 #include "../include/panic.h"
 #include "../include/mouse.h"
 #include "../include/desktop.h"
+#include "../include/soundtest.h"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -78,7 +77,6 @@ void kernel_main(multiboot_t *multiboot) {
     initVBE(multiboot);
     printf("CPOS_Kernel %s (GRUB Multiboot) on an i386.\n",OS_VERSION);
     printf("Memory Size: %dMB\n",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
-    printf("Graphics[ width: %d | height: %d | address: %08x ]\n",multiboot->framebuffer_width,multiboot->framebuffer_height,multiboot->framebuffer_addr);
     gdt_install();
     idt_install();
     init_timer(1);
@@ -86,6 +84,7 @@ void kernel_main(multiboot_t *multiboot) {
     init_page(multiboot);
 
     init_sched();
+    //proc_install();
     init_keyboard();
 
     init_pit();
@@ -94,8 +93,6 @@ void kernel_main(multiboot_t *multiboot) {
     init_vdisk();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     init_vfs();
-    Register_fat_fileSys();
-    init_iso9660();
     syscall_install();
 
     char disk_id = '0';
@@ -125,21 +122,20 @@ void kernel_main(multiboot_t *multiboot) {
         //init_pcnet_card();
     }
     klogf(true,"Kernel load done!\n");
-    printf("\n\n");
+    kernel_thread(sound_test,NULL,"Sound");
+
+    io_sti();
+
     clock_sleep(25);
 
-   // vfs_change_disk('B');
     vfs_change_path("apps");
+    //klogf(user_process("service.bin","Service") != -1,"Service base process init.\n");
+    klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
 
-    user_process("init.bin","User-Init");
-    user_process("service.bin","Service");
+    int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
+    klogf(pid != -1,"Launch kernel shell.\n");
+    kernel_thread(check_task,&pid,"CPOS-CK");
 
-    print_proc();
-
-    //menu_sel();
-
-    //uint32_t pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
-    //kernel_thread(check_task,&pid,"CPOS-SC");
 
     //panic_pane("Proccess out of memory error!",OUT_OF_MEMORY);
 

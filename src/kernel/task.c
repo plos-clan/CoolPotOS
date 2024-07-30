@@ -21,6 +21,8 @@ extern page_directory_t *kernel_directory;
 
 extern void switch_to(struct context *prev, struct context *next);
 
+extern void taskX_switch(struct context *prev, struct context *next);
+
 int now_pid = 0;
 int can_sche = 1;
 
@@ -140,7 +142,6 @@ void task_kill(int pid) {
     argv->state = TASK_DEATH;
     printf("Taskkill process PID:%d Name:%s\n", current->pid, current->name);
     printf("Task [%s] exit code: -130.\n", argv->name);
-    io_sti();
 
     kfree(argv);
     struct task_struct *head = running_proc_head;
@@ -156,41 +157,39 @@ void task_kill(int pid) {
     }
 }
 
-void schedule() {
+void schedule(registers_t *reg) {
+    io_cli();
     if (current && can_sche) {
-        if (current->next->state == TASK_SLEEPING) {
-            change_task_to(current->next->next);
-            return;
-        }
-        change_task_to(current->next);
+        change_task_to(reg,current->next);
     }
 }
 
-void change_task_to(struct task_struct *next) {
+void change_task_to(registers_t *reg,struct task_struct *next) {
     if (current != next) {
         struct task_struct *prev = current;
         current = next;
-
         page_switch(current->pgd_dir);
-        set_kernel_stack(current->stack + STACK_SIZE); // 没有 TSACK_SIZE
+        set_kernel_stack(current->stack + STACK_SIZE);
+
+        prev->context.eip = reg->eip;
+        prev->context.ds = reg->ds;
+        prev->context.cs = reg->cs;
+        prev->context.eax = reg->eax;
         switch_to(&(prev->context), &(current->context));
+        reg->ds = current->context.ds;
+        reg->cs = current->context.cs;
+        reg->eip = current->context.eip;
+        reg->eax = current->context.eax;
     }
 }
-void n() {
-    printf("Hello! User!\n");
-    for(;;);
-}
-
 
 int32_t user_process(char *path, char *name){
     can_sche = 0;
     if(path == NULL){
-        printf("Cannot create process! exec path is NULL\n");
         return -1;
     }
     uint32_t size = vfs_filesize(path);
     if(size == -1){
-        printf("Cannot font exec file\n");
         return -1;
     }
     io_cli();
@@ -235,8 +234,6 @@ int32_t user_process(char *path, char *name){
 
     uint32_t main = load_elf(ehdr,page);
 
-    printf("Main ADDRESS: %08x\n",main);
-
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
 
     *(--stack_top) = (uint32_t) main;
@@ -246,7 +243,7 @@ int32_t user_process(char *path, char *name){
     new_task->context.esp = (uint32_t) new_task + STACK_SIZE - sizeof(uint32_t) * 3;
 
     // 设置新任务的标志寄存器未屏蔽中断，很重要
-    new_task->context.eflags = 0x200;
+    new_task->context.eflags = (0 << 12 | 0b10 | 1 << 9);
     new_task->next = running_proc_head;
 
     page_switch(kernel_directory);
@@ -317,7 +314,8 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) {
 
 void kthread_exit() {
     register uint32_t val asm ("eax");
-    printf("Task exited with value %d\n", val);
+    printf("Task [PID: %d] exited with value %d\n", current->pid,val);
+    task_kill(current->pid);
     current->state = TASK_DEATH;
     while (1);
 }
@@ -334,14 +332,7 @@ void kill_all_task() {
     }
 }
 
-
 #define SA_RPL3 3
-void A() {
-    printf("USE3 HELLO!\n");
-    asm("hlt");
-    for(;;);
-}
-
 
 void switch_to_user_mode(uint32_t func) {
     io_cli();
@@ -365,6 +356,7 @@ void switch_to_user_mode(uint32_t func) {
 
     iframe.ss = GET_SEL(4 * 8, SA_RPL3);
     iframe.cs = GET_SEL(3 * 8, SA_RPL3);
+    //set_tss_ss0(iframe.ss);
 
     iframe.eip = func; //用户可执行程序入口
     iframe.eflags = (0 << 12 | 0b10 | 1 << 9);

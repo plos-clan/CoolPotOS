@@ -17,13 +17,20 @@ enum task_state {
     TASK_DEATH = 4     // 终止状态
 } task_state;
 
-struct context {
+struct context{
     uint32_t esp;
     uint32_t ebp;
     uint32_t ebx;
     uint32_t esi;
     uint32_t edi;
+    uint32_t ecx;
+    uint32_t edx;
     uint32_t eflags;
+
+    uint32_t eax;
+    uint32_t eip;
+    uint32_t ds;
+    uint32_t cs;
 };
 
 // 进程控制块 PCB
@@ -55,9 +62,9 @@ void print_proc();
 
 void init_sched();
 
-void schedule();
+void schedule(registers_t *reg);
 
-void change_task_to(struct task_struct *next);
+void change_task_to(registers_t *reg,struct task_struct *next);
 
 void task_kill(int pid);
 

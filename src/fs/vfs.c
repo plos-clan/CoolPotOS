@@ -6,6 +6,8 @@
 #include "../include/vfs.h"
 #include "../include/common.h"
 #include "../include/memory.h"
+#include "../include/fat.h"
+#include "../include/iso9660.h"
 
 vfs_t vfsstl[26];
 vfs_t vfsMount_Stl[26];
@@ -95,9 +97,6 @@ bool vfs_mount_disk(uint8_t disk_number, uint8_t drive) {
     seat->drive = drive;
     seat->disk_number = disk_number;
     seat->flag = 1;
-
-    printf("Disk %c mount success!\n",disk_number);
-
     return true;
 }
 
@@ -404,6 +403,8 @@ void init_vfs() {
     }
     vfs_now = NULL;
     klogf(true,"Virtual File System initialize.\n");
+    Register_fat_fileSys();
+    init_iso9660();
 }
 
 bool vfs_register_fs(vfs_t vfs) {

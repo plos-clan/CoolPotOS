@@ -48,9 +48,12 @@ switch_to:
         mov [eax+8],  ebx
         mov [eax+12], esi
         mov [eax+16], edi
-        pushf
-        pop ecx
         mov [eax+20], ecx
+        mov [eax+24], edx
+
+        pushf        ;保存eflags
+        pop ecx
+        mov [eax+28], ecx
 
         mov eax, [esp+8]
 
@@ -59,7 +62,10 @@ switch_to:
         mov ebx, [eax+8]
         mov esi, [eax+12]
         mov edi, [eax+16]
-        mov eax, [eax+20]
+        mov ecx, [eax+20]
+        mov edx, [eax+24]
+
+        mov eax, [eax+28] ;加载eflags
         push eax
         popf
 
