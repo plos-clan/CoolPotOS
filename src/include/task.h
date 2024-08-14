@@ -31,23 +31,24 @@ struct context{
     uint32_t eip;
     uint32_t ds;
     uint32_t cs;
+    uint32_t ss;
 };
 
 // 进程控制块 PCB
 struct task_struct {
-    volatile task_state state;  // 进程当前状态
-    int pid;           // 进程标识符
-    int mem_size; //内存利用率
-    char *name;        // 进程名
-    void *stack;         // 进程的内核栈地址
-    header_t *head;
+    volatile task_state state;    // 进程当前状态
+    int pid;                      // 进程标识符
+    int mem_size;                 // 内存利用率
+    char *name;                   // 进程名
+    void *stack;                  // 进程的内核栈地址
+    header_t *head;               // 进程堆
     header_t *tail;
-    bool isUser;
-    uint32_t program_break;
-    uint32_t program_break_end;
-    page_directory_t *pgd_dir;     // 进程页表
-    struct context context;     // 上下文信息
-    struct task_struct *next;   // 链表指针
+    bool isUser;                  // 是否是用户进程
+    uint32_t program_break;       // 进程堆基址
+    uint32_t program_break_end;   // 进程堆尾
+    page_directory_t *pgd_dir;    // 进程页表
+    struct context context;       // 上下文信息
+    struct task_struct *next;     // 链表指针
 };
 
 void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print);

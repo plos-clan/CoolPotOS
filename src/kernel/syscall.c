@@ -5,8 +5,6 @@
 #include "../include/graphics.h"
 #include "../include/io.h"
 
-extern asm_syscall_handler();
-
 void syscall_handler(registers_t regs){
     io_cli();
     printf("Syscall is enable.\n");
@@ -18,5 +16,5 @@ void syscall_handler(registers_t regs){
 }
 
 void syscall_install(){
-    register_interrupt_handler(31,asm_syscall_handler);
+    register_interrupt_handler(31,syscall_handler);
 }

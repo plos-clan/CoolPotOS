@@ -44,8 +44,10 @@ void panic_pane(char* msg,enum PANIC_TYPE type){
     back_color = 0x1e90ff;
     color = 0xffffff;
     screen_clear();
-    if(panic_bmp != NULL)
-        display(panic_bmp,0,0,true);
+    if(panic_bmp != NULL){
+        display(panic_bmp,0,0,false);
+    } else klogf(false,"Cannot draw panic image.\n");
+
     cx = 10;
     cy = c_height - 10;
 

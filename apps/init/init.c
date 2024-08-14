@@ -1,11 +1,11 @@
 #include "../include/stdio.h"
 
-void putc(char c){
-
+void hlt(){
+    while (1);
 }
 
 int main(){
-    putc('A');
-    while (1);
+    hlt();
+    //put_char('A');
     return 0;
 }

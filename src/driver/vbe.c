@@ -4,17 +4,21 @@
 #include "../include/common.h"
 #include "../include/multiboot2.h"
 #include "../include/timer.h"
+#include "../include/bmp.h"
 
 uint32_t width, height;
 uint32_t c_width, c_height; // 字符绘制总宽高
 int32_t x, y;
 int32_t cx, cy; // 字符坐标
 uint32_t color, back_color;
+
 uint32_t *screen;
+
 uint32_t *char_buffer;
 extern uint8_t ascfont[];
 extern uint8_t plfont[];
 extern uint8_t bafont[];
+extern uint8_t logo_bmp[];
 
 bool vbe_status = false;
 
@@ -54,43 +58,17 @@ void vbe_scroll() {
             screen[i] = back_color;
         }
     }
-
-
-    /*
-    if (cy >= c_height) {
-        cy = c_height - 1;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                screen[j + i * width] = screen[j + (i + 16) * width];
-            }
-        }
-    }
-    if (y == height - height % 16) {
-        cy = c_height - 1;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                (screen)[j + i * width] = (screen)[j + (i + 16 - height % 16) * width];
-            }
-        }
-    }
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < 28; j++) {
-            screen[height * (width + j) + i] = back_color;
-        }
-    }
-     */
 }
 
 void vbe_draw_char(char c, int32_t x, int32_t y) {
     if (c == ' ') {
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 9; j++) {
-                screen[(y + i) * width + x + j] = back_color;
+                //screen[(y + i) * width + x + j] = back_color;
             }
         }
         return;
     }
-
 
     uint8_t *font = bafont;
     //uint8_t *font = ascfont;
@@ -102,13 +80,6 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
             if (font[i] & (0x80 >> j)) {
                 screen[(y + i) * width + x + j] = color;
             } //else screen[(y + i) * width + x + j] = back_color;
-        }
-    }
-    for (int i = 0; i < 16; i++) {
-        for (int j = 0; j < 9; j++) {
-            if (font[i] & (0x80 >> j)) {
-                screen[(y + i) * width + x + j] = color;
-            } //else screen[(y + i) * width + x + j + 1] = back_color;
         }
     }
 }
@@ -147,7 +118,9 @@ void vbe_putchar(char ch) {
             if (cy != 0) cy -= 1;
             if (cy == 0) cx = 0, cy = 0;
         }
-        //draw_rect(x, y, x + 9, y + 16, back_color);
+        int x = (cx+1) * 9 - 7;
+        int y = cy * 16;
+        draw_rect(x, y, x + 9, y + 16, back_color);
         return;
     }
 
@@ -158,10 +131,10 @@ void vbe_putchar(char ch) {
 
 void vbe_write(const char *data, size_t size) {
     static const long hextable[] = {
-            [0 ... 255] = -1, // bit aligned access into this table is considerably
-            ['0'] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // faster for most modern processors,
-            ['A'] = 10, 11, 12, 13, 14, 15,       // for the space conscious, reduce to
-            ['a'] = 10, 11, 12, 13, 14, 15        // signed char.
+            [0 ... 255] = -1,
+            ['0'] = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            ['A'] = 10, 11, 12, 13, 14, 15,
+            ['a'] = 10, 11, 12, 13, 14, 15
     };
 
     for (;*data; ++data){
@@ -215,4 +188,7 @@ void initVBE(multiboot_t *info) {
     c_height = height / 16;
 
     vbe_clear();
+
+    Bmp *bmp = (Bmp*) &logo_bmp;
+    display(bmp,0,0,false);
 }

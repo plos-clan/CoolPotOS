@@ -40,7 +40,7 @@ copy_page_physical:
     popf                  ; Pop EFLAGS back.
     pop ebx               ; Get the original value of EBX back.
 
-switch_to:
+switch_to: ;void switch_to(struct context *prev, struct context *next);
         mov eax, [esp+4]
 
         mov [eax+0],  esp

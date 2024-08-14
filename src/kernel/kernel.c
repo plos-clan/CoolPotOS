@@ -75,6 +75,13 @@ void kernel_main(multiboot_t *multiboot) {
     }
 
     initVBE(multiboot);
+
+
+    char* cmdline = multiboot->cmdline;
+    if(cmdline != NULL){
+        printf("Multiboot command line: %s\n",cmdline);
+    }
+
     printf("CPOS_Kernel %s (GRUB Multiboot) on an i386.\n",OS_VERSION);
     printf("Memory Size: %dMB\n",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
     gdt_install();
