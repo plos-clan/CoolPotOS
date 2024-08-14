@@ -140,7 +140,7 @@ void task_kill(int pid) {
         return;
     }
     argv->state = TASK_DEATH;
-    printf("Taskkill process PID:%d Name:%s\n", current->pid, current->name);
+    printf("Taskkill process PID:%d Name:%s\n", argv->pid, argv->name);
     printf("Task [%s] exit code: -130.\n", argv->name);
 
     kfree(argv);
@@ -175,15 +175,17 @@ void change_task_to(registers_t *reg,struct task_struct *next) {
         prev->context.ds = reg->ds;
         prev->context.cs = reg->cs;
         prev->context.eax = reg->eax;
+        prev->context.ss = reg->ss;
         switch_to(&(prev->context), &(current->context));
         reg->ds = current->context.ds;
         reg->cs = current->context.cs;
         reg->eip = current->context.eip;
         reg->eax = current->context.eax;
+        reg->ss = current->context.ss;
     }
 }
 
-int32_t user_process(char *path, char *name){
+int32_t user_process(char *path, char *name){ // 用户进程创建
     can_sche = 0;
     if(path == NULL){
         return -1;
@@ -216,6 +218,8 @@ int32_t user_process(char *path, char *name){
 
     page_switch(page);
 
+    printf("TASK I\n");
+
     for (int i = USER_START; i < USER_END;i++) {
         page_t *pg = get_page(i,1,page, false);
         alloc_frame(pg,0,1);
@@ -223,8 +227,10 @@ int32_t user_process(char *path, char *name){
 
     char* buffer = user_alloc(new_task,size);
 
+    printf("TASK II\n");
+
     memset(buffer,0,size);
-    vfs_readfile(path,buffer);
+    vfs_readfile(path,buffer); //能加载, 但是执行一会就不知道跳哪里去了，给自己爆了
 
     Elf32_Ehdr *ehdr = buffer;
     if(!elf32Validate(ehdr)){
@@ -233,8 +239,9 @@ int32_t user_process(char *path, char *name){
     }
 
     uint32_t main = load_elf(ehdr,page);
+    printf("Task [PID: %d] start_function: %08x\n",new_task->pid,main);
 
-    uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
+    uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE); 
 
     *(--stack_top) = (uint32_t) main;
     *(--stack_top) = (uint32_t) kthread_exit;
@@ -262,7 +269,7 @@ int32_t user_process(char *path, char *name){
 }
 
 
-int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) {
+int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进程(线程) 创建
     io_cli();
     struct task_struct *new_task = (struct task_struct *) kmalloc(STACK_SIZE);
     assert(new_task != NULL, "kern_thread: kmalloc error");
@@ -316,7 +323,6 @@ void kthread_exit() {
     register uint32_t val asm ("eax");
     printf("Task [PID: %d] exited with value %d\n", current->pid,val);
     task_kill(current->pid);
-    current->state = TASK_DEATH;
     while (1);
 }
 

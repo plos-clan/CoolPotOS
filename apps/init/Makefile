@@ -8,7 +8,7 @@ out/%.obj : %.c Makefile
 out/%.obj : %.cpp Makefile
 	$(CPP) -c $*.cpp -o out/$*.obj
 out/%.obj : %.asm Makefile
-	nasm -f elf $*.asm -o out/$*.obj
+	nasm -f elf_i386 $*.asm -o out/$*.obj
 
 clean:
 	rm out/*

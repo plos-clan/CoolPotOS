@@ -3225,5 +3225,6 @@ int elf32Validate(Elf32_Ehdr *hdr);
 void load_segment(Elf32_Phdr *phdr,page_directory_t *pdt, void *elf);
 uint32_t load_elf(Elf32_Ehdr *hdr,page_directory_t *pdt);
 void elf32LoadData(Elf32_Ehdr *elfhdr, uint8_t *ptr);
+uint32_t elf32_get_max_vaddr(Elf32_Ehdr *hdr);
 
 #endif	/* elf.h */

@@ -3,6 +3,7 @@
 #include "../include/vfs.h"
 #include "../include/vdisk.h"
 #include "../include/printf.h"
+
 bool read_sector(l9660_fs *fs, void *buf, uint32_t sector);
 #define l9660_seekdir(dir, pos) (l9660_seek(&(dir)->file, L9660_SEEK_SET, (pos)))
 #define l9660_telldir(dir) (l9660_tell(&(dir)->file))

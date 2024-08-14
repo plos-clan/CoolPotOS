@@ -32,8 +32,7 @@ char read_serial() {
 int is_transmit_empty() { return io_in8(SERIAL_PORT + 5) & 0x20; }
 
 void write_serial(char a) {
-    while (is_transmit_empty() == 0)
-        ;
-
+    return;
+    while (is_transmit_empty() == 0);
     io_out8(SERIAL_PORT, a);
 }
