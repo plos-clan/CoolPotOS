@@ -30,6 +30,10 @@ struct task_struct *get_current() {
     return current;
 }
 
+static uint32_t padding_up(uint32_t num, uint32_t size) {
+    return (num + size - 1) / size;
+}
+
 void print_proc_t(int *i, struct task_struct *base, struct task_struct *cur, int is_print) {
     if (cur->pid == base->pid) {
         if (is_print) {
@@ -218,19 +222,15 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
 
     page_switch(page);
 
-    printf("TASK I\n");
-
-    for (int i = USER_START; i < USER_END;i++) {
+    for (int i = USER_START; i < USER_END + 0x1000;i++) { //用户堆以及用户栈映射
         page_t *pg = get_page(i,1,page, false);
         alloc_frame(pg,0,1);
     }
 
     char* buffer = user_alloc(new_task,size);
 
-    printf("TASK II\n");
-
     memset(buffer,0,size);
-    vfs_readfile(path,buffer); //能加载, 但是执行一会就不知道跳哪里去了，给自己爆了
+    vfs_readfile(path,buffer);
 
     Elf32_Ehdr *ehdr = buffer;
     if(!elf32Validate(ehdr)){
@@ -238,8 +238,15 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
         return -1;
     }
 
+    /*
+    uint32_t alloc_addr = (elf32_get_max_vaddr((Elf32_Ehdr *)ehdr) & 0xfffff000) + 0x1000;
+    uint32_t pg         = padding_up( 0xf00000, 0x1000);
+    for (int i = 0; i < pg + 128; i++) {
+        alloc_frame(get_page(alloc_addr + i * 0x1000,1,page),0,1);
+    }
+     */
+
     uint32_t main = load_elf(ehdr,page);
-    printf("Task [PID: %d] start_function: %08x\n",new_task->pid,main);
 
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE); 
 

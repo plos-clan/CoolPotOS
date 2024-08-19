@@ -14,6 +14,9 @@
 #define UINT32_MAX 0xffffffff
 #define INT32_MAX 0x7fffffff
 
+#define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
+#define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
+
 #define swap32(x)                                                              \
   ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) |                    \
    (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))

@@ -190,5 +190,5 @@ void initVBE(multiboot_t *info) {
     vbe_clear();
 
     Bmp *bmp = (Bmp*) &logo_bmp;
-    display(bmp,0,0,false);
+    //display(bmp,0,0,false);
 }
