@@ -29,7 +29,7 @@ void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
 }
 
 void isr_handler(registers_t regs) {
-    printf("\n[Kernel]: received interrupt: %d\n",regs.int_no);
+    //printf("\n[Kernel]: received interrupt: %d\n",regs.int_no);
 
     if (interrupt_handlers[regs.int_no]) {
         isr_t handler = interrupt_handlers[regs.int_no]; // 有自定义处理程序，调用之

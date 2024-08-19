@@ -20,6 +20,7 @@ extern uint32_t c_height;
 Bmp *panic_bmp;
 
 static GP_13(registers_t *reg){
+    io_cli();
     printf("throw #GP 13 error.\n");
     if(current->pid == 0){
         printf("Kernel PANIC(#GP), Please restart your CPOS Kernel.\n");
@@ -27,6 +28,7 @@ static GP_13(registers_t *reg){
     }else {
         task_kill(current->pid);
     }
+    io_sti();
 }
 
 static UD_6(registers_t *reg){

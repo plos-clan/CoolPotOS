@@ -7,7 +7,7 @@
 
 void syscall_handler(registers_t regs){
     io_cli();
-    printf("Syscall is enable.\n");
+    printf("Syscall is enable. EAX: %08x\n",regs.eax);
     if(regs.eax == 0x01){
         putchar((regs.edx));
     }

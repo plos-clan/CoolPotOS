@@ -16,6 +16,8 @@ uint32_t *PM1b_CNT;
 uint8_t PM1_CNT_LEN;
 uint16_t SLP_EN;
 uint16_t SCI_EN;
+uint32_t PM1a_EVT_BLK;
+uint32_t PM1b_EVT_BLK;
 
 acpi_rsdt_t *rsdt; // root system descript table
 acpi_facp_t *facp; // fixed ACPI table
@@ -144,24 +146,37 @@ void power_off() {
 }
 
 static int AcpiPowerHandler(registers_t *irq) {
-    uint16_t status = io_in16((uint32_t) facp->PM1a_EVT_BLK);
+    io_cli();
+    uint16_t status = io_in16((uint32_t) PM1a_EVT_BLK);
+
+    // 不检查电源键, 按下就关机
+
+    io_out16((uint32_t) PM1a_EVT_BLK, status &= ~(1 << 8)); // clear bits
+    printf("Shutdown OS...");
+    shutdown_kernel();
+
     // check if power button press
     if (status & (1 << 8)) {
-        io_out16((uint32_t) facp->PM1a_EVT_BLK, status &= ~(1 << 8)); // clear bits
-        printf("Shutdown OS...");
-        shutdown_kernel();
+
         return 0;
     }
-    if (!facp->PM1b_EVT_BLK)
+    if (!PM1b_EVT_BLK){
+        printf("PowerDown fault\n");
+        io_sti();
         return -1;
+    }
+
+    printf("DEBUG IV\n");
     // check if power button press
-    status = io_in16((uint32_t) facp->PM1b_EVT_BLK);
+    status = io_in16((uint32_t) PM1b_EVT_BLK);
+    printf("DEBUG V\n");
     if (status & (1 << 8)) {
-        io_out16((uint32_t) facp->PM1b_EVT_BLK, status &= ~(1 << 8));
+        io_out16((uint32_t) PM1b_EVT_BLK, status &= ~(1 << 8));
         printf("Shutdown OS...");
         shutdown_kernel();
         return 0;
     }
+    io_sti();
     return -1;
 }
 
@@ -181,7 +196,7 @@ static void AcpiPowerInit() {
         PM1b_ENABLE_REG, (uint8_t)(1 << 8));
     }
 
-    register_interrupt_handler(facp->SCI_INT, AcpiPowerHandler);
+    register_interrupt_handler(facp->SCI_INT + 0x20, AcpiPowerHandler);
 }
 
 int AcpiCheckHeader(void *ptr, uint8_t *sign) {
@@ -213,8 +228,7 @@ uint8_t *AcpiCheckRSDPtr(void *ptr) {
             bptr++;
         }
         if (!check) {
-            return (uint8_t * )
-            rsdp->rsdt;
+            return (uint8_t * ) rsdp->rsdt;
         }
     }
     return NULL;
@@ -262,6 +276,9 @@ static int AcpiSysInit() {
             PM1b_CNT = facp->PM1b_CNT_BLK;
 
             PM1_CNT_LEN = facp->PM1_CNT_LEN;
+
+            PM1a_EVT_BLK = facp->PM1b_EVT_BLK;
+            PM1b_EVT_BLK = facp->PM1b_EVT_BLK;
 
             SLP_EN = 1 << 13;
             SCI_EN = 1;
