@@ -33,7 +33,7 @@ static GP_13(registers_t *reg){
 
 static UD_6(registers_t *reg){
     if(current->pid == 0){
-        printf("Kernel PANIC(#GP), Please restart your CPOS Kernel.\n");
+        printf("Kernel PANIC(#UD), Please restart your CPOS Kernel.\n");
         while(1) io_hlt();
     }else {
         task_kill(current->pid);
@@ -47,7 +47,7 @@ void panic_pane(char* msg,enum PANIC_TYPE type){
     color = 0xffffff;
     screen_clear();
     if(panic_bmp != NULL){
-        display(panic_bmp,0,0,false);
+        display(panic_bmp,0,0,true);
     } else klogf(false,"Cannot draw panic image.\n");
 
     cx = 10;
@@ -78,10 +78,10 @@ void panic_pane(char* msg,enum PANIC_TYPE type){
 void init_eh(){
     register_interrupt_handler(13,GP_13);
     register_interrupt_handler(6,UD_6);
-
-    if(vfs_change_disk('B')){
+    panic_bmp = NULL;
+    //if(vfs_change_disk('B')){
         uint32_t size = vfs_filesize("panic.bmp");
-        panic_bmp = NULL;
+
         if(size == -1){
             klogf(false,"Enable graphics user interface panic.\n");
         } else{
@@ -90,5 +90,5 @@ void init_eh(){
             panic_bmp = bmp;
             klogf(true,"Enable graphics user interface panic.\n");
         }
-    }
+    //}
 }
