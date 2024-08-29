@@ -237,16 +237,11 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
         printf("Unknown exec file format.\n");
         return -1;
     }
+    printf("Process Main Address: %08x\n",ehdr->e_entry);
+    uint32_t main = ehdr->e_entry;
+    load_elf(ehdr,page);
 
-    /*
-    uint32_t alloc_addr = (elf32_get_max_vaddr((Elf32_Ehdr *)ehdr) & 0xfffff000) + 0x1000;
-    uint32_t pg         = padding_up( 0xf00000, 0x1000);
-    for (int i = 0; i < pg + 128; i++) {
-        alloc_frame(get_page(alloc_addr + i * 0x1000,1,page),0,1);
-    }
-     */
 
-    uint32_t main = load_elf(ehdr,page);
 
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE); 
 

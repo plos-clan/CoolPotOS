@@ -32,6 +32,7 @@ void load_segment(Elf32_Phdr *phdr,page_directory_t *dir, void *elf) {
         alloc_frame(get_page(i,1,dir,false),0,1);
     }
     printf("VDDR: %08x elf: %08x offset: %08x filesz: %08x elf+offset: %08x\n",phdr->p_vaddr, elf , phdr->p_offset, phdr->p_filesz, elf + phdr->p_offset);
+    //if(phdr->p_vaddr == 0xaffff000) return;
     memcpy((void *)phdr->p_vaddr, elf + phdr->p_offset, phdr->p_filesz);
     if (phdr->p_memsz > phdr->p_filesz) { // 这个是bss段
         memset((void *)(phdr->p_vaddr + phdr->p_filesz), 0, phdr->p_memsz - phdr->p_filesz);
@@ -41,7 +42,9 @@ void load_segment(Elf32_Phdr *phdr,page_directory_t *dir, void *elf) {
 uint32_t load_elf(Elf32_Ehdr *hdr,page_directory_t *dir) {
     Elf32_Phdr *phdr = (Elf32_Phdr *)((uint32_t)hdr + hdr->e_phoff);
     for (int i = 0; i < hdr->e_phnum; i++) {
-        load_segment(phdr, (void *)hdr,dir);
+        if(phdr->p_type == PT_LOAD ){
+            load_segment(phdr,dir,(void *)hdr);
+        }
         phdr++;
     }
     return hdr->e_entry;

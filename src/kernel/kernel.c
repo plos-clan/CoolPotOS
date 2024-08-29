@@ -114,7 +114,6 @@ void kernel_main(multiboot_t *multiboot) {
             }
         }
     }
-    init_eh();
     hasFS = false;
     if(disk_id != '0'){
         if(vfs_change_disk(disk_id)){
@@ -128,6 +127,7 @@ void kernel_main(multiboot_t *multiboot) {
     if(pcnet_init){
         //init_pcnet_card();
     }
+    init_eh();
     klogf(true,"Kernel load done!\n");
     kernel_thread(sound_test,NULL,"Sound");
 
@@ -135,16 +135,15 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-   // vfs_change_path("apps");
+    vfs_change_path("apps");
     //klogf(user_process("service.bin","Service") != -1,"Service base process init.\n");
-    //klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
+    klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
 
     int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
     klogf(pid != -1,"Launch kernel shell.\n");
     kernel_thread(check_task,&pid,"CPOS-CK");
 
-
-    //panic_pane("Proccess out of memory error!",OUT_OF_MEMORY);
+    //panic_pane("System out of memory error!",OUT_OF_MEMORY);
 
     for (;;) {
         io_hlt();

@@ -3,7 +3,10 @@
 
 #include <stddef.h>
 
-#define SYSCALL_NUM 10
+#define MAX_SYSCALLS 256
+
+#define SYSCALL_PUTC 1
+#define SYSCALL_PRINT 2
 
 #define DEFN_SYSCALL0(fn, num) \
 int syscall_##fn() \
