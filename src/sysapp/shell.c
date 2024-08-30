@@ -24,7 +24,6 @@ char getc() {
 int gets(char *buf, int buf_size) {
     int index = 0;
     char c;
-    logk("GETS DEBUG I\n");
     while ((c = getc()) != '\n') {
         if (c == '\b') {
             if (index > 0) {
@@ -36,7 +35,6 @@ int gets(char *buf, int buf_size) {
             putchar(c);
         }
     }
-    logk("GETS DEBUG II\n");
     buf[index] = '\0';
     putchar(c);
     return index;

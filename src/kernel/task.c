@@ -227,7 +227,12 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
         alloc_frame(pg,0,1);
     }
 
-    char* buffer = user_alloc(new_task,size);
+    for (int i = USER_EXEC_FILE_START; i < USER_EXEC_FILE_START + size; i++) {
+        page_t *pg = get_page(i,1,page, false);
+        alloc_frame(pg,0,1);
+    }
+
+    char* buffer =  USER_EXEC_FILE_START;//user_alloc(new_task,size);
 
     memset(buffer,0,size);
     vfs_readfile(path,buffer);
@@ -238,7 +243,6 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
         printf("Unknown exec file format.\n");
         return -1;
     }
-   // printf("Process Main Address: %08x\n",ehdr->e_entry);
     uint32_t main = ehdr->e_entry;
     load_elf(ehdr,page);
 

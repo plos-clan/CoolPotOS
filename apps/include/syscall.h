@@ -3,6 +3,7 @@
 
 #define SYSCALL_PUTCHAR 1
 #define SYSCALL_PRINT 2
+#define SYSCALL_GETC 3
 
 #include <stdint.h>
 
@@ -18,6 +19,12 @@ static inline void syscall_putchar(char c){
     uint32_t __arg1 = (uint32_t)(c);
     register uint32_t ebx asm("ebx")  = __arg1;
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_PUTCHAR), "r"(ebx) : "memory", "cc");
+}
+
+static inline char syscall_getc(){
+    uint32_t rets;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_GETC) : "memory", "cc");
+    return rets;
 }
 
 #endif

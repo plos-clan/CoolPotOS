@@ -7,6 +7,7 @@
 
 #define SYSCALL_PUTC 1
 #define SYSCALL_PRINT 2
+#define SYSCALL_GETC 3
 
 void syscall_install();
 

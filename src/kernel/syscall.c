@@ -4,6 +4,7 @@
 #include "../include/description_table.h"
 #include "../include/graphics.h"
 #include "../include/io.h"
+#include "../include/shell.h"
 
 static void syscall_puchar(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     printf("%c",ebx);
@@ -13,9 +14,14 @@ static void syscall_print(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,ui
     printf("%s",ebx);
 }
 
+static char syscall_getc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return getc();
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
+        [SYSCALL_GETC] = syscall_getc,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);
@@ -28,7 +34,6 @@ size_t syscall() {
     asm("mov %%edx, %0\n\t" : "=r"(edx));
     asm("mov %%esi, %0\n\t" : "=r"(esi));
     asm("mov %%edi, %0\n\t" : "=r"(edi));
-    //printf("eax: %08x, ebx: %08x, ecx: %08x,\n edx: %08x, esi: %08x, edi: %08x\n", eax, ebx, ecx, edx, esi, edi);
     if (0 <= eax && eax < MAX_SYSCALLS && sycall_handlers[eax] != NULL) {
         eax = ((syscall_t)sycall_handlers[eax])(ebx, ecx, edx, esi, edi);
     } else {
