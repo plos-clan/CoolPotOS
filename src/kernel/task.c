@@ -232,20 +232,21 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     memset(buffer,0,size);
     vfs_readfile(path,buffer);
 
+
     Elf32_Ehdr *ehdr = buffer;
     if(!elf32Validate(ehdr)){
         printf("Unknown exec file format.\n");
         return -1;
     }
-    printf("Process Main Address: %08x\n",ehdr->e_entry);
+   // printf("Process Main Address: %08x\n",ehdr->e_entry);
     uint32_t main = ehdr->e_entry;
     load_elf(ehdr,page);
-
 
 
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE); 
 
     *(--stack_top) = (uint32_t) main;
+    //*(--stack_top) = (uint32_t) buffer;
     *(--stack_top) = (uint32_t) kthread_exit;
     *(--stack_top) = (uint32_t) switch_to_user_mode;
 

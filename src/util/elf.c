@@ -31,7 +31,7 @@ void load_segment(Elf32_Phdr *phdr,page_directory_t *dir, void *elf) {
     for (size_t i = lo; i < hi; i += 0x1000) {
         alloc_frame(get_page(i,1,dir,false),0,1);
     }
-    printf("VDDR: %08x elf: %08x offset: %08x filesz: %08x elf+offset: %08x\n",phdr->p_vaddr, elf , phdr->p_offset, phdr->p_filesz, elf + phdr->p_offset);
+    //printf("VDDR: %08x elf: %08x offset: %08x filesz: %08x elf+offset: %08x\n",phdr->p_vaddr, elf , phdr->p_offset, phdr->p_filesz, elf + phdr->p_offset);
     //if(phdr->p_vaddr == 0xaffff000) return;
     memcpy((void *)phdr->p_vaddr, elf + phdr->p_offset, phdr->p_filesz);
     if (phdr->p_memsz > phdr->p_filesz) { // 这个是bss段
