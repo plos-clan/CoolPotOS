@@ -7,7 +7,7 @@
 page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
 
-uint32_t *frames;
+volatile uint32_t *frames;
 uint32_t nframes;
 
 extern struct task_struct *current;
@@ -73,11 +73,11 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
 void alloc_frame_line(page_t *page, uint32_t line,int is_kernel, int is_writable) {
     set_frame(line);
     memset(page,0,4);
+
     page->present = 1; // 现在这个页存在了
     page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
     page->user = is_kernel ? 0 : 1; // 是否为用户态由is_kernel决定
     page->frame = line / 0x1000;
-
 }
 
 void free_frame(page_t *page) {

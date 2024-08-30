@@ -7,6 +7,7 @@
 // b 0x211972
 // b 0x20d0a6
 
+#define ACCESS_ONCE(x) (*(volatile typeof(x) *) (x))
 
 #define LONG_MAX 9223372036854775807L
 #define LONG_MIN -9223372036854775808L

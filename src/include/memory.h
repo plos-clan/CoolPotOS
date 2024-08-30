@@ -6,9 +6,10 @@
 #include "isr.h"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
-#define KHEAP_START      0xa0000000
+#define KHEAP_START      0x90000000
 #define STACK_SIZE 32768
 
+#define USER_EXEC_FILE_START 0xa0000000
 #define USER_START 0xb0000000
 #define USER_END (USER_START + 0xf00000)
 #define USER_HEAP_END (USER_END - STACK_SIZE)
@@ -21,8 +22,8 @@ typedef char ALIGN[16];
 #include "multiboot.h"
 #include "common.h"
 
-typedef struct page {
-    uint32_t present: 1;
+typedef volatile struct page {
+    volatile uint32_t present: 1;
     uint32_t rw: 1;
     uint32_t user: 1;
     uint32_t accessed: 1;

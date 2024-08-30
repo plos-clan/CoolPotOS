@@ -19,6 +19,7 @@ extern syscall
 
 
 asm_syscall_handler:
+    cli
     push ds
     push es
     push fs
