@@ -1,11 +1,12 @@
-#include "../include/stdio.h"
+#include "../include/syscall.h"
 
 void hlt(){
     while (1);
 }
 
 int main(){
-    put_char('A');
+    syscall_print("Hello! User Application!\n");
+    //put_char('A');
     hlt();
     return 0;
 }
