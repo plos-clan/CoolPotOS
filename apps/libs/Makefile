@@ -1,4 +1,4 @@
-OBJS_PACK = out/syscall.obj
+OBJS_PACK = out/syscall.obj out/print.obj out/string.obj out/libc.obj
 
 
 default : $(OBJS_PACK)

@@ -145,8 +145,6 @@ void task_kill(int pid) {
     }
     argv->state = TASK_DEATH;
     printf("Taskkill process PID:%d Name:%s\n", argv->pid, argv->name);
-    printf("Task [%s] exit code: -130.\n", argv->name);
-
     kfree(argv);
     struct task_struct *head = running_proc_head;
     struct task_struct *last = NULL;

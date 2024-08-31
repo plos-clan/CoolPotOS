@@ -10,7 +10,7 @@ NASM = nasm
 LIBS_PATH := ../libo
 
 LD = ld
-LD_FLAGS = -Ttext 0xb0000010 -m elf_i386 -static -e main
+LD_FLAGS = -Ttext 0xb0000010 -m elf_i386 -static -e _start
 LINK = $(LD) $(LD_FLAGS)
 
 BASIC_LIB_C = $(LIBS_PATH)/libp.a
