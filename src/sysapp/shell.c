@@ -387,7 +387,6 @@ void setup_shell() {
     char *buffer[255];
 
     while (1) {
-        logk("DEBUG I\n");
         if(hasFS) vfs_getPath(buffer);
         else{
             buffer[0] = 'n';
@@ -397,11 +396,8 @@ void setup_shell() {
             buffer[4] = 's';
             buffer[5] = '\0';
         }
-        logk("DEBUG II\n");
         printf("\03343cd80;default@localhost: \0334169E1;%s\\\033c6c6c6;$ ", buffer);
-        logk("DEBUG III\n");
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
-        logk("DEBUG IIII\n");
 
         argc = cmd_parse(com, argv, ' ');
 

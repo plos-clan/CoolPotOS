@@ -8,6 +8,9 @@
 #define SYSCALL_PUTC 1
 #define SYSCALL_PRINT 2
 #define SYSCALL_GETC 3
+#define SYSCALL_MALLOC 4
+#define SYSCALL_FREE 5
+#define SYSCALL_EXIT 6
 
 void syscall_install();
 

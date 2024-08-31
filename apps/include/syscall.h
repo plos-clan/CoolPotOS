@@ -1,30 +1,21 @@
 #ifndef CRASHPOWEROS_SYSCALL_H
 #define CRASHPOWEROS_SYSCALL_H
 
-#define SYSCALL_PUTCHAR 1
+#define SYSCALL_PUTC 1
 #define SYSCALL_PRINT 2
 #define SYSCALL_GETC 3
+#define SYSCALL_MALLOC 4
+#define SYSCALL_FREE 5
+#define SYSCALL_EXIT 6
 
 #include <stdint.h>
+#include <stddef.h>
 
-static inline void syscall_print(char* c){
-    uint32_t rets;
-    uint32_t __arg1 = c;
-    register uint32_t ebx asm("ebx")  = __arg1;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_PRINT), "r"(ebx) : "memory", "cc");
-}
-
-static inline void syscall_putchar(char c){
-    uint32_t rets;
-    uint32_t __arg1 = (uint32_t)(c);
-    register uint32_t ebx asm("ebx")  = __arg1;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_PUTCHAR), "r"(ebx) : "memory", "cc");
-}
-
-static inline char syscall_getc(){
-    uint32_t rets;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_GETC) : "memory", "cc");
-    return rets;
-}
+void syscall_print(char* c);
+void syscall_putchar(char c);
+char syscall_getc();
+void* syscall_malloc(size_t size);
+void syscall_free(void *ptr);
+void syscall_exit(int code);
 
 #endif
