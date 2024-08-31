@@ -145,12 +145,13 @@ void task_kill(int pid) {
     }
     argv->state = TASK_DEATH;
     printf("Taskkill process PID:%d Name:%s\n", argv->pid, argv->name);
-    kfree(argv);
+    free_tty(*argv);
     struct task_struct *head = running_proc_head;
     struct task_struct *last = NULL;
     while (1) {
         if (head->pid == argv->pid) {
             last->next = argv->next;
+            kfree(argv);
             io_sti();
             return;
         }
@@ -215,6 +216,8 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->program_break_end = USER_HEAP_END;
     new_task->name = name;
     new_task->isUser = 1;
+    new_task->tty = kmalloc(sizeof(tty_t));
+    init_default_tty(*new_task);
 
     extern char root_disk;
     vfs_change_disk(new_task,root_disk);
@@ -233,7 +236,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
         alloc_frame(pg,0,1);
     }
 
-    char* buffer =  USER_EXEC_FILE_START;//user_alloc(new_task,size);
+    char* buffer =  USER_EXEC_FILE_START;
 
     memset(buffer,0,size);
     vfs_readfile(path,buffer);
