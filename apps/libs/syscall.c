@@ -39,6 +39,10 @@ void syscall_exit(int code){
     uint32_t rets;
     uint32_t __arg1 = (uint32_t)(code);
     register uint32_t ebx asm("ebx")  = __arg1;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_EXIT), "r"(ebx)  : "memory", "cc");
-    return rets;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_EXIT), "r"(ebx)  : "memory", "cc");\
+}
+
+void syscall_g_clean(){
+    uint32_t rets;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_G_CLEAN) : "memory", "cc");
 }

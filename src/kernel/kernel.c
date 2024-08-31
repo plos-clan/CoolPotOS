@@ -116,7 +116,9 @@ void kernel_main(multiboot_t *multiboot) {
     }
     hasFS = false;
     if(disk_id != '0'){
-        if(vfs_change_disk(disk_id)){
+        if(vfs_change_disk(get_current(),disk_id)){
+            extern char root_disk;
+            root_disk = disk_id;
             klogf(true,"Chang default mounted disk.\n");
             hasFS = true;
         }
@@ -135,13 +137,13 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-    vfs_change_path("apps");
-    //klogf(user_process("service.bin","Service") != -1,"Service base process init.\n");
-    klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
+    //vfs_change_path("apps");
+    //klogf(user_process("shell.bin","Shell") != -1,"Shell process init.\n");
+    //klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
 
-    //int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
-    //klogf(pid != -1,"Launch kernel shell.\n");
-    //kernel_thread(check_task,&pid,"CPOS-CK");
+    int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
+    klogf(pid != -1,"Launch kernel shell.\n");
+    kernel_thread(check_task,&pid,"CPOS-CK");
 
     //panic_pane("System out of memory error!",OUT_OF_MEMORY);
 

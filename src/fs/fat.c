@@ -25,6 +25,7 @@ static inline int get_fat_time(unsigned short hour, unsigned short minute) {
     time |= (minute & 0x3f) << 5;
     return time;
 }
+
 void read_fat(unsigned char *img, int *fat, unsigned char *ff, int max,
               int type) {
     if (type == 12) {

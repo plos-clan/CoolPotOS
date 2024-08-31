@@ -303,7 +303,7 @@ void cmd_disk(int argc, char **argv) {
                 return;
             }
             if(have_vdisk(argv[2][0])){
-                vfs_change_disk(argv[2][0]);
+                vfs_change_disk(get_current(),argv[2][0]);
             } else printf("[DISK]: Cannot found disk.\n");
             return;
         }
@@ -385,6 +385,9 @@ void setup_shell() {
     char *argv[MAX_ARG_NR];
     int argc = -1;
     char *buffer[255];
+
+    extern char root_disk;
+    vfs_change_disk(get_current(),root_disk);
 
     while (1) {
         if(hasFS) vfs_getPath(buffer);
