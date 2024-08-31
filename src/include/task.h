@@ -3,6 +3,7 @@
 
 #include "memory.h"
 #include "vfs.h"
+#include "tty.h"
 
 typedef struct {
     int (*main)(int argc,char* * argv);
@@ -41,8 +42,9 @@ struct task_struct {
     int mem_size;                 // 内存利用率
     char *name;                   // 进程名
     void *stack;                  // 进程的内核栈地址
-    header_t *head;               // 进程堆
+    header_t *head;               // 进程堆链表头
     header_t *tail;
+    tty_t *tty;                   // 输入输出设备管理器
     vfs_t *vfs_now;               // 文件路径焦点
     bool isUser;                  // 是否是用户进程
     uint32_t program_break;       // 进程堆基址
