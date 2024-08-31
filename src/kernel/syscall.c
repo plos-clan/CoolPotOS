@@ -37,6 +37,10 @@ static void syscall_free(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uin
     use_free(get_current(),ebx);
 }
 
+static void syscall_g_clean(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+     screen_clear();
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -44,6 +48,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_MALLOC] = syscall_malloc,
         [SYSCALL_FREE] = syscall_free,
         [SYSCALL_EXIT] = syscall_exit,
+        [SYSCALL_G_CLEAN] = syscall_g_clean,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

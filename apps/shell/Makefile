@@ -1,8 +1,8 @@
-OBJS_PACK = out/service.obj
+OBJS_PACK = out/shell.obj
 include ../def.mk
 
 default: $(OBJS_PACK)
-	$(LINK) $(OBJS_PACK) $(BASIC_LIB_C) -o ../../isodir/apps/service.bin
+	$(LINK) $(OBJS_PACK) $(BASIC_LIB_C) -o ../../isodir/apps/shell.bin
 out/%.obj : %.c Makefile
 	$(C) -c $*.c -o out/$*.obj
 out/%.obj : %.cpp Makefile

@@ -9,9 +9,9 @@
 #include "../include/fat.h"
 #include "../include/iso9660.h"
 
+char root_disk = 'A';
 vfs_t vfsstl[26];
 vfs_t vfsMount_Stl[26];
-vfs_t *vfs_now;
 bool hasFS;
 
 static vfs_t *drive2fs(uint8_t drive) {
@@ -24,7 +24,7 @@ static vfs_t *drive2fs(uint8_t drive) {
 }
 
 static vfs_t *ParsePath(char *result) {
-    vfs_t *vfs_result = vfs_now;
+    vfs_t *vfs_result = get_current()->vfs_now;
     if (result[1] == ':') {
         if (!(vfs_result = drive2fs(result[0]))) {
             printf("Mount Drive is not found!\n");
@@ -154,7 +154,7 @@ uint32_t vfs_filesize(char *filename) {
 
 List *vfs_listfile(char *dictpath) { // dictpath == "" 则表示当前路径
     if (strcmp(dictpath, "") == 0) {
-        return vfs_now->ListFile(vfs_now, dictpath);
+        return get_current()->vfs_now->ListFile(get_current()->vfs_now, dictpath);
     } else {
         char *new_path = kmalloc(strlen(dictpath) + 1);
         strcpy(new_path, dictpath);
@@ -188,7 +188,7 @@ bool vfs_change_path(char *dictName) {
     memcpy(buf, dictName, strlen(dictName) + 1);
     int i = 0;
     if (buf[i] == '/' || buf[i] == '\\') {
-        if (!vfs_now->cd(vfs_now, "/")) {
+        if (!get_current()->vfs_now->cd(get_current()->vfs_now, "/")) {
             kfree(r);
             return false;
         }
@@ -199,14 +199,14 @@ bool vfs_change_path(char *dictName) {
     for (;; i++) {
         if (buf[i] == '/' || buf[i] == '\\') {
             buf[i] = 0;
-            if (!vfs_now->cd(vfs_now, buf)) {
+            if (!get_current()->vfs_now->cd(get_current()->vfs_now, buf)) {
                 kfree(r);
                 return false;
             }
             buf += strlen(buf) + 1;
         }
         if (buf[i] == 0) {
-            if (!vfs_now->cd(vfs_now, buf)) {
+            if (!get_current()->vfs_now->cd(get_current()->vfs_now, buf)) {
                 kfree(r);
                 return false;
             }
@@ -329,15 +329,15 @@ vfs_file *get_cur_file(char* filename){
     return file;
 }
 
-bool vfs_change_disk(uint8_t drive) {
-    if (vfs_now != NULL) {
-        while (FindForCount(1, vfs_now->path) != NULL) {
-            kfree(FindForCount(vfs_now->path->ctl->all, vfs_now->path)->val);
-            DeleteVal(vfs_now->path->ctl->all, vfs_now->path);
+bool vfs_change_disk(struct task_struct *task,uint8_t drive) {
+    if (task->vfs_now != NULL) {
+        while (FindForCount(1, task->vfs_now->path) != NULL) {
+            kfree(FindForCount(task->vfs_now->path->ctl->all, task->vfs_now->path)->val);
+            DeleteVal(task->vfs_now->path->ctl->all, task->vfs_now->path);
         }
-        kfree(vfs_now->cache);
-        DeleteList(vfs_now->path);
-        kfree(vfs_now);
+        kfree(task->vfs_now->cache);
+        DeleteList(task->vfs_now->path);
+        kfree(task->vfs_now);
     }
 
     vfs_t *f;
@@ -345,11 +345,11 @@ bool vfs_change_disk(uint8_t drive) {
         return false; // 没有mount
     }
 
-    vfs_now = kmalloc(sizeof(vfs_t));
-    memcpy(vfs_now, f, sizeof(vfs_t));
-    f->CopyCache(vfs_now, f);
-    vfs_now->path = NewList();
-    vfs_now->cd(vfs_now, "/");
+    task->vfs_now = kmalloc(sizeof(vfs_t));
+    memcpy(task->vfs_now, f, sizeof(vfs_t));
+    f->CopyCache(task->vfs_now, f);
+    task->vfs_now->path = NewList();
+    task->vfs_now->cd(task->vfs_now, "/");
     return true;
 }
 
@@ -357,12 +357,12 @@ void vfs_getPath(char *buffer) {
     char *path;
     List *l;
     buffer[0] = 0;
-    insert_char(buffer, 0, vfs_now->drive);
+    insert_char(buffer, 0, get_current()->vfs_now->drive);
     insert_char(buffer, 1, ':');
     insert_char(buffer, 2, '\\');
     int pos = strlen(buffer);
-    for (int i = 1; FindForCount(i, vfs_now->path) != NULL; i++) {
-        l = FindForCount(i, vfs_now->path);
+    for (int i = 1; FindForCount(i, get_current()->vfs_now->path) != NULL; i++) {
+        l = FindForCount(i, get_current()->vfs_now->path);
         path = (char *)l->val;
         insert_str(buffer, path, pos);
         pos += strlen(path);
@@ -378,8 +378,8 @@ void vfs_getPath_no_drive(char *buffer) {
     buffer[0] = 0;
     int pos = strlen(buffer);
     int i;
-    for (i = 1; FindForCount(i, vfs_now->path) != NULL; i++) {
-        l = FindForCount(i, vfs_now->path);
+    for (i = 1; FindForCount(i, get_current()->vfs_now->path) != NULL; i++) {
+        l = FindForCount(i, get_current()->vfs_now->path);
         path = (char *)l->val;
         insert_char(buffer, pos, '/');
         pos++;
@@ -401,7 +401,7 @@ void init_vfs() {
         vfsMount_Stl[i].drive = 0;
         // PDEBUG("Set vfsstl[%d] & vfsMount_Stl[%d] OK.", i, i);
     }
-    vfs_now = NULL;
+    get_current()->vfs_now = NULL;
     klogf(true,"Virtual File System initialize.\n");
     Register_fat_fileSys();
     init_iso9660();

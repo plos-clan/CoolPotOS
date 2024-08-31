@@ -11,6 +11,7 @@
 #define SYSCALL_MALLOC 4
 #define SYSCALL_FREE 5
 #define SYSCALL_EXIT 6
+#define SYSCALL_G_CLEAN 7
 
 void syscall_install();
 

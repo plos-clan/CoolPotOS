@@ -216,6 +216,9 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->name = name;
     new_task->isUser = 1;
 
+    extern char root_disk;
+    vfs_change_disk(new_task,root_disk);
+
     io_sti();
 
     page_switch(page);

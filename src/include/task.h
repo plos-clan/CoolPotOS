@@ -43,6 +43,7 @@ struct task_struct {
     void *stack;                  // 进程的内核栈地址
     header_t *head;               // 进程堆
     header_t *tail;
+    vfs_t *vfs_now;               // 文件路径焦点
     bool isUser;                  // 是否是用户进程
     uint32_t program_break;       // 进程堆基址
     uint32_t program_break_end;   // 进程堆尾

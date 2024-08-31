@@ -67,7 +67,10 @@ bool vfs_renamefile(char *filename, char *filename_of_new);
 bool vfs_attrib(char *filename, ftype type);
 bool vfs_format(uint8_t disk_number, char *FSName);
 vfs_file *vfs_fileinfo(char *filename);
-bool vfs_change_disk(uint8_t drive);
+
+#include "task.h"
+
+bool vfs_change_disk(struct task_struct *task,uint8_t drive);
 bool vfs_register_fs(vfs_t vfs);
 void init_vfs();
 vfs_file *get_cur_file(char* filename);

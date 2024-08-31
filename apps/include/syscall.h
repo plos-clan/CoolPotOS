@@ -7,6 +7,7 @@
 #define SYSCALL_MALLOC 4
 #define SYSCALL_FREE 5
 #define SYSCALL_EXIT 6
+#define SYSCALL_G_CLEAN 7
 
 #include <stdint.h>
 #include <stddef.h>
@@ -17,5 +18,6 @@ char syscall_getc();
 void* syscall_malloc(size_t size);
 void syscall_free(void *ptr);
 void syscall_exit(int code);
+void syscall_g_clean();
 
 #endif
