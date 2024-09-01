@@ -8,6 +8,10 @@
 #include "../include/heap.h"
 #include "../include/keyboard.h"
 #include "../include/vfs.h"
+#include "../include/cmos.h"
+
+extern uint32_t phy_mem_size;
+extern unsigned int PCI_NUM;
 
 static void syscall_puchar(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     printf("%c",ebx);
@@ -60,6 +64,44 @@ static void syscall_vfs_writefile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_
     vfs_writefile(ebx,ecx,edx);
 }
 
+struct sysinfo{
+    char* osname;
+    char* kenlname;
+    char* cpu_vendor;
+    char* cpu_name;
+    unsigned int phy_mem_size;
+    unsigned int pci_device;
+    unsigned int frame_width;
+    unsigned int frame_height;
+};
+
+static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    struct sysinfo *info = (struct sysinfo *) user_alloc(get_current(), sizeof(struct sysinfo));
+    cpu_t *cpu = get_cpuid();
+    char *os_name = user_alloc(get_current(), strlen(OS_NAME));
+    char *kernel = user_alloc(get_current(), strlen(OS_NAME));
+    char *cpu_vendor = user_alloc(get_current(), strlen(cpu->vendor));
+    char *cpu_name = user_alloc(get_current(), strlen(cpu->model_name));
+
+    memcpy(os_name,OS_NAME, 40);
+    memcpy(kernel,KERNEL_NAME, 40);
+    memcpy(cpu_vendor,cpu->vendor, strlen(cpu->vendor));
+    memcpy(cpu_name,cpu->model_name, strlen(cpu->model_name));
+
+    extern uint32_t width,height; //vbe.c
+
+    info->osname = os_name;
+    info->kenlname = kernel;
+    info->cpu_vendor = cpu_vendor;
+    info->cpu_name = cpu_name;
+    info->phy_mem_size = phy_mem_size;
+    info->pci_device = PCI_NUM;
+    info->frame_width = width;
+    info->frame_height = height;
+
+    return info;
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -72,6 +114,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_VFS_FILESIZE] = syscall_vfs_filesize,
         [SYSCALL_VFS_READFILE] = syscall_vfs_readfile,
         [SYSCALL_VFS_WRITEFILE] = syscall_vfs_writefile,
+        [SYSCALL_SYSINFO] = syscall_sysinfo,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

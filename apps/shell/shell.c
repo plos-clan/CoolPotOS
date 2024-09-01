@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include "../include/syscall.h"
 #include "../include/string.h"
-#include "../include/math.h"
+#include "../include/cpos.h"
 
-static int gets(char *buf, int buf_size) {
+extern void print_info();
+
+static int gets(char *buf) {
+
     int index = 0;
     char c;
+
     while ((c = syscall_getch()) != '\n') {
         if (c == '\b') {
             if (index > 0) {
@@ -51,24 +55,24 @@ int main(){
     int argc = -1;
     char *buffer[255];
 
-    double x = sin(12);
-    printf("%08f",x);
-
     while (1){
         syscall_get_cd(buffer);
-        printf("%s$ ",buffer);
-        if (gets(com, 100) <= 0) continue;
+        printf("\03343cd80;default@localhost: \0334169E1;%s\\\033c6c6c6;$ ",buffer);
+
+        if (gets(com) <= 0) continue;
 
         argc = cmd_parse(com, argv, ' ');
+
+
 
         if (argc == -1) {
             printf("[Shell]: Error: out of arguments buffer\n");
             continue;
         }
 
-        if (!strcmp("version", argv[0]))
-            printf("CoolPotOS for x86 [v0.3.1]\n");
-        else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
+        if (!strcmp("version", argv[0])){
+            print_info();
+        }else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             printf("-=[CoolPotShell Helper]=-\n");
             printf("help ? h              Print shell help info.\n");
             printf("version               Print os version.\n");
@@ -87,5 +91,4 @@ int main(){
             printf("exec <path>           Execute a application.\n");
         } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
     }
-    return 0;
 }

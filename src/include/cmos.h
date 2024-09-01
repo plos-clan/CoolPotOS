@@ -29,6 +29,7 @@ typedef struct {
 uint8_t read_cmos(uint8_t p);
 char *get_date_time();
 void print_cpu_id();
+cpu_t * get_cpuid();
 
 uint32_t get_hour();
 uint32_t get_min();

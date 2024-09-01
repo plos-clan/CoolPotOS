@@ -18,7 +18,6 @@ uint32_t *char_buffer;
 extern uint8_t ascfont[];
 extern uint8_t plfont[];
 extern uint8_t bafont[];
-extern uint8_t logo_bmp[];
 
 bool vbe_status = false;
 
@@ -182,10 +181,5 @@ void initVBE(multiboot_t *info) {
     c_width = width / 9;
     c_height = height / 16;
 
-    logkf("SCREEN BASS: %08x\n",screen);
-
     vbe_clear();
-
-    Bmp *bmp = (Bmp*) &logo_bmp;
-    //display(bmp,0,0,false);
 }

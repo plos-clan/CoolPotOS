@@ -4,6 +4,7 @@
 #include "../include/printf.h"
 
 unsigned int PCI_ADDR_BASE;
+unsigned int PCI_NUM = 0;
 
 uint8_t pci_get_drive_irq(uint8_t bus, uint8_t slot, uint8_t func) {
     return (uint8_t)read_pci(bus, slot, func, 0x3c);
@@ -104,7 +105,6 @@ void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsign
 }
 
 void init_pci(){
-    int PCI_NUM = 0;
 
     PCI_ADDR_BASE = kmalloc(1 * 1024 * 1024);
     unsigned int i, BUS, Equipment, F, ADDER, *i1;
