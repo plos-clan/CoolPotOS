@@ -7,6 +7,7 @@
 #include "../include/shell.h"
 #include "../include/heap.h"
 #include "../include/keyboard.h"
+#include "../include/vfs.h"
 
 static void syscall_puchar(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     printf("%c",ebx);
@@ -47,6 +48,18 @@ static void syscall_get_cd(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,u
     else buf = "nofs";
 }
 
+static int syscall_vfs_filesize(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return vfs_filesize(ebx);
+}
+
+static void syscall_vfs_readfile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    vfs_readfile(ebx,ecx);
+}
+
+static void syscall_vfs_writefile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    vfs_writefile(ebx,ecx,edx);
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -56,6 +69,9 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_EXIT] = syscall_exit,
         [SYSCALL_G_CLEAN] = syscall_g_clean,
         [SYSCALL_GET_CD] = syscall_get_cd,
+        [SYSCALL_VFS_FILESIZE] = syscall_vfs_filesize,
+        [SYSCALL_VFS_READFILE] = syscall_vfs_readfile,
+        [SYSCALL_VFS_WRITEFILE] = syscall_vfs_writefile,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

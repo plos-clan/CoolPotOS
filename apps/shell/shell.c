@@ -9,7 +9,7 @@ static int gets(char *buf, int buf_size) {
         if (c == '\b') {
             if (index > 0) {
                 index--;
-                syscall_print("\b \b");
+                printf("\b \b");
             }
         } else {
             buf[index++] = c;
@@ -72,7 +72,7 @@ int main(){
             printf("mkdir      <name>     Make a directory.\n");
             printf("del rm     <name>     Delete a file.\n");
             printf("sysinfo               Print system info.\n");
-            printf("proc [kill<pid>|list] Lists all running processes.\n");
+            printf("proc [kill<pid>|list] List all running processes.\n");
             printf("reset                 Reset OS.\n");
             printf("shutdown exit         Shutdown OS.\n");
             printf("debug                 Print os debug info.\n");

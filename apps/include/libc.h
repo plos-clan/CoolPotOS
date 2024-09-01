@@ -1,4 +1,0 @@
-#ifndef CRASHPOWEROS_LIBC_H
-#define CRASHPOWEROS_LIBC_H
-
-#endif
