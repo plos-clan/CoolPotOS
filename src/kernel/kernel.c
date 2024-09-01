@@ -29,6 +29,8 @@ extern vdisk vdisk_ctl[10];
 extern bool hasFS;
 uint32_t placement_address = (uint32_t) & end;
 
+uint32_t phy_mem_size;
+
 void reset_kernel(){
     printf("Restart %s for x86...\n",OS_NAME);
     kill_all_task();
@@ -74,6 +76,8 @@ void kernel_main(multiboot_t *multiboot) {
         while (1) io_hlt();
     }
 
+    phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024;
+
     initVBE(multiboot);
 
     char* cmdline = multiboot->cmdline;
@@ -81,7 +85,7 @@ void kernel_main(multiboot_t *multiboot) {
         printf("Multiboot command line: %s\n",cmdline);
     }
 
-    printf("CPOS_Kernel %s (GRUB Multiboot) on an i386.\n",OS_VERSION);
+    printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
     printf("Memory Size: %dMB\n",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
     gdt_install();
     idt_install();

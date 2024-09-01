@@ -212,7 +212,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     page_directory_t *page = clone_directory(kernel_directory);
     new_task->pgd_dir = page;
     new_task->mem_size = 0;
-    new_task->program_break = USER_START;
+    new_task->program_break = USER_START + 0xf0000;
     new_task->program_break_end = USER_HEAP_END;
     new_task->name = name;
     new_task->isUser = 1;

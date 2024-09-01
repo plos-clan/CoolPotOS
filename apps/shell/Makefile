@@ -1,4 +1,4 @@
-OBJS_PACK = out/shell.obj
+OBJS_PACK = out/shell.obj out/neofetch.obj
 include ../def.mk
 
 default: $(OBJS_PACK)

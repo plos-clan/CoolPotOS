@@ -3,6 +3,7 @@
 
 #define OS_NAME "CoolPotOS"
 #define OS_VERSION "v0.3.1"
+#define KERNEL_NAME "CP_Kernel-i386-0.3.1"
 
 // b 0x211972
 // b 0x20d0a6

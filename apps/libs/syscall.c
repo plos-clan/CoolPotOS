@@ -81,3 +81,9 @@ void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size){
     register uint32_t edx asm("edx") = __arg3;
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_VFS_FILESIZE), "r"(ebx), "r"(ecx), "r"(edx) : "memory", "cc");
 }
+
+void* syscall_sysinfo(){
+    uint32_t rets;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_SYSINFO) : "memory", "cc");
+    return rets;
+}

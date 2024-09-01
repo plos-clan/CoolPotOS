@@ -42,6 +42,14 @@ static void get_cpu_address_sizes(cpu_t *c) {
     c->phys_bits = eax & 0xff;
 }
 
+cpu_t * get_cpuid(){
+    cpu_t *c = (cpu_t *) kmalloc(sizeof(cpu_t));
+    get_vendor_name(c);
+    get_model_name(c);
+    get_cpu_address_sizes(c);
+    return c;
+}
+
 void print_cpu_id() {
     cpu_t *c = (cpu_t *) kmalloc(sizeof(cpu_t));
     get_vendor_name(c);
