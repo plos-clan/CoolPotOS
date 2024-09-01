@@ -1,37 +1,14 @@
 import os
 import sys
 
-
-def check_os():
-    if sys.platform.startswith('darwin'):
-        return "Mac OS X"
-    elif sys.platform.startswith('win'):
-        return "Windows"
-    elif sys.platform.startswith('linux'):
-        return "Linux"
-    else:
-        return "Unknown"
-
-
-if check_os() == "Windows":
-    gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
-    asm = '/i686_elf_tools/bin/i686-elf-as.exe'
-    nasm = "nasm -f elf32"
-    ld = '/i686_elf_tools/bin/i686-elf-g++.exe'
-    cd = os.getcwd()  # 获取当前执行目录 'D:\CrashPowerDOS-main\'
-    out = "target"
-    dir_ = "\\"
-    src = "src\\"
-elif check_os() == "Linux":
-    gcc = 'gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
-    asm = 'gcc.exe'
-    nasm = "nasm -f elf32"
-    ld = 'g++.exe'
-    cd = os.getcwd()  # 获取当前执行目录 '\mnt\d\CrashPowerDOS-main\'
-    out = "target"
-    dir_ = "/"
-    src = "./src/"
-
+gcc = '/i686_elf_tools/bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
+asm = '/i686_elf_tools/bin/i686-elf-as.exe'
+nasm = "nasm -f elf32"
+ld = '/i686_elf_tools/bin/i686-elf-g++.exe'
+cd = os.getcwd()  # 获取当前执行目录 'D:\CrashPowerDOS-main\'
+out = "target"
+dir_ = "\\"
+src = "src\\"
 
 def clean():
     print("Clean target folder")
