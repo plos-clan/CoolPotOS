@@ -1,6 +1,8 @@
 #ifndef CRASHPOWEROS_CPOS_H
 #define CRASHPOWEROS_CPOS_H
 
+#include "ctype.h"
+
 struct sysinfo{
     char* osname;
     char* kenlname;
@@ -10,6 +12,12 @@ struct sysinfo{
     unsigned int pci_device;
     unsigned int frame_width;
     unsigned int frame_height;
+    uint32_t year;
+    uint32_t mon;
+    uint32_t day;
+    uint32_t hour;
+    uint32_t min;
+    uint32_t sec;
 };
 
 #include "syscall.h"

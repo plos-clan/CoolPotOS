@@ -16,7 +16,7 @@ void print_info(){
            "  &@@@@@@@@@@@@@&=.       #@@@@@@@@@@@@@@@@@#:.=         Console:    CPOS_USER_SHELL\n"
            " *@@@@@@@@@@@@@-          #@@@@@@@@@@@@@@@#:.=@@+        PCI Device: %d\n"
            ":@@@@@@@@@@@@&.           #@@@@@@@@@@@@@#: =@@@@@.       Resolution: %d x %d\n"
-           "#@@@@@@@@@@@@.            #@@@@@@@@@@@#: =@@@@@@@+\n"
+           "#@@@@@@@@@@@@.            #@@@@@@@@@@@#: =@@@@@@@+       Time:       %d/%d/%d %d:%d\n"
            "@@@@@@@@@@@@+             *&&&&&&&&&#- =@@@@@@@@@&\n"
            "@@@@@@@@@@@@-                        :@@@@@@@@@@@@\n"
            "@@@@@@@@@@@@+                        #@@@@@@@@@@@&\n"
@@ -38,7 +38,13 @@ void print_info(){
            info->phy_mem_size,
            info->pci_device,
            info->frame_width,
-           info->frame_height);
+           info->frame_height,
+           info->year,
+           info->mon,
+           info->day,
+           info->hour,
+           info->min,
+           info->sec);
 
     free_info(info);
 }

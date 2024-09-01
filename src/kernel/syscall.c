@@ -69,10 +69,16 @@ struct sysinfo{
     char* kenlname;
     char* cpu_vendor;
     char* cpu_name;
-    unsigned int phy_mem_size;
-    unsigned int pci_device;
-    unsigned int frame_width;
-    unsigned int frame_height;
+    uint32_t phy_mem_size;
+    uint32_t pci_device;
+    uint32_t frame_width;
+    uint32_t frame_height;
+    uint32_t year;
+    uint32_t mon;
+    uint32_t day;
+    uint32_t hour;
+    uint32_t min;
+    uint32_t sec;
 };
 
 static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
@@ -98,6 +104,12 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
     info->pci_device = PCI_NUM;
     info->frame_width = width;
     info->frame_height = height;
+    info->year = get_year();
+    info->mon = get_mon();
+    info->day = get_day_of_month();
+    info->hour = get_hour();
+    info->min = get_min();
+    info->sec = get_sec();
 
     return info;
 }
