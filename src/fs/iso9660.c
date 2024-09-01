@@ -288,13 +288,7 @@ l9660_status l9660_read(l9660_file *f, void *buf, size_t size, size_t *read) {
 
     return L9660_OK;
 }
-char *strdup(const char *s) {
-    size_t l = strlen(s);
-    char *d = kmalloc(l + 1);
-    if (!d)
-        return NULL;
-    return memcpy(d, s, l + 1);
-}
+
 bool read_sector(l9660_fs *fs, void *buf, uint32_t sector) {
     return CDROM_Read(sector, 1, buf, fs->disk_number);
 }

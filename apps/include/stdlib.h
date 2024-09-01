@@ -1,7 +1,7 @@
 #ifndef CRASHPOWEROS_STDLIB_H
 #define CRASHPOWEROS_STDLIB_H
 
-#include <stddef.h>
+#include "ctype.h"
 
 long long atoi(const char* s);
 void *malloc(size_t size);

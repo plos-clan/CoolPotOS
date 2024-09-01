@@ -1,8 +1,7 @@
 #ifndef CRASHPOWEROS_STRING_H
 #define CRASHPOWEROS_STRING_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include "ctype.h"
 
 const char* memchr(const char* buf,char c,unsigned long long count);
 void *memmove(void *dest, const void *src, size_t num);

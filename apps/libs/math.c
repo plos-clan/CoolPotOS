@@ -1,4 +1,5 @@
 #include "../include/math.h"
+#include "../include/ctype.h"
 
 static unsigned long long rand_seed = 1 ;
 static unsigned short max_bit = 32 ;
@@ -74,4 +75,81 @@ float q_sqrt(float number){
     y = y * (f - (x * y * y)) ;
     y = y * (f - (x * y * y)) ;
     return number * y ;
+}
+
+double mod(double x, double y){
+    return x - (int32_t)(x / y) * y;
+}
+
+double sin(double x){
+    x  = mod(x, 2 * PI);
+    double  sum  = x;
+    double  term = x;
+    int  n    = 1;
+    bool sign = true;
+    while (term > F64_EPSILON || term < -F64_EPSILON) {
+        n    += 2;
+        term *= x * x / (n * (n - 1));
+        sum  += sign ? -term : term;
+        sign  = !sign;
+    }
+    return sum;
+}
+
+double cos(double x){
+    x         = mod(x, 2 * PI);
+    double  sum  = 1;
+    double  term = 1;
+    int  n    = 0;
+    bool sign = true;
+    while (term > F64_EPSILON || term < -F64_EPSILON) {
+        n    += 2;
+        term *= x * x / (n * (n - 1));
+        sum  += sign ? -term : term;
+        sign  = !sign;
+    }
+    return sum;
+}
+
+double tan(double x) {
+    return sin(x) / cos(x);
+}
+
+double asin(double x){
+    double sum  = x;
+    double term = x;
+    int n    = 1;
+    while (term > F64_EPSILON || term < -F64_EPSILON) {
+        term *= (x * x * (2 * n - 1) * (2 * n - 1)) / (2 * n * (2 * n + 1));
+        sum  += term;
+        n++;
+    }
+    return sum;
+}
+
+double acos(double x) {
+    return PI / 2 - asin(x);
+}
+
+double atan(double x){
+    double  sum  = x;
+    double  term = x;
+    int  n    = 1;
+    bool sign = true;
+    while (term > F64_EPSILON || term < -F64_EPSILON) {
+        term *= x * x * (2 * n - 1) / (2 * n + 1);
+        sum  += sign ? -term : term;
+        sign  = !sign;
+        n++;
+    }
+    return sum;
+}
+
+double atan2(double y, double x){
+    if (x > 0) return atan(y / x);
+    if (x < 0 && y >= 0) return atan(y / x) + PI;
+    if (x < 0 && y < 0) return atan(y / x) - PI;
+    if (x == 0 && y > 0) return PI / 2;
+    if (x == 0 && y < 0) return -PI / 2;
+    return 0;
 }

@@ -1,6 +1,11 @@
 #ifndef CRASHPOWEROS_CTYPE_H
 #define CRASHPOWEROS_CTYPE_H
 
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdarg.h>
+
 int ispunct(char ch);
 char toupper(char ch);
 char tolower(char ch);

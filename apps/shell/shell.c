@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../include/syscall.h"
 #include "../include/string.h"
+#include "../include/math.h"
 
 static int gets(char *buf, int buf_size) {
     int index = 0;
@@ -49,6 +50,10 @@ int main(){
     char *argv[50];
     int argc = -1;
     char *buffer[255];
+
+    double x = sin(12);
+    printf("%08f",x);
+
     while (1){
         syscall_get_cd(buffer);
         printf("%s$ ",buffer);

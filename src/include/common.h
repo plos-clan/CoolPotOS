@@ -32,6 +32,10 @@ typedef int bool;
 #define false 0
 #define EOF -1
 
+char* replaceAll(char* src, char* find, char* replaceWith);
+char *strstr(char *str1, char *str2);
+char *strncpy(char *dest, const char *src, unsigned long long count);
+char *strdup(const char *str);
 unsigned int rand(void);
 void srand(unsigned long seed);
 void insert_char(char* str, int pos, char ch);
@@ -58,6 +62,8 @@ void insert_str(char *str, char *insert_str, int pos);
 int vsprintf(char *buf, const char *fmt, va_list args);
 int sprintf(char *buf, const char *fmt, ...);
 long int strtol(const char *str,char **endptr,int base);
+
+int getFindStrCount(char* src, char* find);
 
 void reset_kernel();
 void shutdown_kernel();

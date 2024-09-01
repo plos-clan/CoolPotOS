@@ -9,6 +9,42 @@ uint32_t ALIGN_F(const uint32_t addr, const uint32_t _align) {
     return (uint32_t)((addr + _align - 1) & (~(_align - 1)));
 }
 
+char *strstr(char *str1, char *str2) {
+    if (str1 == 0 || str2 == 0)return 0;
+    const char *temp = 0;
+    const char *res = 0;
+    while (*str1 != '\0') {
+        temp = str1;
+        res = str2;
+        while (*temp == *res)++temp, ++res;
+        if (*res == '\0')return str1;
+        ++str1;
+    }
+    return 0;
+}
+
+char *strncpy(char *dest, const char *src, unsigned long long count) {
+    if (dest == 0 || src == 0)return 0;
+    char *ret = dest;
+    while (count)*dest = *src, ++dest, ++src, --count;
+    return ret;
+}
+
+char *strdup(const char *str) {
+    if (str == NULL)
+        return NULL;
+
+    char *strat = (char *) str;
+    int len = 0;
+    while (*str++ != '\0')
+        len++;
+    char *ret = (char *) kmalloc(len + 1);
+
+    while ((*ret++ = *strat++) != '\0') {}
+
+    return ret - (len + 1);
+}
+
 void insert_char(char *str, int pos, char ch) {
     int i;
     for (i = strlen(str); i >= pos; i--) {
@@ -502,4 +538,91 @@ void trim(char *s) {
     while (isspace(p[len - 1])) p[--len] = 0;
     while (*p && isspace(*p)) ++p, --len;
     memmove(s, p, len + 1);
+}
+
+char* replaceAll(char* src, char* find, char* replaceWith){
+    //如果find或者replace为null，则返回和src一样的字符串。
+    if(find == NULL || replaceWith == NULL){
+        return strdup(src);
+    }
+    //指向替换后的字符串的head。
+    char* afterReplaceHead = NULL;
+    //总是指向新字符串的结尾位置。
+    char* afterReplaceIndex = NULL;
+    //find字符串在src字符串中出现的次数
+    int count = 0;
+    int i,j,k;
+
+    int srcLen = strlen(src);
+    int findLen = strlen(find);
+    int replaceWithLen = strlen(replaceWith);
+
+    //指向src字符串的某个位置，从该位置开始复制子字符串到afterReplaceIndex，初始从src的head开始复制。
+    char* srcIndex = src;
+    //src字符串的某个下标，从该下标开始复制字符串到afterReplaceIndex，初始为src的第一个字符。
+    int cpStrStart = 0;
+
+    //获取find字符串在src字符串中出现的次数
+    count = getFindStrCount(src, find);
+    //如果没有出现，则返回和src一样的字符串。
+    if(count == 0){
+        return strdup(src);
+    }
+
+    //为新字符串申请内存
+    afterReplaceHead = afterReplaceIndex = (char*)kmalloc(srcLen + 1 + (replaceWithLen - findLen) * count);
+    //初始化新字符串内存
+    memset(afterReplaceHead, '\0',sizeof(afterReplaceHead));
+
+    for(i = 0,j = 0,k = 0;i!=srcLen;i++){
+        //如果find字符串的字符和src中字符串的字符是否相同。
+        if(src[i] == find[j]){
+            //如果刚开始比较，则将i的值先赋给k保存。
+            if(j == 0){
+                k = i;
+            }
+            //如果find字符串包含在src字符串中
+            if(j == (findLen-1)){
+                j = 0;
+                //拷贝src中find字符串之前的字符串到新字符串中
+                strncpy(afterReplaceIndex, srcIndex, i - findLen - cpStrStart + 1);
+                //修改afterReplaceIndex
+                afterReplaceIndex = afterReplaceIndex + i - findLen - cpStrStart + 1;
+                //修改srcIndex
+                srcIndex = srcIndex + i - findLen - cpStrStart + 1;
+                //cpStrStart
+                cpStrStart = i + 1;
+
+                //拷贝replaceWith字符串到新字符串中
+                strncpy(afterReplaceIndex, replaceWith, replaceWithLen);
+                //修改afterReplaceIndex
+                afterReplaceIndex = afterReplaceIndex + replaceWithLen;
+                //修改srcIndex
+                srcIndex = srcIndex + findLen;
+            }else{
+                j++;
+            }
+        }else{
+            //如果find和src比较过程中出现不相等的情况，则将保存的k值还给i
+            if(j != 0){
+                i = k;
+            }
+            j = 0;
+        }
+    }
+    //最后将src中最后一个与find匹配的字符串后面的字符串复制到新字符串中。
+    strncpy(afterReplaceIndex, srcIndex, i - cpStrStart);
+
+    return afterReplaceHead;
+}
+
+int getFindStrCount(char* src, char* find){
+    int count = 0;
+    char* position =src;
+    int findLen = strlen(find);
+    while((position = strstr(position, find)) != NULL){
+        count++;
+        position = position + findLen;
+    }
+    return count;
 }
