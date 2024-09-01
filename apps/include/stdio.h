@@ -10,9 +10,7 @@
 #define BIN 0x0
 #define PLUS 0x10
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdarg.h>
+#include "ctype.h"
 
 typedef struct FILE {
     unsigned int mode;

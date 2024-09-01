@@ -62,11 +62,6 @@ void vbe_scroll() {
 
 void vbe_draw_char(char c, int32_t x, int32_t y) {
     if (c == ' ') {
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 9; j++) {
-                //screen[(y + i) * width + x + j] = back_color;
-            }
-        }
         return;
     }
 
@@ -79,7 +74,7 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
         for (int j = 0; j < 9; j++) {
             if (font[i] & (0x80 >> j)) {
                 screen[(y + i) * width + x + j] = color;
-            } //else screen[(y + i) * width + x + j] = back_color;
+            }
         }
     }
 }
@@ -186,6 +181,8 @@ void initVBE(multiboot_t *info) {
     back_color = 0x000000;
     c_width = width / 9;
     c_height = height / 16;
+
+    logkf("SCREEN BASS: %08x\n",screen);
 
     vbe_clear();
 

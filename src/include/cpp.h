@@ -1,4 +1,0 @@
-#ifndef CRASHPOWEROS_CPP_H
-#define CRASHPOWEROS_CPP_H
-
-#endif

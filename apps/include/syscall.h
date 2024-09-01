@@ -13,8 +13,7 @@
 #define SYSCALL_VFS_READFILE 10
 #define SYSCALL_VFS_WRITEFILE 11
 
-#include <stdint.h>
-#include <stddef.h>
+#include "ctype.h"
 
 void syscall_print(char* c);
 void syscall_putchar(char c);

@@ -76,7 +76,6 @@ void kernel_main(multiboot_t *multiboot) {
 
     initVBE(multiboot);
 
-
     char* cmdline = multiboot->cmdline;
     if(cmdline != NULL){
         printf("Multiboot command line: %s\n",cmdline);
