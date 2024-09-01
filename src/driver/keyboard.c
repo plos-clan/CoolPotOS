@@ -3,91 +3,13 @@
 #include "../include/memory.h"
 #include "../include/queue.h"
 #include "../include/io.h"
+#include "../include/task.h"
 #include "../include/klog.h"
 
-KEY_STATUS *key_status;
-Queue *key_char_queue;
-struct key_listener* head_listener;
+static int caps_lock, shift, e0_flag = 0, ctrl = 0;
+int disable_flag = 0;
 
-unsigned char keyboard_map[128] =
-        {
-                0,  27, '1', '2', '3', '4', '5', '6', '7', '8',	/* 9 */
-                '9', '0', '-', '=', '\b',	/* Backspace */
-                '\t',			/* Tab */
-                'q', 'w', 'e', 'r',	/* 19 */
-                't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',	/* Enter key */
-                0,			/* 29   - Control */
-                'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',	/* 39 */
-                '\'', '`',   -1,		/* Left shift */
-                '\\', 'z', 'x', 'c', 'v', 'b', 'n',			/* 49 */
-                'm', ',', '.', '/',   -1,				/* Right shift */
-                '*',
-                0,	/* Alt */
-                ' ',	/* Space bar */
-                0,	/* Caps lock */
-                0,	/* 59 - F1 key ... > */
-                0,   0,   0,   0,   0,   0,   0,   0,
-                0,	/* < ... F10 */
-                0,	/* 69 - Num lock*/
-                0,	/* Scroll Lock */
-                0,	/* Home key */
-                0,	/* Up Arrow */
-                0,	/* Page Up */
-                '-',
-                0,	/* Left Arrow */
-                0,
-                0,	/* Right Arrow */
-                '+',
-                0,	/* 79 - End key*/
-                0,	/* Down Arrow */
-                0,	/* Page Down */
-                0,	/* Insert Key */
-                0,	/* Delete Key */
-                0,   0,   0,
-                0,	/* F11 Key */
-                0,	/* F12 Key */
-                0,	/* All other keys are undefined */
-        };
-
-unsigned char shift_keyboard_map[128] =
-        {
-                0,  27, '!', '@', '#', '$', '%', '^', '&', '*',	/* 9 */
-                '(', ')', '_', '+', '\b',	/* Backspace */
-                '\t',			/* Tab */
-                'Q', 'W', 'E', 'R',	/* 19 */
-                'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n',	/* Enter key */
-                0,			/* 29   - Control */
-                'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',	/* 39 */
-                '"', '~',   -1,		/* Left shift */
-                '|', 'Z', 'X', 'C', 'V', 'B', 'N',			/* 49 */
-                'M', '<', '>', '?',   -1,				/* Right shift */
-                '*',
-                0,	/* Alt */
-                ' ',	/* Space bar */
-                0,	/* Caps lock */
-                0,	/* 59 - F1 key ... > */
-                0,   0,   0,   0,   0,   0,   0,   0,
-                0,	/* < ... F10 */
-                0,	/* 69 - Num lock*/
-                0,	/* Scroll Lock */
-                0,	/* Home key */
-                0,	/* Up Arrow */
-                0,	/* Page Up */
-                '-',
-                0,	/* Left Arrow */
-                0,
-                0,	/* Right Arrow */
-                '+',
-                0,	/* 79 - End key*/
-                0,	/* Down Arrow */
-                0,	/* Page Down */
-                0,	/* Insert Key */
-                0,	/* Delete Key */
-                0,   0,   0,
-                0,	/* F11 Key */
-                0,	/* F12 Key */
-                0,	/* All other keys are undefined */
-        };
+static int handle_keyboard_input(registers_t *reg);
 
 char keytable[0x54] = { // 按下Shift
         0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
@@ -104,47 +26,7 @@ char keytable1[0x54] = { // 未按下Shift
         0,   0,    0,   '7', '8', '9', '-',  '4', '5', '6',  '+', '1', '2', '3', '0',  '.'};
 
 
-static void default_handle(uint32_t key,int release,char c){
-    if(!release) {
-        if(key == 42) {
-            key_status->is_shift = 1;
-            return 0;
-        }
-
-        if(key == 29){
-            key_status->is_ctrl = 1;
-            return 0;
-        }
-
-        if(c == 0) return 0;
-
-        if(key == 0x81) queue_push(key_char_queue,-5);
-
-        queue_push(key_char_queue,(char)c);
-    } else {
-        if(key == -86){
-            key_status->is_shift = 0;
-        }
-
-        if(key == 29){
-            key_status->is_ctrl = 0;
-            return 0;
-        }
-    }
-}
-
 void init_keyboard(){
-    key_status = (KEY_STATUS*) alloc(sizeof(KEY_STATUS));
-    if(key_status == NULL) goto error;
-    key_status->is_shift = 0;
-
-    key_char_queue = create_queue();
-    head_listener = (struct key_listener*) kmalloc(sizeof(struct key_listener));
-    if(head_listener == NULL) goto error;
-    head_listener->func = default_handle;
-    head_listener->lid = 0;
-    head_listener->next = NULL;
-
     register_interrupt_handler(0x21,handle_keyboard_input);
 
     klogf(true,"Load PS/2 Keyboard device.\n");
@@ -154,88 +36,55 @@ void init_keyboard(){
 }
 
 int handle_keyboard_input(registers_t *reg){
-    unsigned char status = read_port(KEYBOARD_STATUS_PORT);
-    uint32_t key = read_port(KEYBOARD_DATA_PORT);
-    int release = key & 0xb10000000;
-    char c = key_status->is_shift ? shift_keyboard_map[(unsigned char )key] : keyboard_map[(unsigned char )key];
+    uint8_t data = 0;
+    io_out8(0x0020,0x61);
+    data = io_in8(0x0060);
 
-    io_cli();
+    if (data == 0xe0) {
+        e0_flag = 1;
+        return;
+    }
+    if (data == 0x2a || data == 0x36) { // Shift按下
+        shift = 1;
+    }
+    if (data == 0x1d) { // Ctrl按下
+        ctrl = 1;
+    }
+    if (data == 0x3a) { // Caps Lock按下
+        caps_lock = caps_lock ^ 1;
+    }
+    if (data == 0xaa || data == 0xb6) { // Shift松开
+        shift = 0;
+    }
+    if (data == 0x9d) { // Ctrl按下
+        ctrl = 0;
+    }
 
-    struct key_listener* h = head_listener;
-    while (1){
-        h->func(key,release,c);
-        h = h->next;
-        if(h == NULL) break;
+    extern struct task_struct *running_proc_head;
+    if (data < 0x80) {
+        struct task_struct *task = running_proc_head;
+        while (1){
+            if(task->tty != NULL){
+                fifo8_put(task->tty->fifo,data);
+            }
+            task = task->next;
+            if(task == NULL || task == running_proc_head) break;
+        }
     }
 
     return 0;
 }
 
-static void found_listener(int lid,struct key_listener *head,struct key_listener *base,struct key_listener **argv,int first){
-    struct key_listener *t = base;
-    if(t == NULL){
-        argv = NULL;
-        return;
+int input_char_inSM() {
+    int    i;
+    struct task_struct *task = get_current();
+    if (task->tty->is_using == false) {
+    } else {
+        do{
+            i = fifo8_get(task->tty->fifo);
+        } while (i == -1);
     }
-    if(t->lid == lid){
-        *argv = t;
-        return;
-    } else{
-        if(!first)
-            if(head->lid == t->lid){
-                argv = NULL;
-                return;
-            }
-        found_listener(lid,head,t->next,argv,0);
-    }
-}
-
-struct key_listener* found_listener_id(int lid){
-    struct task_struct *argv = NULL;
-    found_listener(lid,head_listener,head_listener,&argv,1);
-    if(argv == NULL){
-        printf("Cannot found key listener id:[%d].\n",lid);
-        return NULL;
-    }
-    return argv;
-}
-
-void remove_listener(int lid){
-    struct key_listener *argv = found_listener_id(lid);
-    if(argv == NULL){
-        printf("Cannot found listener id:[%d].\n",lid);
-        return;
-    }
-    if(argv->lid == 0){
-        printf("[\033driver\036]: Cannot remove default listener.\n");
-        return;
-    }
-
-    kfree(argv);
-    struct key_listener *head = head_listener;
-    struct key_listener *last = NULL;
-    while (1){
-        if(head->lid == argv->lid){
-            last->next = argv->next;
-            return;
-        }
-        last = head;
-        head = head->next;
-    }
-}
-
-void add_listener(struct key_listener* listener){
-    if(listener == NULL) return;
-
-    struct key_listener* h = head_listener,*buf = NULL;
-    while (1){
-        buf = h;
-        h = h->next;
-        if(h == NULL){
-            buf->next = listener;
-            break;
-        }
-    }
+    return i;
 }
 
 int kernel_getch() {
@@ -244,16 +93,16 @@ int kernel_getch() {
     if (ch == 0xe0) {       // keytable之外的键（↑,↓,←,→）
         ch = input_char_inSM();
         if (ch == 0x48) { // ↑
-            return -1;
-        } else if (ch == 0x50) { // ↓
             return -2;
-        } else if (ch == 0x4b) { // ←
+        } else if (ch == 0x50) { // ↓
             return -3;
-        } else if (ch == 0x4d) { // →
+        } else if (ch == 0x4b) { // ←
             return -4;
+        } else if (ch == 0x4d) { // →
+            return -5;
         }
     }
-    // 返回扫描码（keytable之内）对应的ASCII码
+    // 返回扫描码(keytable之内)对应的ASCII码
     if (keytable[ch] == 0x00) {
         return 0;
     } else if (shift == 0 && caps_lock == 0) {

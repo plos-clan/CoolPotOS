@@ -1,4 +1,5 @@
 #include "../include/tty.h"
+#include "../include/task.h"
 
 extern uint32_t *screen;
 extern uint32_t width, height;
@@ -11,6 +12,7 @@ void init_default_tty(struct task_struct *task){
     task->tty->width = width;
     task->tty->height = height;
     task->tty->is_default_frame = true;
+    task->tty->is_using = true;
 
     fifo8_init(task->tty->fifo,256,buffer);
 }

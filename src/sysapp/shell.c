@@ -9,16 +9,15 @@
 #include "../include/common.h"
 #include "../include/sb16.h"
 #include "../include/elf.h"
+#include "../include/keyboard.h"
 
 extern Queue *key_char_queue;
 extern vdisk vdisk_ctl[10];
 extern bool hasFS;
 
 char getc() {
-    while (key_char_queue->size == 0x00) {
-        printf("");
-    }
-    return queue_pop(key_char_queue);
+    char c = kernel_getch();
+    return c;
 }
 
 int gets(char *buf, int buf_size) {
