@@ -9,6 +9,9 @@
 #define SYSCALL_EXIT 6
 #define SYSCALL_G_CLEAN 7
 #define SYSCALL_GET_CD 8
+#define SYSCALL_VFS_FILESIZE 9
+#define SYSCALL_VFS_READFILE 10
+#define SYSCALL_VFS_WRITEFILE 11
 
 #include <stdint.h>
 #include <stddef.h>
@@ -21,5 +24,8 @@ void syscall_free(void *ptr);
 void syscall_exit(int code);
 void syscall_g_clean();
 void syscall_get_cd(char *buffer);
+int syscall_vfs_filesize(char* filename);
+void syscall_vfs_readfile(char* filename,char* buffer);
+void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size);
 
 #endif
