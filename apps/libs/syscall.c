@@ -14,9 +14,9 @@ void syscall_putchar(char c){
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_PUTC), "r"(ebx) : "memory", "cc");
 }
 
-char syscall_getc(){
+char syscall_getch(){
     uint32_t rets;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_GETC) : "memory", "cc");
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_GETCH) : "memory", "cc");
     return rets;
 }
 
@@ -45,4 +45,11 @@ void syscall_exit(int code){
 void syscall_g_clean(){
     uint32_t rets;
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_G_CLEAN) : "memory", "cc");
+}
+
+void syscall_get_cd(char *buffer){
+    uint32_t rets;
+    uint32_t __arg1 = (uint32_t)(buffer);
+    register uint32_t ebx asm("ebx")  = __arg1;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_GET_CD), "r"(ebx) : "memory", "cc");
 }

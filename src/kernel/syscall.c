@@ -6,7 +6,7 @@
 #include "../include/io.h"
 #include "../include/shell.h"
 #include "../include/heap.h"
-
+#include "../include/keyboard.h"
 
 static void syscall_puchar(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     printf("%c",ebx);
@@ -16,10 +16,9 @@ static void syscall_print(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,ui
     printf("%s",ebx);
 }
 
-static char syscall_getc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+static char syscall_getch(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     io_sti();
-    char c = getc();
-    printf("SYSCALL: %c\n",c);
+    char c = kernel_getch();
     return c;
 }
 
@@ -41,14 +40,22 @@ static void syscall_g_clean(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,
      screen_clear();
 }
 
+static void syscall_get_cd(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    char* buf = ebx;
+    extern bool hasFS;
+    if(hasFS) vfs_getPath(buf);
+    else buf = "nofs";
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
-        [SYSCALL_GETC] = syscall_getc,
+        [SYSCALL_GETCH] = syscall_getch,
         [SYSCALL_MALLOC] = syscall_malloc,
         [SYSCALL_FREE] = syscall_free,
         [SYSCALL_EXIT] = syscall_exit,
         [SYSCALL_G_CLEAN] = syscall_g_clean,
+        [SYSCALL_GET_CD] = syscall_get_cd,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

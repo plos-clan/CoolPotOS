@@ -2,7 +2,7 @@
 #define CRASHPOWEROS_COMMON_H
 
 #define OS_NAME "CoolPotOS"
-#define OS_VERSION "v0.3.0"
+#define OS_VERSION "v0.3.1"
 
 // b 0x211972
 // b 0x20d0a6
