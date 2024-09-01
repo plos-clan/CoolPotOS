@@ -43,8 +43,6 @@ void shutdown_kernel(){
     kill_all_task();
     clock_sleep(10);
     power_off();
-
-
 }
 
 uint32_t memory_all(){
@@ -53,6 +51,15 @@ uint32_t memory_all(){
 
 int check_task(int *pid){
     struct task_struct *shell = found_task_pid(*pid);
+
+    if(shell == NULL){
+        printf("\n[Task-Check]: Task was throw exception.\n");
+        printf("Enter any key to restart kernel.> ");
+        getc();
+        printf("\n");
+        reset_kernel();
+    }
+
     while (1){
         if(shell->state == TASK_DEATH){
             printf("\n[Task-Check]: Task was throw exception.\n");
@@ -60,6 +67,18 @@ int check_task(int *pid){
             getc();
             printf("\n");
             reset_kernel();
+        }
+    }
+    return 0;
+}
+
+int check_task_usershell(int *pid){
+    struct task_struct *shell = found_task_pid(*pid);
+    while (1){
+        if(shell->state == TASK_DEATH){
+            screen_clear();
+            int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
+            kernel_thread(check_task,&pid,"CPOS-CK");
         }
     }
     return 0;
@@ -141,7 +160,22 @@ void kernel_main(multiboot_t *multiboot) {
     clock_sleep(25);
 
     vfs_change_path("apps");
-    klogf(user_process("shell.bin","Shell") != -1,"Shell process init.\n");
+    int pid = user_process("shell.bin","Shell");
+    klogf(pid != -1,"Shell process init.\n");
+    if(pid == -1){
+        printf("UserShell launch fault.\n");
+        printf("Launching system shell...\n");
+
+        int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
+        klogf(pid != -1,"Launch kernel shell.\n");
+        kernel_thread(check_task,&pid,"CPOS-CK");
+        goto ker;
+    }
+
+    kernel_thread(check_task_usershell,&pid,"CPOS-UCK");
+
+    ker:
+
     //klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
 
     //int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");

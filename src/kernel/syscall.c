@@ -29,7 +29,7 @@ static char syscall_getch(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,ui
 
 static void syscall_exit(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     task_kill(get_current()->pid);
-    printf("PID[%d] exit code: %d",get_current()->pid,ebx);
+    //printf("PID[%d] exit code: %d",get_current()->pid,ebx);
 }
 
 static void* syscall_malloc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){

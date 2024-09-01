@@ -63,8 +63,6 @@ int main(){
 
         argc = cmd_parse(com, argv, ' ');
 
-
-
         if (argc == -1) {
             printf("[Shell]: Error: out of arguments buffer\n");
             continue;
@@ -72,23 +70,13 @@ int main(){
 
         if (!strcmp("version", argv[0])){
             print_info();
+        }if (!strcmp("system", argv[0])){
+            exit(0);
         }else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             printf("-=[CoolPotShell Helper]=-\n");
             printf("help ? h              Print shell help info.\n");
             printf("version               Print os version.\n");
-            printf("type       <name>     Read a file.\n");
-            printf("ls                    List all files.\n");
-            printf("mkdir      <name>     Make a directory.\n");
-            printf("del rm     <name>     Delete a file.\n");
-            printf("sysinfo               Print system info.\n");
-            printf("proc [kill<pid>|list] List all running processes.\n");
-            printf("reset                 Reset OS.\n");
-            printf("shutdown exit         Shutdown OS.\n");
-            printf("debug                 Print os debug info.\n");
-            printf("disk[list|<ID>|cg<ID>]List or view disks.\n");
-            printf("cd  <path>            Change shell top directory.\n");
-            printf("sb3       <name>      Player a wav sound file.\n");
-            printf("exec <path>           Execute a application.\n");
+            printf("system                Launch system shell.\n");
         } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
     }
 }
