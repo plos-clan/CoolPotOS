@@ -31,53 +31,35 @@
 #define CMD_RP16    0xD6 // Resume playback of 16 bit channel
 #define CMD_VERSION 0xE1 // Turn speaker off
 
-#define MODE_MONO8    0x00
-#define MODE_STEREO8  0x20
-#define MODE_MONO16   0x10
-#define MODE_STEREO16 0x30
+#define MODE_SMONO   (0b01 << 4)
+#define MODE_SSTEREO (0b11 << 4)
+#define MODE_UMONO   (0b00 << 4)
+#define MODE_USTEREO (0b10 << 4)
 
 #define STATUS_READ  0x80 // read buffer status
 #define STATUS_WRITE 0x80 // write buffer status
 
-#define DMA_BUF_SIZE 0x8000 // 缓冲区长度
-#define SAMPLE_RATE 44100 // 采样率
-#define SB16_IRQ    5
+#define DMA_BUF_SIZE 4096 // 缓冲区长度
+#define SB16_IRQ 5
 
 #include "task.h"
 #include "common.h"
 #include "isr.h"
 
-struct WAV16_HEADER {
-    char riff[4];
-    int size;
-    char wave[4];
-    char fmt[4];
-    int fmt_size;
-    short format;
-    short channel;
-    int sample_rate;
-    int byte_per_sec;
-} __attribute__((packed));
-
-struct sb16 {
-    struct task_struct *use_task;
-    int             status;
-    char           *addr1;   // DMA 地址
-    volatile size_t size1;   //
-    char           *addr2;   // DMA 地址
-    volatile size_t size2;   //
-    uint8_t         mode;    // 模式
-    uint8_t         channel; // DMA 通道
-};
-
-void sb16_handler(registers_t *reg);
-void sb_exch_dmaaddr();
-void sb16_do_dma();
-void sb16_do_close();
-void disable_sb16();
-void sb16_close();
-int sb16_write(char *data, size_t size);
-void sb16_open();
-void sb16_set_volume(uint8_t level);
+static struct {
+    struct task_struct *use_task;  //
+    int    status;    //
+    bool   auto_mode; //
+#if VSOUND_RWAPI
+    void *volatile addr1;  // DMA 地址
+  volatile size_t size1; //
+  void *volatile addr2;  // DMA 地址
+  volatile size_t size2; //
+#endif
+    uint8_t mode;        // 模式
+    uint8_t dma_channel; // DMA 通道
+    uint8_t depth;       // 采样深度
+    int  channels;    // 声道数
+} sb;
 
 #endif

@@ -29,7 +29,6 @@ static char syscall_getch(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,ui
 
 static void syscall_exit(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     task_kill(get_current()->pid);
-    //printf("PID[%d] exit code: %d",get_current()->pid,ebx);
 }
 
 static void* syscall_malloc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
@@ -84,13 +83,13 @@ struct sysinfo{
 static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     struct sysinfo *info = (struct sysinfo *) user_alloc(get_current(), sizeof(struct sysinfo));
     cpu_t *cpu = get_cpuid();
-    char *os_name = user_alloc(get_current(), strlen(OS_NAME));
-    char *kernel = user_alloc(get_current(), strlen(OS_NAME));
-    char *cpu_vendor = user_alloc(get_current(), strlen(cpu->vendor));
-    char *cpu_name = user_alloc(get_current(), strlen(cpu->model_name));
+    char *os_name = (char *)user_alloc(get_current(), strlen(OS_NAME));
+    char *kernel = (char *)user_alloc(get_current(), strlen(KERNEL_NAME));
 
-    memcpy(os_name,OS_NAME, 40);
-    memcpy(kernel,KERNEL_NAME, 40);
+    char *cpu_vendor = (char *)user_alloc(get_current(), strlen(cpu->vendor));
+    char *cpu_name = (char *)user_alloc(get_current(), strlen(cpu->model_name));
+    memcpy(os_name,OS_NAME, strlen(OS_NAME));
+    memcpy(kernel,KERNEL_NAME, strlen(KERNEL_NAME));
     memcpy(cpu_vendor,cpu->vendor, strlen(cpu->vendor));
     memcpy(cpu_name,cpu->model_name, strlen(cpu->model_name));
 
@@ -110,6 +109,8 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
     info->hour = get_hour();
     info->min = get_min();
     info->sec = get_sec();
+
+    kfree(cpu);
 
     return info;
 }
@@ -132,6 +133,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);
 
 size_t syscall() {
+    io_cli();
     volatile size_t eax, ebx, ecx, edx, esi, edi;
     asm("mov %%eax, %0\n\t" : "=r"(eax));
     asm("mov %%ebx, %0\n\t" : "=r"(ebx));

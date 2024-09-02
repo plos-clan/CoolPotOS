@@ -70,7 +70,7 @@ int main(){
 
         if (!strcmp("version", argv[0])){
             print_info();
-        }if (!strcmp("system", argv[0])){
+        }else if (!strcmp("system", argv[0])){
             exit(0);
         }else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             printf("-=[CoolPotShell Helper]=-\n");
