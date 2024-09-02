@@ -403,6 +403,7 @@ void init_sched() {
     current->mem_size = 0;
     current->next = current;
     current->isUser = 0;
+    init_default_tty(current);
 
     extern header_t *head;
     extern header_t *tail;
