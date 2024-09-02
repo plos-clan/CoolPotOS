@@ -2,6 +2,7 @@
 #include "../include/common.h"
 #include "../include/graphics.h"
 #include "../include/serial.h"
+#include "../include/tty.h"
 
 static int skip_atoi(const char **s) {
     int i = 0;
@@ -305,18 +306,38 @@ void printf(const char *formet, ...) {
 }
 
 void screen_clear(){
+    struct task_struct *task = get_current();
+    if(task != NULL){
+        task->tty->clear(task->tty);
+        return;
+    }
+
     if(vbe_status){
         vbe_clear();
     } else vga_clear();
 }
 
 void putchar(char c){
+    struct task_struct *task = get_current();
+    if(task != NULL){
+        task->tty->putchar(task->tty,c);
+        return;
+    }
+
     if(vbe_status){
         vbe_putchar(c);
     } else vga_putchar(c);
 }
 
 void print(char *message) {
+    struct task_struct *task = get_current();
+    if(task != NULL){
+        task->tty->print(task->tty,message);
+        return;
+    }
+
+    logk(message);
+
     if(vbe_status){
         vbe_writestring(message);
     } else vga_writestring(message);

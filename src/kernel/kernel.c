@@ -73,7 +73,6 @@ int check_task(int *pid){
 }
 
 int check_task_usershell(int *pid){
-    while (1) asm("hlt");
     struct task_struct *shell = found_task_pid(*pid);
     while (1){
         if(shell->state == TASK_DEATH){
