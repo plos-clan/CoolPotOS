@@ -66,20 +66,6 @@ static uint8_t gen(int t) {
 }
 
 void sound_test() {
-    logk("sound test has been started\n");
-    F               = g(0);
-    G               = g(T);
-    const int total = T + ((128 - F) + (128 - G)) * K;
-    sb16_open();
-    sb16_set_volume(128);
-    uint8_t *buffer = kmalloc(buffer_len);
-    for (int offset = 0;; offset++) {
-        if (offset * buffer_len >= total) break;
-        for (int i = 0; i < buffer_len; i++)
-            buffer[i] = gen(i + offset * buffer_len);
-        sb16_write(buffer, buffer_len);
-    }
-    sb16_close();
-    kfree(buffer);
+
 }
 
