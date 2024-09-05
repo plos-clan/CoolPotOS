@@ -74,5 +74,6 @@ bool vfs_change_disk(struct task_struct *task,uint8_t drive);
 bool vfs_register_fs(vfs_t vfs);
 void init_vfs();
 vfs_file *get_cur_file(char* filename);
+void vfs_copy(struct task_struct *task,vfs_t* src);
 
 #endif

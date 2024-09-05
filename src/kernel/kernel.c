@@ -159,21 +159,8 @@ void kernel_main(multiboot_t *multiboot) {
     clock_sleep(25);
 
     vfs_change_path("apps");
-    int pid = user_process("shell.bin","Shell");
-    klogf(pid != -1,"Shell process init.\n");
-    if(pid == -1){
-        printf("UserShell launch fault.\n");
-        printf("Launching system shell...\n");
+    klogf(user_process("init.bin","InitService") != -1,"Init service process init.\n");
 
-        int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
-        klogf(pid != -1,"Launch kernel shell.\n");
-        kernel_thread(check_task,&pid,"CPOS-CK");
-        goto ker;
-    }
-
-    kernel_thread(check_task_usershell,&pid,"CPOS-UCK");
-
-    ker:
 
     //klogf(user_process("init.bin","Init") != -1,"Init base process init.\n");
 

@@ -1,6 +1,6 @@
 /*
  * PlantsOS FileSystem Abstract Interface
- * Copyright by min0911
+ * Author: min0911
  */
 #include "../include/printf.h"
 #include "../include/vfs.h"
@@ -302,8 +302,6 @@ vfs_file *vfs_fileinfo(char *filename) {
         return false;
     }
 
-
-
     vfs_file *result = vfs->FileInfo(vfs, new_path);
     kfree(new_path);
     return result;
@@ -417,4 +415,15 @@ bool vfs_register_fs(vfs_t vfs) {
     *seat = vfs;
     klogf(true,"Register file system: %s\n",vfs.FSName);
     return true;
+}
+
+void vfs_copy(struct task_struct *task,vfs_t* src){
+    vfs_change_disk(task, src->drive);
+    List *l;
+    char *path;
+    for (int i = 1; FindForCount(i, task->vfs_now->path) != NULL; i++) {
+        l    = FindForCount(i, task->vfs_now->path);
+        path = (char *)l->val;
+        task->vfs_now->cd(task->vfs_now, path);
+    }
 }

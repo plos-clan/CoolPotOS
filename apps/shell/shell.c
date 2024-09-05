@@ -57,7 +57,7 @@ int main(){
 
     while (1){
         syscall_get_cd(buffer);
-        printf("\03343cd80;default@localhost: \0334169E1;%s\\\033c6c6c6;$ ",buffer);
+        printf("\033[40m;default@localhost: \03330m;%s\\\03321m;$ ",buffer);
 
         if (gets(com) <= 0) continue;
 

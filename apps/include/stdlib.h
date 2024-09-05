@@ -8,5 +8,6 @@ void *malloc(size_t size);
 void free(void *ptr);
 void exit(int code);
 void *realloc(void *ptr, uint32_t size);
+void *calloc(size_t n, size_t size);
 
 #endif

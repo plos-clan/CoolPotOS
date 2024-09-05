@@ -36,9 +36,12 @@ typedef struct tty{
     struct FIFO8 *fifo;       // 键盘输出缓冲区
     key_lis keyboard_press;   // 键盘按下
     key_lis keyboard_release; // 键盘松开
+    uint32_t *vram;
+    uint32_t width,height;
     int xsize, ysize;
     int x, y;
     uint8_t color;
+    int Raw_y;
 
     /* vt100 */
     int          vt100;       // 是否检测到标志
@@ -53,5 +56,8 @@ typedef struct tty{
 
 void init_default_tty(struct task_struct *task);
 void free_tty(struct task_struct *task);
+void clear_TextMode(struct tty *res);
+void screen_ne_TextMode(struct tty *res);
+void putchar_TextMode(struct tty *res, int c);
 
 #endif

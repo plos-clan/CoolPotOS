@@ -13,6 +13,7 @@
 #define SYSCALL_VFS_READFILE 10
 #define SYSCALL_VFS_WRITEFILE 11
 #define SYSCALL_SYSINFO 12
+#define SYSCALL_EXEC 13
 
 #include "ctype.h"
 
@@ -28,5 +29,6 @@ int syscall_vfs_filesize(char* filename);
 void syscall_vfs_readfile(char* filename,char* buffer);
 void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size);
 void* syscall_sysinfo();
+int syscall_exec(char *filename);
 
 #endif

@@ -22,6 +22,7 @@ typedef struct FILE {
 } FILE;
 
 void put_char(char a);
+int scanf(const char *format, ...);
 int printf(const char* fmt, ...);
 int puts(const char *s);
 int vsprintf(char *buf, const char *fmt, va_list args);

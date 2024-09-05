@@ -17,6 +17,7 @@
 #define SYSCALL_VFS_READFILE 10
 #define SYSCALL_VFS_WRITEFILE 11
 #define SYSCALL_SYSINFO 12
+#define SYSCALL_EXEC 13
 
 void syscall_install();
 

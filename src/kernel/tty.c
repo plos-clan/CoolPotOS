@@ -288,7 +288,6 @@ static int parse_vt100(struct tty *res, char *string) {
             } else if (delta[0] == 1 && k == 0) { // unsupported
                 return 0;
             }
-            // klogd("switch k");
             static const uint8_t color_map[8] = {0, 4, 2, 6, 1, 5, 3, 7};
             switch (k) {
                 case 0: {
@@ -335,8 +334,51 @@ static int parse_vt100(struct tty *res, char *string) {
 void tty_print(struct tty *res,const char *string){
     vbe_writestring(string);
 }
-void tty_putchar(struct tty *res,int c){
-    vbe_putchar(c);
+void tty_putchar(struct tty *res,int ch){
+    if (ch == '\033' && res->vt100 == 0) {
+        memset(res->buffer, 0, 81);
+        res->buf_p                = 0;
+        res->buffer[res->buf_p++] = '\033';
+        res->vt100                = 1;
+        res->done                 = 0;
+        return;
+    }else if (res->vt100 && res->buf_p == 1) {
+        if (ch == '[') {
+            res->buffer[res->buf_p++] = ch;
+            return;
+        } else {
+            res->vt100 = 0;
+            for (int i = 0; i < res->buf_p; i++) {
+                res->putchar(res, res->buffer[i]);
+            }
+        }
+    }else if (res->vt100 && res->buf_p == 81) {
+        for (int i = 0; i < res->buf_p; i++) {
+            res->putchar(res, res->buffer[i]);
+        }
+        res->vt100 = 0;
+    }else if (res->vt100) {
+        res->buffer[res->buf_p++] = ch;
+        if (t_is_eos(ch)) {
+            res->mode = (vt100_mode_t)ch;
+            if (!parse_vt100(res, res->buffer)) { // 失败了
+                for (int i = 0; i < res->buf_p; i++) {
+                    res->putchar(res, res->buffer[i]);
+                }
+            }
+            res->vt100 = 0;
+            return;
+        } else if (!isdigit(ch) && ch != ';') {
+            for (int i = 0; i < res->buf_p; i++) {
+                res->putchar(res, res->buffer[i]);
+            }
+            res->vt100 = 0;
+            return;
+        }
+        return;
+    }
+    //vbe_putchar(ch);
+    res->putchar(res,ch);
 }
 void tty_MoveCursor(struct tty *res,int x, int y){
 
@@ -351,9 +393,13 @@ void init_default_tty(struct task_struct *task){
 
     task->tty->is_using = true;
     task->tty->print = tty_print;
-    task->tty->clear = tty_clear;
-    task->tty->putchar = tty_putchar;
+    task->tty->clear = clear_TextMode;
+    task->tty->putchar = putchar_TextMode;
     task->tty->gotoxy = tty_gotoxy;
+    task->tty->screen_ne = screen_ne_TextMode;
+    task->tty->vram = screen;
+    task->tty->width = width;
+    task->tty->height = height;
 
     fifo8_init(task->tty->fifo,256,buffer);
 }
