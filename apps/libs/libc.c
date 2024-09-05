@@ -24,6 +24,13 @@ void *realloc(void *ptr, uint32_t size) {
     return new;
 }
 
+void *calloc(size_t n, size_t size) {
+    void *ptr = malloc(n * size);
+    if (ptr == NULL) return NULL;
+    memset(ptr, 0, n * size);
+    return ptr;
+}
+
 long long atoi(const char* s){
     long long temp = 0,sign = (*s <= '9' && *s >= '0') ;
     while(*s > '9' || *s < '0')s ++ ;
@@ -35,6 +42,10 @@ long long atoi(const char* s){
 
 void put_char(char c){
     syscall_putchar(c);
+}
+
+int scanf(const char *format, ...){
+
 }
 
 

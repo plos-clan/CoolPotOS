@@ -193,6 +193,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     if(path == NULL){
         return -1;
     }
+    io_sti();
     uint32_t size = vfs_filesize(path);
     if(size == -1){
         return -1;
@@ -216,11 +217,13 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->program_break_end = USER_HEAP_END;
     new_task->name = name;
     new_task->isUser = 1;
+    new_task->vfs_now = NULL;
     new_task->tty = kmalloc(sizeof(tty_t));
     init_default_tty(new_task);
 
     extern char root_disk;
     vfs_change_disk(new_task,root_disk);
+    vfs_copy(new_task,get_current()->vfs_now);
 
     io_sti();
 
@@ -240,7 +243,6 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
 
     memset(buffer,0,size);
     vfs_readfile(path,buffer);
-
 
     Elf32_Ehdr *ehdr = buffer;
     if(!elf32Validate(ehdr)){
@@ -299,11 +301,12 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进�
     extern header_t *tail;
     extern void *program_break;
     extern void *program_break_end;
-    current->head = head;
-    current->tail = tail;
-    current->program_break = program_break;
-    current->program_break_end = program_break_end;
+    new_task->head = head;
+    new_task->tail = tail;
+    new_task->program_break = program_break;
+    new_task->program_break_end = program_break_end;
     new_task->name = name;
+    new_task->vfs_now = current->vfs_now;
 
     new_task->tty = kmalloc(sizeof(tty_t));
     init_default_tty(new_task);

@@ -87,3 +87,11 @@ void* syscall_sysinfo(){
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_SYSINFO) : "memory", "cc");
     return rets;
 }
+
+int syscall_exec(char *filename){
+    uint32_t rets;
+    uint32_t __arg1 = (uint32_t)(filename);
+    register uint32_t ebx asm("ebx")  = __arg1;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_EXEC), "r"(ebx) : "memory", "cc");
+    return rets;
+}

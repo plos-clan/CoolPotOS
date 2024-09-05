@@ -115,6 +115,10 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
     return info;
 }
 
+static int syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return user_process(ebx,ebx);
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -128,6 +132,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_VFS_READFILE] = syscall_vfs_readfile,
         [SYSCALL_VFS_WRITEFILE] = syscall_vfs_writefile,
         [SYSCALL_SYSINFO] = syscall_sysinfo,
+        [SYSCALL_EXEC] = syscall_exec,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

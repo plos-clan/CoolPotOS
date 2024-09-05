@@ -7,7 +7,6 @@
 #include "../include/vdisk.h"
 #include "../include/vfs.h"
 #include "../include/common.h"
-#include "../include/sb16.h"
 #include "../include/elf.h"
 #include "../include/keyboard.h"
 
@@ -230,14 +229,6 @@ void cmd_cd(int argc, char **argv) {
     if (vfs_change_path(argv[1]) == 0) printf("Invalid path.\n");
 }
 
-void cmd_sb3(int argc, char **argv) {
-    if (argc == 1) {
-        print("[Shell-SB3]: If there are too few parameters, please specify the path.\n");
-        return;
-    }
-   // wav_player(argv[1]);
-}
-
 void cmd_type(int argc,char ** argv){
     if (argc == 1) {
         print("[Shell-TYPE]: If there are too few parameters, please specify the path.\n");
@@ -434,8 +425,6 @@ void setup_shell() {
             cmd_disk(argc, argv);
         else if (!strcmp("cd", argv[0]))
             cmd_cd(argc, argv);
-        else if (!strcmp("sb3", argv[0]))
-            cmd_sb3(argc, argv);
         else if (!strcmp("exec",argv[0]))
             cmd_exec(argc,argv);
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
@@ -453,7 +442,6 @@ void setup_shell() {
             print("debug                 Print os debug info.\n");
             print("disk[list|<ID>|cg<ID>]List or view disks.\n");
             print("cd  <path>            Change shell top directory.\n");
-            print("sb3       <name>      Player a wav sound file.\n");
             print("exec <path>           Execute a application.\n");
         } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
     }
