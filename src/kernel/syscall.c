@@ -63,6 +63,10 @@ static void syscall_vfs_writefile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_
     vfs_writefile(ebx,ecx,edx);
 }
 
+static void syscall_vfs_chang_path(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    vfs_change_path(ebx);
+}
+
 struct sysinfo{
     char* osname;
     char* kenlname;
@@ -133,6 +137,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_VFS_WRITEFILE] = syscall_vfs_writefile,
         [SYSCALL_SYSINFO] = syscall_sysinfo,
         [SYSCALL_EXEC] = syscall_exec,
+        [SYSCALL_CHANGE_PATH] = syscall_vfs_chang_path,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);
