@@ -14,6 +14,7 @@
 #define SYSCALL_VFS_WRITEFILE 11
 #define SYSCALL_SYSINFO 12
 #define SYSCALL_EXEC 13
+#define SYSCALL_CHANGE_PATH 14
 
 #include "ctype.h"
 
@@ -30,5 +31,6 @@ void syscall_vfs_readfile(char* filename,char* buffer);
 void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size);
 void* syscall_sysinfo();
 int syscall_exec(char *filename);
+void syscall_vfs_change_path(const char* path);
 
 #endif

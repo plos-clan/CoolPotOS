@@ -194,6 +194,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
         return -1;
     }
     io_sti();
+
     uint32_t size = vfs_filesize(path);
     if(size == -1){
         return -1;
@@ -221,8 +222,6 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->tty = kmalloc(sizeof(tty_t));
     init_default_tty(new_task);
 
-    extern char root_disk;
-    vfs_change_disk(new_task,root_disk);
     vfs_copy(new_task,get_current()->vfs_now);
 
     io_sti();

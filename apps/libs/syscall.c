@@ -95,3 +95,11 @@ int syscall_exec(char *filename){
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_EXEC), "r"(ebx) : "memory", "cc");
     return rets;
 }
+
+void syscall_vfs_change_path(const char *path){
+    uint32_t rets;
+    uint32_t __arg1 = (uint32_t)(path);
+    register uint32_t ebx asm("ebx")  = __arg1;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_CHANGE_PATH), "r"(ebx) : "memory", "cc");
+    return rets;
+}

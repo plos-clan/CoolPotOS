@@ -230,7 +230,7 @@ void init_page(multiboot_t *mboot) {
     current_directory = kernel_directory;
     int i = 0;
 
-    while (i < placement_address + 0x50000) {
+    while (i < placement_address + 0xf0000) {
         /*
          * 内核部分对ring3而言不可读不可写
          * 无偏移页表映射
@@ -240,6 +240,11 @@ void init_page(multiboot_t *mboot) {
         i += 0x1000;
     }
 
+
+    for (int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i++) {
+        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
+    }
+
     unsigned int j = mboot->framebuffer_addr,size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
 
     while (j <= mboot->framebuffer_addr + size){
@@ -247,9 +252,7 @@ void init_page(multiboot_t *mboot) {
         j += 0x1000;
     }
 
-    for (int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i++) {
-        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
-    }
+
 
 
     register_interrupt_handler(14, page_fault);
