@@ -120,7 +120,8 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
 }
 
 static int syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
-    return user_process(ebx,ebx);
+    int pid = user_process(ebx,ebx);
+    return pid;
 }
 
 void *sycall_handlers[MAX_SYSCALLS] = {

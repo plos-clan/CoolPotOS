@@ -166,6 +166,7 @@ void page_fault(registers_t *regs) {
     }
 
     sleep(1);
+    while (1) io_hlt();
     io_sti();
 }
 
@@ -251,9 +252,6 @@ void init_page(multiboot_t *mboot) {
         alloc_frame_line(get_page(j,1,kernel_directory,false),j,0,1);
         j += 0x1000;
     }
-
-
-
 
     register_interrupt_handler(14, page_fault);
     switch_page_directory(kernel_directory);

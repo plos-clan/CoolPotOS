@@ -389,6 +389,7 @@ bool ISO_ReadFile(struct vfs_t *vfs, char *path, char *buffer) {
         }
         return false; // not found
     }
+
     for (;;) {
         size_t read;
         l9660_read(&file, buffer, 128, &read);

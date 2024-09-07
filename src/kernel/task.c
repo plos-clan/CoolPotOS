@@ -137,10 +137,12 @@ void task_kill(int pid) {
     struct task_struct *argv = found_task_pid(pid);
     if (argv == NULL) {
         printf("Cannot found task Pid:[%d].\n", pid);
+        io_sti();
         return;
     }
     if (argv->pid == 0) {
         printf("\033ff3030;[kernel]: Taskkill cannot terminate kernel processes.\033c6c6c6;\n");
+        io_sti();
         return;
     }
     argv->state = TASK_DEATH;
@@ -191,14 +193,16 @@ void change_task_to(registers_t *reg,struct task_struct *next) {
 int32_t user_process(char *path, char *name){ // 用户进程创建
     can_sche = 0;
     if(path == NULL){
-        return -1;
+        return NULL;
     }
     io_sti();
 
     uint32_t size = vfs_filesize(path);
+
     if(size == -1){
-        return -1;
+        return NULL;
     }
+
     io_cli();
 
     struct task_struct *new_task = (struct task_struct *) kmalloc(STACK_SIZE);
@@ -221,12 +225,16 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->vfs_now = NULL;
     new_task->tty = kmalloc(sizeof(tty_t));
     init_default_tty(new_task);
+    io_sti();
 
     vfs_copy(new_task,get_current()->vfs_now);
 
-    io_sti();
+    char* ker_path = kmalloc(strlen(path) + 1);
+    strcpy(ker_path,path);
+
 
     page_switch(page);
+
 
     for (int i = USER_START; i < USER_END + 0x1000;i++) { //用户堆以及用户栈映射
         page_t *pg = get_page(i,1,page, false);
@@ -241,12 +249,14 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     char* buffer =  USER_EXEC_FILE_START;
 
     memset(buffer,0,size);
-    vfs_readfile(path,buffer);
+    int r = vfs_readfile(ker_path,buffer);
 
     Elf32_Ehdr *ehdr = buffer;
+
     if(!elf32Validate(ehdr)){
         printf("Unknown exec file format.\n");
-        return -1;
+        kfree(ker_path);
+        return NULL;
     }
     uint32_t main = ehdr->e_entry;
     load_elf(ehdr,page);
@@ -264,6 +274,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     // 设置新任务的标志寄存器未屏蔽中断，很重要
     new_task->context.eflags = (0 << 12 | 0b10 | 1 << 9);
     new_task->next = running_proc_head;
+    kfree(ker_path);
 
     page_switch(kernel_directory);
 
@@ -369,16 +380,12 @@ void switch_to_user_mode(uint32_t func) {
     iframe.edx = 6;
     iframe.ecx = 7;
     iframe.eax = 8;
-
     iframe.gs = GET_SEL(4 * 8, SA_RPL3);
     iframe.ds = GET_SEL(4 * 8, SA_RPL3);
     iframe.es = GET_SEL(4 * 8, SA_RPL3);
     iframe.fs = GET_SEL(4 * 8, SA_RPL3);
-
     iframe.ss = GET_SEL(4 * 8, SA_RPL3);
     iframe.cs = GET_SEL(3 * 8, SA_RPL3);
-    //set_tss_ss0(iframe.ss);
-
     iframe.eip = func; //用户可执行程序入口
     iframe.eflags = (0 << 12 | 0b10 | 1 << 9);
     iframe.esp = esp; // 设置用户态堆栈

@@ -117,10 +117,12 @@ bool vfs_readfile(char *path, char *buffer) {
     char *new_path = kmalloc(strlen(path) + 1);
     strcpy(new_path, path);
     vfs_t *vfs = ParsePath(new_path);
+
     if (vfs == NULL) {
         kfree(new_path);
         return false;
     }
+
     int result = vfs->ReadFile(vfs, new_path, buffer);
     kfree(new_path);
     return result;
@@ -321,9 +323,6 @@ vfs_file *get_cur_file(char* filename){
     }
     DeleteList(ls);
     kfree(ls);
-
-
-
     return file;
 }
 
@@ -389,6 +388,25 @@ void vfs_getPath_no_drive(char *buffer) {
     }
 }
 
+void vfs_getPath_no_drive_src(vfs_t *src,char *buffer) {
+    char *path;
+    List *l;
+    buffer[0] = 0;
+    int pos = strlen(buffer);
+    int i;
+    for (i = 1; FindForCount(i, src->path) != NULL; i++) {
+        l = FindForCount(i, src->path);
+        path = (char *)l->val;
+        insert_char(buffer, pos, '/');
+        pos++;
+        insert_str(buffer, path, pos);
+        pos += strlen(path);
+    }
+    if (i == 1) {
+        insert_char(buffer, 0, '/');
+    }
+}
+
 void init_vfs() {
     for (int i = 0; i < 26; i++) {
         vfsstl[i].flag = 0;
@@ -419,11 +437,43 @@ bool vfs_register_fs(vfs_t vfs) {
 
 void vfs_copy(struct task_struct *task,vfs_t* src){
     vfs_change_disk(task, src->drive);
-    List *l;
-    char *path;
-    for (int i = 1; FindForCount(i, task->vfs_now->path) != NULL; i++) {
-        l    = FindForCount(i, task->vfs_now->path);
-        path = (char *)l->val;
-        task->vfs_now->cd(task->vfs_now, path);
+    char* buffer[255];
+
+    vfs_getPath_no_drive_src(src,buffer);
+
+    char *buf = kmalloc(strlen(buffer) + 1);
+    char *r = buf;
+    memcpy(buf, buffer, strlen(buffer) + 1);
+    int i = 0;
+
+    if (buf[i] == '/' || buf[i] == '\\') {
+        if (!task->vfs_now->cd(task->vfs_now, "/")) {
+            kfree(r);
+            return;
+        }
+        i++;
+        buf++;
     }
+
+    for (;; i++) {
+        if (buf[i] == '/' || buf[i] == '\\') {
+            buf[i] = 0;
+            if (!task->vfs_now->cd(task->vfs_now, buf)) {
+                kfree(r);
+                return;
+            }
+            buf += strlen(buf) + 1;
+        }
+        if (buf[i] == '\0') {
+            int bol = task->vfs_now->cd(task->vfs_now, buf);
+
+            if (!(bol)) {
+                kfree(r);
+                return;
+            } else{
+                break;
+            }
+        }
+    }
+    kfree(r);
 }

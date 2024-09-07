@@ -159,10 +159,10 @@ void kernel_main(multiboot_t *multiboot) {
     clock_sleep(25);
 
     vfs_change_path("apps");
-    //klogf(user_process("init.bin","InitService") != -1,"Init service process init.\n");
+    klogf(user_process("init.bin","InitService") != -1,"Init service process init.\n");
 
-    int pid = user_process("shell.bin","UserShell");
-    kernel_thread(check_task_usershell,&pid,"CTU");
+    //int pid = user_process("shell.bin","UserShell");
+    //kernel_thread(check_task_usershell,&pid,"CTU");
 
    // int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
    // klogf(pid != -1,"Launch kernel shell.\n");
