@@ -1,4 +1,5 @@
 #include "../include/syscall.h"
+#include "../include/stdio.h"
 
 void syscall_print(char* c){
     uint32_t rets;

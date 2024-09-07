@@ -75,5 +75,6 @@ bool vfs_register_fs(vfs_t vfs);
 void init_vfs();
 vfs_file *get_cur_file(char* filename);
 void vfs_copy(struct task_struct *task,vfs_t* src);
+void vfs_getPath_no_drive_src(vfs_t *src,char *buffer);
 
 #endif

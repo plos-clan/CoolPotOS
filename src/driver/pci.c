@@ -105,7 +105,6 @@ void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsign
 }
 
 void init_pci(){
-
     PCI_ADDR_BASE = kmalloc(1 * 1024 * 1024);
     unsigned int i, BUS, Equipment, F, ADDER, *i1;
     unsigned char *PCI_DATA = PCI_ADDR_BASE, *PCI_DATA1;
