@@ -338,8 +338,6 @@ void print(char *message) {
         return;
     }
 
-    logk(message);
-
     if(vbe_status){
         vbe_writestring(message);
     } else vga_writestring(message);

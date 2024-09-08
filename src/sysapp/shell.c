@@ -14,8 +14,16 @@ extern Queue *key_char_queue;
 extern vdisk vdisk_ctl[10];
 extern bool hasFS;
 
+static inline int isprint_syshell(int c) {
+    return (c > 0x1F && c < 0x7F);
+}
+
 char getc() {
-    char c = kernel_getch();
+    char c;
+    do{
+        c = kernel_getch();
+        if(c == '\b' || c == '\n') break;
+    } while (!isprint_syshell(c));
     return c;
 }
 
