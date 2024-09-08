@@ -274,7 +274,7 @@ void cmd_exec(int argc,char** argv){
     }
     char buf[1024];
     sprintf(buf,"User-%s ",argv[1]);
-    int32_t pid = user_process(argv[1],buf);
+    int32_t pid = user_process(argv[1],buf,"");
     klogf(pid != -1,"Launching user task PID:%d Name:%s\n",pid,buf);
 }
 

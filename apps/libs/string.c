@@ -2,6 +2,17 @@
 #include "../include/ctype.h"
 #include "../include/stdlib.h"
 
+int isalnum(int c){
+    if ( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') ) return 8;
+    return 0;
+}
+
+int islower(int c){
+    if (c>='a' && c<='z') return 512;
+
+    return 0;
+}
+
 int ispunct(char ch) {
     return ch == '!' || ch == '@' || ch == '#' || ch == '$' || ch == '%' || ch == '^' || ch == '&' || ch == '*' ||
            ch == '(' || ch == ')' || ch == '+' || ch == '-' || ch == '/' || ch == '?' || ch == '"' || ch == '\'' ||
@@ -211,4 +222,181 @@ char *strdup(const char *str) {
     while ((*ret++ = *strat++) != '\0') {}
 
     return ret - (len + 1);
+}
+
+char *strchr(const char *s, const char ch){
+    if (NULL == s)
+        return NULL;
+    const char *pSrc = s;
+    while ('\0' != *pSrc){
+        if (*pSrc == ch){
+            return (char *)pSrc;
+        }
+        ++ pSrc;
+    }
+    return NULL;
+}
+
+size_t strspn(const char * string,const char * control){
+    const char * str = (const char *)string;
+    const char * ctrl = (const char *)control;
+    unsigned char map[32];
+    int count = 0;
+    /*clear the map*/
+    memset(map,0,32*sizeof(unsigned char));
+    //memset(map,0,32);
+    /*set bits in control map*/
+    while(*ctrl){
+        map[*ctrl >> 3] |= (0x01 << (*ctrl & 7));
+        ctrl++;
+    }
+    /*count the str's char num in control*/
+    if(*str){
+        count = 0;
+        while((map[*str >> 3] & (0x01 << (*str & 7)))){
+            count++;
+            str++;
+        }
+        return count;
+    }
+    return 0;
+}
+
+char* strpbrk(const char* str, const char* strCharSet){
+    while (*str){
+        const char* pSet = strCharSet;
+        while (*pSet)
+            if (*pSet++ == *str)
+                return (char*)str;
+        ++str;
+    }
+    return NULL;
+}
+
+int strcoll(const char *str1, const char *str2) { return strcmp(str1, str2); }
+
+double strtod(const char *nptr, char **endptr) {
+    double number;
+    int exponent;
+    int negative;
+    char *p = (char *)nptr;
+    double p10;
+    int n;
+    int num_digits;
+    int num_decimals;
+
+    /* Skip leading whitespace */
+    while (isspace(*p))
+        p++;
+
+    /* Handle optional sign */
+    negative = 0;
+    switch (*p) {
+        case '-':
+            negative = 1;
+            p++;
+            break;
+        case '+':
+            p++;
+            break;
+    }
+
+    number = 0.;
+    exponent = 0;
+    num_digits = 0;
+    num_decimals = 0;
+
+    /* Process string of digits */
+    while (isdigit(*p)) {
+        number = number * 10. + (*p - '0');
+        p++;
+        num_digits++;
+    }
+
+    /* Process decimal part */
+    if (*p == '.') {
+        p++;
+
+        while (isdigit(*p)) {
+            number = number * 10. + (*p - '0');
+            p++;
+            num_digits++;
+            num_decimals++;
+        }
+
+        exponent -= num_decimals;
+    }
+
+    if (num_digits == 0) {
+        return 0.0;
+    }
+
+    /* Correct for sign */
+    if (negative)
+        number = -number;
+
+    /* Process an exponent string */
+    if (*p == 'e' || *p == 'E') {
+        /* Handle optional sign */
+        negative = 0;
+        switch (*++p) {
+            case '-':
+                negative = 1;
+                p++;
+                break;
+            case '+':
+                p++;
+                break;
+        }
+
+        /* Process string of digits */
+        n = 0;
+        while (isdigit(*p)) {
+            n = n * 10 + (*p - '0');
+            p++;
+        }
+
+        if (negative)
+            exponent -= n;
+        else
+            exponent += n;
+    }
+
+    if (exponent < -307 || exponent > 308) {
+        return 0.0;
+    }
+
+    /* Scale the result */
+    p10 = 10.;
+    n = exponent;
+    if (n < 0)
+        n = -n;
+    while (n) {
+        if (n & 1) {
+            if (exponent < 0)
+                number /= p10;
+            else
+                number *= p10;
+        }
+        n >>= 1;
+        p10 *= p10;
+    }
+
+    if (endptr)
+        *endptr = p;
+
+    return number;
+}
+
+int strncmp(const char *s1, const char *s2, size_t n) {
+    const unsigned char *p1 = (const unsigned char *)s1,
+            *p2 = (const unsigned char *)s2;
+    while (n-- > 0) {
+        if (*p1 != *p2)
+            return *p1 - *p2;
+        if (*p1 == '\0')
+            return 0;
+        p1++, p2++;
+    }
+    return 0;
 }

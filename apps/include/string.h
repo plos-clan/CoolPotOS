@@ -15,9 +15,16 @@ char *strcpy(char *dest, const char *src);
 char *strcat(char *dest, const char *src);
 const char* strstr(const char *str1,const char *str2);
 char *strdup(const char *str);
+char *strchr(const char *s, const char ch);
+size_t strspn(const char * string,const char * control);
+char* strpbrk(const char* str, const char* strCharSet);
+int strcoll(const char *str1, const char *str2);
+double strtod(const char *nptr, char **endptr);
 
 char* strncat(char* dest,const char* src,unsigned long long count);
 size_t strnlen(const char *s, size_t maxlen);
 char* strncpy(char* dest, const char* src,unsigned long long count);
+int strncmp(const char *s1, const char *s2, size_t n);
+
 
 #endif
