@@ -318,11 +318,13 @@ void screen_clear(){
 }
 
 void putchar(char c){
+    /*
     struct task_struct *task = get_current();
     if(task != NULL){
         task->tty->putchar(task->tty,c);
         return;
     }
+     */
 
     if(vbe_status){
         vbe_putchar(c);

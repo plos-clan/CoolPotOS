@@ -52,6 +52,7 @@ static void syscall_get_cd(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,u
 }
 
 static int syscall_vfs_filesize(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     return vfs_filesize(ebx);
 }
 
@@ -119,8 +120,8 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
     return info;
 }
 
-static int syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
-    int pid = user_process(ebx,ebx);
+static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    uint32_t pid = user_process(ebx,ebx);
     return pid;
 }
 
@@ -142,9 +143,11 @@ void *sycall_handlers[MAX_SYSCALLS] = {
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);
+extern int can_sche; //进程调度器 0 禁用 | 1 启用
 
 size_t syscall() {
     io_cli();
+   // can_sche = 0;
     volatile size_t eax, ebx, ecx, edx, esi, edi;
     asm("mov %%eax, %0\n\t" : "=r"(eax));
     asm("mov %%ebx, %0\n\t" : "=r"(ebx));
@@ -157,6 +160,8 @@ size_t syscall() {
     } else {
         eax = -1;
     }
+    can_sche = 1;
+    io_sti();
     return eax;
 }
 

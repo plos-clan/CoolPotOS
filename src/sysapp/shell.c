@@ -354,6 +354,7 @@ char *user() {
 }
 
 void setup_shell() {
+    asm("sti");
     printf("Welcome to %s %s (CPOS Kernel i386)\n"
            "\n"
            " * SourceCode:     https://github.com/xiaoyi1212/CoolPotOS\n"
