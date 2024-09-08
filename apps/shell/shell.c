@@ -5,12 +5,21 @@
 
 extern void print_info();
 
+int shell_getc(){
+    char c;
+    do{
+        c = syscall_getch();
+        if(c == '\b' || c == '\n') break;
+    } while (!isprint(c));
+    return c;
+}
+
 static int gets(char *buf) {
 
     int index = 0;
     char c;
 
-    while ((c = syscall_getch()) != '\n') {
+    while ((c = shell_getc()) != '\n') {
         if (c == '\b') {
             if (index > 0) {
                 index--;
