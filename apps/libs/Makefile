@@ -1,4 +1,4 @@
-OBJS_PACK = out/syscall.obj out/print.obj out/string.obj out/libc.obj out/math.obj
+OBJS_PACK = out/syscall.obj out/print.obj out/string.obj out/libc.obj out/math.obj out/timer.obj out/asmfunc.obj
 
 
 default : $(OBJS_PACK)
@@ -11,4 +11,4 @@ out/%.obj : %.asm Makefile
 	nasm -f elf $*.asm -o out/$*.obj
 clean:
 	rm out/*
-	rm ../libo/*
+	rm ../libo/libp.a

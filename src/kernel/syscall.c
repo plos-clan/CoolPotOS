@@ -9,6 +9,7 @@
 #include "../include/keyboard.h"
 #include "../include/vfs.h"
 #include "../include/cmos.h"
+#include "../include/timer.h"
 
 extern uint32_t phy_mem_size;
 extern unsigned int PCI_NUM;
@@ -121,8 +122,37 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
 }
 
 static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
-    uint32_t pid = user_process(ebx,ebx);
+    char* argv = ecx;
+    uint32_t pid = user_process(ebx,ebx,argv);
+    if(!edx){
+       if(pid != 0){
+           struct task_struct *pi_task = found_task_pid(pid);
+           while (pi_task->state != TASK_DEATH);
+       }
+    }
     return pid;
+}
+
+static char* syscall_get_arg(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    char* argv = user_alloc(get_current(), strlen(get_current()->argv) + 1);
+    strcpy(argv,get_current()->argv);
+    return argv;
+}
+
+static uint32_t syscall_clock(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return get_current()->cpu_clock;
+}
+
+static void syscall_sleep(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    clock_sleep(ebx);
+}
+
+static int syscall_vfs_remove_file(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return vfs_delfile(ebx);
+}
+
+static int syscall_vfs_rename(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return vfs_renamefile(ebx,ecx);
 }
 
 void *sycall_handlers[MAX_SYSCALLS] = {
@@ -140,6 +170,11 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_SYSINFO] = syscall_sysinfo,
         [SYSCALL_EXEC] = syscall_exec,
         [SYSCALL_CHANGE_PATH] = syscall_vfs_chang_path,
+        [SYSCALL_GET_ARG] = syscall_get_arg,
+        [SYSCALL_CLOCK] = syscall_clock,
+        [SYSCALL_SLEEP] = syscall_sleep,
+        [SYSCALL_VFS_REMOVE_FILE] = syscall_vfs_remove_file,
+        [SYSCALL_VFS_RENAME] = syscall_vfs_rename,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

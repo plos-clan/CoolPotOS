@@ -52,6 +52,8 @@ struct task_struct {
     page_directory_t *pgd_dir;    // 进程页表
     struct context context;       // 上下文信息
     struct task_struct *next;     // 链表指针
+    char* argv;                   // 命令行参数
+    uint32_t cpu_clock;
 };
 
 void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print);
@@ -84,5 +86,5 @@ int get_procs();
 
 void switch_to_user_mode(uint32_t func);
 
-int32_t user_process(char* path, char *name);
+int32_t user_process(char* path, char *name,char* argv);
 #endif //CRASHPOWEROS_TASK_H

@@ -19,5 +19,7 @@ int isalpha(int c);
 int isupper(int c);
 int isprint(int c);
 int isgraph(int c);
+int islower(int c);
+int isalnum(int c);
 
 #endif

@@ -19,6 +19,11 @@
 #define SYSCALL_SYSINFO 12
 #define SYSCALL_EXEC 13
 #define SYSCALL_CHANGE_PATH 14
+#define SYSCALL_GET_ARG 15
+#define SYSCALL_CLOCK 16
+#define SYSCALL_SLEEP 17
+#define SYSCALL_VFS_REMOVE_FILE 18
+#define SYSCALL_VFS_RENAME 19
 
 void syscall_install();
 

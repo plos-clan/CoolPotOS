@@ -146,8 +146,10 @@ void task_kill(int pid) {
         return;
     }
     argv->state = TASK_DEATH;
-    printf("Taskkill process PID:%d Name:%s\n", argv->pid, argv->name);
+    logkf("Taskkill process PID:%d Name:%s\n", argv->pid, argv->name);
     free_tty(argv);
+    kfree(argv->name);
+    kfree(argv->argv);
     struct task_struct *head = running_proc_head;
     struct task_struct *last = NULL;
     while (1) {
@@ -165,6 +167,7 @@ void task_kill(int pid) {
 void schedule(registers_t *reg) {
     io_cli();
     if (current && can_sche) {
+        current->cpu_clock++;
         change_task_to(reg,current->next);
     }
 }
@@ -190,7 +193,7 @@ void change_task_to(registers_t *reg,struct task_struct *next) {
     }
 }
 
-int32_t user_process(char *path, char *name){ // 用户进程创建
+int32_t user_process(char *path, char *name,char* argv){ // 用户进程创建
     can_sche = 0;
     if(path == NULL){
         return NULL;
@@ -221,17 +224,25 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->mem_size = 0;
     new_task->program_break = USER_START + 0xf0000;
     new_task->program_break_end = USER_HEAP_END;
-    new_task->name = name;
     new_task->isUser = 1;
     new_task->vfs_now = NULL;
     new_task->tty = kmalloc(sizeof(tty_t));
+    new_task->cpu_clock = 0;
     init_default_tty(new_task);
     io_sti();
 
     vfs_copy(new_task,get_current()->vfs_now);
 
     char* ker_path = kmalloc(strlen(path) + 1);
+    char* use_arg = kmalloc(strlen(argv) + 1);
+    char* k_name = kmalloc(strlen(name) + 1);
+    strcpy(k_name,name);
+    strcpy(use_arg,argv);
     strcpy(ker_path,path);
+
+    new_task->name = k_name;
+
+    new_task->argv = use_arg;
 
     page_directory_t *cur_page_dir = get_current()->pgd_dir;
     page_switch(page);
@@ -309,6 +320,7 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进�
     new_task->pgd_dir = kernel_directory;
     new_task->mem_size = 0;
     new_task->isUser = 0;
+    new_task->cpu_clock = 0;
 
     extern header_t *head;
     extern header_t *tail;

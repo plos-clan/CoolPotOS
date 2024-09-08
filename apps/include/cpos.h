@@ -35,8 +35,8 @@ static inline void free_info(struct sysinfo *info){
     free(info);
 }
 
-static inline int exec_elf(const char* filename){
-    return syscall_exec(filename);
+static inline int exec_elf(const char* filename,const char* args,int is_async){
+    return syscall_exec(filename,args,is_async);
 }
 
 #endif

@@ -89,11 +89,15 @@ void* syscall_sysinfo(){
     return rets;
 }
 
-int syscall_exec(char *filename){
+int syscall_exec(char *filename,char* args,int is_async){
     uint32_t rets;
     uint32_t __arg1 = (uint32_t)(filename);
+    uint32_t __arg2 = (uint32_t)(args);
+    uint32_t __arg3 = (uint32_t)(is_async);
     register uint32_t ebx asm("ebx")  = __arg1;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_EXEC), "r"(ebx) : "memory", "cc");
+    register uint32_t ecx asm("ecx") = __arg2;
+    register uint32_t edx asm("edx") = __arg3;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_EXEC), "r"(ebx), "r"(ecx), "r"(edx) : "memory", "cc");
     return rets;
 }
 
@@ -102,5 +106,41 @@ void syscall_vfs_change_path(const char *path){
     uint32_t __arg1 = (uint32_t)(path);
     register uint32_t ebx asm("ebx")  = __arg1;
     asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_CHANGE_PATH), "r"(ebx) : "memory", "cc");
+}
+
+char* syscall_get_arg(){
+    uint32_t rets;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_GET_ARG) : "memory", "cc");
+    return rets;
+}
+
+long syscall_clock(){
+    uint32_t rets;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_CLOCK) : "memory", "cc");
+    return rets;
+}
+
+void syscall_sleep(uint32_t timer){
+    uint32_t rets;
+    uint32_t __arg1 = (uint32_t)(timer);
+    register uint32_t ebx asm("ebx")  = __arg1;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_SLEEP), "r"(ebx) : "memory", "cc");
+}
+
+int syscall_vfs_remove_file(char* filename){
+    uint32_t rets;
+    uint32_t __arg1 = (uint32_t)(filename);
+    register uint32_t ebx asm("ebx")  = __arg1;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_VFS_REMOVE_FILE), "r"(ebx) : "memory", "cc");
+    return rets;
+}
+
+int syscall_vfs_rename(char* filename1,char* filename2){
+    uint32_t rets;
+    uint32_t __arg1 = (uint32_t)(filename1);
+    uint32_t __arg2 = (uint32_t)(filename2);
+    register uint32_t ebx asm("ebx")  = __arg1;
+    register uint32_t ecx asm("ecx") = __arg2;
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_SLEEP), "r"(ebx), "r"(ecx) : "memory", "cc");
     return rets;
 }

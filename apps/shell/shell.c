@@ -5,21 +5,12 @@
 
 extern void print_info();
 
-int shell_getc(){
-    char c;
-    do{
-        c = syscall_getch();
-        if(c == '\b' || c == '\n') break;
-    } while (!isprint(c));
-    return c;
-}
-
 static int gets(char *buf) {
 
     int index = 0;
     char c;
 
-    while ((c = shell_getc()) != '\n') {
+    while ((c = getc()) != '\n') {
         if (c == '\b') {
             if (index > 0) {
                 index--;
@@ -35,7 +26,7 @@ static int gets(char *buf) {
     return index;
 }
 
-static int cmd_parse(char *cmd_str, char **argv, char token) {
+static inline int cmd_parse(char *cmd_str, char **argv, char token) {
     int arg_idx = 0;
     while (arg_idx < 50) {
         argv[arg_idx] = NULL;
@@ -57,7 +48,8 @@ static int cmd_parse(char *cmd_str, char **argv, char token) {
     return argc;
 }
 
-int main(){
+int main(int argc_v,char **argv_v){
+
     printf("CoolPotOS UserShell v0.0.1\n");
     char com[100];
     char *argv[50];
@@ -69,6 +61,9 @@ int main(){
         printf("\033[40m;default@localhost: \03330m;%s\\\03321m;$ ",buffer);
 
         if (gets(com) <= 0) continue;
+
+        char* com_copy[100];
+        strcpy(com_copy,com);
 
         argc = cmd_parse(com, argv, ' ');
 
@@ -86,6 +81,11 @@ int main(){
             printf("help ? h              Print shell help info.\n");
             printf("version               Print os version.\n");
             printf("system                Launch system shell.\n");
-        } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
+        } else {
+            int pid = exec_elf(argv[0],com_copy,false);
+            if(pid == NULL){
+                printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
+            }
+        }
     }
 }

@@ -15,6 +15,11 @@
 #define SYSCALL_SYSINFO 12
 #define SYSCALL_EXEC 13
 #define SYSCALL_CHANGE_PATH 14
+#define SYSCALL_GET_ARG 15
+#define SYSCALL_CLOCK 16
+#define SYSCALL_SLEEP 17
+#define SYSCALL_VFS_REMOVE_FILE 18
+#define SYSCALL_VFS_RENAME 19
 
 #include "ctype.h"
 
@@ -30,7 +35,12 @@ int syscall_vfs_filesize(char* filename);
 void syscall_vfs_readfile(char* filename,char* buffer);
 void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size);
 void* syscall_sysinfo();
-int syscall_exec(char *filename);
+int syscall_exec(char *filename,char* args,int is_async);
 void syscall_vfs_change_path(const char* path);
+char* syscall_get_arg();
+long syscall_clock();
+void syscall_sleep(uint32_t timer);
+int syscall_vfs_remove_file(char* filename);
+int syscall_vfs_rename(char* filename1,char* filename2);
 
 #endif
