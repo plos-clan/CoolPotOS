@@ -393,7 +393,7 @@ void init_default_tty(struct task_struct *task){
 
     task->tty->is_using = true;
     task->tty->print = tty_print;
-    task->tty->clear = clear_TextMode;
+    task->tty->clear = vbe_clear;
     task->tty->putchar = vbe_putchar;
     task->tty->gotoxy = tty_gotoxy;
     task->tty->screen_ne = screen_ne_TextMode;

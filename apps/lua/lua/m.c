@@ -121,7 +121,7 @@
 
 
 #if !defined(LUA_PROGNAME)
-#define LUA_PROGNAME        "lua"
+#define LUA_PROGNAME        "lua.elf"
 #endif
 
 #if !defined(LUA_INIT_VAR)
@@ -149,11 +149,14 @@ static void laction(int i) {
 
 
 static void print_usage(const char *badoption) {
-    lua_writestringerror("%s: ", progname);
-    if (badoption[1] == 'e' || badoption[1] == 'l')
-        lua_writestringerror("'%s' needs argument\n", badoption);
-    else
-        lua_writestringerror("unrecognized option '%s'\n", badoption);
+    if(badoption[0] != '+'){
+        lua_writestringerror("%s: ", progname);
+        if (badoption[1] == 'e' || badoption[1] == 'l')
+            lua_writestringerror("'%s' needs argument\n", badoption);
+        else
+            lua_writestringerror("unrecognized option '%s'\n", badoption);
+    }
+
     lua_writestringerror(
             "usage: %s [options] [script [args]]\n"
             "Available options are:\n"
@@ -333,6 +336,7 @@ static int handle_script(lua_State *L, char **argv) {
 #define has_v        4    /* -v */
 #define has_e        8    /* -e */
 #define has_E        16    /* -E */
+#define has_h        32   /* -h */
 
 
 /*
@@ -379,6 +383,11 @@ static int collectargs(char **argv, int *first) {
                 if (argv[i][2] != '\0')  /* extra characters? */
                     return has_error;  /* invalid option */
                 args |= has_v;
+                break;
+            case 'h':
+                if (argv[i][2] != '\0')  /* extra characters? */
+                    return has_error;  /* invalid option */
+                args |= has_h;
                 break;
             case 'e':
                 args |= has_e;  /* FALLTHROUGH */
@@ -858,6 +867,10 @@ static int pmain(lua_State *L) {
     char **argv = (char **) lua_touserdata(L, 2);
     int script;
 
+    if(argc == 1){
+        print_usage("+");
+        return 0;
+    }
 
     int args = collectargs(argv, &script);
     int optlim = (script > 0) ? script : argc; /* first argv not an option */
@@ -865,6 +878,9 @@ static int pmain(lua_State *L) {
     if (args == has_error) {  /* bad arg? */
         print_usage(argv[script]);  /* 'script' has index of bad arg. */
         return 0;
+    }
+    if(args & has_h){
+        print_usage("<null>");
     }
     if (args & has_v)  /* option '-v'? */
         print_version();
@@ -875,8 +891,8 @@ static int pmain(lua_State *L) {
     // printf("In this2\n");
     luaopen_base(L);
     luaL_setfuncs(L, my_lib_bsp, 0);
-    luaL_requiref(L, "pio", open_io, 1);
-    luaL_requiref(L, "pl_api", open_os, 1);
+    luaL_requiref(L, "cpio", open_io, 1);
+    luaL_requiref(L, "cp_api", open_os, 1);
     luaL_openlibs(L);  /* open standard libraries */
     createargtable(L, argv, argc, script);  /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);  /* GC in generational mode */
