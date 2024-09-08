@@ -535,6 +535,12 @@ int filesize(const char* filename){
 
 int fputc(int ch, FILE *stream) {
     if (CANWRITE(stream->mode)) {
+
+        if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+            syscall_putchar(ch);
+            return 0;
+        }
+
         //		printk("Current Buffer=%s\n",stream->buffer);
         if (stream->p >= stream->bufferSize) {
             //	printk("Realloc....(%d,%d)\n",stream->p,stream->bufferSize);
@@ -632,6 +638,10 @@ FILE *fopen(char *filename, char *mode) {
 
 int fgetc(FILE *stream) {
     if (CANREAD(stream->mode)) {
+        if(strcmp("<stdin>",stream->name)) {
+            return getc();
+        }
+
         if (stream->p >= stream->fileSize) {
             return EOF;
         } else {
@@ -698,6 +708,12 @@ char *fgets(char *str, int n, FILE *stream) {
 
 int fputs(const char *str, FILE *stream) {
     if (CANWRITE(stream->mode)) {
+
+        if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+            syscall_print(str);
+            return 0;
+        }
+
         for (int i = 0; i < strlen(str); i++) {
             fputc(str[i], stream);
         }
@@ -713,7 +729,9 @@ int fprintf(FILE *stream, const char *format, ...) {
         va_start(ap, format);
         char *buf = malloc(1024);
         len = vsprintf(buf, format, ap);
-        fputs(buf, stream);
+        if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+            syscall_print(buf);
+        } else fputs(buf, stream);
         free(buf);
         va_end(ap);
         return len;

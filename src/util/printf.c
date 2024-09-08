@@ -312,6 +312,7 @@ void screen_clear(){
         return;
     }
 
+
     if(vbe_status){
         vbe_clear();
     } else vga_clear();
