@@ -79,11 +79,13 @@ int input_char_inSM() {
     int    i;
     struct task_struct *task = get_current();
     if (task->tty->is_using == false) {
+
     } else {
         do{
             i = fifo8_get(task->tty->fifo);
         } while (i == -1);
     }
+
     return i;
 }
 

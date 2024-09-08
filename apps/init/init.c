@@ -3,6 +3,10 @@
 
 int main(){
     printf("Init service launched.\n");
-    exec_elf("shell.bin");
+
+    int pid = exec_elf("shell.bin");
+    if(pid != 0){
+        printf("Shell process launched [PID: %d]\n",pid);
+    } else printf("Cannot launch shell\n");
     return 0;
 }

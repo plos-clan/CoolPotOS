@@ -74,13 +74,18 @@ int check_task(int *pid){
 
 int check_task_usershell(int *pid){
     struct task_struct *shell = found_task_pid(*pid);
+
     while (1){
         if(shell->state == TASK_DEATH){
+            io_sti();
             screen_clear();
             int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
             kernel_thread(check_task,&pid,"CPOS-CK");
+            break;
         }
     }
+
+    while (1);
     return 0;
 }
 
@@ -113,7 +118,6 @@ void kernel_main(multiboot_t *multiboot) {
     init_page(multiboot);
 
     init_sched();
-    //proc_install();
     init_keyboard();
 
     init_pit();
@@ -160,8 +164,7 @@ void kernel_main(multiboot_t *multiboot) {
 
     vfs_change_path("apps");
     klogf(user_process("init.bin","InitService") != -1,"Init service process init.\n");
-
-    //int pid = user_process("shell.bin","UserShell");
+   // int pid = user_process("shell.bin","UserShell");
     //kernel_thread(check_task_usershell,&pid,"CTU");
 
    // int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");

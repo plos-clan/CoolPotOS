@@ -200,6 +200,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     uint32_t size = vfs_filesize(path);
 
     if(size == -1){
+        can_sche = 1;
         return NULL;
     }
 
@@ -232,7 +233,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     char* ker_path = kmalloc(strlen(path) + 1);
     strcpy(ker_path,path);
 
-
+    page_directory_t *cur_page_dir = get_current()->pgd_dir;
     page_switch(page);
 
 
@@ -256,6 +257,7 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     if(!elf32Validate(ehdr)){
         printf("Unknown exec file format.\n");
         kfree(ker_path);
+        can_sche = 1;
         return NULL;
     }
     uint32_t main = ehdr->e_entry;
@@ -276,7 +278,8 @@ int32_t user_process(char *path, char *name){ // 用户进程创建
     new_task->next = running_proc_head;
     kfree(ker_path);
 
-    page_switch(kernel_directory);
+    page_switch(cur_page_dir);
+    can_sche = 1;
 
     // 找到当前进任务队列，插入到末尾
     struct task_struct *tailt = running_proc_head;
