@@ -689,6 +689,13 @@ static int Lmod(lua_State *L) {
     return 1;
 }
 
+static int Lprint(lua_State *L){
+    size_t l;
+    const char *s = lua_tolstring(L, 1, &l);
+    print(s);
+    return 0;
+}
+
 static const struct luaL_Reg my_lib_bsp[] = {{"input", lua_input},
                                              {"num",   num},
                                              {"Srand", Lsrand},
@@ -698,6 +705,7 @@ static const struct luaL_Reg my_lib_bsp[] = {{"input", lua_input},
                                              {"chr",   LChr},
                                              {"eval",  Leval},
                                              {"mod",   Lmod},
+                                             {"print",   Lprint},
                                              {NULL,    NULL}};
 static const struct luaL_Reg io_lib[] = {{"ReadFile", lua_ReadFile},
                                          {"putstr",   lua_Putstr},
@@ -896,6 +904,7 @@ static int pmain(lua_State *L) {
     luaL_openlibs(L);  /* open standard libraries */
     createargtable(L, argv, argc, script);  /* create table 'arg' */
     lua_gc(L, LUA_GCGEN, 0, 0);  /* GC in generational mode */
+
     if (!(args & has_E)) {  /* no option '-E'? */
     }
     if (!runargs(L, argv, optlim))  /* execute arguments -e and -l */

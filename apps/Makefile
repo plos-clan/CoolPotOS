@@ -5,7 +5,8 @@ default: Makefile
 	make -r -C lua
 
 clean:
-	rm ../isodir/apps/*
+	rm ../isodir/apps/*.elf
+	rm ../isodir/apps/*.bin
 	make -r -C libs clean
 	make -r -C init clean
 	make -r -C shell clean
