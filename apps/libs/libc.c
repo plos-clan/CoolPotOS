@@ -474,13 +474,13 @@ static const struct lconv posix_lconv = {
 
 struct lconv *localeconv(void) { return (struct lconv *)&posix_lconv; }
 
-void *malloc(size_t size){
-    return syscall_malloc(size);
-}
+// void *malloc(size_t size){
+//     return syscall_malloc(size);
+// }
 
-void free(void *ptr){
-    syscall_free(ptr);
-}
+// void free(void *ptr){
+//     syscall_free(ptr);
+// }
 
 void exit(int code){
     syscall_exit(code);
@@ -496,21 +496,21 @@ int sprintf(char *buf, const char *fmt, ...) {
     return i;
 }
 
-void *realloc(void *ptr, uint32_t size) {
-    void *new = malloc(size);
-    if (ptr) {
-        memcpy(new, ptr, *(int *)((int)ptr - 4));
-        free(ptr);
-    }
-    return new;
-}
+// void *realloc(void *ptr, uint32_t size) {
+//     void *new = malloc(size);
+//     if (ptr) {
+//         memcpy(new, ptr, *(int *)((int)ptr - 4));
+//         free(ptr);
+//     }
+//     return new;
+// }
 
-void *calloc(size_t n, size_t size) {
-    void *ptr = malloc(n * size);
-    if (ptr == NULL) return NULL;
-    memset(ptr, 0, n * size);
-    return ptr;
-}
+// void *calloc(size_t n, size_t size) {
+//     void *ptr = malloc(n * size);
+//     if (ptr == NULL) return NULL;
+//     memset(ptr, 0, n * size);
+//     return ptr;
+// }
 
 long long atoi(const char* s){
     long long temp = 0,sign = (*s <= '9' && *s >= '0') ;
@@ -1412,7 +1412,11 @@ FILE *stdout;
 FILE *stdin;
 FILE *stderr;
 
+bool __libc_init_mman();
+
 void _start(){
+    __libc_init_mman();
+
     extern int main(int argc,char** argv);
     int volatile argc = 0;
     char *volatile argv[50];

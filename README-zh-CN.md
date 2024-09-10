@@ -40,4 +40,5 @@
 
 * XIAOYI12 - xiaoyi1212 负责主要的OS开发
 * min0911Y - min0911 负责OS文件系统开发
+* copi143 - copi143 新版用户堆框架开发
 * QtLittleXu - XuYuxuan 负责OS文档编写

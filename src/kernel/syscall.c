@@ -9,6 +9,7 @@
 #include "../include/keyboard.h"
 #include "../include/vfs.h"
 #include "../include/cmos.h"
+#include "../include/memory.h"
 #include "../include/timer.h"
 
 extern uint32_t phy_mem_size;
@@ -155,6 +156,17 @@ static int syscall_vfs_rename(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t es
     return vfs_renamefile(ebx,ecx);
 }
 
+static void* syscall_alloc_page(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    size_t page_size = ebx;
+    int i = USER_END + 0x1000 + get_current()->page_alloc_address;
+    int ret = i;
+    for (;i < (USER_END + 0x1000 + get_current()->page_alloc_address) + (page_size * 0x1000);) {
+        alloc_frame(get_page(i,1,get_current()->pgd_dir,false),0,1);
+        get_current()->page_alloc_address =  i += 0x1000;
+    }
+    return ret;
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -175,6 +187,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_SLEEP] = syscall_sleep,
         [SYSCALL_VFS_REMOVE_FILE] = syscall_vfs_remove_file,
         [SYSCALL_VFS_RENAME] = syscall_vfs_rename,
+        [SYSCALL_ALLOC_PAGE] = syscall_alloc_page,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

@@ -23,24 +23,42 @@
 
 #include "ctype.h"
 
-void syscall_print(char* c);
+void syscall_print(char *c);
+
 void syscall_putchar(char c);
+
 char syscall_getch();
-void* syscall_malloc(size_t size);
+
+void *syscall_malloc(size_t size);
+
 void syscall_free(void *ptr);
+
 void syscall_exit(int code);
+
 void syscall_g_clean();
+
 void syscall_get_cd(char *buffer);
-int syscall_vfs_filesize(char* filename);
-void syscall_vfs_readfile(char* filename,char* buffer);
-void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size);
-void* syscall_sysinfo();
-int syscall_exec(char *filename,char* args,int is_async);
-void syscall_vfs_change_path(const char* path);
-char* syscall_get_arg();
+
+int syscall_vfs_filesize(char *filename);
+
+void syscall_vfs_readfile(char *filename, char *buffer);
+
+void syscall_vfs_writefile(char *filename, char *buffer, unsigned int size);
+
+void *syscall_sysinfo();
+
+int syscall_exec(char *filename, char *args, int is_async);
+
+void syscall_vfs_change_path(const char *path);
+
+char *syscall_get_arg();
+
 long syscall_clock();
+
 void syscall_sleep(uint32_t timer);
-int syscall_vfs_remove_file(char* filename);
-int syscall_vfs_rename(char* filename1,char* filename2);
+
+int syscall_vfs_remove_file(char *filename);
+
+int syscall_vfs_rename(char *filename1, char *filename2);
 
 #endif

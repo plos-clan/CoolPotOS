@@ -228,6 +228,7 @@ int32_t user_process(char *path, char *name,char* argv){ // 用户进程创建
     new_task->vfs_now = NULL;
     new_task->tty = kmalloc(sizeof(tty_t));
     new_task->cpu_clock = 0;
+    new_task->page_alloc_address = 0;
     init_default_tty(new_task);
     io_sti();
 
