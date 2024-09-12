@@ -38,9 +38,11 @@ typedef struct tty{
     key_lis keyboard_release; // 键盘松开
     uint32_t volatile*vram;   // 显存映射
     uint32_t width,height;
+    uint32_t c_width, c_height; // 字符绘制总宽高
+    int32_t cx, cy; // 字符坐标
     int xsize, ysize;
     int x, y;
-    uint8_t color;
+    uint32_t color, back_color;
     int Raw_y;
 
     /* vt100 */

@@ -3,7 +3,7 @@
 #include "../include/graphics.h"
 #include "../include/printf.h"
 
-extern uint32_t *screen;
+extern uint32_t volatile*screen;
 extern uint32_t width, height;
 
 static char eos[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'f', 'J', 'K', 'S', 'T', 'm'};
@@ -335,6 +335,9 @@ void tty_print(struct tty *res,const char *string){
     vbe_writestring(string);
 }
 void tty_putchar(struct tty *res,int ch){
+
+    vbe_putchar(ch);
+    return;
     if (ch == '\033' && res->vt100 == 0) {
         memset(res->buffer, 0, 81);
         res->buf_p                = 0;
@@ -377,7 +380,6 @@ void tty_putchar(struct tty *res,int ch){
         }
         return;
     }
-    //vbe_putchar(ch);
     res->putchar(res,ch);
 }
 void tty_MoveCursor(struct tty *res,int x, int y){
@@ -391,15 +393,39 @@ void init_default_tty(struct task_struct *task){
     task->tty->fifo = kmalloc(sizeof(struct FIFO8));
     char* buffer = kmalloc(256);
 
+    extern uint32_t color, back_color;
+    extern int32_t cx, cy;
+    extern uint32_t c_width, c_height;
+
+    if(get_current() != NULL && get_current()->tty != NULL){
+        task->tty->vram = get_current()->tty->vram;
+        task->tty->width = get_current()->tty->width;
+        task->tty->height = get_current()->tty->height;
+        task->tty->color = 0xc6c6c6;
+        task->tty->cx = get_current()->tty->cx;
+        task->tty->cy = get_current()->tty->cy;
+        task->tty->c_width = get_current()->tty->c_width;
+        task->tty->c_height = get_current()->tty->c_height;
+        task->tty->back_color = 0x000000;
+    } else{
+        task->tty = kmalloc(sizeof(tty_t));
+        task->tty->vram = screen;
+        task->tty->width = width;
+        task->tty->height = height;
+        task->tty->color = color;
+        task->tty->cx = cx;
+        task->tty->cy = cy;
+        task->tty->c_width = c_width;
+        task->tty->c_height = c_height;
+        task->tty->back_color = back_color;
+    }
+
     task->tty->is_using = true;
     task->tty->print = tty_print;
     task->tty->clear = vbe_clear;
-    task->tty->putchar = vbe_putchar;
+    task->tty->putchar = tty_putchar;
     task->tty->gotoxy = tty_gotoxy;
     task->tty->screen_ne = screen_ne_TextMode;
-    task->tty->vram = screen;
-    task->tty->width = width;
-    task->tty->height = height;
 
     fifo8_init(task->tty->fifo,256,buffer);
 }
