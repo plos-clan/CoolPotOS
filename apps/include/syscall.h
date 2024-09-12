@@ -21,6 +21,8 @@
 #define SYSCALL_VFS_REMOVE_FILE 18
 #define SYSCALL_VFS_RENAME 19
 
+#define SYSCALL_FRAMEBUFFER 21
+
 #include "ctype.h"
 
 void syscall_print(char *c);
@@ -60,5 +62,7 @@ void syscall_sleep(uint32_t timer);
 int syscall_vfs_remove_file(char *filename);
 
 int syscall_vfs_rename(char *filename1, char *filename2);
+
+uint32_t *syscall_framebuffer();
 
 #endif

@@ -12,7 +12,7 @@ int32_t x, y;
 int32_t cx, cy; // 字符坐标
 uint32_t color, back_color;
 
-uint32_t *screen;
+uint32_t volatile*screen;
 
 uint32_t *char_buffer;
 extern uint8_t ascfont[];
@@ -37,7 +37,7 @@ void drawPixel(uint32_t x, uint32_t y, uint32_t color) {
         return;
     }
     color = (color & 0xff) << 16 | (color & 0xff00) | (color & 0xff0000) >> 16;
-    uint32_t  *p = (uint32_t *)screen + y * width + x;
+    uint32_t *p = (uint32_t *) screen + y * width + x;
     *p = color;
 }
 
@@ -47,13 +47,13 @@ void vbe_scroll() {
         cy++;
     } else cx++;
 
-    if (cy >= c_height){
+    if (cy >= c_height) {
         cy = c_height - 1;
-        memcpy((void *)screen,
-               (void *)screen + width * 16 * sizeof(uint32_t),
+        memcpy((void *) screen,
+               (void *) screen + width * 16 * sizeof(uint32_t),
                width * (height - 16) * sizeof(uint32_t));
         for (int i = (width * (height - 16));
-             i != (width * height); i++)  {
+             i != (width * height); i++) {
             screen[i] = back_color;
         }
     }
@@ -64,7 +64,7 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
         return;
     }
 
-    uint8_t *font = bafont;
+    uint8_t * font = bafont;
     //uint8_t *font = ascfont;
 
     font += c * 16;
@@ -102,7 +102,7 @@ void vbe_putchar(char ch) {
     } else if (ch == '\r') {
         cx = 0;
         return;
-    } else if(ch == '\t'){
+    } else if (ch == '\t') {
         vbe_putchar("  ");
         return;
     } else if (ch == '\b' && cx > 0) {
@@ -112,7 +112,7 @@ void vbe_putchar(char ch) {
             if (cy != 0) cy -= 1;
             if (cy == 0) cx = 0, cy = 0;
         }
-        int x = (cx+1) * 9 - 7;
+        int x = (cx + 1) * 9 - 7;
         int y = cy * 16;
         draw_rect(x, y, x + 9, y + 16, back_color);
         return;
@@ -131,22 +131,22 @@ void vbe_write(const char *data, size_t size) {
             ['a'] = 10, 11, 12, 13, 14, 15
     };
 
-    for (;*data; ++data){
+    for (; *data; ++data) {
         char c = *data;
-        if(c == '\033'){
+        if (c == '\033') {
             uint32_t text_color = 0;
             ++data;
             while (*data && text_color >= 0) {
                 text_color = (text_color << 4) | hextable[*data++];
-                if(*data == ';')break;
+                if (*data == ';')break;
             }
             color = text_color;
-        }else if(c == '\034'){
-            uint32_t text_color = 0,a = 0;
+        } else if (c == '\034') {
+            uint32_t text_color = 0, a = 0;
             ++data;
             while (*data && text_color >= 0) {
                 text_color = (text_color << 4) | hextable[*data++];
-                if(*data == ';')break;
+                if (*data == ';')break;
             }
             back_color = text_color;
         } else vbe_putchar(c);

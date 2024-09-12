@@ -25,6 +25,7 @@
 #define SYSCALL_VFS_REMOVE_FILE 18
 #define SYSCALL_VFS_RENAME 19
 #define SYSCALL_ALLOC_PAGE 20
+#define SYSCALL_FRAMEBUFFER 21
 
 void syscall_install();
 
