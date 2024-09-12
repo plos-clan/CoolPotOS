@@ -339,10 +339,8 @@ static HpetInfo *hpetInfo = NULL;
 static uint32_t hpetPeriod = 0;
 
 uint32_t nanoTime() {
+    if(hpetInfo == NULL) return 0;
     uint32_t mcv =  hpetInfo->mainCounterValue;
-
-    while (1)asm("hlt");
-
     return mcv * hpetPeriod;
 }
 
