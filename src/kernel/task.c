@@ -306,7 +306,6 @@ int32_t user_process(char *path, char *name,char* argv){ // 用户进程创建
     return new_task->pid;
 }
 
-
 int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进程(线程) 创建
     io_cli();
     struct task_struct *new_task = (struct task_struct *) kmalloc(STACK_SIZE);
