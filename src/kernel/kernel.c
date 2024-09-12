@@ -94,17 +94,17 @@ void kernel_main(multiboot_t *multiboot) {
     io_cli();
     vga_install();
 
-    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 16) {
-        printf("[kernel] Minimal RAM amount for CPOS is 16 MB, but you have only %d MB.\n",
+    initVBE(multiboot);
+
+    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 3071) {
+        printf("[kernel]: Minimal RAM amount for CP_Kernel is 3071 MB, but you have only %d MB.\n",
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
         while (1) io_hlt();
     }
 
     phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024;
-
-    initVBE(multiboot);
-
     char* cmdline = multiboot->cmdline;
+
     if(cmdline != NULL){
         printf("Multiboot command line: %s\n",cmdline);
     }

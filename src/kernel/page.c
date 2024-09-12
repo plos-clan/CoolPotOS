@@ -250,7 +250,8 @@ void init_page(multiboot_t *mboot) {
 
     program_break_end = (void*) i;
 
-    unsigned int j = mboot->framebuffer_addr,size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
+    uint32_t j = mboot->framebuffer_addr,
+    size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
 
     while (j <= mboot->framebuffer_addr + size){
         alloc_frame_line(get_page(j,1,kernel_directory,false),j,0,1);
@@ -262,7 +263,7 @@ void init_page(multiboot_t *mboot) {
 
     klogf(true,"Memory manager is enable\n");
     printf("Kernel: 0x%08x | ",placement_address + 0x30000);
-    printf("GraphicsBuffer: 0x%08x - 0x%08x \n",(mboot->framebuffer_addr),(mboot->framebuffer_addr + size));
+    printf("GraphicsBuffer: 0x%08x |",(mboot->framebuffer_addr));
     printf("KernelHeap: 0x%08x - 0x%08x | ",(program_break),(program_break_end));
     printf("BaseFrame: 0x%08x\n",frames);
 }
