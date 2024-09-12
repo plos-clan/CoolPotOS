@@ -59,14 +59,17 @@ static int syscall_vfs_filesize(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t 
 }
 
 static void syscall_vfs_readfile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     vfs_readfile(ebx,ecx);
 }
 
 static void syscall_vfs_writefile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     vfs_writefile(ebx,ecx,edx);
 }
 
 static void syscall_vfs_chang_path(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     vfs_change_path(ebx);
 }
 
@@ -149,10 +152,12 @@ static void syscall_sleep(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,ui
 }
 
 static int syscall_vfs_remove_file(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     return vfs_delfile(ebx);
 }
 
 static int syscall_vfs_rename(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     return vfs_renamefile(ebx,ecx);
 }
 
@@ -165,6 +170,11 @@ static void* syscall_alloc_page(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t 
         get_current()->page_alloc_address =  i += 0x1000;
     }
     return ret;
+}
+
+static uint32_t *syscall_framebuffer(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    extern uint32_t *screen; //vbe.c
+    return screen;
 }
 
 void *sycall_handlers[MAX_SYSCALLS] = {
@@ -188,6 +198,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_VFS_REMOVE_FILE] = syscall_vfs_remove_file,
         [SYSCALL_VFS_RENAME] = syscall_vfs_rename,
         [SYSCALL_ALLOC_PAGE] = syscall_alloc_page,
+        [SYSCALL_FRAMEBUFFER] = syscall_framebuffer,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

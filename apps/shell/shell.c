@@ -2,6 +2,7 @@
 #include "../include/syscall.h"
 #include "../include/string.h"
 #include "../include/cpos.h"
+#include "../include/ttfprint.h"
 
 extern void print_info();
 
@@ -48,8 +49,8 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
     return argc;
 }
 
-int main(int argc_v,char **argv_v){
 
+int main(int argc_v,char **argv_v){
     printf("CoolPotOS UserShell v0.0.1\n");
     char com[100];
     char *argv[50];

@@ -36,7 +36,7 @@ typedef struct tty{
     struct FIFO8 *fifo;       // 键盘输出缓冲区
     key_lis keyboard_press;   // 键盘按下
     key_lis keyboard_release; // 键盘松开
-    uint32_t *vram;
+    uint32_t volatile*vram;   // 显存映射
     uint32_t width,height;
     int xsize, ysize;
     int x, y;

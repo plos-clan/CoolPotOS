@@ -1,6 +1,9 @@
 #include "../include/math.h"
 #include "../include/ctype.h"
 
+#define EPS (2.22044604925031308085e-16)
+static const float toint = 1 / EPS;
+
 static const double ivln10hi =
         4.34294481878168880939e-01, /* 0x3fdbcb7b, 0x15200000 */
 ivln10lo = 2.50829467116452752298e-11,          /* 0x3dbb9438, 0xca9aadd5 */
@@ -13,6 +16,19 @@ Lg4 = 2.222219843214978396e-01,                 /* 3FCC71C5 1D8E78AF */
 Lg5 = 1.818357216161805012e-01,                 /* 3FC74664 96CB03DE */
 Lg6 = 1.531383769920937332e-01,                 /* 3FC39A09 D078C69F */
 Lg7 = 1.479819860511658591e-01;                 /* 3FC2F112 DF3E5244 */
+
+#define FORCE_EVAL(x) do {									\
+	if (sizeof(x) == sizeof(float)) {						\
+		volatile float __x __attribute__((unused));			\
+		__x = (x);											\
+	} else if (sizeof(x) == sizeof(double)) {				\
+		volatile double __x __attribute__((unused));		\
+		__x = (x);											\
+	} else {												\
+		volatile long double __x __attribute__((unused));	\
+		__x = (x);											\
+	}														\
+} while(0)
 
 #define sub_ddmmss(sh, sl, ah, al, bh, bl) \
   __asm__ ("subl %5,%1\n\tsbbl %3,%0"                    \
@@ -793,6 +809,34 @@ double log(double a) {
     }
     return 2.0 * x * y;
 
+}
+
+float roundf(float x) {
+    union {
+        float f;
+        uint32_t i;
+    } u = {x};
+    int e = u.i >> 23 & 0xff;
+    float y;
+
+    if (e >= 0x7f + 23)
+        return x;
+    if (u.i >> 31)
+        x = -x;
+    if (e < 0x7f - 1) {
+        FORCE_EVAL(x + toint);
+        return 0 * u.f;
+    }
+    y = x + toint - toint - x;
+    if (y > 0.5f)
+        y = y + x - 1;
+    else if (y <= -0.5f)
+        y = y + x + 1;
+    else
+        y = y + x;
+    if (u.i >> 31)
+        y = -y;
+    return y;
 }
 
 unsigned long long __udivdi3(unsigned long long u, unsigned long long v) {

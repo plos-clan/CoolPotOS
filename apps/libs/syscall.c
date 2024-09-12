@@ -56,6 +56,10 @@ int syscall_exec(char *filename,char* args,int is_async){
     return __syscall(SYSCALL_EXEC, filename, args, is_async);
 }
 
+uint32_t *syscall_framebuffer(){
+    return __syscall(SYSCALL_FRAMEBUFFER);
+}
+
 void syscall_vfs_change_path(const char *path){
     uint32_t rets;
     uint32_t __arg1 = (uint32_t)(path);

@@ -148,4 +148,6 @@ double log(double a);
 
 double exp(double x);
 
+float roundf(float x);
+
 #endif
