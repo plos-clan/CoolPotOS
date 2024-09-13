@@ -1,27 +1,30 @@
 import os
 import sys
 
+compiler_dir = "/i686_elf_tools/"
+
 cd = os.getcwd()  # 获取当前执行目录 'D:\CrashPowerDOS-main\'
-gcc = cd + '/i686_elf_tools/bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
-asm = cd + '/i686_elf_tools/bin/i686-elf-as.exe'
+gcc = cd + compiler_dir + 'bin/i686-elf-gcc.exe -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types '
+asm = cd + compiler_dir + 'bin/i686-elf-as.exe'
 nasm = "nasm -f elf32"
-ld = cd + '/i686_elf_tools/bin/i686-elf-g++.exe'
+ld = cd + compiler_dir + 'bin/i686-elf-g++.exe'
 out = "target"
 dir_ = "\\"
 src = "src\\"
-raw_gcc = cd + '/i686_elf_tools/bin/i686-elf-gcc.exe'
+raw_gcc = cd + compiler_dir + 'bin/i686-elf-gcc.exe'
 make_apps = ["wsl make -i -r -C apps clean", "wsl make -r -C apps"]
 build_command = "wsl grub-mkrescue -o cpos.iso isodir"
 
 print("Build os: " + sys.platform)
 if sys.platform.startswith('linux'):
+    compiler_dir = "/i686-linux/"
     dir_ = "/"
     src = "src/"
-    gcc = "gcc -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types "
-    asm = "as"
-    ld = "g++"
-    raw_gcc = "gcc"
-    make_apps = "cd apps;make clean;make;cd .."
+    gcc = cd + compiler_dir + "bin/i686-elf-gcc -w -std=gnu99 -I include/ -std=gnu99 -ffreestanding -c -Wincompatible-pointer-types "
+    asm = cd + compiler_dir + "bin/i686-elf-as"
+    ld = cd + compiler_dir + "bin/i686-elf-g++"
+    raw_gcc = cd + compiler_dir + "bin/i686-elf-gcc"
+    make_apps = ["make -i -r -C apps clean", "make -r -C apps"]
     build_command = "grub-mkrescue -o cpos.iso isodir"
 
 print("GCC Version:")
