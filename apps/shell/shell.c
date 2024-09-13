@@ -51,7 +51,7 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
 
 
 int main(int argc_v,char **argv_v){
-    printf("CoolPotOS UserShell v0.0.1\n");
+    printf("CoolPotOS UserShell \033[7mv0.0.1\033[7m \n");
     char com[100];
     char *argv[50];
     int argc = -1;

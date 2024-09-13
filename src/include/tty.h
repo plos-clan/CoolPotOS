@@ -1,6 +1,14 @@
 #ifndef CRASHPOWEROS_TTY_H
 #define CRASHPOWEROS_TTY_H
 
+#define VT100_BOLD 1
+#define VT100_DIM 2
+#define VT100_SMSO 4
+#define VT100_SMUL 8
+#define VT100_BLINK 16
+#define VT100_REV 32
+#define VT100_INVIS 64
+
 #include "common.h"
 #include "fifo.h"
 
@@ -52,6 +60,7 @@ typedef struct tty{
     int          done;        // 这个东西读取完毕没有？
     vt100_mode_t mode;        // 控制模式
     int          color_saved; // 保存的颜色
+    uint32_t     vt_status;      // 文本属性
 }tty_t;
 
 #include "task.h"
