@@ -288,20 +288,29 @@ static int parse_vt100(struct tty *res, char *string) {
             } else if (delta[0] == 1 && k == 0) { // unsupported
                 return 0;
             }
-            static const uint8_t color_map[8] = {0, 4, 2, 6, 1, 5, 3, 7};
+            static const uint32_t color_map[8] = {0x0, 0xFF0000, 0x00FF00, 0xFFFF00, 0x0000FF, 0xFF69B4, 0x00FFFF, 0xFFFFFF};
             switch (k) {
                 case 0: {
-                    if (delta[0] >= 30 && delta[0] <= 37) { // foreground color
+                    if (delta[0] >= 30 && delta[0] <= 38) { // foreground color
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        res->color &= 0xf0;
-                        res->color |= color_map[delta[0] - 30];
+                       // res->color &= 0xf0;
+                       // res->color |= color_map[delta[0] - 30];
+                        res->color = color_map[delta[0] - 30];
                         return 1;
-                    } else if (delta[0] >= 40 && delta[0] <= 47) {
+                    } else if (delta[0] >= 40 && delta[0] <= 48) {
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        res->color &= 0x0f;
-                        res->color |= color_map[delta[0] - 40] << 4;
+                        //res->color &= 0x0f;
+                        //res->color |= color_map[delta[0] - 40] << 4;
+                        res->back_color = (color_map[delta[0] - 40]);
                         return 1;
                     } else {
+                        if(delta[0] == 39){
+                            res->color = 0xc6c6c6;
+                            return 1;
+                        } else if(delta[0] == 49){
+                            res->back_color = 0;
+                            return 1;
+                        }
                         return 0;
                     }
                 }
@@ -311,13 +320,11 @@ static int parse_vt100(struct tty *res, char *string) {
                     }
                     if (delta[1] >= 30 && delta[1] <= 37) { // foreground color
                         if (res->color_saved == -1) { res->color_saved = res->color; }
-                        res->color &= 0xf0;
-                        res->color |= color_map[delta[1] - 30] + 8;
+                        res->color = color_map[delta[1] - 30];
                         return 1;
                     } else if (delta[1] >= 40 && delta[1] <= 47) {
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        res->color &= 0x0f;
-                        res->color |= (color_map[delta[1] - 40] + 8) << 4;
+                        res->back_color = (color_map[delta[1] - 40]);
                         return 1;
                     } else {
                         return 0;
@@ -332,12 +339,12 @@ static int parse_vt100(struct tty *res, char *string) {
 }
 
 void tty_print(struct tty *res,const char *string){
-    vbe_writestring(string);
+    for (int i = 0; i < strlen(string);i++) {
+        tty_putchar(res,string[i]);
+    }
+    //vbe_writestring(string);
 }
 void tty_putchar(struct tty *res,int ch){
-
-    vbe_putchar(ch);
-    return;
     if (ch == '\033' && res->vt100 == 0) {
         memset(res->buffer, 0, 81);
         res->buf_p                = 0;
@@ -355,7 +362,7 @@ void tty_putchar(struct tty *res,int ch){
                 res->putchar(res, res->buffer[i]);
             }
         }
-    }else if (res->vt100 && res->buf_p == 81) {
+    }else if (res->vt100 && res->buf_p >= 81) {
         for (int i = 0; i < res->buf_p; i++) {
             res->putchar(res, res->buffer[i]);
         }
@@ -387,6 +394,10 @@ void tty_MoveCursor(struct tty *res,int x, int y){
 }
 void tty_clear(struct tty *res){
     vbe_clear();
+}
+
+static void t_putc(tty_t *res,char ch){
+    vbe_putchar(ch);
 }
 
 void init_default_tty(struct task_struct *task){
@@ -423,7 +434,7 @@ void init_default_tty(struct task_struct *task){
     task->tty->is_using = true;
     task->tty->print = tty_print;
     task->tty->clear = vbe_clear;
-    task->tty->putchar = tty_putchar;
+    task->tty->putchar = t_putc;
     task->tty->gotoxy = tty_gotoxy;
     task->tty->screen_ne = screen_ne_TextMode;
 

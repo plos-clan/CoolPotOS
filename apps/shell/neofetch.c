@@ -7,18 +7,18 @@ void print_info(){
     struct sysinfo *info = get_sysinfo();
 
     printf("               .:=*#&&@@@@@@&&#+=:.               \n");
-    printf("            -+&@@@@@@@@@@@@@@@@@@@- \03300C5CD;----------.\033C6C6C6;          -----------------\n");
-    printf("         -*@@@@@@@@@@@@@@@@@@@@&=\03300C5CD;.-&@@@@@@@@@@+\033C6C6C6;          OSName:     %s\n",info->osname);
-    printf("       =&@@@@@@@@@@@@@@@@@@@@@=\03300C5CD;.-&@@@@@@@@@@@@+\033C6C6C6;          Kernel:     %s\n",info->kenlname);
-    printf("     -&@@@@@@@@@@@@@@@@@@@@@=\03300C5CD;.-&@@@@@@@@@@@@@@+\033C6C6C6;          CPU Vendor: %s\n",info->cpu_vendor);
-    printf("    *@@@@@@@@@@@@@@@@@@@@@=\03300C5CD;.-&@@@@@@@@@@@@@@@@+\033C6C6C6;          CPU:        %s\n",info->cpu_name);
-    printf("  .&@@@@@@@@@@@@@@@&*=-:: \03300C5CD;:#@@@@@@@@@@@@@@@@@@=\033C6C6C6;          Memory:     %dMB\n",info->phy_mem_size);
-    printf("  &@@@@@@@@@@@@@&=.       \03300C5CD;#@@@@@@@@@@@@@@@@@#:.\033C6C6C6;=         Console:    CPOS_USER_SHELL\n");
-    printf(" *@@@@@@@@@@@@@-          \03300C5CD;#@@@@@@@@@@@@@@@#:.\033C6C6C6;=@@+        PCI Device: %d\n",info->pci_device);
-    printf(":@@@@@@@@@@@@&.           \03300C5CD;#@@@@@@@@@@@@@#:\033C6C6C6; =@@@@@.       Resolution: %d x %d\n",info->frame_width,info->frame_height);
-    printf("#@@@@@@@@@@@@.            \03300C5CD;#@@@@@@@@@@@#:\033C6C6C6; =@@@@@@@+       Time:       %d/%d/%d %d:%d:%d\n",info->year,info->mon,
+    printf("            -+&@@@@@@@@@@@@@@@@@@@- \033[36m----------.\033[39m          -----------------\n");
+    printf("         -*@@@@@@@@@@@@@@@@@@@@&=\033[36m.-&@@@@@@@@@@+\033[39m          OSName:     %s\n",info->osname);
+    printf("       =&@@@@@@@@@@@@@@@@@@@@@=\033[36m.-&@@@@@@@@@@@@+\033[39m          Kernel:     %s\n",info->kenlname);
+    printf("     -&@@@@@@@@@@@@@@@@@@@@@=\033[36m.-&@@@@@@@@@@@@@@+\033[39m          CPU Vendor: %s\n",info->cpu_vendor);
+    printf("    *@@@@@@@@@@@@@@@@@@@@@=\033[36m.-&@@@@@@@@@@@@@@@@+\033[39m          CPU:        %s\n",info->cpu_name);
+    printf("  .&@@@@@@@@@@@@@@@&*=-:: \033[36m:#@@@@@@@@@@@@@@@@@@=\033[39m          Memory:     %dMB\n",info->phy_mem_size);
+    printf("  &@@@@@@@@@@@@@&=.       \033[36m#@@@@@@@@@@@@@@@@@#:.\033[39m=         Console:    CPOS_USER_SHELL vt100\n");
+    printf(" *@@@@@@@@@@@@@-          \033[36m#@@@@@@@@@@@@@@@#:.\033[39m=@@+        PCI Device: %d\n",info->pci_device);
+    printf(":@@@@@@@@@@@@&.           \033[36m#@@@@@@@@@@@@@#:\033[39m =@@@@@.       Resolution: %d x %d\n",info->frame_width,info->frame_height);
+    printf("#@@@@@@@@@@@@.            \033[36m#@@@@@@@@@@@#:\033[39m =@@@@@@@+       Time:       %d/%d/%d %d:%d:%d\n",info->year,info->mon,
            info->day,info->hour,info->min,info->sec);
-    printf("@@@@@@@@@@@@+             \03300C5CD;*&&&&&&&&&#-\033C6C6C6; =@@@@@@@@@&\n");
+    printf("@@@@@@@@@@@@+             \033[36m*&&&&&&&&&#-\033[39m =@@@@@@@@@&\n");
     printf("@@@@@@@@@@@@-                        :@@@@@@@@@@@@\n");
     printf("@@@@@@@@@@@@+                        #@@@@@@@@@@@&\n");
     printf("*@@@@@@@@@@@@.                      :@@@@@@@@@@@@+\n");
