@@ -15,6 +15,8 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#define FUNLOCK(f) do { if (__need_unlock) __unlockfile((f)); } while (0)
+
 #include "ctype.h"
 
 typedef struct FILE {
@@ -23,6 +25,7 @@ typedef struct FILE {
     unsigned char *buffer;
     unsigned int bufferSize;
     unsigned int p;
+    uint8_t _un_flags;
     char *name;
 } FILE;
 
@@ -32,15 +35,23 @@ extern FILE *stderr;
 
 int getc();
 int getch();
+void ungetc(char c,FILE *stream);
+
+int puts(const char *s);
 void put_char(char a);
-int scanf(const char *format, ...);
 int printf(const char* fmt, ...);
 void print(const char* msg);
-int puts(const char *s);
+
+int scanf(const char *format, ...);
+int vsscanf(const char *restrict s, const char *restrict fmt, va_list ap);
+int sscanf(const char *restrict s, const char *restrict fmt, ...);
+int vfscanf(FILE * f, const char * fmt, va_list ap);
+
 int vsprintf(char *buf, const char *fmt, va_list args);
 int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap);
 int sprintf(char *buf, const char *fmt, ...);
 int snprintf(char *s, size_t n, const char *fmt, ...);
+
 int fgetc(FILE *stream);
 FILE *fopen(char *filename, char *mode);
 unsigned int fread(void *buffer, unsigned int size, unsigned int count,

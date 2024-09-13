@@ -118,7 +118,6 @@ void print_ttf(char* buf,uint32_t fc,uint32_t bc,uint32_t x,uint32_t y){
     free(bitmap);
     free(r);
 
-
 }
 
 bool ttf_install(char* filename){

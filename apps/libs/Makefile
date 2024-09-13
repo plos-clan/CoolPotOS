@@ -1,5 +1,5 @@
 OBJS_PACK = out/syscall.obj out/print.obj out/string.obj out/libc.obj out/math.obj out/timer.obj out/asmfunc.obj \
-out/alloc/mman.obj out/alloc/pool.obj out/alloc.obj out/ttfprint.obj
+out/alloc/mman.obj out/alloc/pool.obj out/alloc.obj out/ttfprint.obj out/scanf.obj
 
 
 default : $(OBJS_PACK)

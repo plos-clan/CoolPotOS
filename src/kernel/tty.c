@@ -293,14 +293,10 @@ static int parse_vt100(struct tty *res, char *string) {
                 case 0: {
                     if (delta[0] >= 30 && delta[0] <= 38) { // foreground color
                         if (res->color_saved == -1) res->color_saved = res->color;
-                       // res->color &= 0xf0;
-                       // res->color |= color_map[delta[0] - 30];
                         res->color = color_map[delta[0] - 30];
                         return 1;
                     } else if (delta[0] >= 40 && delta[0] <= 48) {
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        //res->color &= 0x0f;
-                        //res->color |= color_map[delta[0] - 40] << 4;
                         res->back_color = (color_map[delta[0] - 40]);
                         return 1;
                     } else {
