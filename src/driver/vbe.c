@@ -59,7 +59,7 @@ void vbe_scroll() {
                    wid * (hei - 16) * sizeof(uint32_t));
             for (int i = (wid * (hei - 16));
                  i != (wid * hei); i++) {
-                vram[i] = get_current()->tty->back_color;
+                vram[i] = back_color;//get_current()->tty->back_color;
             }
         }
         return;
