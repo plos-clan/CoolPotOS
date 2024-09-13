@@ -5,6 +5,7 @@
 
 #include "../include/klog.h"
 #include "../include/printf.h"
+#include "../include/task.h"
 
 const char *_log_basename_(const char *path) {
     static char name[128];
@@ -23,9 +24,14 @@ void klogf(bool isok,char* fmt,...){
     va_start(ap, fmt);
     char *buf[1024] = {0};
     len = vsprintf(buf, fmt, ap);
-    if(isok){
-        printf("[  \03300ee76;OK\033c6c6c6;  ]: %s",buf);
+
+    if(get_current() != NULL){
+        printf("[%s]: %s",isok ? "  \033[32mOK\033[39m  ":"\033[31mFAILED\033[39m",buf);
     } else{
-        printf("[\033ee6363;FAILED\033c6c6c6;]: %s",buf);
+        if(isok){
+            printf("[  \03300ee76;OK\033c6c6c6;  ]: %s",buf);
+        } else{
+            printf("[\033ee6363;FAILED\033c6c6c6;]: %s",buf);
+        }
     }
 }

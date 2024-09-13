@@ -58,6 +58,8 @@ typedef struct tty{
 
 void init_default_tty(struct task_struct *task);
 void free_tty(struct task_struct *task);
+void tty_putchar(struct tty *res,int ch);
+void tty_print(struct tty *res,const char *string);
 void clear_TextMode(struct tty *res);
 void screen_ne_TextMode(struct tty *res);
 void putchar_TextMode(struct tty *res, int c);

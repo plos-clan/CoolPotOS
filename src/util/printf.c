@@ -321,7 +321,7 @@ void putchar(char c){
 
     struct task_struct *task = get_current();
     if(task != NULL){
-        task->tty->putchar(task->tty,c);
+        tty_putchar(task->tty,c);
         return;
     }
 

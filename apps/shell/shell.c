@@ -59,7 +59,7 @@ int main(int argc_v,char **argv_v){
 
     while (1){
         syscall_get_cd(buffer);
-        printf("\033[40m;default@localhost: \03330m;%s\\\03321m;$ ",buffer);
+        printf("\033[32mdefault@localhost: \033[34m%s\\\033[39m$ ",buffer);
 
         if (gets(com) <= 0) continue;
 
@@ -85,7 +85,7 @@ int main(int argc_v,char **argv_v){
         } else {
             int pid = exec_elf(argv[0],com_copy,false);
             if(pid == NULL){
-                printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
+                printf("\033[31m[Shell]: Unknown command '%s'.\033[39m\n", argv[0]);
             }
         }
     }

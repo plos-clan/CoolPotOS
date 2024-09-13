@@ -398,7 +398,7 @@ void setup_shell() {
             buffer[4] = 's';
             buffer[5] = '\0';
         }
-        printf("\03343cd80;default@localhost: \0334169E1;%s\\\033c6c6c6;$ ", buffer);
+        printf("\033[32mdefault@localhost: \033[34m%s\\\033[39m$ ", buffer);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
 
         argc = cmd_parse(com, argv, ' ');

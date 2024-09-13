@@ -96,6 +96,7 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
     if(get_current() != NULL){
         uint32_t volatile*vram = get_current()->tty->vram;
         uint32_t wid = get_current()->tty->width;
+
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 9; j++) {
                 if (font[i] & (0x80 >> j)) {
@@ -141,7 +142,8 @@ void draw_rect(int x0, int y0, int x1, int y1, int c) {
 }
 
 void vbe_putchar(char ch) {
-    if(get_current() != NULL){
+
+    if(get_current() != NULL && get_current()->tty != NULL){
 
         if (ch == '\n') {
             get_current()->tty->cx = 0;
@@ -165,6 +167,7 @@ void vbe_putchar(char ch) {
             draw_rect(x, y, x + 9, y + 16, get_current()->tty->back_color);
             return;
         }
+
         vbe_scroll();
         vbe_draw_char(ch,get_current()->tty->cx * 9 - 7,get_current()->tty->cy * 16);
     } else{
