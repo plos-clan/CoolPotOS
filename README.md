@@ -17,16 +17,13 @@ You need to install them on your computer:
 
 - Python toolkit
 - i686_elf_tools
+- Windows subsystem for Linux (Ubuntu 22.04)
+    - grub-mkrescue
+    - qemu-system-i386
 
 ### Steps
 
-- Run `python build.py` on your terminal then it is going to build
-- Run `grub-mkrescue -o cpos.iso isodir` to package the iso file
-- Run `qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m 4096` and you can use the system!
-
-## Update
-
-- Refactor the memory management.
+- Run `python build.py` on your terminal then it is going to build and run
 
 ## License
 

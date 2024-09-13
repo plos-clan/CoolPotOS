@@ -51,7 +51,8 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
 
 
 int main(int argc_v,char **argv_v){
-    printf("CoolPotOS UserShell \033[7mv0.0.1\033[7m \n");
+    printf("Welcome to CoolPotOS UserShell v0.0.1\n");
+    printf("Copyright by XIAOYI12 2023-2024\n");
     char com[100];
     char *argv[50];
     int argc = -1;
@@ -59,7 +60,7 @@ int main(int argc_v,char **argv_v){
 
     while (1){
         syscall_get_cd(buffer);
-        printf("\033[32mdefault@localhost: \033[34m%s\\\033[39m$ ",buffer);
+        printf("\033[32m\033[7mdefault@localhost:\033[7m \033[34m%s\\\033[39m$ ",buffer);
 
         if (gets(com) <= 0) continue;
 

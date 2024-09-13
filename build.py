@@ -10,6 +10,8 @@ out = "target"
 dir_ = "\\"
 src = "src\\"
 raw_gcc = cd + '/i686_elf_tools/bin/i686-elf-gcc.exe'
+make_apps = ["wsl make -i -r -C apps clean", "wsl make -r -C apps"]
+build_command = "wsl grub-mkrescue -o cpos.iso isodir"
 
 print("Build os: " + sys.platform)
 if sys.platform.startswith('linux'):
@@ -19,10 +21,13 @@ if sys.platform.startswith('linux'):
     asm = "as"
     ld = "g++"
     raw_gcc = "gcc"
+    make_apps = "cd apps;make clean;make;cd .."
+    build_command = "grub-mkrescue -o cpos.iso isodir"
 
 print("GCC Version:")
 
 os.system(raw_gcc + " --version")
+
 
 def clean():
     print("Clean target folder")
@@ -126,7 +131,6 @@ def linker():  # 交叉编译链接
         ld + " -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "kernel.elf -ffreestanding -nostdlib " + source_file + " -lgcc")
 
 
-
 clean()
 a = build_boot()
 if a != 0:
@@ -152,6 +156,18 @@ if a != 0:
 a = linker()
 if a != 0:
     exit(-1)
-print("Launching i386 vm...")
+
+print("Make apps")
+for i in make_apps:
+    if os.system(i) != 0:
+        exit(-1)
+    else:
+        print("make win!")
+
+print("Building iso...")
+if os.system(build_command) != 0:
+    exit(-1)
+
+os.system("qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m 4096")
 
 # launch()

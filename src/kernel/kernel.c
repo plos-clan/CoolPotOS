@@ -106,7 +106,7 @@ void kernel_main(multiboot_t *multiboot) {
     char* cmdline = multiboot->cmdline;
 
     if(cmdline != NULL){
-        printf("Multiboot command line: %s\n",cmdline);
+       // printf("Multiboot command line: %s\n",cmdline);
     }
 
     printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);

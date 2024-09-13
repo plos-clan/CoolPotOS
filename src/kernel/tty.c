@@ -317,7 +317,6 @@ static int parse_vt100(struct tty *res, char *string) {
                                 uint32_t color = res->color;
                                 res->color = res->back_color;
                                 res->back_color = color;
-                                logkf("COLOR: F:%08x | B:%08x\n",res->color,res->back_color);
                                 return 1;
                             default: return 0;
                         }

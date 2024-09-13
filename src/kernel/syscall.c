@@ -132,6 +132,9 @@ static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
        if(pid != 0){
            struct task_struct *pi_task = found_task_pid(pid);
            while (pi_task->state != TASK_DEATH);
+
+           get_current()->tty->cx = pi_task->tty->cx;
+           get_current()->tty->cy = pi_task->tty->cy;
        }
     }
     return pid;

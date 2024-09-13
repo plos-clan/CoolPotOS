@@ -3,7 +3,6 @@
 #include "../include/io.h"
 #include "../include/task.h"
 #include "../include/timer.h"
-#include "../include/pagehead.h"
 
 page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
@@ -15,7 +14,6 @@ extern struct task_struct *current;
 
 extern uint32_t placement_address;
 extern void *program_break, *program_break_end;
-extern void *page_break, *page_end;
 
 static void set_frame(uint32_t frame_addr) {
     uint32_t frame = frame_addr / 0x1000;
@@ -214,9 +212,6 @@ page_directory_t *clone_directory(page_directory_t *src) {
 }
 
 void init_page(multiboot_t *mboot) {
-
-    page_break = placement_address;
-    page_end = placement_address + 0x50000;
 
     uint32_t mem_end_page = 0xFFFFFFFF; // 4GB Page
     nframes = mem_end_page / 0x1000;

@@ -17,16 +17,13 @@
 
 - Python 工具包
 - i686_elf_tools
+- 适用于Windows的Linux子系统 (Ubuntu 22.04)
+  - grub-mkrescue
+  - qemu-system-i386
 
 ### 步骤
 
-- 在终端上运行 `python build.py`，项目将开始构建
-- 运行 `grub-mkrescue -o cpos.iso isodir` 来打包 iso 文件
-- 运行 `qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m 4096` 就可以使用这个系统了！
-
-## 更新
-
-- 重构内存管理。
+- 在终端上运行 `python build.py`，项目将开始构建并运行
 
 ## 许可协议
 
