@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+typedef unsigned long int off_t;
+//typedef struct __mbstate_t { unsigned __opaque1, __opaque2; } mbstate_t;
+
 int ispunct(char ch);
 char toupper(char ch);
 char tolower(char ch);

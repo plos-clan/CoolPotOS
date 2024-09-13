@@ -474,13 +474,14 @@ static const struct lconv posix_lconv = {
 
 struct lconv *localeconv(void) { return (struct lconv *)&posix_lconv; }
 
-// void *malloc(size_t size){
-//     return syscall_malloc(size);
-// }
-
-// void free(void *ptr){
-//     syscall_free(ptr);
-// }
+static int __getc(){
+    char c;
+    do{
+        c = syscall_getch();
+        if(c == '\b' || c == '\n') break;
+    } while (!isprint(c));
+    return c;
+}
 
 void exit(int code){
     syscall_exit(code);
@@ -496,22 +497,6 @@ int sprintf(char *buf, const char *fmt, ...) {
     return i;
 }
 
-// void *realloc(void *ptr, uint32_t size) {
-//     void *new = malloc(size);
-//     if (ptr) {
-//         memcpy(new, ptr, *(int *)((int)ptr - 4));
-//         free(ptr);
-//     }
-//     return new;
-// }
-
-// void *calloc(size_t n, size_t size) {
-//     void *ptr = malloc(n * size);
-//     if (ptr == NULL) return NULL;
-//     memset(ptr, 0, n * size);
-//     return ptr;
-// }
-
 long long atoi(const char* s){
     long long temp = 0,sign = (*s <= '9' && *s >= '0') ;
     while(*s > '9' || *s < '0')s ++ ;
@@ -523,10 +508,6 @@ long long atoi(const char* s){
 
 void put_char(char c){
     syscall_putchar(c);
-}
-
-int scanf(const char *format, ...){
-
 }
 
 int filesize(const char* filename){
@@ -638,16 +619,21 @@ FILE *fopen(char *filename, char *mode) {
 
 int fgetc(FILE *stream) {
     if (CANREAD(stream->mode)) {
-        if(strcmp("<stdin>",stream->name)) {
-            return getc();
+        if(!strcmp("<stdin>",stream->name)) {
+            if(stream->_un_flags){
+                stream->_un_flags = false;
+                return stream->buffer[stream->p++];
+            }
+            return __getc();
         }
-
+        stream->_un_flags = false;
         if (stream->p >= stream->fileSize) {
             return EOF;
         } else {
             return stream->buffer[stream->p++];
         }
     } else {
+        stream->_un_flags = false;
         return EOF;
     }
 }
@@ -771,13 +757,17 @@ char *strerror(int errno) {
     return "(null)";
 }
 
+void ungetc(char c,FILE *stream){
+    stream->_un_flags = true;
+    if(stream->p >= stream->bufferSize){
+        stream->bufferSize++;
+    }
+    stream->buffer[stream->p] = c;
+    stream->p--;
+}
+
 int getc(){
-    char c;
-    do{
-        c = syscall_getch();
-        if(c == '\b' || c == '\n') break;
-    } while (!isprint(c));
-    return c;
+    return fgetc(stdin);
 }
 
 int getch(){
@@ -1432,6 +1422,7 @@ void _start(){
     stdout->mode = WRITE;
     stdout->name = "<stdout>";
     stderr->name = "<stderr>";
+    stdin->name = "<stdin>";
     stderr->buffer = (unsigned char *)NULL;
     stderr->mode = WRITE;
     stdin->buffer = (unsigned char *)malloc(1024);
@@ -1439,6 +1430,7 @@ void _start(){
     stdin->bufferSize = 1024;
     stdin->p = 0;
     stdin->mode = READ;
+    stdin->_un_flags = false;
 
     int ret = main(argc,argv);
     exit(ret);
