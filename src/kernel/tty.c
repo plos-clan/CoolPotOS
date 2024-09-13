@@ -255,7 +255,6 @@ static int parse_vt100(struct tty *res, char *string) {
             return 1;
         }
         case MODE_m: {
-            // klogd("MODE_m");
             int  k = 0;
             char dig_string[2][81];
             memset(dig_string, 0, sizeof(dig_string)); // 全部设置为0
@@ -291,7 +290,38 @@ static int parse_vt100(struct tty *res, char *string) {
             static const uint32_t color_map[8] = {0x0, 0xFF0000, 0x00FF00, 0xFFFF00, 0x0000FF, 0xFF69B4, 0x00FFFF, 0xFFFFFF};
             switch (k) {
                 case 0: {
-                    if (delta[0] >= 30 && delta[0] <= 38) { // foreground color
+                    if(delta[0] <= 8){
+                        switch (delta[0]) {
+                            case 0:
+                                res->vt_status = 0;
+                                return 1;
+                            case 1:
+                                res->vt_status |= VT100_BOLD;
+                                return 1;
+                            case 2:
+                                res->vt_status |= VT100_DIM;
+                                return 1;
+                            case 3:
+                                res->vt_status |= VT100_SMSO;
+                                return 1;
+                            case 4:
+                                res->vt_status |= VT100_SMUL;
+                                return 1;
+                            case 5:
+                                res->vt_status |= VT100_BLINK;
+                                return 1;
+                            case 6:
+                                res->vt_status |= VT100_REV;
+                                return 1;
+                            case 7:
+                                uint32_t color = res->color;
+                                res->color = res->back_color;
+                                res->back_color = color;
+                                logkf("COLOR: F:%08x | B:%08x\n",res->color,res->back_color);
+                                return 1;
+                            default: return 0;
+                        }
+                    } else if (delta[0] >= 30 && delta[0] <= 38) { // foreground color
                         if (res->color_saved == -1) res->color_saved = res->color;
                         res->color = color_map[delta[0] - 30];
                         return 1;

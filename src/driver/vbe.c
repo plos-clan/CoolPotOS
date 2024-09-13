@@ -101,7 +101,7 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
             for (int j = 0; j < 9; j++) {
                 if (font[i] & (0x80 >> j)) {
                     vram[(y + i) * wid + x + j] = get_current()->tty->color;
-                }
+                } else vram[(y + i) * wid + x + j] = get_current()->tty->back_color;
             }
         }
         return;
