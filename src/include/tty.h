@@ -1,9 +1,9 @@
 #ifndef CRASHPOWEROS_TTY_H
 #define CRASHPOWEROS_TTY_H
 
-#define VT100_BOLD 1
+#define VT100_BOLD 1 // 加粗
 #define VT100_DIM 2
-#define VT100_SMSO 4
+#define VT100_SMSO 4 // 下划线
 #define VT100_SMUL 8
 #define VT100_BLINK 16
 #define VT100_REV 32

@@ -275,19 +275,19 @@ static int parse_vt100(struct tty *res, char *string) {
             }
 
             int delta[2] = {0};
-            // klogd("start for %d", k);
             for (int i = 0; i <= k; i++) {
                 delta[i] = atol(dig_string[i]);
             }
+
             if (delta[0] == 0 && k == 0) {
                 int sel_color    = res->color_saved != -1 ? res->color_saved : res->color;
-                res->color       = sel_color;
+                //res->color       = sel_color;
                 res->color_saved = -1;
+                res->vt_status = 0;
                 return 1;
-            } else if (delta[0] == 1 && k == 0) { // unsupported
-                return 0;
             }
             static const uint32_t color_map[8] = {0x0, 0xFF0000, 0x00FF00, 0xFFFF00, 0x0000FF, 0xFF69B4, 0x00FFFF, 0xFFFFFF};
+
             switch (k) {
                 case 0: {
                     if(delta[0] <= 8){
@@ -318,7 +318,6 @@ static int parse_vt100(struct tty *res, char *string) {
                                 res->color = res->back_color;
                                 res->back_color = color;
                                 return 1;
-                            default: return 0;
                         }
                     } else if (delta[0] >= 30 && delta[0] <= 38) { // foreground color
                         if (res->color_saved == -1) res->color_saved = res->color;
