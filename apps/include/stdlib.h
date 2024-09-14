@@ -13,6 +13,7 @@ void exit(int code);
 void *realloc(void *ptr, uint32_t size);
 void *calloc(size_t n, size_t size);
 void abort();
+long strtol(const char *cp, char **endp, unsigned int base);
 void goto_xy(short x, short y);
 int system(char *command);
 

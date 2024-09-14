@@ -26,6 +26,7 @@
 #define SYSCALL_VFS_RENAME 19
 #define SYSCALL_ALLOC_PAGE 20
 #define SYSCALL_FRAMEBUFFER 21
+#define SYSCALL_DRAW_BITMAP 22
 
 void syscall_install();
 

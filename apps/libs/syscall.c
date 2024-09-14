@@ -37,7 +37,7 @@ void syscall_get_cd(char *buffer) {
 }
 
 int syscall_vfs_filesize(char* filename) {
-    return __syscall(SYSCALL_GET_CD, filename);
+    return __syscall(SYSCALL_VFS_FILESIZE, filename);
 }
 
 void syscall_vfs_readfile(char* filename,char* buffer) {
@@ -45,7 +45,7 @@ void syscall_vfs_readfile(char* filename,char* buffer) {
 }
 
 void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size){
-    return __syscall(SYSCALL_VFS_FILESIZE, filename, buffer,size);
+    return __syscall(SYSCALL_VFS_WRITEFILE, filename, buffer,size);
 }
 
 void* syscall_sysinfo(){
@@ -58,6 +58,10 @@ int syscall_exec(char *filename,char* args,int is_async){
 
 uint32_t *syscall_framebuffer(){
     return __syscall(SYSCALL_FRAMEBUFFER);
+}
+
+void syscall_draw_bitmap(int x,int y,int width,int height,char* bitmap){
+    __syscall(SYSCALL_DRAW_BITMAP,x,y,width,height,bitmap);
 }
 
 void syscall_vfs_change_path(const char *path){

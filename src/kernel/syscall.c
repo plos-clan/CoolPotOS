@@ -180,6 +180,19 @@ static uint32_t *syscall_framebuffer(uint32_t ebx,uint32_t ecx,uint32_t edx,uint
     return screen;
 }
 
+static void syscall_draw_bitmap(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    int x = ebx;
+    int y = ecx;
+    int w = edx;
+    int h = esi;
+    unsigned int *buffer = (unsigned int *)(edi);
+    for (int i = x; i < x + w; i++) {
+        for (int j = y; j < y + h; j++) {
+            drawPixel(i,j,buffer[(j - y) * w + (i - x)]);
+        }
+    }
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -202,6 +215,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_VFS_RENAME] = syscall_vfs_rename,
         [SYSCALL_ALLOC_PAGE] = syscall_alloc_page,
         [SYSCALL_FRAMEBUFFER] = syscall_framebuffer,
+        [SYSCALL_DRAW_BITMAP] = syscall_draw_bitmap,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

@@ -28,8 +28,14 @@ void *calloc(size_t n, size_t size) {
     return ptr;
 }
 
-void *realloc(void *ptr, size_t newsize) {
-    return mman_realloc(&mman, ptr, newsize);
+void *realloc(void *ptr, size_t size) {
+    //return mman_realloc(&mman, ptr, newsize);
+    void *new = malloc(size);
+    if (ptr) {
+        memcpy(new, ptr, *(int *)((int)ptr - 4));
+        free(ptr);
+    }
+    return new;
 }
 
 void *reallocarray(void *ptr, size_t n, size_t size) {

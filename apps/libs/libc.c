@@ -47,15 +47,15 @@ enum flags {
 
 static char *aday[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
-static char *day[] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
+static char *day[] = {"Sunday", "Monday", "Tuesday", "Wednesday",
                       "Thursday", "Friday", "Saturday"};
 
 static char *amonth[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-static char *month[] = {"January",   "February", "March",    "April",
-                        "May",       "June",     "July",     "August",
-                        "September", "October",  "November", "December"};
+static char *month[] = {"January", "February", "March", "April",
+                        "May", "June", "July", "August",
+                        "September", "October", "November", "December"};
 
 static char buf[26];
 
@@ -87,7 +87,7 @@ static char *cvt(double arg, int ndigits, int *decpt, int *sign, char *buf,
         p1 = &buf[CVT_BUFSZ];
         while (fi != 0) {
             fj = modf(fi / 10, &fi);
-            *--p1 = (int)((fj + .03) * 10) + '0';
+            *--p1 = (int) ((fj + .03) * 10) + '0';
             r2++;
         }
         while (p1 < &buf[CVT_BUFSZ])
@@ -111,7 +111,7 @@ static char *cvt(double arg, int ndigits, int *decpt, int *sign, char *buf,
     while (p <= p1 && p < &buf[CVT_BUFSZ]) {
         arg *= 10;
         arg = modf(arg, &fj);
-        *p++ = (int)fj + '0';
+        *p++ = (int) fj + '0';
     }
 
     if (p1 >= &buf[CVT_BUFSZ]) {
@@ -251,9 +251,9 @@ static size_t format_int(char *q, size_t n, uintmax_t val, enum flags flags,
     /*
      * If signed, separate out the minus
      */
-    if ((flags & FL_SIGNED) && ((intmax_t)val < 0)) {
+    if ((flags & FL_SIGNED) && ((intmax_t) val < 0)) {
         minus = 1;
-        val = (uintmax_t)(-(intmax_t)val);
+        val = (uintmax_t)(-(intmax_t) val);
     }
 
     /*
@@ -412,8 +412,7 @@ static void cropzeros(char *buffer) {
             buffer--;
         if (*buffer == '.')
             buffer--;
-        while ((*++buffer = *stop++))
-            ;
+        while ((*++buffer = *stop++));
     }
 }
 
@@ -427,15 +426,17 @@ static void strfmt(char *str, const char *fmt, ...) {
         if (*fmt++ == '%') {
             ilen = *fmt++ - '0';
             if (ilen == 0) {
-                sval = va_arg(vp, char *);
+                sval = va_arg(vp,
+                char *);
                 while (*sval)
                     *str++ = *sval++;
             } else {
-                ival = va_arg(vp, int);
+                ival = va_arg(vp,
+                int);
 
                 while (ilen) {
                     ival %= powers[ilen--];
-                    *str++ = (char)('0' + ival / powers[ilen]);
+                    *str++ = (char) ('0' + ival / powers[ilen]);
                 }
             }
         } else
@@ -472,18 +473,18 @@ static const struct lconv posix_lconv = {
         .int_n_sign_posn = -1,
 };
 
-struct lconv *localeconv(void) { return (struct lconv *)&posix_lconv; }
+struct lconv *localeconv(void) { return (struct lconv *) &posix_lconv; }
 
-static int __getc(){
+static int __getc() {
     char c;
-    do{
+    do {
         c = syscall_getch();
-        if(c == '\b' || c == '\n') break;
+        if (c == '\b' || c == '\n') break;
     } while (!isprint(c));
     return c;
 }
 
-void exit(int code){
+void exit(int code) {
     syscall_exit(code);
 }
 
@@ -497,27 +498,27 @@ int sprintf(char *buf, const char *fmt, ...) {
     return i;
 }
 
-long long atoi(const char* s){
-    long long temp = 0,sign = (*s <= '9' && *s >= '0') ;
-    while(*s > '9' || *s < '0')s ++ ;
-    if(temp == 0 && *(s - 1) == '-')sign = -1 ;
-    else sign = 1 ;
-    while(*s <= '9' && *s >= '0')temp = (temp * 10) + (*s - '0') , s ++ ;
-    return sign * temp ;
+long long atoi(const char *s) {
+    long long temp = 0, sign = (*s <= '9' && *s >= '0');
+    while (*s > '9' || *s < '0')s++;
+    if (temp == 0 && *(s - 1) == '-')sign = -1;
+    else sign = 1;
+    while (*s <= '9' && *s >= '0')temp = (temp * 10) + (*s - '0'), s++;
+    return sign * temp;
 }
 
-void put_char(char c){
+void put_char(char c) {
     syscall_putchar(c);
 }
 
-int filesize(const char* filename){
+int filesize(const char *filename) {
     return syscall_vfs_filesize(filename);
 }
 
 int fputc(int ch, FILE *stream) {
     if (CANWRITE(stream->mode)) {
 
-        if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+        if (strcmp("<stdout>", stream->name) || strcmp("<stderr>", stream->name)) {
             syscall_putchar(ch);
             return 0;
         }
@@ -541,13 +542,13 @@ int fputc(int ch, FILE *stream) {
 
 unsigned int fwrite(const void *ptr, unsigned int size, unsigned int nmemb,
                     FILE *stream) {
-    if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+    if (strcmp("<stdout>", stream->name) || strcmp("<stderr>", stream->name)) {
         syscall_print(ptr);
         return 0;
     }
 
     if (CANWRITE(stream->mode)) {
-        unsigned char *c_ptr = (unsigned char *)ptr;
+        unsigned char *c_ptr = (unsigned char *) ptr;
         for (int i = 0; i < size * nmemb; i++) {
             fputc(c_ptr[i], stream);
         }
@@ -559,7 +560,7 @@ unsigned int fwrite(const void *ptr, unsigned int size, unsigned int nmemb,
 
 FILE *fopen(char *filename, char *mode) {
     unsigned int flag = 0;
-    FILE *fp = (FILE *)malloc(sizeof(FILE));
+    FILE *fp = (FILE *) malloc(sizeof(FILE));
     while (*mode != '\0') {
         switch (*mode) {
             case 'a':
@@ -619,8 +620,8 @@ FILE *fopen(char *filename, char *mode) {
 
 int fgetc(FILE *stream) {
     if (CANREAD(stream->mode)) {
-        if(!strcmp("<stdin>",stream->name)) {
-            if(stream->_un_flags){
+        if (!strcmp("<stdin>", stream->name)) {
+            if (stream->_un_flags) {
                 stream->_un_flags = false;
                 return stream->buffer[stream->p++];
             }
@@ -641,7 +642,7 @@ int fgetc(FILE *stream) {
 unsigned int fread(void *buffer, unsigned int size, unsigned int count,
                    FILE *stream) {
     if (CANREAD(stream->mode)) {
-        unsigned char *c_ptr = (unsigned char *)buffer;
+        unsigned char *c_ptr = (unsigned char *) buffer;
         for (int i = 0; i < size * count; i++) {
             unsigned int ch = fgetc(stream);
             if (ch == EOF) {
@@ -695,7 +696,7 @@ char *fgets(char *str, int n, FILE *stream) {
 int fputs(const char *str, FILE *stream) {
     if (CANWRITE(stream->mode)) {
 
-        if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+        if (strcmp("<stdout>", stream->name) || strcmp("<stderr>", stream->name)) {
             syscall_print(str);
             return 0;
         }
@@ -715,7 +716,7 @@ int fprintf(FILE *stream, const char *format, ...) {
         va_start(ap, format);
         char *buf = malloc(1024);
         len = vsprintf(buf, format, ap);
-        if(strcmp("<stdout>",stream->name)||strcmp("<stderr>",stream->name)){
+        if (strcmp("<stdout>", stream->name) || strcmp("<stderr>", stream->name)) {
             syscall_print(buf);
         } else fputs(buf, stream);
         free(buf);
@@ -739,11 +740,12 @@ int fseek(FILE *fp, int offset, int whence) {
     return 0;
 }
 
-long clock(){
+long clock() {
     return syscall_clock();
 }
 
-int feof(FILE *stream) { return fputc(' ',stream) == EOF ? -1 : 0; }
+int feof(FILE *stream) { return fputc(' ', stream) == EOF ? -1 : 0; }
+
 int ferror(FILE *stream) { return 0; }
 
 long ftell(FILE *stream) { return stream->p; }
@@ -757,20 +759,20 @@ char *strerror(int errno) {
     return "(null)";
 }
 
-void ungetc(char c,FILE *stream){
+void ungetc(char c, FILE *stream) {
     stream->_un_flags = true;
-    if(stream->p >= stream->bufferSize){
+    if (stream->p >= stream->bufferSize) {
         stream->bufferSize++;
     }
     stream->buffer[stream->p] = c;
     stream->p--;
 }
 
-int getc(){
+int getc() {
     return fgetc(stdin);
 }
 
-int getch(){
+int getch() {
     return syscall_getch();
 }
 
@@ -783,7 +785,7 @@ int snprintf(char *s, size_t n, const char *fmt, ...) {
     return ret;
 }
 
-void abort(){
+void abort() {
     exit(-1);
 }
 
@@ -955,11 +957,11 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
     return argc;
 }
 
-void (*signal(int sig, void (*func)(int)))(int){
+void (*signal(int sig, void (*func)(int)))(int) {
     //TODO signal impl
 }
 
-void print(const char* msg){
+void print(const char *msg) {
     syscall_print(msg);
 }
 
@@ -967,21 +969,21 @@ void goto_xy(short x, short y) {
     //TODO gotoxy
 }
 
-void api_ReadFile(char* filename,char* buffer){
-    syscall_vfs_readfile(filename,buffer);
+void api_ReadFile(char *filename, char *buffer) {
+    syscall_vfs_readfile(filename, buffer);
 }
 
-void fork(){
+void fork() {
     //TODO fork
 }
 
-int system(char *command){
-    char* argv[50];
-    cmd_parse(command,argv,' ');
-    return syscall_exec(argv[0],command,false) == 0 ? -1 : 0;
+int system(char *command) {
+    char *argv[50];
+    cmd_parse(command, argv, ' ');
+    return syscall_exec(argv[0], command, false) == 0 ? -1 : 0;
 }
 
-void sleep(int timer){
+void sleep(int timer) {
     syscall_sleep(timer);
 }
 
@@ -1116,7 +1118,8 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                 if (ch >= '0' && ch <= '9') {
                     width = width * 10 + (ch - '0');
                 } else if (ch == '*') {
-                    width = va_arg(ap, int);
+                    width = va_arg(ap,
+                    int);
                     if (width < 0) {
                         width = -width;
                         flags |= FL_MINUS;
@@ -1134,7 +1137,8 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                 if (ch >= '0' && ch <= '9') {
                     prec = prec * 10 + (ch - '0');
                 } else if (ch == '*') {
-                    prec = va_arg(ap, int);
+                    prec = va_arg(ap,
+                    int);
                     if (prec < 0)
                         prec = -1;
                 } else {
@@ -1189,7 +1193,9 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                                 base = 16;
                                 prec = (8 * sizeof(void *) + 3) / 4;
                                 flags |= FL_HASH;
-                                val = (uintmax_t)(uintptr_t)va_arg(ap, void *);
+                                val = (uintmax_t)(uintptr_t)
+                                va_arg(ap,
+                                void *);
                                 goto is_integer;
 
                             case 'd': /* Signed decimal output */
@@ -1199,19 +1205,29 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                                 switch (rank) {
                                     case rank_char:
                                         /* Yes, all these casts are needed */
-                                        val = (uintmax_t)(intmax_t)(signed char)va_arg(ap, signed int);
+                                        val = (uintmax_t)(intmax_t)(
+                                        signed char)va_arg(ap,
+                                        signed int);
                                         break;
                                     case rank_short:
-                                        val = (uintmax_t)(intmax_t)(signed short)va_arg(ap, signed int);
+                                        val = (uintmax_t)(intmax_t)(
+                                        signed short)va_arg(ap,
+                                        signed int);
                                         break;
                                     case rank_int:
-                                        val = (uintmax_t)(intmax_t)va_arg(ap, signed int);
+                                        val = (uintmax_t)(intmax_t)
+                                        va_arg(ap,
+                                        signed int);
                                         break;
                                     case rank_long:
-                                        val = (uintmax_t)(intmax_t)va_arg(ap, signed long);
+                                        val = (uintmax_t)(intmax_t)
+                                        va_arg(ap,
+                                        signed long);
                                         break;
                                     case rank_longlong:
-                                        val = (uintmax_t)(intmax_t)va_arg(ap, signed long long);
+                                        val = (uintmax_t)(intmax_t)
+                                        va_arg(ap,
+                                        signed long long);
                                         break;
                                 }
                                 goto is_integer;
@@ -1232,19 +1248,26 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                             is_unsigned:
                                 switch (rank) {
                                     case rank_char:
-                                        val = (uintmax_t)(unsigned char)va_arg(ap, unsigned int);
+                                        val = (uintmax_t)(
+                                        unsigned char)va_arg(ap,
+                                        unsigned int);
                                         break;
                                     case rank_short:
-                                        val = (uintmax_t)(unsigned short)va_arg(ap, unsigned int);
+                                        val = (uintmax_t)(
+                                        unsigned short)va_arg(ap,
+                                        unsigned int);
                                         break;
                                     case rank_int:
-                                        val = (uintmax_t)va_arg(ap, unsigned int);
+                                        val = (uintmax_t) va_arg(ap,
+                                        unsigned int);
                                         break;
                                     case rank_long:
-                                        val = (uintmax_t)va_arg(ap, unsigned long);
+                                        val = (uintmax_t) va_arg(ap,
+                                        unsigned long);
                                         break;
                                     case rank_longlong:
-                                        val = (uintmax_t)va_arg(ap, unsigned long long);
+                                        val = (uintmax_t) va_arg(ap,
+                                        unsigned long long);
                                         break;
                                 }
 
@@ -1256,17 +1279,20 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                                 break;
 
                             case 'c': /* Character */
-                                carg = (char)va_arg(ap, int);
+                                carg = (char) va_arg(ap,
+                                int);
                                 sarg = &carg;
                                 slen = 1;
                                 goto is_string;
                             case 's': /* String */
-                                sarg = va_arg(ap, const char *);
+                                sarg = va_arg(ap,
+                                const char *);
                                 sarg = sarg ? sarg : "(null)";
                                 slen = strlen(sarg);
                                 goto is_string;
 
-                            is_string: {
+                            is_string:
+                            {
                                 char sch;
                                 int i;
 
@@ -1290,7 +1316,8 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                                         width--;
                                     }
                                 }
-                            } break;
+                            }
+                                break;
 
                             case 'n': {
                                 /*
@@ -1298,22 +1325,28 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                                  */
                                 switch (rank) {
                                     case rank_char:
-                                        *va_arg(ap, signed char *) = o;
+                                        *va_arg(ap,
+                                        signed char *) = o;
                                         break;
                                     case rank_short:
-                                        *va_arg(ap, signed short *) = o;
+                                        *va_arg(ap,
+                                        signed short *) = o;
                                         break;
                                     case rank_int:
-                                        *va_arg(ap, signed int *) = o;
+                                        *va_arg(ap,
+                                        signed int *) = o;
                                         break;
                                     case rank_long:
-                                        *va_arg(ap, signed long *) = o;
+                                        *va_arg(ap,
+                                        signed long *) = o;
                                         break;
                                     case rank_longlong:
-                                        *va_arg(ap, signed long long *) = o;
+                                        *va_arg(ap,
+                                        signed long long *) = o;
                                         break;
                                 }
-                            } break;
+                            }
+                                break;
 
                             case 'E':
                             case 'G':
@@ -1321,7 +1354,8 @@ int vsnprintf(char *buf, size_t n, const char *fmt, va_list ap) {
                             case 'f':
                             case 'g':
                                 sz =
-                                        format_float(q, (o < n) ? n - o : 0, (double)(va_arg(ap, double)),
+                                        format_float(q, (o < n) ? n - o : 0, (double) (va_arg(ap,
+                                double)),
                                 flags, ch, width, prec);
                                 q += sz;
                                 o += sz;
@@ -1373,30 +1407,65 @@ int remove(char *filename) {
 }
 
 int rename(char *filename1, char *filename2) {
-    return syscall_vfs_rename(filename1,filename2);
+    return syscall_vfs_rename(filename1, filename2);
 }
 
 //TODO
-void TaskForever(){
-
-}
-void SendMessage(int to_tid, void *data, unsigned int size){
-
-}
-void GetMessage(void *data, int from_tid){
-
-}
-unsigned int MessageLength(int from_tid){
+void TaskForever() {
 
 }
 
-int RAND(){
+void SendMessage(int to_tid, void *data, unsigned int size) {
+
+}
+
+void GetMessage(void *data, int from_tid) {
+
+}
+
+unsigned int MessageLength(int from_tid) {
+
+}
+
+int RAND() {
     return rand();
 }
 
-void scan(char *str, int length){
+#define TOLOWER(x) ((x) | 0x20)
 
+static unsigned long strtoul(const char *cp, char **endp, unsigned int base) {
+    unsigned long result = 0, value;
+
+    if (!base) {
+        base = 10;
+        if (*cp == '0') {
+            base = 8;
+            cp++;
+            if ((TOLOWER(*cp) == 'x') && isxdigit(cp[1])) {
+                cp++;
+                base = 16;
+            }
+        }
+    } else if (base == 16) {
+        if (cp[0] == '0' && TOLOWER(cp[1]) == 'x')
+            cp += 2;
+    }
+    while (isxdigit(*cp) &&
+           (value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10) < base) {
+        result = result * base + value;
+        cp++;
+    }
+    if (endp)
+        *endp = (char *) cp;
+    return result;
 }
+
+long strtol(const char *cp, char **endp, unsigned int base) {
+    if (*cp == '-')
+        return -strtoul(cp + 1, endp, base);
+    return strtoul(cp, endp, base);
+}
+
 
 FILE *stdout;
 FILE *stdin;
@@ -1404,35 +1473,35 @@ FILE *stderr;
 
 bool __libc_init_mman();
 
-void _start(){
+void _start() {
     __libc_init_mman();
 
-    extern int main(int argc,char** argv);
+    extern int main(int argc, char **argv);
     int volatile argc = 0;
     char *volatile argv[50];
 
-    char* arg_raw = syscall_get_arg();
-    argc = cmd_parse(arg_raw,argv,' ');
+    char *arg_raw = syscall_get_arg();
+    argc = cmd_parse(arg_raw, argv, ' ');
 
-    stdout = (FILE *)malloc(sizeof(FILE));
-    stdin = (FILE *)malloc(sizeof(FILE));
-    stderr = (FILE *)malloc(sizeof(FILE));
+    stdout = (FILE *) malloc(sizeof(FILE));
+    stdin = (FILE *) malloc(sizeof(FILE));
+    stderr = (FILE *) malloc(sizeof(FILE));
 
-    stdout->buffer = (unsigned char *)NULL;
+    stdout->buffer = (unsigned char *) NULL;
     stdout->mode = WRITE;
     stdout->name = "<stdout>";
     stderr->name = "<stderr>";
     stdin->name = "<stdin>";
-    stderr->buffer = (unsigned char *)NULL;
+    stderr->buffer = (unsigned char *) NULL;
     stderr->mode = WRITE;
-    stdin->buffer = (unsigned char *)malloc(1024);
+    stdin->buffer = (unsigned char *) malloc(1024);
     stdin->fileSize = -1;
     stdin->bufferSize = 1024;
     stdin->p = 0;
     stdin->mode = READ;
     stdin->_un_flags = false;
 
-    int ret = main(argc,argv);
+    int ret = main(argc, argv);
     exit(ret);
     while (1);
 }

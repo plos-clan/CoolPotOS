@@ -39,4 +39,8 @@ static inline int exec_elf(const char* filename,const char* args,int is_async){
     return syscall_exec(filename,args,is_async);
 }
 
+static inline void draw_bitmap(int x,int y,int width,int height,char* bitmap){
+    syscall_draw_bitmap(x,y,width,height,bitmap);
+}
+
 #endif

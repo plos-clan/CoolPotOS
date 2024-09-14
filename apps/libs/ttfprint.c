@@ -40,7 +40,7 @@ static void SDraw_Box(uint32_t *vram, int x, int y, int x1, int y1, uint32_t col
     return;
 }
 
-uint8_t *ttf_bitmap(int *buf,uint32_t *width,uint32_t *heigh){
+uint8_t *ttf_bitmap(int *buf,uint32_t *width,uint32_t *heigh,float pixels){
     int bitmap_w = 512; /* 位图的宽 */
     int bitmap_h = 128; /* 位图的高 */
     uint8_t *bitmap = calloc(bitmap_w * bitmap_h, sizeof(uint8_t));
@@ -48,7 +48,6 @@ uint8_t *ttf_bitmap(int *buf,uint32_t *width,uint32_t *heigh){
     /* "STB"的 unicode 编码 */
     int *word = buf;
 
-    float pixels = 30.0; /* 字体大小（字号） */
     float scale = stbtt_ScaleForPixelHeight(
             font, pixels);
 
@@ -82,14 +81,13 @@ uint8_t *ttf_bitmap(int *buf,uint32_t *width,uint32_t *heigh){
         int kern;
         kern = stbtt_GetCodepointKernAdvance(font, word[i], word[i + 1]);
         x += roundf(kern * scale);
-        printf("px: %d | %d\n",x,byteOffset);
     }
     *width = x;
     *heigh = max + h;
     return bitmap;
 }
 
-void put_bitmap(uint8_t *bitmap, uint32_t *vram, uint32_t x, uint32_t y,
+static void put_bitmap(uint8_t *bitmap, uint32_t *vram, uint32_t x, uint32_t y,
                 uint32_t width, uint32_t heigh, uint32_t bitmap_xsize,
                 uint32_t xsize, uint32_t fc, uint32_t bc) {
     for (int i = 0; i < width; i++) {
@@ -100,7 +98,7 @@ void put_bitmap(uint8_t *bitmap, uint32_t *vram, uint32_t x, uint32_t y,
     }
 }
 
-void print_ttf(char* buf,uint32_t fc,uint32_t bc,uint32_t x,uint32_t y){
+void print_ttf(char* buf,uint32_t fc,uint32_t bc,uint32_t x,uint32_t y,float pixels){
 
     Rune *r = (Rune *) malloc((utflen(buf) + 1) * sizeof(Rune));
     r[utflen(buf)] = 0;
@@ -110,14 +108,12 @@ void print_ttf(char* buf,uint32_t fc,uint32_t bc,uint32_t x,uint32_t y){
     }
 
     uint32_t width = 100, heigh;
-    uint8_t *bitmap = ttf_bitmap(r, &width, &heigh);
+    uint8_t *bitmap = ttf_bitmap(r, &width, &heigh,pixels);
 
-    printf("width: %d | height: %d | framebuffer: %08x\n",width,heigh,framebuffer);
     SDraw_Box(framebuffer, x, y, x + width, y + heigh, bc, 1280);
     put_bitmap(bitmap,framebuffer,x,y,width,heigh,512, 1280, fc, bc);
     free(bitmap);
     free(r);
-
 }
 
 bool ttf_install(char* filename){
