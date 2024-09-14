@@ -52,7 +52,7 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
 
 int main(int argc_v,char **argv_v){
     printf("Welcome to CoolPotOS UserShell v0.0.1\n");
-    printf("Copyright by XIAOYI12 2023-2024\n");
+    printf("Copyright by \033[1m\033[4mXIAOYI12\033[0m 2023-2024\n");
     char com[100];
     char *argv[50];
     int argc = -1;

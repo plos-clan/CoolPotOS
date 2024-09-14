@@ -5,6 +5,7 @@
 #include "../include/multiboot2.h"
 #include "../include/timer.h"
 #include "../include/bmp.h"
+#include "../include/tty.h"
 
 uint32_t width, height;
 uint32_t c_width, c_height; // 字符绘制总宽高
@@ -96,14 +97,39 @@ void vbe_draw_char(char c, int32_t x, int32_t y) {
     if(get_current() != NULL){
         uint32_t volatile*vram = get_current()->tty->vram;
         uint32_t wid = get_current()->tty->width;
+        uint32_t vt_status = get_current()->tty->vt_status;
+
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 9; j++) {
+                vram[(y + i) * wid + x + j] = get_current()->tty->back_color;
+            }
+        }
+
+        if(vt_status & VT100_BOLD){
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < 9; j++) {
+                    if (font[i] & (0x80 >> j)) {
+                        vram[(y + i) * wid + x + j + 1] = get_current()->tty->color;
+                    }
+                }
+            }
+        }
 
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 9; j++) {
                 if (font[i] & (0x80 >> j)) {
                     vram[(y + i) * wid + x + j] = get_current()->tty->color;
-                } else vram[(y + i) * wid + x + j] = get_current()->tty->back_color;
+                }
             }
         }
+
+        if(vt_status & VT100_SMUL){
+            for (int j = 0; j < 10; j++) {
+                vram[(y + 15) * wid + x + j] = get_current()->tty->color;
+                vram[(y + 14) * wid + x + j] = get_current()->tty->color;
+            }
+        }
+
         return;
     }
 
