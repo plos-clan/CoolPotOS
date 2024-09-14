@@ -3,6 +3,7 @@
 #include "../include/string.h"
 #include "../include/cpos.h"
 #include "../include/ttfprint.h"
+#include "../include/image.h"
 
 extern void print_info();
 
@@ -51,6 +52,10 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
 
 
 int main(int argc_v,char **argv_v){
+    ttf_install("logo.ttf");
+    print_ttf("CoolPotOS v0.3.3",0xffffff,0x000000,440,500,70.0);
+    draw_image_xy("icon.png",490,180);
+
     printf("Welcome to CoolPotOS UserShell v0.0.1\n");
     printf("Copyright by \033[1m\033[4mXIAOYI12\033[0m 2023-2024\n");
     char com[100];
@@ -78,11 +83,21 @@ int main(int argc_v,char **argv_v){
             print_info();
         }else if (!strcmp("system", argv[0])){
             exit(0);
+        }else if (!strcmp("cd", argv[0])){
+            if (argc == 1) {
+                print("[Shell-EXEC]: If there are too few parameters, please specify the path.\n");
+            } else syscall_vfs_change_path(argv[1]);
+        }else if (!strcmp("image", argv[0])){
+            if (argc == 1) {
+                print("[Shell-EXEC]: If there are too few parameters, please specify the path.\n");
+            } else draw_image(argv[1]);
         }else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             printf("-=[CoolPotShell Helper]=-\n");
             printf("help ? h              Print shell help info.\n");
             printf("version               Print os version.\n");
             printf("system                Launch system shell.\n");
+            printf("cd        <path>      Change directory.\n");
+            printf("image     <filename>  Draw a image.\n");
         } else {
             int pid = exec_elf(argv[0],com_copy,false);
             if(pid == NULL){

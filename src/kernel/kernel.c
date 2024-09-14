@@ -74,7 +74,7 @@ int check_task(int *pid){
 
 int check_task_usershell(int *pid){
     struct task_struct *shell = found_task_pid(*pid);
-
+    while (1);
     while (1){
         if(shell->state == TASK_DEATH){
             io_sti();
@@ -85,7 +85,7 @@ int check_task_usershell(int *pid){
         }
     }
 
-    while (1);
+
     return 0;
 }
 

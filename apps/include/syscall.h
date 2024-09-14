@@ -22,6 +22,7 @@
 #define SYSCALL_VFS_RENAME 19
 
 #define SYSCALL_FRAMEBUFFER 21
+#define SYSCALL_DRAW_BITMAP 22
 
 #include "ctype.h"
 
@@ -64,5 +65,7 @@ int syscall_vfs_remove_file(char *filename);
 int syscall_vfs_rename(char *filename1, char *filename2);
 
 uint32_t *syscall_framebuffer();
+
+void syscall_draw_bitmap(int x,int y,int width,int height,char* bitmap);
 
 #endif
