@@ -94,10 +94,13 @@ static int parse_vt100(struct tty *res, char *string) {
             }
             int delta = atol(dig_string);
             if (!delta) delta = 1;
-            res->gotoxy(res, res->x + delta, res->y);
+           // res->gotoxy(res, res->x + delta, res->y); TODO gotoxy
             return 1;
         }
         case MODE_D: {
+            vbe_putchar('\b');
+            return 1;
+            /* TODO VT100 MODE D
             char dig_string[81] = {0};
             for (int i = 2, j = 0; string[i]; i++) {
                 if (t_is_eos(string[i])) break;
@@ -108,6 +111,7 @@ static int parse_vt100(struct tty *res, char *string) {
             if (!delta) delta = 1;
             res->gotoxy(res, res->x - delta, res->y);
             return 1;
+             */
         }
         case MODE_E: {
             char dig_string[81] = {0};

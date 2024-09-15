@@ -9,6 +9,11 @@
 
 This is a simple operating system for x86 architecture.
 
+## Model
+
+* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+* `Uinxed-Mark` by ViudiraTech [ViudiraTech/Uinxed-Kernel](https://github.com/ViudiraTech/Uinxed-Kernel)
+
 ## Build & Run
 
 ### Environment

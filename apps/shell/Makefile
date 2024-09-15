@@ -2,7 +2,7 @@ OBJS_PACK = out/shell.obj out/neofetch.obj
 include ../def.mk
 
 default: $(OBJS_PACK)
-	$(LINK) $(OBJS_PACK) $(BASIC_LIB_C) -o ../../isodir/apps/shell.bin
+	$(LINK) $(OBJS_PACK) $(BASIC_LIB_C) $(LIBS_PATH)/libplr.a  -o ../../isodir/apps/shell.bin
 out/%.obj : %.c Makefile
 	$(C) -c $*.c -o out/$*.obj
 out/%.obj : %.cpp Makefile

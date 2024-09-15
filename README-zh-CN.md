@@ -9,6 +9,12 @@
 
 这是一个基于 x86 架构的简单操作系统。
 
+## 模块
+
+* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+* `Uinxed-Mark` by ViudiraTech [ViudiraTech/Uinxed-Kernel](https://github.com/ViudiraTech/Uinxed-Kernel)
+
+
 ## 构建并运行
 
 ### 环境
