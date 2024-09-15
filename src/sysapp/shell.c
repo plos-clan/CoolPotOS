@@ -100,8 +100,7 @@ void cmd_proc(int argc, char **argv) {
 
 void cmd_date() {
     printf("System Time:           %s\n", get_date_time());
-    printf("Memory Usage: [%dKB] | All Size: [%dMB]\n", memory_usage() / 1024,
-           (KHEAP_START + KHEAP_INITIAL_SIZE) / 1024 / 1024);
+    printf("Memory Usage: [%dKB] | All Size: [%dMB]\n", memory_usage() / 1024,4096);
     print_cpu_id();
 
     print("\n");
@@ -274,7 +273,7 @@ void cmd_exec(int argc,char** argv){
     }
     char buf[1024];
     sprintf(buf,"User-%s ",argv[1]);
-    int32_t pid = user_process(argv[1],buf,"");
+    int32_t pid = user_process(argv[1],buf,"",TASK_APPLICATION_LEVEL);
     klogf(pid != -1,"Launching user task PID:%d Name:%s\n",pid,buf);
 }
 

@@ -1,6 +1,10 @@
 #ifndef CRASHPOWEROS_TASK_H
 #define CRASHPOWEROS_TASK_H
 
+#define TASK_KERNEL_LEVEL 0
+#define TASK_SYSTEM_SERVICE_LEVEL 1
+#define TASK_APPLICATION_LEVEL 2
+
 #include "memory.h"
 #include "vfs.h"
 #include "tty.h"
@@ -37,6 +41,7 @@ struct context{
 
 // 进程控制块 PCB
 struct task_struct {
+    uint8_t task_level;           // 进程等级< 0:内核 | 1:系统服务 | 2:应用程序 >
     volatile task_state state;    // 进程当前状态
     int pid;                      // 进程标识符
     int mem_size;                 // 内存利用率
@@ -87,5 +92,5 @@ int get_procs();
 
 void switch_to_user_mode(uint32_t func);
 
-int32_t user_process(char* path, char *name,char* argv);
+int32_t user_process(char *path, char *name,char* argv,uint8_t level);
 #endif //CRASHPOWEROS_TASK_H

@@ -92,8 +92,8 @@ static void put_bitmap(uint8_t *bitmap, uint32_t *vram, uint32_t x, uint32_t y,
                 uint32_t xsize, uint32_t fc, uint32_t bc) {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < heigh; j++) {
-            vram[(y + j) * xsize + (x + i)] =
-                    LCD_AlphaBlend(fc, bc, bitmap[j * bitmap_xsize + i]);
+            uint32_t color = LCD_AlphaBlend(fc, bc, bitmap[j * bitmap_xsize + i]);
+            if(color != 0x0) vram[(y + j) * xsize + (x + i)] = color;
         }
     }
 }
@@ -107,10 +107,10 @@ void print_ttf(char* buf,uint32_t fc,uint32_t bc,uint32_t x,uint32_t y,float pix
         buf += chartorune(&(r[i++]), buf);
     }
 
-    uint32_t width = 100, heigh;
+    uint32_t width, heigh;
     uint8_t *bitmap = ttf_bitmap(r, &width, &heigh,pixels);
 
-    SDraw_Box(framebuffer, x, y, x + width, y + heigh, bc, 1280);
+    //SDraw_Box(framebuffer, x, y, x + width, y + heigh, bc, 1280);
     put_bitmap(bitmap,framebuffer,x,y,width,heigh,512, 1280, fc, bc);
     free(bitmap);
     free(r);

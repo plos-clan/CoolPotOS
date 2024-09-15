@@ -3,6 +3,7 @@
 #include "../include/alloc.h"
 #include "../include/syscall.h"
 
+
 static struct mman mman;
 
 void *malloc(size_t size) {
@@ -30,6 +31,7 @@ void *calloc(size_t n, size_t size) {
 
 void *realloc(void *ptr, size_t size) {
     //return mman_realloc(&mman, ptr, newsize);
+
     void *new = malloc(size);
     if (ptr) {
         memcpy(new, ptr, *(int *)((int)ptr - 4));
