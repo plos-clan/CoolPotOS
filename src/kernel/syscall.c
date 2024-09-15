@@ -11,6 +11,7 @@
 #include "../include/cmos.h"
 #include "../include/memory.h"
 #include "../include/timer.h"
+#include "../include/panic.h"
 
 extern uint32_t phy_mem_size;
 extern unsigned int PCI_NUM;
@@ -35,6 +36,12 @@ static void syscall_exit(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uin
 
 static void* syscall_malloc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     void* address = user_alloc(get_current(),ebx);
+    if(address == NULL){
+        if(get_current()->task_level == TASK_SYSTEM_SERVICE_LEVEL)
+            panic_pane("CSP Service out of memory error.",OUT_OF_MEMORY);
+        else if(get_current()->task_level == TASK_APPLICATION_LEVEL)
+            task_kill(get_current()->pid);
+    }
     return address;
 }
 
@@ -127,7 +134,7 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
 
 static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     char* argv = ecx;
-    uint32_t pid = user_process(ebx,ebx,argv);
+    uint32_t pid = user_process(ebx,ebx,argv,TASK_APPLICATION_LEVEL);
     if(!edx){
        if(pid != 0){
            struct task_struct *pi_task = found_task_pid(pid);

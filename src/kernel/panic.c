@@ -42,6 +42,8 @@ static UD_6(registers_t *reg){
 
 void panic_pane(char* msg,enum PANIC_TYPE type){
     io_cli();
+    extern int can_sche;
+    can_sche = 0;
     kill_all_task();
     back_color = 0x1e90ff;
     color = 0xffffff;
@@ -64,6 +66,7 @@ void panic_pane(char* msg,enum PANIC_TYPE type){
     cx = 10;
     printf("Restarting your system...\n");
 
+    io_sti();
     for (int i = 90; i < 1200; i++) {
         for (int j = 650; j < 670; j++) {
             drawPixel(i,j,0xffffff);

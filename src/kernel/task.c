@@ -193,7 +193,7 @@ void change_task_to(registers_t *reg,struct task_struct *next) {
     }
 }
 
-int32_t user_process(char *path, char *name,char* argv){ // 用户进程创建
+int32_t user_process(char *path, char *name,char* argv,uint8_t level){ // 用户进程创建
     can_sche = 0;
     if(path == NULL){
         return NULL;
@@ -229,6 +229,7 @@ int32_t user_process(char *path, char *name,char* argv){ // 用户进程创建
     new_task->tty = kmalloc(sizeof(tty_t));
     new_task->cpu_clock = 0;
     new_task->page_alloc_address = 0;
+    new_task->task_level = level;
     init_default_tty(new_task);
     io_sti();
 
@@ -321,6 +322,8 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进�
     new_task->mem_size = 0;
     new_task->isUser = 0;
     new_task->cpu_clock = 0;
+    new_task->page_alloc_address = 0;
+    new_task->task_level = TASK_KERNEL_LEVEL;
 
     extern header_t *head;
     extern header_t *tail;

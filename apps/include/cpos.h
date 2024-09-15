@@ -43,4 +43,8 @@ static inline void draw_bitmap(int x,int y,int width,int height,char* bitmap){
     syscall_draw_bitmap(x,y,width,height,bitmap);
 }
 
+static inline void screen_clear(){
+    syscall_g_clean();
+}
+
 #endif
