@@ -73,6 +73,7 @@ int check_task(int *pid){
 }
 
 int check_task_usershell(int *pid){
+    while (1);
     struct task_struct *shell = found_task_pid(*pid);
     while (1){
         if(shell->state == TASK_DEATH){
@@ -162,13 +163,13 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
-    vfs_change_path("sys");
-    int pid = user_process("csp.bin","CSP","",TASK_SYSTEM_SERVICE_LEVEL);
+    //vfs_change_path("sys");
+    //int pid = user_process("csp.bin","CSP","",TASK_SYSTEM_SERVICE_LEVEL);
 
-    /*
+
     vfs_change_path("apps");
     //klogf(user_process("init.bin","InitService",true) != -1,"Init service process init.\n");
-    int pid = user_process("shell.bin","UserShell","shell.bin -d shell -c -SsS");
+    int pid = user_process("shell.bin","UserShell","shell.bin -d shell -c -SsS",TASK_SYSTEM_SERVICE_LEVEL);
     kernel_thread(check_task_usershell,&pid,"CTU");
 
    // int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
@@ -176,7 +177,7 @@ void kernel_main(multiboot_t *multiboot) {
     //kernel_thread(check_task,&pid,"CPOS-CK");
 
     //panic_pane("System out of memory error!",OUT_OF_MEMORY);
-     */
+
 
     for (;;) {
         io_hlt();
