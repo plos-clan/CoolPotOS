@@ -23,7 +23,7 @@ int io_in8(int port);
 
 int io_in16(int port);
 
-int io_in32(int port);
+int io_in32();
 
 void io_out8(int port, int data);
 
