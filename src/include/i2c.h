@@ -12,26 +12,54 @@
 #define GPIO_Port 0x12345678    // TODO: change to actual port
 #define IIC_Pin 0x01    // TODO: change to actual pin
 
+STATIC_INLINE void IIC_SDA_OUT(void) {
+    io_out32(
+            GPIO_Port, (io_in32(GPIO_Port) | (0x01 << IIC_Pin))
+    );
+}
+STATIC_INLINE void IIC_SDA_OUT_HIGH(void) {
+    io_out32(
+            GPIO_Port, (io_in32(GPIO_Port) | (0x01 << IIC_Pin))
+    );
+}
+STATIC_INLINE void IIC_SDA_OUT_LOW(void) {
+    io_out32(
+            GPIO_Port, (io_in32(GPIO_Port) | (0x00 << IIC_Pin))
+    );
+}
+STATIC_INLINE uint32_t IIC_SDA_IN(void) {
+    return io_in32(GPIO_Port);
+}
+STATIC_INLINE void IIC_SCL_OUT_HIGH(void ) {
+    io_out32(
+            GPIO_Port, (io_in32(GPIO_Port) | (0x01 << IIC_Pin))
+    );
+}
+STATIC_INLINE void IIC_SCL_OUT_LOW(void) {
+    io_out32(
+            GPIO_Port, (io_in32(GPIO_Port) | (0x00 << IIC_Pin))
+    );
+}
+STATIC_INLINE void IIC_Delay(void)
+{
+    volatile uint8_t i;
+    /*
+		*AT32F425F6P7,
+		*i = 100,SCL = 163.4KHZ,6.1us
+		*i = 75, SCL = 243.9KHZ,4.1us
+		*i = 50, SCL = 312.5kHZ,3.2us
+    */
+    for(i=0;i<75;i++);
+}
+
 typedef struct {
     char name[I2C_NAME_SIZE];
 } iic_device_id;
-typedef enum{
-    I2C_BUSY = 0x01,
-    I2C_NO_ACK = 0x02,
-    I2C_ERROR = 0x04,
-} iic_flag;
-typedef enum {
-    ENABLE = 0x01u,
-    DISABLE = 0x00u,
-} iic_status;
 typedef struct {
     uint8_t address;
-    iic_flag flags;
     iic_device_id i2CDeviceId;
 } iic_client;
 typedef struct {
-    uint16_t address;
-    iic_flag flags;
     uint16_t length;
     uint8_t  *buffer;
 } iic_message;
@@ -46,17 +74,17 @@ void IIC_client_get_info(iic_client *client);
 
 void IIC_GenerateStart(void);
 void IIC_GenerateStop(void);
-bool IIC_SendAddress(iic_client *client);
 
-STATIC_INLINE int32_t IIC_SendByte(iic_client *client, const uint8_t *buffer){
+void IIC_Acknowledge(void);
+void IIC_NoAcknowledge(void);
+bool IIC_ReceiveAcknowledge(void);
 
-};
-STATIC_INLINE int32_t IIC_ReceiveByte(iic_client *client, uint8_t *buffer){
+void IIC_SendByte(uint8_t byte);
+int32_t IIC_ReceiveByte(void);
 
-};
+bool IIC_SendWriteAddress(iic_client *);
+bool IIC_SendReadAddress(iic_client *);
 
-int32_t IIC_read_data(iic_client *client, uint8_t command);
-int32_t IIC_write_data(iic_client *client, uint8_t command, uint8_t value);
-int32_t IIC_transfer(iic_client *client, iic_message *msg, int num);
+bool IIC_CheckClient(iic_client *client);
 
 #endif // CRASHPOWEROS_I2C_H
