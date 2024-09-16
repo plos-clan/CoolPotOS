@@ -50,7 +50,7 @@ void into_32bitsRW() {
 void into_16bitsRW() {
     // 切换到16位读写模式 与切换到32位读写模式相反
     io_out32(io_base + RAP32, BCR18);
-    uint32_t tmp = io_in32(io_base + BDP32);
+    uint32_t tmp = io_in32();
     tmp &= ~0x80;
     io_out32(io_base + RAP32, BCR18);
     io_out32(io_base + BDP32, tmp);
