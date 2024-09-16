@@ -6,3 +6,5 @@ i686-linux/
 cmake-build-debug/
 
 OSMain/
+
+/CMakeLists.txt

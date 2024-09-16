@@ -65,7 +65,7 @@ uint32_t read_pci(uint8_t bus, uint8_t device, uint8_t function, uint8_t registe
     uint32_t id = 1 << 31 | ((bus & 0xff) << 16) | ((device & 0x1f) << 11) |
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
     io_out32(PCI_COMMAND_PORT, id);
-    uint32_t result = io_in32(PCI_DATA_PORT);
+    uint32_t result = io_in32();
     return result >> (8 * (registeroffset % 4));
 }
 
@@ -113,7 +113,7 @@ void init_pci(){
         for (Equipment = 0; Equipment < 32; Equipment++) {  //查询设备
             for (F = 0; F < 8; F++) {                         //查询功能
                 pci_config(BUS, F, Equipment, 0);
-                if (io_in32(PCI_DATA_PORT) != 0xFFFFFFFF) {
+                if (io_in32() != 0xFFFFFFFF) {
                     //当前插槽有设备
                     //把当前设备信息映射到PCI数据区
                     int key = 1;
@@ -130,7 +130,7 @@ void init_pci(){
                         PCI_DATA1 = PCI_DATA1 + 8;
                         for (ADDER = 0; ADDER < 256; ADDER = ADDER + 4) {
                             pci_config(BUS, F, Equipment, ADDER);
-                            i = io_in32(PCI_DATA_PORT);
+                            i = io_in32();
                             i1 = i;
                             //*i1 = PCI_DATA1;
                             memcpy(PCI_DATA1, &i, 4);
