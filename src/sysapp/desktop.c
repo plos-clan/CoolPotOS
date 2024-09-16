@@ -8,8 +8,6 @@ int send_ok_box(char *title,char* message){
 
 static int desktop_setup(){
 
-
-
     for (;;) {
 
     }

@@ -233,7 +233,8 @@ typedef struct {
     uint64_t mainCounterValue;
     uint64_t reserved4;
     HpetTimer timers[0];
-} __attribute__((packed)) HpetInfo;
+} volatile __attribute__((packed)) HpetInfo;
+
 typedef struct {
     uint8_t addressSpaceID;
     uint8_t registerBitWidth;

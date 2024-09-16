@@ -78,6 +78,7 @@ int handle_keyboard_input(registers_t *reg){
 int input_char_inSM() {
     int    i;
     struct task_struct *task = get_current();
+    if(task == NULL) return 0;
     if (task->tty->is_using == false) {
 
     } else {

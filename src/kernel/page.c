@@ -3,7 +3,6 @@
 #include "../include/io.h"
 #include "../include/task.h"
 #include "../include/timer.h"
-#include "../include/pagehead.h"
 
 page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
@@ -15,7 +14,6 @@ extern struct task_struct *current;
 
 extern uint32_t placement_address;
 extern void *program_break, *program_break_end;
-extern void *page_break, *page_end;
 
 static void set_frame(uint32_t frame_addr) {
     uint32_t frame = frame_addr / 0x1000;
@@ -215,9 +213,6 @@ page_directory_t *clone_directory(page_directory_t *src) {
 
 void init_page(multiboot_t *mboot) {
 
-    page_break = placement_address;
-    page_end = placement_address + 0x50000;
-
     uint32_t mem_end_page = 0xFFFFFFFF; // 4GB Page
     nframes = mem_end_page / 0x1000;
     frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
@@ -231,7 +226,7 @@ void init_page(multiboot_t *mboot) {
     current_directory = kernel_directory;
     int i = 0;
 
-    while (i < placement_address + 0xf0000) {
+    while (i < placement_address + 0x30000) {
         /*
          * 内核部分对ring3而言不可读不可写
          * 无偏移页表映射
@@ -241,12 +236,17 @@ void init_page(multiboot_t *mboot) {
         i += 0x1000;
     }
 
+    program_break = i;
 
-    for (int i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i++) {
+    for (; i < placement_address + 0x30000 + 1 + KHEAP_INITIAL_SIZE; ) {
         alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
+        i+= 0x1000;
     }
 
-    unsigned int j = mboot->framebuffer_addr,size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
+    program_break_end = (void*) i;
+
+    uint32_t j = mboot->framebuffer_addr,
+    size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
 
     while (j <= mboot->framebuffer_addr + size){
         alloc_frame_line(get_page(j,1,kernel_directory,false),j,0,1);
@@ -256,12 +256,9 @@ void init_page(multiboot_t *mboot) {
     register_interrupt_handler(14, page_fault);
     switch_page_directory(kernel_directory);
 
-    program_break = (void *) KHEAP_START;
-    program_break_end = (void *) (KHEAP_START + KHEAP_INITIAL_SIZE);
-
     klogf(true,"Memory manager is enable\n");
     printf("Kernel: 0x%08x | ",placement_address + 0x30000);
-    printf("GraphicsBuffer: 0x%08x - 0x%08x \n",(mboot->framebuffer_addr),(mboot->framebuffer_addr + size));
-    printf("KernelHeap: 0x%08x - 0x%08x | ",(KHEAP_START),(KHEAP_START + KHEAP_INITIAL_SIZE));
+    printf("GraphicsBuffer: 0x%08x |",(mboot->framebuffer_addr));
+    printf("KernelHeap: 0x%08x - 0x%08x | ",(program_break),(program_break_end));
     printf("BaseFrame: 0x%08x\n",frames);
 }

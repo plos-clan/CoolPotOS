@@ -1,6 +1,10 @@
 #ifndef CRASHPOWEROS_TASK_H
 #define CRASHPOWEROS_TASK_H
 
+#define TASK_KERNEL_LEVEL 0
+#define TASK_SYSTEM_SERVICE_LEVEL 1
+#define TASK_APPLICATION_LEVEL 2
+
 #include "memory.h"
 #include "vfs.h"
 #include "tty.h"
@@ -37,6 +41,7 @@ struct context{
 
 // 进程控制块 PCB
 struct task_struct {
+    uint8_t task_level;           // 进程等级< 0:内核 | 1:系统服务 | 2:应用程序 >
     volatile task_state state;    // 进程当前状态
     int pid;                      // 进程标识符
     int mem_size;                 // 内存利用率
@@ -52,6 +57,9 @@ struct task_struct {
     page_directory_t *pgd_dir;    // 进程页表
     struct context context;       // 上下文信息
     struct task_struct *next;     // 链表指针
+    char* argv;                   // 命令行参数
+    uint32_t cpu_clock;           // CPU运行时间片
+    uint32_t page_alloc_address;  // 页分配计数器
 };
 
 void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print);
@@ -84,5 +92,5 @@ int get_procs();
 
 void switch_to_user_mode(uint32_t func);
 
-int32_t user_process(char* path, char *name);
+int32_t user_process(char *path, char *name,char* argv,uint8_t level);
 #endif //CRASHPOWEROS_TASK_H

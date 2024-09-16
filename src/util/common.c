@@ -540,6 +540,8 @@ void trim(char *s) {
     memmove(s, p, len + 1);
 }
 
+
+
 char* replaceAll(char* src, char* find, char* replaceWith){
     //如果find或者replace为null，则返回和src一样的字符串。
     if(find == NULL || replaceWith == NULL){
