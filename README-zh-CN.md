@@ -46,3 +46,4 @@
 * copi143 - copi143 新版用户堆框架开发
 * QtLittleXu - XuYuxuan 负责OS文档编写
 * ViudiraTech - Uinxed-Mark 性能测试程序
+* * Vinbe Wan - IIC 驱动程序开发
