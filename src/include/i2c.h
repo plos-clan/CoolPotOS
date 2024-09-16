@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <list.h>
-#include <io.h>
+#include "../include/list.h"
+#include "../include/io.h"
 
 #define I2C_NAME_SIZE 32
 #define STATIC_INLINE static inline
