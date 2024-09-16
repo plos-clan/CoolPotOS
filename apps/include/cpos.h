@@ -35,8 +35,16 @@ static inline void free_info(struct sysinfo *info){
     free(info);
 }
 
-static inline int exec_elf(const char* filename){
-    return syscall_exec(filename);
+static inline int exec_elf(const char* filename,const char* args,int is_async){
+    return syscall_exec(filename,args,is_async);
+}
+
+static inline void draw_bitmap(int x,int y,int width,int height,char* bitmap){
+    syscall_draw_bitmap(x,y,width,height,bitmap);
+}
+
+static inline void screen_clear(){
+    syscall_g_clean();
 }
 
 #endif

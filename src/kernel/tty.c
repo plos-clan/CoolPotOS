@@ -3,7 +3,7 @@
 #include "../include/graphics.h"
 #include "../include/printf.h"
 
-extern uint32_t *screen;
+extern uint32_t volatile*screen;
 extern uint32_t width, height;
 
 static char eos[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'f', 'J', 'K', 'S', 'T', 'm'};
@@ -94,10 +94,13 @@ static int parse_vt100(struct tty *res, char *string) {
             }
             int delta = atol(dig_string);
             if (!delta) delta = 1;
-            res->gotoxy(res, res->x + delta, res->y);
+           // res->gotoxy(res, res->x + delta, res->y); TODO gotoxy
             return 1;
         }
         case MODE_D: {
+            vbe_putchar('\b');
+            return 1;
+            /* TODO VT100 MODE D
             char dig_string[81] = {0};
             for (int i = 2, j = 0; string[i]; i++) {
                 if (t_is_eos(string[i])) break;
@@ -108,6 +111,7 @@ static int parse_vt100(struct tty *res, char *string) {
             if (!delta) delta = 1;
             res->gotoxy(res, res->x - delta, res->y);
             return 1;
+             */
         }
         case MODE_E: {
             char dig_string[81] = {0};
@@ -255,7 +259,6 @@ static int parse_vt100(struct tty *res, char *string) {
             return 1;
         }
         case MODE_m: {
-            // klogd("MODE_m");
             int  k = 0;
             char dig_string[2][81];
             memset(dig_string, 0, sizeof(dig_string)); // 全部设置为0
@@ -276,32 +279,66 @@ static int parse_vt100(struct tty *res, char *string) {
             }
 
             int delta[2] = {0};
-            // klogd("start for %d", k);
             for (int i = 0; i <= k; i++) {
                 delta[i] = atol(dig_string[i]);
             }
+
             if (delta[0] == 0 && k == 0) {
                 int sel_color    = res->color_saved != -1 ? res->color_saved : res->color;
-                res->color       = sel_color;
+                //res->color       = sel_color;
                 res->color_saved = -1;
+                res->vt_status = 0;
                 return 1;
-            } else if (delta[0] == 1 && k == 0) { // unsupported
-                return 0;
             }
-            static const uint8_t color_map[8] = {0, 4, 2, 6, 1, 5, 3, 7};
+            static const uint32_t color_map[8] = {0x0, 0xFF0000, 0x00FF00, 0xFFFF00, 0x0000FF, 0xFF69B4, 0x00FFFF, 0xFFFFFF};
+
             switch (k) {
                 case 0: {
-                    if (delta[0] >= 30 && delta[0] <= 37) { // foreground color
+                    if(delta[0] <= 8){
+                        switch (delta[0]) {
+                            case 0:
+                                res->vt_status = 0;
+                                return 1;
+                            case 1:
+                                res->vt_status |= VT100_BOLD;
+                                return 1;
+                            case 2:
+                                res->vt_status |= VT100_DIM;
+                                return 1;
+                            case 3:
+                                res->vt_status |= VT100_SMSO;
+                                return 1;
+                            case 4:
+                                res->vt_status |= VT100_SMUL;
+                                return 1;
+                            case 5:
+                                res->vt_status |= VT100_BLINK;
+                                return 1;
+                            case 6:
+                                res->vt_status |= VT100_REV;
+                                return 1;
+                            case 7:
+                                uint32_t color = res->color;
+                                res->color = res->back_color;
+                                res->back_color = color;
+                                return 1;
+                        }
+                    } else if (delta[0] >= 30 && delta[0] <= 38) { // foreground color
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        res->color &= 0xf0;
-                        res->color |= color_map[delta[0] - 30];
+                        res->color = color_map[delta[0] - 30];
                         return 1;
-                    } else if (delta[0] >= 40 && delta[0] <= 47) {
+                    } else if (delta[0] >= 40 && delta[0] <= 48) {
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        res->color &= 0x0f;
-                        res->color |= color_map[delta[0] - 40] << 4;
+                        res->back_color = (color_map[delta[0] - 40]);
                         return 1;
                     } else {
+                        if(delta[0] == 39){
+                            res->color = 0xc6c6c6;
+                            return 1;
+                        } else if(delta[0] == 49){
+                            res->back_color = 0;
+                            return 1;
+                        }
                         return 0;
                     }
                 }
@@ -311,13 +348,11 @@ static int parse_vt100(struct tty *res, char *string) {
                     }
                     if (delta[1] >= 30 && delta[1] <= 37) { // foreground color
                         if (res->color_saved == -1) { res->color_saved = res->color; }
-                        res->color &= 0xf0;
-                        res->color |= color_map[delta[1] - 30] + 8;
+                        res->color = color_map[delta[1] - 30];
                         return 1;
                     } else if (delta[1] >= 40 && delta[1] <= 47) {
                         if (res->color_saved == -1) res->color_saved = res->color;
-                        res->color &= 0x0f;
-                        res->color |= (color_map[delta[1] - 40] + 8) << 4;
+                        res->back_color = (color_map[delta[1] - 40]);
                         return 1;
                     } else {
                         return 0;
@@ -332,7 +367,10 @@ static int parse_vt100(struct tty *res, char *string) {
 }
 
 void tty_print(struct tty *res,const char *string){
-    vbe_writestring(string);
+    for (int i = 0; i < strlen(string);i++) {
+        tty_putchar(res,string[i]);
+    }
+    //vbe_writestring(string);
 }
 void tty_putchar(struct tty *res,int ch){
     if (ch == '\033' && res->vt100 == 0) {
@@ -352,7 +390,7 @@ void tty_putchar(struct tty *res,int ch){
                 res->putchar(res, res->buffer[i]);
             }
         }
-    }else if (res->vt100 && res->buf_p == 81) {
+    }else if (res->vt100 && res->buf_p >= 81) {
         for (int i = 0; i < res->buf_p; i++) {
             res->putchar(res, res->buffer[i]);
         }
@@ -377,7 +415,6 @@ void tty_putchar(struct tty *res,int ch){
         }
         return;
     }
-    //vbe_putchar(ch);
     res->putchar(res,ch);
 }
 void tty_MoveCursor(struct tty *res,int x, int y){
@@ -387,19 +424,47 @@ void tty_clear(struct tty *res){
     vbe_clear();
 }
 
+static void t_putc(tty_t *res,char ch){
+    vbe_putchar(ch);
+}
+
 void init_default_tty(struct task_struct *task){
     task->tty->fifo = kmalloc(sizeof(struct FIFO8));
     char* buffer = kmalloc(256);
 
+    extern uint32_t color, back_color;
+    extern int32_t cx, cy;
+    extern uint32_t c_width, c_height;
+
+    if(get_current() != NULL && get_current()->tty != NULL){
+        task->tty->vram = get_current()->tty->vram;
+        task->tty->width = get_current()->tty->width;
+        task->tty->height = get_current()->tty->height;
+        task->tty->color = 0xc6c6c6;
+        task->tty->cx = get_current()->tty->cx;
+        task->tty->cy = get_current()->tty->cy;
+        task->tty->c_width = get_current()->tty->c_width;
+        task->tty->c_height = get_current()->tty->c_height;
+        task->tty->back_color = 0x000000;
+    } else{
+        task->tty = kmalloc(sizeof(tty_t));
+        task->tty->vram = screen;
+        task->tty->width = width;
+        task->tty->height = height;
+        task->tty->color = color;
+        task->tty->cx = cx;
+        task->tty->cy = cy;
+        task->tty->c_width = c_width;
+        task->tty->c_height = c_height;
+        task->tty->back_color = back_color;
+    }
+
     task->tty->is_using = true;
     task->tty->print = tty_print;
-    task->tty->clear = clear_TextMode;
-    task->tty->putchar = vbe_putchar;
+    task->tty->clear = vbe_clear;
+    task->tty->putchar = t_putc;
     task->tty->gotoxy = tty_gotoxy;
     task->tty->screen_ne = screen_ne_TextMode;
-    task->tty->vram = screen;
-    task->tty->width = width;
-    task->tty->height = height;
 
     fifo8_init(task->tty->fifo,256,buffer);
 }

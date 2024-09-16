@@ -6,12 +6,11 @@
 #include "isr.h"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
-#define KHEAP_START      0x90000000
 #define STACK_SIZE 32768
 
 #define USER_EXEC_FILE_START 0xa0000000
 #define USER_START 0xb0000000
-#define USER_END (USER_START + 0xf00000)
+#define USER_END (USER_START + 0x2000000)
 #define USER_HEAP_END (USER_END - STACK_SIZE)
 
 #define INDEX_FROM_BIT(a) (a / (8*4))

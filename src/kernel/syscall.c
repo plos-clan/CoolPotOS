@@ -9,6 +9,9 @@
 #include "../include/keyboard.h"
 #include "../include/vfs.h"
 #include "../include/cmos.h"
+#include "../include/memory.h"
+#include "../include/timer.h"
+#include "../include/panic.h"
 
 extern uint32_t phy_mem_size;
 extern unsigned int PCI_NUM;
@@ -33,6 +36,12 @@ static void syscall_exit(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uin
 
 static void* syscall_malloc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     void* address = user_alloc(get_current(),ebx);
+    if(address == NULL){
+        if(get_current()->task_level == TASK_SYSTEM_SERVICE_LEVEL)
+            panic_pane("CSP Service out of memory error.",OUT_OF_MEMORY);
+        else if(get_current()->task_level == TASK_APPLICATION_LEVEL)
+            task_kill(get_current()->pid);
+    }
     return address;
 }
 
@@ -57,14 +66,17 @@ static int syscall_vfs_filesize(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t 
 }
 
 static void syscall_vfs_readfile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     vfs_readfile(ebx,ecx);
 }
 
 static void syscall_vfs_writefile(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     vfs_writefile(ebx,ecx,edx);
 }
 
 static void syscall_vfs_chang_path(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
     vfs_change_path(ebx);
 }
 
@@ -121,8 +133,71 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
 }
 
 static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
-    uint32_t pid = user_process(ebx,ebx);
+    char* argv = ecx;
+    uint32_t pid = user_process(ebx,ebx,argv,TASK_APPLICATION_LEVEL);
+    if(!edx){
+       if(pid != 0){
+           struct task_struct *pi_task = found_task_pid(pid);
+           while (pi_task->state != TASK_DEATH);
+
+           get_current()->tty->cx = pi_task->tty->cx;
+           get_current()->tty->cy = pi_task->tty->cy;
+       }
+    }
     return pid;
+}
+
+static char* syscall_get_arg(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    char* argv = user_alloc(get_current(), strlen(get_current()->argv) + 1);
+    strcpy(argv,get_current()->argv);
+    return argv;
+}
+
+static uint32_t syscall_clock(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    return get_current()->cpu_clock;
+}
+
+static void syscall_sleep(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    clock_sleep(ebx);
+}
+
+static int syscall_vfs_remove_file(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
+    return vfs_delfile(ebx);
+}
+
+static int syscall_vfs_rename(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    io_sti();
+    return vfs_renamefile(ebx,ecx);
+}
+
+static void* syscall_alloc_page(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    size_t page_size = ebx;
+    int i = USER_END + 0x1000 + get_current()->page_alloc_address;
+    int ret = i;
+    for (;i < (USER_END + 0x1000 + get_current()->page_alloc_address) + (page_size * 0x1000);) {
+        alloc_frame(get_page(i,1,get_current()->pgd_dir,false),0,1);
+        get_current()->page_alloc_address =  i += 0x1000;
+    }
+    return ret;
+}
+
+static uint32_t *syscall_framebuffer(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    extern uint32_t *screen; //vbe.c
+    return screen;
+}
+
+static void syscall_draw_bitmap(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    int x = ebx;
+    int y = ecx;
+    int w = edx;
+    int h = esi;
+    unsigned int *buffer = (unsigned int *)(edi);
+    for (int i = x; i < x + w; i++) {
+        for (int j = y; j < y + h; j++) {
+            drawPixel(i,j,buffer[(j - y) * w + (i - x)]);
+        }
+    }
 }
 
 void *sycall_handlers[MAX_SYSCALLS] = {
@@ -140,6 +215,14 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_SYSINFO] = syscall_sysinfo,
         [SYSCALL_EXEC] = syscall_exec,
         [SYSCALL_CHANGE_PATH] = syscall_vfs_chang_path,
+        [SYSCALL_GET_ARG] = syscall_get_arg,
+        [SYSCALL_CLOCK] = syscall_clock,
+        [SYSCALL_SLEEP] = syscall_sleep,
+        [SYSCALL_VFS_REMOVE_FILE] = syscall_vfs_remove_file,
+        [SYSCALL_VFS_RENAME] = syscall_vfs_rename,
+        [SYSCALL_ALLOC_PAGE] = syscall_alloc_page,
+        [SYSCALL_FRAMEBUFFER] = syscall_framebuffer,
+        [SYSCALL_DRAW_BITMAP] = syscall_draw_bitmap,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

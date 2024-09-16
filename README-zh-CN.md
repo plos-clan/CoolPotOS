@@ -9,6 +9,12 @@
 
 这是一个基于 x86 架构的简单操作系统。
 
+## 模块
+
+* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+* `Uinxed-Mark` by ViudiraTech [ViudiraTech/Uinxed-Kernel](https://github.com/ViudiraTech/Uinxed-Kernel)
+
+
 ## 构建并运行
 
 ### 环境
@@ -17,16 +23,13 @@
 
 - Python 工具包
 - i686_elf_tools
+- 适用于Windows的Linux子系统 (Ubuntu 22.04)
+  - grub-mkrescue
+  - qemu-system-i386
 
 ### 步骤
 
-- 在终端上运行 `python build.py`，项目将开始构建
-- 运行 `grub-mkrescue -o cpos.iso isodir` 来打包 iso 文件
-- 运行 `qemu-system-i386 -cdrom cpos.iso  -serial stdio -hda diskx.img -boot d` 就可以使用这个系统了！
-
-## 更新
-
-- 重构内存管理。
+- 在终端上运行 `python build.py`，项目将开始构建并运行
 
 ## 许可协议
 
@@ -40,4 +43,6 @@
 
 * XIAOYI12 - xiaoyi1212 负责主要的OS开发
 * min0911Y - min0911 负责OS文件系统开发
+* copi143 - copi143 新版用户堆框架开发
 * QtLittleXu - XuYuxuan 负责OS文档编写
+* ViudiraTech - Uinxed-Mark 性能测试程序

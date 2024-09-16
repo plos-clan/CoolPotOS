@@ -74,7 +74,6 @@ int check_task(int *pid){
 
 int check_task_usershell(int *pid){
     struct task_struct *shell = found_task_pid(*pid);
-
     while (1){
         if(shell->state == TASK_DEATH){
             io_sti();
@@ -86,6 +85,7 @@ int check_task_usershell(int *pid){
     }
 
     while (1);
+
     return 0;
 }
 
@@ -94,19 +94,19 @@ void kernel_main(multiboot_t *multiboot) {
     io_cli();
     vga_install();
 
-    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 16) {
-        printf("[kernel] Minimal RAM amount for CPOS is 16 MB, but you have only %d MB.\n",
+    initVBE(multiboot);
+
+    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 3071) {
+        printf("[kernel]: Minimal RAM amount for CP_Kernel is 3071 MB, but you have only %d MB.\n",
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
         while (1) io_hlt();
     }
 
     phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024;
-
-    initVBE(multiboot);
-
     char* cmdline = multiboot->cmdline;
+
     if(cmdline != NULL){
-        printf("Multiboot command line: %s\n",cmdline);
+       // printf("Multiboot command line: %s\n",cmdline);
     }
 
     printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
@@ -162,9 +162,13 @@ void kernel_main(multiboot_t *multiboot) {
 
     clock_sleep(25);
 
+    //vfs_change_path("sys");
+    //int pid = user_process("csp.bin","CSP","",TASK_SYSTEM_SERVICE_LEVEL);
+
+
     vfs_change_path("apps");
-   // klogf(user_process("init.bin","InitService") != -1,"Init service process init.\n");
-    int pid = user_process("shell.bin","UserShell");
+    //klogf(user_process("init.bin","InitService",true) != -1,"Init service process init.\n");
+    int pid = user_process("shell.bin","UserShell","shell.bin -d shell -c -SsS",TASK_SYSTEM_SERVICE_LEVEL);
     kernel_thread(check_task_usershell,&pid,"CTU");
 
    // int pid = kernel_thread(setup_shell,NULL,"CPOS-Shell");
@@ -172,6 +176,7 @@ void kernel_main(multiboot_t *multiboot) {
     //kernel_thread(check_task,&pid,"CPOS-CK");
 
     //panic_pane("System out of memory error!",OUT_OF_MEMORY);
+
 
     for (;;) {
         io_hlt();

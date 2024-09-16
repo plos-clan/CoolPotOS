@@ -15,22 +15,57 @@
 #define SYSCALL_SYSINFO 12
 #define SYSCALL_EXEC 13
 #define SYSCALL_CHANGE_PATH 14
+#define SYSCALL_GET_ARG 15
+#define SYSCALL_CLOCK 16
+#define SYSCALL_SLEEP 17
+#define SYSCALL_VFS_REMOVE_FILE 18
+#define SYSCALL_VFS_RENAME 19
+
+#define SYSCALL_FRAMEBUFFER 21
+#define SYSCALL_DRAW_BITMAP 22
 
 #include "ctype.h"
 
-void syscall_print(char* c);
+void syscall_print(char *c);
+
 void syscall_putchar(char c);
+
 char syscall_getch();
-void* syscall_malloc(size_t size);
+
+void *syscall_malloc(size_t size);
+
 void syscall_free(void *ptr);
+
 void syscall_exit(int code);
+
 void syscall_g_clean();
+
 void syscall_get_cd(char *buffer);
-int syscall_vfs_filesize(char* filename);
-void syscall_vfs_readfile(char* filename,char* buffer);
-void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size);
-void* syscall_sysinfo();
-int syscall_exec(char *filename);
-void syscall_vfs_change_path(const char* path);
+
+int syscall_vfs_filesize(char *filename);
+
+void syscall_vfs_readfile(char *filename, char *buffer);
+
+void syscall_vfs_writefile(char *filename, char *buffer, unsigned int size);
+
+void *syscall_sysinfo();
+
+int syscall_exec(char *filename, char *args, int is_async);
+
+void syscall_vfs_change_path(const char *path);
+
+char *syscall_get_arg();
+
+long syscall_clock();
+
+void syscall_sleep(uint32_t timer);
+
+int syscall_vfs_remove_file(char *filename);
+
+int syscall_vfs_rename(char *filename1, char *filename2);
+
+uint32_t *syscall_framebuffer();
+
+void syscall_draw_bitmap(int x,int y,int width,int height,char* bitmap);
 
 #endif
