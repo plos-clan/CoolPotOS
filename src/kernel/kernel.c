@@ -18,6 +18,7 @@
 #include "../include/vfs.h"
 #include "../include/panic.h"
 #include "../include/mouse.h"
+#include "../include/i2c.h"
 #include "../include/desktop.h"
 #include "../include/soundtest.h"
 
@@ -126,6 +127,7 @@ void kernel_main(multiboot_t *multiboot) {
     init_vdisk();
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     init_vfs();
+
     syscall_install();
 
     char disk_id = '0';
