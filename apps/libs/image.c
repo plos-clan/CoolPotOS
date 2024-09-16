@@ -15,7 +15,7 @@ void convert_ABGR_to_ARGB(uint32_t* bitmap, size_t num_pixels) {
         uint8_t green = (pixel >> 8) & 0xFF;
         uint8_t blue = pixel & 0xFF;
 
-        bitmap[i] = (alpha << 24) | (red << 16) | (green << 8) | blue;
+        bitmap[i] = (alpha << 24) | (blue << 16) | (green << 8) | red;
     }
 }
 

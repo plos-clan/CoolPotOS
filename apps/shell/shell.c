@@ -54,12 +54,11 @@ static inline int cmd_parse(char *cmd_str, char **argv, char token) {
 static void flush() { fflush(stdout); }
 
 static void handle_tab(char *buf, pl_readline_words_t words) {
-    pl_readline_word_maker_add("hello", words, true, ' ');
-    pl_readline_word_maker_add("world", words, false, ' ');
-    pl_readline_word_maker_add("foo", words, false, ' ');
-    pl_readline_word_maker_add("bar", words, false, ' ');
-    pl_readline_word_maker_add("baz", words, false, ' ');
-    pl_readline_word_maker_add("qux", words, false, ' ');
+    pl_readline_word_maker_add("help", words, true, ' ');
+    pl_readline_word_maker_add("version", words, false, ' ');
+    pl_readline_word_maker_add("system", words, false, ' ');
+    pl_readline_word_maker_add("image", words, false, ' ');
+    pl_readline_word_maker_add("cd", words, false, ' ');
 }
 
 static int pl_getch(void) {
