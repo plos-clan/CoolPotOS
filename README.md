@@ -45,4 +45,4 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * copi143 - copi143 UserHeap Development
 * QtLittleXu - XuYuxuan OS Document
 * ViudiraTech - Uinxed-Mark program
-* Vinbe Wan - IIC Driver Devlopment
+* Vinbe Wan - CoolPot_Driver Development
