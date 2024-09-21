@@ -97,6 +97,7 @@ static int pl_getch(void) {
 }
 
 int main(int argc_v,char **argv_v){
+
     ttf_install("logo.ttf");
     print_ttf("CoolPotOS v0.3.3",0xffffff,0x000000,440,500,70.0);
     draw_image_xy("icon.png",490,180);

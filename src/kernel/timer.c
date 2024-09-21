@@ -25,13 +25,12 @@ static void timer_handle(registers_t *regs) {
 
 void sleep(uint32_t timer){
     clock_sleep(timer);
-    //usleep(timer*1000000);
 }
 
 void clock_sleep(uint32_t timer){
     uint32_t sleep = tick + timer;
     while(1){
-        printf("");
+        int a;
         if(tick >= sleep) break;
     }
 }

@@ -1,6 +1,12 @@
 #ifndef CRASHPOWEROS_PCI_H
 #define CRASHPOWEROS_PCI_H
 
+#define PCI_CONF_VENDOR		0X0 // Vendor ID
+#define PCI_CONF_DEVICE		0X2 // Device ID
+#define PCI_CONF_COMMAND	0x4 // Command
+#define PCI_CONF_STATUS		0x6 // Status
+#define PCI_CONF_REVISION	0x8 // Revision ID
+
 #define PCI_COMMAND_PORT 0xCF8
 #define PCI_DATA_PORT 0xCFC
 #define mem_mapping 0
@@ -52,6 +58,9 @@ uint32_t read_bar_n(uint8_t bus, uint8_t device, uint8_t function, uint8_t bar_n
 uint32_t read_pci(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset);
 base_address_register get_base_address_register(uint8_t bus, uint8_t device, uint8_t function, uint8_t bar);
 void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsigned int adder);
+char *pci_classname(uint32_t classcode);
+void load_pci_device(uint32_t BUS,uint32_t Equipment,uint32_t F);
+void print_all_pci_info();
 void init_pci();
 
 #endif

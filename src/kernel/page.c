@@ -218,6 +218,8 @@ void init_page(multiboot_t *mboot) {
     frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
     memset(frames, 0, INDEX_FROM_BIT(nframes));
 
+    printf("BaseFrame: 0x%08x | ",frames);
+
     uint32_t physical_addr;
     kernel_directory = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t),&physical_addr); //kmalloc: 无分页情况自动在内核后方分配 | 有分页从内核堆分配
     kernel_directory->physicalAddr = physical_addr;
@@ -236,14 +238,16 @@ void init_page(multiboot_t *mboot) {
         i += 0x1000;
     }
 
-    program_break = i;
+    printf("Kernel: 0x%08x | ",placement_address + 0x30000);
 
+    program_break = i;
     for (; i < placement_address + 0x30000 + 1 + KHEAP_INITIAL_SIZE; ) {
         alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
         i+= 0x1000;
     }
+    program_break_end = i;
 
-    program_break_end = (void*) i;
+    printf("KernelHeap: 0x%08x - 0x%08x | ",(program_break),(program_break_end));
 
     uint32_t j = mboot->framebuffer_addr,
     size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
@@ -253,12 +257,10 @@ void init_page(multiboot_t *mboot) {
         j += 0x1000;
     }
 
+    printf("GraphicsBuffer: 0x%08x \n",(mboot->framebuffer_addr));
+
     register_interrupt_handler(14, page_fault);
     switch_page_directory(kernel_directory);
 
     klogf(true,"Memory manager is enable\n");
-    printf("Kernel: 0x%08x | ",placement_address + 0x30000);
-    printf("GraphicsBuffer: 0x%08x |",(mboot->framebuffer_addr));
-    printf("KernelHeap: 0x%08x - 0x%08x | ",(program_break),(program_break_end));
-    printf("BaseFrame: 0x%08x\n",frames);
 }

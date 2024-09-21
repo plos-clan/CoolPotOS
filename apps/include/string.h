@@ -3,6 +3,8 @@
 
 #include "ctype.h"
 
+#define MAX_PRECISION (10)
+
 const char* memchr(const char* buf,char c,unsigned long long count);
 void *memmove(void *dest, const void *src, size_t num);
 void *memset(void *s, int c, size_t n);
@@ -25,6 +27,8 @@ char* strncat(char* dest,const char* src,unsigned long long count);
 size_t strnlen(const char *s, size_t maxlen);
 char* strncpy(char* dest, const char* src,unsigned long long count);
 int strncmp(const char *s1, const char *s2, size_t n);
+
+char *ftoa(double f, char *buf, int precision);
 
 
 #endif

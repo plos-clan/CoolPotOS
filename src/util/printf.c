@@ -353,6 +353,7 @@ void logkf(char *formet,...){
 }
 
 void logk(char *message){
-    for (size_t i = 0; i < strlen(message); i++)
+    for (size_t i = 0; i < strlen(message); i++){
         write_serial(message[i]);
+    }
 }
