@@ -166,7 +166,7 @@ void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
             vd.Read = Read;
             vd.Write = Write;
             vd.size = ide_devices[i].Size;
-            klogf(true,"Disk-(%c) Size: %dMB | %s | Name: %s\n", register_vdisk(vd), vd.size,(const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], vd.DriveName);
+            printf("Disk-(%c) Size: %dMB | %s | Name: %s\n", register_vdisk(vd), vd.size,(const char *[]) {"ATA", "ATAPI"}[ide_devices[i].Type], vd.DriveName);
         }
 }
 

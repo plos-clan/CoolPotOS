@@ -6,6 +6,7 @@
 #include "../include/memory.h"
 #include "../include/timer.h"
 #include "../include/task.h"
+#include "../include/fpu.h"
 #include "../include/cmos.h"
 #include "../include/keyboard.h"
 #include "../include/shell.h"
@@ -90,6 +91,14 @@ int check_task_usershell(int *pid){
     return 0;
 }
 
+void cursor_task(){
+    while (1){
+        tty_t *tty = get_current()->tty;
+        draw_rect_tty(tty,tty->x,tty->y,tty->x + 10,tty->y + 8,tty->color);
+        clock_sleep(1);
+    }
+}
+
 void kernel_main(multiboot_t *multiboot) {
 
     io_cli();
@@ -111,7 +120,8 @@ void kernel_main(multiboot_t *multiboot) {
     }
 
     printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
-    printf("Memory Size: %dMB\n",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+    printf("Memory Size: %dMB | ",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+    printf("Video Resolution: %d x %d\n",multiboot->framebuffer_width,multiboot->framebuffer_height);
     gdt_install();
     idt_install();
     init_timer(1);
@@ -119,14 +129,20 @@ void kernel_main(multiboot_t *multiboot) {
     init_page(multiboot);
 
     init_sched();
+    //fpu_setup();
+
+    int pid_cur = kernel_thread(cursor_task,NULL,"System-Cur");
+    // klogf(pid != -1,"Launch cursor service\n");
+
     init_keyboard();
 
     init_pit();
     io_sti();
-    init_pci();
+
     init_vdisk();
-    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     init_vfs();
+
+    init_pci();
 
     syscall_install();
 
