@@ -132,7 +132,7 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
     return info;
 }
 
-static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     char* argv = ecx;
     uint32_t pid = user_process(ebx,ebx,argv,TASK_APPLICATION_LEVEL);
     if(!edx){

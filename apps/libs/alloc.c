@@ -7,7 +7,7 @@
 static struct mman mman;
 
 void *malloc(size_t size) {
-   // return mman_alloc(&mman, size);
+    //return mman_alloc(&mman, size);
     return syscall_malloc(size);
 }
 
@@ -30,7 +30,7 @@ void *calloc(size_t n, size_t size) {
 }
 
 void *realloc(void *ptr, size_t size) {
-    //return mman_realloc(&mman, ptr, newsize);
+    //return mman_realloc(&mman, ptr, size);
 
     void *new = malloc(size);
     if (ptr) {

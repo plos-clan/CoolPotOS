@@ -109,7 +109,7 @@ int syscall_vfs_rename(char* filename1,char* filename2){
 }
 
 void *mmap(void *addr, size_t size) {
-    return (void *)__syscall(20, (size + 4095) / 4096);
+    return (void *)__syscall(SYSCALL_ALLOC_PAGE, (size + 4095) / 4096);
 }
 
 int munmap(void *addr, size_t size) {
