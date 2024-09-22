@@ -16,7 +16,8 @@ struct large_blk {
 finline large_blk_t *large_blk_blokp(large_blks_t blks, void *ptr) __attr(pure);
 
 finline large_blk_t *large_blk_blokp(large_blks_t blks, void *ptr) {
-  return blks + ((size_t)ptr / SIZE_4k) % LARGEBLKLIST_NUM;
+    large_blk_t *ret = blks + ((size_t)ptr / SIZE_4k) % LARGEBLKLIST_NUM;
+  return ret;
 }
 
 finline large_blk_t large_blk_put(large_blks_t blks, void *ptr, size_t size) {
@@ -59,7 +60,9 @@ finline bool large_blk_free(large_blks_t blks, void *ptr, cb_delmem_t delmem) {
   large_blk_t *blk_p = large_blk_blokp(blks, ptr);
   auto         blk   = large_blk_find(blks, ptr);
   if (blk == null) return false;
+
   *blk_p = (large_blk_t)freelist_detach((freelist_t)*blk_p, (freelist_t)blk);
+
   delmem(blk->ptr, blk->size);
   free(blk);
   return true;

@@ -2,7 +2,6 @@
 #include "../include/memory.h"
 #include "../include/io.h"
 #include "../include/common.h"
-#include "../include/multiboot2.h"
 #include "../include/timer.h"
 #include "../include/bmp.h"
 #include "../include/tty.h"

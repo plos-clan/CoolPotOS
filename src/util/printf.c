@@ -320,7 +320,7 @@ void screen_clear(){
 void putchar(char c){
 
     struct task_struct *task = get_current();
-    if(task != NULL){
+    if(task != NULL && task->tty != NULL){
         tty_putchar(task->tty,c);
         return;
     }
@@ -332,7 +332,7 @@ void putchar(char c){
 
 void print(char *message) {
     struct task_struct *task = get_current();
-    if(task != NULL){
+    if(task != NULL && task->tty != NULL){
         task->tty->print(task->tty,message);
         return;
     }
@@ -354,6 +354,8 @@ void logkf(char *formet,...){
 
 void logk(char *message){
     for (size_t i = 0; i < strlen(message); i++){
+#ifndef OS_HARDWARE_MODE
         write_serial(message[i]);
+#endif
     }
 }

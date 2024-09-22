@@ -228,7 +228,7 @@ void init_page(multiboot_t *mboot) {
     current_directory = kernel_directory;
     int i = 0;
 
-    while (i < placement_address + 0x30000) {
+    while (i < placement_address + 0x300000) {
         /*
          * 内核部分对ring3而言不可读不可写
          * 无偏移页表映射
@@ -238,7 +238,7 @@ void init_page(multiboot_t *mboot) {
         i += 0x1000;
     }
 
-    printf("Kernel: 0x%08x | ",placement_address + 0x30000);
+    printf("Kernel: 0x%08x | ",placement_address + 0x300000);
 
     program_break = i;
     for (; i < placement_address + 0x30000 + 1 + KHEAP_INITIAL_SIZE; ) {
