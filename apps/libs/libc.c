@@ -1474,6 +1474,7 @@ FILE *stderr;
 bool __libc_init_mman();
 
 void _start() {
+
     __libc_init_mman();
 
     extern int main(int argc, char **argv);

@@ -75,6 +75,7 @@ int check_task(int *pid){
 }
 
 int check_task_usershell(int *pid){
+    while (1);
     struct task_struct *shell = found_task_pid(*pid);
     while (1){
         if(shell->state == TASK_DEATH){
@@ -106,11 +107,13 @@ void kernel_main(multiboot_t *multiboot) {
 
     initVBE(multiboot);
 
+    /*
     if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 3071) {
         printf("[kernel]: Minimal RAM amount for CP_Kernel is 3071 MB, but you have only %d MB.\n",
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
         while (1) io_hlt();
     }
+     */
 
     phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024;
     char* cmdline = multiboot->cmdline;
@@ -119,6 +122,7 @@ void kernel_main(multiboot_t *multiboot) {
        // printf("Multiboot command line: %s\n",cmdline);
     }
 
+    logkf("\n\n\n");
     printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
     printf("Memory Size: %dMB | ",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
     printf("Video Resolution: %d x %d\n",multiboot->framebuffer_width,multiboot->framebuffer_height);

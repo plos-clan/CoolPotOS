@@ -10,6 +10,7 @@ out/%.obj : %.cpp Makefile
 	gcc -m32 -I../include -nostdinc -nostdlib -fno-builtin -ffreestanding -fno-stack-protector -Qn -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fomit-frame-pointer -march=pentium -O0 -w -c $*.cpp -o out/$*.obj
 out/%.obj : %.asm Makefile
 	nasm -f elf $*.asm -o out/$*.obj
+
 clean:
 	rm out/*
 	rm ../libo/libp.a
