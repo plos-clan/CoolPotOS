@@ -554,7 +554,6 @@ static int lua_input(lua_State *L) {
 static int num(lua_State *L) {
     // size_t l;
     // const char* s = lua_tolstring(L, 1, &l);
-    printf("Hello!\n");
     lua_pushinteger(L, 1);
     return 1;
 }

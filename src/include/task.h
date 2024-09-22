@@ -62,7 +62,7 @@ struct task_struct {
     char* argv;                   // 命令行参数
     bool fpu_flag;				  // 是否使用 FPU
     uint32_t cpu_clock;           // CPU运行时间片
-    uint32_t page_alloc_address;  // 页分配计数器
+    int page_alloc_address;       // 页分配计数器
 };
 
 void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print);

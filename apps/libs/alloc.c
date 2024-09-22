@@ -2,13 +2,13 @@
 
 #include "../include/alloc.h"
 #include "../include/syscall.h"
-
+#include "../include/stdio.h"
 
 static struct mman mman;
 
 void *malloc(size_t size) {
-    //return mman_alloc(&mman, size);
-    return syscall_malloc(size);
+    void *ptr = mman_alloc(&mman, size);
+    return ptr;
 }
 
 void *xmalloc(size_t size) {
@@ -18,8 +18,7 @@ void *xmalloc(size_t size) {
 }
 
 void free(void *ptr) {
-    //mman_free(&mman, ptr);
-    syscall_free(ptr);
+   // mman_free(&mman, ptr);
 }
 
 void *calloc(size_t n, size_t size) {
@@ -30,14 +29,7 @@ void *calloc(size_t n, size_t size) {
 }
 
 void *realloc(void *ptr, size_t size) {
-    //return mman_realloc(&mman, ptr, size);
-
-    void *new = malloc(size);
-    if (ptr) {
-        memcpy(new, ptr, *(int *)((int)ptr - 4));
-        free(ptr);
-    }
-    return new;
+    return mman_realloc(&mman, ptr, size);
 }
 
 void *reallocarray(void *ptr, size_t n, size_t size) {
@@ -132,6 +124,6 @@ bool __libc_init_mman() {
     void *ptr = mmap(null, SIZE_4k);
     if (ptr == null) return false;
     mman_init(&mman, ptr, SIZE_4k);
-    mman_setcb(&mman, wrap_mmap, wrap_munmap);
+    mman_setcb(&mman, wrap_mmap, null);
     return true;
 }

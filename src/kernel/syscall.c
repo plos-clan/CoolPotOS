@@ -173,12 +173,14 @@ static int syscall_vfs_rename(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t es
 
 static void* syscall_alloc_page(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     size_t page_size = ebx;
-    int i = USER_END + 0x1000 + get_current()->page_alloc_address;
+    uint32_t i = get_current()->page_alloc_address;
+    if(page_size==512) i = (i + (2*1024*1024) - 1) / (2*1024*1024) * (2*1024*1024);
     int ret = i;
-    for (;i < (USER_END + 0x1000 + get_current()->page_alloc_address) + (page_size * 0x1000);) {
+    for (;i < ret + (page_size * 0x1000);i += 0x1000) {
         alloc_frame(get_page(i,1,get_current()->pgd_dir,false),0,1);
-        get_current()->page_alloc_address =  i += 0x1000;
     }
+    get_current()->page_alloc_address = i;
+
     return ret;
 }
 

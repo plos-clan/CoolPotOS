@@ -180,11 +180,13 @@ void change_task_to(registers_t *reg,struct task_struct *next) {
         set_kernel_stack(current->stack + STACK_SIZE);
 
 
+        /*
         if(current->fpu_flag) {
             set_cr0(get_cr0() & ~((1 << 2) | (1 << 3)));
             asm volatile("fnsave (%%eax) \n" ::"a"(&(current->context.fpu_regs)) : "memory");
             set_cr0(get_cr0() | (1 << 2) | (1 << 3));
         }
+         */
 
         prev->context.eip = reg->eip;
         prev->context.ds = reg->ds;
@@ -235,11 +237,13 @@ int32_t user_process(char *path, char *name,char* argv,uint8_t level){ // 用户
     new_task->vfs_now = NULL;
     new_task->tty = kmalloc(sizeof(tty_t));
     new_task->cpu_clock = 0;
-    new_task->page_alloc_address = 0;
+    new_task->page_alloc_address = USER_END + 0x1000;
     new_task->task_level = level;
     new_task->fpu_flag = false;
     init_default_tty(new_task);
     io_sti();
+
+
 
     vfs_copy(new_task,get_current()->vfs_now);
 
@@ -330,7 +334,7 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进�
     new_task->mem_size = 0;
     new_task->isUser = 0;
     new_task->cpu_clock = 0;
-    new_task->page_alloc_address = 0;
+    new_task->page_alloc_address = USER_END + 0x1000;
     new_task->task_level = TASK_KERNEL_LEVEL;
     new_task->fpu_flag = false;
 
@@ -439,6 +443,7 @@ void init_sched() {
     current->mem_size = 0;
     current->next = current;
     current->isUser = 0;
+
     init_default_tty(current);
 
     extern header_t *head;
