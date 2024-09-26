@@ -38,7 +38,7 @@ static void* syscall_malloc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,
     void* address = user_alloc(get_current(),ebx);
     if(address == NULL){
         if(get_current()->task_level == TASK_SYSTEM_SERVICE_LEVEL)
-            panic_pane("CSP Service out of memory error.",OUT_OF_MEMORY);
+            panic_pane("System Service out of memory error.",OUT_OF_MEMORY);
         else if(get_current()->task_level == TASK_APPLICATION_LEVEL)
             task_kill(get_current()->pid);
     }

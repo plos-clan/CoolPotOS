@@ -101,6 +101,9 @@ struct {
         {0x000000, NULL}
 };
 
+pci_device_t *pci_device[PCI_DEVICE_MAX];
+uint32_t device_number = 0;
+
 uint8_t pci_get_drive_irq(uint8_t bus, uint8_t slot, uint8_t func) {
     return (uint8_t)
     read_pci(bus, slot, func, 0x3c);
@@ -158,6 +161,10 @@ void pci_write_command_status(uint8_t bus, uint8_t slot, uint8_t func, uint32_t 
     write_pci(bus, slot, func, 0x04, value);
 }
 
+uint32_t pci_dev_read32(pci_device_t* pdev, uint16_t offset) {
+    return read_pci(pdev->bus, pdev->slot, pdev->func, offset);
+}
+
 uint32_t read_pci(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset) {
     uint32_t id = 1 << 31 | ((bus & 0xff) << 16) | ((device & 0x1f) << 11) |
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
@@ -203,12 +210,31 @@ void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsign
 
 char *pci_classname(uint32_t classcode) {
     for (size_t i = 0; pci_classnames[i].name != NULL; i++) {
-        if (pci_classnames[i].classcode == classcode)
+        if (pci_classnames[i].classcode == classcode){
             return pci_classnames[i].name;
-        if (pci_classnames[i].classcode == (classcode & 0xFFFF00))
+        }
+        if (pci_classnames[i].classcode == (classcode & 0xFFFF00)){
             return pci_classnames[i].name;
+        }
     }
     return "Unknown device";
+}
+
+pci_device_t *pci_find_class(uint32_t class_code){
+    for (int i = 0; i < device_number; i++) {
+        if (pci_device[i]->class_code == class_code) {
+            return pci_device[i];
+        }
+        if(class_code == (pci_device[i]->class_code & 0xFFFF00)){
+            return pci_device[i];
+        }
+    }
+    return NULL;
+}
+
+base_address_register find_bar(pci_device_t *device,uint8_t barNum){
+    base_address_register bar =get_base_address_register(device->bus, device->slot, device->func, barNum);
+    return bar;
 }
 
 void load_pci_device(uint32_t BUS,uint32_t Equipment,uint32_t F){
@@ -220,12 +246,30 @@ void load_pci_device(uint32_t BUS,uint32_t Equipment,uint32_t F){
     uint16_t vendor_id = value_v & 0xffff;
     uint16_t device_id = value_d & 0xffff;
 
-    switch (class_code) {
-        case 0x060400:
-            return;
-    }
+    pci_device_t *device = kmalloc(sizeof(pci_device_t));
+    device->name = pci_classname(class_code);
+    device->vendor_id = vendor_id;
+    device->device_id = device_id;
+    device->class_code = class_code;
+    device->bus = BUS;
+    device->slot = Equipment;
+    device->func = F;
 
-    logkf("Found PCI device: %03d:%02d:%02d [0x%04X:0x%04X] %s\n", BUS, Equipment, F, vendor_id, device_id, pci_classname(class_code));
+
+    if (device_number > PCI_DEVICE_MAX) {
+        printf("add device full %d\n", device_number);
+        return;
+    }
+    pci_device[device_number++] = device;
+
+    logkf("Found PCI device: %03d:%02d:%02d [0x%04X:0x%04X] <%08x> %s\n",
+          device->bus,
+          device->slot,
+          device->func,
+          device->vendor_id,
+          device->device_id,
+          device->class_code,
+          device->name);
 }
 
 void print_all_pci_info(){
@@ -293,18 +337,17 @@ void init_pci() {
                                 PCI_DATA1 += 4;
                                 int i = ((uint32_t)(bar.address));
                                 memcpy(PCI_DATA1, &i, 4);
-                                PCI_NUM++;
                             }
                         }
                         PCI_DATA = PCI_DATA + 0x110 + 4;
                         key = 0;
                     }
+                    PCI_NUM++;
                     load_pci_device(BUS,Equipment,F);
                 }
             }
         }
     }
     klogf(true, "PCI device loaded: %d\n", PCI_NUM);
-    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     rtc_init();
 }
