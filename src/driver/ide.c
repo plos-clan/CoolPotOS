@@ -50,6 +50,16 @@ static void Write(char drive, unsigned char *buffer, unsigned int number,
     ide_write_sectors(drive - 'A', number, lba, 1 * 8, buffer);
 }
 
+void ide_init(){
+    pci_device_t *ide_ctrl = pci_find_class(0x010100);
+    if(ide_ctrl == NULL){
+        klogf(false,"Cannot find ide device\n");
+        return;
+    } else klogf(true,"Find IDE Controller\n");
+
+    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+}
+
 void ide_initialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2,
                     unsigned int BAR3, unsigned int BAR4) {
     register_interrupt_handler(0x2f,ide_irq);

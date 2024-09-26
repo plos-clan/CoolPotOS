@@ -16,6 +16,7 @@
 #include "../include/pci.h"
 #include "../include/pcnet.h"
 #include "../include/ide.h"
+#include "../include/ahci.h"
 #include "../include/vfs.h"
 #include "../include/panic.h"
 #include "../include/mouse.h"
@@ -147,6 +148,9 @@ void kernel_main(multiboot_t *multiboot) {
     init_vfs();
 
     init_pci();
+
+    ide_init();
+    ahci_init();
 
     syscall_install();
 
