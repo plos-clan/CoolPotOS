@@ -82,6 +82,16 @@ def build_kernel():  # 构建内核本体
         e = os.system(cmd)
         if e != 0:
             return -1
+    for file in os.listdir(cd + dir_ + src + 'kernel' + dir_ + 'memory'):
+        cmd = gcc + "-O0 " + src + "kernel" + dir_ + 'memory' + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        e = os.system(cmd)
+        if e != 0:
+            return -1
+    for file in os.listdir(cd + dir_ + src + 'kernel' + dir_ + 'memory' + dir_ + 'mpool'):
+        cmd = gcc + "-O0 " + src + "kernel" + dir_ + 'memory' + dir_ + 'mpool' + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        e = os.system(cmd)
+        if e != 0:
+            return -1
     return 0
 
 

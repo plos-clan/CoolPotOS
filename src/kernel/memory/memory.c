@@ -1,4 +1,4 @@
-#include "../include/memory.h"
+#include "../../include/memory.h"
 
 void memclean(char *s, int len) {
     // 清理某个内存区域（全部置0）

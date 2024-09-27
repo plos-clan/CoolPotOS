@@ -104,4 +104,8 @@ void page_switch(page_directory_t *dir);
 
 uint32_t kmalloc_i_ap(uint32_t size, uint32_t *phys);
 
+void memory_init_mpool(void *ptr, uint32_t size);
+void *kmalloc_mpool(size_t size);
+void kfree_mpool(void *ptr);
+
 #endif //CRASHPOWEROS_MEMORY_H

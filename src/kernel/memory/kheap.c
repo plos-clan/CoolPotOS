@@ -1,6 +1,7 @@
-#include "../include/memory.h"
-#include "../include/task.h"
-#include "../include/printf.h"
+#include "../../include/memory.h"
+#include "../../include/task.h"
+#include "../../include/printf.h"
+#include "../../include/mpool.h"
 
 header_t *head = NULL, *tail = NULL; // 内存块链表
 extern page_directory_t *current_directory;
@@ -8,6 +9,23 @@ extern uint32_t end; // declared in linker.ld
 static uint32_t placement_address = (uint32_t) &end;
 void *program_break, *program_break_end;
 extern struct task_struct *current;
+
+static struct mpool pool;
+
+void memory_init_mpool(void *ptr, uint32_t size) {
+    mpool_init(&pool, ptr, size);
+}
+
+void *kmalloc_mpool(size_t size) {
+    void *ptr = mpool_alloc(&pool, size);
+    // klogd("alloc %-10p %d -> %d", ptr, size, mpool_msize(&pool, ptr));
+    return ptr;
+}
+
+void kfree_mpool(void *ptr) {
+    // klogd("free  %-10p %d", ptr, mpool_msize(&pool, ptr));
+    mpool_free(&pool, ptr);
+}
 
 uint32_t memory_usage(){
     header_t *curr = head;
@@ -71,6 +89,29 @@ uint32_t kmalloc(uint32_t size) {
     return kmalloc_int(size, 0, 0);
 }
 
+void kfree(void *block) {
+    header_t *header, *tmp;
+    if (!block) return;
+    header = (header_t *) block - 1;
+    if ((char *) block + header->s.size == program_break) {
+        if (head == tail) head = tail = NULL;
+        else {
+            tmp = head;
+            while (tmp) {
+                if (tmp->s.next == tail) {
+                    tmp->s.next = NULL;
+                    tail = tmp;
+                }
+                tmp = tmp->s.next;
+            }
+        }
+        ksbrk(0 - sizeof(header_t) - header->s.size);
+        return;
+    }
+    header->s.is_free = 1;
+
+}
+
 void *ksbrk(int incr) {
     if (program_break == 0 || program_break + incr >= program_break_end) return (void *) -1;
 
@@ -110,26 +151,4 @@ void *alloc(size_t size) {
     if (tail) tail->s.next = header;
     tail = header;
     return (void *) (header + 1);
-}
-
-void kfree(void *block) {
-    header_t *header, *tmp;
-    if (!block) return;
-    header = (header_t *) block - 1;
-    if ((char *) block + header->s.size == program_break) {
-        if (head == tail) head = tail = NULL;
-        else {
-            tmp = head;
-            while (tmp) {
-                if (tmp->s.next == tail) {
-                    tmp->s.next = NULL;
-                    tail = tmp;
-                }
-                tmp = tmp->s.next;
-            }
-        }
-        ksbrk(0 - sizeof(header_t) - header->s.size);
-        return;
-    }
-    header->s.is_free = 1;
 }
