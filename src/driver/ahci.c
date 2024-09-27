@@ -9,7 +9,7 @@ void ahci_init(){
         klogf(false,"Cannot find ahci device\n");
         return;
     } else klogf(true,"Find AHCI Controller\n");
-    uint32_t bar5 = pci_dev_read32(ahci_ctrl, PCI_BASE_ADDR5) & 0xFFFFFFF0;
 
+    uint32_t bar5 = pci_dev_read32(ahci_ctrl, PCI_BASE_ADDR5) & 0xFFFFFFF0;
 
 }
