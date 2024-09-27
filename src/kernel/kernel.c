@@ -22,7 +22,6 @@
 #include "../include/mouse.h"
 #include "../include/i2c.h"
 #include "../include/desktop.h"
-#include "../include/soundtest.h"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -76,7 +75,6 @@ int check_task(int *pid){
 }
 
 int check_task_usershell(int *pid){
-    while (1);
     struct task_struct *shell = found_task_pid(*pid);
     while (1){
         if(shell->state == TASK_DEATH){
@@ -136,7 +134,7 @@ void kernel_main(multiboot_t *multiboot) {
     init_sched();
     //fpu_setup();
 
-    int pid_cur = kernel_thread(cursor_task,NULL,"System-Cur");
+   // int pid_cur = kernel_thread(cursor_task,NULL,"System-Cur");
     // klogf(pid != -1,"Launch cursor service\n");
 
     init_keyboard();
