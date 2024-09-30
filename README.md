@@ -28,7 +28,9 @@ You need to install them on your computer:
 
 ### Steps
 
-- Run `python build.py` on your terminal then it is going to build and run
+- Run `python build.py` or `bash build.bash` on your terminal then it is going to build and run
+
+Before that, you may need to run `bash init.bash`
 
 ## License
 
@@ -46,3 +48,4 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * QtLittleXu - XuYuxuan OS Document
 * ViudiraTech - Uinxed-Mark program
 * Vinbe Wan - CoolPot_Driver Development
+* A4-Tacks - Write some build scripts
