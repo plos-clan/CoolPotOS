@@ -1,9 +1,9 @@
 /*
  * Copi143 new alloc library
  */
-#include "../../../include/mpool.h"
-#include "../../../include/memory.h"
-#include "../../../include/printf.h"
+#include "../../include/mpool.h"
+#include "../../include/memory.h"
+#include "../../include/printf.h"
 
 static void allocarea_init(void *addr, size_t size, void *pdata) {
     size_t *ptr       = addr;
@@ -86,22 +86,14 @@ void *mpool_alloc(mpool_t pool, size_t size) {
     if (size == 0) size = 2 * sizeof(size_t);
     size = PADDING(size);
 
-    logkf("Pool Alloc Size: %d\n",size);
-
     void *ptr = freelists_match(pool->freed, size);
 
-    logkf("Alloc ptr I: %08x\n",ptr);
-
     if (ptr == NULL) ptr = freelist_match(&pool->large_blk, size);
-
-    logkf("Alloc ptr II: %08x\n",ptr);
 
     if (ptr == NULL) { // 不足就分配
         if (!mpool_reqmem(pool, size)) return NULL;
         ptr = freelist_match(&pool->large_blk, size);
     }
-
-    logkf("Alloc ptr III: %08x\n",ptr);
 
     try_split_and_free(pool, ptr, size);
 
