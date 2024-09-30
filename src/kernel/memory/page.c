@@ -8,7 +8,7 @@ page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
 
 volatile uint32_t *frames;
-uint32_t nframes;
+volatile uint32_t nframes;
 
 extern struct task_struct *current;
 
@@ -124,13 +124,14 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
         return pgg;
     }else if (make) {
         uint32_t tmp;
-        /*
-        if(memory_is_enable){
-            dir->tables[table_idx] = (page_table_t *) kmalloc_mpool(sizeof(page_table_t));
-            tmp = (uint32_t) dir->tables[table_idx];
-        } else
-         */
-        dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
+
+        //if(memory_is_enable){
+        //    dir->tables[table_idx] = (page_table_t *) kmalloc_mpool(sizeof(page_table_t));
+         //   tmp = (uint32_t) dir->tables[table_idx];
+        //} else
+            dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
+
+
         memset(dir->tables[table_idx], 0, 0x1000);
         dir->tablesPhysical[table_idx] = tmp | 0x7;
         page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
@@ -258,17 +259,7 @@ void init_page(multiboot_t *mboot) {
         alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
         i += 0x1000;
     }
-    //memory_init_mpool(placement_address,placement_address + 0x300000);
     printf("PageArea: 0x%08x | ",placement_address + 0x300000);
-
-    program_break = i;
-    for (; i < placement_address + 0x30000 + 1 + KHEAP_INITIAL_SIZE; ) {
-        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
-        i+= 0x1000;
-    }
-    program_break_end = i;
-
-    printf("KernelHeap: 0x%08x - 0x%08x | ",(program_break),(program_break_end));
 
     uint32_t j = mboot->framebuffer_addr,
     size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
@@ -278,12 +269,22 @@ void init_page(multiboot_t *mboot) {
         j += 0x1000;
     }
 
-    memory_is_enable = true;
+    printf("GraphicsBuffer: 0x%08x | ",(mboot->framebuffer_addr));
 
-    printf("GraphicsBuffer: 0x%08x \n",(mboot->framebuffer_addr));
+    program_break = i;
+    for (; i < placement_address + 0x300000 + 1 + KHEAP_INITIAL_SIZE; ) {
+        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
+        i+= 0x1000;
+    }
+    program_break_end = i;
+
+    printf("KernelHeap: 0x%08x - 0x%08x\n",(program_break),(program_break_end));
 
     register_interrupt_handler(14, page_fault);
     switch_page_directory(kernel_directory);
+
+    memory_init_mpool(placement_address,placement_address + 0x300000);
+    memory_is_enable = true;
 
     klogf(true,"Memory manager is enable\n");
 }

@@ -18,12 +18,12 @@ void memory_init_mpool(void *ptr, uint32_t size) {
 
 void *kmalloc_mpool(size_t size) {
     void *ptr = mpool_alloc(&pool, size);
-    // klogd("alloc %-10p %d -> %d", ptr, size, mpool_msize(&pool, ptr));
+    logkf("alloc %-10p %d -> %d\n", ptr, size, mpool_msize(&pool, ptr));
     return ptr;
 }
 
 void kfree_mpool(void *ptr) {
-    // klogd("free  %-10p %d", ptr, mpool_msize(&pool, ptr));
+    logkf("free  %-10p %d", ptr, mpool_msize(&pool, ptr));
     mpool_free(&pool, ptr);
 }
 
