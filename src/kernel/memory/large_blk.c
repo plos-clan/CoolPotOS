@@ -1,4 +1,4 @@
-#include "../../../include/mpool.h"
+#include "../../include/mpool.h"
 
 void blk_setalloced(void *ptr, size_t size) {
     blk_head(ptr)       &= ~FREE_FLAG;

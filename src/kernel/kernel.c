@@ -134,9 +134,6 @@ void kernel_main(multiboot_t *multiboot) {
     init_sched();
     //fpu_setup();
 
-   // int pid_cur = kernel_thread(cursor_task,NULL,"System-Cur");
-    // klogf(pid != -1,"Launch cursor service\n");
-
     init_keyboard();
 
     init_pit();
@@ -164,6 +161,7 @@ void kernel_main(multiboot_t *multiboot) {
             }
         }
     }
+
     hasFS = false;
     if(disk_id != '0'){
         if(vfs_change_disk(get_current(),disk_id)){
@@ -172,13 +170,14 @@ void kernel_main(multiboot_t *multiboot) {
             klogf(true,"Chang default mounted disk.\n");
             hasFS = true;
         }
-    } else klogf(false,"Unable to find available IDE devices.\n");
+    } else klogf(false,"Unable to find available disk devices.\n");
 
     bool pcnet_init = pcnet_find_card();
     klogf(pcnet_init,"Enable network device pcnet.\n");
     if(pcnet_init){
         //init_pcnet_card();
     }
+
     init_eh();
     klogf(true,"Kernel load done!\n");
 
