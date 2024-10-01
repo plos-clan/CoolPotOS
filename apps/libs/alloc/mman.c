@@ -2,6 +2,7 @@
 
 #include "area.h"
 #include "block.h"
+#include "memory.h"
 #include "freelist.h"
 #include "large-blk.h"
 
@@ -20,7 +21,7 @@ dlexport bool mman_init(mman_t man, void *ptr, size_t size) {
   if (man == null || ptr == null || size == 0) return false;
   if (size != SIZE_2M && size != SIZE_4k) return false;
   man->main.ptr          = ptr;
-  man->main.alloced_size = null;
+  man->main.alloced_size = 0;
   man->main.next         = null;
   man->size              = size;
   man->alloced_size      = 0;

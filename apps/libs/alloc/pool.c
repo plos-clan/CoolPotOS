@@ -2,6 +2,7 @@
 
 #include "area.h"
 #include "block.h"
+#include "memory.h"
 #include "freelist.h"
 
 // mpool_free 中使用的临时函数
