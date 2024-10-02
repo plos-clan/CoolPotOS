@@ -175,9 +175,12 @@ log "[80%]: Linking object file..."
 link_obj
 wait_step
 
-log "Make apps"
+log "Clean apps output"
 run make -i -r -C apps clean
-#run make -r -C apps
+wait_step
+
+log "Make apps"
+run make -r -C apps
 wait_step
 
 log "Building iso..."
