@@ -23,6 +23,4 @@ fi
 [ $# = 0 ]
 
 mkdir -p target
-find ./apps -type d -print0 | while read -rd '' dir; do
-    echo "${dir}/out/alloc"
-done | xargs mkdir -vp
+mkdir -v apps/{libs/out{,/alloc},{init,lib_pl_readline,libutf,lua,phigrOS,shell}/out}
