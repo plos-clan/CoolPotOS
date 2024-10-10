@@ -102,11 +102,11 @@ int main(int argc_v,char **argv_v){
     print_ttf("CoolPotOS v0.3.3",0xffffff,0x000000,440,500,70.0);
     draw_image_xy("icon.png",490,180);
 
-    pl_readline_t n = pl_readline_init(pl_getch, (void *)put_char, flush, handle_tab);
+    //pl_readline_t n = pl_readline_init(pl_getch, (void *)put_char, flush, handle_tab);
 
     printf("Welcome to CoolPotOS UserShell v0.0.1\n");
     printf("Copyright by \033[1m\033[4mXIAOYI12\033[0m 2023-2024\n");
-    char *com = NULL;
+    char *com[100];
     char *argv[50];
     int argc = -1;
     char *buffer[255];
@@ -115,10 +115,12 @@ int main(int argc_v,char **argv_v){
         syscall_get_cd(buffer);
         printf("\033[32m\033[7mdefault@localhost:\033[7m \033[34m%s\\\033[39m$ ",buffer);
 
-        //if (gets(com) <= 0) continue;
+        if (gets(com) <= 0) continue;
+        /*
         free(com);
-        com = malloc(100);
+        com = malloc(100 * sizeof(char));
         pl_readline(n,"", com, 100);
+         */
 
         char* com_copy[100];
         strcpy(com_copy,com);
@@ -151,6 +153,7 @@ int main(int argc_v,char **argv_v){
             printf("image     <filename>  Draw a image.\n");
         } else {
             int pid = exec_elf(argv[0],com_copy,false);
+
             if(pid == NULL){
                 printf("\033[31m[Shell]: Unknown command '%s'.\033[39m\n", argv[0]);
             }

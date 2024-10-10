@@ -81,10 +81,10 @@ static void syscall_vfs_chang_path(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32
 }
 
 struct sysinfo{
-    char* osname;
-    char* kenlname;
-    char* cpu_vendor;
-    char* cpu_name;
+    char osname[50];
+    char kenlname[50];
+    char cpu_vendor[64];
+    char cpu_name[64];
     uint32_t phy_mem_size;
     uint32_t pci_device;
     uint32_t frame_width;
@@ -98,24 +98,16 @@ struct sysinfo{
 };
 
 static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
-    struct sysinfo *info = (struct sysinfo *) user_alloc(get_current(), sizeof(struct sysinfo));
+    struct sysinfo *info = ebx;
     cpu_t *cpu = get_cpuid();
-    char *os_name = (char *)user_alloc(get_current(), strlen(OS_NAME));
-    char *kernel = (char *)user_alloc(get_current(), strlen(KERNEL_NAME));
 
-    char *cpu_vendor = (char *)user_alloc(get_current(), strlen(cpu->vendor));
-    char *cpu_name = (char *)user_alloc(get_current(), strlen(cpu->model_name));
-    memcpy(os_name,OS_NAME, strlen(OS_NAME));
-    memcpy(kernel,KERNEL_NAME, strlen(KERNEL_NAME));
-    memcpy(cpu_vendor,cpu->vendor, strlen(cpu->vendor));
-    memcpy(cpu_name,cpu->model_name, strlen(cpu->model_name));
+    memcpy(info->osname,OS_NAME, strlen(OS_NAME)); info->osname[strlen(OS_NAME) + 1] = '\0';
+    memcpy(info->kenlname,KERNEL_NAME, strlen(KERNEL_NAME)); info->kenlname[strlen(KERNEL_NAME) + 1] = '\0';
+    memcpy(info->cpu_vendor,cpu->vendor, strlen(cpu->vendor)); info->cpu_vendor[strlen(cpu->vendor) + 1] = '\0';
+    memcpy(info->cpu_name,cpu->model_name, strlen(cpu->model_name)); info->cpu_name[strlen(cpu->model_name) + 1] = '\0';
 
     extern uint32_t width,height; //vbe.c
 
-    info->osname = os_name;
-    info->kenlname = kernel;
-    info->cpu_vendor = cpu_vendor;
-    info->cpu_name = cpu_name;
     info->phy_mem_size = phy_mem_size;
     info->pci_device = PCI_NUM;
     info->frame_width = width;

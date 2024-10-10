@@ -4,10 +4,10 @@
 #include "ctype.h"
 
 struct sysinfo{
-    char* osname;
-    char* kenlname;
-    char* cpu_vendor;
-    char* cpu_name;
+    char osname[50];
+    char kenlname[50];
+    char cpu_vendor[64];
+    char cpu_name[64];
     unsigned int phy_mem_size;
     unsigned int pci_device;
     unsigned int frame_width;
@@ -23,8 +23,8 @@ struct sysinfo{
 #include "syscall.h"
 #include "stdlib.h"
 
-static inline struct sysinfo* get_sysinfo(){
-    return syscall_sysinfo();
+static inline void get_sysinfo(struct sysinfo* info){
+    syscall_sysinfo(info);
 }
 
 static inline void free_info(struct sysinfo *info){
