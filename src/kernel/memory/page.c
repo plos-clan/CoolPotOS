@@ -100,7 +100,6 @@ void page_flush(page_directory_t *dir){
 void page_switch(page_directory_t *dir){
     current_directory = dir;
     asm volatile("mov %0, %%cr3" : : "r"(&dir->tablesPhysical));
-
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -126,11 +125,9 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
         uint32_t tmp;
 
         //if(memory_is_enable){
-        //    dir->tables[table_idx] = (page_table_t *) kmalloc_mpool(sizeof(page_table_t));
-         //   tmp = (uint32_t) dir->tables[table_idx];
+        //    dir->tables[table_idx] = (page_table_t *) kmalloc_ap(sizeof(page_table_t),&tmp);
         //} else
-            dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
-
+        dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
 
         memset(dir->tables[table_idx], 0, 0x1000);
         dir->tablesPhysical[table_idx] = tmp | 0x7;
@@ -139,9 +136,8 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
     } else return 0;
 }
 
-
 void page_fault(registers_t *regs) {
-    logk("Page Fault\n");
+
     io_cli();
     uint32_t faulting_address;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address)); //
@@ -174,7 +170,6 @@ void page_fault(registers_t *regs) {
 
     sleep(1);
     while (1) io_hlt();
-    io_sti();
 }
 
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
@@ -184,6 +179,7 @@ static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
     //*physAddr = table;
 
     memset(table, 0, sizeof(page_directory_t));
+    //memcpy(src,table,sizeof(page_directory_t));
 
     int i;
     for (i = 0; i < 1024; i++) {
@@ -197,6 +193,7 @@ static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
         if (src->pages[i].dirty) table->pages[i].dirty = 1;
         copy_page_physical(src->pages[i].frame * 0x1000, table->pages[i].frame * 0x1000);
     }
+
     return table;
 }
 
@@ -204,8 +201,8 @@ page_directory_t *clone_directory(page_directory_t *src) {
     uint32_t phys;
     page_directory_t *dir = (page_directory_t *) kmalloc_i_ap(sizeof(page_directory_t), &phys);
 
-    //page_directory_t *dir = (page_directory_t *) kmalloc_mpool(sizeof(page_directory_t));
-    //phys = dir;
+   // page_directory_t *dir = (page_directory_t *) kmalloc_mpool(sizeof(page_directory_t));
+   // phys = dir;
     memset(dir, 0, sizeof(page_directory_t));
 
     uint32_t offset = (uint32_t) dir->tablesPhysical - (uint32_t) dir;
@@ -240,6 +237,7 @@ void init_page(multiboot_t *mboot) {
     kernel_directory->physicalAddr = physical_addr;
 
     memset(kernel_directory, 0, sizeof(page_directory_t));
+
     current_directory = kernel_directory;
     int i = 0;
 

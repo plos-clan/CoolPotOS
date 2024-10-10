@@ -25,6 +25,7 @@
 #define SYSCALL_DRAW_BITMAP 22
 
 #include "ctype.h"
+#include "cpos.h"
 
 void syscall_print(char *c);
 
@@ -48,7 +49,7 @@ void syscall_vfs_readfile(char *filename, char *buffer);
 
 void syscall_vfs_writefile(char *filename, char *buffer, unsigned int size);
 
-void *syscall_sysinfo();
+void syscall_sysinfo(struct sysinfo* info);
 
 int syscall_exec(char *filename, char *args, int is_async);
 

@@ -4,7 +4,8 @@
 
 void print_info(){
 
-    struct sysinfo *info = get_sysinfo();
+    struct sysinfo *info = malloc(sizeof(struct sysinfo));
+    get_sysinfo(info);
 
     printf("               .:=*#&&@@@@@@&&#+=:.               \n");
     printf("            -+&@@@@@@@@@@@@@@@@@@@- \033[36m----------.\033[39m          -----------------\n");
@@ -32,7 +33,6 @@ void print_info(){
     printf("         :*@@@@@@@@@@@@@@@@@@@@@@@@@@@&+:         \n");
     printf("            :+#@@@@@@@@@@@@@@@@@@@@#+:            \n");
     printf("                :=+*#&@@@@@@&#*+-:                \n");
-    
 
-    free_info(info);
+    free(info);
 }

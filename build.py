@@ -165,18 +165,19 @@ a = linker()
 if a != 0:
     exit(-1)
 
+"""
 print("Make apps")
 for i in make_apps:
     if os.system(i) != 0:
         exit(-1)
     else:
         print("make win!")
+"""
 
 print("Building iso...")
 if os.system(build_command) != 0:
     exit(-1)
 
-os.system("qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m "
-          "4096")
+os.system("qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m 4096")
 
 # launch()
