@@ -45,6 +45,7 @@ stack_top:
 _start:
 	mov $stack_top, %esp
 
+    push %ecx
     push %ebx
 	call kernel_main
 

@@ -48,8 +48,8 @@ void syscall_vfs_writefile(char* filename,char* buffer,unsigned int size){
     __syscall(SYSCALL_VFS_WRITEFILE, filename, buffer,size);
 }
 
-void* syscall_sysinfo(){
-    return (void *)__syscall(SYSCALL_SYSINFO);
+void syscall_sysinfo(struct sysinfo* info){
+    __syscall(SYSCALL_SYSINFO,info);
 }
 
 int syscall_exec(char *filename,char* args,int is_async){
@@ -104,7 +104,7 @@ int syscall_vfs_rename(char* filename1,char* filename2){
     uint32_t __arg2 = (uint32_t)(filename2);
     register uint32_t ebx asm("ebx")  = __arg1;
     register uint32_t ecx asm("ecx") = __arg2;
-    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_SLEEP), "r"(ebx), "r"(ecx) : "memory", "cc");
+    asm volatile("int $31\n\t" : "=a"(rets) : "0"(SYSCALL_VFS_RENAME), "r"(ebx), "r"(ecx) : "memory", "cc");
     return rets;
 }
 

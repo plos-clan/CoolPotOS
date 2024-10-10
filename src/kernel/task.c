@@ -150,6 +150,15 @@ void task_kill(int pid) {
     free_tty(argv);
     kfree(argv->name);
     kfree(argv->argv);
+
+    for (int i = 0; i < 1024; ++i) {
+        page_table_t *table = argv->pgd_dir->tables[i];
+        for (int j = 0; j < 1024; ++j) {
+            page_t page = table->pages[i];
+            free_frame(&page);
+        }
+    }
+
     struct task_struct *head = running_proc_head;
     struct task_struct *last = NULL;
     while (1) {
@@ -225,7 +234,7 @@ int32_t user_process(char *path, char *name,char* argv,uint8_t level){ // 用户
     memset(new_task, 0, sizeof(struct task_struct));
 
     new_task->state = TASK_RUNNABLE;
-    new_task->stack = current;
+    new_task->stack = new_task;
     new_task->pid = now_pid++;
 
     page_directory_t *page = clone_directory(kernel_directory);
@@ -328,7 +337,7 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进�
     memset(new_task, 0, sizeof(struct task_struct));
 
     new_task->state = TASK_RUNNABLE;
-    new_task->stack = current;
+    new_task->stack = new_task;
     new_task->pid = now_pid++;
     new_task->pgd_dir = kernel_directory;
     new_task->mem_size = 0;

@@ -96,4 +96,7 @@ int get_procs();
 void switch_to_user_mode(uint32_t func);
 
 int32_t user_process(char *path, char *name,char* argv,uint8_t level);
+
+struct task_struct* get_free_task();
+
 #endif //CRASHPOWEROS_TASK_H

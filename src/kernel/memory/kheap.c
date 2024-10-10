@@ -44,6 +44,7 @@ uint32_t kmalloc_i_ap(uint32_t size, uint32_t *phys){
         placement_address &= 0xFFFFF000;
         placement_address += 0x1000;
     }
+
     if (phys) *phys = placement_address;
     uint32_t tmp = placement_address;
     placement_address += size;
@@ -66,10 +67,10 @@ static uint32_t kmalloc_int(size_t sz, uint32_t align, uint32_t *phys) {
         placement_address &= 0xFFFFF000;
         placement_address += 0x1000;
     }
+
     if (phys) *phys = placement_address;
     uint32_t tmp = placement_address;
     placement_address += sz;
-
     return tmp;
 }
 
@@ -93,6 +94,9 @@ void kfree(void *block) {
     header_t *header, *tmp;
     if (!block) return;
     header = (header_t *) block - 1;
+
+    logkf("FreeSize: %d | Addr: %08x\n",header->s.size,block);
+
     if ((char *) block + header->s.size == program_break) {
         if (head == tail) head = tail = NULL;
         else {
@@ -109,7 +113,6 @@ void kfree(void *block) {
         return;
     }
     header->s.is_free = 1;
-
 }
 
 void *ksbrk(int incr) {

@@ -22,6 +22,7 @@ You need to install them on your computer:
 
 - Python toolkit
 - i686_elf_tools
+- rustup
 - Windows subsystem for Linux (Ubuntu 22.04)
     - grub-mkrescue
     - qemu-system-i386
