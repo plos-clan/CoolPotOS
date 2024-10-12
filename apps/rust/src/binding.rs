@@ -21,8 +21,7 @@ struct Print;
 
 impl Write for Print {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        s.chars()
-            .for_each(|c| unsafe { syscall_putchar(c as c_char) });
+        unsafe { s.chars().for_each(|c| syscall_putchar(c as c_char)) }
         Ok(())
     }
 }
