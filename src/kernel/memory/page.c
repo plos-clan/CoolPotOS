@@ -86,6 +86,7 @@ void free_frame(page_t *page) {
     uint32_t frame = page->frame;
     if (!frame) return;
     else {
+        page->present = 0;
         clear_frame(frame);
         page->frame = 0x0;
     }
@@ -113,11 +114,8 @@ void switch_page_directory(page_directory_t *dir) {
 }
 
 page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
-
     address /= 0x1000;
-
     uint32_t table_idx = address / 1024;
-
     if (dir->tables[table_idx]){
         page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
         return pgg;

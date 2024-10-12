@@ -67,9 +67,9 @@ struct task_struct {
 
 void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print);
 
-struct task_struct* get_current();
+struct task_struct* get_current(); //获取当前调度种的进程
 
-int32_t kernel_thread(int (*fn)(void *), void *arg, char *name);
+int32_t kernel_thread(int (*fn)(void *), void *arg, char *name); //创建内核进程
 
 void kthread_exit();
 
@@ -81,7 +81,7 @@ void schedule(registers_t *reg);
 
 void change_task_to(registers_t *reg,struct task_struct *next);
 
-void task_kill(int pid);
+void task_kill(int pid); //杀死指定进程 PID:0 IDLE内核进程不可杀死
 
 void kill_all_task();
 
@@ -95,7 +95,15 @@ int get_procs();
 
 void switch_to_user_mode(uint32_t func);
 
-int32_t user_process(char *path, char *name,char* argv,uint8_t level);
+/*
+ * 创建用户进程
+ * path: ELF可执行文件路径
+ * name: 进程名称
+ * argv: 进程实参
+ * level: TASK_SYSTEM_SERVICE_LEVEL(系统服务级别) | TASK_APPLICATION_LEVEL(应用程序级别)
+ * @return : 该进程PID (创建失败为-1)
+ */
+int32_t user_process(char *path, char *name,char* argv,uint8_t level); //创建用户进程
 
 struct task_struct* get_free_task();
 

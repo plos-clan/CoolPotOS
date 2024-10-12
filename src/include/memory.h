@@ -65,17 +65,17 @@ void *memset(void *s, int c, size_t n);
 
 void *memmove(void *dest, const void *src, size_t num);
 
-void switch_page_directory(page_directory_t *dir);
+void switch_page_directory(page_directory_t *dir); //页初始化
 
-page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist);
+page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist); //获取指定地址的页映射 (make为1造页 ist决定是否开启DEBUG输出)
 
-void alloc_frame(page_t *page, int is_kernel, int is_writable);
+void alloc_frame(page_t *page, int is_kernel, int is_writable); //为一个页分配一个物理页框
 
-uint32_t first_frame();
+uint32_t first_frame(); //获取第一个空闲页框
 
 void page_fault(registers_t *regs);
 
-page_directory_t *clone_directory(page_directory_t *src);
+page_directory_t *clone_directory(page_directory_t *src); //克隆页表
 
 void flush_tlb();
 
@@ -91,7 +91,7 @@ uint32_t kmalloc_p(uint32_t size, uint32_t *phy);
 
 uint32_t kmalloc(size_t size);
 
-uint32_t kmalloc_ap(uint32_t size, uint32_t *phys);
+uint32_t kmalloc_ap(uint32_t size, uint32_t *phys); // 内核堆分配, 并指定物理地址
 
 void init_page(multiboot_t *mboot);
 
@@ -99,13 +99,13 @@ void memclean(char *s, int len);
 
 void *realloc(void *ptr, uint32_t size);
 
-void alloc_frame_line(page_t *page, uint32_t line,int is_kernel, int is_writable);
+void alloc_frame_line(page_t *page, uint32_t line,int is_kernel, int is_writable); //映射指定物理地址的页框
 
-void free_frame(page_t *page);
+void free_frame(page_t *page); //释放页框
 
 void page_flush(page_directory_t *dir);
 
-void page_switch(page_directory_t *dir);
+void page_switch(page_directory_t *dir); //切换页目录
 
 uint32_t kmalloc_i_ap(uint32_t size, uint32_t *phys);
 

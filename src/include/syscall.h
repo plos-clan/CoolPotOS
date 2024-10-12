@@ -30,6 +30,5 @@
 #define SYSCALL_DRAW_BITMAP 22
 
 void syscall_install();
-uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi);
 
 #endif
