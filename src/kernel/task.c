@@ -252,8 +252,6 @@ int32_t user_process(char *path, char *name,char* argv,uint8_t level){ // 用户
     init_default_tty(new_task);
     io_sti();
 
-
-
     vfs_copy(new_task,get_current()->vfs_now);
 
     char* ker_path = kmalloc(strlen(path) + 1);

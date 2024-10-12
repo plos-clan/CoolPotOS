@@ -33,17 +33,18 @@ struct IDEHardDiskInfomationBlock {
 };
 
 int init_vdisk();
-int register_vdisk(vdisk vd);
+int register_vdisk(vdisk vd); //注册一个硬盘设备
 int logout_vdisk(char drive);
 int rw_vdisk(char drive, unsigned int lba, unsigned char *buffer,
              unsigned int number, int read);
 int have_vdisk(char drive);
+
 void Disk_Read(unsigned int lba, unsigned int number, void *buffer,
-               char drive);
+               char drive); // 读取指定扇区 ATA设备 512字节
 bool CDROM_Read(unsigned int lba, unsigned int number, void *buffer,
-               char drive);
+               char drive); // 读取指定扇区 ATAPI设备 2048字节
 unsigned int disk_Size(char drive);
-int DiskReady(char drive);
+int DiskReady(char drive); // 硬盘是否就绪
 void Disk_Write(unsigned int lba, unsigned int number, void *buffer,
                 char drive);
 unsigned int GetDriveCode(unsigned char *name);
