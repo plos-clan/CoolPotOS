@@ -50,3 +50,4 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * ViudiraTech - Uinxed-Mark program
 * Vinbe Wan - CoolPot_Driver Development
 * A4-Tacks - Write some build scripts
+* wenxuanjun - CoolPotOS Rust SDK

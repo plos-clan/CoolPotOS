@@ -50,3 +50,4 @@
 * ViudiraTech - Uinxed-Mark 性能测试程序
 * VinbeWan - 负责驱动程序开发
 * A4-Tacks - 编写一些构建脚本
+* wenxuanjun - 支持用 Rust 编写 APP
