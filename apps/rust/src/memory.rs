@@ -1,12 +1,13 @@
 use crate::binding::*;
 use core::alloc::{GlobalAlloc, Layout};
+use core::panic;
 
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator;
 
 #[alloc_error_handler]
-fn alloc_error_handler(_layout: Layout) -> ! {
-    loop {}
+fn alloc_error_handler(layout: Layout) -> ! {
+    panic!("allocation error: {:?}", layout);
 }
 
 struct Allocator;
