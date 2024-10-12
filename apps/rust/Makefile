@@ -9,9 +9,9 @@ else
 endif
 	cp ../libo/libp.a libs/libp.a
 	cargo build --release
-	mv $(target)/cara $(apps)/cara
-	mv $(target)/os-terminal $(apps)/os-terminal
+	mv $(target)/cara $(apps)/cara.elf
+	mv $(target)/os-terminal $(apps)/os-terminal.elf
 
 clean:
-	rm $(apps)/cara
-	rm $(apps)/os-terminal
+	rm $(apps)/cara.elf
+	rm $(apps)/os-terminal.elf
