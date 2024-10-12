@@ -50,11 +50,11 @@ typedef struct vfs_t {
     int flag;
 } vfs_t;
 
-bool vfs_change_path(char *dictName);
-void vfs_getPath(char *buffer);
-void vfs_getPath_no_drive(char *buffer);
-bool vfs_mount_disk(uint8_t disk_number, uint8_t drive);
-bool vfs_unmount_disk(uint8_t drive);
+bool vfs_change_path(char *dictName); // cd命令
+void vfs_getPath(char *buffer); //获取CD 格式 <驱动器号>:/<路径>
+void vfs_getPath_no_drive(char *buffer); //获取CD 格式 /<路径>
+bool vfs_mount_disk(uint8_t disk_number, uint8_t drive); //挂载指定硬盘
+bool vfs_unmount_disk(uint8_t drive); //卸载硬盘
 bool vfs_readfile(char *path, char *buffer);
 bool vfs_writefile(char *path, char *buffer, int size);
 uint32_t vfs_filesize(char *filename);
@@ -65,16 +65,16 @@ bool vfs_createfile(char *filename);
 bool vfs_createdict(char *filename);
 bool vfs_renamefile(char *filename, char *filename_of_new);
 bool vfs_attrib(char *filename, ftype type);
-bool vfs_format(uint8_t disk_number, char *FSName);
+bool vfs_format(uint8_t disk_number, char *FSName); //格式化硬盘
 vfs_file *vfs_fileinfo(char *filename);
 
 #include "task.h"
 
-bool vfs_change_disk(struct task_struct *task,uint8_t drive);
-bool vfs_register_fs(vfs_t vfs);
+bool vfs_change_disk(struct task_struct *task,uint8_t drive); //为指定进程切换硬盘挂载
+bool vfs_register_fs(vfs_t vfs); //注册文件系统
 void init_vfs();
 vfs_file *get_cur_file(char* filename);
-void vfs_copy(struct task_struct *task,vfs_t* src);
-void vfs_getPath_no_drive_src(vfs_t *src,char *buffer);
+void vfs_copy(struct task_struct *task,vfs_t* src);// 将VFS拷贝至指定进程
+void vfs_getPath_no_drive_src(vfs_t *src,char *buffer); //获取该VFS的CD
 
 #endif

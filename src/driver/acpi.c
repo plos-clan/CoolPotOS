@@ -5,6 +5,7 @@
 #include "../include/isr.h"
 #include "../include/timer.h"
 #include "../include/common.h"
+#include "../include/task.h"
 
 uint16_t SLP_TYPa;
 uint16_t SLP_TYPb;
@@ -380,6 +381,10 @@ unsigned int acpi_find_table(char *Signature) {
     return 0;
 }
 
+static void hpet_clock(registers_t *regs){
+    //schedule(regs);
+}
+
 void hpet_initialize() {
     HPET *hpet = acpi_find_table("HPET");
     if (!hpet) {
@@ -390,6 +395,14 @@ void hpet_initialize() {
 
     uint32_t counterClockPeriod = hpetInfo->generalCapabilities >> 32;
     hpetPeriod = counterClockPeriod / 1000000;
+
+   // HpetTimer hpet_timer = hpetInfo->timers[0];
+   // hpet_timer.configurationAndCapability = 0x004c;
+   // hpet_timer.comparatorValue = 14318179;
+
+   // hpetInfo->mainCounterValue = 0;
+
+   // register_interrupt_handler(0x20,hpet_clock);
 
     hpetInfo->generalConfiguration |= 1;  //  启用hpet
 }

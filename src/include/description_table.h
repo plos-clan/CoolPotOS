@@ -150,13 +150,13 @@ typedef struct intr_frame_t {
 } intr_frame_t;
 
 void write_tss(int32_t num, uint16_t ss0, uint32_t esp0);
-void set_kernel_stack(uintptr_t stack);
+void set_kernel_stack(uintptr_t stack); //设置内核栈(进程切换用)
 void set_tss_ss0(uintptr_t ss);
 
 void gdt_install();
 void idt_install();
 
-void idt_use_reg(uint8_t num,uint32_t base);
+void idt_use_reg(uint8_t num,uint32_t base); //注册用户可调用的中断服务程序
 void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
 
 #endif //CRASHPOWEROS_DESCRIPTION_TABLE_H

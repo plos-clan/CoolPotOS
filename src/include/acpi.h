@@ -268,13 +268,13 @@ uint8_t *AcpiGetRSDPtr();
 int AcpiCheckHeader(void *ptr, uint8_t *sign);
 uint8_t *AcpiCheckRSDPtr(void *ptr);
 uint32_t AcpiGetMadtBase();
-void power_off();
-void power_reset();
+void power_off(); // 关机
+void power_reset(); // 重启
 int acpi_enable();
 int acpi_disable();
 void acpi_install();
 void hpet_initialize();
-uint32_t nanoTime();
-void usleep(uint32_t nano);
+uint32_t nanoTime(); //获取纳秒数
+void usleep(uint32_t nano); //纳秒级精度休眠
 
 #endif //CRASHPOWEROS_ACPI_H
