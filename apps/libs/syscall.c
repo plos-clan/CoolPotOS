@@ -108,6 +108,10 @@ int syscall_vfs_rename(char* filename1,char* filename2){
     return rets;
 }
 
+void syscall_cp_system(procces_t *pcb){
+    __syscall(SYSCALL_CP_SYSTEM,pcb);
+}
+
 void *mmap(void *addr, size_t size) {
     return (void *)__syscall(SYSCALL_ALLOC_PAGE, (size + 4095) / 4096);
 }

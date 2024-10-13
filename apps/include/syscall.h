@@ -23,6 +23,7 @@
 #define SYSCALL_ALLOC_PAGE 20
 #define SYSCALL_FRAMEBUFFER 21
 #define SYSCALL_DRAW_BITMAP 22
+#define SYSCALL_CP_SYSTEM 23
 
 #include "ctype.h"
 #include "cpos.h"
@@ -68,5 +69,7 @@ int syscall_vfs_rename(char *filename1, char *filename2);
 uint32_t *syscall_framebuffer();
 
 void syscall_draw_bitmap(int x,int y,int width,int height,char* bitmap);
+
+void syscall_cp_system(procces_t *pcb);
 
 #endif

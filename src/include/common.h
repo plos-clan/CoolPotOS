@@ -33,6 +33,7 @@ typedef int bool;
 #define false 0
 #define EOF -1
 
+char *strtok(char *str, const char *delim);
 char* replaceAll(char* src, char* find, char* replaceWith);
 char *strstr(char *str1, char *str2);
 char *strncpy(char *dest, const char *src, unsigned long long count);
