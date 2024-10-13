@@ -129,6 +129,9 @@ def build_fs():  # 构建文件系统
             return -1
     return 0
 
+def syservice():
+    print("Building syservice...")
+    return os.system("make -r -C syservice")
 
 def linker():  # 交叉编译链接
     print("Linking object files...")
@@ -159,6 +162,9 @@ a = build_network()
 if a != 0:
     exit(-1)
 a = build_fs()
+if a != 0:
+    exit(-1)
+a = syservice()
 if a != 0:
     exit(-1)
 a = linker()

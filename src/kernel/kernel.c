@@ -21,7 +21,8 @@
 #include "../include/panic.h"
 #include "../include/mouse.h"
 #include "../include/i2c.h"
-#include "../include/desktop.h"
+#include "../include/bootarg.h"
+#include "../include/os_terminal.h"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -118,7 +119,7 @@ void kernel_main(multiboot_t *multiboot) {
     char* cmdline = multiboot->cmdline;
 
     if(cmdline != NULL){
-       // printf("Multiboot command line: %s\n",cmdline);
+        boot_arg(cmdline);
     }
 
     logkf("\n\n\n");
@@ -181,10 +182,18 @@ void kernel_main(multiboot_t *multiboot) {
     init_eh();
     klogf(true,"Kernel load done!\n");
 
+
+
     io_sti();
 
+    printf("Launching system service...\n");
     clock_sleep(25);
-
+    extern uint32_t boot_arg_device_d;
+    if(boot_arg_device_d & TTY_OS_TERMINAL){
+        init_terminal();
+        boot_arg_device_d |= TTY_IS_OPEN;
+        klogf(true,"System service [os_terminal] launch success!\n");
+    }
     //vfs_change_path("sys");
     //int pid = user_process("csp.bin","CSP","",TASK_SYSTEM_SERVICE_LEVEL);
 

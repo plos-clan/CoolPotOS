@@ -2,9 +2,13 @@
 #include "../include/task.h"
 #include "../include/graphics.h"
 #include "../include/printf.h"
+#include "../include/bootarg.h"
+#include "../include/os_terminal.h"
 
 extern uint32_t volatile*screen;
 extern uint32_t width, height;
+
+extern uint32_t boot_arg_device_d;
 
 static char eos[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'f', 'J', 'K', 'S', 'T', 'm'};
 // vt100控制字符中可能的结束符号
@@ -371,6 +375,7 @@ void tty_print(struct tty *res,const char *string){
         tty_putchar(res,string[i]);
     }
 }
+
 void tty_putchar(struct tty *res,int ch){
     if (ch == '\033' && res->vt100 == 0) {
         memset(res->buffer, 0, 81);
@@ -419,12 +424,25 @@ void tty_putchar(struct tty *res,int ch){
 void tty_MoveCursor(struct tty *res,int x, int y){
 
 }
+
 void tty_clear(struct tty *res){
-    vbe_clear();
+    if(boot_arg_device_d & TTY_DEFAULT){
+        vbe_clear();
+    } else if(boot_arg_device_d & TTY_OS_TERMINAL) {
+        if (boot_arg_device_d & TTY_IS_OPEN) {
+            tty_print(res, "\033[2J");
+        } else vbe_clear();
+    }
 }
 
 static void t_putc(tty_t *res,char ch){
-    vbe_putchar(ch);
+    if(boot_arg_device_d & TTY_DEFAULT){
+        vbe_putchar(ch);
+    } else if(boot_arg_device_d & TTY_OS_TERMINAL){
+        if(boot_arg_device_d & TTY_IS_OPEN){
+            terminal_write_char(ch);
+        } else vbe_putchar(ch);
+    }
 }
 
 void init_default_tty(struct task_struct *task){
@@ -460,7 +478,7 @@ void init_default_tty(struct task_struct *task){
 
     task->tty->is_using = true;
     task->tty->print = tty_print;
-    task->tty->clear = vbe_clear;
+    task->tty->clear = tty_clear;
     task->tty->putchar = t_putc;
     task->tty->gotoxy = tty_gotoxy;
     task->tty->screen_ne = screen_ne_TextMode;
