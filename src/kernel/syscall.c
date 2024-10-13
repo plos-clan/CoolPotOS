@@ -13,6 +13,14 @@
 #include "../include/timer.h"
 #include "../include/panic.h"
 
+typedef struct procces{
+    int pid;
+    char* cmd;
+    FILE* stdout;
+    FILE* stderr;
+    FILE* stdin;
+}procces_t;
+
 extern uint32_t phy_mem_size;
 extern unsigned int PCI_NUM;
 
@@ -79,23 +87,6 @@ static void syscall_vfs_chang_path(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32
     io_sti();
     vfs_change_path(ebx);
 }
-
-struct sysinfo{
-    char osname[50];
-    char kenlname[50];
-    char cpu_vendor[64];
-    char cpu_name[64];
-    uint32_t phy_mem_size;
-    uint32_t pci_device;
-    uint32_t frame_width;
-    uint32_t frame_height;
-    uint32_t year;
-    uint32_t mon;
-    uint32_t day;
-    uint32_t hour;
-    uint32_t min;
-    uint32_t sec;
-};
 
 static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     struct sysinfo *info = ebx;
@@ -194,6 +185,14 @@ static void syscall_draw_bitmap(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t 
     }
 }
 
+static void syscall_cp_system(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    procces_t *pcb = ebx;
+    int pid = user_process(pcb->cmd[0],"SubProcess",pcb->cmd,TASK_APPLICATION_LEVEL);
+    if(pid != -1){
+        pcb->pid = pid;
+    } else pcb->pid = 0;
+}
+
 void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_puchar,
         [SYSCALL_PRINT] = syscall_print,
@@ -217,6 +216,7 @@ void *sycall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_ALLOC_PAGE] = syscall_alloc_page,
         [SYSCALL_FRAMEBUFFER] = syscall_framebuffer,
         [SYSCALL_DRAW_BITMAP] = syscall_draw_bitmap,
+        [SYSCALL_CP_SYSTEM] = syscall_cp_system,
 };
 
 typedef size_t (*syscall_t)(size_t, size_t, size_t, size_t, size_t);

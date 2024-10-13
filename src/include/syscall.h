@@ -28,6 +28,24 @@
 #define SYSCALL_ALLOC_PAGE 20
 #define SYSCALL_FRAMEBUFFER 21
 #define SYSCALL_DRAW_BITMAP 22
+#define SYSCALL_CP_SYSTEM 23
+
+struct sysinfo{
+    char osname[50];
+    char kenlname[50];
+    char cpu_vendor[64];
+    char cpu_name[64];
+    uint32_t phy_mem_size;
+    uint32_t pci_device;
+    uint32_t frame_width;
+    uint32_t frame_height;
+    uint32_t year;
+    uint32_t mon;
+    uint32_t day;
+    uint32_t hour;
+    uint32_t min;
+    uint32_t sec;
+};
 
 void syscall_install();
 

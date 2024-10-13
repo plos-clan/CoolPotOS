@@ -2,6 +2,7 @@
 #define CRASHPOWEROS_CPOS_H
 
 #include "ctype.h"
+#include "stdio.h"
 
 struct sysinfo{
     char osname[50];
@@ -20,6 +21,14 @@ struct sysinfo{
     uint32_t sec;
 };
 
+typedef struct procces{
+    int pid;
+    char* cmd;
+    FILE* stdout;
+    FILE* stderr;
+    FILE* stdin;
+}procces_t;
+
 #include "syscall.h"
 #include "stdlib.h"
 
@@ -33,6 +42,13 @@ static inline void free_info(struct sysinfo *info){
     free(info->cpu_name);
     free(info->cpu_vendor);
     free(info);
+}
+
+static inline procces_t* cp_system(const char* cmd){
+    procces_t *pcb = malloc(sizeof(pcb));
+    pcb->cmd = cmd;
+    syscall_cp_system(pcb);
+    return pcb;
 }
 
 static inline int exec_elf(const char* filename,const char* args,int is_async){
