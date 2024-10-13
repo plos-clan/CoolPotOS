@@ -15,7 +15,7 @@ use binding::*;
 
 #[panic_handler]
 unsafe fn panic(info: &PanicInfo) -> ! {
-    print!("panicked: {}", info.message());
+    println!("panicked: {}", info.message());
     exit(1);
 }
 
