@@ -2,9 +2,10 @@ CFLAGS = -m32 -I$(INCLUDE_PATH) -nolibc -nostdlib -ffreestanding -fno-stack-prot
 CPPFLAGS = -m32 -I$(INCLUDE_PATH) -nostdinc -nolibc -nostdlib -ffreestanding -fno-exceptions -fno-stack-protector -Qn -fno-pic -fno-pie -fno-asynchronous-unwind-tables -fomit-frame-pointer -finput-charset=UTF-8 -fexec-charset=GB2312 -Qn -O3 -march=pentium -fno-rtti -w
 
 CC = gcc
+CPC = g++
 
 C = $(CC) $(CFLAGS)
-CPP = $(CC) $(CPPFLAGS)
+CPP = $(CPC) $(CPPFLAGS)
 INCLUDE_PATH := ../include
 NASM = nasm
 LIBS_PATH := ../libo

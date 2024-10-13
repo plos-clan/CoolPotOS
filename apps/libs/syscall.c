@@ -12,7 +12,7 @@ void syscall_putchar(char c) {
     __syscall(SYSCALL_PUTC, c);
 }
 
-char syscall_getch(){
+int syscall_getch(){
     return __syscall(SYSCALL_GETCH);
 }
 

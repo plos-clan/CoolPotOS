@@ -64,6 +64,7 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
 static int pl_getch(void) {
     int fd = 0, ch;
 
+
     ch = syscall_getch();
 
     if (ch == 0x0d) {
@@ -75,24 +76,10 @@ static int pl_getch(void) {
     if (ch == 0x9) {
         return PL_READLINE_KEY_TAB;
     }
-    if (ch == 0x1b) {
-        ch = getch();
-        if (ch == 0x5b) {
-            ch = getch();
-            switch (ch) {
-                case 0x41:
-                    return PL_READLINE_KEY_UP;
-                case 0x42:
-                    return PL_READLINE_KEY_DOWN;
-                case 0x43:
-                    return PL_READLINE_KEY_RIGHT;
-                case 0x44:
-                    return PL_READLINE_KEY_LEFT;
-                default:
-                    return -1;
-            }
-        }
-    }
+    if (ch == -1) return PL_READLINE_KEY_UP;
+    if (ch == -2) return PL_READLINE_KEY_DOWN;
+    if (ch == -3) return PL_READLINE_KEY_LEFT;
+    if (ch == -4) return PL_READLINE_KEY_RIGHT;
     return ch;
 }
 
@@ -102,25 +89,25 @@ int main(int argc_v,char **argv_v){
     print_ttf("CoolPotOS v0.3.3",0xffffff,0x000000,440,500,70.0);
     draw_image_xy("icon.png",490,180);
 
-   // pl_readline_t n = pl_readline_init(pl_getch, (void *)put_char, flush, handle_tab);
+    pl_readline_t n = pl_readline_init(pl_getch, (void *)put_char, flush, handle_tab);
 
     printf("Welcome to CoolPotOS UserShell v0.0.1\n");
-    printf("Copyright by \x1b[1m\x1b[4mXIAOYI12\x1b[0m 2023-2024\n");
-    char *com[100];
-    //char **com;
+    printf("Copyright by \033[4mXIAOYI12\033[0m 2023-2024\n");
+    //char *com[100];
+    char **com;
     char *argv[50];
     int argc = -1;
     char *buffer[255];
 
     while (1){
         syscall_get_cd(buffer);
-        printf("\033[32m\033[7mdefault@localhost:\033[7m \033[34m%s\\\033[39m$ ",buffer);
+        printf("\033[3mdefault@localhost:\033[0m \033[4m%s\\\033[0m$ ",buffer);
 
-        if (gets(com) <= 0) continue;
+        //if (gets(com) <= 0) continue;
 
-        //free(com);
-        //com = malloc(100 * sizeof(char));
-        //pl_readline(n,"", com, 100);
+        free(com);
+        com = malloc(100 * sizeof(char));
+        pl_readline(n,"", com, 100);
 
         char* com_copy[100];
         strcpy(com_copy,com);

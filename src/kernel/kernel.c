@@ -190,7 +190,7 @@ void kernel_main(multiboot_t *multiboot) {
     clock_sleep(25);
     extern uint32_t boot_arg_device_d;
     if(boot_arg_device_d & TTY_OS_TERMINAL){
-        init_terminal();
+        init_terminal(1);
         boot_arg_device_d |= TTY_IS_OPEN;
         klogf(true,"System service [os_terminal] launch success!\n");
     }
