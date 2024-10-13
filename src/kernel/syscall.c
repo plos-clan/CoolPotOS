@@ -32,10 +32,9 @@ static void syscall_print(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,ui
     printf("%s",ebx);
 }
 
-static char syscall_getch(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+static int syscall_getch(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     io_sti();
-    char c = kernel_getch();
-    return c;
+    return kernel_getch();
 }
 
 static void syscall_exit(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){

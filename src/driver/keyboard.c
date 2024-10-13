@@ -5,6 +5,7 @@
 #include "../include/io.h"
 #include "../include/task.h"
 #include "../include/klog.h"
+#include "../include/os_terminal.h"
 
 static int caps_lock, shift, e0_flag = 0, ctrl = 0;
 int disable_flag = 0;
@@ -65,6 +66,7 @@ int handle_keyboard_input(registers_t *reg){
         struct task_struct *task = running_proc_head;
         while (1){
             if(task->tty != NULL){
+                if(e0_flag) fifo8_put(task->tty->fifo,0xe0);
                 fifo8_put(task->tty->fifo,data);
             }
             task = task->next;
@@ -92,17 +94,19 @@ int input_char_inSM() {
 
 int kernel_getch() {
     uint8_t ch;
+    flush_terminal();
     ch = input_char_inSM(); // 扫描码
+
     if (ch == 0xe0) {       // keytable之外的键（↑,↓,←,→）
         ch = input_char_inSM();
         if (ch == 0x48) { // ↑
-            return -2;
+            return -1;
         } else if (ch == 0x50) { // ↓
-            return -3;
+            return -2;
         } else if (ch == 0x4b) { // ←
-            return -4;
+            return -3;
         } else if (ch == 0x4d) { // →
-            return -5;
+            return -4;
         }
     }
     // 返回扫描码(keytable之内)对应的ASCII码

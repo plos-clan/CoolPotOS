@@ -225,6 +225,7 @@ int pl_readline_handle_key(_SELF, int ch, pl_readline_runtime *rt) {
             }
             break;
         case PL_READLINE_KEY_BACKSPACE:
+
             if (!rt->p) // 光标在最左边
                 return PL_READLINE_NOT_FINISHED;
             --rt->p;

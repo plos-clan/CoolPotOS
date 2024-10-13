@@ -377,6 +377,14 @@ void tty_print(struct tty *res,const char *string){
 }
 
 void tty_putchar(struct tty *res,int ch){
+
+    if(boot_arg_device_d & TTY_OS_TERMINAL){
+        if(boot_arg_device_d & TTY_IS_OPEN){
+            res->putchar(res,ch);
+            return;
+        }
+    }
+
     if (ch == '\033' && res->vt100 == 0) {
         memset(res->buffer, 0, 81);
         res->buf_p                = 0;
