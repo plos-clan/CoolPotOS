@@ -32,7 +32,7 @@ void syscall_print(char *c);
 
 void syscall_putchar(char c);
 
-char syscall_getch();
+int syscall_getch();
 
 void *syscall_malloc(size_t size);
 
