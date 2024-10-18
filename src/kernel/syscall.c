@@ -29,7 +29,7 @@ static void syscall_puchar(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,u
 }
 
 static void syscall_print(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
-    printf("%s",ebx);
+    get_current()->tty->print(get_current()->tty,ebx);
 }
 
 static int syscall_getch(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){

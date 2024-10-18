@@ -139,11 +139,11 @@ void kernel_main(multiboot_t *multiboot) {
     if(boot_arg_device_d & TTY_OS_TERMINAL){
         extern uint32_t width, height;
         extern uint32_t *screen;
-
         terminal_init(width,height,screen,kmalloc, kfree, logk);
         boot_arg_device_d |= TTY_IS_OPEN;
     }
     printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
+    printf("酷锅系统 版本: %s 适用于x86平台 基于多重引导规范\n",OS_VERSION);
     printf("Memory Size: %dMB | ",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
     printf("Video Resolution: %d x %d\n",multiboot->framebuffer_width,multiboot->framebuffer_height);
     klogf(true,"System service [os_terminal] launch success!\n");
