@@ -92,7 +92,7 @@ int main(int argc_v,char **argv_v){
     pl_readline_t n = pl_readline_init(pl_getch, (void *)put_char, flush, handle_tab);
 
     printf("Welcome to CoolPotOS UserShell v0.0.1\n");
-    printf("Copyright by \033[4mXIAOYI12\033[0m 2023-2024\n");
+
     //char *com[100];
     char **com;
     char *argv[50];
@@ -101,7 +101,7 @@ int main(int argc_v,char **argv_v){
 
     while (1){
         syscall_get_cd(buffer);
-        printf("\033[3mdefault@localhost:\033[0m \033[4m%s\\\033[0m$ ",buffer);
+        printf("\033[32mUser@localhost: \033[34m%s\\\033[39m$ ",buffer);
 
         //if (gets(com) <= 0) continue;
 
