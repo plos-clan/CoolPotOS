@@ -2,8 +2,8 @@
 #define CRASHPOWEROS_COMMON_H
 
 #define OS_NAME "CoolPotOS"
-#define OS_VERSION "v0.3.4"
-#define KERNEL_NAME "CP_Kernel-i386-0.3.4"
+#define OS_VERSION "v0.3.6"
+#define KERNEL_NAME "CP_Kernel-i386-0.3.6"
 
 // b 0x211972
 // b 0x20d0a6

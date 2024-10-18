@@ -14,7 +14,7 @@ void print_info(){
     printf("     -&@@@@@@@@@@@@@@@@@@@@@=\033[36m.-&@@@@@@@@@@@@@@+\033[39m          CPU Vendor: %s\n",info->cpu_vendor);
     printf("    *@@@@@@@@@@@@@@@@@@@@@=\033[36m.-&@@@@@@@@@@@@@@@@+\033[39m          CPU:        %s\n",info->cpu_name);
     printf("  .&@@@@@@@@@@@@@@@&*=-:: \033[36m:#@@@@@@@@@@@@@@@@@@=\033[39m          Memory:     %dMB\n",info->phy_mem_size);
-    printf("  &@@@@@@@@@@@@@&=.       \033[36m#@@@@@@@@@@@@@@@@@#:.\033[39m=         Console:    CPOS_USER_SHELL vt100\n");
+    printf("  &@@@@@@@@@@@@@&=.       \033[36m#@@@@@@@@@@@@@@@@@#:.\033[39m=         Console:    CPOS_USER_SHELL os_terminal\n");
     printf(" *@@@@@@@@@@@@@-          \033[36m#@@@@@@@@@@@@@@@#:.\033[39m=@@+        PCI Device: %d\n",info->pci_device);
     printf(":@@@@@@@@@@@@&.           \033[36m#@@@@@@@@@@@@@#:\033[39m =@@@@@.       Resolution: %d x %d\n",info->frame_width,info->frame_height);
     printf("#@@@@@@@@@@@@.            \033[36m#@@@@@@@@@@@#:\033[39m =@@@@@@@+       Time:       %d/%d/%d %d:%d:%d\n",info->year,info->mon,

@@ -151,6 +151,17 @@ bool CDROM_Read(unsigned int lba, unsigned int number, void *buffer,
     }
     return false;
 }
+
+vdisk *get_disk(char drive){
+    unsigned char drive1 = drive;
+    if (have_vdisk(drive1)) {
+        int indx = drive1 - 'A';
+        return &vdisk_ctl[indx];
+    } else {
+        return NULL;
+    }
+}
+
 unsigned int disk_Size(char drive) {
     unsigned char drive1 = drive;
     if (have_vdisk(drive1)) {
@@ -159,8 +170,6 @@ unsigned int disk_Size(char drive) {
     } else {
         return 0;
     }
-
-    return 0;
 }
 bool DiskReady(char drive) { return have_vdisk(drive); }
 int getReadyDisk() { return 0; }

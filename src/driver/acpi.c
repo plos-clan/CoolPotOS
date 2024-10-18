@@ -336,7 +336,7 @@ void acpi_install() {
     AcpiPowerInit();
 }
 
-static HpetInfo *hpetInfo = NULL;
+HpetInfo *hpetInfo = NULL;
 static uint32_t hpetPeriod = 0;
 
 uint32_t nanoTime() {

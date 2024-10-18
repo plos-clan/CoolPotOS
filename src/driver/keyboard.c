@@ -62,6 +62,7 @@ int handle_keyboard_input(registers_t *reg){
     }
 
     extern struct task_struct *running_proc_head;
+
     if (data < 0x80) {
         struct task_struct *task = running_proc_head;
         while (1){
@@ -94,7 +95,6 @@ int input_char_inSM() {
 
 int kernel_getch() {
     uint8_t ch;
-    flush_terminal();
     ch = input_char_inSM(); // 扫描码
 
     if (ch == 0xe0) {       // keytable之外的键（↑,↓,←,→）

@@ -159,7 +159,7 @@ static void* syscall_alloc_page(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t 
     if(page_size==512) i = (i + (2*1024*1024) - 1) / (2*1024*1024) * (2*1024*1024);
     int ret = i;
     for (;i < ret + (page_size * 0x1000);i += 0x1000) {
-        alloc_frame(get_page(i,1,get_current()->pgd_dir,false),0,1);
+        alloc_frame(get_page(i,1,get_current()->pgd_dir),0,1);
     }
     get_current()->page_alloc_address = i;
 

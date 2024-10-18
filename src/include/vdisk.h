@@ -53,5 +53,6 @@ void Disk_Read2048(unsigned int lba, unsigned int number, void *buffer,
                    char drive);
 void DriveSemaphoreGive(unsigned int drive_code);
 bool DriveSemaphoreTake(unsigned int drive_code);
+vdisk *get_disk(char drive);
 
 #endif

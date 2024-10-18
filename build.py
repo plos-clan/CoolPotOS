@@ -138,8 +138,9 @@ def linker():  # 交叉编译链接
     source_file = ""
     for file in os.listdir(cd + dir_ + 'target'):
         source_file = source_file + " target" + dir_ + file
-    return os.system(
-        ld + " -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "cposkrnl.elf -ffreestanding -nostdlib " + source_file + " -lgcc")
+    cmd = ld + " -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "cposkrnl.elf -ffreestanding -nostdlib " + source_file + " -lgcc"
+    print(cmd)
+    return os.system(cmd)
 
 
 clean()
