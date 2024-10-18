@@ -3,6 +3,8 @@
 #include "../../include/io.h"
 #include "../../include/acpi.h"
 #include "../../include/printf.h"
+#include "../../include/task.h"
+#include "../../include/timer.h"
 
 extern uint32_t end; //linker.ld 内核末尾地址
 
@@ -150,7 +152,15 @@ void page_fault(registers_t *regs) {
         printk("Type: decode address;\n\taddress: %x\n", faulting_address);
     }
 
-    while (1);
+    if (get_current()->pid == 0) {
+        printf(" ======= Kernel Error ======= \n");
+        while (1) io_hlt();
+    } else {
+        task_kill(get_current()->pid);
+    }
+
+    sleep(1);
+    while (1) io_hlt();
 }
 
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {

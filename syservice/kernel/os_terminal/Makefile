@@ -1,3 +1,3 @@
 
 default:
-	cp out/libcoolpotos_os_terminal.a ../../../target/os_terminal.a
+	cp out/libos_terminal.a ../../../target/os_terminal.a
