@@ -23,6 +23,8 @@
 #include "../include/i2c.h"
 #include "../include/bootarg.h"
 #include "../include/os_terminal.h"
+#include "../include/devdisk.h"
+#include "../include/devfs.h"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -123,9 +125,7 @@ void kernel_main(multiboot_t *multiboot) {
     }
 
     logkf("\n\n\n");
-    printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
-    printf("Memory Size: %dMB | ",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
-    printf("Video Resolution: %d x %d\n",multiboot->framebuffer_width,multiboot->framebuffer_height);
+
     gdt_install();
     idt_install();
     init_timer(1);
@@ -135,6 +135,18 @@ void kernel_main(multiboot_t *multiboot) {
     init_sched();
     //fpu_setup();
 
+    extern uint32_t boot_arg_device_d;
+    if(boot_arg_device_d & TTY_OS_TERMINAL){
+        extern uint32_t width, height;
+        extern uint32_t *screen;
+
+        terminal_init(width,height,screen,kmalloc, kfree, logk);
+        boot_arg_device_d |= TTY_IS_OPEN;
+    }
+    printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
+    printf("Memory Size: %dMB | ",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+    printf("Video Resolution: %d x %d\n",multiboot->framebuffer_width,multiboot->framebuffer_height);
+    klogf(true,"System service [os_terminal] launch success!\n");
     init_keyboard();
 
     init_pit();
@@ -147,6 +159,9 @@ void kernel_main(multiboot_t *multiboot) {
 
     ide_init();
     ahci_init();
+
+    devdisk_init();
+   // register_devfs();
 
     syscall_install();
 
@@ -180,20 +195,13 @@ void kernel_main(multiboot_t *multiboot) {
     }
 
     init_eh();
+
     klogf(true,"Kernel load done!\n");
-
-
 
     io_sti();
 
-    printf("Launching system service...\n");
     clock_sleep(25);
-    extern uint32_t boot_arg_device_d;
-    if(boot_arg_device_d & TTY_OS_TERMINAL){
-        init_terminal(1);
-        boot_arg_device_d |= TTY_IS_OPEN;
-        klogf(true,"System service [os_terminal] launch success!\n");
-    }
+
     //vfs_change_path("sys");
     //int pid = user_process("csp.bin","CSP","",TASK_SYSTEM_SERVICE_LEVEL);
 

@@ -157,7 +157,9 @@ void task_kill(int pid) {
             page_t page = table->pages[i];
             free_frame(&page);
         }
+        kfree(table);
     }
+    kfree(argv->pgd_dir);
 
     struct task_struct *head = running_proc_head;
     struct task_struct *last = NULL;
@@ -185,7 +187,7 @@ void change_task_to(registers_t *reg,struct task_struct *next) {
     if (current != next) {
         struct task_struct *prev = current;
         current = next;
-        page_switch(current->pgd_dir);
+        switch_page_directory(current->pgd_dir);
         set_kernel_stack(current->stack + STACK_SIZE);
 
 
@@ -266,16 +268,16 @@ int32_t user_process(char *path, char *name,char* argv,uint8_t level){ // 用户
     new_task->argv = use_arg;
 
     page_directory_t *cur_page_dir = get_current()->pgd_dir;
-    page_switch(page);
+    switch_page_directory(page);
 
 
     for (int i = USER_START; i < USER_END + 0x1000;i++) { //用户堆以及用户栈映射
-        page_t *pg = get_page(i,1,page, false);
+        page_t *pg = get_page(i,1,page);
         alloc_frame(pg,0,1);
     }
 
     for (int i = USER_EXEC_FILE_START; i < USER_EXEC_FILE_START + size; i++) {
-        page_t *pg = get_page(i,1,page, false);
+        page_t *pg = get_page(i,1,page);
         alloc_frame(pg,0,1);
     }
 
@@ -310,7 +312,7 @@ int32_t user_process(char *path, char *name,char* argv,uint8_t level){ // 用户
     new_task->next = running_proc_head;
     kfree(ker_path);
 
-    page_switch(cur_page_dir);
+    switch_page_directory(cur_page_dir);
     can_sche = 1;
 
     // 找到当前进任务队列，插入到末尾
@@ -345,12 +347,8 @@ int32_t kernel_thread(int (*fn)(void *), void *arg, char *name) { // 内核进�
     new_task->task_level = TASK_KERNEL_LEVEL;
     new_task->fpu_flag = false;
 
-    extern header_t *head;
-    extern header_t *tail;
     extern void *program_break;
     extern void *program_break_end;
-    new_task->head = head;
-    new_task->tail = tail;
     new_task->program_break = program_break;
     new_task->program_break_end = program_break_end;
     new_task->name = name;
@@ -453,12 +451,8 @@ void init_sched() {
 
     init_default_tty(current);
 
-    extern header_t *head;
-    extern header_t *tail;
     extern void *program_break;
     extern void *program_break_end;
-    current->head = head;
-    current->tail = tail;
     current->program_break = program_break;
     current->program_break_end = program_break_end;
 

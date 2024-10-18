@@ -448,7 +448,8 @@ static void t_putc(tty_t *res,char ch){
         vbe_putchar(ch);
     } else if(boot_arg_device_d & TTY_OS_TERMINAL){
         if(boot_arg_device_d & TTY_IS_OPEN){
-            terminal_write_char(ch);
+            terminal_advance_state_single(ch);
+           // terminal_write_char(ch);
         } else vbe_putchar(ch);
     }
 }
