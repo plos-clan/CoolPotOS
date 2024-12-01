@@ -101,7 +101,8 @@ void vbe_clear();
 void vbe_write(const char *data, size_t size);
 void vbe_writestring(const char *data);
 void vbe_scroll();
-int cur_task();
+#include "../include/tty.h"
+void draw_rect_tty(tty_t *tty, int x0, int y0, int x1, int y1, int c);
 void vbe_draw_char(char c,int32_t x,int32_t y);
 void draw_rect(int x0, int y0, int x1, int y1, int c);
 void initVBE(multiboot_t *multiboot);

@@ -94,5 +94,6 @@ void ide_read_sectors(unsigned char drive, unsigned char numsects,
 void ide_write_sectors(unsigned char drive, unsigned char numsects,
                        unsigned int lba, unsigned short es, unsigned int edi);
 void ide_atapi_eject(unsigned char drive);
+void ide_init();
 
 #endif

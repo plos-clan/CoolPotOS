@@ -2,12 +2,13 @@
 
 #include "area.h"
 #include "block.h"
+#include "memory.h"
 #include "freelist.h"
 #include "large-blk.h"
 
 // mman_free 中使用的临时函数
 // 用于将内存块从空闲链表中分离
-dlexport void _detach(mman_t man, freelist_t ptr) {
+static void _detach(mman_t man, freelist_t ptr) {
   int id = freelists_size2id(blk_size(ptr));
   if (id < 0) {
     man->large_blk = freelist_detach(man->large_blk, ptr);
@@ -20,7 +21,7 @@ dlexport bool mman_init(mman_t man, void *ptr, size_t size) {
   if (man == null || ptr == null || size == 0) return false;
   if (size != SIZE_2M && size != SIZE_4k) return false;
   man->main.ptr          = ptr;
-  man->main.alloced_size = null;
+  man->main.alloced_size = 0;
   man->main.next         = null;
   man->size              = size;
   man->alloced_size      = 0;
@@ -158,7 +159,6 @@ dlexport void *mman_alloc(mman_t man, size_t size) {
 
 dlexport void mman_free(mman_t man, void *ptr) {
   if (ptr == null) return;
-
   if ((size_t)ptr % SIZE_4k == 0) {
     if (large_blk_free(man->large, ptr, man->cb_delmem)) return;
   }

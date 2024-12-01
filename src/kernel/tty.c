@@ -370,7 +370,6 @@ void tty_print(struct tty *res,const char *string){
     for (int i = 0; i < strlen(string);i++) {
         tty_putchar(res,string[i]);
     }
-    //vbe_writestring(string);
 }
 void tty_putchar(struct tty *res,int ch){
     if (ch == '\033' && res->vt100 == 0) {
@@ -465,6 +464,7 @@ void init_default_tty(struct task_struct *task){
     task->tty->putchar = t_putc;
     task->tty->gotoxy = tty_gotoxy;
     task->tty->screen_ne = screen_ne_TextMode;
+    //task->tty->MoveCursor = move_cur_TextMode;
 
     fifo8_init(task->tty->fifo,256,buffer);
 }

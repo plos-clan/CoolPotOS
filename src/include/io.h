@@ -41,9 +41,19 @@ void load_idtr(int limit, int addr);
 
 uint16_t inw(uint16_t port);
 
-void copy_page_physical(uint32_t,uint32_t);
+void copy_page_physical(uint32_t, uint32_t);
 
 extern char read_port(unsigned short port);
+
+static inline uint32_t get_cr0(void) {
+    uint32_t cr0;
+    asm volatile("mov %%cr0, %0" : "=r"(cr0));
+    return cr0;
+}
+
+static inline void set_cr0(uint32_t cr0) {
+    asm volatile("mov %0, %%cr0" : : "r"(cr0));
+}
 
 static inline void outb(uint16_t port, uint8_t data) {
     asm volatile("outb %b0, %w1" : : "a"(data), "Nd"(port));

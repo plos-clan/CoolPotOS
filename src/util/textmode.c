@@ -61,3 +61,9 @@ void clear_TextMode(struct tty *res) {
     res->gotoxy(res, 0, 0);
     res->Raw_y = 0;
 }
+
+void move_cur_TextMode(struct tty *res, int x, int y){
+    //res->x = x;
+   // res->y = y;
+   // int i = y * res->xsize + x;
+}
