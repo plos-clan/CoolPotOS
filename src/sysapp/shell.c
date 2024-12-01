@@ -1,25 +1,20 @@
-#include "../include/shell.h"
-#include "../include/queue.h"
-#include "../include/graphics.h"
-#include "../include/common.h"
-#include "../include/task.h"
-#include "../include/cmos.h"
-#include "../include/vdisk.h"
-#include "../include/vfs.h"
-#include "../include/common.h"
-#include "../include/elf.h"
-#include "../include/keyboard.h"
-#include "../include/pci.h"
-
-extern Queue *key_char_queue;
-extern vdisk vdisk_ctl[10];
-extern bool hasFS;
+#include "shell.h"
+#include "krlibc.h"
+#include "klog.h"
+#include "keyboard.h"
+#include "cmos.h"
+#include "vfs.h"
+#include "pcb.h"
+#include "cpuid.h"
+#include "pci.h"
+#include "video.h"
+#include "scheduler.h"
 
 static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);
 }
 
-char getc() {
+static char getc() {
     char c;
     do{
         c = kernel_getch();
@@ -28,26 +23,26 @@ char getc() {
     return c;
 }
 
-int gets(char *buf, int buf_size) {
+static int gets(char *buf, int buf_size) {
     int index = 0;
     char c;
     while ((c = getc()) != '\n') {
         if (c == '\b') {
             if (index > 0) {
                 index--;
-                print("\b \b");
+                printk("\b \b");
             }
         } else {
             buf[index++] = c;
-            putchar(c);
+            printk("%c",c);
         }
     }
     buf[index] = '\0';
-    putchar(c);
+    printk("%c",c);
     return index;
 }
 
-int cmd_parse(char *cmd_str, char **argv, char token) {
+static int cmd_parse(char *cmd_str, char **argv, char token) {
     int arg_idx = 0;
     while (arg_idx < MAX_ARG_NR) {
         argv[arg_idx] = NULL;
@@ -69,395 +64,211 @@ int cmd_parse(char *cmd_str, char **argv, char token) {
     return argc;
 }
 
-void cmd_echo(int argc, char **argv) {
-    for (int i = 1; i < argc; i++) {
-        if (i == 1) print("");
-        else print(" ");
-        print(argv[i]);
-    }
-    print("\n");
-}
-
-void cmd_proc(int argc, char **argv) {
-    if (argc <= 1) {
-        print_proc();
-        return;
-    }
-
-    if (!strcmp("list", argv[1])) {
-        print_proc();
-    } else if (!strcmp("kill", argv[1])) {
-        if (argc <= 2) {
-            printf("[Shell-PROC-kill]: If there are too few parameters.\n");
-            return;
-        }
-        int pid = strtol(argv[2], NULL, 10);
-        task_kill(pid);
-    } else {
-        printf("[Shell-[PROC]]: Unknown parameter\n");
-        return;
-    }
-}
-
-void cmd_date() {
-    printf("System Time:           %s\n", get_date_time());
-    printf("Memory Usage: [%dKB] | All Size: [%dMB]\n", memory_usage() / 1024,4096);
-    print_cpu_id();
-
-    print("\n");
-}
-
-void cmd_ls() {
-    List *ls = vfs_listfile("");
-    int files = 0, dirs = 0;
-
-    for (int i = 1; FindForCount(i, ls) != NULL; i++) {
-        vfs_file *d = (vfs_file *) FindForCount(i, ls)->val;
-        char *type;
-        if (d->type == DIR) {
-            type = "<DIR>"; //文件夹
-            dirs++;
-        } else if (d->type == HID) {
-            type = "<HID>"; //隐藏文件
-            files++;
-        } else {
-            type = "<FILE>"; //文件
-            files++;
-        }
-        printf("%-13s %-6s  %d \n", d->name, type, d->size / 1024);
-        kfree(d);
-    }
-    printf("-----------------------------------------\n");
-    printf("Name          Type     Size(KB)\n"
-           "All directory: %d | All Files: %d\n",dirs, files);
-
-    DeleteList(ls);
-    kfree(ls);
-}
-
-void cmd_mkdir(int argc, char **argv) {
+static void mkdir(int argc,char** argv){
     if (argc == 1) {
-        printf("[Shell-MKDIR]: If there are too few parameters, please specify the directory name.\n");
+        printk("[Shell-MKDIR]: If there are too few parameters.\n");
         return;
     }
+    if(vfs_mkdir(argv[1]) == -1){
+        printk("Failed create directory [%s].\n",argv[1]);
+    }
+}
 
-    if(!hasFS){
-        printf("Cannot find fs in this disk.\n");
+static void mount(int argc,char** argv){
+    if (argc == 2) {
+        printk("[Shell-MOUNT]: If there are too few parameters.\n");
         return;
     }
+    vfs_node_t p = vfs_open(argv[1]);
+    if(p == NULL) {
+        printk("Cannot found mount directory.\n");
+        return;
+    }
+    if(vfs_mount(argv[2],p) == -1){
+        printk("Failed mount device [%s]\n",argv[2]);
+    }
+}
 
-    vfs_file *file = get_cur_file(argv[1]);
+static void ls(int argc,char** argv){
+    vfs_node_t p;
+    if (argc == 1) {
+        p = vfs_open("/");
+    } else{
+        p = vfs_open(argv[1]);
+    }
+    if(p == NULL){
+        printk("Cannot fount directory.\n");
+        return;
+    }
+    list_foreach(p->child, i) {
+        vfs_node_t c = (vfs_node_t) i->data;
+        printk("%s ", c->name);
+    }
+    printk("\n");
+}
 
+static void read(int argc,char** argv) {
+    if (argc == 1) {
+        printk("[Shell-MKDIR]: If there are too few parameters.\n");
+        return;
+    }
+    vfs_node_t file = vfs_open(argv[1]);
     if(file != NULL){
-        printf("This file is exist.\n");
+        char* buf = kmalloc(file->size);
+        if(vfs_read(file,buf,0,file->size) == -1){
+            goto read_error;
+        }
+        for (size_t i = 0; i < file->size; i++) {
+            printk("%c",buf[i]);
+        }
+        printk("\n");
         return;
     }
-
-    if(!vfs_createdict(argv[1])){
-        printf("Illegal create.\n");
-    } else printf("Create directory: %s\n", argv[1]);
+    read_error:
+    printk("Cannot read file.\n");
 }
 
-void cmd_del(int argc, char **argv) {
-    if (argc == 1) {
-        print("[Shell-DEL]: If there are too few parameters, please specify the folder name.\n");
-        return;
-    }
-
-    if(!hasFS){
-        printf("Cannot find fs in this disk.\n");
-        return;
-    }
-
-    vfs_file *file = get_cur_file(argv[1]);
-
-    if(file == NULL){
-        printf("Cannot found file.\n");
-        return;
-    }
-
-    bool  b;
-    if(file->type == DIR){
-        b = vfs_deldir(argv[1]);
-    } else b = vfs_delfile(argv[1]);
-    if(!b){
-        printf("Illegal delete!\n");
-    }
+static void shutdown_os(){
+    shutdown();
 }
 
-void cmd_reset() {
-    reset_kernel();
-}
-
-void cmd_shutdown() {
-    shutdown_kernel();
-}
-
-void cmd_debug() {
-    screen_clear();
-
-    printf("%s for x86 [Version %s] \n", OS_NAME, OS_VERSION);
-    printf("Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n");
-    extern int acpi_enable_flag;
-    extern uint8_t *rsdp_address;
-    printf("ACPI: Enable: %s | RSDP Address: 0x%08x\n", acpi_enable_flag ? "ENABLE" : "DISABLE",
-           rsdp_address);
-    int index = 0;
-    print_proc_t(&index, get_current(), get_current()->next, 0);
-    printf("Process Runnable: %d\n", index);
-    cmd_date();
-    for (int i = 0; i < 10; i++) {
-        if (vdisk_ctl[i].flag) {
-            vdisk vd = vdisk_ctl[i];
-            char id = i + ('A');
-            printf("[DISK-%c]: Size: %dMB | Name: %s\n", id, vd.size, vd.DriveName);
+static inline void foreach(list_t list){
+    list_foreach(list,node){
+        vfs_node_t c = (vfs_node_t)node->data;
+        if(c->type == file_dir) foreach(c->child);
+        else{
+            char* buf = kmalloc(c->size);
+            vfs_read(c,buf,0,c->size);
+            printk("%s > %s\n",c->name);
         }
     }
-    printf("            > > > > ====[Registers Info]==== < < < <\n");
-    register uint32_t eax asm("eax"),
-            ecx asm("ecx"),
-            esp asm("esp"),
-            ebp asm("ebp"),
-            ebx asm("ebx"),
-            esi asm("esi"),
-            edi asm("edi");
-    printf("EAX: 0x%08x | EBX 0x%08x | ECX 0x%08x | ESP 0x%08x \n", eax, ebx, ecx, esp);
-    printf("ESI: 0x%08x | EDI 0x%08x | EBP 0x%08x | EFLAGS 0x%08x\n", esi, edi, ebp, get_current()->context.eflags);
 }
 
-void cmd_pcils(){
-    print_all_pci_info();
+// 实现ps命令
+static void ps(){
+    extern pcb_t *running_proc_head;
+    // 找出最长进程名
+    pcb_t *longest_name = running_proc_head;
+    size_t longest_name_len = 0;
+    while(longest_name != NULL){
+        if(strlen(longest_name->name) > longest_name_len)
+            longest_name_len = strlen(longest_name->name);
+        longest_name = longest_name->next;
+    }
+    pcb_t *pcb = running_proc_head;
+    printk("PID  %-*s       RAM  Level   Priority  Time\n",longest_name_len,"NAME");
+    while(pcb != NULL){
+        printk("%-5d%-*s%10d  %-8s%-10d%-d\n",pcb->pid,longest_name_len,pcb->name,pcb->program_break_end - pcb->program_break,pcb->task_level == TASK_KERNEL_LEVEL ? "Kernel" : pcb->task_level == TASK_SYSTEM_SERVICE_LEVEL ? "System" : "User",pcb->task_level,pcb->cpu_clock);
+        pcb = pcb->next;
+    }
 }
 
-void cmd_cd(int argc, char **argv) {
-    if (argc == 1) {
-        print("[Shell-CD]: If there are too few parameters, please specify the path.\n");
-        return;
-    }
-    if(!hasFS){
-        printf("Cannot find fs in this disk.\n");
-        return;
-    }
-    if (vfs_change_path(argv[1]) == 0) printf("Invalid path.\n");
-}
+extern uint32_t phy_mem_size;
 
-void cmd_type(int argc,char ** argv){
-    if (argc == 1) {
-        print("[Shell-TYPE]: If there are too few parameters, please specify the path.\n");
-        return;
-    }
-    if(!hasFS){
-        printf("Cannot find fs in this disk.\n");
-        return;
-    }
+static void sys_info(){
+    cpu_t *cpu = get_cpuid();
 
-    char *buffer;
-    buffer = (char*) kmalloc(vfs_filesize(argv[1]));
+    extern void* program_break;
+    extern void* program_break_end;
+    uint32_t bytes = get_kernel_memory_usage() + (uint32_t)program_break_end - (uint32_t)program_break;
 
-    if(buffer == NULL){
-        printf("Cannot read file.\n");
-        return;
-    }
-
-    if(vfs_readfile(argv[1],buffer))
-        printf("%s",buffer);
-    else printf("Cannot read file.\n");
-
-    kfree(buffer);
-    print("\n");
-}
-
-void cmd_exec(int argc,char** argv){
-    if (argc == 1) {
-        print("[Shell-EXEC]: If there are too few parameters, please specify the path.\n");
-        return;
-    }
-    if(vfs_filesize(argv[1]) == -1){
-        print("Cannot found exec file.\n");
-        return;
-    }
-    char buf[1024];
-    sprintf(buf,"User-%s ",argv[1]);
-    int32_t pid = user_process(argv[1],buf,"",TASK_APPLICATION_LEVEL);
-    klogf(pid != -1,"Launching user task PID:%d Name:%s\n",pid,buf);
-}
-
-void cmd_disk(int argc, char **argv) {
-    if (argc > 1) {
-        if (!strcmp("list", argv[1])) {
-            printf("[Disk]: Loaded disk - ");
-            for (int i = 0; i < 10; i++) {
-                if (vdisk_ctl[i].flag) {
-                    vdisk vd = vdisk_ctl[i];
-                    char id = i + ('A');
-                    printf("(%c) ", id, vd.size, vd.DriveName);
-                }
-            }
-            printf("\n");
-            return;
-        } else if(!strcmp("cg", argv[1])){
-            if(argc < 2){
-                printf("Please type disk ID\n");
-                return;
-            }
-            if (strlen(argv[2]) > 1) {
-                printf("[DISK]: Cannot found disk.\n");
-                return;
-            }
-            if(have_vdisk(argv[2][0])){
-                vfs_change_disk(get_current(),argv[2][0]);
-            } else printf("[DISK]: Cannot found disk.\n");
-            return;
-        }
-
-        if (strlen(argv[1]) > 1) {
-            printf("[DISK]: Cannot found disk.\n");
-            return;
-        }
-
-        for (int i = 0; i < 10; i++) {
-            if (vdisk_ctl[i].flag) {
-                vdisk vd = vdisk_ctl[i];
-                char id = i + ('A');
-                if (id == (argv[1][0])) {
-                    printf("[Disk(%c)]: \n"
-                           "    Size: %dMB\n"
-                           "    Name: %s\n"
-                           "    WriteAddress: 0x%08x\n"
-                           "    ReadAddress: 0x%08x\n", id, vd.size, vd.DriveName, vd.Write, vd.Read);
-                    return;
-                }
-            }
-        }
-        printf("[DISK]: Cannot found disk.\n");
-        return;
-    }
-    printf("[Disk]: Loaded disk - ");
-    for (int i = 0; i < 10; i++) {
-        if (vdisk_ctl[i].flag) {
-            vdisk vd = vdisk_ctl[i];
-            char id = i + ('A');
-            printf("(%c) ", id, vd.size, vd.DriveName);
+    extern pcb_t *running_proc_head;
+    pcb_t *pcb = running_proc_head;
+    while(pcb != NULL){
+        pcb = pcb->next;
+        if(pcb->task_level != TASK_KERNEL_LEVEL){
+            bytes += (uint32_t)pcb->program_break_end - (uint32_t)pcb->program_break;
         }
     }
-    printf("\n");
+    int memory = (bytes > 10485760) ? bytes/1048576 : bytes/1024;
+
+    printk("        -*&@@@&*-        \n");
+    printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
+    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
+    printk("  .@@@@@@@@@@@:\033[36m+@@@@@@@:\033[39m         Process:      %d\n",get_all_task());
+    printk("  &@@@@@@@@@@:\033[36m+@@@@@@@@:\033[39m         CPU:          %s\n",cpu->model_name);
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n",get_pci_num());
+    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",get_vbe_width(),get_vbe_height());
+    printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n",get_date_time());
+    printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
+    printk("&@@@@@+           +@@@@@&        Kernel:       %s\n",KERNEL_NAME);
+    printk("*@@@@@@           @@@@@@*        Memory Usage: %d%s / %dMB\n",memory,bytes > 10485760 ? "MB" : "KB",(int)(phy_mem_size));
+    printk("-@@@@@@*         #@@@@@@:        32-bit operating system, x86-based processor\n");
+    printk(" &@@@@@@*.     .#@@@@@@& \n");
+    printk(" =@@@@@@@@*---*@@@@@@@@- \n");
+    printk("  .@@@@@@@@@@@@@@@@@@&.  \n");
+    printk("    .#@@@@@@@@@@@@@#.    \n");
+    printk("      =&@@@@@@@@@&-      \n");
+    printk("        -*&@@@&+:        \n");
 }
 
-char *user() {
-    printf("\n\nPlease type your username and password.\n");
-    char com[MAX_COMMAND_LEN];
-    char *username = "admin";
-    char *password = "12345678";
-    while (1) {
-        print("username/> ");
-        if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
-        if (!strcmp(username, com)) {
-            break;
-        } else printf("Cannot found username, Please check your info.\n");
-    }
-    while (1) {
-        print("password/> ");
-        if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
-        if (!strcmp(password, com)) {
-            break;
-        } else printf("Unknown password, Please check your info.\n");
-    }
-    return username;
+static void print_help(){
+    printk("Usage <command|app_path> [argument...]\n");
+    printk("help h ?                 Get shell command help.\n");
+    printk("mkdir     <name>         Make a directory to vfs.\n");
+    printk("mount     <dir> <dev>    Mount a file system to vfs directory.\n");
+    printk("ls        [path]         List all file or directory.\n");
+    printk("read      <path>         Read a text file.\n");
+    printk("shutdown                 Shutdown os.\n");
+    printk("sysinfo                  Get os system information.\n");
+    printk("clear                    Clear terminal screen.\n");
+    printk("ps                       List all processes info.\n");
 }
 
-void setup_shell() {
-    asm("sti");
-    printf("Welcome to %s %s (CPOS Kernel i386)\n"
-           "\n"
-           " * SourceCode:     https://github.com/xiaoyi1212/CoolPotOS\n"
+void setup_shell(){
+    printk("Welcome to CoolPotOS (%s)\n"
+           " * SourceCode:     https://github.com/plos-clan/CoolPotOS\n"
            " * Website:        https://github.com/plos-clan\n"
-           "\n"
            " System information as of %s \n"
-           "\n"
            "  Processes:             %d\n"
-           "  Users logged in:       default\n"
-           "  Memory usage:          %d B        \n"
-           "\n"
-           "Copyright 2024 XIAOYI12 (Build by GCC i686-elf-tools)\n"
-           ,OS_NAME
-           ,OS_VERSION
-           ,get_date_time()
-           ,get_procs()
-           ,memory_usage());
+           "  User login in:         Kernel\n"
+           "Copyright 2024 XIAOYI12 (Build by xmake zig_cc & nasm)\n"
+            ,KERNEL_NAME
+            ,get_date_time(),
+            get_all_task());
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
     int argc = -1;
-    char *buffer[255];
-
-    extern char root_disk;
-    vfs_change_disk(get_current(),root_disk);
-
-    while (1) {
-        if(hasFS) vfs_getPath(buffer);
-        else{
-            buffer[0] = 'n';
-            buffer[1] = 'o';
-            buffer[2] = '_';
-            buffer[3] = 'f';
-            buffer[4] = 's';
-            buffer[5] = '\0';
-        }
-        printf("\033[32mKernel@localhost: \033[34m%s\\\033[39m$ ", buffer);
+    while (1){
+        printk("\033[32mKernel@localhost: \033[39m$ ");
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
-
+        char* com_copy[100];
+        strcpy(com_copy,com);
         argc = cmd_parse(com, argv, ' ');
 
         if (argc == -1) {
-            print("[Shell]: Error: out of arguments buffer\n");
+            printk("[Shell]: Error: out of arguments buffer\n");
             continue;
         }
 
-        if (!strcmp("version", argv[0]))
-            printf("%s for x86 [%s]\n", OS_NAME, OS_VERSION);
-        else if (!strcmp("type", argv[0]))
-            cmd_type(argc, argv);
-        else if (!strcmp("clear", argv[0]))
-            screen_clear();
-        else if (!strcmp("proc", argv[0]))
-            cmd_proc(argc, argv);
-        else if (!strcmp("sysinfo", argv[0]))
-            cmd_date();
-        else if (!strcmp("ls", argv[0]))
-            cmd_ls();
-        else if (!strcmp("mkdir", argv[0]))
-            cmd_mkdir(argc, argv);
-        else if (!strcmp("del", argv[0]) || !strcmp("rm", argv[0]))
-            cmd_del(argc, argv);
-        else if (!strcmp("reset", argv[0]))
-            cmd_reset();
-        else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
-            cmd_shutdown();
-        else if (!strcmp("debug", argv[0]))
-            cmd_debug();
-        else if (!strcmp("disk", argv[0]))
-            cmd_disk(argc, argv);
-        else if (!strcmp("cd", argv[0]))
-            cmd_cd(argc, argv);
-        else if (!strcmp("exec",argv[0]))
-            cmd_exec(argc,argv);
-        else if (!strcmp("pcils",argv[0]))
-            cmd_pcils();
-        else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
-            print("-=[CoolPotShell Helper]=-\n");
-            print("help ? h              Print shell help info.\n");
-            print("version               Print os version.\n");
-            print("type       <name>     Read a file.\n");
-            print("ls                    List all files.\n");
-            print("mkdir      <name>     Make a directory.\n");
-            print("del rm     <name>     Delete a file.\n");
-            print("sysinfo               Print system info.\n");
-            print("proc [kill<pid>|list] Lists all running processes.\n");
-            print("reset                 Reset OS.\n");
-            print("shutdown exit         Shutdown OS.\n");
-            print("debug                 Print os debug info.\n");
-            print("disk[list|<ID>|cg<ID>]List or view disks.\n");
-            print("cd  <path>            Change shell top directory.\n");
-            print("pcils                 List all pci device info.\n");
-        } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
+        if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
+            print_help();
+        } else if(!strcmp("mkdir",argv[0]))
+            mkdir(argc,argv);
+        else if(!strcmp("ls",argv[0]))
+            ls(argc,argv);
+        else if(!strcmp("mount",argv[0]))
+            mount(argc,argv);
+        else if(!strcmp("read",argv[0]))
+            read(argc,argv);
+        else if(!strcmp("shutdown",argv[0]))
+            shutdown_os();
+        else if(!strcmp("sysinfo",argv[0]))
+            sys_info();
+        else if(!strcmp("ps",argv[0]))
+            ps();
+        else if(!strcmp("clear",argv[0]))
+            get_current_proc()->tty->clear(get_current_proc()->tty);
+        else{
+            int pid;
+            if((pid = create_user_process(argv[0],com_copy,"User",TASK_APPLICATION_LEVEL)) == -1)
+                printk("\033[31m[Shell]: Unknown command '%s'.\033[39m\n", argv[0]);
+            pcb_t *pcb;
+            do{
+                pcb = found_pcb(pid);
+                if(pcb == NULL) break;
+            } while (1);
+            printk("\n");
+        }
     }
 }

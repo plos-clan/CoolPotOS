@@ -1,7 +1,6 @@
-#ifndef CRASHPOWEROS_ETHERFRAME_H
-#define CRASHPOWEROS_ETHERFRAME_H
+#pragma once
 
-#include <stdint.h>
+#include "ctypes.h"
 
 struct EthernetFrame_head {
     uint8_t dest_mac[6];
@@ -15,5 +14,3 @@ struct EthernetFrame_tail {
 
 void ether_frame_provider_send(uint64_t dest_mac, uint16_t type, uint8_t *buffer,
                                uint32_t size);
-
-#endif

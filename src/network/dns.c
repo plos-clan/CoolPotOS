@@ -1,8 +1,8 @@
-#include "../include/dns.h"
-#include "../include/common.h"
-#include "../include/udp.h"
-#include "../include/ipv4.h"
-#include "../include/etherframe.h"
+#include "dns.h"
+#include "krlibc.h"
+#include "ipv4.h"
+#include "udp.h"
+#include "etherframe.h"
 
 uint32_t dns_parse_ip_result = 0;
 

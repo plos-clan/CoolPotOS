@@ -1,5 +1,5 @@
-#include "../include/serial.h"
-#include "../include/io.h"
+#include "serial.h"
+#include "io.h"
 
 int init_serial() {
     io_out8(SERIAL_PORT + 1, 0x00); // 禁止COM的中断发生
