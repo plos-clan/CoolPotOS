@@ -1,7 +1,8 @@
-#include "../include/arp.h"
-#include "../include/etherframe.h"
-#include "../include/memory.h"
-#include "../include/pcnet.h"
+#include "arp.h"
+#include "krlibc.h"
+#include "etherframe.h"
+#include "kmalloc.h"
+
 uint8_t ARP_flags = 1;
 uint64_t ARP_mac_address[MAX_ARP_TABLE];
 uint32_t ARP_ip_address[MAX_ARP_TABLE];

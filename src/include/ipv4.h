@@ -1,5 +1,4 @@
-#ifndef CRASHPOWEROS_IPV4_H
-#define CRASHPOWEROS_IPV4_H
+#pragma once
 
 #define IP_PROTOCOL 0x0800
 #define MTU 1500
@@ -7,7 +6,7 @@
 #define IP_DF 14
 #define IP_OFFSET 0
 
-#include <stdint.h>
+#include "ctypes.h"
 
 struct IPV4Message {
     uint8_t headerLength : 4;
@@ -27,5 +26,3 @@ void IPV4ProviderSend(uint8_t protocol, uint64_t dest_mac, uint32_t dest_ip,
                       uint32_t src_ip, uint8_t *data, uint32_t size);
 uint16_t CheckSum(uint16_t *data, uint32_t size);
 uint32_t IP2UINT32_T(uint8_t *ip);
-
-#endif

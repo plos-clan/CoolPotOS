@@ -1,11 +1,10 @@
-#ifndef CRASHPOWEROS_SOCKET_H
-#define CRASHPOWEROS_SOCKET_H
+#pragma once
 
 #define MAX_SOCKET_NUM 256
 #define SOCKET_ALLOC -1
 #define SOCKET_FREE 0
 
-#include <stdint.h>
+#include "ctypes.h"
 
 struct Socket {
     // 函数格式
@@ -33,5 +32,3 @@ struct Socket {
 void socket_init();
 struct Socket *Socket_Find(uint32_t dstIP, uint16_t dstPort, uint32_t srcIP,
                            uint16_t srcPort, uint8_t protocol);
-
-#endif

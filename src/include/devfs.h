@@ -1,16 +1,11 @@
-#ifndef CRASHPOWERDOS_DEVFS_H
-#define CRASHPOWERDOS_DEVFS_H
+#pragma once
 
 #include "vfs.h"
-#include "common.h"
 
-typedef struct node_t{
-    char* name;               // 节点名
-    int   n_children;         // 子节点个数
-    int   level;              // 记录该节点在多叉树中的层数
-    struct node_t** children; // 指向其自身的子节点，children一个数组，该数组中的元素时node_t*指针
-} NODE;
-
-void register_devfs();
-
-#endif
+int devfs_mount(const char* src, vfs_node_t node);
+void devfs_regist();
+int dev_get_sector_size(char *path);
+int dev_get_size(char *path);
+int dev_get_type(char *path); //1:HDD 2:CDROM
+void print_devfs();
+void devfs_sysinfo_init();
