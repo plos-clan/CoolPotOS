@@ -2,11 +2,12 @@
 
 #include "area.h"
 #include "block.h"
+#include "memory.h"
 #include "freelist.h"
 
 // mpool_free 中使用的临时函数
 // 用于将内存块从空闲链表中分离
-dlexport void _detach(mpool_t pool, freelist_t ptr) {
+static void _detach(mpool_t pool, freelist_t ptr) {
   int id = freelists_size2id(blk_size(ptr));
   if (id < 0) {
     pool->large_blk = freelist_detach(pool->large_blk, ptr);

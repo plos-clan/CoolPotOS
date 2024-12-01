@@ -38,7 +38,7 @@ static void* syscall_malloc(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,
     void* address = user_alloc(get_current(),ebx);
     if(address == NULL){
         if(get_current()->task_level == TASK_SYSTEM_SERVICE_LEVEL)
-            panic_pane("CSP Service out of memory error.",OUT_OF_MEMORY);
+            panic_pane("System Service out of memory error.",OUT_OF_MEMORY);
         else if(get_current()->task_level == TASK_APPLICATION_LEVEL)
             task_kill(get_current()->pid);
     }
@@ -132,7 +132,7 @@ static void* syscall_sysinfo(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi
     return info;
 }
 
-static uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+uint32_t syscall_exec(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     char* argv = ecx;
     uint32_t pid = user_process(ebx,ebx,argv,TASK_APPLICATION_LEVEL);
     if(!edx){
@@ -173,12 +173,14 @@ static int syscall_vfs_rename(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t es
 
 static void* syscall_alloc_page(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
     size_t page_size = ebx;
-    int i = USER_END + 0x1000 + get_current()->page_alloc_address;
+    uint32_t i = get_current()->page_alloc_address;
+    if(page_size==512) i = (i + (2*1024*1024) - 1) / (2*1024*1024) * (2*1024*1024);
     int ret = i;
-    for (;i < (USER_END + 0x1000 + get_current()->page_alloc_address) + (page_size * 0x1000);) {
+    for (;i < ret + (page_size * 0x1000);i += 0x1000) {
         alloc_frame(get_page(i,1,get_current()->pgd_dir,false),0,1);
-        get_current()->page_alloc_address =  i += 0x1000;
     }
+    get_current()->page_alloc_address = i;
+
     return ret;
 }
 

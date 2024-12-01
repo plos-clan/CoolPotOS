@@ -6,6 +6,7 @@
 #include "../include/memory.h"
 #include "../include/timer.h"
 #include "../include/task.h"
+#include "../include/fpu.h"
 #include "../include/cmos.h"
 #include "../include/keyboard.h"
 #include "../include/shell.h"
@@ -15,12 +16,12 @@
 #include "../include/pci.h"
 #include "../include/pcnet.h"
 #include "../include/ide.h"
+#include "../include/ahci.h"
 #include "../include/vfs.h"
 #include "../include/panic.h"
 #include "../include/mouse.h"
 #include "../include/i2c.h"
 #include "../include/desktop.h"
-#include "../include/soundtest.h"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -90,6 +91,14 @@ int check_task_usershell(int *pid){
     return 0;
 }
 
+void cursor_task(){
+    while (1){
+        tty_t *tty = get_current()->tty;
+        draw_rect_tty(tty,tty->x,tty->y,tty->x + 10,tty->y + 8,tty->color);
+        clock_sleep(1);
+    }
+}
+
 void kernel_main(multiboot_t *multiboot) {
 
     io_cli();
@@ -97,11 +106,13 @@ void kernel_main(multiboot_t *multiboot) {
 
     initVBE(multiboot);
 
+    /*
     if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 3071) {
         printf("[kernel]: Minimal RAM amount for CP_Kernel is 3071 MB, but you have only %d MB.\n",
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
         while (1) io_hlt();
     }
+     */
 
     phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024;
     char* cmdline = multiboot->cmdline;
@@ -110,8 +121,10 @@ void kernel_main(multiboot_t *multiboot) {
        // printf("Multiboot command line: %s\n",cmdline);
     }
 
+    logkf("\n\n\n");
     printf("%s OS Version: %s (GRUB Multiboot) on an i386.\n",KERNEL_NAME,OS_VERSION);
-    printf("Memory Size: %dMB\n",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+    printf("Memory Size: %dMB | ",(multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+    printf("Video Resolution: %d x %d\n",multiboot->framebuffer_width,multiboot->framebuffer_height);
     gdt_install();
     idt_install();
     init_timer(1);
@@ -119,14 +132,20 @@ void kernel_main(multiboot_t *multiboot) {
     init_page(multiboot);
 
     init_sched();
+    //fpu_setup();
+
     init_keyboard();
 
     init_pit();
     io_sti();
-    init_pci();
+
     init_vdisk();
-    ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     init_vfs();
+
+    init_pci();
+
+    ide_init();
+    ahci_init();
 
     syscall_install();
 
@@ -142,6 +161,7 @@ void kernel_main(multiboot_t *multiboot) {
             }
         }
     }
+
     hasFS = false;
     if(disk_id != '0'){
         if(vfs_change_disk(get_current(),disk_id)){
@@ -150,13 +170,14 @@ void kernel_main(multiboot_t *multiboot) {
             klogf(true,"Chang default mounted disk.\n");
             hasFS = true;
         }
-    } else klogf(false,"Unable to find available IDE devices.\n");
+    } else klogf(false,"Unable to find available disk devices.\n");
 
     bool pcnet_init = pcnet_find_card();
     klogf(pcnet_init,"Enable network device pcnet.\n");
     if(pcnet_init){
         //init_pcnet_card();
     }
+
     init_eh();
     klogf(true,"Kernel load done!\n");
 

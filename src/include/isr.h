@@ -1,6 +1,8 @@
 #ifndef CPOS_ISR_H
 #define CPOS_ISR_H
 
+#define INTERRUPT_SERVICE __attribute__((naked))
+
 #include <stdint.h>
 
 typedef struct registers {

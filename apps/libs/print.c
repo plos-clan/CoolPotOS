@@ -258,6 +258,9 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                 flags |= SIGN;
             case 'u':
                 break;
+            case 'f':
+                str = ftoa(va_arg(args, double), str, precision);
+                break;
 
             default:
                 *str++ = '%';

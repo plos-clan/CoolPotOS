@@ -3322,6 +3322,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
       STBTT_memset(scanline , 0, result->w*sizeof(scanline[0]));
       STBTT_memset(scanline2, 0, (result->w+1)*sizeof(scanline[0]));
 
+
       // update all active edges;
       // remove all active edges that terminate before the top of this scanline
       while (*step) {
@@ -3381,12 +3382,11 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
          step = &((*step)->next); // advance through list
       }
 
+
       ++y;
       ++j;
    }
-
    stbtt__hheap_cleanup(&hh, userdata);
-
    if (scanline != scanline_data)
       STBTT_free(scanline, userdata);
 }
@@ -3507,6 +3507,7 @@ static void stbtt__rasterize(stbtt__bitmap *result, stbtt__point *pts, int *wcou
       n += wcount[i];
 
    e = (stbtt__edge *) STBTT_malloc(sizeof(*e) * (n+1), userdata); // add an extra one as a sentinel
+
    if (e == 0) return;
    n = 0;
 
@@ -3698,8 +3699,11 @@ STBTT_DEF void stbtt_Rasterize(stbtt__bitmap *result, float flatness_in_pixels, 
    int winding_count      = 0;
    int *winding_lengths   = NULL;
    stbtt__point *windings = stbtt_FlattenCurves(vertices, num_verts, flatness_in_pixels / scale, &winding_lengths, &winding_count, userdata);
+
+
    if (windings) {
       stbtt__rasterize(result, windings, winding_lengths, winding_count, scale_x, scale_y, shift_x, shift_y, x_off, y_off, invert, userdata);
+
       STBTT_free(winding_lengths, userdata);
       STBTT_free(windings, userdata);
    }
@@ -3767,6 +3771,7 @@ STBTT_DEF void stbtt_MakeGlyphBitmapSubpixel(const stbtt_fontinfo *info, unsigne
    gbm.w = out_w;
    gbm.h = out_h;
    gbm.stride = out_stride;
+
 
    if (gbm.w && gbm.h)
       stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, scale_x, scale_y, shift_x, shift_y, ix0,iy0, 1, info->userdata);
