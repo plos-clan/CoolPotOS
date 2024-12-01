@@ -1,5 +1,4 @@
-#ifndef CRASHPOWEROS_PCNET_H
-#define CRASHPOWEROS_PCNET_H
+#pragma once
 
 #define CARD_VENDOR_ID 0x1022
 #define CARD_DEVICE_ID 0x2000
@@ -34,12 +33,8 @@
 #define IP_MF 13
 #define IP_DF 14
 #define IP_OFFSET 0
-#define swap32(x)                                                              \
-  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) |                    \
-   (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
-#define swap16(x) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8))
-#include <stdint.h>
-#include "isr.h"
+
+#include "ctypes.h"
 
 struct InitializationBlock {
     uint16_t mode;
@@ -59,14 +54,7 @@ struct BufferDescriptor {
     uint32_t avail;
 } __attribute__((packed));
 
-void into_32bitsRW();
-void into_16bitsRW();
-void reset_card();
-void Activate();
-int pcnet_find_card();
-void init_pcnet_card();
-void PCNET_IRQ(registers_t *reg);
+void pcnet_setup();
+void PcnetSend(uint8_t *buffer, int size);
 void Recv();
-void PcnetSend(uint8_t* buffer, int size);
-
-#endif
+void Card_Recv_Handler(uint8_t *RawData);

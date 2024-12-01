@@ -1,7 +1,6 @@
-#ifndef CRASHPOWEROS_NET_H
-#define CRASHPOWEROS_NET_H
+#pragma once
 
-#include "common.h"
+#include "ctypes.h"
 
 typedef struct {
     bool (*find)();
@@ -12,6 +11,5 @@ typedef struct {
     int flag;
 } network_card;
 
+void net_setup();
 void netcard_send(unsigned char* buffer, unsigned int size);
-
-#endif
