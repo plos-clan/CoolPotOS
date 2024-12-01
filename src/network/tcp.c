@@ -1,10 +1,10 @@
-#include "../include/tcp.h"
-#include "../include/memory.h"
-#include "../include/ipv4.h"
-#include "../include/dhcp.h"
-#include "../include/socket.h"
-#include "../include/printf.h"
-#include "../include/etherframe.h"
+#include "tcp.h"
+#include "kmalloc.h"
+#include "krlibc.h"
+#include "ipv4.h"
+#include "etherframe.h"
+#include "socket.h"
+#include "arp.h"
 
 static uint16_t ident = 0;
 
@@ -146,7 +146,6 @@ void tcp_handler(void *base) {
                 // TCP 传输
                 if ((swap16(ipv4->totalLength) - sizeof(struct IPV4Message) -
                      (tcp->headerLength * 4)) == socket->MSS) {
-                    printf("TCP Segment.\n");
                     break;
                 }
                 if (socket->ackNum == swap32(tcp->seqNum) &&

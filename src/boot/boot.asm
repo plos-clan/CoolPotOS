@@ -1,55 +1,34 @@
-.code32
+section .multiboot
 
-.set MAGIC, 0x1badb002
-.set FLAGS, 7
-/*.set FLAGS, 3 */
-.set CHECKSUM, -(MAGIC + FLAGS)
-.set MODE_TYPE, 0
-.set WIDTH, 1280  /* requested width */
-.set HEIGHT, 768  /* requested height */
-/* .set WIDTH, 640
-.set HEIGHT, 480 */
-.set DEPTH, 32    /* requested bits per pixel BPP */
+dd 0x1badb002 ; 文件魔术头, 内核识别码
+dd 7          ; FLAGS
+dd -464367625 ;-(MAGIC + FLAGS)
+dd 0          ;HEADER_ADDR
+dd 0          ;LOAD_ADDR
+dd 0          ;LOAD_END_ADDR
+dd 0          ;BSS_END_ADDR
+dd 0          ;ENTRY_ADDR
+dd 0          ;MODE_TYPE
+dd 1280       ;WIDTH
+dd 768        ;HEIGHT
+dd 32         ;DEPTH
+times 52 db 0 ; 显式初始化 52 个字节为零
 
-.set HEADER_ADDR, 0
-.set LOAD_ADDR, 0
-.set LOAD_END_ADDR, 0
-.set BSS_END_ADDR, 0
-.set ENTRY_ADDR, 0
+section .text
+global _start
+extern kernel_head ; 内核预处理函数 src/core/mboot/kernel_head.c
 
-.section .multiboot
-.long MAGIC
-    .long FLAGS
-    .long CHECKSUM
-    .long HEADER_ADDR
-    .long LOAD_ADDR
-    .long LOAD_END_ADDR
-    .long BSS_END_ADDR
-    .long ENTRY_ADDR
-    .long MODE_TYPE
-    .long WIDTH
-    .long HEIGHT
-    .long DEPTH
-    /* enough space for the returned header */
-    .space 4 * 13
-
-.section .bss
-.align 16
-stack_bottom:
-.skip 16384 # 16 KiB
-stack_top:
-
-.section .text
-.global _start
-.type _start, @function
 _start:
-	mov $stack_top, %esp
+    mov esp,stack_top
+    push esp
+    push ebx
+    call kernel_head
+L1:
+    hlt
+    jmp L1
 
-    push %ebx
-	call kernel_main
 
-	cli
-1:	hlt
-	jmp 1b
-
-.size _start, . - _start
+section .bss
+stack_bottom:
+resb 16384 ; 内核栈大小 16KB
+stack_top:

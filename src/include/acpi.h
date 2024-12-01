@@ -1,17 +1,14 @@
-#ifndef CRASHPOWEROS_ACPI_H
-#define CRASHPOWEROS_ACPI_H
-
-#include <stdint.h>
-#include <stddef.h>
+#pragma once
 
 #define HEADER_SIZE 36
 
 #define ACPI_TABLE_RSDT ((void *)rsdt)
 #define ACPI_TABLE_FACP ((void *)facp)
 
+#include "ctypes.h"
+
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t addressid;
     uint8_t register_bitwidth;
     uint8_t register_bitoffset;
@@ -21,8 +18,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t signature[8];
     uint8_t checksum;
     uint8_t oem_id[6];
@@ -32,8 +28,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t signature[4]; // signature "RSDT"
     uint32_t length;
     uint8_t revision;
@@ -48,8 +43,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t signature[4];
     uint32_t length;
     uint8_t revision;
@@ -63,8 +57,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t signature[4];
     uint32_t length;
     uint8_t FADT_major_version;
@@ -142,8 +135,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t sign[4]; // string 'APIC'
     uint32_t len;
     uint8_t revision;
@@ -159,8 +151,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t ioapic_id;
     uint8_t reserved;
     uint32_t ioapic_base; // iobase base
@@ -169,8 +160,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t bus;
     uint8_t irq;
     uint32_t gsi;
@@ -179,8 +169,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t nmi;
     uint8_t reserved;
     uint16_t flags;
@@ -188,8 +177,7 @@ typedef struct
 } madt_ioapic_nmi_assert_t;
 #pragma pack(pop)
 
-typedef enum
-{
+typedef enum {
     MADT_PROCESSOR_LOCAL_APIC = 0,
     MADT_PRCESSOR_IOAPIC = 1,
     MADT_LOCAL_INT_ASSERT = 2,
@@ -197,8 +185,7 @@ typedef enum
 } madt_entry_t;
 
 #pragma pack(push, 1)
-typedef struct
-{
+typedef struct {
     uint8_t ACPI_processorID;
     uint8_t APIC_ID;
     uint32_t flags; // bit0 = processor enabled  bit1 = online capable
@@ -233,7 +220,7 @@ typedef struct {
     uint64_t mainCounterValue;
     uint64_t reserved4;
     HpetTimer timers[0];
-} volatile __attribute__((packed)) HpetInfo;
+} __attribute__((packed)) volatile HpetInfo;
 
 typedef struct {
     uint8_t addressSpaceID;
@@ -253,10 +240,10 @@ typedef struct {
     uint32_t creatorID;
     uint32_t creatorVersion;
     uint8_t hardwareRevision;
-    uint8_t comparatorCount : 5;
-    uint8_t counterSize : 1;
-    uint8_t reserved : 1;
-    uint8_t legacyReplacement : 1;
+    uint8_t comparatorCount: 5;
+    uint8_t counterSize: 1;
+    uint8_t reserved: 1;
+    uint8_t legacyReplacement: 1;
     uint16_t pciVendorId;
     AcpiAddress hpetAddress;
     uint8_t hpetNumber;
@@ -264,17 +251,16 @@ typedef struct {
     uint8_t pageProtection;
 } __attribute__((packed)) HPET;
 
-uint8_t *AcpiGetRSDPtr();
-int AcpiCheckHeader(void *ptr, uint8_t *sign);
-uint8_t *AcpiCheckRSDPtr(void *ptr);
-uint32_t AcpiGetMadtBase();
-void power_off();
-void power_reset();
 int acpi_enable();
 int acpi_disable();
-void acpi_install();
+uint8_t *AcpiGetRSDPtr();
+uint8_t *AcpiCheckRSDPtr(void *ptr);
+int AcpiCheckHeader(void *ptr, uint8_t *sign);
+uint32_t AcpiGetMadtBase();
 void hpet_initialize();
-uint32_t nanoTime();
-void usleep(uint32_t nano);
+void acpi_install();
 
-#endif //CRASHPOWEROS_ACPI_H
+uint32_t nanoTime(); // 获取自ACPI启用后的纳秒数
+void usleep(uint32_t nano); //纳秒精度的睡眠
+void power_reset(); //重启
+void power_off(); //关机

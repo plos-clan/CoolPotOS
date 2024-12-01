@@ -1,6 +1,6 @@
-#include "../include/socket.h"
-#include "../include/udp.h"
-#include "../include/tcp.h"
+#include "socket.h"
+#include "udp.h"
+#include "tcp.h"
 
 static struct Socket sockets[MAX_SOCKET_NUM];
 
@@ -40,5 +40,5 @@ struct Socket *Socket_Find(uint32_t dstIP, uint16_t dstPort, uint32_t srcIP,
             return (struct Socket *)&sockets[i];
         }
     }
-    return -1;
+    return (struct Socket *) -1;
 }

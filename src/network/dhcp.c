@@ -1,11 +1,13 @@
-#include "../include/dhcp.h"
-#include "../include/memory.h"
-#include "../include/common.h"
-#include "../include/udp.h"
-#include "../include/ipv4.h"
-#include "../include/etherframe.h"
+#include "dhcp.h"
+#include "krlibc.h"
+#include "kmalloc.h"
+#include "klog.h"
+#include "ipv4.h"
+#include "etherframe.h"
+#include "udp.h"
 
 uint32_t gateway, submask, dns, ip, dhcp_ip;
+
 
 static int fill_dhcp_option(uint8_t *packet, uint8_t code, uint8_t *data,
                             uint8_t len) {
@@ -65,7 +67,7 @@ int dhcp_discovery(uint8_t *mac) {
 }
 
 void dhcp_handler(void *base) {
-    printf("DHCP\n");
+    printk("DHCP\n");
     struct IPV4Message *ipv4 =
             (struct IPV4Message *)(base + sizeof(struct EthernetFrame_head));
     struct UDPMessage *udp =
@@ -75,35 +77,38 @@ void dhcp_handler(void *base) {
             (struct DHCPMessage *)(base + sizeof(struct EthernetFrame_head) +
                                    sizeof(struct IPV4Message) +
                                    sizeof(struct UDPMessage));
-    printf("%d %d %d\n",dhcp->bp_options[0],dhcp->bp_options[1],dhcp->bp_options[2]);
+    printk("%d %d %d\n",dhcp->bp_options[0],dhcp->bp_options[1],dhcp->bp_options[2]);
     if (dhcp->bp_options[0] == 53 && dhcp->bp_options[1] == 1 &&
         dhcp->opcode == 2) {
-         printf("DHCP Offer\n");
+        printk("DHCP Offer\n");
         ip = dhcp->yiaddr;
         uint8_t nip1 = ip;
         uint8_t nip2 = ip >> 8;
         uint8_t nip3 = ip >> 16;
         uint8_t nip4 = ip >> 24;
-        // printk("DHCP: %d.%d.%d.%d\n", (uint8_t)(ipv4->srcIP),
-        //        (uint8_t)(ipv4->srcIP >> 8), (uint8_t)(ipv4->srcIP >> 16),
-        //        (uint8_t)(ipv4->srcIP >> 24));
+         printk("DHCP: %d.%d.%d.%d\n", (uint8_t)(ipv4->srcIP),
+                (uint8_t)(ipv4->srcIP >> 8), (uint8_t)(ipv4->srcIP >> 16),
+                (uint8_t)(ipv4->srcIP >> 24));
         dhcp_ip = swap32(ipv4->srcIP);
-        printf("IP: %d.%d.%d.%d\n", nip1, nip2, nip3, nip4);
+        printk("IP: %d.%d.%d.%d\n", nip1, nip2, nip3, nip4);
         ip = swap32(ip);
 
         unsigned char *options = &dhcp->bp_options[0];
         while (options[0] != 0xff) {
             if (options[0] == MESSAGE_TYPE_DNS) {
-                 printf("DNS: %d.%d.%d.%d\n", options[2], options[3], options[4],
-                     options[5]);
+                printk("DNS: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                       options[5]);
                 dns = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_REQ_SUBNET_MASK) {
-                 printf("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4],
-                      options[5]);
+                printk("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                       options[5]);
                 submask = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_ROUTER) {
-                 printf("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4],
-                      options[5]);
+                printk("option: %08x \n",options);
+                //waitif(true);
+                printk("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                       options[5]);
+
                 gateway = swap32(*(uint32_t *)&options[2]);
             }
             options += options[1] + 2;

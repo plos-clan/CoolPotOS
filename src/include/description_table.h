@@ -1,11 +1,39 @@
-#ifndef CRASHPOWEROS_DESCRIPTION_TABLE_H
-#define CRASHPOWEROS_DESCRIPTION_TABLE_H
+#pragma once
 
-#include <stdint.h>
+#include "ctypes.h"
+#include "isr.h"
 
 #define GDT_LENGTH 6
 
 #define SA_RPL3 3
+
+#define SA_RPL_MASK 0xFFFC
+#define SA_TI_MASK 0xFFFB
+#define GET_SEL(cs, rpl) ((cs & SA_RPL_MASK & SA_TI_MASK) | (rpl))
+
+typedef struct intr_frame_t {
+    unsigned edi;
+    unsigned esi;
+    unsigned ebp;
+    // 虽然 pushad 把 esp 也压入，但 esp 是不断变化的，所以会被 popad 忽略
+    unsigned esp_dummy;
+
+    unsigned ebx;
+    unsigned edx;
+    unsigned ecx;
+    unsigned eax;
+
+    unsigned gs;
+    unsigned fs;
+    unsigned es;
+    unsigned ds;
+
+    unsigned eip;
+    unsigned cs;
+    unsigned eflags;
+    unsigned esp;
+    unsigned ss;
+} intr_frame_t;
 
 typedef struct gdt_entry_t {
     uint16_t limit_low;           // 段基址 | 低16位置
@@ -20,6 +48,36 @@ typedef struct gdt_ptr_t {
     uint16_t limit;
     uint32_t base;
 } __attribute__((packed)) gdt_ptr_t;
+
+typedef struct tss_table {
+    uint32_t prev_tss;
+    uint32_t esp0;
+    uint32_t ss0;
+    uint32_t esp1;
+    uint32_t ss1;
+    uint32_t esp2;
+    uint32_t ss2;
+    uint32_t cr3;
+    uint32_t eip;
+    uint32_t eflags;
+    uint32_t eax;
+    uint32_t ecx;
+    uint32_t edx;
+    uint32_t ebx;
+    uint32_t esp;
+    uint32_t ebp;
+    uint32_t esi;
+    uint32_t edi;
+    uint32_t es;
+    uint32_t cs;
+    uint32_t ss;
+    uint32_t ds;
+    uint32_t fs;
+    uint32_t gs;
+    uint32_t ldt;
+    uint16_t trap;
+    uint16_t iomap_base;
+} tss_entry;
 
 #define DECLARE_ISR(i) extern void isr##i();
 
@@ -95,68 +153,15 @@ struct idt_ptr_struct {
 
 typedef struct idt_ptr_struct idt_ptr_t;
 
-typedef struct tss_table {
-    uint32_t prev_tss;
-    uint32_t esp0;
-    uint32_t ss0;
-    uint32_t esp1;
-    uint32_t ss1;
-    uint32_t esp2;
-    uint32_t ss2;
-    uint32_t cr3;
-    uint32_t eip;
-    uint32_t eflags;
-    uint32_t eax;
-    uint32_t ecx;
-    uint32_t edx;
-    uint32_t ebx;
-    uint32_t esp;
-    uint32_t ebp;
-    uint32_t esi;
-    uint32_t edi;
-    uint32_t es;
-    uint32_t cs;
-    uint32_t ss;
-    uint32_t ds;
-    uint32_t fs;
-    uint32_t gs;
-    uint32_t ldt;
-    uint16_t trap;
-    uint16_t iomap_base;
-} tss_entry;
-
-typedef struct intr_frame_t {
-    unsigned edi;
-    unsigned esi;
-    unsigned ebp;
-    // 虽然 pushad 把 esp 也压入，但 esp 是不断变化的，所以会被 popad 忽略
-    unsigned esp_dummy;
-
-    unsigned ebx;
-    unsigned edx;
-    unsigned ecx;
-    unsigned eax;
-
-    unsigned gs;
-    unsigned fs;
-    unsigned es;
-    unsigned ds;
-
-    unsigned eip;
-    unsigned cs;
-    unsigned eflags;
-    unsigned esp;
-    unsigned ss;
-} intr_frame_t;
-
-void write_tss(int32_t num, uint16_t ss0, uint32_t esp0);
-void set_kernel_stack(uintptr_t stack);
-void set_tss_ss0(uintptr_t ss);
-
-void gdt_install();
+void idt_flush(uint32_t);
+void idt_use_reg(uint8_t num,uint32_t base); // 注册用户态可触发中断 (需自行提供通用中断处理程序)
+void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
+void isr_handler(registers_t regs);
+void irq_handler(registers_t regs);
 void idt_install();
 
-void idt_use_reg(uint8_t num,uint32_t base);
-void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
-
-#endif //CRASHPOWEROS_DESCRIPTION_TABLE_H
+void set_kernel_stack(uintptr_t stack); //切换内核栈
+void gdt_flush(uint32_t gdtr); // asmfunc.asm
+void tss_flush();              // asmfunc.asm
+void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
+void gdt_install();
