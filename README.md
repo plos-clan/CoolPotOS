@@ -22,16 +22,17 @@ This is a simple operating system for x86 architecture.
 
 You need to install them on your computer:
 
-- xmake toolkit
-- zig cc & nasm
-- rustup
+- Xmake
+- NASM
+- Zig (you can install manually if xmake cannot download it for you)
 - Windows subsystem for Linux (Ubuntu 22.04)
     - xorriso
     - qemu-system-i386
 
 ### Steps
 
-- Run `xmake run` or `bash build.bash` on your terminal then it is going to build and run
+- Run `xmake run` on your terminal then it will build and run automatically
+- `init.bash` and `build.bash` are deprecated currently
 
 ## License
 
