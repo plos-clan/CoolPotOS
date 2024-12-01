@@ -1,5 +1,4 @@
-#ifndef CRASHPOWEROS_DHCP_H
-#define CRASHPOWEROS_DHCP_H
+#pragma once
 
 #define DHCP_CHADDR_LEN 16
 #define DHCP_SNAME_LEN 64
@@ -30,7 +29,8 @@
 
 #define DHCP_MAGIC_COOKIE 0x63825363
 
-#include <stdint.h>
+#include "ctypes.h"
+
 
 struct DHCPMessage {
     uint8_t opcode;
@@ -51,9 +51,5 @@ struct DHCPMessage {
     uint8_t bp_options[0];
 } __attribute__((packed));
 
-
-
 int dhcp_discovery(uint8_t *mac);
 void dhcp_handler(void *base);
-
-#endif

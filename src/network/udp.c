@@ -1,11 +1,12 @@
-#include "../include/udp.h"
-#include "../include/ipv4.h"
-#include "../include/memory.h"
-#include "../include/common.h"
-#include "../include/dhcp.h"
-#include "../include/socket.h"
-#include "../include/dns.h"
-#include "../include/etherframe.h"
+#include "udp.h"
+#include "krlibc.h"
+#include "kmalloc.h"
+#include "dhcp.h"
+#include "ipv4.h"
+#include "etherframe.h"
+#include "dns.h"
+#include "socket.h"
+#include "arp.h"
 
 uint8_t *UDP_Packet(uint16_t dest_port, uint16_t src_port, uint8_t *data, uint32_t size) {
     struct UDPMessage *res =

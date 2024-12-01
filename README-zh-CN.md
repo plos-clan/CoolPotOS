@@ -21,17 +21,15 @@
 
 您需要安装这些软件：
 
-- Python 工具包
-- i686_elf_tools
+- xmake 
+- zig工具链 & nasm汇编器
 - 适用于Windows的Linux子系统 (Ubuntu 22.04)
-  - grub-mkrescue
+  - xorriso
   - qemu-system-i386
 
 ### 步骤
 
-- 在终端上运行 `python build.py`或`bash build.bash`，项目将开始构建并运行
-
-在此之前, 你或许需要运行`bash init.bash`
+- 在终端上运行 `xmake run`或`bash build.bash`，项目将开始构建并运行
 
 ## 许可协议
 
@@ -50,3 +48,5 @@
 * ViudiraTech - Uinxed-Mark 性能测试程序
 * VinbeWan - 负责驱动程序开发
 * A4-Tacks - 编写一些构建脚本
+* wenxuanjun - OS 重构开发
+* Minsecrus - OS 重构开发

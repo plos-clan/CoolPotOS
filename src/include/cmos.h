@@ -1,7 +1,4 @@
-#ifndef CRASHPOWEROS_CMOS_H
-#define CRASHPOWEROS_CMOS_H
-
-#include <stdint.h>
+#pragma once
 
 #define NEED_UTC_8
 
@@ -17,19 +14,9 @@
 #define CMOS_CUR_YEAR 0x9
 #define CMOS_CUR_CEN 0x32
 
-#define bcd2hex(n) ((n >> 4) * 10) + (n & 0xf)
+#include "ctypes.h"
 
-typedef struct {
-    char* vendor;
-    char model_name[64];
-    unsigned int virt_bits;
-    unsigned int phys_bits;
-}cpu_t;
-
-uint8_t read_cmos(uint8_t p);
 char *get_date_time();
-void print_cpu_id();
-cpu_t * get_cpuid();
 
 uint32_t get_hour();
 uint32_t get_min();
@@ -39,5 +26,3 @@ uint32_t get_day_of_week();
 uint32_t get_mon();
 uint32_t get_year();
 int is_leap_year(int year);
-
-#endif //CRASHPOWEROS_CMOS_H

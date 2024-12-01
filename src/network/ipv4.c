@@ -1,6 +1,7 @@
-#include "../include/ipv4.h"
-#include "../include/memory.h"
-#include "../include/common.h"
+#include "ipv4.h"
+#include "kmalloc.h"
+#include "krlibc.h"
+#include "etherframe.h"
 
 static uint16_t ident = 0;
 
@@ -85,21 +86,22 @@ uint16_t CheckSum(uint16_t *data, uint32_t size) {
         tmp = (tmp & 0xffff) + (tmp >> 16);
     return ((~tmp & 0xff00) >> 8) | ((~tmp & 0x00ff) << 8);
 }
+
 uint32_t IP2UINT32_T(uint8_t *ip) {
     uint8_t ip0, ip1, ip2, ip3;
-    ip0 = strtol(ip, '.', 10);
+    ip0 = strtol(ip, (char **) '.', 10);
     uint8_t t = ip0;
     while (t >= 10) {
         t /= 10;
         ip++;
     }
-    ip1 = strtol(ip + 2, '.', 10);
+    ip1 = strtol(ip + 2, (char **) '.', 10);
     t = ip1;
     while (t >= 10) {
         t /= 10;
         ip++;
     }
-    ip2 = strtol(ip + 4, '.', 10);
+    ip2 = strtol(ip + 4, (char **) '.', 10);
     t = ip2;
     while (t >= 10) {
         t /= 10;

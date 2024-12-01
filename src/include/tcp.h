@@ -1,5 +1,4 @@
-#ifndef CRASHPOWEROS_TCP_H
-#define CRASHPOWEROS_TCP_H
+#pragma once
 
 #define TCP_PROTOCOL 6
 #define TCP_CONNECT_WAITTIME 10000
@@ -18,9 +17,8 @@
 #define SOCKET_TCP_CLOSE_WAIT 10
 #define SOCKET_TCP_LAST_ACK 11
 
-#include <stdint.h>
+#include "ctypes.h"
 
-#include "common.h"
 
 struct TCPPesudoHeader {
     uint32_t srcIP;
@@ -55,5 +53,3 @@ void tcp_provider_send(uint32_t dstIP, uint32_t srcIP, uint16_t dstPort,
                        bool URG, bool ACK, bool PSH, bool RST, bool SYN, bool FIN,
                        bool ECE, bool CWR, uint8_t *data, uint32_t size);
 void tcp_handler(void *base);
-
-#endif
