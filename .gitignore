@@ -1,9 +1,16 @@
-.vscode
-.idea
-/i686_elf_tools
-/i686-linux
-/cmake-build-debug
-/OSMain
-/CMakeLists.txt
-/target
-/cpos.iso
+# Xmake cache
+.xmake/
+build/
+CMakeLists.txt
+
+# Disk cache
+*.qcow2
+
+# IDE Config
+.idea/
+.vscode/
+cmake-build-debug/
+
+# MacOS Cache
+.DS_Store
+

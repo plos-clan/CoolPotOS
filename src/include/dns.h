@@ -1,5 +1,4 @@
-#ifndef CRASHPOWEROS_DNS_H
-#define CRASHPOWEROS_DNS_H
+#pragma once
 
 #define DNS_Header_ID 0x2115
 
@@ -30,7 +29,7 @@
 #define DNS_PORT 53
 #define DNS_SERVER_IP 0x08080808
 
-#include <stdint.h>
+#include "ctypes.h"
 
 struct DNS_Header {
     uint16_t ID;
@@ -65,5 +64,3 @@ struct DNS_Answer {
 } __attribute__((packed));
 
 void dns_handler(void *base);
-
-#endif

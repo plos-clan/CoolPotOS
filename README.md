@@ -13,6 +13,8 @@ This is a simple operating system for x86 architecture.
 
 * `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 * `Uinxed-Mark` by ViudiraTech [ViudiraTech/Uinxed-Kernel](https://github.com/ViudiraTech/Uinxed-Kernel)
+* `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+* `libelf_parser` by wenxuanjun [plos-clan/libelf_parser](https://github.com/plos-clan/libelf-parse)
 
 ## Build & Run
 
@@ -20,17 +22,16 @@ This is a simple operating system for x86 architecture.
 
 You need to install them on your computer:
 
-- Python toolkit
-- i686_elf_tools
+- xmake toolkit
+- zig cc & nasm
+- rustup
 - Windows subsystem for Linux (Ubuntu 22.04)
-    - grub-mkrescue
+    - xorriso
     - qemu-system-i386
 
 ### Steps
 
-- Run `python build.py` or `bash build.bash` on your terminal then it is going to build and run
-
-Before that, you may need to run `bash init.bash`
+- Run `xmake run` or `bash build.bash` on your terminal then it is going to build and run
 
 ## License
 
@@ -49,3 +50,5 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * ViudiraTech - Uinxed-Mark program
 * Vinbe Wan - CoolPot_Driver Development
 * A4-Tacks - Write some build scripts
+* wenxuanjun - OS Developer
+* Minsecrus - OS Developer

@@ -1,9 +1,7 @@
 #ifndef CPOS_ISR_H
 #define CPOS_ISR_H
 
-#define INTERRUPT_SERVICE __attribute__((naked))
-
-#include <stdint.h>
+#include "ctypes.h"
 
 typedef struct registers {
     uint32_t ds; // 我们自己弹入的，当前数据段
@@ -32,6 +30,11 @@ typedef struct registers {
 
 typedef void (*isr_t)(registers_t *);
 
+/*
+ * 注册一个中断处理程序(重复注册会覆盖上次注册的程序)
+ * uint8_t n : 中断号
+ * isr_t handler : 处理函数指针
+ */
 void register_interrupt_handler(uint8_t n, isr_t handler);
 
 #endif
