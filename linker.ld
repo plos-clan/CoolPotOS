@@ -5,25 +5,25 @@ SECTIONS
 	
 	. = 2M;
  
-	.text BLOCK(4K) : ALIGN(4K)
+	.text :
 	{
 	    code = .; _code = .; __code = .;
 		*(.multiboot)
 		*(.text)
 	}
  
-	.rodata BLOCK(4K) : ALIGN(4K)
+	.rodata ALIGN(0x1000):
 	{
 		*(.rodata)
 	}
  
-	.data BLOCK(4K) : ALIGN(4K)
+	.data ALIGN(0x1000):
 	{
 	    data = .; _data = .; __data = .;
 		*(.data)
 	}
  
-	.bss BLOCK(4K) : ALIGN(4K)
+	.bss :
 	{
 	    bss = .; _bss = .; __bss = .;
 		*(COMMON)

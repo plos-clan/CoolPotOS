@@ -316,7 +316,6 @@ void ISO_InitFs(struct vfs_t *vfs, uint8_t disk_number) {
     l9660_openfs(fs_m->fs, read_sector, disk_number);
     l9660_fs_open_root(&fs_m->root_dir, fs_m->fs);
     fs_m->now_dir = fs_m->root_dir;
-    logkf("%08x\n", vfs->cache);
 }
 
 void ISO_CDFile() {}

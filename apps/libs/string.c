@@ -2,13 +2,27 @@
 #include "../include/ctype.h"
 #include "../include/stdlib.h"
 
-int isalnum(int c){
-    if ( (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') ) return 8;
+static const double rounders[MAX_PRECISION + 1] = {
+        0.5,				// 0
+        0.05,				// 1
+        0.005,				// 2
+        0.0005,				// 3
+        0.00005,			// 4
+        0.000005,			// 5
+        0.0000005,			// 6
+        0.00000005,			// 7
+        0.000000005,		// 8
+        0.0000000005,		// 9
+        0.00000000005		// 10
+};
+
+int isalnum(int c) {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) return 8;
     return 0;
 }
 
-int islower(int c){
-    if (c>='a' && c<='z') return 512;
+int islower(int c) {
+    if (c >= 'a' && c <= 'z') return 512;
 
     return 0;
 }
@@ -224,36 +238,36 @@ char *strdup(const char *str) {
     return ret - (len + 1);
 }
 
-char *strchr(const char *s, const char ch){
+char *strchr(const char *s, const char ch) {
     if (NULL == s)
         return NULL;
     const char *pSrc = s;
-    while ('\0' != *pSrc){
-        if (*pSrc == ch){
-            return (char *)pSrc;
+    while ('\0' != *pSrc) {
+        if (*pSrc == ch) {
+            return (char *) pSrc;
         }
-        ++ pSrc;
+        ++pSrc;
     }
     return NULL;
 }
 
-size_t strspn(const char * string,const char * control){
-    const char * str = (const char *)string;
-    const char * ctrl = (const char *)control;
+size_t strspn(const char *string, const char *control) {
+    const char *str = (const char *) string;
+    const char *ctrl = (const char *) control;
     unsigned char map[32];
     int count = 0;
     /*clear the map*/
-    memset(map,0,32*sizeof(unsigned char));
+    memset(map, 0, 32 * sizeof(unsigned char));
     //memset(map,0,32);
     /*set bits in control map*/
-    while(*ctrl){
+    while (*ctrl) {
         map[*ctrl >> 3] |= (0x01 << (*ctrl & 7));
         ctrl++;
     }
     /*count the str's char num in control*/
-    if(*str){
+    if (*str) {
         count = 0;
-        while((map[*str >> 3] & (0x01 << (*str & 7)))){
+        while ((map[*str >> 3] & (0x01 << (*str & 7)))) {
             count++;
             str++;
         }
@@ -262,12 +276,12 @@ size_t strspn(const char * string,const char * control){
     return 0;
 }
 
-char* strpbrk(const char* str, const char* strCharSet){
-    while (*str){
-        const char* pSet = strCharSet;
+char *strpbrk(const char *str, const char *strCharSet) {
+    while (*str) {
+        const char *pSet = strCharSet;
         while (*pSet)
             if (*pSet++ == *str)
-                return (char*)str;
+                return (char *) str;
         ++str;
     }
     return NULL;
@@ -279,7 +293,7 @@ double strtod(const char *nptr, char **endptr) {
     double number;
     int exponent;
     int negative;
-    char *p = (char *)nptr;
+    char *p = (char *) nptr;
     double p10;
     int n;
     int num_digits;
@@ -389,8 +403,8 @@ double strtod(const char *nptr, char **endptr) {
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
-    const unsigned char *p1 = (const unsigned char *)s1,
-            *p2 = (const unsigned char *)s2;
+    const unsigned char *p1 = (const unsigned char *) s1,
+            *p2 = (const unsigned char *) s2;
     while (n-- > 0) {
         if (*p1 != *p2)
             return *p1 - *p2;
@@ -399,4 +413,59 @@ int strncmp(const char *s1, const char *s2, size_t n) {
         p1++, p2++;
     }
     return 0;
+}
+
+char *ftoa(double f, char *buf, int precision) {
+    char *ptr = buf;
+    char *p = ptr;
+    char *p1;
+    char c;
+    long intPart;
+
+    if (precision > MAX_PRECISION)
+        precision = MAX_PRECISION;
+    if (f < 0) {
+        f = -f;
+        *ptr++ = '-';
+    }
+    if (precision < 0) {
+        if (f < 1.0) precision = 6;
+        else if (f < 10.0) precision = 5;
+        else if (f < 100.0) precision = 4;
+        else if (f < 1000.0) precision = 3;
+        else if (f < 10000.0) precision = 2;
+        else if (f < 100000.0) precision = 1;
+        else precision = 0;
+    }
+    if (precision)
+        f += rounders[precision];
+    intPart = f;
+    f -= intPart;
+    if (!intPart)
+        *ptr++ = '0';
+    else {
+        p = ptr;
+        while (intPart) {
+            *p++ = '0' + intPart % 10;
+            intPart /= 10;
+        }
+        p1 = p;
+        while (p > ptr) {
+            c = *--p;
+            *p = *ptr;
+            *ptr++ = c;
+        }
+        ptr = p1;
+    }
+    if (precision) {
+        *ptr++ = '.';
+        while (precision--) {
+            f *= 10.0;
+            c = f;
+            *ptr++ = '0' + c;
+            f -= c;
+        }
+    }
+    *ptr = 0;
+    return ptr;
 }

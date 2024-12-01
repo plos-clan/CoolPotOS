@@ -44,13 +44,11 @@ uint8_t *ttf_bitmap(int *buf,uint32_t *width,uint32_t *heigh,float pixels){
     int bitmap_w = 512; /* 位图的宽 */
     int bitmap_h = 128; /* 位图的高 */
     uint8_t *bitmap = calloc(bitmap_w * bitmap_h, sizeof(uint8_t));
-
     /* "STB"的 unicode 编码 */
     int *word = buf;
 
     float scale = stbtt_ScaleForPixelHeight(
             font, pixels);
-
     int ascent = 0;
     int descent = 0;
     int lineGap = 0;
@@ -70,12 +68,10 @@ uint8_t *ttf_bitmap(int *buf,uint32_t *width,uint32_t *heigh,float pixels){
         int c_x1, c_y1, c_x2, c_y2;
         stbtt_GetCodepointBitmapBox(font, word[i], scale, scale, &c_x1, &c_y1,
                                     &c_x2, &c_y2);
-
         int y = ascent + c_y1;
         int byteOffset = x + roundf(leftSideBearing * scale) + (y * bitmap_w);
         stbtt_MakeCodepointBitmap(font, bitmap + byteOffset, c_x2 - c_x1,
                                   c_y2 - c_y1, bitmap_w, scale, scale, word[i]);
-
         x += roundf(advanceWidth * scale);
 
         int kern;
@@ -99,17 +95,14 @@ static void put_bitmap(uint8_t *bitmap, uint32_t *vram, uint32_t x, uint32_t y,
 }
 
 void print_ttf(char* buf,uint32_t fc,uint32_t bc,uint32_t x,uint32_t y,float pixels){
-
     Rune *r = (Rune *) malloc((utflen(buf) + 1) * sizeof(Rune));
     r[utflen(buf)] = 0;
     int i = 0;
     while (*buf != '\0') {
         buf += chartorune(&(r[i++]), buf);
     }
-
     uint32_t width, heigh;
     uint8_t *bitmap = ttf_bitmap(r, &width, &heigh,pixels);
-
     //SDraw_Box(framebuffer, x, y, x + width, y + heigh, bc, 1280);
     put_bitmap(bitmap,framebuffer,x,y,width,heigh,512, 1280, fc, bc);
     free(bitmap);

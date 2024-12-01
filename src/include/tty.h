@@ -71,6 +71,7 @@ void tty_putchar(struct tty *res,int ch);
 void tty_print(struct tty *res,const char *string);
 void clear_TextMode(struct tty *res);
 void screen_ne_TextMode(struct tty *res);
+void move_cur_TextMode(struct tty *res, int x, int y);
 void putchar_TextMode(struct tty *res, int c);
 
 #endif

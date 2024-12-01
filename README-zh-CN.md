@@ -29,7 +29,9 @@
 
 ### 步骤
 
-- 在终端上运行 `python build.py`，项目将开始构建并运行
+- 在终端上运行 `python build.py`或`bash build.bash`，项目将开始构建并运行
+
+在此之前, 你或许需要运行`bash init.bash`
 
 ## 许可协议
 
@@ -47,3 +49,4 @@
 * QtLittleXu - XuYuxuan 负责OS文档编写
 * ViudiraTech - Uinxed-Mark 性能测试程序
 * VinbeWan - 负责驱动程序开发
+* A4-Tacks - 编写一些构建脚本

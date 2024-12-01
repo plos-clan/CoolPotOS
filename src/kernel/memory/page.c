@@ -1,19 +1,21 @@
-#include "../include/memory.h"
-#include "../include/graphics.h"
-#include "../include/io.h"
-#include "../include/task.h"
-#include "../include/timer.h"
+#include "../../include/memory.h"
+#include "../../include/graphics.h"
+#include "../../include/io.h"
+#include "../../include/task.h"
+#include "../../include/timer.h"
 
 page_directory_t *kernel_directory = 0; // 内核用页目录
 page_directory_t *current_directory = 0; // 当前页目录
 
 volatile uint32_t *frames;
-uint32_t nframes;
+volatile uint32_t nframes;
 
 extern struct task_struct *current;
 
 extern uint32_t placement_address;
 extern void *program_break, *program_break_end;
+
+static uint8_t memory_is_enable = false;
 
 static void set_frame(uint32_t frame_addr) {
     uint32_t frame = frame_addr / 0x1000;
@@ -120,10 +122,16 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
     if (dir->tables[table_idx]){
         page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
         return pgg;
-    }
-    else if (make) {
+    }else if (make) {
         uint32_t tmp;
-        dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
+
+        //if(memory_is_enable){
+        //    dir->tables[table_idx] = (page_table_t *) kmalloc_mpool(sizeof(page_table_t));
+         //   tmp = (uint32_t) dir->tables[table_idx];
+        //} else
+            dir->tables[table_idx] = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), &tmp);
+
+
         memset(dir->tables[table_idx], 0, 0x1000);
         dir->tablesPhysical[table_idx] = tmp | 0x7;
         page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
@@ -133,6 +141,7 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir,bool ist) {
 
 
 void page_fault(registers_t *regs) {
+    logk("Page Fault\n");
     io_cli();
     uint32_t faulting_address;
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address)); //
@@ -171,6 +180,9 @@ void page_fault(registers_t *regs) {
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
     page_table_t *table = (page_table_t *) kmalloc_i_ap(sizeof(page_table_t), physAddr);
 
+    //page_table_t *table = (page_table_t *) kmalloc_mpool(sizeof(page_table_t));
+    //*physAddr = table;
+
     memset(table, 0, sizeof(page_directory_t));
 
     int i;
@@ -191,6 +203,9 @@ static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
 page_directory_t *clone_directory(page_directory_t *src) {
     uint32_t phys;
     page_directory_t *dir = (page_directory_t *) kmalloc_i_ap(sizeof(page_directory_t), &phys);
+
+    //page_directory_t *dir = (page_directory_t *) kmalloc_mpool(sizeof(page_directory_t));
+    //phys = dir;
     memset(dir, 0, sizeof(page_directory_t));
 
     uint32_t offset = (uint32_t) dir->tablesPhysical - (uint32_t) dir;
@@ -218,6 +233,8 @@ void init_page(multiboot_t *mboot) {
     frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
     memset(frames, 0, INDEX_FROM_BIT(nframes));
 
+    printf("BaseFrame: 0x%08x | ",frames);
+
     uint32_t physical_addr;
     kernel_directory = (page_directory_t *) kmalloc_ap(sizeof(page_directory_t),&physical_addr); //kmalloc: 无分页情况自动在内核后方分配 | 有分页从内核堆分配
     kernel_directory->physicalAddr = physical_addr;
@@ -226,7 +243,7 @@ void init_page(multiboot_t *mboot) {
     current_directory = kernel_directory;
     int i = 0;
 
-    while (i < placement_address + 0x30000) {
+    while (i < placement_address) {
         /*
          * 内核部分对ring3而言不可读不可写
          * 无偏移页表映射
@@ -236,14 +253,13 @@ void init_page(multiboot_t *mboot) {
         i += 0x1000;
     }
 
-    program_break = i;
+    printf("Kernel: 0x%08x | ",placement_address);
 
-    for (; i < placement_address + 0x30000 + 1 + KHEAP_INITIAL_SIZE; ) {
+    while (i < placement_address + 0x300000){
         alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
-        i+= 0x1000;
+        i += 0x1000;
     }
-
-    program_break_end = (void*) i;
+    printf("PageArea: 0x%08x | ",placement_address + 0x300000);
 
     uint32_t j = mboot->framebuffer_addr,
     size = mboot->framebuffer_height * mboot->framebuffer_width*mboot->framebuffer_bpp;
@@ -253,12 +269,22 @@ void init_page(multiboot_t *mboot) {
         j += 0x1000;
     }
 
+    printf("GraphicsBuffer: 0x%08x | ",(mboot->framebuffer_addr));
+
+    program_break = i;
+    for (; i < placement_address + 0x300000 + 1 + KHEAP_INITIAL_SIZE; ) {
+        alloc_frame(get_page(i, 1, kernel_directory,false), 1, 1);
+        i+= 0x1000;
+    }
+    program_break_end = i;
+
+    printf("KernelHeap: 0x%08x - 0x%08x\n",(program_break),(program_break_end));
+
     register_interrupt_handler(14, page_fault);
     switch_page_directory(kernel_directory);
 
+    memory_init_mpool(placement_address,placement_address + 0x300000);
+    memory_is_enable = true;
+
     klogf(true,"Memory manager is enable\n");
-    printf("Kernel: 0x%08x | ",placement_address + 0x30000);
-    printf("GraphicsBuffer: 0x%08x |",(mboot->framebuffer_addr));
-    printf("KernelHeap: 0x%08x - 0x%08x | ",(program_break),(program_break_end));
-    printf("BaseFrame: 0x%08x\n",frames);
 }

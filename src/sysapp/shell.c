@@ -9,6 +9,7 @@
 #include "../include/common.h"
 #include "../include/elf.h"
 #include "../include/keyboard.h"
+#include "../include/pci.h"
 
 extern Queue *key_char_queue;
 extern vdisk vdisk_ctl[10];
@@ -224,6 +225,10 @@ void cmd_debug() {
     printf("ESI: 0x%08x | EDI 0x%08x | EBP 0x%08x | EFLAGS 0x%08x\n", esi, edi, ebp, get_current()->context.eflags);
 }
 
+void cmd_pcils(){
+    print_all_pci_info();
+}
+
 void cmd_cd(int argc, char **argv) {
     if (argc == 1) {
         print("[Shell-CD]: If there are too few parameters, please specify the path.\n");
@@ -397,7 +402,7 @@ void setup_shell() {
             buffer[4] = 's';
             buffer[5] = '\0';
         }
-        printf("\033[32mdefault@localhost: \033[34m%s\\\033[39m$ ", buffer);
+        printf("\033[32mKernel@localhost: \033[34m%s\\\033[39m$ ", buffer);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
 
         argc = cmd_parse(com, argv, ' ');
@@ -435,6 +440,8 @@ void setup_shell() {
             cmd_cd(argc, argv);
         else if (!strcmp("exec",argv[0]))
             cmd_exec(argc,argv);
+        else if (!strcmp("pcils",argv[0]))
+            cmd_pcils();
         else if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print("-=[CoolPotShell Helper]=-\n");
             print("help ? h              Print shell help info.\n");
@@ -450,7 +457,7 @@ void setup_shell() {
             print("debug                 Print os debug info.\n");
             print("disk[list|<ID>|cg<ID>]List or view disks.\n");
             print("cd  <path>            Change shell top directory.\n");
-            print("exec <path>           Execute a application.\n");
+            print("pcils                 List all pci device info.\n");
         } else printf("\033ff3030;[Shell]: Unknown command '%s'.\033c6c6c6;\n", argv[0]);
     }
 }

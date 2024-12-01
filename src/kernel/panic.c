@@ -40,6 +40,15 @@ static UD_6(registers_t *reg){
     }
 }
 
+static DE_0(registers_t *reg){
+    if(current->pid == 0){
+        printf("Kernel PANIC(#DE), Please restart your CPOS Kernel.\n");
+        while(1) io_hlt();
+    }else {
+        task_kill(current->pid);
+    }
+}
+
 void panic_pane(char* msg,enum PANIC_TYPE type){
     io_cli();
     extern int can_sche;
@@ -81,17 +90,15 @@ void panic_pane(char* msg,enum PANIC_TYPE type){
 void init_eh(){
     register_interrupt_handler(13,GP_13);
     register_interrupt_handler(6,UD_6);
+    register_interrupt_handler(0,DE_0);
     panic_bmp = NULL;
-    //if(vfs_change_disk('B')){
-        uint32_t size = vfs_filesize("panic.bmp");
-
-        if(size == -1){
-            klogf(false,"Enable graphics user interface panic.\n");
-        } else{
-            Bmp *bmp = kmalloc(size);
-            vfs_readfile("panic.bmp",bmp);
-            panic_bmp = bmp;
-            klogf(true,"Enable graphics user interface panic.\n");
-        }
-    //}
+    uint32_t size = vfs_filesize("panic.bmp");
+    if(size == -1){
+        klogf(false,"Enable graphics user interface panic.\n");
+    } else{
+        Bmp *bmp = kmalloc(size);
+        vfs_readfile("panic.bmp",bmp);
+        panic_bmp = bmp;
+        klogf(true,"Enable graphics user interface panic.\n");
+    }
 }

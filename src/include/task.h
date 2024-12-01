@@ -8,6 +8,7 @@
 #include "memory.h"
 #include "vfs.h"
 #include "tty.h"
+#include "fpu.h"
 
 typedef struct {
     int (*main)(int argc,char* * argv);
@@ -37,6 +38,7 @@ struct context{
     uint32_t ds;
     uint32_t cs;
     uint32_t ss;
+    fpu_regs_t fpu_regs;
 };
 
 // 进程控制块 PCB
@@ -58,8 +60,9 @@ struct task_struct {
     struct context context;       // 上下文信息
     struct task_struct *next;     // 链表指针
     char* argv;                   // 命令行参数
+    bool fpu_flag;				  // 是否使用 FPU
     uint32_t cpu_clock;           // CPU运行时间片
-    uint32_t page_alloc_address;  // 页分配计数器
+    int page_alloc_address;       // 页分配计数器
 };
 
 void print_proc_t(int *i,struct task_struct *base,struct task_struct *cur,int is_print);

@@ -82,6 +82,11 @@ def build_kernel():  # 构建内核本体
         e = os.system(cmd)
         if e != 0:
             return -1
+    for file in os.listdir(cd + dir_ + src + 'kernel' + dir_ + 'memory'):
+        cmd = gcc + "-O0 " + src + "kernel" + dir_ + 'memory' + dir_ + file + " -o " + "target" + dir_ + file.split(".")[0] + ".o"
+        e = os.system(cmd)
+        if e != 0:
+            return -1
     return 0
 
 
@@ -131,7 +136,7 @@ def linker():  # 交叉编译链接
     for file in os.listdir(cd + dir_ + 'target'):
         source_file = source_file + " target" + dir_ + file
     return os.system(
-        ld + " -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "kernel.elf -ffreestanding -nostdlib " + source_file + " -lgcc")
+        ld + " -T linker.ld -o isodir" + dir_ + "sys" + dir_ + "cposkrnl.elf -ffreestanding -nostdlib " + source_file + " -lgcc")
 
 
 clean()
@@ -171,6 +176,7 @@ print("Building iso...")
 if os.system(build_command) != 0:
     exit(-1)
 
-os.system("qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m 4096")
+os.system("qemu-system-i386 -cdrom cpos.iso -serial stdio -device sb16 -net nic,model=pcnet -m "
+          "4096")
 
 # launch()
