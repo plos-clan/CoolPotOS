@@ -1,4 +1,4 @@
-set_project("MdrOS")
+set_project("CoolPotOS")
 
 add_rules("mode.debug", "mode.release")
 add_requires("zig", "nasm")
@@ -45,15 +45,15 @@ target("iso")
         local kernel = project.target("kernel")
         os.cp(kernel:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
 
-        local iso_file = "$(buildir)/mdros.iso"
+        local iso_file = "$(buildir)/CoolPotOS.iso"
         local xorriso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
         os.run("xorriso -as mkisofs %s %s -o %s", xorriso_flags, iso_dir, iso_file)
         print("ISO image created at: " .. iso_file)
     end)
 
     on_run(function (target)
-        local flags = "-serial stdio -m 4096"
+        local flags = "-serial stdio -m 1024"
         local net_flags = "-nic model=pcnet"
         local scsi_flags = ""--"-drive file=./disk.qcow2,if=none,id=disk0 -device ahci,id=ahci -device ide-hd,bus=ahci.0,drive=disk0"
-        os.exec("qemu-system-i386 -cdrom $(buildir)/mdros.iso %s %s %s", flags,scsi_flags,net_flags)
+        os.exec("qemu-system-i386 -cdrom $(buildir)/mdros.iso %s %s %s", flags, scsi_flags, net_flags)
     end)
