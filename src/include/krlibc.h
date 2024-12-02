@@ -90,6 +90,7 @@ double cos(double x);
 double acos(double x);
 double sqrt(double number);
 double pow(double x, int y);
+int atoi(const char *string);
 
 int vsprintf(char *buf, const char *fmt, va_list args);
 int sprintf(char *buf, const char *fmt, ...);
