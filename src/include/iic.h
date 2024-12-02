@@ -1,7 +1,7 @@
 #ifndef COOLPOTOS_IIC_H
 #define COOLPOTOS_IIC_H
 
-#include "stdbool.h"
+#include "ctypes.h"
 #include "list.h"
 #include "io.h"
 #include "crc.h"
@@ -23,6 +23,6 @@ typedef struct {
     uint8_t stop;              // 数据段末标（0x01）
 } IIC_Data;
 
-void crc_check(IIC_Data *frame);
+int crc_check(IIC_Data *frame);
 
 #endif //COOLPOTOS_IIC_H

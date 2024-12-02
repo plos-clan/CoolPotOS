@@ -1,6 +1,7 @@
 #include "iic.h"
+#include "klog.h"
 
-void crc_check(IIC_Data *frame) {
+int crc_check(IIC_Data *frame) {
     uint32_t *data = frame->data;
     uint8_t crc = crc8(data, frame->data_len);
     if (crc != frame->crc) {
