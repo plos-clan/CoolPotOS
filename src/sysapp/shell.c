@@ -97,7 +97,7 @@ static void ls(int argc,char** argv){
         p = vfs_open(argv[1]);
     }
     if(p == NULL){
-        printk("Cannot fount directory.\n");
+        printk("Cannot found directory.\n");
         return;
     }
     list_foreach(p->child, i) {

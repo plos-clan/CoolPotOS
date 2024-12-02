@@ -18,9 +18,10 @@ add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
 target("kernel")
     set_kind("binary")
     set_toolchains("@zig", "nasm")
+    set_toolset("as", "nasm")
     set_default(false)
 
-    add_linkdirs("libs")
+    add_linkdirs("src/lib")F
     add_includedirs("src/include")
 
     add_links("os_terminal")
@@ -43,7 +44,7 @@ target("iso")
         os.cp("assets", iso_dir)
 
         local kernel = project.target("kernel")
-        os.cp(kernel:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
+        os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         local xorriso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
@@ -52,8 +53,7 @@ target("iso")
     end)
 
     on_run(function (target)
-        local flags = "-serial stdio -m 1024"
-        local net_flags = "-nic model=pcnet"
-        local scsi_flags = ""--"-drive file=./disk.qcow2,if=none,id=disk0 -device ahci,id=ahci -device ide-hd,bus=ahci.0,drive=disk0"
-        os.exec("qemu-system-i386 -cdrom $(buildir)/mdros.iso %s %s %s", flags, scsi_flags, net_flags)
+        local flags = "-serial stdio -m 1024 -nic model=pcnet -device ahci,id=ahci"
+        local ahci_flags = ""--"-drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
+        os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s %s", flags, ahci_flags)
     end)
