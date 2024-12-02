@@ -21,7 +21,7 @@ target("kernel")
     set_toolset("as", "nasm")
     set_default(false)
 
-    add_linkdirs("src/lib")F
+    add_linkdirs("src/lib")
     add_includedirs("src/include")
 
     add_links("os_terminal")
@@ -54,6 +54,7 @@ target("iso")
 
     on_run(function (target)
         local flags = "-serial stdio -m 1024 -nic model=pcnet -device ahci,id=ahci"
+        local audio_flags = "-audiodev pa,id=speaker -machine pcspk-audiodev=speaker"
         local ahci_flags = ""--"-drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
-        os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s %s", flags, ahci_flags)
+        os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s %s %s", flags, ahci_flags,audio_flags)
     end)

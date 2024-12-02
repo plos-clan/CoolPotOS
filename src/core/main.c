@@ -23,6 +23,7 @@
 #include "scheduler.h"
 #include "krlibc.h"
 #include "syscall.h"
+#include "speaker.h"
 #include "shell.h"
 
 extern void* program_break_end;
@@ -103,6 +104,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     jmp:
 
     klogf(true,"Kernel load done!\n");
+    beep();
     enable_scheduler();
     io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行
 
