@@ -80,6 +80,9 @@ static inline void terminal_setup(bool is_f3) {
             .address = get_vbe_screen()};
     terminal_init(&display, is_f3 ? 30.0 : 10.0, kmalloc, kfree, logk);
 
+    extern void beep();
+    terminal_set_bell_handler(beep);
+
     if(!is_f3){
         terminal_set_color_scheme(0);
         return;

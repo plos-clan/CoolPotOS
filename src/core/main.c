@@ -24,6 +24,7 @@
 #include "krlibc.h"
 #include "syscall.h"
 #include "speaker.h"
+#include "hda.h"
 #include "shell.h"
 
 extern void* program_break_end;
@@ -72,6 +73,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     ide_init();
     ahci_init();
+    hda_init();
 
     devfs_regist();
 
@@ -85,12 +87,12 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     setup_syscall();
 
-    extern void f3system_setup();
-    create_kernel_thread((void*)f3system_setup,NULL,"f3system");
-    klogf(true,"Enable f3system service.\n");
+//    extern void f3system_setup();
+//    create_kernel_thread((void*)f3system_setup,NULL,"f3system");
+//    klogf(true,"Enable f3system service.\n");
 
-//    create_kernel_thread((void*)setup_shell, NULL, "Shell");
-//    klogf(true,"Enable kernel shell service.\n");
+    create_kernel_thread((void*)setup_shell, NULL, "Shell");
+    klogf(true,"Enable kernel shell service.\n");
 
     // 挂载最后一个块设备(通常为引导设备)
     vfs_node_t dev = vfs_open("/dev");
