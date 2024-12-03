@@ -4,11 +4,14 @@
 #include "description_table.h"
 #include "klog.h"
 #include "io.h"
+#include "timer.h"
 
 extern void switch_to(struct context *prev, struct context *next); //asmfunc.asm
 
-pcb_t *current_pcb = NULL;
-pcb_t *running_proc_head = NULL;
+pcb_t *current_pcb = NULL; //当前运行进程
+pcb_t *running_proc_head = NULL; //调度队列
+pcb_t *wait_proc_head = NULL; //等待队列
+
 bool can_sche = false; //调度标志位
 
 int get_all_task(){
@@ -32,6 +35,10 @@ void disable_scheduler(){
 
 pcb_t *get_current_proc(){
     return current_pcb;
+}
+
+void kernel_sche(){
+    __asm__("int $31\n");
 }
 
 void scheduler_process(registers_t *reg){
