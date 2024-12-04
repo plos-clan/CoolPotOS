@@ -25,6 +25,7 @@
 #include "syscall.h"
 #include "speaker.h"
 #include "hda.h"
+#include "vsound.h"
 #include "shell.h"
 
 extern void* program_break_end;
@@ -38,6 +39,10 @@ _Noreturn void shutdown(){
     sleep(10);
     power_off();
     while (1);
+}
+
+static void play_music(){
+    wav_player("/music_box.mp3");
 }
 
 /*
@@ -74,6 +79,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     ide_init();
     ahci_init();
     hda_init();
+    hda_regist();
 
     devfs_regist();
 
@@ -90,6 +96,9 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 //    extern void f3system_setup();
 //    create_kernel_thread((void*)f3system_setup,NULL,"f3system");
 //    klogf(true,"Enable f3system service.\n");
+
+    create_kernel_thread((void*)play_music,NULL,"music");
+    klogf(true,"Enable music service.\n");
 
     create_kernel_thread((void*)setup_shell, NULL, "Shell");
     klogf(true,"Enable kernel shell service.\n");
@@ -110,7 +119,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     jmp:
 
     klogf(true,"Kernel load done!\n");
-    beep();
+    //beep();
     clock_sleep(100);
     enable_scheduler();
     io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行

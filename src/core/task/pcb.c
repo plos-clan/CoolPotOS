@@ -84,7 +84,6 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     new_task->pgd_dir = clone_directory(kernel_directory);
     new_task->cpu_clock = 0;
     new_task->tty = default_tty_alloc();
-    new_task->cpu_clock = 0;
     new_task->exe_file = exefile;
     new_task->kernel_stack = new_task;
     new_task->sche_time = 1;
@@ -242,6 +241,7 @@ void init_pcb(){
     current_pcb->sche_time = 1;
     current_pcb->pgd_dir = kernel_directory;
     current_pcb->context.esp = (uint32_t )current_pcb->kernel_stack;
+    current_pcb->cpu_clock = 0;
 
     current_pcb->program_break = program_break;
     current_pcb->program_break_end = program_break_end;

@@ -1,5 +1,4 @@
 #include "krlibc.h"
-#include "video.h"
 #include "kmalloc.h"
 #include "acpi.h" //void sleep(u32 time)
 #include "timer.h" //void sleep(u32 time)
@@ -796,6 +795,12 @@ int sprintf(char *buf, const char *fmt, ...) {
     i = vsprintf(buf, fmt, args);
     va_end(args);
     return i;
+}
+
+void explicit_bzero(void *_s, size_t _n) {
+    for (size_t i = 0; i < _n; i++) {
+        ((uint8_t *)_s)[i] = 0;
+    }
 }
 
 void sleep(uint32_t time) {
