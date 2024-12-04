@@ -14,16 +14,15 @@ void free_pages(){
         ii = fifo8_get(fifo8);
         if(ii == -1) return;
         page_directory_t *dir = (page_directory_t *)ii;
-        return;
         for (int i = 0; i < 1024; i++) {
             page_table_t *table = dir->tables[i];
             for (int j = 0; j < 1024; j++) {
                 page_t page = table->pages[i];
                 free_frame(&page);
             }
-           // kfree(table);
+            //kfree(table);
         }
-        //kfree(dir);
+        kfree(dir);
     } while (1);
 }
 

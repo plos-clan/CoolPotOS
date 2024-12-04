@@ -8,6 +8,7 @@
 #include "page.h"
 #include "tty.h"
 #include "vfs.h"
+#include "elf.h"
 
 typedef struct __attribute__((packed)) fpu_regs {
     uint16_t control;
@@ -59,7 +60,7 @@ typedef struct task_pcb{
     uint32_t cpu_clock;           // CPU运行时间片
     uint32_t sche_time;           // 进程剩余的可运行时间片
     vfs_node_t exe_file;          // 可执行文件
-    uint8_t *data;                // 可执行文件内核数据缓冲区
+    Elf32_Ehdr *data;             // 可执行文件elf句柄
     struct task_pcb *next;     // 链表指针
 }pcb_t;
 
