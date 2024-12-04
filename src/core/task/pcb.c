@@ -113,13 +113,13 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     disable_scheduler();
     io_sti();
     switch_page_directory(new_task->pgd_dir);
-    uint8_t *data = kmalloc(exefile->size);
+    Elf32_Ehdr *data = kmalloc(exefile->size);
     if(vfs_read(exefile,data,0,exefile->size) == -1){
         vfs_close(exefile);
         return -1;
     }
-    uint32_t _start = elf_load(exefile->size,data);
-    kfree(data);
+    uint32_t _start = load_elf(data,new_task->pgd_dir);
+    new_task->data = data;
     switch_page_directory(cur_dir);
     io_cli();
     enable_scheduler();
@@ -160,7 +160,7 @@ int create_kernel_thread(int (*_start)(void* arg),void *args,char* name){ //åˆ›å
     new_task->cpu_clock = 0;
     new_task->sche_time = 1;
     new_task->user_stack = new_task->kernel_stack;
-
+    new_task->data = NULL;
     new_task->kernel_stack = new_task;
 
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
@@ -200,6 +200,7 @@ void kill_proc(pcb_t *pcb){
     if(pcb->task_level == TASK_KERNEL_LEVEL){
 
     } else{
+        kfree(pcb->data);
         vfs_close(pcb->exe_file);
         put_directory(pcb->pgd_dir);
     }
