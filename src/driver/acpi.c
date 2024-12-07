@@ -28,10 +28,6 @@ uint8_t *rsdp_address;
 HpetInfo *hpetInfo = NULL;
 static uint32_t hpetPeriod = 0;
 
-#define page_line(ptr) do { \
-     alloc_frame_line(get_page((uint32_t)ptr,1,get_current_directory()),(uint32_t)ptr,1,1);                       \
-}while(0)
-
 static void AcpiPowerHandler(registers_t *irq) {
     io_cli();
     uint16_t status = io_in16((uint32_t) PM1a_EVT_BLK);
@@ -141,6 +137,11 @@ static int AcpiSysInit() {
             if (!AcpiCheckHeader(facp->DSDT, "DSDT")) {
                 S5Addr = &(facp->DSDT->definition_block);
                 dsdtlen = facp->DSDT->length - HEADER_SIZE;
+
+                for (uint32_t i = (uint32_t)S5Addr; i <((uint32_t)S5Addr) + dsdtlen; i+=PAGE_SIZE) {
+                    alloc_frame_line(get_page(i,1,get_current_directory()),i,1,1);
+                }
+
                 while (dsdtlen--) {
                     if (!memcmp(S5Addr, "_S5_", 4)) {
                         break;
@@ -347,7 +348,7 @@ void hpet_clock_init(){
 void hpet_initialize() {
     HPET *hpet = (HPET *)acpi_find_table("HPET");
     if (!hpet) {
-        printk("can not found acpi hpet table\n");
+        printk("\033[31mCannot found acpi hpet table\033[0m\n");
     }
 
     hpetInfo = (HpetInfo *) hpet->hpetAddress.address;

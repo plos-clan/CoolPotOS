@@ -9,6 +9,7 @@
 #include "pci.h"
 #include "video.h"
 #include "scheduler.h"
+#include "speaker.h"
 
 static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);

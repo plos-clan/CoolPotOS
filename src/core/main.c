@@ -23,6 +23,9 @@
 #include "scheduler.h"
 #include "krlibc.h"
 #include "syscall.h"
+#include "speaker.h"
+#include "hda.h"
+#include "vsound.h"
 #include "shell.h"
 
 extern void* program_break_end;
@@ -36,6 +39,10 @@ _Noreturn void shutdown(){
     sleep(10);
     power_off();
     while (1);
+}
+
+static void play_music(){
+    wav_player("/music_box.mp3");
 }
 
 /*
@@ -53,10 +60,14 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     idt_install(); //8259A PIC初始化
     tty_init(); //tty 设备初始化
 
+    default_terminal_setup();
+    extern void check_memory(multiboot_t *multiboot);
+    check_memory(multiboot);
+
     init_vbe(multiboot);
     page_init(multiboot); //分页开启
     setup_free_page();
-    terminal_setup();
+    terminal_setup(false);
     printk("CoolPotOS %s (Limine Multiboot) on an i386\n",KERNEL_NAME);
     printk("KernelArea: 0x00000000 - 0x%08x | GraphicsBuffer: 0x%08x \n",
            program_break_end,
@@ -71,6 +82,8 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     ide_init();
     ahci_init();
+    hda_init();
+    hda_regist();
 
     devfs_regist();
 
@@ -83,6 +96,13 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     mouse_init();
 
     setup_syscall();
+
+//    extern void f3system_setup();
+//    create_kernel_thread((void*)f3system_setup,NULL,"f3system");
+//    klogf(true,"Enable f3system service.\n");
+
+    create_kernel_thread((void*)play_music,NULL,"music");
+    klogf(true,"Enable music service.\n");
 
     create_kernel_thread((void*)setup_shell, NULL, "Shell");
     klogf(true,"Enable kernel shell service.\n");
@@ -103,6 +123,8 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     jmp:
 
     klogf(true,"Kernel load done!\n");
+    //beep();
+    clock_sleep(100);
     enable_scheduler();
     io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行
 

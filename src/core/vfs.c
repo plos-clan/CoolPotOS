@@ -7,7 +7,6 @@
 #include "vfs.h"
 #include "list.h"
 
-
 vfs_node_t rootdir = NULL;
 
 static void empty_func() {}

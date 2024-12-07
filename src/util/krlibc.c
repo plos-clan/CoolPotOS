@@ -1,5 +1,4 @@
 #include "krlibc.h"
-#include "video.h"
 #include "kmalloc.h"
 #include "acpi.h" //void sleep(u32 time)
 #include "timer.h" //void sleep(u32 time)
@@ -95,18 +94,43 @@ static char *number(char *str, long num, int base, int size, int precision,
 }
 
 static const double rounders[10 + 1] = {
-        0.5,				// 0
-        0.05,				// 1
-        0.005,				// 2
-        0.0005,				// 3
-        0.00005,			// 4
-        0.000005,			// 5
-        0.0000005,			// 6
-        0.00000005,			// 7
-        0.000000005,		// 8
-        0.0000000005,		// 9
-        0.00000000005		// 10
+        0.5,                // 0
+        0.05,                // 1
+        0.005,                // 2
+        0.0005,                // 3
+        0.00005,            // 4
+        0.000005,            // 5
+        0.0000005,            // 6
+        0.00000005,            // 7
+        0.000000005,        // 8
+        0.0000000005,        // 9
+        0.00000000005        // 10
 };
+
+int atoi(const char *pstr) {
+    int Ret_Integer = 0;
+    int Integer_sign = 1;
+
+    if (pstr == NULL) {
+        return 0;
+    }
+    while (isspace(*pstr) == 0) {
+        pstr++;
+    }
+    if (*pstr == '-') {
+        Integer_sign = -1;
+    }
+    if (*pstr == '-' || *pstr == '+') {
+        pstr++;
+    }
+    while (*pstr >= '0' && *pstr <= '9') {
+        Ret_Integer = Ret_Integer * 10 + *pstr - '0';
+        pstr++;
+    }
+    Ret_Integer = Integer_sign * Ret_Integer;
+
+    return Ret_Integer;
+}
 
 char *ftoa(double f, char *buf, int precision) {
     char *ptr = buf;
@@ -164,20 +188,20 @@ char *ftoa(double f, char *buf, int precision) {
 }
 
 float ceilf(float x) {
-    float fract = x - (int)x; // 获取小数部分
+    float fract = x - (int) x; // 获取小数部分
     if (fract > 0) {
-        return (int)x + 1; // 如果有小数部分，向上取整
+        return (int) x + 1; // 如果有小数部分，向上取整
     } else {
-        return (int)x; // 如果没有小数部分，直接返回整数部分
+        return (int) x; // 如果没有小数部分，直接返回整数部分
     }
 }
 
 float floorf(float x) {
-    float fract = x - (int)x; // 获取小数部分
+    float fract = x - (int) x; // 获取小数部分
     if (fract < 0) {
-        return (int)x - 1; // 如果是负数且有小数部分，向下取整
+        return (int) x - 1; // 如果是负数且有小数部分，向下取整
     } else {
-        return (int)x; // 如果是正数或没有小数部分，直接返回整数部分
+        return (int) x; // 如果是正数或没有小数部分，直接返回整数部分
     }
 }
 
@@ -198,20 +222,20 @@ double fabs(double x) {
 }
 
 double floor(double x) {
-    double fract = x - (int)x;
+    double fract = x - (int) x;
     if (fract < 0) {
-        return (int)x - 1;
+        return (int) x - 1;
     } else {
-        return (int)x;
+        return (int) x;
     }
 }
 
 double ceil(double x) {
-    double fract = x - (int)x; // 获取小数部分
+    double fract = x - (int) x; // 获取小数部分
     if (fract > 0) {
-        return (int)x + 1; // 如果有小数部分，向上取整
+        return (int) x + 1; // 如果有小数部分，向上取整
     } else {
-        return (int)x; // 如果没有小数部分，直接返回整数部分
+        return (int) x; // 如果没有小数部分，直接返回整数部分
     }
 }
 
@@ -336,7 +360,7 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
             ++fmt;
             /* it's the next argument */
             field_width = va_arg(args,
-            int);
+                                 int);
             if (field_width < 0) {
                 field_width = -field_width;
                 flags |= LEFT;
@@ -353,7 +377,7 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                 ++fmt;
                 /* it's the next argument */
                 precision = va_arg(args,
-                int);
+                                   int);
             }
             if (precision < 0)
                 precision = 0;
@@ -375,14 +399,14 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                     while (--field_width > 0)
                         *str++ = ' ';
                 *str++ = (unsigned char) va_arg(args,
-                int);
+                                                int);
                 while (--field_width > 0)
                     *str++ = ' ';
                 continue;
 
             case 's':
                 s = va_arg(args,
-                char *);
+                           char *);
                 len = strnlen(s, precision);
 
                 if (!(flags & LEFT))
@@ -400,18 +424,18 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
                     flags |= ZEROPAD;
                 }
                 str = number(str, (unsigned long) va_arg(args,
-                void *), 16,
-                field_width, precision, flags);
+                                                         void *), 16,
+                             field_width, precision, flags);
                 continue;
 
             case 'n':
                 if (qualifier == 'l') {
                     long *ip = va_arg(args,
-                    long *);
+                                      long *);
                     *ip = (str - buf);
                 } else {
                     int *ip = va_arg(args,
-                    int *);
+                                     int *);
                     *ip = (str - buf);
                 }
                 continue;
@@ -450,18 +474,18 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
         }
         if (qualifier == 'l')
             num = va_arg(args,
-        unsigned long);
+                         unsigned long);
         else if (qualifier == 'h') {
             num = (unsigned short) va_arg(args,
-            int);
+                                          int);
             if (flags & SIGN)
                 num = (short) num;
         } else if (flags & SIGN)
             num = va_arg(args,
-        int);
+                         int);
         else
-        num = va_arg(args,
-        unsigned int);
+            num = va_arg(args,
+                         unsigned int);
         str = number(str, num, base, field_width, precision, flags);
     }
     *str = '\0';
@@ -476,11 +500,11 @@ void memclean(char *s, int len) {
     }
 }
 
-void* memcpy(void* s, const void* ct, size_t n) {
+void *memcpy(void *s, const void *ct, size_t n) {
     if (NULL == s || NULL == ct || n <= 0)
         return NULL;
     while (n--)
-        *(char*)s++ = *(char*)ct++;
+        *(char *) s++ = *(char *) ct++;
     return s;
 }
 
@@ -540,7 +564,7 @@ char *strchrnul(const char *s, int c) {
         if ((*s++) == c)
             break;
     }
-    return (char *)s;
+    return (char *) s;
 }
 
 char *strtok(char *str, const char *delim) {
@@ -736,10 +760,10 @@ char *strcat(char *dest, const char *src) {
     while ((*temp++ = *src++) != '\0');
 }
 
-char* strchr(const char* str,int c){
-    while (*str != '\0'){
-        if(*str == c){
-            return (char*) str;
+char *strchr(const char *str, int c) {
+    while (*str != '\0') {
+        if (*str == c) {
+            return (char *) str;
         }
         str++;
     }
@@ -773,6 +797,12 @@ int sprintf(char *buf, const char *fmt, ...) {
     return i;
 }
 
-void sleep(uint32_t time){
+void explicit_bzero(void *_s, size_t _n) {
+    for (size_t i = 0; i < _n; i++) {
+        ((uint8_t *)_s)[i] = 0;
+    }
+}
+
+void sleep(uint32_t time) {
     clock_sleep(time);
 }

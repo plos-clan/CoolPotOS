@@ -46,7 +46,6 @@ static void *sbrk(int incr){
     pcb_t *pcb = get_current_proc();
     if (pcb->program_break + incr >= pcb->program_break_end) {
         ral:
-        if(pcb->program_break_end >= (void*)0x01bf8f7d) goto alloc_error; // 奇怪的界限, 不设置内核会卡死
         if ((uint32_t) pcb->program_break_end < USER_AREA_START) {
             uint32_t ai = (uint32_t) pcb->program_break_end;
             for (; ai < (uint32_t) pcb->program_break_end + PAGE_SIZE * 10;) {

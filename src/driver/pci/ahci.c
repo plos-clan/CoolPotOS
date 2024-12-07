@@ -4,6 +4,7 @@
 #include "krlibc.h"
 #include "kmalloc.h"
 #include "vdisk.h"
+#include "page.h"
 
 HBA_MEM *hba_mem;
 static uint32_t ahci_ports[32];
@@ -367,6 +368,8 @@ void ahci_init(){
     } else klogf(true,"Find Serial ATA Controller.\n");
 
     hba_mem = (HBA_MEM*) read_bar_n(device,5);
+
+    page_line(hba_mem);
 
     //允许产生中断
     uint32_t conf  = pci_read_command_status(device->bus, device->slot, device->func);
