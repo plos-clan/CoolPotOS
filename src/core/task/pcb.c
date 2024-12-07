@@ -8,6 +8,7 @@
 #include "description_table.h"
 #include "elf_util.h"
 #include "free_page.h"
+#include "thread.h"
 
 extern pcb_t *current_pcb;
 extern pcb_t *running_proc_head;
@@ -30,7 +31,7 @@ static void add_task(pcb_t *new_task){ //添加进程至调度链
     tailt->next = new_task;
 }
 
-static void switch_to_user_mode(uint32_t func) {
+void switch_to_user_mode(uint32_t func) {
     io_cli();
     uint32_t esp = (uint32_t )get_current_proc()->user_stack + STACK_SIZE;
     get_current_proc()->context.eflags = (0 << 12 | 0b10 | 1 << 9);
@@ -63,7 +64,7 @@ static void switch_to_user_mode(uint32_t func) {
                  "iret" ::"m"(a));
 }
 
-_Noreturn static void process_exit(){
+_Noreturn void process_exit(){
     register uint32_t eax __asm__("eax");
     printk("Kernel Process exit, Code: %d\n",eax);
     kill_proc(current_pcb);
@@ -88,7 +89,7 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     new_task->kernel_stack = new_task;
     new_task->sche_time = 1;
     new_task->program_break = new_task->program_break_end = (void*)USER_AREA_START;
-
+    new_task->now_tid = 0;
     // 映射形参数据区
     new_task->program_break_end += PAGE_SIZE;
     for (uint32_t i = (uint32_t)new_task->program_break; i < (uint32_t)new_task->program_break_end; i += PAGE_SIZE) {
@@ -131,7 +132,9 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
         return -1;
     }
 
-    uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
+    create_user_thread(new_task,(void*)_start);
+
+    uint32_t *stack_top = (uint32_t * )((uint32_t) new_task->kernel_stack + STACK_SIZE);
     *(--stack_top) = (uint32_t) _start;
     *(--stack_top) = (uint32_t) process_exit;
     *(--stack_top) = (uint32_t) switch_to_user_mode;

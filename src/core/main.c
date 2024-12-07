@@ -60,6 +60,10 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     idt_install(); //8259A PIC初始化
     tty_init(); //tty 设备初始化
 
+    default_terminal_setup();
+    extern void check_memory(multiboot_t *multiboot);
+    check_memory(multiboot);
+
     init_vbe(multiboot);
     page_init(multiboot); //分页开启
     setup_free_page();
