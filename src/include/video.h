@@ -30,3 +30,6 @@ void init_vbe(multiboot_t *multiboot);
 uint32_t *get_vbe_screen();
 uint32_t get_vbe_width();
 uint32_t get_vbe_height();
+
+void default_terminal_setup();
+void default_writestring(const char *data);

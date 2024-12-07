@@ -45,7 +45,13 @@ void scheduler_process(registers_t *reg){
     io_cli();
     if(current_pcb && can_sche){
         current_pcb->cpu_clock++;
-        default_scheduler(reg,current_pcb->next);
+        if(current_pcb->task_level == TASK_KERNEL_LEVEL){
+            default_scheduler(reg,current_pcb->next);
+        } else{
+            //TODO 用户线程调度
+            default_scheduler(reg,current_pcb->next);
+        }
+
     }
 }
 

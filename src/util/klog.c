@@ -34,7 +34,11 @@ void printk(const char *format, ...) {
 }
 
 void k_print(const char* message){
-    default_tty.print(&default_tty,message);
+    extern uint32_t tty_status;
+    if(tty_status == TTY_VGA_OUTPUT){
+        extern void default_writestring(const char *data);
+        default_writestring(message);
+    } else default_tty.print(&default_tty,message);
 }
 
 void klogf(bool isok, char* fmt, ...){
