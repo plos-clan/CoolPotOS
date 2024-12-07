@@ -54,5 +54,5 @@ void init_vbe(multiboot_t *multiboot) {
     screen = videoArea.screen = (uint32_t *) multiboot->framebuffer_addr;
     width = videoArea.width = multiboot->framebuffer_width;
     height = videoArea.height = multiboot->framebuffer_height;
-    vbe_clear(0xc6c6c6);
+    vbe_clear(0x000000);
 }

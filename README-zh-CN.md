@@ -13,7 +13,8 @@
 
 * `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 * `Uinxed-Mark` by ViudiraTech [ViudiraTech/Uinxed-Kernel](https://github.com/ViudiraTech/Uinxed-Kernel)
-
+* `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+* `libelf_parser` by wenxuanjun [plos-clan/libelf_parser](https://github.com/plos-clan/libelf-parse)
 
 ## 构建并运行
 
@@ -21,15 +22,17 @@
 
 您需要安装这些软件：
 
-- xmake 
-- zig工具链 & nasm汇编器
-- 适用于Windows的Linux子系统 (Ubuntu 22.04)
-  - xorriso
-  - qemu-system-i386
+- Xmake
+- NASM
+- Zig（如果 xmake 无法为您下载它，您可以手动安装）
+- Windows subsystem for Linux (Ubuntu 22.04)
+    - xorriso
+    - qemu-system-i386
 
 ### 步骤
 
-- 在终端上运行 `xmake run`或`bash build.bash`，项目将开始构建并运行
+- 在终端上运行 `xmake run`，项目将开始构建并运行
+- `init.bash` and `build.bash` 目前已弃用
 
 ## 许可协议
 

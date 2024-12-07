@@ -8,6 +8,9 @@
 #include "page.h"
 #include "tty.h"
 #include "vfs.h"
+#include "elf.h"
+
+typedef struct cp_thread* cp_thread_t;
 
 typedef struct __attribute__((packed)) fpu_regs {
     uint16_t control;
@@ -45,10 +48,10 @@ typedef struct task_pcb{
     uint8_t task_level;           // 进程等级< 0:内核 | 1:系统服务 | 2:应用程序 >
     int pid;
     char name[50];
-    char cmdline[50];             //命令行实参
-    char* user_cmdline;           //用户空间的命令行实参
-    void* user_stack;             //用户栈
-    void* kernel_stack;           //内核栈
+    char cmdline[50];             // 命令行实参
+    char* user_cmdline;           // 用户空间的命令行实参
+    void* user_stack;             // 用户栈
+    void* kernel_stack;           // 内核栈
     void* program_break;          // 进程堆基址
     void* program_break_end;      // 进程堆尾
     page_directory_t *pgd_dir;    // 进程页表
@@ -59,10 +62,13 @@ typedef struct task_pcb{
     uint32_t cpu_clock;           // CPU运行时间片
     uint32_t sche_time;           // 进程剩余的可运行时间片
     vfs_node_t exe_file;          // 可执行文件
-    uint8_t *data;                // 可执行文件内核数据缓冲区
+    Elf32_Ehdr *data;             // 可执行文件elf句柄
+    cp_thread_t thread_head;      // 线程队列
     struct task_pcb *next;     // 链表指针
 }pcb_t;
 
+void process_exit();
+void switch_to_user_mode(uint32_t func);
 void kill_all_proc(); //终止所有进程
 int create_user_process(const char* path,const char* cmdline,char* name,uint8_t level); //创建用户态进程
 int create_kernel_thread(int (*_start)(void* arg),void *args,char* name); //创建内核线程

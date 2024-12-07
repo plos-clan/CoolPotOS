@@ -1,8 +1,20 @@
 #include "multiboot.h"
 #include "ctypes.h"
 #include "klog.h"
+#include "io.h"
 
 uint32_t phy_mem_size;
+
+void check_memory(multiboot_t *multiboot){
+    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 30) {
+        printk("CP_Kernel bootloader panic info:\n");
+        printk("\033ff0000;Minimal RAM amount for CP_Kernel is 30 MB, but you have only %d MB.\033c6c6c6;\n",
+               (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1);
+        printk("Please check your memory size, and restart CP_Kernel.\n");
+        while (1) io_hlt();
+    }
+    phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024;
+}
 
 void show_memory_map(multiboot_t *mboot) {
     uint32_t mmap_addr = mboot->mmap_addr;
