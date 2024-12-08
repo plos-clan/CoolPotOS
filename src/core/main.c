@@ -27,6 +27,7 @@
 #include "hda.h"
 #include "vsound.h"
 #include "shell.h"
+#include "iic_core.h"
 
 extern void* program_break_end;
 
@@ -92,6 +93,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     ahci_init();
     hda_init();
     hda_regist();
+    iic_init();
 
     devfs_regist();
 

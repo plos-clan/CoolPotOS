@@ -1,16 +1,21 @@
-#ifndef COOLPOTOS_IIC_H
-#define COOLPOTOS_IIC_H
+#pragma once
 
 #include "ctypes.h"
+
 #include "list.h"
 #include "io.h"
 #include "crc.h"
+#include "klog.h"
+#include "pci.h"
 
 typedef struct {
     uint32_t address;          // 地址
     uint8_t reg_address;       // 寄存器首地址
     uint32_t freq;             // 频率
-    void (*init)(void);        // 设备初始化函数
+    uint8_t flag;             // 状态
+    void (*init)(void);        // 设备初始化
+    void (*probe)(void);       // 挂载设备
+    void (*remove)(void);     // 卸载设备
 } IIC_Device;
 typedef struct {
     uint8_t rw_flag;           // 读写标志（0x00：写，0x01：读）
@@ -23,6 +28,8 @@ typedef struct {
     uint8_t stop;              // 数据段末标（0x01）
 } IIC_Data;
 
-int crc_check(IIC_Data *frame);
-
-#endif //COOLPOTOS_IIC_H
+void iic_init(void);
+bool crc_check(IIC_Data *frame);
+uint32_t iic_data_transfer(IIC_Data *frame);
+void iic_start(pci_device_t *IIC_Device);
+void iic_stop(pci_device_t *IIC_Device);
