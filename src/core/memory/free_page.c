@@ -1,6 +1,8 @@
 #include "free_page.h"
 #include "kmalloc.h"
 #include "fifo8.h"
+#include "klog.h"
+#include "scheduler.h"
 
 struct FIFO8 *fifo8;
 
@@ -9,21 +11,26 @@ void put_directory(page_directory_t *dir){
 }
 
 void free_pages(){
-    int ii;
+    disable_scheduler();
+    uint32_t ii;
     do{
         ii = fifo8_get(fifo8);
-        if(ii == -1) return;
+        if(ii == -1 || ii == 0){
+            break;
+        }
         page_directory_t *dir = (page_directory_t *)ii;
         for (int i = 0; i < 1024; i++) {
             page_table_t *table = dir->tables[i];
+            if(table == NULL) continue;
             for (int j = 0; j < 1024; j++) {
                 page_t page = table->pages[i];
                 free_frame(&page);
             }
-            //kfree(table);
+            kfree(table);
         }
         kfree(dir);
     } while (1);
+    enable_scheduler();
 }
 
 /*

@@ -10,7 +10,13 @@
 #include "vfs.h"
 #include "elf.h"
 
-typedef struct cp_thread* cp_thread_t;
+enum PStatus {
+    RUNNING,
+    DEATH,
+    WAIT,
+};
+
+typedef struct cp_thread* tcb_t;
 
 typedef struct __attribute__((packed)) fpu_regs {
     uint16_t control;
@@ -59,11 +65,12 @@ typedef struct task_pcb{
     tty_t *tty;                   // TTY设备
     bool fpu_flag;				  // 是否使用 FPU
     int now_tid;
+    enum PStatus status;          // 进程状态
     uint32_t cpu_clock;           // CPU运行时间片
     uint32_t sche_time;           // 进程剩余的可运行时间片
     vfs_node_t exe_file;          // 可执行文件
     Elf32_Ehdr *data;             // 可执行文件elf句柄
-    cp_thread_t thread_head;      // 线程队列
+    tcb_t thread_head;      // 线程队列
     struct task_pcb *next;     // 链表指针
 }pcb_t;
 

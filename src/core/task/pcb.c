@@ -8,7 +8,7 @@
 #include "description_table.h"
 #include "elf_util.h"
 #include "free_page.h"
-#include "thread.h"
+#include "tcb.h"
 
 extern pcb_t *current_pcb;
 extern pcb_t *running_proc_head;
@@ -90,6 +90,7 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     new_task->sche_time = 1;
     new_task->program_break = new_task->program_break_end = (void*)USER_AREA_START;
     new_task->now_tid = 0;
+    new_task->status = RUNNING;
     // 映射形参数据区
     new_task->program_break_end += PAGE_SIZE;
     for (uint32_t i = (uint32_t)new_task->program_break; i < (uint32_t)new_task->program_break_end; i += PAGE_SIZE) {
@@ -165,6 +166,7 @@ int create_kernel_thread(int (*_start)(void* arg),void *args,char* name){ //创�
     new_task->user_stack = new_task->kernel_stack;
     new_task->data = NULL;
     new_task->kernel_stack = new_task;
+    new_task->status = RUNNING;
 
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
     *(--stack_top) = (uint32_t) args;
@@ -194,11 +196,14 @@ void kill_all_proc() {
 
 void kill_proc(pcb_t *pcb){
     io_cli();
+    disable_scheduler();
     if (pcb->pid == 0) {
         klogf(false,"Cannot kill kernel processes.\n");
         io_sti();
         return;
     }
+
+    pcb->status = DEATH;
 
     if(pcb->task_level == TASK_KERNEL_LEVEL){
 
@@ -216,6 +221,7 @@ void kill_proc(pcb_t *pcb){
         if (head->pid == pcb->pid) {
             last->next = pcb->next;
             kfree(pcb);
+            enable_scheduler();
             io_sti();
             return;
         }
