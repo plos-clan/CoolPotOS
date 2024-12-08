@@ -4,7 +4,7 @@
 #include "description_table.h"
 #include "klog.h"
 #include "io.h"
-#include "timer.h"
+#include "fpu.h"
 
 extern void switch_to(struct context *prev, struct context *next); //asmfunc.asm
 
@@ -72,6 +72,9 @@ void default_scheduler(registers_t *reg,pcb_t* next){ //CP_Kernel 默认的进�
         current_pcb = next;
         switch_page_directory(current_pcb->pgd_dir);
         set_kernel_stack((uintptr_t)current_pcb->kernel_stack + STACK_SIZE);
+
+        switch_fpu(current_pcb);
+
         prev->context.eip = reg->eip;
         prev->context.ds = reg->ds;
         prev->context.cs = reg->cs;
