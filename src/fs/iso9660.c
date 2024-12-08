@@ -65,7 +65,9 @@ l9660_status l9660_openfs(l9660_fs *fs,
     uint32_t idx = 0x10;
     for (;;) {
         // Read next sector
+
         if (!read_sector(fs, pvd, idx)) return L9660_EIO;
+
         // Validate magic
         if (memcmp(pvd->hdr.magic, "CD001", 5) != 0) return L9660_EBADFS;
 

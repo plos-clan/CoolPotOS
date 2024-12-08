@@ -179,6 +179,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
             vd.Write         = Write;
             vd.size          = ide_devices[i].Size;
             vd.sector_size   = vd.flag == 2 ? 2048 : 512;
+
             int c            = register_vdisk(vd);
             drive_mapping[c] = i;
         }

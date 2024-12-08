@@ -1,8 +1,10 @@
 #include "vsound.h"
-#include "rbtree-strptr.h"
 #include "krlibc.h"
 #include "klog.h"
 #include "vfs.h"
+
+#define ALL_IMPLEMENTATION
+#include "rbtree-strptr.h"
 
 #define DR_MP3_IMPLEMENTATION
 #define DR_MP3_NO_STDIO
