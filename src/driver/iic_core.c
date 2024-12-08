@@ -23,7 +23,7 @@ bool crc_check(IIC_Data *frame) {
     }
 }
 
-int iic_data_transfer(IIC_Data *frame) {
+unsigned int iic_data_transfer(IIC_Data *frame) {
 
     unsigned int *data = frame->data;
     if (crc_check(frame)) {
