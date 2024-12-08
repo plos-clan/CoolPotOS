@@ -41,6 +41,14 @@ _Noreturn void shutdown(){
     while (1);
 }
 
+_Noreturn void reboot(){
+    printk("Shutdown %s...\n",KERNEL_NAME);
+    kill_all_proc();
+    sleep(10);
+    power_reset();
+    while (1);
+}
+
 static void play_music(){
     wav_player("/music_box.mp3");
 }
@@ -59,12 +67,12 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     gdt_install();
     idt_install(); //8259A PIC初始化
     tty_init(); //tty 设备初始化
+    init_vbe(multiboot);
 
     default_terminal_setup();
     extern void check_memory(multiboot_t *multiboot);
     check_memory(multiboot);
 
-    init_vbe(multiboot);
     page_init(multiboot); //分页开启
     setup_free_page();
     terminal_setup(false);

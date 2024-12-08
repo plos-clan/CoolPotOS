@@ -21,7 +21,7 @@ struct cp_thread{
     void* user_stack; // 用户栈
     void* kernel_stack; // 内核栈
     struct thread_context context; //线程上下文
-    cp_thread_t next;  // 线程链表
+    tcb_t next;  // 线程链表
 };
 
 void create_user_thread(pcb_t *pcb,void* func);

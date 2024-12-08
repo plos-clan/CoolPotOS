@@ -1,10 +1,10 @@
-#include "thread.h"
+#include "tcb.h"
 #include "krlibc.h"
 #include "user_malloc.h"
 
-static void add_thread(pcb_t *pcb,cp_thread_t thread){ //添加线程至调度链
+static void add_thread(pcb_t *pcb,tcb_t thread){ //添加线程至调度链
     if(pcb == NULL || thread == NULL) return;
-    cp_thread_t tailt = pcb->thread_head;
+    tcb_t tailt = pcb->thread_head;
     while (tailt->next != pcb->thread_head) {
         if(tailt->next == NULL) break;
         tailt = tailt->next;
@@ -12,8 +12,12 @@ static void add_thread(pcb_t *pcb,cp_thread_t thread){ //添加线程至调度�
     tailt->next = thread;
 }
 
+void kill_user_thread(tcb_t thread){
+    kfree(thread);
+}
+
 void create_user_thread(pcb_t *pcb,void* func){
-    cp_thread_t thread = kmalloc(STACK_SIZE);
+    tcb_t thread = kmalloc(STACK_SIZE);
     thread->next = NULL;
     thread->father_pcb = pcb;
     thread->tid = pcb->now_tid++;

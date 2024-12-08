@@ -44,6 +44,9 @@ void kernel_sche(){
 void scheduler_process(registers_t *reg){
     io_cli();
     if(current_pcb && can_sche){
+        if(current_pcb->status == DEATH){
+            current_pcb = running_proc_head;
+        }
         current_pcb->cpu_clock++;
         if(current_pcb->task_level == TASK_KERNEL_LEVEL){
             default_scheduler(reg,current_pcb->next);

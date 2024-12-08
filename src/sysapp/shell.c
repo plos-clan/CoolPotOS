@@ -133,6 +133,10 @@ static void shutdown_os(){
     shutdown();
 }
 
+static void reboot_os(){
+    reboot();
+}
+
 static inline void foreach(list_t list){
     list_foreach(list,node){
         vfs_node_t c = (vfs_node_t)node->data;
@@ -157,9 +161,9 @@ static void ps(){
         longest_name = longest_name->next;
     }
     pcb_t *pcb = running_proc_head;
-    printk("PID  %-*s       RAM  Level   Priority  Time\n",longest_name_len,"NAME");
+    printk("PID  %-*s       RAM(byte)  Level   Priority  Time\n",longest_name_len,"NAME");
     while(pcb != NULL){
-        printk("%-5d%-*s%10d  %-8s%-10d%-d\n",pcb->pid,longest_name_len,pcb->name,pcb->program_break_end - pcb->program_break,pcb->task_level == TASK_KERNEL_LEVEL ? "Kernel" : pcb->task_level == TASK_SYSTEM_SERVICE_LEVEL ? "System" : "User",pcb->task_level,pcb->cpu_clock);
+        printk("%-5d%-*s%10d        %-8s%-10d%-d\n",pcb->pid,longest_name_len,pcb->name,pcb->program_break_end - pcb->program_break,pcb->task_level == TASK_KERNEL_LEVEL ? "Kernel" : pcb->task_level == TASK_SYSTEM_SERVICE_LEVEL ? "System" : "User",pcb->task_level,pcb->cpu_clock);
         pcb = pcb->next;
     }
 }
@@ -179,6 +183,7 @@ static void sys_info(){
         pcb = pcb->next;
         if(pcb->task_level != TASK_KERNEL_LEVEL){
             bytes += (uint32_t)pcb->program_break_end - (uint32_t)pcb->program_break;
+            bytes += pcb->exe_file->size;
         }
     }
     int memory = (bytes > 10485760) ? bytes/1048576 : bytes/1024;
@@ -210,7 +215,8 @@ static void print_help(){
     printk("mount     <dir> <dev>    Mount a file system to vfs directory.\n");
     printk("ls        [path]         List all file or directory.\n");
     printk("read      <path>         Read a text file.\n");
-    printk("shutdown                 Shutdown os.\n");
+    printk("shutdown exit            Shutdown os.\n");
+    printk("reboot                   Reboot os.\n");
     printk("sysinfo                  Get os system information.\n");
     printk("clear                    Clear terminal screen.\n");
     printk("ps                       List all processes info.\n");
@@ -252,8 +258,10 @@ void setup_shell(){
             mount(argc,argv);
         else if(!strcmp("read",argv[0]))
             read(argc,argv);
-        else if(!strcmp("shutdown",argv[0]))
+        else if(!strcmp("shutdown",argv[0]) || !strcmp("exit",argv[0]))
             shutdown_os();
+        else if(!strcmp("reboot",argv[0]))
+            reboot_os();
         else if(!strcmp("sysinfo",argv[0]))
             sys_info();
         else if(!strcmp("ps",argv[0]))

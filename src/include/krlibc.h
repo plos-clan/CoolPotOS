@@ -165,6 +165,7 @@ int isupper(int c);
 void explicit_bzero(void *_s, size_t _n);
 void sleep(uint32_t time);
 void shutdown(); //main.c
+void reboot();   //main.c
 
 #define streq(s1, s2)                                                                              \
   ({                                                                                               \
