@@ -28,6 +28,6 @@ typedef struct {
 
 void iic_init(void);
 bool crc_check(IIC_Data *frame);
-uint32_t iic_data_transfer(IIC_Data *frame);
+unsigned int iic_data_transfer(IIC_Data *frame);
 void iic_start(pci_device_t *IIC_Device);
 void iic_stop(pci_device_t *IIC_Device);
