@@ -437,6 +437,7 @@ void hda_init_codec(uint32_t codec) {
 }
 
 void hda_interrupt_handler(registers_t *reg){
+    printk("HDA IRQ\n");
     if(hda_stopping){
         hda_stop();
     } else{
@@ -486,7 +487,8 @@ void hda_init(){
     hda_output_base = hda_base + 0x80 + (0x20 * input_stream_count);
     hda_output_buffer = kmalloc(4096);
 
-    register_interrupt_handler(0x20 + 0xb,hda_interrupt_handler);
+    int irq = pci_get_drive_irq(device->bus,device->slot,device->func);
+    register_interrupt_handler(0x20 + irq,hda_interrupt_handler);
     mem_set32(hda_base + 0x20, ((uint32_t )1 << 31) | ((uint32_t )1 << input_stream_count));
 
     mem_set32(hda_base + 0x70, 0);

@@ -52,7 +52,9 @@ _Noreturn void reboot(){
 }
 
 static void play_music(){
+    printk("Playing..\n");
     wav_player("/music_box.mp3");
+    printk("PlayEnd\n");
 }
 
 /*
@@ -122,20 +124,25 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     // 挂载最后一个块设备(通常为引导设备)
     vfs_node_t dev = vfs_open("/dev");
     vfs_node_t c = NULL;
+    bool win = false;
     list_foreach(dev->child, i) {
         c = (vfs_node_t) i->data;
+        char buf[20];
+        sprintf(buf,"/dev/%s",c->name);
+        if(vfs_mount(buf, vfs_open("/")) != -1){
+            win = true;
+            break;
+        }
     }
-    if(c == NULL) {
+    if(c == NULL || !win) {
         klogf(false,"Cannot mount a drive device.\n");
-        goto jmp;
+    }else{
+        klogf(true,"Block device mount success!\n");
     }
-    char buf[20];
-    sprintf(buf,"/dev/%s",c->name);
-    vfs_mount(buf, vfs_open("/"));
-    jmp:
+
 
     klogf(true,"Kernel load done!\n");
-    //beep();
+    beep();
     clock_sleep(100);
     enable_scheduler();
     io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行

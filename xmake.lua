@@ -52,9 +52,9 @@ target("iso")
     end)
 
     on_run(function (target)
-        local flags = "-serial stdio -m 4096 -device ahci,id=ahci"
+        local flags = "-serial stdio -m 4096 "
         local audio_flags = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
-        local ahci_flags = "-drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
+        local ahci_flags = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
 
         local vga = " -vga std -global VGA.vgamem_mb=32 "
         local net = " -net nic,model=pcnet -net user "

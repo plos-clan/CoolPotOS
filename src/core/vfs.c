@@ -229,7 +229,6 @@ int vfs_mount(const char* src, vfs_node_t node) {
     if (node->type != file_dir) return -1;
     void *handle = NULL;
     for (int i = 1; i < fs_nextid; i++) {
-        // printf("trying %d", i);
         if (fs_callbacks[i]->mount(src, node) == 0) {
             node->fsid = i;
             node->root = node;

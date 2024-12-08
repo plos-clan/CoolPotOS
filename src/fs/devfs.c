@@ -1,11 +1,14 @@
 #include "devfs.h"
 #include "vdisk.h"
 #include "klog.h"
-#include "rbtree-strptr.h"
 #include "krlibc.h"
 #include "kmalloc.h"
 #include "page.h"
 #include "scheduler.h"
+
+#define ALL_IMPLEMENTATION
+#define SLIST_SP_IMPLEMENTATION
+#include "rbtree-strptr.h"
 
 int devfs_id = 0;
 extern vdisk vdisk_ctl[26]; // core/vdisk.c
@@ -39,7 +42,7 @@ int devfs_mount(const char* src, vfs_node_t node) {
 
 static int  devfs_read(void *file, void *addr, size_t offset, size_t size) {
     int dev_id = (int)file;
-    int sector_size;
+    int sector_size = 0;
     if (vdisk_ctl[dev_id].flag == 0) return -1;
     sector_size                     = vdisk_ctl[dev_id].sector_size;
     int   padding_up_to_sector_size = PADDING_UP(size, sector_size);
@@ -55,6 +58,14 @@ static int  devfs_read(void *file, void *addr, size_t offset, size_t size) {
         memcpy(addr, buf, size);
         kfree(buf);
     }
+    return 0;
+}
+
+static int devfs_stat(void *handle, vfs_node_t node) {
+    if (node->type == file_dir) return 0;
+    node->handle = rbtree_sp_get(dev_rbtree, node->name);
+    node->type   = file_block;
+    node->size   = disk_Size((int)node->handle);
     return 0;
 }
 
@@ -94,7 +105,7 @@ static struct vfs_callback callbacks = {
         .mkfile  = (void *)dummy,
         .open    = devfs_open,
         .close   = (void *)dummy,
-        .stat    = (void *)dummy,
+        .stat    = devfs_stat,
         .read    = devfs_read,
         .write   = devfs_write,
 };

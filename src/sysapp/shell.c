@@ -149,6 +149,20 @@ static inline void foreach(list_t list){
     }
 }
 
+static void pkill(int argc,char** argv){
+    if (argc == 1) {
+        printk("[Shell-PKILL]: If there are too few parameters.\n");
+        return;
+    }
+    int pid = strtol(argv[1], NULL, 10);
+    pcb_t *pcb = found_pcb(pid);
+    if(pcb == NULL){
+        printk("Cannot find procces [%d]\n",pid);
+        return;
+    }
+    kill_proc(pcb);
+}
+
 // 实现ps命令
 static void ps(){
     extern pcb_t *running_proc_head;
@@ -220,6 +234,7 @@ static void print_help(){
     printk("sysinfo                  Get os system information.\n");
     printk("clear                    Clear terminal screen.\n");
     printk("ps                       List all processes info.\n");
+    printk("pkill     <pid>          Stop a process.\n");
 }
 
 void setup_shell(){
@@ -266,6 +281,8 @@ void setup_shell(){
             sys_info();
         else if(!strcmp("ps",argv[0]))
             ps();
+        else if(!strcmp("pkill",argv[0]))
+            pkill(argc,argv);
         else if(!strcmp("clear",argv[0]))
             get_current_proc()->tty->clear(get_current_proc()->tty);
         else{
