@@ -24,6 +24,7 @@
 #include "krlibc.h"
 #include "syscall.h"
 #include "speaker.h"
+#include "fpu.h"
 #include "hda.h"
 #include "vsound.h"
 #include "shell.h"
@@ -83,6 +84,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
            multiboot->framebuffer_addr);
     init_cpuid();
     klogf(true, "Memory manager initialize.\n");
+    init_fpu(); //初始化浮点处理器
     acpi_install();  //ACPI初始化
     init_timer(1); //RTC 时钟中断
     vdisk_init();

@@ -90,6 +90,7 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     new_task->sche_time = 1;
     new_task->program_break = new_task->program_break_end = (void*)USER_AREA_START;
     new_task->now_tid = 0;
+    new_task->fpu_flag = 0;
     new_task->status = RUNNING;
     // 映射形参数据区
     new_task->program_break_end += PAGE_SIZE;
@@ -161,10 +162,10 @@ int create_kernel_thread(int (*_start)(void* arg),void *args,char* name){ //创�
     new_task->pgd_dir = kernel_directory;
     new_task->cpu_clock = 0;
     new_task->tty = default_tty_alloc();
-    new_task->cpu_clock = 0;
     new_task->sche_time = 1;
     new_task->user_stack = new_task->kernel_stack;
     new_task->data = NULL;
+    new_task->fpu_flag = 0;
     new_task->kernel_stack = new_task;
     new_task->status = RUNNING;
 

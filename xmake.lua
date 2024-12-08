@@ -13,7 +13,7 @@ set_policy("check.auto_ignore_flags", false)
 add_cflags("-target x86-freestanding")
 add_arflags("-target x86-freestanding")
 add_ldflags("-target x86-freestanding")
-add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
+add_cflags("-mno-sse", "-mno-sse2")
 
 target("kernel")
     set_kind("binary")
