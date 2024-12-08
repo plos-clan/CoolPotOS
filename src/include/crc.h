@@ -2,5 +2,5 @@
 
 #include "ctypes.h"
 
-uint8_t crc8(uint32_t *data, uint8_t len);
+unsigned char crc8(unsigned int *data, unsigned char len);
 
