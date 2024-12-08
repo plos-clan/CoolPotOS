@@ -2,12 +2,12 @@
 #include "crc.h"
 
 // CRC-8
-uint8_t crc8(uint32_t *data, uint8_t len) {
-    uint8_t crc = 0;
+unsigned char crc8(unsigned int *data, unsigned char len) {
+    unsigned char crc = 0;
 
-    for (uint8_t i = 0; i < len; i++) {
+    for (unsigned char i = 0; i < len; i++) {
         crc ^= data[i];
-        for (uint8_t j = 0; j < 8; j++) {
+        for (unsigned char j = 0; j < 8; j++) {
             if (crc & 0x80) {
                 crc = (crc << 1) ^ 0x07;
             } else {
