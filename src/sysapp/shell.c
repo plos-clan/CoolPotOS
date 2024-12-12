@@ -43,6 +43,17 @@ static int gets(char *buf, int buf_size) {
     return index;
 }
 
+int ends_with(const char *str, const char *suffix) {
+    size_t str_len = strlen(str);
+    size_t suffix_len = strlen(suffix);
+
+    if (suffix_len > str_len) {
+        return 0;
+    }
+
+    return strncmp(str + str_len - suffix_len, suffix, suffix_len) == 0;
+}
+
 static int cmd_parse(char *cmd_str, char **argv, char token) {
     int arg_idx = 0;
     while (arg_idx < MAX_ARG_NR) {
@@ -200,7 +211,7 @@ static void sys_info(){
             bytes += pcb->exe_file->size;
         }
     }
-    int memory = (bytes > 10485760) ? bytes/1048576 : bytes/1024;
+    float memory = (bytes > 10485760) ? bytes/1048576 : bytes/1024;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
@@ -212,7 +223,7 @@ static void sys_info(){
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n",get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n",KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        Memory Usage: %d%s / %dMB\n",memory,bytes > 10485760 ? "MB" : "KB",(int)(phy_mem_size));
+    printk("*@@@@@@           @@@@@@*        Memory Usage: %0.2f%s / %dMB\n",memory,bytes > 10485760 ? "MB" : "KB",(int)(phy_mem_size));
     printk("-@@@@@@*         #@@@@@@:        32-bit operating system, x86-based processor\n");
     printk(" &@@@@@@*.     .#@@@@@@& \n");
     printk(" =@@@@@@@@*---*@@@@@@@@- \n");
@@ -286,8 +297,18 @@ void setup_shell(){
         else if(!strcmp("clear",argv[0]))
             get_current_proc()->tty->clear(get_current_proc()->tty);
         else{
+
+            char buf_h[14];
+            if(!ends_with(argv[0],".elf")){
+                sprintf(buf_h,"%s.elf",argv[0]);
+            } else sprintf(buf_h,"%s",argv[0]);
+            char bufx[15];
+            if(buf_h[0] != '/') {
+                sprintf(bufx,"/%s",buf_h);
+            }else sprintf(bufx,"%s",buf_h);
+
             int pid;
-            if((pid = create_user_process(argv[0],com_copy,"User",TASK_APPLICATION_LEVEL)) == -1)
+            if((pid = create_user_process(bufx,com_copy,"User",TASK_APPLICATION_LEVEL)) == -1)
                 printk("\033[31m[Shell]: Unknown command '%s'.\033[39m\n", argv[0]);
             pcb_t *pcb;
             do{

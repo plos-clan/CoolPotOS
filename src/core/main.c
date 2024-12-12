@@ -8,6 +8,7 @@
 #include "acpi.h"
 #include "page.h"
 #include "free_page.h"
+#include "error.h"
 #include "pci.h"
 #include "ide.h"
 #include "ahci.h"
@@ -64,10 +65,6 @@ static void play_music(){
  */
 _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     vga_install();
-
-    if(multiboot->cmdline != (multiboot_uint32_t)NULL) {
-    }
-
     gdt_install();
     idt_install(); //8259A PIC初始化
     tty_init(); //tty 设备初始化
@@ -76,6 +73,11 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     default_terminal_setup();
     extern void check_memory(multiboot_t *multiboot);
     check_memory(multiboot);
+
+    if(multiboot->flags & (1 << 2)) {
+
+    }
+
 
     page_init(multiboot); //分页开启
     setup_free_page();
@@ -86,6 +88,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
            multiboot->framebuffer_addr);
     init_cpuid();
     klogf(true, "Memory manager initialize.\n");
+    setup_error();
     init_fpu(); //初始化浮点处理器
     acpi_install();  //ACPI初始化
     init_timer(1); //RTC 时钟中断
@@ -139,7 +142,6 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     }else{
         klogf(true,"Block device mount success!\n");
     }
-
 
     klogf(true,"Kernel load done!\n");
     beep();

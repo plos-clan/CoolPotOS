@@ -102,8 +102,16 @@
   __syscall_concat(__syscall, __syscall_argn(__VA_ARGS__))(id, ##__VA_ARGS__)
 
 #include "ctypes.h"
+#include "vfs.h"
 
 typedef uint32_t (*syscall_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+
+struct cfile_posix{
+    vfs_node_t handle;
+    int pos;
+    uint32_t flags;
+};
+typedef struct cfile_posix* cfile_t;
 
 void asm_syscall_handler(); //asmfunc.__asm__
 void setup_syscall();

@@ -9,6 +9,7 @@
 #include "tty.h"
 #include "vfs.h"
 #include "elf.h"
+#include "syscall.h"
 
 enum PStatus {
     RUNNING,
@@ -68,10 +69,11 @@ typedef struct task_pcb{
     enum PStatus status;          // 进程状态
     uint32_t cpu_clock;           // CPU运行时间片
     uint32_t sche_time;           // 进程剩余的可运行时间片
+    cfile_t file_table[255];      // 进程文件句柄表
     vfs_node_t exe_file;          // 可执行文件
     Elf32_Ehdr *data;             // 可执行文件elf句柄
-    tcb_t thread_head;      // 线程队列
-    struct task_pcb *next;     // 链表指针
+    tcb_t thread_head;            // 线程队列
+    struct task_pcb *next;        // 链表指针
 }pcb_t;
 
 void process_exit();

@@ -173,7 +173,7 @@ void init_pcnet_card(){
     submask = 0xFFFFFFFF;
     dns = 0xFFFFFFFF;
 
-    logkf("DHCP DISCOVERY %08x %08x %08x %08x %08x %08x\n", &mac0, &mac1, &mac2, &mac3, &mac4, &mac5);
+    logkf("DHCP DISCOVERY %08x %08x %08x %08x %08x %08x\n", mac0, mac1, mac2, mac3, mac4, mac5);
     dhcp_discovery(&mac0);
 
     while (gateway == 0xFFFFFFFF && submask == 0xFFFFFFFF && dns == 0xFFFFFFFF &&
