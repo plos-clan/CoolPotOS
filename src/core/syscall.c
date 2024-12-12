@@ -51,26 +51,71 @@ static uint32_t syscall_get_arg(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t 
     return (uint32_t)pcb->user_cmdline;
 }
 
+typedef enum oflags {
+    O_RDONLY,
+    O_WRONLY,
+    O_RDWR,
+    O_CREAT = 4
+} oflags_t;
+
 static uint32_t syscall_posix_open(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi) {
-    void *r = vfs_open((const char*)ebx);
-    return (uint32_t) (r == NULL ? -1 : r);
+    io_sti();
+    char* name = (char*)ebx;
+    if(ecx & O_CREAT){
+        int status = vfs_mkfile(name);
+        if(status == -1) goto error;
+    }
+    vfs_node_t r = vfs_open(name);
+    if(r == NULL) goto error;
+    for (int i = 3; i < 255; i++){
+         if(get_current_proc()->file_table[i] == NULL){
+             cfile_t file = kmalloc(sizeof(cfile_t));
+             file->handle = r;
+             file->pos = 0;
+             file->flags = ecx;
+             get_current_proc()->file_table[i] = file;
+             return i;
+         }
+    }
+    error:
+    return -1;
 }
 
 static uint32_t syscall_posix_close(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi) {
-    return (uint32_t ) vfs_close((void*)ebx);
+    for (int i = 3; i < 255; i++){
+        if(i == ebx){
+            cfile_t file = get_current_proc()->file_table[i];
+            if(file == NULL) return -1;
+            vfs_close(file->handle);
+            kfree(file);
+            return (uint32_t) (get_current_proc()->file_table[i] = NULL);
+        }
+    }
+    return -1;
 }
 
 static uint32_t syscall_posix_read(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi) {
-    vfs_node_t file = (vfs_node_t) ebx;
-    void* buf = (void*) ecx;
-    size_t count = (size_t)edx;
-    if(count == 0) return 0;
     io_sti();
-    if(vfs_read(file,buf,0,count) == -1){
-        return -1;
-    }
+    if (ebx < 0 || ebx == 1 || ebx == 2) return -1;
+    cfile_t file = get_current_proc()->file_table[ebx];
+    if(file == NULL) return -1;
+    if (file->flags == O_WRONLY) return -1;
+    char* buffer = kmalloc(file->handle->size);
+    if(vfs_read(file->handle,buffer,0,file->handle->size) == -1) return -1;
+    int ret = 0; // 记录到底读了多少个字节
     io_cli();
-    return file->size < count ? file->size : count;
+    char *filebuf = (char *) buffer; // 文件缓冲区
+    char *retbuf = (char *) ecx; // 接收缓冲区
+
+    if(edx > file->handle->size){
+        memcpy(retbuf,filebuf,file->handle->size);
+        ret = file->pos += file->handle->size;
+    }else{
+        memcpy(retbuf,filebuf,edx);
+        ret = file->pos += edx;
+    }
+    kfree(buffer);
+    return ret;
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
@@ -88,7 +133,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
 
 size_t syscall() { //由 asmfunc.c/asm_syscall_handler调用
     io_cli();
-    // disable_scheduler();
+    disable_scheduler();
     volatile size_t eax, ebx, ecx, edx, esi, edi;
     __asm__("mov %%eax, %0\n\t" : "=r"(eax));
     __asm__("mov %%ebx, %0\n\t" : "=r"(ebx));
@@ -101,8 +146,6 @@ size_t syscall() { //由 asmfunc.c/asm_syscall_handler调用
     } else {
         eax = -1;
     }
-    enable_scheduler();
-    io_sti();
     return eax;
 }
 

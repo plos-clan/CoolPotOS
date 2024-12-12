@@ -5,6 +5,7 @@
 #include "ipv4.h"
 #include "etherframe.h"
 #include "udp.h"
+#include "page.h"
 
 uint32_t gateway, submask, dns, ip, dhcp_ip;
 
@@ -77,6 +78,7 @@ void dhcp_handler(void *base) {
             (struct DHCPMessage *)(base + sizeof(struct EthernetFrame_head) +
                                    sizeof(struct IPV4Message) +
                                    sizeof(struct UDPMessage));
+
     printk("%d %d %d\n",dhcp->bp_options[0],dhcp->bp_options[1],dhcp->bp_options[2]);
     if (dhcp->bp_options[0] == 53 && dhcp->bp_options[1] == 1 &&
         dhcp->opcode == 2) {
@@ -94,19 +96,19 @@ void dhcp_handler(void *base) {
         ip = swap32(ip);
 
         unsigned char *options = &dhcp->bp_options[0];
+        alloc_frame_line(get_page((uint32_t)options,1,get_current_directory()),(uint32_t)options,1,0);
         while (options[0] != 0xff) {
             if (options[0] == MESSAGE_TYPE_DNS) {
-                printk("DNS: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                logkf("DNS: %d.%d.%d.%d\n", options[2], options[3], options[4],
                        options[5]);
                 dns = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_REQ_SUBNET_MASK) {
-                printk("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                logkf("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4],
                        options[5]);
                 submask = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_ROUTER) {
-                printk("option: %08x \n",options);
                 //waitif(true);
-                printk("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4],
+                logkf("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4],
                        options[5]);
 
                 gateway = swap32(*(uint32_t *)&options[2]);

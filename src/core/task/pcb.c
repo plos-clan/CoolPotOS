@@ -92,6 +92,7 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     new_task->now_tid = 0;
     new_task->fpu_flag = 0;
     new_task->status = RUNNING;
+    for (int i = 0; i < 255; i++) new_task->file_table[i] = NULL;
     // 映射形参数据区
     new_task->program_break_end += PAGE_SIZE;
     for (uint32_t i = (uint32_t)new_task->program_break; i < (uint32_t)new_task->program_break_end; i += PAGE_SIZE) {
@@ -168,7 +169,7 @@ int create_kernel_thread(int (*_start)(void* arg),void *args,char* name){ //创�
     new_task->fpu_flag = 0;
     new_task->kernel_stack = new_task;
     new_task->status = RUNNING;
-
+    for (int i = 0; i < 255; i++) new_task->file_table[i] = NULL;
     uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
     *(--stack_top) = (uint32_t) args;
     *(--stack_top) = (uint32_t) process_exit;
@@ -205,6 +206,13 @@ void kill_proc(pcb_t *pcb){
     }
 
     pcb->status = DEATH;
+
+    for (int i = 0; i < 255; i++){
+        cfile_t file = pcb->file_table[i];
+        if(file != NULL){
+            vfs_close(file->handle);
+        }
+    }
 
     if(pcb->task_level == TASK_KERNEL_LEVEL){
 
@@ -253,7 +261,7 @@ void init_pcb(){
     current_pcb->pgd_dir = kernel_directory;
     current_pcb->context.esp = (uint32_t )current_pcb->kernel_stack;
     current_pcb->cpu_clock = 0;
-
+    for (int i = 0; i < 255; i++) current_pcb->file_table[i] = NULL;
     current_pcb->program_break = program_break;
     current_pcb->program_break_end = program_break_end;
 

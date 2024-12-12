@@ -19,6 +19,7 @@ global _start
 extern kernel_head ; 内核预处理函数 src/core/mboot/kernel_head.c
 
 _start:
+    cli
     mov esp,stack_top
     push esp
     push ebx

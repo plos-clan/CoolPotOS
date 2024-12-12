@@ -156,6 +156,7 @@ char *strdup(const char *str);
 void strtoupper(char *str);
 char *strchrnul(const char *s, int c);
 int strcmp(const char *s1, const char *s2);
+int strncmp(const char *str1, const char *str2, size_t n);
 char *strcpy(char *dest, const char *src);
 char *strcat(char *dest, const char *src);
 int isspace(int c);

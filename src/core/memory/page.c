@@ -52,7 +52,7 @@ uint32_t first_frame() { //获取第一个空闲物理块
             }
         }
     }
-    return (uint32_t) - 1;
+    return (uint32_t) -1;
 }
 
 void free_frame(page_t *page) {
@@ -68,17 +68,16 @@ void free_frame(page_t *page) {
 void alloc_frame(page_t *page, int is_kernel, int is_writable) {
     if (page->present) {
         return;
-    }
-    else {
+    } else {
         uint32_t idx = first_frame();
-        if (idx == (uint32_t) - 1) {
+        if (idx == (uint32_t) -1) {
             printk("FRAMES_FREE_ERROR: Cannot free frames!\n");
             __asm__("cli");
             for (;;)io_hlt();
         }
 
         set_frame(idx * PAGE_SIZE);
-        memset(page,0,4);
+        memset(page, 0, 4);
         page->present = 1; // 现在这个页存在了
         page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
         page->user = is_kernel ? 0 : 1; // 是否为用户态由is_kernel决定
@@ -86,9 +85,9 @@ void alloc_frame(page_t *page, int is_kernel, int is_writable) {
     }
 }
 
-void alloc_frame_line(page_t *page, uint32_t line,int is_kernel, int is_writable) {
+void alloc_frame_line(page_t *page, uint32_t line, int is_kernel, int is_writable) {
     set_frame(line);
-    memset(page,0,4);
+    memset(page, 0, 4);
 
     page->present = 1; // 现在这个页存在了
     page->rw = is_writable ? 1 : 0; // 是否可写由is_writable决定
@@ -102,12 +101,12 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
 
     uint32_t table_idx = address / 1024;
 
-    if (dir->tables[table_idx]){
+    if (dir->tables[table_idx]) {
         page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
         return pgg;
-    }else if (make) {
+    } else if (make) {
         uint32_t tmp;
-        tmp = (uint32_t )(dir->tables[table_idx] = (page_table_t*) kmalloc(sizeof(page_table_t)));
+        tmp = (uint32_t) (dir->tables[table_idx] = (page_table_t *) kmalloc(sizeof(page_table_t)));
         memset(dir->tables[table_idx], 0, PAGE_SIZE);
         dir->table_phy[table_idx] = tmp | 0x7;
         page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
@@ -115,21 +114,21 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
     } else return 0;
 }
 
-static void open_page(){ //打开分页机制
+static void open_page() { //打开分页机制
     uint32_t cr0;
     __asm__ volatile("mov %%cr0, %0" : "=b"(cr0));
     cr0 |= 0x80000000;
     __asm__ volatile("mov %0, %%cr0" : : "b"(cr0));
 }
 
-void switch_page_directory(page_directory_t *dir){
+void switch_page_directory(page_directory_t *dir) {
     current_directory = dir;
     __asm__ volatile("mov %0, %%cr3" : : "r"(&dir->table_phy));
 }
 
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
     page_table_t *table = (page_table_t *) kmalloc(sizeof(page_table_t));
-    *physAddr = (uint32_t )table;
+    *physAddr = (uint32_t) table;
     memset(table, 0, sizeof(page_directory_t));
 
     int i;
@@ -169,7 +168,7 @@ page_directory_t *clone_directory(page_directory_t *src) {
     return dir;
 }
 
-page_directory_t *get_current_directory(){
+page_directory_t *get_current_directory() {
     return current_directory;
 }
 
@@ -177,7 +176,7 @@ void page_fault(registers_t *regs) {
     io_cli();
     disable_scheduler();
     uint32_t faulting_address;
-    __asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address)); //
+    __asm__ volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
     int present = !(regs->err_code & 0x1); // 页不存在
     int rw = regs->err_code & 0x2; // 只读页被写入
@@ -185,19 +184,25 @@ void page_fault(registers_t *regs) {
     int reserved = regs->err_code & 0x8; // 写入CPU保留位
     int id = regs->err_code & 0x10; // 由取指引起
 
-    logkf("[ERROR]: Page fault [Not Process] | Type: %s | address: %x \n",
+    logkf("eip: %08x | esp: %08x | peip: %08x | pesp: %08x\n",regs->eip,regs->esp,get_current_proc()->context.eip,get_current_proc()->context.esp);
+
+    logk("[Error]: Page fault ");
+    logkf("[%s]", get_current_proc() != NULL ? get_current_proc()->name : "Not Process");
+    logkf(" Type: %s ",
           (
                   present ? "present" : (
                           rw ? "read-only" : (
                                   us ? "user-mode" : (
                                           reserved ? "reserved" : (
                                                   id ? "decode address" : "unknown"))))
-          ),
+          ));
+    logkf("address: %x \n",
           faulting_address); //调试: 串口优先打印信息, 屏蔽虚拟终端的BUG
 
-    if(get_current_proc() == NULL){
+    if (get_current_proc() == NULL) {
         printk("[ERROR]: Page fault [Not Process] |");
-    } else printk("[ERROR]: Page fault [PID: %d |Level: %d] |",get_current_proc()->pid,get_current_proc()->task_level);
+    } else
+        printk("[ERROR]: Page fault [PID: %d |Level: %d] |", get_current_proc()->pid, get_current_proc()->task_level);
     if (present) {
         printk("Type: present | address: %x  \n", faulting_address);
     } else if (rw) {
@@ -209,20 +214,20 @@ void page_fault(registers_t *regs) {
     } else if (id) {
         printk("Type: decode address | address: %x\n", faulting_address);
     }
-    if(get_current_proc() == NULL){
-        klogf(false,"Kernel Error Panic.\n");
+    if (get_current_proc() == NULL) {
+        klogf(false, "Kernel Error Panic.\n");
         while (1) io_hlt();
     }
 
     // 多进程相关, 未实现多进程的OS可将以下代码全部替换为 while(1)
-    if(get_current_proc()->task_level == TASK_KERNEL_LEVEL){
-        klogf(false,"Kernel Error Panic.\n");
+    if (get_current_proc()->task_level == TASK_KERNEL_LEVEL) {
+        klogf(false, "Kernel Error Panic.\n");
         while (1) io_hlt();
-    } else if(get_current_proc()->task_level == TASK_APPLICATION_LEVEL){
+    } else if (get_current_proc()->task_level == TASK_APPLICATION_LEVEL) {
         kill_proc(get_current_proc());
-    } else if(get_current_proc()->task_level == TASK_SYSTEM_SERVICE_LEVEL){
+    } else if (get_current_proc()->task_level == TASK_SYSTEM_SERVICE_LEVEL) {
         //TODO 蓝屏处理程序待实现
-        klogf(false,"System service error. ==Kernel Panic==\n");
+        klogf(false, "System service error. ==Kernel Panic==\n");
         while (1) io_hlt();
     }
 
@@ -230,7 +235,7 @@ void page_fault(registers_t *regs) {
     io_sti();
 }
 
-void page_init(multiboot_t *multiboot){
+void page_init(multiboot_t *multiboot) {
     uint32_t mem_end_page = 0xFFFFFFFF; // 4GB Page
     nframes = mem_end_page / PAGE_SIZE;
 
@@ -245,7 +250,7 @@ void page_init(multiboot_t *multiboot){
 
     int i = 0;
 
-    while (i < (int)program_break_end) {
+    while (i < (int) program_break_end) {
         /*
          * 内核部分对ring3而言不可读不可写
          * 无偏移页表映射
@@ -257,9 +262,9 @@ void page_init(multiboot_t *multiboot){
     }
 
     uint32_t j = multiboot->framebuffer_addr,
-            size = multiboot->framebuffer_height * multiboot->framebuffer_width*multiboot->framebuffer_bpp;
-    while (j <= multiboot->framebuffer_addr + size){ //VBE显存缓冲区映射
-        alloc_frame_line(get_page(j,1,kernel_directory),j,0,1);
+            size = multiboot->framebuffer_height * multiboot->framebuffer_width * multiboot->framebuffer_bpp;
+    while (j <= multiboot->framebuffer_addr + size) { //VBE显存缓冲区映射
+        alloc_frame_line(get_page(j, 1, kernel_directory), j, 0, 1);
         j += 0x1000;
     }
 
