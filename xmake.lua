@@ -46,7 +46,7 @@ target("iso")
         os.cp(kernel:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
-        local xorriso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
+        local xorriso_flags = "-b sys/limine-bios-cd.bin -no-emul-boot -boot-info-table"
         os.run("xorriso -as mkisofs %s %s -o %s", xorriso_flags, iso_dir, iso_file)
         print("ISO image created at: " .. iso_file)
     end)
@@ -63,3 +63,5 @@ target("iso")
 
         os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", fa)
     end)
+
+

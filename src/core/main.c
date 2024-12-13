@@ -35,6 +35,7 @@ extern void* program_break_end;
 
 extern void iso9660_regist(); //iso9660.c
 extern void fatfs_regist(); //fat.c
+extern void pipfs_regist(); //pipfs.c
 
 _Noreturn void shutdown(){
     printk("Shutdown %s...\n",KERNEL_NAME);
@@ -108,6 +109,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     iso9660_regist();
     fatfs_regist();
     init_pcb();
+    pipfs_regist();
     //net_setup();
     keyboard_init();
     mouse_init();
@@ -118,8 +120,8 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 //    create_kernel_thread((void*)f3system_setup,NULL,"f3system");
 //    klogf(true,"Enable f3system service.\n");
 
-    create_kernel_thread((void*)play_music,NULL,"music");
-    klogf(true,"Enable music service.\n");
+//    create_kernel_thread((void*)play_music,NULL,"music");
+//    klogf(true,"Enable music service.\n");
 
     create_kernel_thread((void*)setup_shell, NULL, "Shell");
     klogf(true,"Enable kernel shell service.\n");

@@ -11,6 +11,9 @@
 #include "scheduler.h"
 #include "speaker.h"
 
+char* shell_work_path;
+char  com_copy[100];
+
 static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);
 }
@@ -104,9 +107,14 @@ static void mount(int argc,char** argv){
 static void ls(int argc,char** argv){
     vfs_node_t p;
     if (argc == 1) {
-        p = vfs_open("/");
+        p = vfs_open(shell_work_path);
     } else{
-        p = vfs_open(argv[1]);
+        char* buf_h = com_copy + 5;
+        char bufx[100];
+        if(buf_h[0] != '/') {
+            sprintf(bufx,"%s/%s",shell_work_path,buf_h);
+        }else sprintf(bufx,"%s",buf_h);
+        p = vfs_open(bufx);
     }
     if(p == NULL){
         printk("Cannot fount directory.\n");
@@ -114,7 +122,7 @@ static void ls(int argc,char** argv){
     }
     list_foreach(p->child, i) {
         vfs_node_t c = (vfs_node_t) i->data;
-        printk("%s ", c->name);
+        printk("%s ",c->name);
     }
     printk("\n");
 }
@@ -124,7 +132,12 @@ static void read(int argc,char** argv) {
         printk("[Shell-MKDIR]: If there are too few parameters.\n");
         return;
     }
-    vfs_node_t file = vfs_open(argv[1]);
+    char* buf_h = com_copy + 5;
+    char bufx[100];
+    if(buf_h[0] != '/') {
+        sprintf(bufx,"%s/%s",shell_work_path,buf_h);
+    }else sprintf(bufx,"%s",buf_h);
+    vfs_node_t file = vfs_open(bufx);
     if(file != NULL){
         char* buf = kmalloc(file->size);
         if(vfs_read(file,buf,0,file->size) == -1){
@@ -193,6 +206,38 @@ static void ps(){
     }
 }
 
+static void cd(int argc,char** argv){
+    if (argc == 1) {
+        printk("[Shell-CD]: If there are too few parameters.\n");
+        return;
+    }
+    char *s = com_copy + 3;
+    if (s[strlen(s) - 1] == '/' && strlen(s) > 1) { s[strlen(s) - 1] = '\0'; }
+    if (streq(s, ".")) return;
+    if (streq(s, "..")) {
+        if (streq(s, "/")) return;
+        char *n = shell_work_path + strlen(shell_work_path);
+        while (*--n != '/' && n != shell_work_path) {}
+        *n = '\0';
+        if (strlen(shell_work_path) == 0) strcpy(shell_work_path, "/");
+        return;
+    }
+    char *old = strdup(shell_work_path);
+    if (s[0] == '/') {
+        strcpy(shell_work_path, s);
+    } else {
+        if (streq(shell_work_path, "/"))
+            sprintf(shell_work_path, "%s%s", shell_work_path, s);
+        else
+            sprintf(shell_work_path, "%s/%s", shell_work_path, s);
+    }
+    if (vfs_open(shell_work_path) == NULL) {
+        printk("cd: %s: No such directory\n", s);
+        sprintf(shell_work_path, "%s", old);
+        kfree(old);
+    }
+}
+
 extern uint32_t phy_mem_size;
 
 static void sys_info(){
@@ -246,6 +291,7 @@ static void print_help(){
     printk("clear                    Clear terminal screen.\n");
     printk("ps                       List all processes info.\n");
     printk("pkill     <pid>          Stop a process.\n");
+    printk("cd        <path>         Change shell work path.\n");
 }
 
 void setup_shell(){
@@ -261,11 +307,13 @@ void setup_shell(){
             get_all_task());
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
+    shell_work_path = kmalloc(1024);
+    shell_work_path[0] = '/';
     int argc = -1;
     while (1){
-        printk("\033[32mKernel@localhost: \033[39m$ ");
+        printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ",shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
-        char* com_copy[100];
+        memset(com_copy,0,100);
         strcpy(com_copy,com);
         argc = cmd_parse(com, argv, ' ');
 
@@ -294,6 +342,8 @@ void setup_shell(){
             ps();
         else if(!strcmp("pkill",argv[0]))
             pkill(argc,argv);
+        else if(!strcmp("cd",argv[0]))
+            cd(argc,argv);
         else if(!strcmp("clear",argv[0]))
             get_current_proc()->tty->clear(get_current_proc()->tty);
         else{
@@ -304,7 +354,7 @@ void setup_shell(){
             } else sprintf(buf_h,"%s",argv[0]);
             char bufx[15];
             if(buf_h[0] != '/') {
-                sprintf(bufx,"/%s",buf_h);
+                sprintf(bufx,"%s%s",shell_work_path,buf_h);
             }else sprintf(bufx,"%s",buf_h);
 
             int pid;

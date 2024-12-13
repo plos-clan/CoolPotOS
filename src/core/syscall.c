@@ -118,6 +118,13 @@ static uint32_t syscall_posix_read(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32
     return ret;
 }
 
+static uint32_t syscall_posix_sizex(uint32_t ebx,uint32_t ecx,uint32_t edx,uint32_t esi,uint32_t edi){
+    if (ebx < 0 || ebx == 1 || ebx == 2) return -1;
+    cfile_t file = get_current_proc()->file_table[ebx];
+    if(file == NULL) return -1;
+    return file->handle->size;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_putc,
         [SYSCALL_PRINT] = syscall_print,
@@ -129,6 +136,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_POSIX_OPEN] = syscall_posix_open,
         [SYSCALL_POSIX_CLOSE] = syscall_posix_close,
         [SYSCALL_POSIX_READ] = syscall_posix_read,
+        [SYSCALL_POSIX_SIZEX] = syscall_posix_sizex,
 };
 
 size_t syscall() { //由 asmfunc.c/asm_syscall_handler调用
