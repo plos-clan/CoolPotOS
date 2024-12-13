@@ -9,6 +9,7 @@
 #include "elf_util.h"
 #include "free_page.h"
 #include "tcb.h"
+#include "pipfs.h"
 
 extern pcb_t *current_pcb;
 extern pcb_t *running_proc_head;
@@ -29,6 +30,7 @@ static void add_task(pcb_t *new_task){ //添加进程至调度链
         tailt = tailt->next;
     }
     tailt->next = new_task;
+    pipfs_update();
 }
 
 void switch_to_user_mode(uint32_t func) {
@@ -223,6 +225,7 @@ void kill_proc(pcb_t *pcb){
     }
 
     free_tty(pcb->tty);
+    pipfs_update();
 
     pcb_t *head = running_proc_head;
     pcb_t *last = NULL;

@@ -71,6 +71,34 @@ void terminal_set_custom_color_scheme(const struct TerminalPalette *palette);
 
 const uint8_t *terminal_handle_keyboard(uint8_t scancode);
 
+static inline void cpos_default_color(){
+    TerminalPalette palette = {
+            .background = 0x000000,
+            .foreground = 0xc6c6c6,
+            .ansi_colors = {
+                    [0] = 0x000000,
+                    [1] = 0xee6363,
+                    [2] = 0x00FF00,
+                    [3] = 0x00FFFF,
+                    [4] = 0x0036ff,
+                    [5] = 0xdf1200,
+                    [6] = 0x00bcdf,
+                    [7] = 0xabc990,
+
+                    [8] = 0x111111,
+                    [9] = 0x711712,
+                    [10] = 0x2d522a,
+                    [11] = 0xbcff00,
+                    [12] = 0x0036ff,
+                    [13] = 0xdf1200,
+                    [14] = 0x00bcdf,
+                    [15] = 0xabc990,
+            },
+
+    };
+    terminal_set_custom_color_scheme(&palette);
+}
+
 static inline void terminal_setup(bool is_f3) {
     extern uint32_t tty_status;
     tty_status = TTY_OST_OUTPUT;
@@ -84,7 +112,8 @@ static inline void terminal_setup(bool is_f3) {
     terminal_set_bell_handler(beep);
 
     if(!is_f3){
-        terminal_set_color_scheme(0);
+        cpos_default_color();
+        //terminal_set_color_scheme(0);
         return;
     }
     TerminalPalette palette = {

@@ -1,6 +1,6 @@
 #pragma once
 
-#define KERNEL_NAME "CP_Kernel-i386-0.4.2"
+#define KERNEL_NAME "CP_Kernel-i386-0.4.3"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
 #define STACK_SIZE 32768
