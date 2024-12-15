@@ -13,7 +13,7 @@ set_policy("check.auto_ignore_flags", false)
 add_cflags("-target x86-freestanding")
 add_arflags("-target x86-freestanding")
 add_ldflags("-target x86-freestanding")
-add_cflags("-mno-sse", "-mno-sse2")
+add_cflags("-O2", "-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
 
 target("kernel")
     set_kind("binary")
@@ -25,6 +25,7 @@ target("kernel")
 
     add_links("os_terminal")
     add_links("elf_parse")
+    add_links("alloc-i686")
     add_files("src/**/*.asm", "src/**/*.c")
 
     add_asflags("-f", "elf32")
@@ -52,16 +53,16 @@ target("iso")
     end)
 
     on_run(function (target)
-        local flags = "-serial stdio -m 4096"
-        local audio_flags = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
-        local ahci_flags = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
-
+        local mis = "-serial stdio -m 4096"
+        local speaker = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
+        local ahci = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
+        local kvm = " -enable-kvm"
         local vga = " -vga std -global VGA.vgamem_mb=32 "
         local net = " -net nic,model=pcnet -net user "
         local audio = " -device sb16,audiodev=speaker -device intel-hda -device hda-micro,audiodev=speaker "
-        local fa = flags..audio_flags..vga..net..audio
+        local flags = mis..speaker..vga..net..kvm..audio
 
-        os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", fa)
+        os.exec("qemu-system-x86_64 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
     end)
 
 
