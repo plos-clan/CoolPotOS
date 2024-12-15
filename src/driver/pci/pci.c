@@ -7,8 +7,7 @@
 unsigned int PCI_ADDR_BASE;
 unsigned int PCI_NUM = 0;
 
-struct
-{
+struct {
     uint32_t classcode;
     char *name;
 } pci_classnames[] = {
@@ -146,7 +145,7 @@ struct
 pci_device_t *pci_device[PCI_DEVICE_MAX];
 uint32_t device_number = 0;
 
-uint32_t get_pci_num(){
+uint32_t get_pci_num() {
     return PCI_NUM;
 }
 
@@ -182,7 +181,7 @@ void pci_write_command_status(uint8_t bus, uint8_t slot, uint8_t func, uint32_t 
     write_pci(bus, slot, func, 0x04, value);
 }
 
-uint32_t pci_dev_read32(pci_device_t* pdev, uint16_t offset) {
+uint32_t pci_dev_read32(pci_device_t *pdev, uint16_t offset) {
     return read_pci(pdev->bus, pdev->slot, pdev->func, offset);
 }
 
@@ -217,10 +216,10 @@ base_address_register get_base_address_register(uint8_t bus, uint8_t device, uin
             case 2:  // 64
                 break;
         }
-        result.address = (uint8_t * )(bar_value & ~0x3);
+        result.address = (uint8_t *) (bar_value & ~0x3);
         result.prefetchable = 0;
     } else {
-        result.address = (uint8_t * )(bar_value & ~0x3);
+        result.address = (uint8_t *) (bar_value & ~0x3);
         result.prefetchable = 0;
     }
     return result;
@@ -236,43 +235,43 @@ void pci_config(unsigned int bus, unsigned int f, unsigned int equipment, unsign
 
 char *pci_classname(uint32_t classcode) {
     for (size_t i = 0; pci_classnames[i].name != NULL; i++) {
-        if (pci_classnames[i].classcode == classcode){
+        if (pci_classnames[i].classcode == classcode) {
             return pci_classnames[i].name;
         }
-        if (pci_classnames[i].classcode == (classcode & 0xFFFF00)){
+        if (pci_classnames[i].classcode == (classcode & 0xFFFF00)) {
             return pci_classnames[i].name;
         }
     }
     return "Unknown device";
 }
 
-pci_device_t *pci_find_vid_did(uint16_t vendor_id,uint16_t device_id){
+pci_device_t *pci_find_vid_did(uint16_t vendor_id, uint16_t device_id) {
     for (int i = 0; i < device_number; i++) {
-        if(pci_device[i]->vendor_id == vendor_id &&
-        pci_device[i]->device_id == device_id)
+        if (pci_device[i]->vendor_id == vendor_id &&
+            pci_device[i]->device_id == device_id)
             return pci_device[i];
     }
     return NULL;
 }
 
-pci_device_t *pci_find_class(uint32_t class_code){
+pci_device_t *pci_find_class(uint32_t class_code) {
     for (int i = 0; i < device_number; i++) {
         if (pci_device[i]->class_code == class_code) {
             return pci_device[i];
         }
-        if(class_code == (pci_device[i]->class_code & 0xFFFF00)){
+        if (class_code == (pci_device[i]->class_code & 0xFFFF00)) {
             return pci_device[i];
         }
     }
     return NULL;
 }
 
-base_address_register find_bar(pci_device_t *device,uint8_t barNum){
+base_address_register find_bar(pci_device_t *device, uint8_t barNum) {
     base_address_register bar = get_base_address_register(device->bus, device->slot, device->func, barNum);
     return bar;
 }
 
-void load_pci_device(uint32_t BUS,uint32_t Equipment,uint32_t F){
+void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F) {
     uint32_t value_c = read_pci(BUS, Equipment, F, PCI_CONF_REVISION);
     uint32_t class_code = value_c >> 8;
 
@@ -306,10 +305,25 @@ void load_pci_device(uint32_t BUS,uint32_t Equipment,uint32_t F){
           device->name);
 }
 
+void print_all_pci() {
+    printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
+    for (int i = 0; i < device_number; i++) {
+        pci_device_t *device = pci_device[i];
+        printk("%03d:%02d:%02d\t[0x%04X:0x%04X]\t<0x%08x>\t%s\n",
+               device->bus,
+               device->slot,
+               device->func,
+               device->vendor_id,
+               device->device_id,
+               device->class_code,
+               device->name);
+    }
+}
+
 void init_pci() {
     PCI_ADDR_BASE = (uint32_t) kmalloc(1 * 1024 * 1024);
     unsigned int i, BUS, Equipment, F, ADDER, *i1;
-    unsigned char *PCI_DATA = (char*)PCI_ADDR_BASE, *PCI_DATA1;
+    unsigned char *PCI_DATA = (char *) PCI_ADDR_BASE, *PCI_DATA1;
 
     for (BUS = 0; BUS < 256; BUS++) {                     //查询总线
         for (Equipment = 0; Equipment < 32; Equipment++) {  //查询设备
@@ -333,7 +347,7 @@ void init_pci() {
                         for (ADDER = 0; ADDER < 256; ADDER = ADDER + 4) {
                             pci_config(BUS, F, Equipment, ADDER);
                             i = io_in32(PCI_DATA_PORT);
-                            i1 = (uint32_t *)i;
+                            i1 = (uint32_t *) i;
                             //*i1 = PCI_DATA1;
                             memcpy(PCI_DATA1, &i, 4);
                             PCI_DATA1 = PCI_DATA1 + 4;
@@ -343,7 +357,7 @@ void init_pci() {
                                     get_base_address_register(BUS, Equipment, F, barNum);
                             if (bar.address && (bar.type == input_output)) {
                                 PCI_DATA1 += 4;
-                                int i = ((uint32_t)(bar.address));
+                                int i = ((uint32_t) (bar.address));
                                 memcpy(PCI_DATA1, &i, 4);
                             }
                         }
@@ -351,7 +365,7 @@ void init_pci() {
                         key = 0;
                     }
                     PCI_NUM++;
-                    load_pci_device(BUS,Equipment,F);
+                    load_pci_device(BUS, Equipment, F);
                 }
             }
         }

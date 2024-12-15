@@ -68,7 +68,7 @@
         } \
     } while (0)
 #else
-#define assert(condition,...) (void)0
+#define assert(condition, ...) (void)0
 #endif
 
 #define MASK8(n)  ((uint8_t)1 << (n))
@@ -116,55 +116,92 @@
 
 static inline void bzero(void *_s, size_t _n) {
     for (size_t i = 0; i < _n; i++) {
-        ((uint8_t *)_s)[i] = 0;
+        ((uint8_t *) _s)[i] = 0;
     }
 }
 
 typedef struct _xstr {
     size_t len;
     size_t hash;
-    char   data[];
+    char data[];
 } *xstr;
 
 float roundf(float number);
+
 float ceilf(float x);
+
 float floorf(float x);
+
 double fabs(double x);
+
 double ceil(double x);
+
 double floor(double x);
+
 double fmod(double x, double y);
+
 double cos(double x);
+
 double acos(double x);
+
 double sqrt(double number);
+
 double pow(double x, int y);
+
 int atoi(const char *string);
 
 int vsprintf(char *buf, const char *fmt, va_list args);
+
 int sprintf(char *buf, const char *fmt, ...);
+
 void memclean(char *s, int len);
-void* memcpy(void* s, const void* ct, size_t n);
+
+void *memcpy(void *s, const void *ct, size_t n);
+
 int memcmp(const void *a_, const void *b_, uint32_t size);
+
 void *memset(void *s, int c, size_t n);
+
 void *memmove(void *dest, const void *src, size_t num);
+
 size_t strnlen(const char *s, size_t maxlen);
+
 size_t strlen(const char *str);
-char* strchr(const char* str,int c);
+
+char *strchr(const char *str, int c);
+
 int64_t strtol(const char *str, char **endptr, int base);
+
 char *strstr(char *str1, char *str2);
+
 char *strncpy(char *dest, const char *src, unsigned long long count);
+
 char *strdup(const char *str);
+
 void strtoupper(char *str);
+
 char *strchrnul(const char *s, int c);
+
 int strcmp(const char *s1, const char *s2);
+
 int strncmp(const char *str1, const char *str2, size_t n);
+
 char *strcpy(char *dest, const char *src);
+
 char *strcat(char *dest, const char *src);
+
 int isspace(int c);
+
 int isdigit(int c);
+
 int isalpha(int c);
+
 int isupper(int c);
+
 void explicit_bzero(void *_s, size_t _n);
+
 void sleep(uint32_t time);
+
 void shutdown(); //main.c
 void reboot();   //main.c
 

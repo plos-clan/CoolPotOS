@@ -14,3 +14,5 @@ cmake-build-debug/
 # MacOS Cache
 .DS_Store
 
+assets/*.elf
+

@@ -30,6 +30,7 @@
 #include "vsound.h"
 #include "shell.h"
 #include "iic_core.h"
+#include "os_terminal.h"
 
 extern void* program_break_end;
 
@@ -53,10 +54,18 @@ _Noreturn void reboot(){
     while (1);
 }
 
-static void play_music(){
-    printk("Playing..\n");
-    wav_player("/music_box.mp3");
-    printk("PlayEnd\n");
+//static void play_music(){
+//    printk("Playing..\n");
+//    wav_player("/music_box.mp3");
+//    printk("PlayEnd\n");
+//}
+
+int terminal_manual_flush(void *arg) {
+    terminal_set_auto_flush(0);
+    while (1) {
+        terminal_flush();
+        io_hlt();
+    }
 }
 
 /*
@@ -75,15 +84,14 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     extern void check_memory(multiboot_t *multiboot);
     check_memory(multiboot);
 
-    if(multiboot->flags & (1 << 2)) {
-
-    }
-
+//    if (multiboot->flags & (1 << 2)) {
+//
+//    }
 
     page_init(multiboot); //分页开启
     setup_free_page();
     terminal_setup(false);
-    printk("CoolPotOS %s (Limine Multiboot) on an i386\n",KERNEL_NAME);
+    printk("CoolPotOS %s (Limine Multiboot) on an i386\n", KERNEL_NAME);
     printk("KernelArea: 0x00000000 - 0x%08x | GraphicsBuffer: 0x%08x \n",
            program_break_end,
            multiboot->framebuffer_addr);
@@ -105,7 +113,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     devfs_regist();
 
-    io_cli(); //ide驱动会打开中断以加载硬盘设备, 需重新关闭中断以继续初始化其余OS功能
+    io_cli(); //ide等块设备驱动会打开中断以加载硬盘设备, 需重新关闭中断以继续初始化其余OS功能
     iso9660_regist();
     fatfs_regist();
     init_pcb();
@@ -123,8 +131,10 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 //    create_kernel_thread((void*)play_music,NULL,"music");
 //    klogf(true,"Enable music service.\n");
 
-    create_kernel_thread((void*)setup_shell, NULL, "Shell");
-    klogf(true,"Enable kernel shell service.\n");
+    create_kernel_thread(terminal_manual_flush, NULL, "Terminal");
+
+    create_kernel_thread((void *) setup_shell, NULL, "Shell");
+    klogf(true, "Enable kernel shell service.\n");
 
     // 挂载最后一个块设备(通常为引导设备)
     vfs_node_t dev = vfs_open("/dev");
@@ -133,25 +143,25 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     list_foreach(dev->child, i) {
         c = (vfs_node_t) i->data;
         char buf[20];
-        sprintf(buf,"/dev/%s",c->name);
-        if(vfs_mount(buf, vfs_open("/")) != -1){
+        sprintf(buf, "/dev/%s", c->name);
+        if (vfs_mount(buf, vfs_open("/")) != -1) {
             win = true;
             break;
         }
     }
-    if(c == NULL || !win) {
-        klogf(false,"Cannot mount a drive device.\n");
-    }else{
-        klogf(true,"Block device mount success!\n");
+    if (c == NULL || !win) {
+        klogf(false, "Cannot mount a drive device.\n");
+    } else {
+        klogf(true, "Block device mount success!\n");
     }
 
-    klogf(true,"Kernel load done!\n");
+    klogf(true, "Kernel load done!\n");
     beep();
     clock_sleep(100);
     enable_scheduler();
     io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行
 
-    while(1){
+    while (1) {
         free_pages();
         io_hlt();
     }

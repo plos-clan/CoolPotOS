@@ -55,3 +55,4 @@ pci_device_t *pci_find_class(uint32_t class_code); //根据指定class_code寻�
 base_address_register find_bar(pci_device_t *device,uint8_t barNum);
 void load_pci_device(uint32_t BUS,uint32_t Equipment,uint32_t F);
 void init_pci();
+void print_all_pci();

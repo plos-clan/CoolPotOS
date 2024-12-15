@@ -5,10 +5,12 @@
 
 extern page_directory_t *kernel_directory; //page.c
 
-void *program_break = (void*)0x3e0000;
+void *program_break = (void *) 0x3e0000;
 void *program_break_end;
 
 #define getpagesize() PAGE_SIZE
+
+uint32_t kh_usage_memory_byte;
 
 static void *sbrk(int incr) { //内核堆扩容措施
     if (program_break == 0) {
@@ -17,7 +19,7 @@ static void *sbrk(int incr) { //内核堆扩容措施
 
     if (program_break + incr >= program_break_end) {
         ral:
-        if(program_break_end >= (void*)0x01bf8f7d) goto alloc_error; // 奇怪的界限, 不设置内核会卡死
+        if (program_break_end >= (void *) 0x01bf8f7d) goto alloc_error; // 奇怪的界限, 不设置内核会卡死
         if ((uint32_t) program_break_end < USER_AREA_START) {
             uint32_t ai = (uint32_t) program_break_end;
             for (; ai < (uint32_t) program_break_end + PAGE_SIZE * 10;) {

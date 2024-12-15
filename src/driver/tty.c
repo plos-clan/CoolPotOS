@@ -19,8 +19,6 @@ static void tty_print(tty_t *tty_d, const char *msg) {
 }
 
 static void tty_putchar(tty_t *tty_d, int c) {
-    char buf[2] = {c, 0};
-    tty_print(tty_d, buf);
     if (tty_status == TTY_VGA_OUTPUT) {
         vga_putchar(c);
     } else if (tty_status == TTY_OST_OUTPUT) {
