@@ -2,6 +2,7 @@
 #include "kmalloc.h"
 #include "acpi.h" //void sleep(u32 time)
 #include "timer.h" //void sleep(u32 time)
+#include "klog.h"
 
 #define ZEROPAD    1        /* pad with zero */
 #define SIGN    2        /* unsigned/signed long */
@@ -16,6 +17,11 @@ int __res; \
 __res = ((unsigned long) n) % (unsigned) base; \
 n = ((unsigned long) n) / (unsigned) base; \
 __res; })
+
+const char _plos_lut_alnum_lower[62] =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const char _plos_lut_alnum_upper[62] =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 static int skip_atoi(const char **s) {
     int i = 0;
@@ -106,6 +112,21 @@ static const double rounders[10 + 1] = {
         0.0000000005,        // 9
         0.00000000005        // 10
 };
+
+void abort() {
+    klogf(false, "Kernel abort panic\n");
+    __asm__("cli");
+    while (1) __asm__("hlt");
+}
+
+void fftostr() {
+}
+
+void fltostr() {
+}
+
+void ftostr() {
+}
 
 int atoi(const char *pstr) {
     int Ret_Integer = 0;
@@ -493,18 +514,15 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
 }
 
 void memclean(char *s, int len) {
-    // 清理某个内存区域（全部置0）
-    int i;
-    for (i = 0; i != len; i++) {
-        s[i] = 0;
-    }
+    memset(s, 0, len);
 }
 
 void *memcpy(void *s, const void *ct, size_t n) {
     if (NULL == s || NULL == ct || n <= 0)
         return NULL;
-    while (n--)
+    for (size_t i = 0; i < n; ++i) {
         *(char *) s++ = *(char *) ct++;
+    }
     return s;
 }
 
@@ -520,8 +538,9 @@ int memcmp(const void *a_, const void *b_, uint32_t size) {
 
 void *memset(void *s, int c, size_t n) {
     unsigned char *p = s;
-    while (n-- > 0)
+    for (size_t i = 0; i < n; i++) {
         *p++ = c;
+    }
     return s;
 }
 
@@ -541,6 +560,15 @@ void *memmove(void *dest, const void *src, size_t num) {
         }
     }
     return ret;
+}
+
+void *memchr(const void *_s, int _c, size_t _n) {
+    uint8_t *s = (const uint8_t *) _s;
+    uint8_t *e = (const uint8_t *) ((uint8_t *) _s + _n);
+    const uint8_t c = _c;
+    for (; s < e; s++)
+        if (*s == c) return (void *) s;
+    return NULL;
 }
 
 size_t strnlen(const char *s, size_t maxlen) {
@@ -799,7 +827,7 @@ int sprintf(char *buf, const char *fmt, ...) {
 
 void explicit_bzero(void *_s, size_t _n) {
     for (size_t i = 0; i < _n; i++) {
-        ((uint8_t *)_s)[i] = 0;
+        ((uint8_t *) _s)[i] = 0;
     }
 }
 

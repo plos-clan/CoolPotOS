@@ -389,7 +389,7 @@ void default_writestring(const char *data) {
     default_write(data, strlen(data));
 }
 
-void default_terminal_setup(){
+void default_terminal_setup() {
     dwidth = get_vbe_width();
     dheight = get_vbe_height();
     dscreen = get_vbe_screen();

@@ -102,15 +102,15 @@ page_t *get_page(uint32_t address, int make, page_directory_t *dir) {
     uint32_t table_idx = address / 1024;
 
     if (dir->tables[table_idx]) {
-        page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
-        return pgg;
+        volatile page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
+        return (page_t *) pgg;
     } else if (make) {
         uint32_t tmp;
         tmp = (uint32_t) (dir->tables[table_idx] = (page_table_t *) kmalloc(sizeof(page_table_t)));
-        memset(dir->tables[table_idx], 0, PAGE_SIZE);
+        memset((void *) dir->tables[table_idx], 0, PAGE_SIZE);
         dir->table_phy[table_idx] = tmp | 0x7;
-        page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
-        return pgg;
+        volatile page_t *pgg = &dir->tables[table_idx]->pages[address % 1024];
+        return (page_t *) pgg;
     } else return 0;
 }
 
@@ -184,7 +184,8 @@ void page_fault(registers_t *regs) {
     int reserved = regs->err_code & 0x8; // 写入CPU保留位
     int id = regs->err_code & 0x10; // 由取指引起
 
-    logkf("eip: %08x | esp: %08x | peip: %08x | pesp: %08x\n",regs->eip,regs->esp,get_current_proc()->context.eip,get_current_proc()->context.esp);
+    logkf("eip: %08x | esp: %08x | peip: %08x | pesp: %08x\n", regs->eip, regs->esp, get_current_proc()->context.eip,
+          get_current_proc()->context.esp);
 
     logk("[Error]: Page fault ");
     logkf("[%s]", get_current_proc() != NULL ? get_current_proc()->name : "Not Process");
@@ -238,9 +239,6 @@ void page_fault(registers_t *regs) {
 void page_init(multiboot_t *multiboot) {
     uint32_t mem_end_page = 0xFFFFFFFF; // 4GB Page
     nframes = mem_end_page / PAGE_SIZE;
-
-    program_break_end = program_break + 0x300000 + 1 + KHEAP_INITIAL_SIZE;
-    memset(program_break, 0, program_break_end - program_break);
 
     frames = (uint32_t *) kmalloc(INDEX_FROM_BIT(nframes));
     memset(frames, 0, INDEX_FROM_BIT(nframes));

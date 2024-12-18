@@ -1,13 +1,90 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#pragma GCC system_header
+
+#define NULL 0
+
+#ifndef __cplusplus
+#  if __STDC_VERSION__ < 202311L
+#    define bool  _Bool
+#    define true  ((bool)1)
+#    define false ((bool)0)
+#  else
+#    define _Bool typeof("Who let u fuck use _Bool?!"[0][0])
+#  endif
+#endif
+
+#if __INT_WIDTH__ != 32
+#  error "int must be int32"
+#endif
+
+#if __FLT_RADIX__ != 2
+#  error "float must be binary"
+#endif
+
+#if __FLT_MANT_DIG__ != 24
+#  error "float must be 32 bit float"
+#endif
+
+#if __DBL_MANT_DIG__ != 53
+#  error "double must be 64 bit float"
+#endif
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~ 基本类型
+
+typedef __INTPTR_TYPE__ intptr_t;
+typedef __UINTPTR_TYPE__ uintptr_t;
+typedef __INTPTR_TYPE__ ssize_t;
+typedef __UINTPTR_TYPE__ size_t;
+typedef __INTPTR_TYPE__ ptrdiff_t;
+typedef size_t usize;
+typedef ssize_t isize;
+
+typedef signed char schar; // 在大多数环境下 schar 就是 char
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef long long llong;
+typedef unsigned long long ullong;
+
+#ifndef __cplusplus
+typedef __UINT8_TYPE__ char8_t; // 我们认为 char8 就是 uint8
+typedef __CHAR16_TYPE__ char16_t;
+typedef __CHAR32_TYPE__ char32_t;
+typedef __WCHAR_TYPE__ wchar_t;
+#endif
+
+typedef __INT8_TYPE__ int8_t;
+typedef __UINT8_TYPE__ uint8_t;
+typedef __INT16_TYPE__ int16_t;
+typedef __UINT16_TYPE__ uint16_t;
+typedef __INT32_TYPE__ int32_t;
+typedef __UINT32_TYPE__ uint32_t;
+typedef __INT64_TYPE__ int64_t;
+typedef __UINT64_TYPE__ uint64_t;
+typedef float float32_t;
+typedef double float64_t;
+#if defined(__x86_64__)
+typedef __int128          int128_t;
+typedef unsigned __int128 uint128_t;
+#  if !NO_EXTFLOAT
+typedef _Float16   float16_t; // 命名最不统一的一集
+typedef __float128 float128_t;
+#  endif
+#endif
+
+typedef __INTMAX_TYPE__ intmax_t;
+typedef __UINTMAX_TYPE__ uintmax_t;
+
 
 typedef int ssize_t;
 typedef size_t usize;
 typedef ssize_t isize;
+
 typedef void (*free_t)(void *ptr);
+
 typedef void *(*alloc_t)(size_t size);
 
 #define __PACKED__ __attribute__((packed))

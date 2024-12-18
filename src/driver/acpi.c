@@ -35,7 +35,7 @@ static void AcpiPowerHandler(registers_t *irq) {
     // 不检查电源键, 按下就关机
 
     io_out16((uint32_t) PM1a_EVT_BLK, status &= ~(1 << 8)); // clear bits
-    printk("Shutdown OS...");
+    dlogf("Shutdown OS...");
     //TODO shutdown_kernel();
     power_off();
 
@@ -44,17 +44,17 @@ static void AcpiPowerHandler(registers_t *irq) {
         power_off();
         return;
     }
-    if (!PM1b_EVT_BLK){
-        printk("PowerDown fault\n");
+    if (!PM1b_EVT_BLK) {
+        dlogf("PowerDown fault\n");
         io_sti();
-        return ;
+        return;
     }
 
     // check if power button press
     status = io_in16((uint32_t) PM1b_EVT_BLK);
     if (status & (1 << 8)) {
         io_out16((uint32_t) PM1b_EVT_BLK, status &= ~(1 << 8));
-        printk("Shutdown OS...");
+        dlogf("Shutdown OS...");
         //TODO shutdown_kernel();
         power_off();
         return;
@@ -72,29 +72,30 @@ static void AcpiPowerInit() {
     if (PM1b_ENABLE_REG == len)
         PM1b_ENABLE_REG = 0;
 
-    io_out16((int)PM1a_ENABLE_REG, (1 << 8));
+    io_out16((int) PM1a_ENABLE_REG, (1 << 8));
     if (PM1b_ENABLE_REG) {
-        io_out16((uint16_t)PM1b_ENABLE_REG, (uint8_t)(1 << 8));
+        io_out16((uint16_t) PM1b_ENABLE_REG, (uint8_t) (1 << 8));
     }
 
     register_interrupt_handler(facp->SCI_INT + 0x20, AcpiPowerHandler);
 }
 
 static unsigned int acpi_find_table(char *Signature) {
-    uint8_t * ptr, *ptr2;
+    uint8_t *ptr, *ptr2;
     uint32_t len;
-    uint8_t * rsdt_t = (uint8_t * )
+    uint8_t *rsdt_t = (uint8_t *)
             rsdt;
-    for (len = *((uint32_t * )(rsdt_t + 4)), ptr2 = rsdt_t + 36; ptr2 < rsdt_t + len;
+    for (len = *((uint32_t *) (rsdt_t + 4)), ptr2 = rsdt_t + 36; ptr2 < rsdt_t + len;
          ptr2 += (char *) rsdt_t[0] == 'X' ? 8 : 4) {
-        ptr = (uint8_t * )(uintptr_t)(rsdt_t[0] == 'X' ? *((uint64_t *) ptr2)
-                                                       : *((uint32_t *) ptr2));
+        ptr = (uint8_t *) (uintptr_t) (rsdt_t[0] == 'X' ? *((uint64_t *) ptr2)
+                                                        : *((uint32_t *) ptr2));
         if (!memcmp(ptr, Signature, 4)) {
             return (unsigned) ptr;
         }
     }
     return 0;
 }
+
 static int AcpiSysInit() {
 
     uint32_t **p;
@@ -104,7 +105,7 @@ static int AcpiSysInit() {
     rsdt = (acpi_rsdt_t *) AcpiGetRSDPtr();
     page_line(rsdt);
     if (!rsdt || AcpiCheckHeader(rsdt, "RSDT") < 0) {
-        printk("No ACPI\n");
+        dlogf("No ACPI\n");
         return false;
     }
 
@@ -120,8 +121,8 @@ static int AcpiSysInit() {
 
             SMI_CMD = facp->SMI_CMD;
 
-            PM1a_CNT = (uint32_t *)facp->PM1a_CNT_BLK;
-            PM1b_CNT = (uint32_t *)facp->PM1b_CNT_BLK;
+            PM1a_CNT = (uint32_t *) facp->PM1a_CNT_BLK;
+            PM1b_CNT = (uint32_t *) facp->PM1b_CNT_BLK;
 
             PM1_CNT_LEN = facp->PM1_CNT_LEN;
 
@@ -131,15 +132,15 @@ static int AcpiSysInit() {
             SLP_EN = 1 << 13;
             SCI_EN = 1;
 
-            uint8_t * S5Addr;
+            uint8_t *S5Addr;
             uint32_t dsdtlen;
             page_line(facp->DSDT);
             if (!AcpiCheckHeader(facp->DSDT, "DSDT")) {
                 S5Addr = &(facp->DSDT->definition_block);
                 dsdtlen = facp->DSDT->length - HEADER_SIZE;
 
-                for (uint32_t i = (uint32_t)S5Addr; i <((uint32_t)S5Addr) + dsdtlen; i+=PAGE_SIZE) {
-                    alloc_frame_line(get_page(i,1,get_current_directory()),i,1,1);
+                for (uint32_t i = (uint32_t) S5Addr; i < ((uint32_t) S5Addr) + dsdtlen; i += PAGE_SIZE) {
+                    alloc_frame_line(get_page(i, 1, get_current_directory()), i, 1, 1);
                 }
 
                 while (dsdtlen--) {
@@ -166,19 +167,19 @@ static int AcpiSysInit() {
                         SLP_TYPb = *(S5Addr) << 10;
                         S5Addr++;
                     } else {
-                        printk("[acpi] \\_S5 parse error!\n");
+                        dlogf("[acpi] \\_S5 parse error!\n");
                     }
                 } else {
-                    printk("[acpi] \\_S5 not present!\n");
+                    dlogf("[acpi] \\_S5 not present!\n");
                 }
             } else {
-                printk("[acpi] no found DSDT table\n");
+                dlogf("[acpi] no found DSDT table\n");
             }
             return true;
         }
         ++p;
     }
-    printk("[acpi] No valid FACP present\n");
+    dlogf("[acpi] No valid FACP present\n");
 }
 
 int acpi_enable() {
@@ -186,7 +187,7 @@ int acpi_enable() {
 
     // check if enable ACPI
     if (io_in16((uint32_t) PM1a_CNT) & SCI_EN) {
-        printk("ACPI already enable!\n");
+        dlogf("ACPI already enable!\n");
         return 0;
     }
 
@@ -224,7 +225,7 @@ int acpi_enable() {
 int acpi_disable() {
     int i;
 
-    if (!io_in16((uint16_t)PM1a_CNT) &SCI_EN)
+    if (!io_in16((uint16_t) PM1a_CNT) & SCI_EN)
         return 0;
 
     if (SMI_CMD || ACPI_DISABLE) {
@@ -232,13 +233,13 @@ int acpi_disable() {
                         SMI_CMD, ACPI_DISABLE);
 
         for (i = 0; i < 300; i++) {
-            if (!io_in16((uint16_t)PM1a_CNT) &SCI_EN)
+            if (!io_in16((uint16_t) PM1a_CNT) & SCI_EN)
                 break;
             clock_sleep(5);
         }
 
         for (i = 0; i < 300; i++) {
-            if (!io_in16((uint16_t)PM1b_CNT) &SCI_EN)
+            if (!io_in16((uint16_t) PM1b_CNT) & SCI_EN)
                 break;
             clock_sleep(5);
         }
@@ -257,8 +258,8 @@ uint8_t *AcpiGetRSDPtr() {
     uint32_t *rsdt;
     uint32_t ebda;
 
-    for (uint32_t i = 0xfeef000; i < 0xfff0000 + PAGE_SIZE; i+= PAGE_SIZE) {
-        alloc_frame_line(get_page(i,1,get_current_directory()),i,1,0);
+    for (uint32_t i = 0xfeef000; i < 0xfff0000 + PAGE_SIZE; i += PAGE_SIZE) {
+        alloc_frame_line(get_page(i, 1, get_current_directory()), i, 1, 0);
     }
 
     for (addr = (uint32_t *) 0x000E0000; addr < (uint32_t *) 0x00100000; addr += 0x10 / sizeof(addr)) {
@@ -269,11 +270,11 @@ uint8_t *AcpiGetRSDPtr() {
     }
 
     // search extented bios data area for the root system description pointer signature
-    ebda = *(uint16_t * )
+    ebda = *(uint16_t *)
             0x40E;
     ebda = ebda * 0x10 & 0xfffff;
 
-    for (addr = (uint32_t *) ebda; addr < (uint32_t * )(ebda + 1024); addr += 0x10 / sizeof(addr)) {
+    for (addr = (uint32_t *) ebda; addr < (uint32_t *) (ebda + 1024); addr += 0x10 / sizeof(addr)) {
         rsdt = AcpiCheckRSDPtr(addr);
         if (rsdt) {
             return rsdt;
@@ -285,7 +286,7 @@ uint8_t *AcpiGetRSDPtr() {
 uint8_t *AcpiCheckRSDPtr(void *ptr) {
     char *sign = "RSD PTR ";
     acpi_rsdptr_t *rsdp = ptr;
-    uint8_t * bptr = ptr;
+    uint8_t *bptr = ptr;
     uint32_t i = 0;
     uint8_t check = 0;
 
@@ -297,14 +298,14 @@ uint8_t *AcpiCheckRSDPtr(void *ptr) {
             bptr++;
         }
         if (!check) {
-            return (uint8_t * ) rsdp->rsdt;
+            return (uint8_t *) rsdp->rsdt;
         }
     }
     return NULL;
 }
 
 int AcpiCheckHeader(void *ptr, uint8_t *sign) {
-    uint8_t * bptr = ptr;
+    uint8_t *bptr = ptr;
     uint32_t len = *(bptr + 4);
     uint8_t checksum = 0;
 
@@ -325,30 +326,30 @@ uint32_t AcpiGetMadtBase() {
     while (--entrys) {
         if (!AcpiCheckHeader(*p, "APIC")) {
             madt = (acpi_madt_t *) *p;
-            return (uint32_t)madt;
+            return (uint32_t) madt;
         }
         p++;
     }
     return 0;
 }
 
-void hpet_clock(registers_t *reg){
+void hpet_clock(registers_t *reg) {
 
 }
 
-void hpet_clock_init(){
-    if(!hpetInfo) return;
+void hpet_clock_init() {
+    if (!hpetInfo) return;
     HpetTimer hpet_timer = hpetInfo->timers[0];
     hpet_timer.configurationAndCapability = 0x004c;
     hpet_timer.comparatorValue = 14318179;
     hpetInfo->mainCounterValue = 0;
-    register_interrupt_handler(0x20,hpet_clock);
+    register_interrupt_handler(0x20, hpet_clock);
 }
 
 void hpet_initialize() {
-    HPET *hpet = (HPET *)acpi_find_table("HPET");
+    HPET *hpet = (HPET *) acpi_find_table("HPET");
     if (!hpet) {
-        printk("\033[31mCannot found acpi hpet table\033[0m\n");
+        dlogf("\033[31mCannot found acpi hpet table\033[0m\n");
     }
 
     hpetInfo = (HpetInfo *) hpet->hpetAddress.address;
@@ -365,12 +366,12 @@ void acpi_install() {
     acpi_enable_flag = !acpi_enable();
     hpet_initialize();
     AcpiPowerInit();
-    klogf(b & acpi_enable_flag, "Load acpi driver. Rsdp: %08x NanoTime: %d\n",rsdp_address,nanoTime());
+    klogf(b & acpi_enable_flag, "Load acpi driver. Rsdp: %08x NanoTime: %d\n", rsdp_address, nanoTime());
 }
 
 uint32_t nanoTime() {
-    if(hpetInfo == NULL) return 0;
-    uint32_t mcv =  hpetInfo->mainCounterValue;
+    if (hpetInfo == NULL) return 0;
+    uint32_t mcv = hpetInfo->mainCounterValue;
     return mcv * hpetPeriod;
 }
 

@@ -32,33 +32,28 @@
 #include "iic_core.h"
 #include "os_terminal.h"
 
-extern void* program_break_end;
+extern void *program_break_end;
+extern void *program_break;
 
 extern void iso9660_regist(); //iso9660.c
 extern void fatfs_regist(); //fat.c
 extern void pipfs_regist(); //pipfs.c
 
-_Noreturn void shutdown(){
-    printk("Shutdown %s...\n",KERNEL_NAME);
+_Noreturn void shutdown() {
+    printk("Shutdown %s...\n", KERNEL_NAME);
     kill_all_proc();
     sleep(10);
     power_off();
     while (1);
 }
 
-_Noreturn void reboot(){
-    printk("Shutdown %s...\n",KERNEL_NAME);
+_Noreturn void reboot() {
+    printk("Shutdown %s...\n", KERNEL_NAME);
     kill_all_proc();
     sleep(10);
     power_reset();
     while (1);
 }
-
-//static void play_music(){
-//    printk("Playing..\n");
-//    wav_player("/music_box.mp3");
-//    printk("PlayEnd\n");
-//}
 
 int terminal_manual_flush(void *arg) {
     terminal_set_auto_flush(0);
@@ -74,6 +69,10 @@ int terminal_manual_flush(void *arg) {
  * @Noreturn
  */
 _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
+    //内核堆初始化
+    program_break_end = program_break + 0x300000 + 1 + KHEAP_INITIAL_SIZE;
+    memset(program_break, 0, program_break_end - program_break);
+
     vga_install();
     gdt_install();
     idt_install(); //8259A PIC初始化
@@ -87,7 +86,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 //    if (multiboot->flags & (1 << 2)) {
 //
 //    }
-
+    disable_scheduler();
     page_init(multiboot); //分页开启
     setup_free_page();
     terminal_setup(false);
@@ -107,8 +106,8 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     ide_init();
     ahci_init();
-    hda_init();
-    hda_regist();
+    //hda_init();
+    //hda_regist();
     iic_init();
 
     devfs_regist();
@@ -123,13 +122,6 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     mouse_init();
 
     setup_syscall();
-
-//    extern void f3system_setup();
-//    create_kernel_thread((void*)f3system_setup,NULL,"f3system");
-//    klogf(true,"Enable f3system service.\n");
-
-//    create_kernel_thread((void*)play_music,NULL,"music");
-//    klogf(true,"Enable music service.\n");
 
     create_kernel_thread(terminal_manual_flush, NULL, "Terminal");
 
@@ -157,12 +149,11 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     klogf(true, "Kernel load done!\n");
     beep();
-    clock_sleep(100);
     enable_scheduler();
     io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行
 
     while (1) {
         free_pages();
-        io_hlt();
+        //io_hlt();
     }
 }

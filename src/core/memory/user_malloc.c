@@ -38,12 +38,12 @@ static int pagebucket;            /* page size bucket */
 
 #define    ASSERT(p)
 
-static void morecore(int bucket);
+static void morecore(pcb_t *pcb, int bucket);
 
 static int findbucket(union overhead *freep, int srchlen);
 
-static void *sbrk(int incr){
-    pcb_t *pcb = get_current_proc();
+static void *sbrk(pcb_t *pcb, int incr) {
+    //pcb_t *pcb = get_current_proc();
     if (pcb->program_break + incr >= pcb->program_break_end) {
         ral:
         if ((uint32_t) pcb->program_break_end < USER_AREA_START) {
@@ -70,7 +70,7 @@ static void *sbrk(int incr){
     return prev_break;
 }
 
-void *user_malloc(size_t nbytes) {
+void *user_malloc(pcb_t *pcb, size_t nbytes) {
     register union overhead *op;
     register int bucket;
     register long n;
@@ -78,12 +78,12 @@ void *user_malloc(size_t nbytes) {
 
     if (pagesz == 0) {
         pagesz = n = getpagesize();
-        op = (union overhead *) sbrk(0);
+        op = (union overhead *) sbrk(pcb, 0);
         n = n - sizeof(*op) - ((long) op & (n - 1));
         if (n < 0)
             n += pagesz;
         if (n) {
-            if (sbrk(n) == (char *) -1) {
+            if (sbrk(pcb, n) == (char *) -1) {
                 return (NULL);
             }
         }
@@ -111,7 +111,7 @@ void *user_malloc(size_t nbytes) {
         bucket++;
     }
     if ((op = nextf[bucket]) == NULL) {
-        morecore(bucket);
+        morecore(pcb, bucket);
         if ((op = nextf[bucket]) == NULL) {
             return (NULL);
         }
@@ -124,12 +124,12 @@ void *user_malloc(size_t nbytes) {
 }
 
 void *user_calloc(size_t nelem, size_t elsize) {
-    void *ptr = user_malloc(nelem * elsize);
+    void *ptr = user_malloc(get_current_proc(), nelem * elsize);
     memset(ptr, 0, nelem * elsize);
     return ptr;
 }
 
-static void morecore(int bucket) {
+static void morecore(pcb_t *pcb, int bucket) {
     register union overhead *op;
     register long sz;        /* size of desired block */
     long amt;            /* amount to allocate */
@@ -145,7 +145,7 @@ static void morecore(int bucket) {
         amt = sz + pagesz;
         nblks = 1;
     }
-    op = (union overhead *) sbrk(amt);
+    op = (union overhead *) sbrk(pcb, amt);
     if ((long) op == -1)
         return;
     nextf[bucket] = op;
@@ -199,7 +199,7 @@ size_t user_usable_size(void *cp) {
 
 static int realloc_srchlen = 4;    /* 4 should be plenty, -1 =>'s whole list */
 
-void *user_realloc(void *cp, size_t nbytes) {
+void *user_realloc(pcb_t *pcb, void *cp, size_t nbytes) {
     register u_long onb;
     register long i;
     union overhead *op;
@@ -207,7 +207,7 @@ void *user_realloc(void *cp, size_t nbytes) {
     int was_alloced = 0;
 
     if (cp == NULL)
-        return (user_malloc(nbytes));
+        return (user_malloc(pcb, nbytes));
     if (nbytes == 0) {
         user_free(cp);
         return NULL;
@@ -240,7 +240,7 @@ void *user_realloc(void *cp, size_t nbytes) {
         } else
             user_free(cp);
     }
-    if ((res = user_malloc(nbytes)) == NULL)
+    if ((res = user_malloc(pcb, nbytes)) == NULL)
         return (NULL);
     if (cp != res)        /* common optimization if "compacting" */
         bcopy(cp, res, (nbytes < onb) ? nbytes : onb);

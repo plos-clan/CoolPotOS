@@ -1,4 +1,3 @@
-#include "stdint.h"
 #include "crc.h"
 
 // CRC-8
