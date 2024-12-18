@@ -1,11 +1,11 @@
 #pragma once
 
-#define KERNEL_NAME "CP_Kernel-i386-0.4.3"
+#define KERNEL_NAME "CP_Kernel-i386-0.4.4"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
 #define STACK_SIZE 32768
 
-#define USER_STACK_TOP 0xb2000000
+#define USER_STACK_TOP 0xc2000000
 #define USER_AREA_START 0x90000000
 #define USER_AREA_SIZE 0x2000000
 
@@ -59,17 +59,7 @@
     while (cond) {}                                                                                \
   }))
 
-#ifndef NDEBUG
-#define assert(condition) \
-    do { \
-        if (!(condition)) { \
-            fprintf(stderr, "Assertion failed: %s\n", #condition); \
-            abort(); \
-        } \
-    } while (0)
-#else
 #define assert(condition, ...) (void)0
-#endif
 
 #define MASK8(n)  ((uint8_t)1 << (n))
 #define MASK16(n) ((uint16_t)1 << (n))
@@ -163,6 +153,8 @@ int memcmp(const void *a_, const void *b_, uint32_t size);
 void *memset(void *s, int c, size_t n);
 
 void *memmove(void *dest, const void *src, size_t num);
+
+void *memchr(const void *_s, int _c, size_t _n);
 
 size_t strnlen(const char *s, size_t maxlen);
 

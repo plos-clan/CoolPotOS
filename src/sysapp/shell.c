@@ -190,7 +190,7 @@ static void pkill(int argc, char **argv) {
 }
 
 // 实现ps命令
-static void ps() {
+void ps() {
     extern pcb_t *running_proc_head;
     // 找出最长进程名
     pcb_t *longest_name = running_proc_head;
@@ -358,7 +358,6 @@ void setup_shell() {
                 if (!strcmp(shell_work_path, "/")) sprintf(bufx, "/%s", buf_h);
                 else sprintf(bufx, "%s/%s", shell_work_path, buf_h);
             } else sprintf(bufx, "%s", buf_h);
-
 
             int pid;
             if ((pid = create_user_process(bufx, com_copy, "User", TASK_APPLICATION_LEVEL)) == -1)

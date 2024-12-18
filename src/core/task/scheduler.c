@@ -14,43 +14,43 @@ pcb_t *wait_proc_head = NULL; //等待队列
 
 bool can_sche = false; //调度标志位
 
-int get_all_task(){
+int get_all_task() {
     int num = 1;
     pcb_t *pcb = running_proc_head;
-    do{
+    do {
         pcb = pcb->next;
-        if(pcb == NULL) break;
+        if (pcb == NULL) break;
         num++;
     } while (1);
     return num;
 }
 
-void enable_scheduler(){
+void enable_scheduler() {
     can_sche = true;
 }
 
-void disable_scheduler(){
+void disable_scheduler() {
     can_sche = false;
 }
 
-pcb_t *get_current_proc(){
+pcb_t *get_current_proc() {
     return current_pcb;
 }
 
-void kernel_sche(){
+void kernel_sche() {
     __asm__("int $31\n");
 }
 
-void scheduler_process(registers_t *reg){
+void scheduler_process(registers_t *reg) {
     io_cli();
-    if(current_pcb && can_sche){
+    if (current_pcb && can_sche) {
         //logkf("scheduler: pid:%d name:%s status: %s\n",current_pcb->pid,current_pcb->name,current_pcb->status == DEATH ? "DEATH" : "RUNNING");
-        if(current_pcb->status == DEATH){
+        if (current_pcb->status == DEATH) {
             current_pcb = running_proc_head;
-            logkf("DEATH SCHEDULER %s\n",current_pcb->next->status == DEATH ? "YE" : "NO");
+            logkf("DEATH SCHEDULER %s\n", current_pcb->next->status == DEATH ? "YE" : "NO");
         }
         current_pcb->cpu_clock++;
-        default_scheduler(reg,current_pcb->next);
+        default_scheduler(reg, current_pcb->next);
         /*
         if(current_pcb->task_level == TASK_KERNEL_LEVEL){
             default_scheduler(reg,current_pcb->next);
@@ -63,20 +63,20 @@ void scheduler_process(registers_t *reg){
     }
 }
 
-void default_scheduler(registers_t *reg,pcb_t* next){ //CP_Kernel 默认的进程调度器
+void default_scheduler(registers_t *reg, pcb_t *next) { //CP_Kernel 默认的进程调度器
 
-    if(current_pcb->sche_time > 1){
+    if (current_pcb->sche_time > 1) {
         current_pcb->sche_time--;
         return;
     }
 
     if (current_pcb != next) {
-        if(next == NULL) next = running_proc_head;
+        if (next == NULL) next = running_proc_head;
         current_pcb->sche_time = 1;
         pcb_t *prev = current_pcb;
         current_pcb = next;
         switch_page_directory(current_pcb->pgd_dir);
-        set_kernel_stack((uintptr_t)current_pcb->kernel_stack + STACK_SIZE);
+        set_kernel_stack((uintptr_t) current_pcb->kernel_stack + STACK_SIZE);
 
         switch_fpu(current_pcb);
 

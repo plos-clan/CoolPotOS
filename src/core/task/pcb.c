@@ -22,11 +22,11 @@ extern void *program_break_end;
 extern page_directory_t *kernel_directory;
 extern tty_t default_tty;
 
-static void add_task(pcb_t *new_task){ //添加进程至调度链
-    if(new_task == NULL) return;
+static void add_task(pcb_t *new_task) { //添加进程至调度链
+    if (new_task == NULL) return;
     pcb_t *tailt = running_proc_head;
     while (tailt->next != running_proc_head) {
-        if(tailt->next == NULL) break;
+        if (tailt->next == NULL) break;
         tailt = tailt->next;
     }
     tailt->next = new_task;
@@ -35,7 +35,7 @@ static void add_task(pcb_t *new_task){ //添加进程至调度链
 
 void switch_to_user_mode(uint32_t func) {
     io_cli();
-    uint32_t esp = (uint32_t )get_current_proc()->user_stack + STACK_SIZE;
+    uint32_t esp = (uint32_t) get_current_proc()->user_stack + STACK_SIZE;
     get_current_proc()->context.eflags = (0 << 12 | 0b10 | 1 << 9);
     intr_frame_t iframe;
     iframe.edi = 1;
@@ -56,33 +56,33 @@ void switch_to_user_mode(uint32_t func) {
     iframe.eflags = (0 << 12 | 0b10 | 1 << 9);
     iframe.esp = esp; // 设置用户态堆栈
 
-    intr_frame_t  *a = &iframe;
+    intr_frame_t *a = &iframe;
     __asm__ volatile("movl %0, %%esp\n"
-                 "popa\n"
-                 "pop %%gs\n"
-                 "pop %%fs\n"
-                 "pop %%es\n"
-                 "pop %%ds\n"
-                 "iret" ::"m"(a));
+                     "popa\n"
+                     "pop %%gs\n"
+                     "pop %%fs\n"
+                     "pop %%es\n"
+                     "pop %%ds\n"
+                     "iret"::"m"(a));
 }
 
-_Noreturn void process_exit(){
+_Noreturn void process_exit() {
     register uint32_t eax __asm__("eax");
-    printk("Kernel Process exit, Code: %d\n",eax);
+    printk("Kernel Process exit, Code: %d\n", eax);
     kill_proc(current_pcb);
     while (1);
 }
 
-int create_user_process(const char* path,const char* cmdline,char* name,uint8_t level){
+int create_user_process(const char *path, const char *cmdline, char *name, uint8_t level) {
     vfs_node_t exefile = vfs_open(path);
-    if(exefile == NULL) return -1;
+    if (exefile == NULL) return -1;
 
     pcb_t *new_task = kmalloc(STACK_SIZE);
     memset(new_task, 0, sizeof(pcb_t));
 
     new_task->task_level = level;
-    strcpy(new_task->name,name);
-    strcpy(new_task->cmdline,cmdline);
+    strcpy(new_task->name, name);
+    strcpy(new_task->cmdline, cmdline);
     new_task->pid = now_pid++;
     new_task->pgd_dir = clone_directory(kernel_directory);
     new_task->cpu_clock = 0;
@@ -90,56 +90,57 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
     new_task->exe_file = exefile;
     new_task->kernel_stack = new_task;
     new_task->sche_time = 1;
-    new_task->program_break = new_task->program_break_end = (void*)USER_AREA_START;
+    new_task->program_break = new_task->program_break_end = (void *) USER_AREA_START;
     new_task->now_tid = 0;
     new_task->fpu_flag = 0;
     new_task->status = RUNNING;
     for (int i = 0; i < 255; i++) new_task->file_table[i] = NULL;
     // 映射形参数据区
     new_task->program_break_end += PAGE_SIZE;
-    for (uint32_t i = (uint32_t)new_task->program_break; i < (uint32_t)new_task->program_break_end; i += PAGE_SIZE) {
-        alloc_frame(get_page(i,1,new_task->pgd_dir),0,1);
+    for (uint32_t i = (uint32_t) new_task->program_break; i < (uint32_t) new_task->program_break_end; i += PAGE_SIZE) {
+        alloc_frame(get_page(i, 1, new_task->pgd_dir), 0, 1);
     }
     new_task->program_break += PAGE_SIZE;
 
     //映射用户堆初始大小
     new_task->program_break_end += USER_AREA_SIZE;
-    for (uint32_t i = (uint32_t)new_task->program_break; i < (uint32_t)new_task->program_break_end; i += PAGE_SIZE) {
-        alloc_frame(get_page(i,1,new_task->pgd_dir),0,1);
+    for (uint32_t i = (uint32_t) new_task->program_break; i < (uint32_t) new_task->program_break_end; i += PAGE_SIZE) {
+        alloc_frame(get_page(i, 1, new_task->pgd_dir), 0, 1);
     }
 
     // 映射用户栈区
-    for (uint32_t i = USER_STACK_TOP - STACK_SIZE; i < USER_STACK_TOP; i+= PAGE_SIZE) {
-        alloc_frame(get_page(i,1,new_task->pgd_dir),0,1);
+    for (uint32_t i = USER_STACK_TOP - STACK_SIZE; i < USER_STACK_TOP; i += PAGE_SIZE) {
+        alloc_frame(get_page(i, 1, new_task->pgd_dir), 0, 1);
     }
-    new_task->user_stack = (void*)0xb2000000 - STACK_SIZE;
+    new_task->user_stack = (void *) USER_STACK_TOP - STACK_SIZE;
 
     // 读取可执行文件
     page_directory_t *cur_dir = get_current_proc()->pgd_dir;
     disable_scheduler();
     io_sti();
     switch_page_directory(new_task->pgd_dir);
+
     Elf32_Ehdr *data = kmalloc(exefile->size);
-    if(vfs_read(exefile,data,0,exefile->size) == -1){
+    if (vfs_read(exefile, data, 0, exefile->size) == -1) {
         vfs_close(exefile);
         return -1;
     }
-    uint32_t _start = load_elf(data,new_task->pgd_dir);
+    uint32_t _start = load_elf(data, new_task->pgd_dir);
     new_task->data = data;
     switch_page_directory(cur_dir);
     io_cli();
     enable_scheduler();
 
-    if(_start == 0){
+    if (_start == 0) {
         free_tty(new_task->tty);
         kfree(new_task);
         vfs_close(exefile);
         return -1;
     }
 
-    create_user_thread(new_task,(void*)_start);
+    create_user_thread(new_task, (void *) _start);
 
-    uint32_t *stack_top = (uint32_t * )((uint32_t) new_task->kernel_stack + STACK_SIZE);
+    uint32_t *stack_top = (uint32_t *) ((uint32_t) new_task->kernel_stack + STACK_SIZE);
     *(--stack_top) = (uint32_t) _start;
     *(--stack_top) = (uint32_t) process_exit;
     *(--stack_top) = (uint32_t) switch_to_user_mode;
@@ -152,13 +153,13 @@ int create_user_process(const char* path,const char* cmdline,char* name,uint8_t 
 }
 
 
-int create_kernel_thread(int (*_start)(void* arg),void *args,char* name){ //创建内核进程 (内核线程)
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name) { //创建内核进程 (内核线程)
     io_cli();
     pcb_t *new_task = kmalloc(STACK_SIZE);
     memset(new_task, 0, sizeof(pcb_t));
 
     new_task->task_level = TASK_KERNEL_LEVEL;
-    strcpy(new_task->name,name);
+    strcpy(new_task->name, name);
     new_task->pid = now_pid++;
     new_task->program_break = program_break;
     new_task->program_break_end = program_break_end;
@@ -172,7 +173,7 @@ int create_kernel_thread(int (*_start)(void* arg),void *args,char* name){ //创�
     new_task->kernel_stack = new_task;
     new_task->status = RUNNING;
     for (int i = 0; i < 255; i++) new_task->file_table[i] = NULL;
-    uint32_t *stack_top = (uint32_t * )((uint32_t) new_task + STACK_SIZE);
+    uint32_t *stack_top = (uint32_t *) ((uint32_t) new_task + STACK_SIZE);
     *(--stack_top) = (uint32_t) args;
     *(--stack_top) = (uint32_t) process_exit;
     *(--stack_top) = (uint32_t) _start;
@@ -193,32 +194,32 @@ void kill_all_proc() {
             return;
         }
         if (head->pid == get_current_proc()->pid) continue;
-        printk("Kill process [PID: %d].\n",head->pid);
+        printk("Kill process [PID: %d].\n", head->pid);
         kill_proc(head);
     }
 }
 
-void kill_proc(pcb_t *pcb){
+void kill_proc(pcb_t *pcb) {
     io_cli();
     disable_scheduler();
     if (pcb->pid == 0) {
-        klogf(false,"Cannot kill kernel processes.\n");
+        klogf(false, "Cannot kill kernel processes.\n");
         io_sti();
         return;
     }
 
     pcb->status = DEATH;
 
-    for (int i = 0; i < 255; i++){
+    for (int i = 0; i < 255; i++) {
         cfile_t file = pcb->file_table[i];
-        if(file != NULL){
+        if (file != NULL) {
             vfs_close(file->handle);
         }
     }
 
-    if(pcb->task_level == TASK_KERNEL_LEVEL){
+    if (pcb->task_level == TASK_KERNEL_LEVEL) {
 
-    } else{
+    } else {
         kfree(pcb->data);
         vfs_close(pcb->exe_file);
         put_directory(pcb->pgd_dir);
@@ -242,32 +243,32 @@ void kill_proc(pcb_t *pcb){
     }
 }
 
-pcb_t *found_pcb(int pid){
+pcb_t *found_pcb(int pid) {
     pcb_t *l = running_proc_head;
-    while (l->pid != pid){
+    while (l->pid != pid) {
         l = l->next;
-        if(l == NULL || l == running_proc_head) return NULL;
+        if (l == NULL || l == running_proc_head) return NULL;
     }
     return l;
 }
 
-void init_pcb(){
+void init_pcb() {
     current_pcb = kmalloc(sizeof(pcb_t));
 
     current_pcb->task_level = TASK_KERNEL_LEVEL;
     current_pcb->pid = now_pid++;
-    strcpy(current_pcb->name,"CP_IDLE");
+    strcpy(current_pcb->name, "CP_IDLE");
     current_pcb->next = current_pcb;
     current_pcb->kernel_stack = current_pcb;
     current_pcb->tty = &default_tty;
     current_pcb->sche_time = 1;
     current_pcb->pgd_dir = kernel_directory;
-    current_pcb->context.esp = (uint32_t )current_pcb->kernel_stack;
+    current_pcb->context.esp = (uint32_t) current_pcb->kernel_stack;
     current_pcb->cpu_clock = 0;
     for (int i = 0; i < 255; i++) current_pcb->file_table[i] = NULL;
     current_pcb->program_break = program_break;
     current_pcb->program_break_end = program_break_end;
 
     running_proc_head = current_pcb;
-    klogf(true,"Load task schedule. | KernelProcessName: %s PID: %d\n",current_pcb->name,current_pcb->pid);
+    klogf(true, "Load task schedule. | KernelProcessName: %s PID: %d\n", current_pcb->name, current_pcb->pid);
 }

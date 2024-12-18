@@ -8,13 +8,14 @@
 
 #include "stb_sprintf.h"
 #include "video.h"
+#include "cmos.h"
 
 extern tty_t default_tty;
 
 void logkf(char *formet, ...) {
     va_list ap;
     va_start(ap, formet);
-    char *buf[1024] = {0};
+    char buf[1024] = {0};
     stbsp_vsprintf(buf, formet, ap);
     logk(buf);
     va_end(ap);
@@ -31,7 +32,7 @@ void logk(const char *message) {
 void printk(const char *format, ...) {
     va_list ap;
     va_start(ap, format);
-    char *buf[1024] = {0};
+    char buf[1024] = {0};
     stbsp_vsprintf(buf, format, ap);
     k_print(buf);
     va_end(ap);
@@ -45,10 +46,19 @@ void k_print(const char *message) {
     } else default_tty.print(&default_tty, message);
 }
 
+void dlogf(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    char buf[1024] = {0};
+    stbsp_vsprintf(buf, fmt, ap);
+
+    printk("[%d:%d:%d]: %s", get_hour(), get_min(), get_sec(), buf);
+}
+
 void klogf(bool isok, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    char *buf[1024] = {0};
+    char buf[1024] = {0};
     stbsp_vsprintf(buf, fmt, ap);
 
     printk("[%s]: %s", isok ? "  \033[32mOK\033[39m  " : "\033[31mFAILED\033[39m", buf);
