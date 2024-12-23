@@ -32,7 +32,6 @@ You need to install them on your computer:
 ### Steps
 
 - Run `xmake run` on your terminal then it will build and run automatically
-- `init.bash` and `build.bash` are deprecated currently
 
 ## License
 
