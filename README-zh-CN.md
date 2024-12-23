@@ -32,7 +32,6 @@
 ### 步骤
 
 - 在终端上运行 `xmake run`，项目将开始构建并运行
-- `init.bash` and `build.bash` 目前已弃用
 
 ## 许可协议
 
