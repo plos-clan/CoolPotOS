@@ -1,4 +1,4 @@
-# CoolPorOS for x86
+# CoolPotOS for x86
 
 ## Translations
 
