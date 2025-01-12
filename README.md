@@ -52,3 +52,4 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * A4-Tacks - Write some build scripts
 * wenxuanjun - OS Developer
 * Minsecrus - OS Developer
+* CLimber-Rong - Software Developer
