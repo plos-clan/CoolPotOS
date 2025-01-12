@@ -52,3 +52,4 @@
 * A4-Tacks - 编写一些构建脚本
 * wenxuanjun - OS 重构开发
 * Minsecrus - OS 重构开发
+* CLimber-Rong - 软件开发
