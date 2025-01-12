@@ -1,5 +1,4 @@
 #include "serial.h"
-#include "io.h"
 
 int init_serial() {
     io_out8(SERIAL_PORT + 1, 0x00); // 禁止COM的中断发生
@@ -16,23 +15,19 @@ int init_serial() {
     if (io_in8(SERIAL_PORT + 0) != 0xAE) {
         return 1;
     }
+
     // 如果串口没有故障，将其设置为正常运行模式。
     // (非环回，启用IRQ，启用OUT#1和OUT#2位)
     io_out8(SERIAL_PORT + 4, 0x0F);
     return 0;
 }
-int serial_received() { return io_in8(SERIAL_PORT + 5) & 1; }
 
 char read_serial() {
-    while (serial_received() == 0)
-        ;
-
+    while ((io_in8(SERIAL_PORT + 5) & 1) == 0);
     return io_in8(SERIAL_PORT);
 }
-int is_transmit_empty() { return io_in8(SERIAL_PORT + 5) & 0x20; }
 
 void write_serial(char a) {
-    //return;
-    while (is_transmit_empty() == 0);
+    while ((io_in8(SERIAL_PORT + 5) & 0x20) == 0);
     io_out8(SERIAL_PORT, a);
 }

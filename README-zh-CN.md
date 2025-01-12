@@ -7,7 +7,7 @@
 
 ## 介绍
 
-这是一个基于 x86 架构的简单操作系统。
+这是一个适用于 x86_64 架构的简单操作系统
 
 ## 模块
 
@@ -24,7 +24,7 @@
 
 - Xmake
 - NASM
-- Zig（如果 xmake 无法为您下载它，您可以手动安装）
+- Clang（如果 xmake 无法为您下载它，您可以手动安装）
 - Windows subsystem for Linux (Ubuntu 22.04)
     - xorriso
     - qemu-system-i386
@@ -43,13 +43,5 @@
 
 ### 贡献者们
 
-* XIAOYI12 - xiaoyi1212 负责主要的OS开发
-* min0911Y - min0911 负责OS文件系统开发
-* copi143 - copi143 新版用户堆框架开发
-* QtLittleXu - XuYuxuan 负责OS文档编写
-* ViudiraTech - Uinxed-Mark 性能测试程序
-* VinbeWan - 负责驱动程序开发
-* A4-Tacks - 编写一些构建脚本
-* wenxuanjun - OS 重构开发
-* Minsecrus - OS 重构开发
-* CLimber-Rong - 软件开发
+* XIAOYI12 - OS 主要开发者
+* wenxuanjun - OS 主要开发者
