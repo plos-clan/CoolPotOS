@@ -41,5 +41,3 @@ void gdt_setup();
 void tss_setup();
 
 void idt_setup();
-
-void register_interrupt_handler(uint16_t vector, void *handler, uint8_t ist, uint8_t flags);

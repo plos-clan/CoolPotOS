@@ -82,6 +82,7 @@ void io_apic_init(){
     ioapic_address = (uint64_t)phys_to_virt(ioapic_address);
     ioapic_add((uint8_t)timer,0);
     ioapic_add((uint8_t)keyboard,1);
+    ioapic_add((uint8_t)mouse,12);
     kinfo("Setup I/O apic.", ioapic_address);
 }
 

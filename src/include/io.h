@@ -25,6 +25,16 @@ static inline void io_out16(uint16_t port, uint16_t data) {
     __asm__ volatile("outw %w0, %w1" : : "a"(data), "Nd"(port));
 }
 
+static inline uint32_t io_in32(uint16_t port){
+    uint32_t data;
+    __asm__ volatile("inl %1, %0" : "=a"(data) : "Nd"(port));
+    return data;
+}
+
+static inline void io_out32(uint16_t port, uint32_t data) {
+    __asm__ volatile("outl %0, %1" : : "a"(data), "Nd"(port));
+}
+
 static inline void flush_tlb(uint64_t addr) {
     __asm__ volatile("invlpg (%0)"::"r" (addr) : "memory");
 }

@@ -66,9 +66,10 @@ target("iso")
             "-no-reboot",
             "-enable-kvm",
             "-d", "in_asm,int",
+            "-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso"
         }
         
-        os.execv("qemu-system-x86_64" , flags)
+        os.execv("qemu-system-x86_64 " , flags)
     end)

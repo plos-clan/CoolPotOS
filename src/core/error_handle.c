@@ -1,4 +1,3 @@
-#include "description_table.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "isr.h"
