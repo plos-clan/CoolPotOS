@@ -15,5 +15,5 @@ struct interrupt_frame {
 };
 
 typedef struct interrupt_frame interrupt_frame_t;
-
+void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame);
 void send_eoi();

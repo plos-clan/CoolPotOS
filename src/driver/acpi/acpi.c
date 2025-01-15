@@ -4,6 +4,7 @@
 #include "limine.h"
 #include "hhdm.h"
 
+
 XSDT *xsdt;
 
 __attribute__((used, section(".limine_requests")))
@@ -55,4 +56,12 @@ void acpi_setup() {
         return;
     } else
         apic_setup(apic);
+
+
+    void* facp = find_table("FACP");
+    if(facp == NULL) {
+        kwarn("Cannot find acpi facp table.");
+        return;
+    } else
+        setup_facp(facp);
 }

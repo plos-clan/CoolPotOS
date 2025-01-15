@@ -15,6 +15,16 @@ static inline uint8_t io_in8(uint16_t port) {
     return data;
 }
 
+static inline uint16_t io_in16(uint16_t port) {
+    uint16_t data;
+    __asm__ volatile("inw %w1, %w0" : "=a"(data) : "Nd"(port));
+    return data;
+}
+
+static inline void io_out16(uint16_t port, uint16_t data) {
+    __asm__ volatile("outw %w0, %w1" : : "a"(data), "Nd"(port));
+}
+
 static inline void flush_tlb(uint64_t addr) {
     __asm__ volatile("invlpg (%0)"::"r" (addr) : "memory");
 }
