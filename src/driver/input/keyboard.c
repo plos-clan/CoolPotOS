@@ -1,3 +1,4 @@
+#include "keyboard.h"
 #include "isr.h"
 #include "description_table.h"
 #include "krlibc.h"
@@ -21,7 +22,6 @@ char keytable1[0x54] = { // 未按下Shift
         'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm',
         ',', '.', '/', 0, '*', 0, ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.'};
-
 
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame){

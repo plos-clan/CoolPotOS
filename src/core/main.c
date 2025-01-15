@@ -7,10 +7,15 @@
 #include "heap.h"
 #include "krlibc.h"
 #include "acpi.h"
+#include "timer.h"
 #include "power.h"
 #include "description_table.h"
 #include "page.h"
+#include "keyboard.h"
 #include "cpuid.h"
+#include "pcb.h"
+#include "pci.h"
+#include "speaker.h"
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(2)
@@ -22,7 +27,6 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
-extern void keyboard_setup(); //keyboard.c
 
 void kmain(void) {
     init_gop();
@@ -43,8 +47,14 @@ void kmain(void) {
 
     acpi_setup();
     keyboard_setup();
-
+    mouse_setup();
+    char* date = get_date_time();
+    kinfo("RTC time %s",date);
+    free(date);
+    pci_setup();
+    init_pcb();
     kinfo("Kernel load Done!");
+    beep();
     open_interrupt;
 
     cpu_hlt;
