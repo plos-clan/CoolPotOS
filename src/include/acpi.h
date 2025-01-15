@@ -5,6 +5,13 @@
 #define MADT_APIC_INT 0x02
 #define MADT_APIC_NMI 0x03
 
+#define LAPIC_REG_ID 32
+#define LAPIC_REG_TIMER_CURCNT 0x390
+#define LAPIC_REG_TIMER_INITCNT 0x380
+#define LAPIC_REG_TIMER 0x320
+#define LAPIC_REG_SPURIOUS 0xf0
+#define LAPIC_REG_TIMER_DIV 0x3e0
+
 #include "ctype.h"
 
 typedef struct {
@@ -114,5 +121,9 @@ void acpi_setup();
 void apic_setup(MADT *madt);
 
 void *find_table(const char *name);
+
+uint64_t lapic_id();
+
+void ioapic_add(uint8_t vector, uint32_t irq);
 
 void hpet_init(Hpet *hpetInfo);
