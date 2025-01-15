@@ -7,7 +7,7 @@
 #include "isr.h"
 
 bool x2apic_mode;
-uint32_t lapic_address;
+uint64_t lapic_address;
 uint64_t ioapic_address;
 
 __attribute__((used, section(".limine_requests")))
@@ -72,16 +72,17 @@ void local_apic_init() {
     for (;;) if (nanoTime() - b >= 1000000) break;
     uint64_t lapic_timer = (~(uint32_t) 0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     uint64_t calibrated_timer_initial = (uint64_t) ((uint64_t) (lapic_timer * 1000) / 250);
-    kinfo("Calibrated LAPIC timer: %d ticks per second.", calibrated_timer_initial);
+    printk("Calibrated LAPIC timer: %d ticks per second.\n", calibrated_timer_initial);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT,calibrated_timer_initial);
+    kinfo("Setup local %s.",x2apic_mode ? "x2APIC" : "APIC");
 }
 
 void io_apic_init(){
     ioapic_address = (uint64_t)phys_to_virt(ioapic_address);
     ioapic_add((uint8_t)timer,0);
     ioapic_add((uint8_t)keyboard,1);
-    kinfo("IO APIC address: 0x%p", ioapic_address);
+    kinfo("Setup I/O apic.", ioapic_address);
 }
 
 void send_eoi(){

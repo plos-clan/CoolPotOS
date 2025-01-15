@@ -7,7 +7,7 @@
 #include "heap.h"
 #include "krlibc.h"
 #include "acpi.h"
-#include "klog.h"
+#include "power.h"
 #include "description_table.h"
 #include "page.h"
 #include "cpuid.h"

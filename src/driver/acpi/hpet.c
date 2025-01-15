@@ -15,6 +15,24 @@ __IRQHANDLER void timer_handle(interrupt_frame_t *frame) {
     send_eoi();
 }
 
+void usleep(uint64_t nano) {
+    uint64_t targetTime = nanoTime();
+    uint64_t after = 0;
+    while (1) {
+        uint64_t n = nanoTime();
+        if (n < targetTime) {
+            after += 0xffffffff - targetTime + n;
+            targetTime = n;
+        } else {
+            after += n - targetTime;
+            targetTime = n;
+        }
+        if (after >= nano) {
+            return;
+        }
+    }
+}
+
 uint64_t nanoTime() {
     if (hpet_addr == NULL) return 0;
     uint64_t mcv = hpet_addr->mainCounterValue;
@@ -27,5 +45,5 @@ void hpet_init(Hpet *hpet) {
     hpetPeriod = counterClockPeriod / 1000000;
     hpet_addr->generalConfiguration |= 1;
     register_interrupt_handler(timer, (void *) timer_handle,0,0x8E);
-    kinfo("HPET (nano_time: %d) address: 0x%p",(uint64_t)nanoTime(), hpet_addr);
+    kinfo("Setup acpi hpet table (nano_time: %d).",(uint64_t)nanoTime());
 }

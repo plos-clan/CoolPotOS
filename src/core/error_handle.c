@@ -16,7 +16,7 @@ static void print_register(interrupt_frame_t *frame){
     printk("rflags: 0x%p \n", frame->rflags);
 }
 
-static void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
+void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
     print_register(frame);
     for(;;) cpu_hlt;
