@@ -23,7 +23,7 @@ typedef struct {
 } page_table_t;
 
 typedef struct page_directory {
-    uint64_t tables[1024];
+    page_table_t *table;
 } page_directory_t;
 
 void page_setup();

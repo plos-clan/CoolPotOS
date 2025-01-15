@@ -40,16 +40,7 @@ void acpi_setup() {
         kwarn("Cannot find acpi xsdt table.");
         return;
     }
-
     xsdt = (XSDT *) phys_to_virt((uint64_t) xsdt);
-    kinfo("Found acpi xsdt table at 0x%p", xsdt);
-
-    void *apic = find_table("APIC");
-    if (apic == NULL) {
-        kwarn("Cannot find acpi apic table.");
-        return;
-    } else
-        apic_setup(apic);
 
     void *hpet = find_table("HPET");
     if (hpet == NULL) {
@@ -57,4 +48,11 @@ void acpi_setup() {
         return;
     } else
         hpet_init(hpet);
+
+    void *apic = find_table("APIC");
+    if (apic == NULL) {
+        kwarn("Cannot find acpi apic table.");
+        return;
+    } else
+        apic_setup(apic);
 }

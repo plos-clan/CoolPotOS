@@ -22,6 +22,7 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
+extern void keyboard_setup(); //keyboard.c
 
 void kmain(void) {
     init_gop();
@@ -33,15 +34,15 @@ void kmain(void) {
 
     printk("CoolPotOS %s (Limine Bootloader) on an x86_64\n", KERNEL_NAME);
     init_cpuid();
-    kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
+    printk("Video: 0x%p - %d x %d\n", framebuffer->address, framebuffer->width, framebuffer->height);
 
     gdt_setup();
     idt_setup();
     error_setup();
     page_setup();
 
-
     acpi_setup();
+    keyboard_setup();
 
     kinfo("Kernel load Done!");
     open_interrupt;

@@ -45,5 +45,5 @@ void init_cpuid() {
     get_vendor_name();
     get_model_name();
     get_cpu_address_sizes();
-    kinfo("CPUID: %s %s | phy/virt: %d/%d bits", cpu.vendor, cpu.model_name, cpu.phys_bits, cpu.virt_bits);
+    printk("CPU: %s %s | phy/virt: %d/%d bits\n", cpu.vendor, cpu.model_name, cpu.phys_bits, cpu.virt_bits);
 }
