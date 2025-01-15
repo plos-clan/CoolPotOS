@@ -12,9 +12,7 @@
 ## 模块
 
 * `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
-* `Uinxed-Mark` by ViudiraTech [ViudiraTech/Uinxed-Kernel](https://github.com/ViudiraTech/Uinxed-Kernel)
 * `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-* `libelf_parser` by wenxuanjun [plos-clan/libelf_parser](https://github.com/plos-clan/libelf-parse)
 
 ## 构建并运行
 
@@ -39,17 +37,17 @@
 
 ## 贡献
 
-欢迎为这个项目提交 PR 或 issue，我会非常高兴看到它！
+欢迎为这个项目提交 PR 或 issue，`然后坐和放宽`
 
 ### 贡献者们
 
-* XIAOYI12 - xiaoyi1212 负责主要的OS开发
-* min0911Y - min0911 负责OS文件系统开发
-* copi143 - copi143 新版用户堆框架开发
-* QtLittleXu - XuYuxuan 负责OS文档编写
-* ViudiraTech - Uinxed-Mark 性能测试程序
-* VinbeWan - 负责驱动程序开发
+* XIAOYI12 - 负责主要的OS开发
+* min0911Y - 负责OS文件系统开发
+* copi143 - 新版用户堆框架开发
+* QtLittleXu - 负责OS文档编写
+* ViudiraTech - PCI驱动优化
+* VinbeWan - IIC驱动程序开发
 * A4-Tacks - 编写一些构建脚本
 * wenxuanjun - OS 重构开发
-* Minsecrus - OS 重构开发
+* Minsecrus - OS 内存统计算法优化
 * CLimber-Rong - 软件开发
