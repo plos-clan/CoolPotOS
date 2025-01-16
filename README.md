@@ -1,4 +1,4 @@
-# CoolPotOS for x86
+# CoolPotOS for x86_64
 
 ## Translations
 
@@ -12,6 +12,7 @@ This is a simple operating system for x86_64 architecture.
 ## Model
 
 * `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 
 ## Build & Run
 
@@ -20,11 +21,11 @@ This is a simple operating system for x86_64 architecture.
 You need to install them on your computer:
 
 - Xmake
-- NASM
+- NASM (No x86_64)
 - Clang (you can install manually if xmake cannot download it for you)
 - Windows subsystem for Linux (Ubuntu 22.04)
     - xorriso
-    - qemu-system-i386
+    - qemu-system-x86_64
 
 ### Steps
 
@@ -40,5 +41,13 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 
 ### Contributors
 
-* XIAOYI12 - xiaoyi12 OS Development
+* XIAOYI12 - OS Development
+* min0911Y - OS FileSystem Development
+* copi143 - UserHeap Development
+* QtLittleXu - XuYuxuan OS Document
+* ViudiraTech - PCI driver optimization
+* Vinbe Wan - IIC Development
+* A4-Tacks - Write some build scripts
 * wenxuanjun - OS Developer
+* Minsecrus - Memory usage optimization
+* CLimber-Rong - Software Developer
