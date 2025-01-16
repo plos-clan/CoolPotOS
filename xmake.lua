@@ -15,7 +15,7 @@ add_ldflags("-target x86_64-freestanding")
 
 add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
 add_cflags("-mno-red-zone", "-mcmodel=kernel", "-fno-sanitize=undefined","-Werror")
-add_ldflags("-static","-nostdlib")
+add_ldflags("-static","-nostdlib","-nostdinc")
 
 target("kernel")
     set_kind("binary")
