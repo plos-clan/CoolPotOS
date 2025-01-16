@@ -15,6 +15,7 @@
 #include "cpuid.h"
 #include "pcb.h"
 #include "pci.h"
+#include "ahci.h"
 #include "speaker.h"
 
 __attribute__((used, section(".limine_requests")))
@@ -51,7 +52,11 @@ void kmain(void) {
     char* date = get_date_time();
     kinfo("RTC time %s",date);
     free(date);
+
     pci_setup();
+    ahci_setup();
+
+
     init_pcb();
     kinfo("Kernel load Done!");
     beep();
