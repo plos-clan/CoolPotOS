@@ -2,9 +2,9 @@ name: CI Workflow
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main","x86_64"]
   pull_request:
-    branches: ["main"]
+    branches: ["main","x86_64"]
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
     - name: Install packages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: xorriso mtools nasm
+        packages: xorriso nasm clang
         version: 1.0
 
     - name: Setup BuildTools
