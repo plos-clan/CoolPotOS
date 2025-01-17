@@ -39,7 +39,7 @@ static int cmd_parse(char *cmd_str, char **argv, char token) {
     char *next = cmd_str;
     int argc = 0;
     int in_quote = 0;  // 用于跟踪是否在引号内
-
+	char quote_char;
     while (*next) {
         // 跳过分隔符
         while (*next == token && !in_quote) {
@@ -54,7 +54,7 @@ static int cmd_parse(char *cmd_str, char **argv, char token) {
         // 检查是否进入引号
         if (*next == '"' || *next == '\'') {
             in_quote = 1;
-            char quote_char = *next;
+            quote_char = *next;
             next++;
             continue;
         }
