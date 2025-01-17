@@ -23,8 +23,10 @@ void free_pages(){
             page_table_t *table = dir->tables[i];
             if(table == NULL) continue;
             for (int j = 0; j < 1024; j++) {
-                page_t page = table->pages[i];
+                page_t page = table->pages[j];
+                //TODO:此处存疑，此处数组下标应为j，源代码为i，猜测由于二者皆递增且范围一样，没有出现问题，理论上会导致没法遍历整个内存表，因环境问题无法测试，作此标注
                 free_frame(&page);
+
             }
             kfree(table);
         }
