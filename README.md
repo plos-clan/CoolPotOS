@@ -51,3 +51,4 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 * wenxuanjun - OS Developer
 * Minsecrus - Memory usage optimization
 * CLimber-Rong - Software Developer
+* shiyu - Debuger and Annotation writer
