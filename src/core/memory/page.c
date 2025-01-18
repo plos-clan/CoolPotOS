@@ -123,7 +123,7 @@ static void open_page() { //打开分页机制
 
 void switch_page_directory(page_directory_t *dir) {
     current_directory = dir;//更新当前页面目录
-    __asm__ volatile("mov %0, %%cr3" : : "r"(&dir->table_phy))//切换页面目录
+    __asm__ volatile("mov %0, %%cr3" : : "r"(&dir->table_phy));//切换页面目录
 }
 
 static page_table_t *clone_table(page_table_t *src, uint32_t *physAddr) {
