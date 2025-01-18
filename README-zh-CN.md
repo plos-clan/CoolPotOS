@@ -54,3 +54,4 @@
 * CLimber-Rong - 软件开发
 * shiyu - 负责到处捉虫和帮助代码添加注释
 * 27Onion - 翻译了法语README
+* LY-Xiang - 优化了 actions 流程
