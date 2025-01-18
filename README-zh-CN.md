@@ -4,6 +4,7 @@
 
 - [English](README.md)
 - [中文](README-zh-CN.md)
+- [Français](README-fr-FR.md)
 
 ## 介绍
 
@@ -52,3 +53,4 @@
 * Minsecrus - OS 内存统计算法优化
 * CLimber-Rong - 软件开发
 * shiyu - 负责到处捉虫和帮助代码添加注释
+* 27Onion - 翻译了法语README
