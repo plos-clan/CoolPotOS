@@ -65,8 +65,6 @@ uint64_t alloc_frames(size_t count) {
     Bitmap *bitmap = &frame_allocator.bitmap;
     size_t frame_index = bitmap_find_range(bitmap, count, true);
 
-    logkf("frame_index: %d\n", frame_index);
-
     if (frame_index == (size_t) -1) return 0;
     bitmap_set_range(bitmap, frame_index, frame_index + count, false);
     frame_allocator.usable_frames -= count;

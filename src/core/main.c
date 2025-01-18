@@ -34,6 +34,7 @@ void kmain(void) {
     init_serial();
     init_hhdm();
     init_frame();
+    page_setup();
     init_heap();
     init_terminal();
 
@@ -44,7 +45,6 @@ void kmain(void) {
     gdt_setup();
     idt_setup();
     error_setup();
-    page_setup();
 
     acpi_setup();
     keyboard_setup();

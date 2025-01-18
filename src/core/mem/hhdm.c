@@ -13,6 +13,10 @@ void init_hhdm() {
     physical_memory_offset = hhdm_request.response->offset;
 }
 
+uint64_t get_physical_memory_offset() {
+    return physical_memory_offset;
+}
+
 void *phys_to_virt(uint64_t phys_addr) {
     return (void *) (phys_addr + physical_memory_offset);
 }

@@ -12,6 +12,11 @@
 #define mem_mapping 0
 #define input_output 1
 
+#define PCI_RCMD_DISABLE_INTR (1 << 10)
+#define  PCI_RCMD_BUS_MASTER (1 << 2)
+#define PCI_RCMD_IO_ACCESS 1
+#define PCI_RCMD_MM_ACCESS 2
+
 #include "ctype.h"
 
 struct pci_device{
