@@ -4,12 +4,13 @@
 
 - [English](README.md)
 - [中文](README-zh-CN.md)
+- [Français](README-fr-FR.md)
 
 ## Introduction
 
 This is a simple operating system for x86 architecture.
 
-## Model
+## Modules
 
 * `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 * `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
@@ -45,10 +46,11 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 * min0911Y - OS FileSystem Development
 * copi143 - UserHeap Development
 * QtLittleXu - XuYuxuan OS Document
-* ViudiraTech - PCI driver optimization
+* ViudiraTech - PCI Driver Optimization
 * Vinbe Wan - IIC Development
-* A4-Tacks - Write some build scripts
+* A4-Tacks - Write Some Build Scripts
 * wenxuanjun - OS Developer
-* Minsecrus - Memory usage optimization
+* Minsecrus - Memory Usage Optimization
 * CLimber-Rong - Software Developer
-* shiyu - Debuger and Annotation writer
+* shiyu - Debugger and Comments Writer
+* 27Onion - Translated French README
