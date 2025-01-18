@@ -54,3 +54,4 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 * CLimber-Rong - Software Developer
 * shiyu - Debugger and Comments Writer
 * 27Onion - Translated French README
+* LY-Xiang - Optimized actions process
