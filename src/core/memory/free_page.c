@@ -56,7 +56,7 @@ uint32_t get_all_memusage(){ //获取总内存占用
  * 用于回收进程创建的页表项, 由于进程退出过程中还是在该进程的页表中无法直接回收
  * 故移动到内核IDLE进程统一回收处理
 */
-void setup_free_page(){ //初始化内存管理队列
+void setup_free_page(){ //初始化列表释放队列
     fifo8 = kmalloc(sizeof(struct FIFO8));
     uint8_t *buf = kmalloc(sizeof(uint32_t) * MAX_FREE_QUEUE);
     fifo8_init(fifo8,sizeof(uint32_t) * MAX_FREE_QUEUE,buf);
