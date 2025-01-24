@@ -29,6 +29,15 @@ static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
 
+int func(void *pVoid) {
+    UNUSED(pVoid);
+    while (1){
+        printk("Hello World!\n");
+        usleep(1000);
+    }
+    return 0;
+}
+
 void kmain(void) {
     init_gop();
     init_serial();
@@ -37,7 +46,7 @@ void kmain(void) {
     page_setup();
     init_heap();
     init_terminal();
-
+    init_tty();
     printk("CoolPotOS %s (Limine Bootloader) on an x86_64\n", KERNEL_NAME);
     init_cpuid();
     printk("Video: 0x%p - %d x %d\n", framebuffer->address, framebuffer->width, framebuffer->height);
@@ -56,10 +65,12 @@ void kmain(void) {
     pci_setup();
     ahci_setup();
 
-
     init_pcb();
+
+   // create_kernel_thread(func, NULL, "Test");
     kinfo("Kernel load Done!");
     beep();
+
     open_interrupt;
 
     cpu_hlt;

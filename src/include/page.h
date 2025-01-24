@@ -25,4 +25,7 @@ typedef struct page_directory {
 page_directory_t *get_kernel_pagedir();
 void page_map_to(page_directory_t *directory,uint64_t addr,uint64_t frame,uint64_t flags);
 void page_map_range_to(page_directory_t *directory,uint64_t frame,uint64_t length,uint64_t flags);
+page_directory_t *clone_directory(page_directory_t *src);
+void switch_page_directory(page_directory_t *dir);
+page_directory_t *get_current_directory();
 void page_setup();

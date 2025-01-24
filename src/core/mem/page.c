@@ -1,23 +1,32 @@
 #include "page.h"
-#include "description_table.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "hhdm.h"
 #include "io.h"
 #include "isr.h"
 #include "frame.h"
+#include "alloc.h"
+#include "klog.h"
 
 page_directory_t kernel_page_dir;
+page_directory_t *current_directory = NULL;
+
+static bool is_huge_page(page_table_entry_t *entry){
+    return (((uint64_t)entry) & PTE_HUGE) != 0;
+}
 
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t error_code) {
+    close_interrupt;
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
+    logkf("Page fault, virtual address 0x%x\n", faulting_address);
     kerror("Page fault, virtual address 0x%x", faulting_address);
     kerror("Error code: %s\n", !(error_code & 0x1) ? "Page not present" :
                                 error_code & 0x2 ? "Write error" :
                                 error_code & 0x4 ? "User mode" :
                                 error_code & 0x8 ? "Reserved bits set" :
                                 error_code & 0x10 ? "Decode address" : "Unknown");
+    print_register(frame);
     cpu_hlt;
 }
 
@@ -43,6 +52,40 @@ page_directory_t *get_kernel_pagedir(){
     return &kernel_page_dir;
 }
 
+page_directory_t *get_current_directory(){
+    return current_directory;
+}
+
+static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table, int level) {
+    if (level == 0) {
+        for (int i = 0; i < 512; i++) {
+            new_table->entries[i].value = source_table->entries[i].value;
+        }
+        return;
+    }
+
+    for (int i = 0; i < 512; i++) {
+        if (source_table->entries[i].value == 0) {
+            new_table->entries[i].value = 0;
+            continue;
+        }
+        page_table_t *source_next_level = (page_table_t *)phys_to_virt(source_table->entries[i].value & 0xFFFFFFFFFFFFF000);
+        page_table_t *new_next_level = page_table_create(&(new_table->entries[i]));
+        new_table->entries[i].value = (uint64_t)new_next_level | (source_table->entries[i].value & 0xFFF);
+
+        copy_page_table_recursive(source_next_level, new_next_level, level - 1);
+    }
+}
+
+page_directory_t *clone_directory(page_directory_t *src){
+    page_directory_t *new_directory = malloc(sizeof(page_directory_t));
+    new_directory->table = malloc(sizeof(page_table_t));
+
+    copy_page_table_recursive(src->table, new_directory->table, 3);
+
+    return new_directory;
+}
+
 void page_map_to(page_directory_t *directory,uint64_t addr,uint64_t frame,uint64_t flags){
     uint64_t l4_index = (((addr >> 39)) & 0x1FF);
     uint64_t l3_index = (((addr >> 30)) & 0x1FF);
@@ -59,6 +102,12 @@ void page_map_to(page_directory_t *directory,uint64_t addr,uint64_t frame,uint64
     flush_tlb(addr);
 }
 
+void switch_page_directory(page_directory_t *dir){
+    current_directory = dir;
+    page_table_t *physical_table = virt_to_phys((uint64_t)dir->table);
+    __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
+}
+
 void page_map_range_to(page_directory_t *directory,uint64_t frame,uint64_t length,uint64_t flags){
     for(uint64_t i = 0;i < length;i += 0x1000){
         uint64_t var = (uint64_t)phys_to_virt(frame + i);
@@ -70,5 +119,6 @@ void page_setup() {
     page_table_t *kernel_page_table = (page_table_t *) phys_to_virt(get_cr3());
     kernel_page_dir = (page_directory_t){.table = kernel_page_table};
     register_interrupt_handler(14, (void *) page_fault_handle, 0, 0x8E);
+    current_directory = &kernel_page_dir;
     kinfo("Kernel page table in 0x%p", kernel_page_table);
 }

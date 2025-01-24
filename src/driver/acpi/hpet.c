@@ -4,14 +4,12 @@
 #include "hhdm.h"
 #include "krlibc.h"
 #include "isr.h"
-#include "description_table.h"
+#include "scheduler.h"
 
 HpetInfo *hpet_addr;
 static uint32_t hpetPeriod = 0;
 
 __IRQHANDLER void timer_handle(interrupt_frame_t *frame) {
-    UNUSED(frame);
-
     send_eoi();
 }
 
@@ -44,6 +42,6 @@ void hpet_init(Hpet *hpet) {
     uint32_t counterClockPeriod = hpet_addr->generalCapabilities >> 32;
     hpetPeriod = counterClockPeriod / 1000000;
     hpet_addr->generalConfiguration |= 1;
-    register_interrupt_handler(timer, (void *) timer_handle,0,0x8E);
-    kinfo("Setup acpi hpet table (nano_time: %d).",(uint64_t)nanoTime());
+    register_interrupt_handler(timer, (void *) timer_handle, 0, 0x8E);
+    kinfo("Setup acpi hpet table (nano_time: %d).", (uint64_t) nanoTime());
 }

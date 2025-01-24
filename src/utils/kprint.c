@@ -2,6 +2,7 @@
 #include "krlibc.h"
 #include "os_terminal.h"
 #include "sprintf.h"
+#include "pcb.h"
 
 static char *const color_codes[] = {
     [BLACK] = "0",
@@ -34,5 +35,7 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     strcat(buf, buf + 11);
     strcat(buf, "\033[0m");
 
-    terminal_process(buf);
+    if(get_current_task() != NULL)
+        get_current_task()->tty->print(get_current_task()->tty,buf);
+    else terminal_process(buf);
 }

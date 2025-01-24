@@ -8,12 +8,12 @@ struct idt_register {
 } __attribute__((packed));
 
 struct idt_entry {
-    uint16_t offset_low;
-    uint16_t selector;
+    uint16_t offset_low; //处理函数指针低16位地址
+    uint16_t selector; //段选择子
     uint8_t ist;
-    uint8_t flags;
-    uint16_t offset_mid;
-    uint32_t offset_hi;
+    uint8_t flags; //标志位
+    uint16_t offset_mid; //处理函数指针中16位地址
+    uint32_t offset_hi;//处理函数指针高32位地址
     uint32_t reserved;
 } __attribute__((packed));
 

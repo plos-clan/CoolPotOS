@@ -52,3 +52,7 @@ void tss_setup() {
 
     __asm__ volatile("ltr %[offset];" : : [offset]"rm"(0x28U) : "memory");
 }
+
+void set_kernel_stack(uint64_t rsp){
+    tss0.rsp[0] = rsp;
+}

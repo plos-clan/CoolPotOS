@@ -19,3 +19,4 @@ void register_interrupt_handler(uint16_t vector, void *handler, uint8_t ist, uin
     idt_entries[vector].offset_mid = (uint16_t) (addr >> 16);
     idt_entries[vector].offset_hi = (uint32_t) (addr >> 32);
 }
+
