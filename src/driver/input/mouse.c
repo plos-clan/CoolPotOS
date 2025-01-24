@@ -5,8 +5,8 @@
 
 __IRQHANDLER void mouse_handle(interrupt_frame_t *frame){
     UNUSED(frame);
-    printk("m");
     send_eoi();
+    printk("m");
 }
 
 void mouse_setup(){

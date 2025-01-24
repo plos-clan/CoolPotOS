@@ -49,6 +49,18 @@ static inline uint64_t get_cr3(void) {
     return cr0;
 }
 
+static inline uint64_t get_rflags(){
+    uint64_t rflags;
+    __asm__ volatile (
+            "pushfq\n"
+            "pop %0\n"
+            : "=r"(rflags)
+            :
+            : "memory"
+            );
+    return rflags;
+}
+
 static inline void mmio_write32(uint32_t * addr, uint32_t data) {
     *(volatile uint32_t *) addr = data;
 }

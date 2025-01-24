@@ -6,15 +6,25 @@
 
 #include "ctype.h"
 #include "isr.h"
+#include "page.h"
+#include "tty.h"
+#include "scheduler.h"
 
 struct process_control_block{
     uint8_t task_level;           // 进程等级< 0:内核 | 1:系统服务 | 2:应用程序 >
     int pid;                      // 进程 PID
+    char name[50];                // 进程名(可选)
     uint64_t cpu_clock;           // CPU 调度时间片
-    interrupt_frame_t context;    // 进程上下文
-
+    interrupt_frame_t context0;      // 进程上下文
+    page_directory_t *directory;  // 进程页目录
+    uint64_t kernel_stack;
+    tty_t *tty;                   // tty设备
+    struct process_control_block *next; // 下一个进程
 };
 
 typedef struct process_control_block *pcb_t;
 
+void add_task(pcb_t new_task);
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name);
+pcb_t get_current_task();
 void init_pcb();

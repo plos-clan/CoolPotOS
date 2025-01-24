@@ -1,6 +1,9 @@
 #pragma once
 
 #define KERNEL_NAME "CP_Kernel-x86_64-0.0.2"
+
+#define STACK_SIZE 32768
+
 #define cpu_hlt while(1) __asm__("hlt")
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define __IRQHANDLER __attribute__((interrupt))
