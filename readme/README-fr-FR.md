@@ -3,8 +3,8 @@
 ## Traductions 
 
 - [English](README.md)
-- [中文](README-zh-CN.md)
-- [Français](README-fr-FR.md)
+- [中文](readme/README-zh-CN.md)
+- **Français**
 
 ## Introduction
 
