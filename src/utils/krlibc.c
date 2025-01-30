@@ -83,3 +83,120 @@ char* strcat(char* dest, const char* src) {
     while ((*dest++ = *src++));
     return ret;
 }
+
+int strncmp(const char *s1, const char *s2, size_t n) {
+    const unsigned char *p1 = (const unsigned char *) s1,
+            *p2 = (const unsigned char *) s2;
+    while (n-- > 0) {
+        if (*p1 != *p2)
+            return *p1 - *p2;
+        if (*p1 == '\0')
+            return 0;
+        p1++, p2++;
+    }
+    return 0;
+}
+
+char *strcpy(char *dest, const char *src) {
+    do {
+        *dest++ = *src++;
+    } while (*src != 0);
+    *dest = 0;
+    return dest;
+}
+
+int strcmp(const char *s1, const char *s2) {
+    char is_equal = 1;
+
+    for (; (*s1 != '\0') && (*s2 != '\0'); s1++, s2++) {
+        if (*s1 != *s2) {
+            is_equal = 0;
+            break;
+        }
+    }
+
+    if (is_equal) {
+        if (*s1 != '\0') {
+            return 1;
+        } else if (*s2 != '\0') {
+            return -1;
+        } else {
+            return 0;
+        }
+    } else {
+        return (int) (*s1 - *s2);
+    }
+}
+
+int isspace(int c) {
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
+            c == '\v');
+}
+
+int64_t strtol(const char *str, char **endptr, int base) {
+    const char *s;
+    uint64_t acc;
+    char c;
+    uint64_t cutoff;
+    uint64_t neg, any, cutlim;
+    s = str;
+    do {
+        c = *s++;
+    } while (isspace((unsigned char) c));
+    if (c == '-') {
+        neg = 1;
+        c = *s++;
+    } else {
+        neg = 0;
+        if (c == '+')
+            c = *s++;
+    }
+    if ((base == 0 || base == 16) &&
+        c == '0' && (*s == 'x' || *s == 'X') &&
+        ((s[1] >= '0' && s[1] <= '9') ||
+         (s[1] >= 'A' && s[1] <= 'F') ||
+         (s[1] >= 'a' && s[1] <= 'f'))) {
+        c = s[1];
+        s += 2;
+        base = 16;
+    }
+    if (base == 0)
+        base = c == '0' ? 8 : 10;
+    acc = any = 0;
+    if (base < 2 || base > 36)
+        goto noconv;
+
+    cutoff = neg ? (unsigned long) -(LONG_MIN + LONG_MAX) + LONG_MAX
+                 : LONG_MAX;
+    cutlim = cutoff % base;
+    cutoff /= base;
+    for (;; c = *s++) {
+        if (c >= '0' && c <= '9')
+            c -= '0';
+        else if (c >= 'A' && c <= 'Z')
+            c -= 'A' - 10;
+        else if (c >= 'a' && c <= 'z')
+            c -= 'a' - 10;
+        else
+            break;
+        if (c >= base)
+            break;
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+            any = -1;
+        else {
+            any = 1;
+            acc *= base;
+            acc += c;
+        }
+    }
+    if (any < 0) {
+        acc = neg ? LONG_MIN : LONG_MAX;
+    } else if (!any) {
+        noconv:
+        {}
+    } else if (neg)
+        acc = -acc;
+    if (endptr != NULL)
+        *endptr = (char *) (any ? s - 1 : str);
+    return (acc);
+}

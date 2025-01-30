@@ -31,6 +31,17 @@ void add_task(pcb_t new_task) {
     tailt->next = new_task;
 }
 
+int get_all_task() {
+    int num = 1;
+    pcb_t pcb = kernel_head_task;
+    do {
+        pcb = pcb->next;
+        num++;
+        if (pcb == NULL || pcb->pid == kernel_head_task->pid) break;
+    } while (1);
+    return num;
+}
+
 void change_proccess(registers_t *reg,pcb_t taget){
     switch_page_directory(taget->directory);
     set_kernel_stack(taget->kernel_stack);

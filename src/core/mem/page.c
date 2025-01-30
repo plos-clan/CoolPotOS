@@ -8,6 +8,7 @@
 #include "alloc.h"
 #include "klog.h"
 #include "pcb.h"
+#include "os_terminal.h"
 
 page_directory_t kernel_page_dir;
 page_directory_t *current_directory = NULL;
@@ -31,6 +32,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
                                 error_code & 0x10 ? "Decode address" : "Unknown");
     printk("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
     print_register(frame);
+    terminal_flush();
     cpu_hlt;
 }
 

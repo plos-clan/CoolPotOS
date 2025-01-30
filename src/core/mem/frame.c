@@ -10,10 +10,10 @@ static volatile struct limine_memmap_request memmap_request = {
 };
 
 FrameAllocator frame_allocator;
+uint64_t memory_size = 0;
 
 void init_frame() {
     struct limine_memmap_response *memory_map = memmap_request.response;
-    uint64_t memory_size = 0;
 
     for (uint64_t i = memory_map->entry_count - 1; i >= 0; i--) {
         struct limine_memmap_entry *region = memory_map->entries[i];
