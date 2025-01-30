@@ -1,6 +1,6 @@
 #include "keyboard.h"
 #include "isr.h"
-#include "description_table.h"
+#include "klog.h"
 #include "krlibc.h"
 #include "io.h"
 #include "kprint.h"
@@ -29,6 +29,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame){
     UNUSED(frame);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
+    //logkf("Key: %d",scancode);
     send_eoi();
     if (scancode == 0xe0) {
         e0_flag = 1;
@@ -59,11 +60,12 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame){
 }
 
 int input_char_inSM() {
-    int i;
+    int i = -1;
     pcb_t task = get_current_task();
     if (task == NULL) return 0;
     do {
-        i = out_queue(task->tty->keyboard_buffer);
+        if(!is_queue_empty(task->tty->keyboard_buffer))
+            i = out_queue(task->tty->keyboard_buffer);
     } while (i == -1);
     return i;
 }

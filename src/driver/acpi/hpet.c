@@ -5,12 +5,18 @@
 #include "krlibc.h"
 #include "isr.h"
 #include "scheduler.h"
+#include "pcb.h"
+#include "io.h"
 
 HpetInfo *hpet_addr;
 static uint32_t hpetPeriod = 0;
 
-__IRQHANDLER void timer_handle(interrupt_frame_t *frame) {
-    send_eoi();
+extern void save_registers();
+
+/*ASM CALL*/ registers_t *timer_handle(registers_t *reg) {
+    close_interrupt;
+    scheduler(reg);
+    return reg;
 }
 
 void usleep(uint64_t nano) {
@@ -42,6 +48,6 @@ void hpet_init(Hpet *hpet) {
     uint32_t counterClockPeriod = hpet_addr->generalCapabilities >> 32;
     hpetPeriod = counterClockPeriod / 1000000;
     hpet_addr->generalConfiguration |= 1;
-    register_interrupt_handler(timer, (void *) timer_handle, 0, 0x8E);
+    register_interrupt_handler(timer, (void *) save_registers, 0, 0x8E);
     kinfo("Setup acpi hpet table (nano_time: %d).", (uint64_t) nanoTime());
 }

@@ -39,14 +39,16 @@ static inline void flush_tlb(uint64_t addr) {
     __asm__ volatile("invlpg (%0)"::"r" (addr) : "memory");
 }
 
-static inline void set_cr3(uint64_t cr0) {
-    __asm__ volatile("mov %0, %%cr0" : : "r"(cr0));
-}
-
 static inline uint64_t get_cr3(void) {
     uint64_t cr0;
     __asm__ volatile("mov %%cr3, %0" : "=r"(cr0));
     return cr0;
+}
+
+static inline uint64_t get_rsp(void) {
+    uint64_t rsp;
+    __asm__ volatile("mov %%rsp, %0" : "=r"(rsp));
+    return rsp;
 }
 
 static inline uint64_t get_rflags(){
@@ -61,7 +63,7 @@ static inline uint64_t get_rflags(){
     return rflags;
 }
 
-static inline void mmio_write32(uint32_t * addr, uint32_t data) {
+static inline void mmio_write32(uint32_t *addr, uint32_t data) {
     *(volatile uint32_t *) addr = data;
 }
 

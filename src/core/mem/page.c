@@ -7,6 +7,7 @@
 #include "frame.h"
 #include "alloc.h"
 #include "klog.h"
+#include "pcb.h"
 
 page_directory_t kernel_page_dir;
 page_directory_t *current_directory = NULL;
@@ -17,15 +18,18 @@ static bool is_huge_page(page_table_entry_t *entry){
 
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t error_code) {
     close_interrupt;
+    disable_scheduler();
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault, virtual address 0x%x\n", faulting_address);
+    logkf("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
     kerror("Page fault, virtual address 0x%x", faulting_address);
-    kerror("Error code: %s\n", !(error_code & 0x1) ? "Page not present" :
+    kerror("Error code: %s", !(error_code & 0x1) ? "Page not present" :
                                 error_code & 0x2 ? "Write error" :
                                 error_code & 0x4 ? "User mode" :
                                 error_code & 0x8 ? "Reserved bits set" :
                                 error_code & 0x10 ? "Decode address" : "Unknown");
+    printk("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
     print_register(frame);
     cpu_hlt;
 }

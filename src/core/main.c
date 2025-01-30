@@ -29,15 +29,6 @@ static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
 
-int func(void *pVoid) {
-    UNUSED(pVoid);
-    while (1){
-        printk("Hello World!\n");
-        usleep(1000);
-    }
-    return 0;
-}
-
 void kmain(void) {
     init_gop();
     init_serial();
@@ -67,10 +58,9 @@ void kmain(void) {
 
     init_pcb();
 
-   // create_kernel_thread(func, NULL, "Test");
     kinfo("Kernel load Done!");
     beep();
-
+    enable_scheduler();
     open_interrupt;
 
     cpu_hlt;

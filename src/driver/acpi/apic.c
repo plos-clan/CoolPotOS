@@ -90,6 +90,11 @@ void send_eoi(){
     lapic_write(0xb0,0);
 }
 
+void lapic_timer_stop() {
+    lapic_write(LAPIC_REG_TIMER_INITCNT, 0);
+    lapic_write(LAPIC_REG_TIMER, (1 << 16));
+}
+
 void apic_setup(MADT *madt) {
     lapic_address = madt->local_apic_address;
     uint64_t current = 0;
