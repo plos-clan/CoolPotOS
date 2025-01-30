@@ -13,9 +13,9 @@
 struct process_control_block{
     uint8_t task_level;           // 进程等级< 0:内核 | 1:系统服务 | 2:应用程序 >
     int pid;                      // 进程 PID
-    char name[50];                // 进程名(可选)
+    char name[50];                // 进程名
     uint64_t cpu_clock;           // CPU 调度时间片
-    interrupt_frame_t context0;      // 进程上下文
+    TaskContext context0;         // 进程上下文
     page_directory_t *directory;  // 进程页目录
     uint64_t kernel_stack;
     tty_t *tty;                   // tty设备

@@ -23,6 +23,7 @@ target("kernel")
     set_default(false)
 
     add_files("src/**/*.c")
+    add_files("src/**/*.S")
     add_linkdirs("libs")
     add_includedirs("libs")
     add_includedirs("src/include")
@@ -64,9 +65,10 @@ target("iso")
             "-cpu", "qemu64,+x2apic",
             "-smp", "4",
             "-serial", "stdio",
-            "-no-reboot",
-            "-enable-kvm",
-            "-d", "in_asm,int",
+            --"-no-reboot",
+            --"-enable-kvm",
+            --"-d", "in_asm,int",
+            "-S","-s",
             "-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
             "-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",

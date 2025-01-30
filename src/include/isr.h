@@ -23,3 +23,4 @@ void print_register(interrupt_frame_t *frame);
 void register_interrupt_handler(uint16_t vector, void *handler, uint8_t ist, uint8_t flags);
 void set_kernel_stack(uint64_t rsp);
 void send_eoi();
+void lapic_timer_stop();

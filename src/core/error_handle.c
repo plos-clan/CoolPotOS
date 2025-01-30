@@ -2,6 +2,7 @@
 #include "krlibc.h"
 #include "isr.h"
 #include "io.h"
+#include "pcb.h"
 
 void print_register(interrupt_frame_t *frame){
     printk("ss: 0x%p ", frame->ss);
@@ -12,9 +13,14 @@ void print_register(interrupt_frame_t *frame){
     printk("cr3: 0x%p \n", get_cr3());
 }
 
+void print_task_info(pcb_t pcb){
+    printk("Current process PID: %d (%s)\n",pcb->pid,pcb->name);
+}
+
 void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
     close_interrupt;
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
+    print_task_info(get_current_task());
     print_register(frame);
     for(;;) cpu_hlt;
 }
