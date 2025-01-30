@@ -290,6 +290,21 @@ static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){
           device->name);
 }
 
+void print_all_pci() {
+    printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
+    for (int i = 0; i < device_number; i++) {
+        pci_device_t device = pci_device[i];
+        printk("%03d:%02d:%02d\t[0x%04X:0x%04X]\t<0x%08x>\t%s\n",
+               device->bus,
+               device->slot,
+               device->func,
+               device->vendor_id,
+               device->device_id,
+               device->class_code,
+               device->name);
+    }
+}
+
 void pci_setup(){
     uint32_t i, BUS, Equipment, F, ADDER;
     for (BUS = 0; BUS < 256; BUS++) {

@@ -45,4 +45,6 @@ base_address_register find_bar(pci_device_t device, uint8_t barNum);
 uint32_t read_bar_n(pci_device_t device, uint8_t bar_n);
 void pci_write_command_status(pci_device_t device, uint32_t value);
 uint32_t pci_read_command_status(pci_device_t device);
+void print_all_pci();
+uint32_t get_pci_num();
 void pci_setup();

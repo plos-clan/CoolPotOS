@@ -68,7 +68,7 @@ target("iso")
             --"-no-reboot",
             --"-enable-kvm",
             --"-d", "in_asm,int",
-            "-S","-s",
+            --"-S","-s",
             "-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
             "-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",

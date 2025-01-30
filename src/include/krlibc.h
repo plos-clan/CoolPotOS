@@ -1,6 +1,6 @@
 #pragma once
 
-#define KERNEL_NAME "CP_Kernel-x86_64-0.0.2"
+#define KERNEL_NAME "CP_Kernel-x86_64-0.0.3"
 
 #define STACK_SIZE 32768
 
@@ -13,6 +13,7 @@
     while (cond) {}                                                                                \
   }))
 
+#include "limits.h"
 #include "ctype.h"
 
 int memcmp(const void *a_, const void *b_, size_t size);
@@ -24,3 +25,13 @@ void *memset(void *dst, int val, size_t size);
 size_t strlen(const char *str);
 
 char *strcat(char *dest, const char *src);
+
+int strncmp(const char *s1, const char *s2, size_t n);
+
+char *strcpy(char *dest, const char *src);
+
+int strcmp(const char *s1, const char *s2);
+
+int64_t strtol(const char *str, char **endptr, int base);
+
+int isspace(int c);

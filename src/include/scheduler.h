@@ -56,4 +56,5 @@ typedef struct {
 void enable_scheduler();
 void disable_scheduler();
 void scheduler(registers_t *registers);
+int get_all_task();
 

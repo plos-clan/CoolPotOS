@@ -17,6 +17,7 @@
 #include "pci.h"
 #include "ahci.h"
 #include "speaker.h"
+#include "shell.h"
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(2)
@@ -28,6 +29,29 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
+
+int terminal_flush_service(void *pVoid) {
+    terminal_set_auto_flush(0);
+    while (1){
+        terminal_flush();
+        __asm__("hlt":::"memory");
+    }
+    return 0;
+}
+
+_Noreturn void cp_shutdown(){
+    printk("Shutdown %s...\n", KERNEL_NAME);
+   // kill_all_proc();
+    power_off();
+    while (1);
+}
+
+_Noreturn void cp_reset(){
+    printk("Rebooting %s...\n", KERNEL_NAME);
+   // kill_all_proc();
+    power_reset();
+    while (1);
+}
 
 void kmain(void) {
     init_gop();
@@ -58,6 +82,8 @@ void kmain(void) {
 
     init_pcb();
 
+    create_kernel_thread(terminal_flush_service, NULL, "Terminal");
+    create_kernel_thread((void*)shell_setup, NULL, "Shell");
     kinfo("Kernel load Done!");
     beep();
     enable_scheduler();
