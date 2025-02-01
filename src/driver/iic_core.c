@@ -9,8 +9,13 @@ void iic_init(void) {
         return;
     } else {
         klogf(true, "Find IIC Master Controller.\n");
+        IIC_Master *iiC_master;
+        unsigned int Address = Get_iic_master_address(IIC_Master_Controller);
+        iiC_master->address = Address;
+        iiC_master->reg_address = Address;
     }
 }
+
 
 bool crc_check(IIC_Data *frame) {
 
@@ -22,6 +27,7 @@ bool crc_check(IIC_Data *frame) {
         return true;
     }
 }
+
 
 unsigned int iic_data_transfer(IIC_Data *frame) {
 
@@ -38,17 +44,33 @@ unsigned int iic_data_transfer(IIC_Data *frame) {
     }
 }
 
-void iic_start(pci_device_t *IIC_Device) {
-    // IIC主机控制器基地址发送起始信号
-    base_address_register iic_bar = find_bar(IIC_Device, 0);
-    int base_address = (int)(iic_bar.address);
-    io_out8(base_address + 0x10, 0x01);
-}
-void iic_stop(pci_device_t *IIC_Device) {
-    // IIC主机控制器基地址发送停止信号
-    base_address_register iic_bar = find_bar(IIC_Device, 0);
-    int base_address = (int)(iic_bar.address);
-    io_out8(base_address + 0x14, 0x00);
+unsigned int Get_iic_master_address(pci_device_t *IIC_Master_Controller) {
+    // 获取IIC主机控制器基地址
+    base_address_register bar = find_bar(IIC_Master_Controller, 0);
+    unsigned int base_address = (unsigned int)(bar.address);
+    return base_address;
 }
 
+void iic_start(IIC_Master *IIC_Master) {
+    // IIC主机控制器总线初始化
+}
 
+void iic_stop(IIC_Master *IIC_Master) {
+    // 兼容性
+}
+
+void iic_send_Start(IIC_Master *IIC_Master) {
+    // IIC主机控制器发送起始信号
+}
+
+void iic_send_Stop(IIC_Master *IIC_Master) {
+    // IIC主机控制器发送停止信号
+}
+
+void iic_send_byte(IIC_Master *IIC_Master, unsigned char data) {
+    // IIC主机控制器基地址发送一个字节
+}
+
+char iic_receive_byte(IIC_Master *IIC_Master) {
+    // IIC主机控制器基地址接收一个字节
+}
