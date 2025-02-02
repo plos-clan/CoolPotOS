@@ -25,7 +25,7 @@ static inline void io_out16(uint16_t port, uint16_t data) {
     __asm__ volatile("outw %w0, %w1" : : "a"(data), "Nd"(port));
 }
 
-static inline uint32_t io_in32(uint16_t port){
+static inline uint32_t io_in32(uint16_t port) {
     uint32_t data;
     __asm__ volatile("inl %1, %0" : "=a"(data) : "Nd"(port));
     return data;
@@ -51,7 +51,7 @@ static inline uint64_t get_rsp(void) {
     return rsp;
 }
 
-static inline uint64_t get_rflags(){
+static inline uint64_t get_rflags() {
     uint64_t rflags;
     __asm__ volatile (
             "pushfq\n"
@@ -67,7 +67,7 @@ static inline void mmio_write32(uint32_t *addr, uint32_t data) {
     *(volatile uint32_t *) addr = data;
 }
 
-static inline uint32_t mmio_read32(void* addr) {
+static inline uint32_t mmio_read32(void *addr) {
     return *(volatile uint32_t *) addr;
 }
 
@@ -78,7 +78,27 @@ static inline uint64_t rdmsr(uint32_t msr) {
 }
 
 static inline void wrmsr(uint32_t msr, uint64_t value) {
-    uint32_t eax = (uint32_t)value;
+    uint32_t eax = (uint32_t) value;
     uint32_t edx = value >> 32;
     __asm__ volatile("wrmsr" : : "c"(msr), "a"(eax), "d"(edx));
+}
+
+static inline uint64_t load(uint64_t *addr) {
+    uint64_t ret = 0;
+    __asm__ volatile (
+            "lock xadd %[ret], %[addr];"
+            : [addr] "+m"(*addr),
+    [ret] "+r"(ret)
+    : : "memory"
+    );
+    return ret;
+}
+
+static inline void store(uint64_t *addr, uint32_t value) {
+    __asm__ volatile (
+            "lock xchg %[value], %[addr];"
+            : [addr] "+m"(*addr),
+    [value] "+r"(value)
+    : : "memory"
+    );
 }

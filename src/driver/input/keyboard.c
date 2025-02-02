@@ -54,7 +54,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame){
         pcb_t cur = kernel_head_task;
         do{
             cur = cur->next;
-            add_queue(cur->tty->keyboard_buffer,scancode);
+            atom_push(cur->tty->keyboard_buffer,scancode);
         } while (cur->pid != kernel_head_task->pid);
     } else printk("Keyboard scancode: %x\n", scancode);
 }
@@ -64,8 +64,7 @@ int input_char_inSM() {
     pcb_t task = get_current_task();
     if (task == NULL) return 0;
     do {
-        if(!is_queue_empty(task->tty->keyboard_buffer))
-            i = out_queue(task->tty->keyboard_buffer);
+        i = atom_pop(task->tty->keyboard_buffer);
     } while (i == -1);
     return i;
 }
