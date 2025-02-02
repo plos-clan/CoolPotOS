@@ -5,6 +5,7 @@
 #include "scheduler.h"
 #include "io.h"
 #include "acpi.h"
+#include "description_table.h"
 
 extern pcb_t current_task;
 extern pcb_t kernel_head_task;
@@ -12,15 +13,41 @@ extern pcb_t kernel_head_task;
 static int now_pid = 0;
 
 _Noreturn void process_exit() {
-    register uint32_t eax __asm__("eax");//获取退出代码
-    printk("Kernel Process exit, Code: %d\n", eax);//打印退出信息
-    //kill_proc(current_pcb);//终止进程
-    while (1);//确保进程不被继续执行
+    register uint64_t rax __asm__("rax");
+    printk("Kernel Process exit, Code: %d\n", rax);
+    kill_proc(current_task);
+    while (1);
+}
+
+void switch_to_user_mode(uint64_t func) {
+    close_interrupt;
+    uint64_t rsp = (uint64_t) get_current_task()->user_stack + STACK_SIZE;
+    get_current_task()->context0.rflags = (0 << 12 | 0b10 | 1 << 9);
+    __asm__ volatile(
+            "pushq %5\n" // SS
+            "pushq %1\n" // RSP
+            "pushq %2\n" // RFLAGS
+            "pushq %3\n" // CS
+            "pushq %4\n" // RIP
+
+            "mov %0, %%gs\n"
+            "mov %0, %%fs\n"
+            "mov %0, %%es\n"
+            "mov %0, %%ds\n"
+            "iretq\n"
+    :
+    :"r" ((uint64_t)GET_SEL(4 * 8, SA_RPL3)), "r"(rsp), "r"(get_current_task()->context0.rflags),
+    "r"((uint64_t)0x23),"r"(func),"r"((uint64_t)0x1b)
+    :"memory");
 }
 
 void kill_proc(pcb_t task){
+    if(task->pid == 0){
+        kerror("Cannot stop kernel idle.");
+        return;
+    }
     close_interrupt;
-    disable_scheduler();
+    disable_scheduler(); // 终止调度器, 防止释放被杀进程时候调度到该进程发生错误
     free_tty(task->tty);
 
     pcb_t head = kernel_head_task;
@@ -67,10 +94,10 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
     pcb_t new_task = (pcb_t)malloc(STACK_SIZE);
     memset(new_task,0, sizeof(struct process_control_block));
 
-    new_task->task_level = TASK_KERNEL_LEVEL;
+    new_task->task_level = TASK_KERNEL_LEVEL; //内核级进程
     new_task->pid = now_pid++;
     new_task->cpu_clock = 0;
-    new_task->tty = alloc_default_tty();
+    new_task->tty = alloc_default_tty(); // 初始化TTY设备
     new_task->directory = get_kernel_pagedir();
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top = (uint64_t *) ((uint64_t) new_task + STACK_SIZE);
@@ -79,8 +106,9 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
     *(--stack_top) = (uint64_t) _start;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip = (uint64_t)_start;
-    new_task->context0.rsp = (uint64_t) new_task + STACK_SIZE - sizeof(uint64_t) * 3;//设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF); // 16字节对齐
+    new_task->context0.rsp = (uint64_t) new_task + STACK_SIZE - sizeof(uint64_t) * 3; //设置上下文
+    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF); // 栈16字节对齐
+    new_task->user_stack = new_task->kernel_stack; //内核级进程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
     new_task->next = kernel_head_task;
     add_task(new_task);
     return new_task->pid;
@@ -92,7 +120,9 @@ void init_pcb(){
     current_task->pid = now_pid++;
     current_task->cpu_clock = 0;
     current_task->directory = get_kernel_pagedir();
+    set_kernel_stack(get_rsp()); //给IDLE进程设置TSS内核栈, 不然这个进程炸了后会发生 DoubleFault
     current_task->kernel_stack = current_task->context0.rsp = get_rsp();
+    current_task->user_stack = current_task->kernel_stack;
     current_task->tty = get_default_tty();
     current_task->context0.rflags = get_rflags();
     memcpy(current_task->name, "CP_IDLE\0", 9);

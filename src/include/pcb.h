@@ -18,6 +18,7 @@ struct process_control_block{
     TaskContext context0;         // 进程上下文
     page_directory_t *directory;  // 进程页目录
     uint64_t kernel_stack;        // 内核栈
+    uint64_t user_stack;          // 用户栈
     uint64_t mem_usage;           // 内存利用率
     tty_t *tty;                   // tty设备
     struct process_control_block *next; // 下一个进程
@@ -26,6 +27,7 @@ struct process_control_block{
 typedef struct process_control_block *pcb_t;
 
 void add_task(pcb_t new_task);
+void switch_to_user_mode(uint64_t func);
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name);
 pcb_t get_current_task();
 void kill_all_proc();

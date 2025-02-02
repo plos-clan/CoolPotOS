@@ -131,7 +131,7 @@ static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
     uint32_t bytes = get_all_memusage();
-    float memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
@@ -144,7 +144,7 @@ static void sys_info() {
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        Memory Usage: %0.2f%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size));
+    printk("*@@@@@@           @@@@@@*        Memory Usage: %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
     printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor\n");
     printk(" &@@@@@@*.     .#@@@@@@& \n");
     printk(" =@@@@@@@@*---*@@@@@@@@- \n");
@@ -206,5 +206,10 @@ void shell_setup(){
             ps();
         else if (!strcmp("pkill", argv[0]))
             pkill(argc,argv);
+        else if (!strcmp("test", argv[0])){
+            for (int i = 0; i < 100; ++i) {
+                printk("count: %d\n",i);
+            }
+        }
     }
 }

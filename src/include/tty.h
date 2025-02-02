@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ctype.h"
-#include "queue.h"
+#include "atom_queue.h"
 
 typedef struct tty_virtual_device{
     void (*print)(struct tty_virtual_device *res, const char *string);
@@ -9,7 +9,7 @@ typedef struct tty_virtual_device{
 
     uint64_t volatile *video_ram; // 显存基址
     uint64_t width, height;
-    queue_t *keyboard_buffer;
+    atom_queue *keyboard_buffer;
 }tty_t;
 
 void init_tty();

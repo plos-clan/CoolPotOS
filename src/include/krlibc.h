@@ -1,6 +1,6 @@
 #pragma once
 
-#define KERNEL_NAME "CP_Kernel-x86_64-0.0.3"
+#define KERNEL_NAME "CP_Kernel-x86_64-0.0.4"
 
 #define STACK_SIZE 32768
 
