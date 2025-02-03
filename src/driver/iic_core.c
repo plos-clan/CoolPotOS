@@ -9,10 +9,9 @@ void iic_init(void) {
         return;
     } else {
         klogf(true, "Find IIC Master Controller.\n");
-        IIC_Master *iiC_master;
-        unsigned int Address = Get_iic_master_address(IIC_Master_Controller);
-        iiC_master->address = Address;
-        iiC_master->reg_address = Address;
+        IIC_Master *iic_master;
+        unsigned int address = Get_iic_master_address(IIC_Master_Controller);
+        iic_master->Control = address;
     }
 }
 
@@ -53,17 +52,18 @@ unsigned int Get_iic_master_address(pci_device_t *IIC_Master_Controller) {
 
 void iic_start(IIC_Master *IIC_Master) {
     // IIC主机控制器总线初始化
+
 }
 
 void iic_stop(IIC_Master *IIC_Master) {
     // 兼容性
 }
 
-void iic_send_Start(IIC_Master *IIC_Master) {
+void iic_send_start(IIC_Master *IIC_Master) {
     // IIC主机控制器发送起始信号
 }
 
-void iic_send_Stop(IIC_Master *IIC_Master) {
+void iic_send_stop(IIC_Master *IIC_Master) {
     // IIC主机控制器发送停止信号
 }
 

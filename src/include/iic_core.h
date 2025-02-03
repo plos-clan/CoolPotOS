@@ -8,20 +8,30 @@
 #include "klog.h"
 #include "pci.h"
 
-#define IIC_Salve_Flag_Busy  0x00
-#define IIC_Salve_Flag_Empty 0x01
-#define IIC_Salve_Flag_Error 0x02
+#define IIC_Slave_Flag_Busy   0x01
+#define IIC_Slave_Flag_Empty  0x00
+#define IIC_Slave_Flag_START  0x01
+#define IIC_Slave_Flag_STOP   0x00
+#define IIC_Slave_Flag_ACK    0x01
+#define IIC_Slave_Flag_NoAck  0x00
+#define IIC_Slave_Flag_Addr   0x01
+#define IIC_Slave_Flag_Data   0x01
 
 #define IIC_Master_Write 0x00
 #define IIC_Master_Read  0x01
 
-#define IIC_Slave_NoAck  0x00
-#define IIC_Slave_Ack    0x01
+#define Freq_100 0x64
+#define Freq_400 0x190
 
-typedef struct IIC_Master {
-    unsigned int address;           // 地址
-    unsigned int reg_address;       // 寄存器首地址
-    unsigned int freq;              // 频率
+typedef struct IIC_Master{
+    uint8_t Control;                // 控制寄存器
+    uint8_t Status;                 // 状态寄存器
+    uint8_t Data;                   // 数据寄存器
+    uint8_t Address;                // 地址寄存器
+    uint8_t Clock;                  // 时钟寄存器
+    uint8_t Transfer;               // 传输寄存器
+    uint8_t Interrupt;              // 中断寄存器
+    uint8_t Error;                  // 错误寄存器
 } IIC_Master;
 
 typedef struct IIC_Slave {
@@ -46,9 +56,9 @@ void iic_init(void);
 bool crc_check(IIC_Data *);
 unsigned int iic_data_transfer(IIC_Data *);
 unsigned int Get_iic_master_address(pci_device_t *);
-void iic_Start(IIC_Master *);
-void iic_Stop(IIC_Master *);
-void iic_send_Start(IIC_Master *);
-void iic_send_Stop(IIC_Master *);
-void iic_send_Byte(IIC_Master *, unsigned char);
-char iic_receive_Byte(IIC_Master *);
+void iic_start(IIC_Master *);
+void iic_stop(IIC_Master *);
+void iic_send_start(IIC_Master *);
+void iic_send_stop(IIC_Master *);
+void iic_send_byte(IIC_Master *, unsigned char);
+char iic_receive_byte(IIC_Master *);
