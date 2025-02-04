@@ -11,7 +11,7 @@
 #include "scheduler.h"
 
 struct process_control_block{
-    uint8_t task_level;           // 进程等级< 0:内核 | 1:系统服务 | 2:应用程序 >
+    uint8_t task_level;           // 进程优先级
     int pid;                      // 进程 PID
     char name[50];                // 进程名
     uint64_t cpu_clock;           // CPU 调度时间片

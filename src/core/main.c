@@ -11,10 +11,12 @@
 #include "power.h"
 #include "description_table.h"
 #include "page.h"
+#include "vfs.h"
 #include "keyboard.h"
 #include "cpuid.h"
 #include "pcb.h"
 #include "pci.h"
+#include "nvme.h"
 #include "ahci.h"
 #include "speaker.h"
 #include "shell.h"
@@ -44,10 +46,6 @@ _Noreturn void cp_reset(){
     while (1);
 }
 
-void test_func(){
-    __asm__ volatile ("hlt");
-}
-
 void kmain(void) {
     init_gop();
     init_serial();
@@ -64,15 +62,15 @@ void kmain(void) {
     gdt_setup();
     idt_setup();
     error_setup();
-
     acpi_setup();
     keyboard_setup();
     mouse_setup();
     char* date = get_date_time();
     kinfo("RTC time %s",date);
     free(date);
-
+    vfs_init();
     pci_setup();
+    nvme_setup();
     ahci_setup();
 
     init_pcb();

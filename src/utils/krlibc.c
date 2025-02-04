@@ -1,4 +1,5 @@
 #include "krlibc.h"
+#include "alloc.h"
 
 int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;
@@ -199,4 +200,19 @@ int64_t strtol(const char *str, char **endptr, int base) {
     if (endptr != NULL)
         *endptr = (char *) (any ? s - 1 : str);
     return (acc);
+}
+
+char *strdup(const char *str) {
+    if (str == NULL)
+        return NULL;
+
+    char *strat = (char *) str;
+    int len = 0;
+    while (*str++ != '\0')
+        len++;
+    char *ret = (char *) malloc(len + 1);
+
+    while ((*ret++ = *strat++) != '\0') {}
+
+    return ret - (len + 1);
 }

@@ -3,6 +3,7 @@
 #include "alloc.h"
 #include "kprint.h"
 #include "hhdm.h"
+#include "acpi.h"
 
 uint32_t PCI_NUM = 0;
 
@@ -196,8 +197,55 @@ static uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function,uint8_t 
     return result >> (8 * (registeroffset % 4));
 }
 
+static void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset, uint32_t value) {
+    uint32_t id = 1 << 31 | ((bus & 0xff) << 16) | ((device & 0x1f) << 11) |
+                  ((function & 0x07) << 8) | (registeroffset & 0xfc);
+    io_out32(PCI_COMMAND_PORT, id);
+    io_out32(PCI_DATA_PORT, value);
+}
+
 uint32_t read_pci(pci_device_t device, uint8_t registeroffset) {
     return read_pci0(device->bus,device->slot,device->func,registeroffset);
+}
+
+void write_pci(pci_device_t device,uint8_t offset, uint32_t value){
+    write_pci0(device->bus,device->slot,device->func,offset,value);
+}
+
+int pci_find_capability(pci_device_t device, uint8_t cap_id) {
+    uint8_t pos = (uint8_t)(read_pci(device, PCI_CAPABILITY_LIST) & 0xFF);
+    if (pos == 0) {
+        return 0;
+    }
+
+    while (pos != 0) {
+        uint8_t id = (uint8_t)(read_pci(device, pos + PCI_CAP_LIST_ID) & 0xFF);
+        if (id == cap_id) {
+            return pos;
+        }
+        pos = (uint8_t)(read_pci(device, pos + PCI_CAP_LIST_NEXT) & 0xFF);
+    }
+
+    return 0;
+}
+
+void pci_set_msi(pci_device_t device,uint8_t vector){
+    device->msi_offset = pci_find_capability(device,PCI_CAP_ID_MSI);
+    uint32_t msg_ctrl = read_pci(device,device->msi_offset + 2);
+    uint8_t reg0 = 0x4;
+    uint8_t reg1 = 0x8;
+
+    if (((msg_ctrl >> 7) & 1) == 1) {
+        reg1 = 0xc;
+    }
+
+    uint64_t address = (0xfee << 20) | (lapic_id() << 12);
+    uint8_t data = vector;
+    write_pci(device,device->msi_offset + reg0,address);
+    write_pci(device,device->msi_offset + reg1,data);
+    msg_ctrl |= 1;
+    msg_ctrl &= ~(0b111 << 4);
+    write_pci(device,device->msi_offset + 2,msg_ctrl);
 }
 
 static base_address_register get_base_address_register(uint8_t bus, uint8_t device, uint8_t function, uint8_t bar) {
@@ -237,19 +285,17 @@ uint32_t read_bar_n(pci_device_t device, uint8_t bar_n) {
     return read_pci(device, bar_offset);
 }
 
-static void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset, uint32_t value) {
-    uint32_t id = 1 << 31 | ((bus & 0xff) << 16) | ((device & 0x1f) << 11) |
-                  ((function & 0x07) << 8) | (registeroffset & 0xfc);
-    io_out32(PCI_COMMAND_PORT, id);
-    io_out32(PCI_DATA_PORT, value);
-}
-
 uint32_t pci_read_command_status(pci_device_t device) {
     return read_pci(device, 0x04);
 }
 
 void pci_write_command_status(pci_device_t device, uint32_t value) {
     write_pci0(device->bus, device->slot, device->func, 0x04, value);
+}
+
+bool pci_bar_present(pci_device_t device,uint8_t bar){
+    uint8_t reg_index = 0x10 + bar * 4;
+    return read_pci(device,reg_index) != 0;
 }
 
 static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){

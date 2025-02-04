@@ -1,6 +1,6 @@
 #pragma once
 
-#define KERNEL_NAME "CP_Kernel-x86_64-0.0.4"
+#define KERNEL_NAME "CP_Kernel-x86_64-0.0.5"
 
 #define STACK_SIZE 32768
 
@@ -12,6 +12,12 @@
   ((void)({                                                                                        \
     while (cond) {}                                                                                \
   }))
+
+#define streq(s1, s2)                                                                              \
+  ({                                                                                               \
+    const char* _s1 = (s1), *_s2 = (s2);                                                                 \
+    (_s1 && _s2) ? strcmp(_s1, _s2) == 0 : _s1 == _s2;                                             \
+  })
 
 #include "limits.h"
 #include "ctype.h"
@@ -33,5 +39,7 @@ char *strcpy(char *dest, const char *src);
 int strcmp(const char *s1, const char *s2);
 
 int64_t strtol(const char *str, char **endptr, int base);
+
+char *strdup(const char *str);
 
 int isspace(int c);
