@@ -1,5 +1,8 @@
 #pragma once
 
+#define VFS_STATUS_FAILED (-1)
+#define VFS_STATUS_SUCCESS 0;
+
 #include "ctype.h"
 #include "list.h"
 

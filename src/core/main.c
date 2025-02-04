@@ -12,6 +12,7 @@
 #include "description_table.h"
 #include "page.h"
 #include "vfs.h"
+#include "vdisk.h"
 #include "keyboard.h"
 #include "cpuid.h"
 #include "pcb.h"
@@ -19,6 +20,8 @@
 #include "nvme.h"
 #include "ahci.h"
 #include "speaker.h"
+#include "devfs.h"
+
 #include "shell.h"
 
 __attribute__((used, section(".limine_requests")))
@@ -69,12 +72,15 @@ void kmain(void) {
     kinfo("RTC time %s",date);
     free(date);
     vfs_init();
+    vdisk_init();
     pci_setup();
     nvme_setup();
     ahci_setup();
 
-    init_pcb();
+    devfs_setup();
 
+    init_pcb();
+    build_stream_device();
     //TODO create_kernel_thread(terminal_flush_service, NULL, "Terminal");
     create_kernel_thread((void*)shell_setup, NULL, "Shell");
     kinfo("Kernel load Done!");

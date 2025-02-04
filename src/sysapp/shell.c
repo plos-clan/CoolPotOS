@@ -168,10 +168,12 @@ static void ls(int argc, char **argv) {
     if (argc == 1) {
         p = vfs_open(shell_work_path);
     } else {
-        char *buf_h = com_copy + 5;
+        char *buf_h = com_copy + 3;
         char bufx[100];
         if (buf_h[0] != '/') {
-            stbsp_sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+            if(!strcmp(shell_work_path,"/"))
+                stbsp_sprintf(bufx, "/%s", buf_h);
+            else stbsp_sprintf(bufx, "%s/%s", shell_work_path, buf_h);
         } else stbsp_sprintf(bufx, "%s", buf_h);
         p = vfs_open(bufx);
     }
@@ -198,6 +200,23 @@ static void pkill(int argc, char **argv) {
         return;
     }
     kill_proc(pcb);
+}
+
+static void echo(int argc,char** argv){
+    if (argc == 1) {
+        printk("[Shell-ECHO]: If there are too few parameters.\n");
+        return;
+    }
+    vfs_node_t stdout = vfs_open("/dev/stdout");
+    if(stdout == NULL)
+        printk("ERROR: stream device is null.\n");
+    else{
+        char* buf = com_copy + 5;
+        if(vfs_write(stdout,buf,0, strlen(buf)) == VFS_STATUS_FAILED)
+            printk("stdout stream has error.\n");
+        vfs_close(stdout);
+        printk("\n");
+    }
 }
 
 static void sys_info() {
@@ -240,6 +259,7 @@ static void print_help() {
     printk("cd        <path>         Change shell work path.\n");
     printk("mkdir     <name>         Make a directory to vfs.\n");
     printk("ls        [path]         List all file or directory.\n");
+    printk("echo      <message>      Print a message to terminal.\n");
 }
 
 void shell_setup(){
@@ -291,6 +311,8 @@ void shell_setup(){
             mkdir(argc, argv);
         else if (!strcmp("ls", argv[0]))
             ls(argc, argv);
+        else if(!strcmp("echo",argv[0]))
+            echo(argc,argv);
         else if (!strcmp("test", argv[0])){
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n",i);
