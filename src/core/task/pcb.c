@@ -94,7 +94,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
     pcb_t new_task = (pcb_t)malloc(STACK_SIZE);
     memset(new_task,0, sizeof(struct process_control_block));
 
-    new_task->task_level = TASK_KERNEL_LEVEL; //内核级进程
+    new_task->task_level = 0;
     new_task->pid = now_pid++;
     new_task->cpu_clock = 0;
     new_task->tty = alloc_default_tty(); // 初始化TTY设备
@@ -116,7 +116,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
 
 void init_pcb(){
     kernel_head_task = current_task = (pcb_t)malloc(STACK_SIZE);
-    current_task->task_level = TASK_KERNEL_LEVEL;
+    current_task->task_level = 0;
     current_task->pid = now_pid++;
     current_task->cpu_clock = 0;
     current_task->directory = get_kernel_pagedir();

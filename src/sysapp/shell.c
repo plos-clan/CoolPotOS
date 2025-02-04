@@ -10,10 +10,13 @@
 #include "gop.h"
 #include "heap.h"
 #include "pcb.h"
+#include "vfs.h"
+#include "sprintf.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
 
+char *shell_work_path;
 extern uint64_t memory_size; //hhdm.c
 char com_copy[100];
 
@@ -90,6 +93,55 @@ static void reboot_os() {
     cp_reset();
 }
 
+static void cd(int argc, char **argv) {
+    if (argc == 1) {
+        printk("If there are too few parameters.\n");
+        return;
+    }
+    char *s = com_copy + 3;
+    if (s[strlen(s) - 1] == '/' && strlen(s) > 1) { s[strlen(s) - 1] = '\0'; }
+    if (streq(s, ".")) return;
+    if (streq(s, "..")) {
+        if (streq(s, "/")) return;
+        char *n = shell_work_path + strlen(shell_work_path);
+        while (*--n != '/' && n != shell_work_path) {}
+        *n = '\0';
+        if (strlen(shell_work_path) == 0) strcpy(shell_work_path, "/");
+        return;
+    }
+    char *old = strdup(shell_work_path);
+    if (s[0] == '/') {
+        strcpy(shell_work_path, s);
+    } else {
+        if (streq(shell_work_path, "/"))
+            stbsp_sprintf(shell_work_path, "%s%s", shell_work_path, s);
+        else
+            stbsp_sprintf(shell_work_path, "%s/%s", shell_work_path, s);
+    }
+    if (vfs_open(shell_work_path) == NULL) {
+        printk("cd: %s: No such directory\n", s);
+        stbsp_sprintf(shell_work_path, "%s", old);
+        free(old);
+    }
+}
+
+static void mkdir(int argc, char **argv) {
+    if (argc == 1) {
+        printk("[Shell-MKDIR]: If there are too few parameters.\n");
+        return;
+    }
+    char *buf_h = com_copy + 6;
+    char bufx[100];
+    if (buf_h[0] != '/') {
+        if(!strcmp(shell_work_path,"/"))
+            stbsp_sprintf(bufx, "/%s", buf_h);
+        else stbsp_sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+    } else stbsp_sprintf(bufx, "%s", buf_h);
+    if (vfs_mkdir(bufx) == -1) {
+        printk("Failed create directory [%s].\n", argv[1]);
+    }
+}
+
 void ps() {
     extern pcb_t kernel_head_task;
     pcb_t longest_name = kernel_head_task;
@@ -101,16 +153,37 @@ void ps() {
         if(longest_name->pid == kernel_head_task->pid) break;
     }
     pcb_t pcb = kernel_head_task;
-    printk("PID  %-*s       RAM(byte)  Level   Priority  Time\n", longest_name_len, "NAME");
+    printk("PID  %-*s         RAM(byte)  Priority  Time\n", longest_name_len, "NAME");
     while (pcb != NULL) {
-        printk("%-5d%-*s%10d        %-8s%-10d%-d\n", pcb->pid, longest_name_len, pcb->name,
+        printk("%-5d%-*s%10d          %-10d%-d\n", pcb->pid, longest_name_len, pcb->name,
                pcb->mem_usage,
-               pcb->task_level == TASK_KERNEL_LEVEL ? "Kernel" : pcb->task_level == TASK_SYSTEM_SERVICE_LEVEL ? "System"
-                                                                                                              : "User",
                pcb->task_level, pcb->cpu_clock);
         pcb = pcb->next;
         if(pcb->pid == kernel_head_task->pid) break;
     }
+}
+
+static void ls(int argc, char **argv) {
+    vfs_node_t p;
+    if (argc == 1) {
+        p = vfs_open(shell_work_path);
+    } else {
+        char *buf_h = com_copy + 5;
+        char bufx[100];
+        if (buf_h[0] != '/') {
+            stbsp_sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+        } else stbsp_sprintf(bufx, "%s", buf_h);
+        p = vfs_open(bufx);
+    }
+    if (p == NULL) {
+        printk("Cannot fount directory.\n");
+        return;
+    }
+    list_foreach(p->child, i) {
+        vfs_node_t c = (vfs_node_t) i->data;
+        printk("%s ", c->name);
+    }
+    printk("\n");
 }
 
 static void pkill(int argc, char **argv) {
@@ -160,10 +233,13 @@ static void print_help() {
     printk("shutdown exit            Shutdown os.\n");
     printk("reboot                   Reboot os.\n");
     printk("lspci                    List all PCI devices.\n");
-    printk("sysinfo                  Get os system information.\n");
+    printk("sysinfo                  Get system information.\n");
     printk("clear                    Clear terminal screen.\n");
     printk("ps                       List all processes info.\n");
     printk("pkill     <pid>          Stop a process.\n");
+    printk("cd        <path>         Change shell work path.\n");
+    printk("mkdir     <name>         Make a directory to vfs.\n");
+    printk("ls        [path]         List all file or directory.\n");
 }
 
 void shell_setup(){
@@ -178,8 +254,11 @@ void shell_setup(){
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
     int argc = -1;
+    shell_work_path = malloc(1024);
+    memset(shell_work_path,0,1024);
+    shell_work_path[0] = '/';
     while (1){
-        printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ","/");
+        printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ",shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
         strcpy(com_copy, com);
@@ -206,10 +285,17 @@ void shell_setup(){
             ps();
         else if (!strcmp("pkill", argv[0]))
             pkill(argc,argv);
+        else if (!strcmp("cd", argv[0]))
+            cd(argc, argv);
+        else if (!strcmp("mkdir", argv[0]))
+            mkdir(argc, argv);
+        else if (!strcmp("ls", argv[0]))
+            ls(argc, argv);
         else if (!strcmp("test", argv[0])){
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n",i);
             }
-        }
+        } else
+            printk("\033[31mUnknown command '%s'.\033[39m\n",com_copy);
     }
 }

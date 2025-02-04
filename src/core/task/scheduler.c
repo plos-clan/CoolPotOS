@@ -7,8 +7,6 @@ pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
 bool is_scheduler = false;
 
-extern void asm_switch_to(registers_t *prev,registers_t *next);
-
 pcb_t get_current_task(){
     return current_task;
 }
@@ -87,6 +85,10 @@ void change_proccess(registers_t *reg,pcb_t taget){
     current_task = taget;
 }
 
+/**
+ * CP_Kernel 默认调度器 - 循环调度
+ * @param reg 当前进程上下文
+ */
 void scheduler(registers_t *reg){
     if(is_scheduler){
         if(current_task != NULL){
