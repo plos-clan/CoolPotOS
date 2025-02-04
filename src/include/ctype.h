@@ -11,4 +11,5 @@ typedef ssize_t isize;
 
 typedef void (*free_t)(void *ptr);
 
+#define __wur __attribute__((warn_unused_result))
 #define _rest __restrict

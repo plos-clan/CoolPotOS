@@ -8,6 +8,9 @@
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define __IRQHANDLER __attribute__((interrupt))
 
+#define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
+#define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
+
 #define waitif(cond)                                                                               \
   ((void)({                                                                                        \
     while (cond) {}                                                                                \
@@ -21,6 +24,8 @@
 
 #include "limits.h"
 #include "ctype.h"
+
+static inline void empty() {}
 
 int memcmp(const void *a_, const void *b_, size_t size);
 

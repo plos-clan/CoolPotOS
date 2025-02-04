@@ -3,6 +3,7 @@
 #include "kprint.h"
 #include "hhdm.h"
 #include "io.h"
+#include "krlibc.h"
 
 NvmeRegisters *registers;
 
@@ -32,5 +33,9 @@ void nvme_setup(){
     uint32_t minor_version = (vs >> 8) & 0xff;
     uint32_t tertiary_version = vs & 0xff;
 
-    printk("[%d:%d:%d]\n",major_version,minor_version,tertiary_version);
+    UNUSED(major_version);
+    UNUSED(minor_version);
+    UNUSED(tertiary_version);
+
+    //printk("[%d:%d:%d]\n",major_version,minor_version,tertiary_version);
 }

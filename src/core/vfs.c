@@ -54,7 +54,7 @@ static vfs_node_t vfs_child_find(vfs_node_t parent,const char* name) {
 }
 
 int vfs_mkdir(const char* name) {
-    if (name[0] != '/') return -1;
+    if (name[0] != '/') return VFS_STATUS_FAILED;
     char      *path     = strdup(name + 1);
     char      *save_ptr = path;
     vfs_node_t current  = rootdir;
@@ -84,11 +84,11 @@ int vfs_mkdir(const char* name) {
     }
 
     free(path);
-    return 0;
+    return VFS_STATUS_SUCCESS;
 
     err:
     free(path);
-    return -1;
+    return VFS_STATUS_FAILED;
 }
 
 int vfs_mkfile(const char* name) {
@@ -102,7 +102,7 @@ int vfs_mkfile(const char* name) {
     *filename++ = '\0';
     if (strlen(path) == 0) {
         free(path);
-        return -1;
+        return VFS_STATUS_FAILED;
     }
     for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
         if (streq(buf, ".")) {
@@ -125,17 +125,17 @@ int vfs_mkfile(const char* name) {
     callbackof(current, mkfile)(current->handle, filename, node);
 
     free(path);
-    return 0;
+    return VFS_STATUS_SUCCESS;
 
     err:
     free(path);
-    return -1;
+    return VFS_STATUS_FAILED;
 }
 
 int vfs_regist(const char* name, vfs_callback_t callback) {
     if (callback == NULL) return -1;
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
-        if (((void **)callback)[i] == NULL) return -1;
+        if (((void **)callback)[i] == NULL) return VFS_STATUS_FAILED;
     }
     int id           = fs_nextid++;
     fs_callbacks[id] = callback;
@@ -204,13 +204,15 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char* name) {
     if (parent) list_prepend(parent->child, node);
     return node;
 }
+
 int vfs_close(vfs_node_t node) {
-    if (node == NULL) return -1;
+    if (node == NULL) return VFS_STATUS_FAILED;
     if (node->handle == NULL) return 0;
     callbackof(node, close)(node->handle);
     node->handle = NULL;
-    return 0;
+    return VFS_STATUS_SUCCESS;
 }
+
 void vfs_free(vfs_node_t vfs) {
     if (vfs == NULL) return;
     list_free_with(vfs->child, (void (*)(void *))vfs_free);
@@ -218,41 +220,43 @@ void vfs_free(vfs_node_t vfs) {
     free(vfs->name);
     free(vfs);
 }
+
 void vfs_free_child(vfs_node_t vfs) {
     if (vfs == NULL) return;
     list_free_with(vfs->child, (void (*)(void *))vfs_free);
 }
 
 int vfs_mount(const char* src, vfs_node_t node) {
-    if (node == NULL) return -1;
-    if (node->type != file_dir) return -1;
+    if (node == NULL) return VFS_STATUS_FAILED;
+    if (node->type != file_dir) return VFS_STATUS_FAILED;
     void *handle = NULL;
     for (int i = 1; i < fs_nextid; i++) {
         if (fs_callbacks[i]->mount(src, node) == 0) {
             node->fsid = i;
             node->root = node;
-            return 0;
+            return VFS_STATUS_SUCCESS;
         }
     }
-    return -1;
+    return VFS_STATUS_FAILED;
 }
 
 int vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size) {
     do_update(file);
-    if (file->type != file_block) return -1;
+    if (file->type == file_dir) return VFS_STATUS_FAILED;
     return callbackof(file, read)(file->handle, addr, offset, size);
 }
+
 int vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
     do_update(file);
-    if (file->type != file_block) return -1;
+    if (file->type == file_dir) return VFS_STATUS_FAILED;
     return callbackof(file, write)(file->handle, addr, offset, size);
 }
 
 int vfs_unmount(const char* path) {
     vfs_node_t node = vfs_open(path);
-    if (node == NULL) return -1;
-    if (node->type != file_dir) return -1;
-    if (node->fsid == 0) return -1;
+    if (node == NULL) return VFS_STATUS_FAILED;
+    if (node->type != file_dir) return VFS_STATUS_FAILED;
+    if (node->fsid == 0) return VFS_STATUS_FAILED;
     if (node->parent) {
         vfs_node_t cur = node;
         node           = node->parent;
@@ -265,10 +269,10 @@ int vfs_unmount(const char* path) {
             cur->child  = NULL;
             // cur->type   = file_none;
             if (cur->fsid) do_update(cur);
-            return 0;
+            return VFS_STATUS_SUCCESS;
         }
     }
-    return -1;
+    return VFS_STATUS_FAILED;
 }
 
 bool vfs_init() {

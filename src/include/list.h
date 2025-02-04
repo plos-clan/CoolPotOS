@@ -200,7 +200,7 @@ static void *list_pop(list_t *list_p) {
   list_t list = list_tail(*list_p);
   if (*list_p == list) *list_p = list->prev;
   if (list->prev) list->prev->next = NULL;
-  auto data = list->data;
+  void* data = list->data;
   free(list);
   return data;
 }
