@@ -106,7 +106,7 @@ void gdt_install() {
 
     // 刷新当前任务状态段，以确保处理器使用新的TSS信息
     tss_flush();
+
 }
 
-// 输出日志信息，表示FPU协处理器已经初始化完成
-klogf(true,"FPU coprocessor is initialized.\n");
+
