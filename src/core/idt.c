@@ -2,7 +2,7 @@
 #include "io.h"
 #include "krlibc.h"
 // 中断服务例程处理数组，存储256种中断的处理函数，每个ISR对应一个处理器
- */
+
 static isr_t interrupt_handlers[256];
 
 // IDT描述符表，共有256个条目，每个条目的结构由idt_entry_t定义
