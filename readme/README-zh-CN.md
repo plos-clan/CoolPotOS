@@ -2,9 +2,9 @@
 
 ## 翻译
 
-- [English](README.md)
-- [中文](README-zh-CN.md)
-- [Français](README-fr-FR.md)
+- [English](/README.md)
+- **简体中文**
+- [Français](/readme/README-fr-FR.md)
 
 ## 介绍
 
