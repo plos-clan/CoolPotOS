@@ -2,9 +2,9 @@
 
 ## Translations
 
-- [English](README.md)
-- [中文](README-zh-CN.md)
-- [Français](README-fr-FR.md)
+- **English**
+- [简体中文](readme/README-zh-CN.md)
+- [Français](readme/README-fr-FR.md)
 
 ## Introduction
 
