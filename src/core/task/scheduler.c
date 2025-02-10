@@ -2,10 +2,12 @@
 #include "krlibc.h"
 #include "pcb.h"
 #include "kprint.h"
+#include "pipfs.h"
 
 pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
 bool is_scheduler = false;
+uint64_t cpu_all_clock; //当前调度轮询的CPU总时间
 
 pcb_t get_current_task(){
     return current_task;
@@ -27,6 +29,7 @@ void add_task(pcb_t new_task) {
         tailt = tailt->next;
     }
     tailt->next = new_task;
+    pipfs_update(kernel_head_task);
 }
 
 int get_all_task() {
@@ -93,6 +96,11 @@ void scheduler(registers_t *reg){
     if(is_scheduler){
         if(current_task != NULL){
             current_task->cpu_clock++;
+            if(current_task->time_buf != NULL){
+                current_task->cpu_timer += get_time(current_task->time_buf);
+                current_task->time_buf = NULL;
+            }
+            current_task->time_buf = alloc_timer();
             if(current_task->pid != current_task->next->pid) {
                 disable_scheduler();
                 change_proccess(reg,current_task->next);

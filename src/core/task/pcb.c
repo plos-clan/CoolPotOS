@@ -4,8 +4,10 @@
 #include "kprint.h"
 #include "scheduler.h"
 #include "io.h"
-#include "acpi.h"
+#include "pipfs.h"
 #include "description_table.h"
+#include "timer.h"
+#include "heap.h"
 
 extern pcb_t current_task;
 extern pcb_t kernel_head_task;
@@ -97,6 +99,8 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
     new_task->task_level = 0;
     new_task->pid = now_pid++;
     new_task->cpu_clock = 0;
+    new_task->cpu_timer = 0;
+    new_task->mem_usage = get_all_memusage();
     new_task->tty = alloc_default_tty(); // 初始化TTY设备
     new_task->directory = get_kernel_pagedir();
     memcpy(new_task->name, name, strlen(name) + 1);
@@ -125,7 +129,10 @@ void init_pcb(){
     current_task->user_stack = current_task->kernel_stack;
     current_task->tty = get_default_tty();
     current_task->context0.rflags = get_rflags();
+    current_task->cpu_timer = nanoTime();
+    current_task->time_buf = alloc_timer();
     memcpy(current_task->name, "CP_IDLE\0", 9);
-    current_task->next = current_task;
+    current_task->next = kernel_head_task;
+    pipfs_update(kernel_head_task);
     kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);
 }

@@ -104,7 +104,7 @@ static int devfs_write(void *file, const void *addr, size_t offset, size_t size)
     return (int)size;
 }
 
-static struct vfs_callback callback = {
+static struct vfs_callback devfs_callbacks = {
         .mount = devfs_mount,
         .unmount = (void*)empty,
         .mkdir = devfs_mkdir,
@@ -117,7 +117,7 @@ static struct vfs_callback callback = {
 };
 
 void devfs_setup(){
-    devfs_id = vfs_regist("devfs",&callback);
+    devfs_id = vfs_regist("devfs",&devfs_callbacks);
     vfs_mkdir("/dev");
     vfs_node_t dev = vfs_open("/dev");
     if(dev == NULL) {

@@ -325,15 +325,6 @@ static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){
     if(device->class_code == 0x060400 || (device->class_code & 0xFFFF00) == 0x060400){
         return;
     }
-
-    kinfo("Found PCI device: %03d:%02d:%02d [0x%04X:0x%04X] <%08x> %s",
-          device->bus,
-          device->slot,
-          device->func,
-          device->vendor_id,
-          device->device_id,
-          device->class_code,
-          device->name);
 }
 
 void print_all_pci() {

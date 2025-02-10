@@ -6,7 +6,6 @@ struct idt_entry idt_entries[256];
 void idt_setup() {
     idt_pointer.size = (uint16_t) sizeof(idt_entries) - 1;
     idt_pointer.ptr = &idt_entries;
-
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
 }
 

@@ -9,12 +9,15 @@
 #include "page.h"
 #include "tty.h"
 #include "scheduler.h"
+#include "timer.h"
 
 struct process_control_block{
     uint8_t task_level;           // 进程优先级
     int pid;                      // 进程 PID
     char name[50];                // 进程名
     uint64_t cpu_clock;           // CPU 调度时间片
+    uint64_t cpu_timer;           // CPU 占用时间
+    timer_t *time_buf;             // 计时器句柄
     TaskContext context0;         // 进程上下文
     page_directory_t *directory;  // 进程页目录
     uint64_t kernel_stack;        // 内核栈

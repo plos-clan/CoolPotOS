@@ -35,15 +35,15 @@ enum {
 };
 
 typedef struct vfs_callback { //VFS回调函数
-    vfs_mount_t   mount;
-    vfs_unmount_t unmount;
+    vfs_mount_t   mount;  //挂载文件系统
+    vfs_unmount_t unmount; //卸载文件系统 (虚拟文件系统不支持卸载)
     vfs_open_t    open;
     vfs_close_t   close;
     vfs_read_t    read;
     vfs_write_t   write;
     vfs_mk_t      mkdir;
     vfs_mk_t      mkfile;
-    vfs_stat_t    stat; // 保留备用
+    vfs_stat_t    stat; // 检查文件状态信息
 } *vfs_callback_t;
 
 struct vfs_node { //vfs节点
