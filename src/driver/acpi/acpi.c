@@ -4,7 +4,6 @@
 #include "limine.h"
 #include "hhdm.h"
 
-
 XSDT *xsdt;
 
 __attribute__((used, section(".limine_requests")))

@@ -21,7 +21,7 @@
 #include "ahci.h"
 #include "speaker.h"
 #include "devfs.h"
-
+#include "pipfs.h"
 #include "shell.h"
 
 __attribute__((used, section(".limine_requests")))
@@ -78,15 +78,17 @@ void kmain(void) {
     ahci_setup();
 
     devfs_setup();
-
+    pipfs_setup();
     init_pcb();
     build_stream_device();
-    //TODO create_kernel_thread(terminal_flush_service, NULL, "Terminal");
-    create_kernel_thread((void*)shell_setup, NULL, "Shell");
+    /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
+    create_kernel_thread((void*)shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
     beep();
     enable_scheduler();
     open_interrupt;
+
+   // switch_to_user_mode((uint64_t)cp_reset);
 
     cpu_hlt;
 }

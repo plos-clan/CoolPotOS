@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "limine.h"
+#include "smp.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "timer.h"
@@ -153,14 +154,23 @@ void ps() {
         if(longest_name->pid == kernel_head_task->pid) break;
     }
     pcb_t pcb = kernel_head_task;
-    printk("PID  %-*s         RAM(byte)  Priority  Time\n", longest_name_len, "NAME");
+
+    uint64_t all_time = 0;
+    uint64_t idle_time = kernel_head_task->cpu_timer;
+    uint64_t mem_use = 0;
+    uint32_t bytes = get_all_memusage();
+    int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    printk("PID  %-*s  RAM(byte)  Priority  Timer\n", longest_name_len, "NAME");
     while (pcb != NULL) {
-        printk("%-5d%-*s%10d          %-10d%-d\n", pcb->pid, longest_name_len, pcb->name,
+        all_time += pcb->cpu_timer;
+        if(pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
+        printk("%-5d%-*s  %-10d %-10d%-d\n", pcb->pid, longest_name_len, pcb->name,
                pcb->mem_usage,
                pcb->task_level, pcb->cpu_clock);
         pcb = pcb->next;
         if(pcb->pid == kernel_head_task->pid) break;
     }
+    printk("--- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n",idle_time * 100 / all_time,mem_use + memory,bytes > 10485760 ? "MB" : "KB",memory_size / 1024 / 1024);
 }
 
 static void ls(int argc, char **argv) {
@@ -228,19 +238,18 @@ static void sys_info() {
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
     printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
-    printk("  .@@@@@@@@@@@:\033[36m+@@@@@@@:\033[39m         Process:      %d\n", get_all_task());
-    printk("  &@@@@@@@@@@:\033[36m+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
+    printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
+    printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pci_num());
-    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n", framebuffer->width,
-           framebuffer->height);
+    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n", framebuffer->width,framebuffer->height);
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
     printk("*@@@@@@           @@@@@@*        Memory Usage: %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
     printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor\n");
     printk(" &@@@@@@*.     .#@@@@@@& \n");
-    printk(" =@@@@@@@@*---*@@@@@@@@- \n");
-    printk("  .@@@@@@@@@@@@@@@@@@&.  \n");
+    printk("  =@@@@@@@*----*@@@@@@@- \n");
+    printk("  .#@@@@@@@@@@@@@@@@@#.    \n");
     printk("    .#@@@@@@@@@@@@@#.    \n");
     printk("      =&@@@@@@@@@&-      \n");
     printk("        -*&@@@&+:        \n");

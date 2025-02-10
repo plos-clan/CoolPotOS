@@ -12,7 +12,7 @@ This is a simple operating system for x86_64 architecture.
 ## Model
 
 * `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+* `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
 
 ## Build & Run
 

@@ -17,6 +17,10 @@
 #include "ctype.h"
 #include "isr.h"
 
+typedef struct timer{
+    uint64_t old_time;
+}timer_t;
+
 //void timer_handle(void); __attribute__((naked));
 void usleep(uint64_t nano);
 uint64_t nanoTime();
@@ -30,3 +34,6 @@ uint32_t get_mon();
 uint32_t get_year();
 int is_leap_year(int year);
 char *get_date_time();
+
+timer_t *alloc_timer();
+uint64_t get_time(timer_t *timer1);

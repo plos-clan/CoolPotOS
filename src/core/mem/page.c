@@ -25,12 +25,13 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault, virtual address 0x%x\n", faulting_address);
     logkf("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
-    kerror("Page fault, virtual address 0x%x", faulting_address);
-    kerror("Error code: %s", !(error_code & 0x1) ? "Page not present" :
-                                error_code & 0x2 ? "Write error" :
-                                error_code & 0x4 ? "User mode" :
-                                error_code & 0x8 ? "Reserved bits set" :
-                                error_code & 0x10 ? "Decode address" : "Unknown");
+    printk("\n");
+    printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
+           !(error_code & 0x1) ? "PageNotPresent" :
+           error_code & 0x2 ? "WriteError" :
+           error_code & 0x4 ? "UserMode" :
+           error_code & 0x8 ? "ReservedBitsSet" :
+           error_code & 0x10 ? "DecodeAddress" : "Unknown",faulting_address);
     printk("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
     print_register(frame);
     update_terminal();

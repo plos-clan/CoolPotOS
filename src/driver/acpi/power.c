@@ -41,8 +41,6 @@ void enable_acpi(){
     }
 }
 
-
-
 void setup_facp(acpi_facp_t *facp0) {
     uint8_t *S5Addr;
     uint32_t dsdtlen;

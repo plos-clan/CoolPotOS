@@ -12,6 +12,9 @@
 #define LAPIC_REG_SPURIOUS 0xf0
 #define LAPIC_REG_TIMER_DIV 0x3e0
 
+#define APIC_ICR_LOW 0x300
+#define APIC_ICR_HIGH 0x310
+
 #include "ctype.h"
 
 typedef struct {
@@ -70,6 +73,13 @@ struct madt_io_apic {
     uint32_t address;
     uint32_t gsib;
 }__attribute__((packed));
+
+struct madt_local_apic{
+    struct madt_hander h;
+    uint8_t ACPI_Processor_UID;
+    uint8_t local_apic_id;
+    uint32_t flags;
+};
 
 typedef struct {
     struct ACPISDTHeader h;
@@ -182,6 +192,7 @@ typedef struct generic_address GenericAddress;
 typedef struct hpet Hpet;
 typedef struct madt_hander MadtHeader;
 typedef struct madt_io_apic MadtIOApic;
+typedef struct madt_local_apic MadtLocalApic;
 typedef struct facp_table acpi_facp_t;
 
 void acpi_setup();
@@ -191,8 +202,10 @@ void apic_setup(MADT *madt);
 void *find_table(const char *name);
 
 uint64_t lapic_id();
-
+void send_ipi(uint32_t apic_id, uint32_t command);
 void ioapic_add(uint8_t vector, uint32_t irq);
+uint32_t lapic_read(uint32_t reg);
+void local_apic_init(bool is_print);
 
 void setup_facp(acpi_facp_t *facp);
 

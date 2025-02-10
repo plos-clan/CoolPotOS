@@ -5,6 +5,7 @@
 #include "limine.h"
 #include "timer.h"
 #include "isr.h"
+#include "smp.h"
 
 bool x2apic_mode;
 uint64_t lapic_address;
@@ -41,15 +42,15 @@ void ioapic_add(uint8_t vector, uint32_t irq) {
     ioapic_write(ioredtbl + 1, (uint32_t)(redirect >> 32));
 }
 
-static void lapic_write(uint32_t reg, uint32_t value) {
+static void lapic_write(uint32_t reg, uint64_t value) {
     if(x2apic_mode){
         wrmsr(0x800 + (reg >> 4), value);
         return;
     }
-    mmio_write32((uint32_t*)((uint64_t)lapic_address + reg), value);
+    mmio_write64((uint32_t*)((uint64_t)lapic_address + reg), value);
 }
 
-static uint32_t lapic_read(uint32_t reg) {
+uint32_t lapic_read(uint32_t reg) {
     if(x2apic_mode){
         return rdmsr(0x800 + (reg >> 4));
     }
@@ -57,10 +58,11 @@ static uint32_t lapic_read(uint32_t reg) {
 }
 
 uint64_t lapic_id() {
-    return (lapic_read(LAPIC_REG_ID) >> 24);
+    uint32_t phy_id = lapic_read(LAPIC_REG_ID);
+    return x2apic_mode ? phy_id : (phy_id >> 24);
 }
 
-void local_apic_init() {
+void local_apic_init(bool is_print) {
     x2apic_mode = (smp_request.flags & 1U) != 0;
     lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
@@ -72,10 +74,10 @@ void local_apic_init() {
     for (;;) if (nanoTime() - b >= 1000000) break;
     uint64_t lapic_timer = (~(uint32_t) 0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     uint64_t calibrated_timer_initial = (uint64_t) ((uint64_t) (lapic_timer * 1000) / 250);
-    printk("Calibrated LAPIC timer: %d ticks per second.\n", calibrated_timer_initial);
+    if(is_print) printk("Calibrated LAPIC timer: %d ticks per second.\n", calibrated_timer_initial);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT,calibrated_timer_initial);
-    kinfo("Setup local %s.",x2apic_mode ? "x2APIC" : "APIC");
+    if(is_print) kinfo("Setup local %s.",x2apic_mode ? "x2APIC" : "APIC");
 }
 
 void io_apic_init(){
@@ -95,6 +97,15 @@ void lapic_timer_stop() {
     lapic_write(LAPIC_REG_TIMER, (1 << 16));
 }
 
+void send_ipi(uint32_t apic_id, uint32_t command){
+    if (x2apic_mode){
+        lapic_write(APIC_ICR_LOW, (((uint64_t)apic_id) << 32) | command);
+    }else{
+        lapic_write(APIC_ICR_HIGH, apic_id << 24);
+        lapic_write(APIC_ICR_LOW, command);
+    }
+}
+
 void apic_setup(MADT *madt) {
     lapic_address = madt->local_apic_address;
     uint64_t current = 0;
@@ -110,6 +121,7 @@ void apic_setup(MADT *madt) {
         current += (uint64_t) header->length;
     }
     disable_pic();
-    local_apic_init();
+    local_apic_init(true);
     io_apic_init();
+    apu_startup(smp_request);
 }
