@@ -59,6 +59,6 @@ char *get_date_time() {
     if (day > day_of_months[month]) day = 1, month++;
     if (month > 12) month = 1, year++;
 #endif
-    stbsp_sprintf(s, "%d/%d/%d %d:%d:%d", year, month, day, hour, min, sec);
+    sprintf(s, "%d/%d/%d %d:%d:%d", year, month, day, hour, min, sec);
     return s;
 }

@@ -56,6 +56,12 @@ void acpi_setup() {
     } else
         apic_setup(apic);
 
+    void* mcfg = find_table("MCFG");
+    if (mcfg == NULL) {
+        kwarn("Cannot find acpi mcfg table.");
+        return;
+    } else
+        pcie_setup(mcfg);
 
     void* facp = find_table("FACP");
     if(facp == NULL) {

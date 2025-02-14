@@ -54,7 +54,7 @@
     do                                     \
     {                                      \
         printk("[");                       \
-        color_printk(RED, BLACK, "ERROR"); \
+        color_printk(RED, BLACK, "ERROR "); \
         printk("]: ");                      \
         printk(__VA_ARGS__);               \
         printk("\n");                      \

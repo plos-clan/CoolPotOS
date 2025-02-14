@@ -3,15 +3,23 @@
 #include "gop.h"
 #include "alloc.h"
 #include "terminal.h"
+#include "mpmc_queue.h"
+#include "kprint.h"
 
 tty_t defualt_tty;
+mpmc_queue_t *queue;
 
 extern bool open_flush; //terminal.c
 
 static void tty_kernel_print(tty_t *tty,const char* msg){
     if(open_flush)
         terminal_puts(msg);
-    else terminal_process(msg);
+    else{
+        if(queue == NULL){
+
+        }
+        terminal_process(msg);
+    }
 }
 
 static void tty_kernel_putc(tty_t *tty,int c){
@@ -47,4 +55,10 @@ void init_tty(){
     defualt_tty.keyboard_buffer = create_atom_queue(1024);
     defualt_tty.print = tty_kernel_print;
     defualt_tty.putchar = tty_kernel_putc;
+    queue = malloc(sizeof(mpmc_queue_t));
+    if(init(queue,1024, sizeof(uint32_t),FAIL) != SUCCESS){
+        kerror("Cannot enable mppmc buffer\n");
+        free(queue);
+        queue = NULL;
+    }
 }

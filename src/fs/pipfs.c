@@ -36,7 +36,7 @@ static int pipfs_mount(const char* handle,vfs_node_t node){
 static int pipfs_mkdir(void* handle0,const char* name,vfs_node_t node){
     pipfs_handle_t *handle = handle0;
     char  *new_path = malloc(strlen(handle->path) + strlen(name) + 1 + 1);
-    stbsp_sprintf(new_path, "%s/%s", handle->path, name);
+    sprintf(new_path, "%s/%s", handle->path, name);
     pipfs_handle_t *new_dir = malloc(sizeof(pipfs_handle_t));
     new_dir->type = DIR;
     new_dir->path = new_path;
@@ -64,7 +64,7 @@ static int pipfs_stat(void *handle0,vfs_node_t node){
 static int pipfs_mkfile(void *handle0, const char *name, vfs_node_t node){
     pipfs_handle_t *handle = handle0;
     char  *new_path = malloc(strlen(handle->path) + strlen(name) + 1 + 1);
-    stbsp_sprintf(new_path, "%s/%s", handle->path, name);
+    sprintf(new_path, "%s/%s", handle->path, name);
     pipfs_handle_t *new_file = file_alloc(10);
     new_file->path = new_path;
     new_file->child = NULL;
@@ -110,7 +110,7 @@ void pipfs_setup(){
 
 static void update_process(char *path,pcb_t pcb,bool is_build){
     char buf[50];
-    stbsp_sprintf(buf,"%s/name",path);
+    sprintf(buf,"%s/name",path);
 
     if(is_build){
         vfs_mkfile(buf);
@@ -122,7 +122,7 @@ void pipfs_update(pcb_t kernel_head){
     pcb_t f = kernel_head;
     do{
         char buf[100];
-        stbsp_sprintf(buf,"/proc/%d",f->pid);
+        sprintf(buf,"/proc/%d",f->pid);
         vfs_node_t node = vfs_open(buf);
         vfs_mkdir(buf);
         if(node == NULL)
