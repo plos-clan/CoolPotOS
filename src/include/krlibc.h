@@ -1,9 +1,13 @@
 #pragma once
 
-#define KERNEL_NAME "CP_Kernel-x86_64-0.0.6"
+/**
+ * 定义CP_Kernel的各种属性
+ */
+#define KERNEL_NAME "CP_Kernel-x86_64-0.0.6" //内核编号
+#define MAX_CPU 20                           //最大支持CPU核心数
+#define STACK_SIZE 32768                     //栈大小(byte)
 
-#define STACK_SIZE 32768
-
+// 常用工具宏
 #define cpu_hlt while(1) __asm__("hlt")
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define __IRQHANDLER __attribute__((interrupt))

@@ -115,13 +115,13 @@ static void cd(int argc, char **argv) {
         strcpy(shell_work_path, s);
     } else {
         if (streq(shell_work_path, "/"))
-            stbsp_sprintf(shell_work_path, "%s%s", shell_work_path, s);
+            sprintf(shell_work_path, "%s%s", shell_work_path, s);
         else
-            stbsp_sprintf(shell_work_path, "%s/%s", shell_work_path, s);
+            sprintf(shell_work_path, "%s/%s", shell_work_path, s);
     }
     if (vfs_open(shell_work_path) == NULL) {
         printk("cd: %s: No such directory\n", s);
-        stbsp_sprintf(shell_work_path, "%s", old);
+        sprintf(shell_work_path, "%s", old);
         free(old);
     }
 }
@@ -135,9 +135,9 @@ static void mkdir(int argc, char **argv) {
     char bufx[100];
     if (buf_h[0] != '/') {
         if(!strcmp(shell_work_path,"/"))
-            stbsp_sprintf(bufx, "/%s", buf_h);
-        else stbsp_sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-    } else stbsp_sprintf(bufx, "%s", buf_h);
+            sprintf(bufx, "/%s", buf_h);
+        else sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+    } else sprintf(bufx, "%s", buf_h);
     if (vfs_mkdir(bufx) == -1) {
         printk("Failed create directory [%s].\n", argv[1]);
     }
@@ -160,17 +160,17 @@ void ps() {
     uint64_t mem_use = 0;
     uint32_t bytes = get_all_memusage();
     int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-    printk("PID  %-*s  RAM(byte)  Priority  Timer\n", longest_name_len, "NAME");
+    printk("PID  %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME");
     while (pcb != NULL) {
         all_time += pcb->cpu_timer;
         if(pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
-        printk("%-5d%-*s  %-10d %-10d%-d\n", pcb->pid, longest_name_len, pcb->name,
+        printk("%-5d%-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,
                pcb->mem_usage,
-               pcb->task_level, pcb->cpu_clock);
+               pcb->task_level, pcb->cpu_clock,pcb->cpu_id);
         pcb = pcb->next;
         if(pcb->pid == kernel_head_task->pid) break;
     }
-    printk("--- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n",idle_time * 100 / all_time,mem_use + memory,bytes > 10485760 ? "MB" : "KB",memory_size / 1024 / 1024);
+    printk("   --- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n",idle_time * 100 / all_time,mem_use + memory,bytes > 10485760 ? "MB" : "KB",memory_size / 1024 / 1024);
 }
 
 static void ls(int argc, char **argv) {
@@ -182,9 +182,9 @@ static void ls(int argc, char **argv) {
         char bufx[100];
         if (buf_h[0] != '/') {
             if(!strcmp(shell_work_path,"/"))
-                stbsp_sprintf(bufx, "/%s", buf_h);
-            else stbsp_sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-        } else stbsp_sprintf(bufx, "%s", buf_h);
+                sprintf(bufx, "/%s", buf_h);
+            else sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+        } else sprintf(bufx, "%s", buf_h);
         p = vfs_open(bufx);
     }
     if (p == NULL) {

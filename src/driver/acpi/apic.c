@@ -123,5 +123,8 @@ void apic_setup(MADT *madt) {
     disable_pic();
     local_apic_init(true);
     io_apic_init();
+}
+
+void smp_setup(){
     apu_startup(smp_request);
 }

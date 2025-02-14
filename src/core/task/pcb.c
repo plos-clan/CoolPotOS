@@ -8,11 +8,13 @@
 #include "description_table.h"
 #include "timer.h"
 #include "heap.h"
+#include "sprintf.h"
+#include "smp.h"
 
-extern pcb_t current_task;
+extern pcb_t current_task; //scheduler.c
 extern pcb_t kernel_head_task;
 
-static int now_pid = 0;
+int now_pid = 0;
 
 _Noreturn void process_exit() {
     register uint64_t rax __asm__("rax");
@@ -103,6 +105,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
     new_task->mem_usage = get_all_memusage();
     new_task->tty = alloc_default_tty(); // 初始化TTY设备
     new_task->directory = get_kernel_pagedir();
+    new_task->cpu_id = get_current_cpuid();
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top = (uint64_t *) ((uint64_t) new_task + STACK_SIZE);
     *(--stack_top) = (uint64_t) args;
@@ -131,7 +134,10 @@ void init_pcb(){
     current_task->context0.rflags = get_rflags();
     current_task->cpu_timer = nanoTime();
     current_task->time_buf = alloc_timer();
-    memcpy(current_task->name, "CP_IDLE\0", 9);
+    current_task->cpu_id = get_current_cpuid();
+    char name[50];
+    sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
+    memcpy(current_task->name, name, strlen(name));
     current_task->next = kernel_head_task;
     pipfs_update(kernel_head_task);
     kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);

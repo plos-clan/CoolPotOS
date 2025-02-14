@@ -5,10 +5,19 @@
 #include "io.h"
 #include "hhdm.h"
 #include "limine.h"
+#include "scheduler.h"
+#include "pcb.h"
+#include "alloc.h"
+#include "sprintf.h"
+#include "pipfs.h"
 
 extern struct idt_register idt_pointer; //idt.c
 extern struct gdt_register gdt_pointer; //gdt.c
+extern int now_pid; //pcb.c
+extern pcb_t kernel_head_task; //scheduler.c
 extern bool x2apic_mode; //apic.c
+
+smp_cpu_t cpus[MAX_CPU];
 
 uint64_t cpu_count = 0;
 
@@ -16,7 +25,20 @@ uint64_t cpu_num(){
     return cpu_count;
 }
 
-void apu_entry(){
+uint64_t get_current_cpuid(){
+    uint64_t rax, rbx, rcx, rdx;
+    rax = 0xB;
+    rcx = 0;
+    __asm__ volatile (
+            "cpuid"
+            : "=a"(rax), "=b"(rbx), "=c"(rcx), "=d"(rdx)
+            : "a"(rax), "c"(rcx)
+            );
+    return rdx;
+}
+
+static void apu_gdt_setup(){
+
     __asm__ volatile (
             "lgdt %[ptr];"
             "push %[cseg];"
@@ -34,8 +56,14 @@ void apu_entry(){
     [dseg] "rm"((uint16_t) 0x10U)
     : "memory"
     );
-    __asm__ volatile("lidt %0" : : "m"(idt_pointer));
+}
 
+void apu_entry(){
+    __asm__ volatile("lidt %0" : : "m"(idt_pointer));
+    apu_gdt_setup();
+
+    page_table_t *physical_table = virt_to_phys((uint64_t)get_kernel_pagedir()->table);
+    __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 
     uint64_t ia32_apic_base = rdmsr(0x1b);
     ia32_apic_base |= 1 << 11;
@@ -44,16 +72,38 @@ void apu_entry(){
     }
     wrmsr(0x1b, ia32_apic_base);
     local_apic_init(false);
+
+    pcb_t apu_idle = (pcb_t)malloc(STACK_SIZE);
+    apu_idle->task_level = 0;
+    apu_idle->pid = now_pid++;
+    apu_idle->cpu_clock = 0;
+    apu_idle->directory = get_kernel_pagedir();
+    //TODO 核心私有TSS未实现 set_kernel_stack(get_rsp());
+    apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
+    apu_idle->user_stack = apu_idle->kernel_stack;
+    apu_idle->tty = get_default_tty();
+    apu_idle->context0.rflags = get_rflags();
+    apu_idle->cpu_timer = nanoTime();
+    apu_idle->time_buf = alloc_timer();
+    apu_idle->cpu_id = get_current_cpuid();
+    char name[50];
+    stbsp_sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
+    memcpy(apu_idle->name, name, strlen(name));
+    apu_idle->next = kernel_head_task;
+    add_task(apu_idle);
+    pipfs_update(kernel_head_task);
     cpu_hlt;
 }
 
 void apu_startup(struct limine_smp_request smp_request){
     struct limine_smp_response *response = smp_request.response;
     cpu_count = response->cpu_count;
-    for (uint64_t i = 0; i < cpu_count; i++){
+    for (uint64_t i = 0; i < cpu_count && i < MAX_CPU; i++){
         struct limine_smp_info *info = response->cpus[i];
         if(info->lapic_id == response->bsp_lapic_id) continue;
         info->goto_address = (void*)apu_entry;
+        cpus[i].lapic_id = info->lapic_id;
+        cpus[i].flags = 1;
     }
     kinfo("%d processors have been enabled.",cpu_count);
 }

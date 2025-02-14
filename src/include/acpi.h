@@ -188,6 +188,19 @@ typedef struct facp_table {
     struct generic_address x_gpe1_blk;
 } __attribute__((packed)) acpi_facp_t;
 
+typedef struct{
+    struct ACPISDTHeader Header;
+    uint64_t Reserved;
+} __attribute__((packed)) MCFG;
+
+typedef struct{
+    uint64_t base_address;
+    uint16_t pci_segment_group;
+    uint8_t start_bus;
+    uint8_t end_bus;
+    uint32_t reserved;
+} __attribute__((packed)) MCFG_ENTRY;
+
 typedef struct generic_address GenericAddress;
 typedef struct hpet Hpet;
 typedef struct madt_hander MadtHeader;
@@ -198,6 +211,7 @@ typedef struct facp_table acpi_facp_t;
 void acpi_setup();
 
 void apic_setup(MADT *madt);
+void pcie_setup(MCFG *mcfg);
 
 void *find_table(const char *name);
 

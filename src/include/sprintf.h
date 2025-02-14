@@ -1721,3 +1721,5 @@ static stbsp__int32 stbsp__real_to_str(char const **start, stbsp__uint32 *len, c
 #undef STBSP__UNALIGNED
 
 #endif // STB_SPRINTF_IMPLEMENTATION
+
+int sprintf(char *buf, char const *fmt, ...);

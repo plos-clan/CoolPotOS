@@ -15,8 +15,9 @@
 #include "vdisk.h"
 #include "keyboard.h"
 #include "cpuid.h"
+#include "smp.h"
 #include "pcb.h"
-#include "pci.h"
+#include "pcie.h"
 #include "nvme.h"
 #include "ahci.h"
 #include "speaker.h"
@@ -73,14 +74,16 @@ void kmain(void) {
     free(date);
     vfs_init();
     vdisk_init();
-    pci_setup();
+    pcie_init();
     nvme_setup();
     ahci_setup();
 
     devfs_setup();
     pipfs_setup();
     init_pcb();
+    smp_setup();
     build_stream_device();
+
     /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void*)shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");

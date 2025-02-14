@@ -3,6 +3,7 @@
 #include "pcb.h"
 #include "kprint.h"
 #include "pipfs.h"
+#include "smp.h"
 
 pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
@@ -90,20 +91,26 @@ void change_proccess(registers_t *reg,pcb_t taget){
 
 /**
  * CP_Kernel 默认调度器 - 循环调度
+ * TODO 只适用于单核调度所以做了进程的CPU归属判断
  * @param reg 当前进程上下文
  */
 void scheduler(registers_t *reg){
     if(is_scheduler){
         if(current_task != NULL){
+            pcb_t next = current_task->next;
+            while (next->cpu_id != get_current_cpuid()){
+                next = next->next;
+            }
             current_task->cpu_clock++;
             if(current_task->time_buf != NULL){
                 current_task->cpu_timer += get_time(current_task->time_buf);
                 current_task->time_buf = NULL;
             }
             current_task->time_buf = alloc_timer();
-            if(current_task->pid != current_task->next->pid) {
+
+            if(current_task->pid != next->pid) {
                 disable_scheduler();
-                change_proccess(reg,current_task->next);
+                change_proccess(reg,next);
                 enable_scheduler();
             }
         }
