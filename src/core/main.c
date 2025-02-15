@@ -24,6 +24,7 @@
 #include "devfs.h"
 #include "pipfs.h"
 #include "shell.h"
+#include "iic_core.h"
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(2)
@@ -82,6 +83,9 @@ void kmain(void) {
     init_pcb();
     //smp_setup();
     build_stream_device();
+    
+    //init_iic();
+    init_iic();
 
     /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
