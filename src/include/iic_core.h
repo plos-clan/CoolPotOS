@@ -1,14 +1,14 @@
 #pragma once
 
 #include "ctypes.h"
-
-#include "list.h"
 #include "io.h"
 #include "crc.h"
 #include "klog.h"
 #include "pci.h"
 
-#define LIST_IMPLEMENTATION   0x01   // enable list implementation
+//eanble list implementation
+#define LIST_IMPLEMENTATION   0x01
+#include "list.h"
 
 #define IIC_Slave_Flag_Busy   0x01
 #define IIC_Slave_Flag_Empty  0x00
