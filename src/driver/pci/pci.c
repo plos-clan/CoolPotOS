@@ -148,7 +148,7 @@ uint32_t get_pci_num() {
     return PCI_NUM;
 }
 
-static char *pci_classname(uint32_t classcode) {
+char *pci_classname(uint32_t classcode) {
     for (size_t i = 0; pci_classnames[i].name != NULL; i++) {
         if (pci_classnames[i].classcode == classcode) {
             return pci_classnames[i].name;

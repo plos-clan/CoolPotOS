@@ -24,3 +24,5 @@ typedef struct{
 void pcie_init();
 pcie_device_t *pcie_find_class(uint32_t class_code);
 void mcfg_addr_to_entries(MCFG_ENTRY **entries);
+void print_all_pcie();
+uint32_t get_pcie_num();

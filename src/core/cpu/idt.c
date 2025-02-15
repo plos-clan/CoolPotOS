@@ -6,10 +6,7 @@
 struct idt_register idt_pointer;
 struct idt_entry idt_entries[256];
 
-__IRQHANDLER void empty_handler(interrupt_frame_t *frame){
-    send_eoi();
-    printk("Empty interrupt.\n");
-}
+extern void (*empty_handle[256])(interrupt_frame_t *frame);
 
 void idt_setup() {
     idt_pointer.size = (uint16_t) sizeof(idt_entries) - 1;
@@ -17,7 +14,7 @@ void idt_setup() {
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
 
     for (int i = 0; i < 256; i++) {
-        register_interrupt_handler(i, empty_handler,0,0x8E);
+        register_interrupt_handler(i,empty_handle[i],0,0x8E);
     }
 }
 
