@@ -6,7 +6,7 @@
 #include "timer.h"
 #include "scheduler.h"
 #include "keyboard.h"
-#include "pci.h"
+#include "pcie.h"
 #include "cpuid.h"
 #include "gop.h"
 #include "heap.h"
@@ -234,13 +234,14 @@ static void sys_info() {
 
     uint32_t bytes = get_all_memusage();
     int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    extern bool is_pcie;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
     printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pci_num());
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",is_pcie ? "PCIE" : "PCI ", get_pcie_num());
     printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n", framebuffer->width,framebuffer->height);
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
@@ -307,7 +308,7 @@ void shell_setup(){
         else if (!strcmp("clear", argv[0]))
             printk("\033[H\033[2J\033[3J");
         else if (!strcmp("lspci", argv[0]))
-            print_all_pci();
+            print_all_pcie();
         else if (!strcmp("sysinfo", argv[0]))
             sys_info();
         else if (!strcmp("ps", argv[0]))

@@ -45,6 +45,7 @@ typedef struct base_address_register {
 
 typedef struct pci_device *pci_device_t;
 
+char *pci_classname(uint32_t classcode);
 pci_device_t pci_find_class(uint32_t class_code);
 pci_device_t pci_find_vid_did(uint16_t vendor_id, uint16_t device_id);
 uint32_t read_pci(pci_device_t device, uint8_t registeroffset);

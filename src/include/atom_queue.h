@@ -8,6 +8,7 @@ typedef struct Queue {
     uint64_t head;
     uint64_t tail;
     uint64_t size;
+    uint64_t length;
 }atom_queue;
 
 atom_queue *create_atom_queue(uint64_t size);

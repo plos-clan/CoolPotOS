@@ -48,6 +48,6 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * ViudiraTech - PCI driver optimization
 * Vinbe Wan - IIC Development
 * A4-Tacks - Write some build scripts
-* wenxuanjun - OS Developer
+* wenxuanjun - OS Memory Manager Development
 * Minsecrus - Memory usage optimization
 * CLimber-Rong - Software Developer

@@ -36,16 +36,16 @@ static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
 
-_Noreturn void cp_shutdown(){
+_Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
-   // kill_all_proc();
+    // kill_all_proc();
     power_off();
     while (1);
 }
 
-_Noreturn void cp_reset(){
+_Noreturn void cp_reset() {
     printk("Rebooting %s...\n", KERNEL_NAME);
-   // kill_all_proc();
+    // kill_all_proc();
     power_reset();
     while (1);
 }
@@ -55,22 +55,21 @@ void kmain(void) {
     init_serial();
     init_hhdm();
     init_frame();
-    page_setup();
     init_heap();
     init_terminal();
     init_tty();
     printk("CoolPotOS %s (Limine Bootloader) on an x86_64\n", KERNEL_NAME);
     init_cpuid();
     printk("Video: 0x%p - %d x %d\n", framebuffer->address, framebuffer->width, framebuffer->height);
-
     gdt_setup();
     idt_setup();
+    page_setup();
     error_setup();
     acpi_setup();
     keyboard_setup();
     mouse_setup();
-    char* date = get_date_time();
-    kinfo("RTC time %s",date);
+    char *date = get_date_time();
+    kinfo("RTC time %s", date);
     free(date);
     vfs_init();
     vdisk_init();
@@ -81,17 +80,17 @@ void kmain(void) {
     devfs_setup();
     pipfs_setup();
     init_pcb();
-    smp_setup();
+    //smp_setup();
     build_stream_device();
 
     /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
-    create_kernel_thread((void*)shell_setup, NULL, "KernelShell");
+    create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
     beep();
     enable_scheduler();
     open_interrupt;
 
-   // switch_to_user_mode((uint64_t)cp_reset);
+    // switch_to_user_mode((uint64_t)cp_reset);
 
     cpu_hlt;
 }

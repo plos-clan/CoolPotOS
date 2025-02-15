@@ -10,6 +10,14 @@ static volatile struct limine_framebuffer_request framebuffer_request = {
         .revision = 0
 };
 
+uint64_t get_screen_width(){
+    return framebuffer->width;
+}
+
+uint64_t get_screen_height(){
+    return framebuffer->height;
+}
+
 void init_gop() {
     if (framebuffer_request.response == NULL
         || framebuffer_request.response->framebuffer_count < 1) {

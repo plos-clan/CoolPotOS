@@ -52,10 +52,28 @@ __IRQHANDLER void general_protection_fault(interrupt_frame_t *frame,uint64_t err
     kernel_error("General protection fault",error_code,frame);
 }
 
+__IRQHANDLER void device_not_available(interrupt_frame_t *frame){
+    close_interrupt;
+    kernel_error("Device Not Available",0,frame);
+}
+
+__IRQHANDLER void invalid_tss(interrupt_frame_t *frame,uint64_t error_code){
+    close_interrupt;
+    kernel_error("Invalid TSS",error_code,frame);
+}
+
+__IRQHANDLER void stack_segment_fault(interrupt_frame_t *frame,uint64_t error_code){
+    close_interrupt;
+    kernel_error("Stack Segment Fault",error_code,frame);
+}
+
 void error_setup() {
-    register_interrupt_handler(8, (void *) double_fault, 1, 0x8E);
     register_interrupt_handler(0, (void *) divede_error, 0, 0x8E);
-    register_interrupt_handler(11, (void *) segment_not_present, 0, 0x8E);
     register_interrupt_handler(6, (void *) invalid_opcode, 0, 0x8E);
+    register_interrupt_handler(7, (void*) device_not_available,0,0x8E);
+    register_interrupt_handler(8, (void *) double_fault, 1, 0x8E);
+    register_interrupt_handler(10, (void*) invalid_tss, 0, 0x8E);
+    register_interrupt_handler(11, (void *) segment_not_present, 0, 0x8E);
+    register_interrupt_handler(12, (void *) stack_segment_fault, 0, 0x8E);
     register_interrupt_handler(13, (void *) general_protection_fault, 0, 0x8E);
 }

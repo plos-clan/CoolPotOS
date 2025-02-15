@@ -6,6 +6,7 @@
 #include "kprint.h"
 #include "acpi.h"
 #include "pcb.h"
+#include "terminal.h"
 
 static int caps_lock, shift, e0_flag = 0, ctrl = 0;
 int disable_flag = 0;
@@ -25,16 +26,17 @@ char keytable1[0x54] = { // 未按下Shift
         ',', '.', '/', 0, '*', 0, ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.'};
 
-__IRQHANDLER void keyboard_handler(interrupt_frame_t *frame){
+__IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     UNUSED(frame);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     //logkf("Key: %d",scancode);
     send_eoi();
-    if (scancode == 0xe0) {
-        e0_flag = 1;
-        return;
-    }
+
+//    if (scancode == 0xe0) {
+//        e0_flag = 1;
+//        return;
+//    }
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
     }
@@ -50,13 +52,17 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame){
     if (scancode == 0x9d) { // Ctrl按下
         ctrl = 0;
     }
-    if(kernel_head_task != NULL){
-        pcb_t cur = kernel_head_task;
-        do{
-            cur = cur->next;
-            atom_push(cur->tty->keyboard_buffer,scancode);
-        } while (cur->pid != kernel_head_task->pid);
-    } else printk("Keyboard scancode: %x\n", scancode);
+
+    if (scancode < 0x80) {
+        if (kernel_head_task != NULL) {
+            pcb_t cur = kernel_head_task;
+            do {
+                cur = cur->next;
+                atom_push(cur->tty->keyboard_buffer, scancode);
+            } while (cur->pid != kernel_head_task->pid);
+        } else
+            printk("Keyboard scancode: %x\n", scancode);
+    }
 }
 
 int input_char_inSM() {
@@ -96,7 +102,7 @@ int kernel_getch() {
     return -1;
 }
 
-void keyboard_setup(){
+void keyboard_setup() {
     register_interrupt_handler(keyboard, (void *) keyboard_handler, 0, 0x8E);
     kinfo("Setup PS/2 keyboard.");
 }

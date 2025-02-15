@@ -48,6 +48,6 @@
 * ViudiraTech - PCI驱动优化
 * VinbeWan - IIC驱动程序开发
 * A4-Tacks - 编写一些构建脚本
-* wenxuanjun - OS 重构开发
+* wenxuanjun - OS 内存管理开发
 * Minsecrus - OS 内存统计算法优化
 * CLimber-Rong - 软件开发

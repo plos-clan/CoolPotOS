@@ -11,11 +11,22 @@
 #define KB_SEND2MOUSE 0xd4
 #define MOUSE_EN 0xf4
 
+#include "ctype.h"
+
 typedef enum mouse_type {
     Standard = 0,
     OnlyScroll = 1,
     FiveButton = 2,
 }MouseType;
+
+typedef struct{
+    uint8_t buf[3], phase;
+    int x, y, btn;
+    char roll;
+    bool left;
+    bool center;
+    bool right;
+} mouse_dec;
 
 void keyboard_setup();
 void mouse_setup();

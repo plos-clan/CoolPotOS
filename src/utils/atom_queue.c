@@ -9,6 +9,7 @@ atom_queue *create_atom_queue(uint64_t size){
     queue->head = 0;
     queue->tail = 0;
     queue->size = size;
+    queue->length = 0;
     return queue;
 }
 
@@ -19,15 +20,17 @@ bool atom_push(atom_queue *queue,uint8_t data){
     if(next == load(&queue->tail)) return false;
     *(&queue->buf[head]) = data;
     store(&queue->head, next);
+    queue->length++;
     return true;
 }
 
 uint8_t atom_pop(atom_queue *queue){
-    if(queue == NULL) return false;
+    if(queue == NULL) return -1;
     uint64_t tail = load(&queue->tail);
     if(tail == load(&queue->head)) return -1;
     uint8_t data = queue->buf[tail];
     store(&queue->tail,(tail + 1) & queue->mask);
+    queue->length--;
     return data;
 }
 
