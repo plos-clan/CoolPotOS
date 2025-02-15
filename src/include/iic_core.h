@@ -8,6 +8,8 @@
 #include "klog.h"
 #include "pci.h"
 
+#define LIST_IMPLEMENTATION   0x01   // enable list implementation
+
 #define IIC_Slave_Flag_Busy   0x01
 #define IIC_Slave_Flag_Empty  0x00
 #define IIC_Slave_Flag_START  0x01
@@ -44,6 +46,11 @@ typedef struct IIC_Slave {
     void (*remove)(void);           // 卸载设备
 } IIC_Slave;
 
+typedef struct IIC_Slave_Node {
+    IIC_Slave slave;
+    list_t next;
+} IIC_Slave_Node;
+
 typedef struct IIC_Data {
     unsigned char start;            // 数据段始标（0x01）
     unsigned char data_len;         // 数据长度（字节计）
@@ -52,8 +59,13 @@ typedef struct IIC_Data {
     unsigned char stop;             // 数据段末标（0x01）
 } IIC_Data;
 
+
 void iic_init(void);
 bool crc_check(IIC_Data *);
+IIC_Slave_Node iic_slave_alloc(IIC_Slave*);
+void iic_slave_append(list_t *, IIC_Slave_Node *);
+void iic_slave_delete(list_t *head, IIC_Slave_Node *node);
+void iic_slave_foreach(list_t *head, void (*func)(IIC_Slave *));
 unsigned int iic_data_transfer(IIC_Data *);
 unsigned int Get_iic_master_address(pci_device_t *);
 void iic_start(IIC_Master *);

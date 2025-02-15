@@ -9,9 +9,10 @@ void iic_init(void) {
         return;
     } else {
         klogf(true, "Find IIC Master Controller.\n");
-        IIC_Master *iic_master;
+        IIC_Master *iic_master = (IIC_Master *) kmalloc(sizeof(IIC_Master));
         unsigned int address = Get_iic_master_address(IIC_Master_Controller);
         iic_master->Control = address;
+        IIC_Slave_Node iic_slave_list = iic_slave_alloc(NULL);
     }
 }
 
@@ -27,6 +28,25 @@ bool crc_check(IIC_Data *frame) {
     }
 }
 
+
+IIC_Slave_Node iic_slave_alloc(IIC_Slave *slave) {
+    IIC_Slave_Node node;
+    node.next = list_alloc(NULL);
+    node.slave = *slave;
+    return node;
+}
+
+void iic_slave_append(list_t *head, IIC_Slave_Node *node) {
+    list_append(head, node->next);
+}
+
+void iic_slave_delete(list_t *head, IIC_Slave_Node *node) {
+    list_delete(head, node->next);
+}
+
+void iic_slave_foreach(list_t *head, void (*func)(IIC_Slave *)) {
+    list_foreach(head, func);
+}
 
 unsigned int iic_data_transfer(IIC_Data *frame) {
 
@@ -51,7 +71,7 @@ unsigned int Get_iic_master_address(pci_device_t *IIC_Master_Controller) {
 }
 
 void iic_start(IIC_Master *IIC_Master) {
-    // IIC主机控制器总线初始化
+    // 启动兼容性
 
 }
 
@@ -60,17 +80,17 @@ void iic_stop(IIC_Master *IIC_Master) {
 }
 
 void iic_send_start(IIC_Master *IIC_Master) {
-    // IIC主机控制器发送起始信号
+    // 起始信号兼容性
 }
 
 void iic_send_stop(IIC_Master *IIC_Master) {
-    // IIC主机控制器发送停止信号
+    // 停止信号兼容性
 }
 
 void iic_send_byte(IIC_Master *IIC_Master, unsigned char data) {
-    // IIC主机控制器基地址发送一个字节
+    // 发送字节兼容性
 }
 
 char iic_receive_byte(IIC_Master *IIC_Master) {
-    // IIC主机控制器基地址接收一个字节
+    // 接收字节兼容性
 }
