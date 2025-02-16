@@ -24,7 +24,7 @@
 #include "devfs.h"
 #include "pipfs.h"
 #include "shell.h"
-#include "iic_core.h"
+#include "iic/iic_core.h"
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(2)
