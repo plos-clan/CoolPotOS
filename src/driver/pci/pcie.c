@@ -3,6 +3,7 @@
 #include "kprint.h"
 #include "hhdm.h"
 #include "alloc.h"
+#include "krlibc.h"
 
 MCFG_ENTRY *mcfg_entries[PCI_MCFG_MAX_ENTRIES_LEN];
 MCFG *mcfg;
@@ -13,7 +14,7 @@ bool is_pcie = false; // 是否是PCIE模式 (CP_Kernel无法加载PCIE驱动时
 
 static uint64_t
 get_device_mmio_physical_address(uint16_t segment_group, uint8_t bus, uint8_t device, uint8_t function) {
-    for (int i = 0; i < mcfg_entries_len; i++) {
+    for (size_t i = 0; i < mcfg_entries_len; i++) {
         if (mcfg_entries[i]->pci_segment_group == segment_group) {
             return mcfg_entries[i]->base_address + ((bus - mcfg_entries[i]->start_bus) << 20) + (device << 15) +
                    (function << 12);
@@ -27,7 +28,7 @@ static uint64_t get_mmio_address(uint32_t pci_address, uint16_t offset) {
     uint8_t bus = (pci_address >> 8) & 0xFF;
     uint8_t device = (pci_address >> 3) & 0x1F;
     uint8_t function = pci_address & 0x07;
-    return (uint64_t) (phys_to_virt(get_device_mmio_physical_address(segment, bus, device, function)) + offset);
+    return (uint64_t) (((uint64_t)phys_to_virt(get_device_mmio_physical_address(segment, bus, device, function))) + offset);
 }
 
 static uint32_t
@@ -39,10 +40,12 @@ void mcfg_addr_to_entries(MCFG_ENTRY **entries) {
     MCFG_ENTRY *entry = (MCFG_ENTRY *) ((uint64_t) mcfg + sizeof(MCFG));
     uint64_t length = mcfg->Header.Length - sizeof(MCFG);
     mcfg_entries_len = length / sizeof(MCFG_ENTRY);
-    for (int i = 0; i < mcfg_entries_len; i++) {
+    for (size_t i = 0; i < mcfg_entries_len; i++) {
         *(entries + i) = entry + i;
     }
 }
+
+
 
 void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint8_t function) {
     uint32_t pci_address = segment_bus_device_functon_to_pci_address(segment_group, bus, device, function);
@@ -61,6 +64,7 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
     uint8_t device_interface = *((uint8_t *) field_mmio_addr + 1);
 
     uint64_t header_type_mmio_addr = get_mmio_address(pci_address, 0x0c);
+    UNUSED(device_revision);
 
     switch (*((uint8_t *) header_type_mmio_addr + 2)) {
         // Endpoint
@@ -86,13 +90,14 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
                     pci_device->bars[i].mmio = false;
                 } else {
                     bool prefetchable = bar & (1 << 3);
+                    UNUSED(prefetchable);
                     uint64_t bar_address = bar & 0xFFFFFFF0;
                     uint16_t bit = (bar & ((1 << 3) | (1 << 2) | (1 << 1))) >> 1;
 
-                    if(bit == 0b00){
+                    if(bit == 0){ //0b00
                         pci_device->bars[i].address = bar & 0xFFFFFFFC;
                         pci_device->bars[i].mmio = true;
-                    } else if(bit == 0b10){
+                    } else if(bit == 2){ //0b10
                         uint32_t bar_address_upper = *((uint32_t *) bars_mmio_address + 1);
                         bar_address |= ((uint64_t) bar_address_upper << 32);
                         pci_device->bars[i].address = bar_address;
@@ -119,7 +124,7 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
 }
 
 void pci_scan_bus(uint16_t segment_group, uint8_t bus) {
-    for (int i = 0; i < 32; i++) {
+    for (size_t i = 0; i < 32; i++) {
         pci_scan_function(segment_group, bus, i, 0);
         uint32_t pci_address = segment_bus_device_functon_to_pci_address(segment_group, bus, i, 0);
         uint64_t mmio_addr = get_mmio_address(pci_address, 0x0c);
@@ -136,7 +141,7 @@ void pci_scan_segment(uint16_t segment_group) {
     uint32_t pci_address = segment_bus_device_functon_to_pci_address(segment_group, 0, 0, 0);
     uint64_t mmio_addr = get_mmio_address(pci_address, 0x0c);
     if (*(uint32_t *) mmio_addr & (1 << 23)) {
-        for (int i = 1; i < 8; i++) {
+        for (size_t i = 1; i < 8; i++) {
             pci_scan_bus(segment_group, i);
         }
     }
@@ -153,7 +158,7 @@ void print_all_pcie() {
         return;
     }
     printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
-    for (int i = 0; i < pci_device_number; i++) {
+    for (size_t i = 0; i < pci_device_number; i++) {
         pcie_device_t *device = pci_devices[i];
         printk("%03d:%02d:%02d\t[0x%04X:0x%04X]\t<0x%08x>\t%s\n",
                device->bus,
@@ -168,7 +173,7 @@ void print_all_pcie() {
 }
 
 pcie_device_t *pcie_find_class(uint32_t class_code) {
-    for (int i = 0; i < pci_device_number; i++) {
+    for (size_t i = 0; i < pci_device_number; i++) {
         if (pci_devices[i]->class_code == class_code) {
             return pci_devices[i];
         }
@@ -185,7 +190,7 @@ void pcie_init() {
         return;
     }
     mcfg_addr_to_entries(mcfg_entries);
-    for (int i = 0; i < mcfg_entries_len; i++) {
+    for (size_t i = 0; i < mcfg_entries_len; i++) {
         uint16_t segment_group = mcfg_entries[i]->pci_segment_group;
         pci_scan_segment(segment_group);
     }

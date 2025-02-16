@@ -22,7 +22,7 @@
 #include "ahci.h"
 #include "speaker.h"
 #include "devfs.h"
-#include "pipfs.h"
+#include "pivfs.h"
 #include "shell.h"
 #include "iic/iic_core.h"
 
@@ -75,13 +75,13 @@ void kmain(void) {
     vfs_init();
     vdisk_init();
     pcie_init();
-    nvme_setup();
+    //nvme_setup();
     ahci_setup();
 
     devfs_setup();
-    pipfs_setup();
+    pivfs_setup();
     init_pcb();
-    //smp_setup();
+    smp_setup();
     build_stream_device();
     
     //init_iic();

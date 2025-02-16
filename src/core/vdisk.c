@@ -9,7 +9,9 @@
 vdisk vdisk_ctl[26];
 
 static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    for (int i = 0; i < number; i++) {
+    UNUSED(lba);
+    UNUSED(drive);
+    for (size_t i = 0; i < number; i++) {
         char c = (char) kernel_getch();
         buffer[i] = c;
     }
@@ -17,10 +19,12 @@ static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba
 
 static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     tty_t *tty;
+    UNUSED(drive);
+    UNUSED(lba);
     if (get_current_task() == NULL) {
         tty = get_default_tty();
     } else tty = get_current_task()->tty;
-    for (int i = 0; i < number; i++) {
+    for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }
 }
@@ -32,7 +36,7 @@ void build_stream_device() {
     stdout.flag = 1;
     stdout.sector_size = 1;
     stdout.size = 1;
-    stdout.read = (void *) empty;
+    stdout.read = (void*)empty;
     stdout.write = stdout_write;
     regist_vdisk(stdout);
 
@@ -42,7 +46,7 @@ void build_stream_device() {
     stdin.flag = 1;
     stdin.sector_size = 1;
     stdin.size = 1;
-    stdin.write = (void *) empty;
+    stdin.write = (void*)empty;
     stdin.read = stdin_read;
     regist_vdisk(stdin);
 }
@@ -78,8 +82,6 @@ uint32_t disk_size(int drive) {
     } else {
         return 0;
     }
-
-    return 0;
 }
 
 int rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read) {
@@ -101,7 +103,7 @@ int rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read
 
 void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
     if (have_vdisk(drive)) {
-        for (int i = 0; i < number; i += SECTORS_ONCE) {
+        for (size_t i = 0; i < number; i += SECTORS_ONCE) {
             int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
             rw_vdisk(drive, lba + i, (uint8_t *) ((uint64_t) buffer + i * vdisk_ctl[drive].sector_size), sectors, 1);
         }
@@ -110,7 +112,7 @@ void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
 
 void vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
     if (have_vdisk(drive)) {
-        for (int i = 0; i < number; i += SECTORS_ONCE) {
+        for (size_t i = 0; i < number; i += SECTORS_ONCE) {
             int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
             rw_vdisk(drive, lba + i, (uint8_t *) ((uint64_t) buffer + i * vdisk_ctl[drive].sector_size), sectors,
                      0);
@@ -119,7 +121,7 @@ void vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
 }
 
 int vdisk_init() {
-    for (int i = 0; i < 26; i++) {
+    for (size_t i = 0; i < 26; i++) {
         vdisk_ctl[i].flag = 0; // 设置为未使用
     }
     return 0;

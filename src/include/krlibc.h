@@ -52,3 +52,13 @@ int64_t strtol(const char *str, char **endptr, int base);
 char *strdup(const char *str);
 
 int isspace(int c);
+
+static inline char *LeadingWhitespace(char *beg, char *end) {
+    while (end > beg && *--end <= 0x20) {
+        *end = 0;
+    }
+    while (beg < end && *beg <= 0x20) {
+        beg++;
+    }
+    return beg;
+}

@@ -182,7 +182,7 @@ int64_t strtol(const char *str, char **endptr, int base) {
             break;
         if (c >= base)
             break;
-        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+        if (any < 0 || acc > cutoff || (acc == cutoff && ((uint64_t)c) > cutlim))
             any = -1;
         else {
             any = 1;
@@ -216,3 +216,4 @@ char *strdup(const char *str) {
 
     return ret - (len + 1);
 }
+

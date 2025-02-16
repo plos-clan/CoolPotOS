@@ -169,7 +169,7 @@ static void pci_config0(uint32_t bus, uint32_t f, uint32_t equipment, uint32_t a
 }
 
 pci_device_t pci_find_vid_did(uint16_t vendor_id, uint16_t device_id) {
-    for (int i = 0; i < device_number; i++) {
+    for (size_t i = 0; i < device_number; i++) {
         if (pci_device[i]->vendor_id == vendor_id &&
             pci_device[i]->device_id == device_id)
             return pci_device[i];
@@ -178,7 +178,7 @@ pci_device_t pci_find_vid_did(uint16_t vendor_id, uint16_t device_id) {
 }
 
 pci_device_t pci_find_class(uint32_t class_code) {
-    for (int i = 0; i < device_number; i++) {
+    for (size_t i = 0; i < device_number; i++) {
         if (pci_device[i]->class_code == class_code) {
             return pci_device[i];
         }
@@ -244,7 +244,7 @@ void pci_set_msi(pci_device_t device,uint8_t vector){
     write_pci(device,device->msi_offset + reg0,address);
     write_pci(device,device->msi_offset + reg1,data);
     msg_ctrl |= 1;
-    msg_ctrl &= ~(0b111 << 4);
+    msg_ctrl &= ~(7 << 4);
     write_pci(device,device->msi_offset + 2,msg_ctrl);
 }
 
@@ -329,7 +329,7 @@ static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){
 
 void print_all_pci() {
     printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
-    for (int i = 0; i < device_number; i++) {
+    for (size_t i = 0; i < device_number; i++) {
         pci_device_t device = pci_device[i];
         printk("%03d:%02d:%02d\t[0x%04X:0x%04X]\t<0x%08x>\t%s\n",
                device->bus,
@@ -343,7 +343,7 @@ void print_all_pci() {
 }
 
 void pci_setup(){
-    uint32_t i, BUS, Equipment, F, ADDER;
+    uint32_t BUS, Equipment, F;
     for (BUS = 0; BUS < 256; BUS++) {
         for (Equipment = 0; Equipment < 32; Equipment++) {
             for (F = 0; F < 8; F++) {

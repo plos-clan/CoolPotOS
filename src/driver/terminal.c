@@ -45,6 +45,7 @@ void update_terminal() {
 }
 
 int terminal_flush_service(void *pVoid) {
+    UNUSED(pVoid);
     terminal_set_auto_flush(0);
     open_flush = true;
     while (1) {
@@ -59,7 +60,7 @@ void terminal_putc(char c) {
 }
 
 void terminal_puts(const char *msg) {
-    for (int i = 0; i < strlen(msg); ++i) {
+    for (size_t i = 0; i < strlen(msg); ++i) {
         terminal_putc(msg[i]);
     }
 }

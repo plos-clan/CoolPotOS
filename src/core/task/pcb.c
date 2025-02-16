@@ -4,7 +4,7 @@
 #include "kprint.h"
 #include "scheduler.h"
 #include "io.h"
-#include "pipfs.h"
+#include "pivfs.h"
 #include "description_table.h"
 #include "timer.h"
 #include "heap.h"
@@ -139,6 +139,6 @@ void init_pcb(){
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(current_task->name, name, strlen(name));
     current_task->next = kernel_head_task;
-    pipfs_update(kernel_head_task);
+    pivfs_update(kernel_head_task);
     kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);
 }

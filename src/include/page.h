@@ -8,6 +8,8 @@
 
 #define KERNEL_PTE_FLAGS (PTE_PRESENT | PTE_WRITEABLE | PTE_NO_EXECUTE)
 
+#define PAGE_SIZE 0x1000
+
 #include "ctype.h"
 
 typedef struct page_table_entry {

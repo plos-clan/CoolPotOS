@@ -2,13 +2,16 @@
 #include "krlibc.h"
 #include "pcb.h"
 #include "kprint.h"
-#include "pipfs.h"
+#include "pivfs.h"
 #include "smp.h"
+#include "lock.h"
 
 pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
 bool is_scheduler = false;
 uint64_t cpu_all_clock; //当前调度轮询的CPU总时间
+
+ticketlock scheduler_lock;
 
 pcb_t get_current_task(){
     return current_task;
@@ -24,13 +27,15 @@ void disable_scheduler(){
 
 void add_task(pcb_t new_task) {
     if (new_task == NULL) return;
+    ticket_lock(&scheduler_lock);
     pcb_t tailt = kernel_head_task;
     while (tailt->next != kernel_head_task) {
         if (tailt->next == NULL) break;
         tailt = tailt->next;
     }
     tailt->next = new_task;
-    pipfs_update(kernel_head_task);
+    pivfs_update(kernel_head_task);
+    ticket_unlock(&scheduler_lock);
 }
 
 int get_all_task() {
