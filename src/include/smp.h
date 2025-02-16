@@ -10,6 +10,7 @@
 typedef struct smp_cpu{
     uint8_t flags; //标志位, CPU是否启用
     uint64_t lapic_id;
+    uint64_t kernel_stack; //初始内核栈
     gdt_entries_t gdtEntries;
 }smp_cpu_t;
 

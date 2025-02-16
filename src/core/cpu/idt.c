@@ -14,7 +14,7 @@ void idt_setup() {
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
 
     for (int i = 0; i < 256; i++) {
-        register_interrupt_handler(i,empty_handle[i],0,0x8E);
+        register_interrupt_handler(i,(void*)(empty_handle[i]),0,0x8E);
     }
 }
 

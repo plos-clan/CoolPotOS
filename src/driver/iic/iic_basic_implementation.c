@@ -2,7 +2,7 @@
 #define ALL_IMPLEMENTATION   0x01
 
 #include "iic/iic_basic_implementation.h"
-
+#include "krlibc.h"
 
 bool crc_check(IIC_Data *frame) {
 
@@ -32,6 +32,7 @@ void iic_slave_delete(list_t *head, IIC_Slave_Node *node) {
 }
 
 void iic_slave_foreach(list_t *head, void (*func)(IIC_Slave *)) {
+    UNUSED(func);
     list_foreach(*head, func);
 }
 
@@ -41,7 +42,7 @@ uint32_t iic_data_transfer(IIC_Data *frame) {
     if (crc_check(frame)) {
         // 将原始数据转换为32位值
         int original_data = 0;
-        for (char i = 0; i < frame->data_len; i++) {
+        for (size_t i = 0; i < frame->data_len; i++) {
             original_data |= (int)data[i] << (8 * i);
         }
         return original_data;
@@ -58,27 +59,33 @@ uint8_t Get_iic_master_address(pci_device_t *IIC_Master_Controller) {
 }
 
 void iic_start(IIC_Master *IIC_Master) {
+    UNUSED(IIC_Master);
     // 启动兼容性
-
 }
 
 void iic_stop(IIC_Master *IIC_Master) {
+    UNUSED(IIC_Master);
     // 兼容性
 }
 
 void iic_send_start(IIC_Master *IIC_Master) {
+    UNUSED(IIC_Master);
     // 起始信号兼容性
 }
 
 void iic_send_stop(IIC_Master *IIC_Master) {
+    UNUSED(IIC_Master);
     // 停止信号兼容性
 }
 
 void iic_send_byte(IIC_Master *IIC_Master, unsigned char data) {
+    UNUSED(IIC_Master);
+    UNUSED(data);
     // 发送字节兼容性
 }
 
 uint16_t iic_receive_byte(IIC_Master *IIC_Master) {
+    UNUSED(IIC_Master);
     // 接收字节兼容性
     return 0;
 }

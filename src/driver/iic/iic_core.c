@@ -1,4 +1,5 @@
 #include "iic/iic_core.h"
+#include "krlibc.h"
 
 void init_iic(void) {
     pci_device_t *IIC_Master_Controller = (pci_device_t *)(pci_find_class(0x0C800000));
@@ -11,5 +12,6 @@ void init_iic(void) {
         unsigned int address = Get_iic_master_address(IIC_Master_Controller);
         iic_master->Control = address;
         IIC_Slave_Node iic_slave_list = iic_slave_alloc(NULL);
+        UNUSED(iic_slave_list);
     }
 }

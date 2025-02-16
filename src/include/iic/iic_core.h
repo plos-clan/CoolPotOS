@@ -5,5 +5,4 @@
 
 #include "iic_basic_implementation.h"
 
-
 void init_iic(void);

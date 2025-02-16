@@ -187,7 +187,7 @@ void ahci_setup(){
     if (device == NULL) {
         return;
     }
-    int i;
+    uint32_t i;
 
     hba_mem = phys_to_virt((uint64_t)read_bar_n(device,5));
 

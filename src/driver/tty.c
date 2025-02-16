@@ -5,6 +5,7 @@
 #include "terminal.h"
 #include "mpmc_queue.h"
 #include "kprint.h"
+#include "krlibc.h"
 
 tty_t defualt_tty;
 mpmc_queue_t *queue;
@@ -12,6 +13,7 @@ mpmc_queue_t *queue;
 extern bool open_flush; //terminal.c
 
 static void tty_kernel_print(tty_t *tty,const char* msg){
+    UNUSED(tty);
     if(open_flush)
         terminal_puts(msg);
     else{
@@ -23,6 +25,7 @@ static void tty_kernel_print(tty_t *tty,const char* msg){
 }
 
 static void tty_kernel_putc(tty_t *tty,int c){
+    UNUSED(tty);
     if(open_flush)
         terminal_putc((char)c);
     else terminal_process_char((char)c);

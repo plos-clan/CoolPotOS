@@ -14,7 +14,7 @@ add_cflags("-target x86_64-freestanding")
 add_ldflags("-target x86_64-freestanding")
 
 add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float","-nostdinc")
-add_cflags("-mno-red-zone", "-mcmodel=kernel", "-fno-sanitize=undefined","-Werror")
+add_cflags("-mno-red-zone", "-mcmodel=kernel", "-fno-sanitize=undefined")
 add_ldflags("-static","-nostdlib")
 
 target("kernel")
@@ -28,6 +28,7 @@ target("kernel")
     add_includedirs("libs")
     add_includedirs("src/include")
     add_includedirs("src/include/types")
+    add_includedirs("src/include/iic")
     add_ldflags("-T src/linker.ld", "-e kmain")
 
     add_links("alloc")
