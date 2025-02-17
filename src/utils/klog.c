@@ -4,9 +4,14 @@
 #include "serial.h"
 #include "sprintf.h"
 
+#define HARDWARE
+
 void logk(const char *str) {
-    while (*str) {
-        write_serial(*str++);
+    while (*str){
+        char ch = *str++;
+#ifndef HARDWARE
+        write_serial(ch);
+#endif
     }
 }
 

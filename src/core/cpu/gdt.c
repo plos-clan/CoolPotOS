@@ -1,10 +1,14 @@
 #include "description_table.h"
 #include "kprint.h"
+#include "smp.h"
+#include "krlibc.h"
 
 gdt_entries_t gdt_entries;
 struct gdt_register gdt_pointer;
 tss_t tss0;
 tss_stack_t tss_stack;
+
+extern smp_cpu_t cpus[MAX_CPU];
 
 void gdt_setup() {
     gdt_entries[0] = 0x0000000000000000U;
@@ -54,5 +58,9 @@ void tss_setup() {
 }
 
 void set_kernel_stack(uint64_t rsp){
-    tss0.rsp[0] = rsp;
+    uint64_t cpuid = get_current_cpuid();
+    if(cpuid == 0) tss0.rsp[0] = rsp;
+    else {
+        cpus[cpuid].tss0.rsp[0] = rsp;
+    }
 }

@@ -118,6 +118,7 @@ static bool send_command(uint8_t value) {
 
 void mouse_setup() {
     register_interrupt_handler(mouse, (void*)mouse_handle, 0, 0x8E);
+    return;
     send_command(MOUSE_EN);
     UNUSED(wait_for_read);
     //type = get_mouse_type();

@@ -10,9 +10,11 @@
 #include "heap.h"
 #include "sprintf.h"
 #include "smp.h"
+#include "lock.h"
 
 extern pcb_t current_task; //scheduler.c
 extern pcb_t kernel_head_task;
+ticketlock pcb_lock;
 
 int now_pid = 0;
 
@@ -45,11 +47,14 @@ void switch_to_user_mode(uint64_t func) {
     :"memory");
 }
 
+
+
 void kill_proc(pcb_t task){
-    if(task->pid == 0){
-        kerror("Cannot stop kernel idle.");
+    if(task->task_level == TASK_KERNEL_LEVEL){
+        kerror("Cannot stop kernel thread.");
         return;
     }
+    ticket_lock(&pcb_lock);
     close_interrupt;
     disable_scheduler(); // 终止调度器, 防止释放被杀进程时候调度到该进程发生错误
     free_tty(task->tty);
@@ -62,6 +67,7 @@ void kill_proc(pcb_t task){
             free(task);
             enable_scheduler();
             open_interrupt;
+            ticket_unlock(&pcb_lock);
             return;
         }
         last = head;
