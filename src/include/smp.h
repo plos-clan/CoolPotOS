@@ -10,9 +10,11 @@
 typedef struct smp_cpu{
     uint8_t flags; //标志位, CPU是否启用
     uint64_t lapic_id;
-    uint64_t kernel_stack; //初始内核栈
     gdt_entries_t gdtEntries;
-}smp_cpu_t;
+    struct gdt_register gdt_pointer;
+    tss_t tss0;
+    tss_stack_t tss_stack;
+}__attribute__((packed)) smp_cpu_t;
 
 uint64_t get_current_cpuid();
 void smp_setup();

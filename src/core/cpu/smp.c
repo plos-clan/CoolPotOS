@@ -12,14 +12,12 @@
 #include "pivfs.h"
 
 extern struct idt_register idt_pointer; //idt.c
-extern struct gdt_register gdt_pointer; //gdt.c
 extern int now_pid; //pcb.c
 extern pcb_t kernel_head_task; //scheduler.c
 extern bool x2apic_mode; //apic.c
 
 ticketlock apu_lock;
 
-uint64_t *apu_stack[MAX_CPU];
 smp_cpu_t cpus[MAX_CPU];
 
 uint64_t cpu_count = 0;
@@ -41,6 +39,18 @@ uint64_t get_current_cpuid(){
 }
 
 static void apu_gdt_setup(){
+    smp_cpu_t cpu = cpus[get_current_cpuid()];
+    cpu.gdtEntries[0] = 0x0000000000000000U;
+    cpu.gdtEntries[1] = 0x00a09a0000000000U;
+    cpu.gdtEntries[2] = 0x00c0920000000000U;
+    cpu.gdtEntries[3] = 0x00c0f20000000000U;
+    cpu.gdtEntries[4] = 0x00a0fa0000000000U;
+
+    cpu.gdt_pointer = ((struct gdt_register) {
+            .size = ((uint16_t) ((uint32_t) sizeof(gdt_entries_t) - 1U)),
+            .ptr = &cpu.gdtEntries,
+    });
+
     __asm__ volatile (
             "lgdt %[ptr];"
             "push %[cseg];"
@@ -53,22 +63,34 @@ static void apu_gdt_setup(){
             "mov %[dseg], %%gs;"
             "mov %[dseg], %%es;"
             "mov %[dseg], %%ss;"
-            : : [ptr] "m"(gdt_pointer),
+            : : [ptr] "m"(cpu.gdt_pointer),
     [cseg] "rm"((uint16_t) 0x8U),
     [dseg] "rm"((uint16_t) 0x10U)
     : "memory"
     );
+
+    uint64_t address = ((uint64_t)(&cpu.tss0));
+    uint64_t low_base = (((address & 0xffffffU)) << 16U);
+    uint64_t mid_base = (((((address >> 24U)) & 0xffU)) << 56U);
+    uint64_t high_base = (address >> 32U);
+    uint64_t access_byte = (((uint64_t)(0x89U)) << 40U);
+    uint64_t limit = ((uint64_t)((uint32_t)(sizeof(tss_t) - 1U)));
+    cpu.gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
+    cpu.gdtEntries[6] = high_base;
+
+    cpu.tss0.ist[0] = ((uint64_t) &cpu.tss_stack) + sizeof(tss_stack_t);
+
+    __asm__ volatile("ltr %[offset];" : : [offset]"rm"(0x28U) : "memory");
 }
 
 void apu_entry(){
     __asm__ volatile("lidt %0" : : "m"(idt_pointer));
 
+    ticket_lock(&apu_lock);
     apu_gdt_setup();
 
     page_table_t *physical_table = virt_to_phys((uint64_t)get_kernel_pagedir()->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
-
-    ticket_lock(&apu_lock);
 
     uint64_t ia32_apic_base = rdmsr(0x1b);
     ia32_apic_base |= 1 << 11;
@@ -92,12 +114,11 @@ void apu_entry(){
     apu_idle->time_buf = alloc_timer();
     apu_idle->cpu_id = get_current_cpuid();
     char name[50];
-    stbsp_sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
+    sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(apu_idle->name, name, strlen(name));
     apu_idle->next = kernel_head_task;
     add_task(apu_idle);
     pivfs_update(kernel_head_task);
-
     ticket_unlock(&apu_lock);
     cpu_hlt;
 }
@@ -109,7 +130,6 @@ void apu_startup(struct limine_smp_request smp_request){
         struct limine_smp_info *info = response->cpus[i];
         if(info->lapic_id == response->bsp_lapic_id) continue;
         cpus[info->processor_id].lapic_id = info->lapic_id;
-        cpus[info->processor_id].kernel_stack = (uint64_t)malloc(32768);
         cpus[info->processor_id].flags = 1;
         info->goto_address = (void*)apu_entry;
     }
