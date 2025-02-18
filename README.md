@@ -1,4 +1,25 @@
-# CoolPotOS for x86_64
+
+<br>
+<br>
+
+<h1 align="center">CoolPotOS</h1>
+
+<div align="center"><strong>A simple toy operating system.</strong></div>
+
+<br>
+<br>
+
+<div align="center">
+<img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="GitHub issues" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
+</div>
+
+
+
+<hr>
 
 ## Translations
 
