@@ -30,13 +30,12 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     UNUSED(frame);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
-    //logkf("Key: %d",scancode);
     send_eoi();
-
-//    if (scancode == 0xe0) {
-//        e0_flag = 1;
-//        return;
-//    }
+    //printk("Key: %d",scancode);
+    if (scancode == 0xe0) {
+        e0_flag = 1;
+        return;
+    }
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
     }
