@@ -76,7 +76,7 @@ void kmain(void) {
     vdisk_init();
     pcie_init();
     //nvme_setup();
-    ahci_setup();
+    //ahci_setup();
 
     devfs_setup();
     pivfs_setup();
@@ -84,17 +84,14 @@ void kmain(void) {
     smp_setup();
     build_stream_device();
     
-    //init_iic();
     init_iic();
 
     /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
-    beep();
+    //beep();
     enable_scheduler();
     open_interrupt;
-
-    // switch_to_user_mode((uint64_t)cp_reset);
 
     cpu_hlt;
 }

@@ -4,6 +4,10 @@
 #include "io.h"
 #include "pcb.h"
 #include "terminal.h"
+#include "lock.h"
+#include "smp.h"
+
+ticketlock error_lock;
 
 void print_register(interrupt_frame_t *frame){
     printk("ss: 0x%p ", frame->ss);
@@ -15,15 +19,17 @@ void print_register(interrupt_frame_t *frame){
 }
 
 void print_task_info(pcb_t pcb){
-    printk("Current process PID: %d (%s)\n",pcb->pid,pcb->name);
+    printk("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
 }
 
 void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
     close_interrupt;
+    ticket_lock(&error_lock);
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
     print_task_info(get_current_task());
     print_register(frame);
     update_terminal();
+    ticket_unlock(&error_lock);
     for(;;) cpu_hlt;
 }
 
@@ -32,7 +38,7 @@ __IRQHANDLER void double_fault(interrupt_frame_t *frame,uint64_t error_code) {
     kernel_error("Double fault",error_code,frame);
 }
 
-__IRQHANDLER void divede_error(interrupt_frame_t *frame) {
+__IRQHANDLER void dived_error(interrupt_frame_t *frame) {
     close_interrupt;
     kernel_error("Divide by zero error",0,frame);
 }
@@ -68,7 +74,7 @@ __IRQHANDLER void stack_segment_fault(interrupt_frame_t *frame,uint64_t error_co
 }
 
 void error_setup() {
-    register_interrupt_handler(0, (void *) divede_error, 0, 0x8E);
+    register_interrupt_handler(0, (void *) dived_error, 0, 0x8E);
     register_interrupt_handler(6, (void *) invalid_opcode, 0, 0x8E);
     register_interrupt_handler(7, (void*) device_not_available,0,0x8E);
     register_interrupt_handler(8, (void *) double_fault, 1, 0x8E);

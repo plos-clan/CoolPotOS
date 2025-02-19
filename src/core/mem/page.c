@@ -8,8 +8,11 @@
 #include "alloc.h"
 #include "klog.h"
 #include "pcb.h"
-#include "os_terminal.h"
 #include "terminal.h"
+#include "lock.h"
+#include "smp.h"
+
+ticketlock page_lock;
 
 page_directory_t kernel_page_dir;
 page_directory_t *current_directory = NULL;
@@ -21,6 +24,7 @@ static bool is_huge_page(page_table_entry_t *entry){
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t error_code) {
     close_interrupt;
     disable_scheduler();
+    switch_page_directory(get_kernel_pagedir());
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault, virtual address 0x%x\n", faulting_address);
@@ -32,7 +36,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
            error_code & 0x4 ? "UserMode" :
            error_code & 0x8 ? "ReservedBitsSet" :
            error_code & 0x10 ? "DecodeAddress" : "Unknown",faulting_address);
-    printk("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
+    printk("Current process PID: %d (%s) at CPU%d\n",get_current_task()->pid,get_current_task()->name,get_current_cpuid());
     print_register(frame);
     update_terminal();
     cpu_hlt;
@@ -86,11 +90,11 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
 }
 
 page_directory_t *clone_directory(page_directory_t *src){
+    ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     new_directory->table = malloc(sizeof(page_table_t));
-
     copy_page_table_recursive(src->table, new_directory->table, 3);
-
+    ticket_unlock(&page_lock);
     return new_directory;
 }
 

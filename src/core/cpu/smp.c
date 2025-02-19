@@ -40,6 +40,7 @@ uint64_t get_current_cpuid(){
 
 static void apu_gdt_setup(){
     smp_cpu_t cpu = cpus[get_current_cpuid()];
+    memset(&cpu,0, sizeof(smp_cpu_t));
     cpu.gdtEntries[0] = 0x0000000000000000U;
     cpu.gdtEntries[1] = 0x00a09a0000000000U;
     cpu.gdtEntries[2] = 0x00c0920000000000U;
@@ -105,7 +106,7 @@ void apu_entry(){
     apu_idle->pid = now_pid++;
     apu_idle->cpu_clock = 0;
     apu_idle->directory = get_kernel_pagedir();
-    //TODO 核心私有TSS未实现 set_kernel_stack(get_rsp());
+    set_kernel_stack(get_rsp());
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
     apu_idle->user_stack = apu_idle->kernel_stack;
     apu_idle->tty = get_default_tty();
