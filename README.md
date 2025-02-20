@@ -30,7 +30,7 @@
 
 This is a simple operating system for x86_64 architecture.
 
-## Model
+## Module
 
 * `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 * `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
