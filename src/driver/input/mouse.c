@@ -6,6 +6,7 @@
 #include "klog.h"
 #include "gop.h"
 
+MouseType type;
 mouse_dec mouse_decode;
 size_t mouse_x;
 size_t mouse_y;
@@ -85,7 +86,7 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
 }
 
 static inline void wait_for_read() {
-    while (io_in8(PS2_CMD_PORT) & KB_STATUS_OBF);
+    while (!(io_in8(PS2_CMD_PORT) & KB_STATUS_OBF));
 }
 
 static inline void wait_for_write() {
@@ -99,29 +100,27 @@ static bool send_command(uint8_t value) {
     io_out8(PS2_DATA_PORT, value);
     return io_in8(PS2_DATA_PORT) != 0xfa;
 }
-//
-//static MouseType get_mouse_type() {
-//    send_command(0xf3);
-//    send_command(200);
-//
-//    send_command(0xf3);
-//    send_command(100);
-//
-//    send_command(0xf3);
-//    send_command(80);
-//
-//    send_command(0xf2);
-//    wait_for_read();
-//    uint8_t type0 = io_in8(PS2_DATA_PORT);
-//    return type0 == 0x3 ? OnlyScroll : (type0 == 0x4 ? FiveButton : Standard);
-//}
+
+static MouseType get_mouse_type() {
+    send_command(0xf3);
+    send_command(200);
+
+    send_command(0xf3);
+    send_command(100);
+
+    send_command(0xf3);
+    send_command(80);
+
+    send_command(0xf2);
+    wait_for_read();
+    uint8_t type0 = io_in8(PS2_DATA_PORT);
+    return type0 == 0x3 ? OnlyScroll : (type0 == 0x4 ? FiveButton : Standard);
+}
 
 void mouse_setup() {
     register_interrupt_handler(mouse, (void*)mouse_handle, 0, 0x8E);
-    return;
     send_command(MOUSE_EN);
-    UNUSED(wait_for_read);
-    //type = get_mouse_type();
-    //ksuccess("Setup PS/2 %s mouse.",type == OnlyScroll ? "OnlyScroll" : (type == FiveButton ? "FiveButton" : "Standard"));
-    kinfo("Setup PS/2 mouse.");
+    type = get_mouse_type();
+    kinfo("Setup PS/2 %s mouse.",
+          type == OnlyScroll ? "OnlyScroll" : (type == FiveButton ? "FiveButton" : "Standard"));
 }
