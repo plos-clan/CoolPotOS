@@ -31,7 +31,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
     logkf("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
     printk("\n");
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
-           !(error_code & 0x1) ? "PageNotPresent" :
+           !(error_code & 0x1) ? "NotPresent" :
            error_code & 0x2 ? "WriteError" :
            error_code & 0x4 ? "UserMode" :
            error_code & 0x8 ? "ReservedBitsSet" :

@@ -61,7 +61,7 @@ void kmain(void) {
     init_tty();
     printk("CoolPotOS %s (Limine Bootloader) on an x86_64\n", KERNEL_NAME);
     init_cpuid();
-    printk("Video: 0x%p - %d x %d\n", framebuffer->address, framebuffer->width, framebuffer->height);
+    kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     gdt_setup();
     idt_setup();
     page_setup();
