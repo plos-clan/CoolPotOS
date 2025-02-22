@@ -16,27 +16,27 @@ bool crc_check(IIC_Data *frame) {
 }
 
 
-IIC_Slave_Node iic_slave_alloc(IIC_Slave *slave) {
-    IIC_Slave_Node node;
+IIC_slaveNode iic_slaveAlloc(IIC_Slave *slave) {
+    IIC_slaveNode node;
     node.next = list_alloc(NULL);
     node.slave = *slave;
     return node;
 }
 
-void iic_slave_append(list_t *head, IIC_Slave_Node *node) {
+void iic_slaveAppend(list_t *head, IIC_slaveNode *node) {
     list_append(*head, node->next);
 }
 
-void iic_slave_delete(list_t *head, IIC_Slave_Node *node) {
+void iic_slaveDelete(list_t *head, IIC_slaveNode *node) {
     list_delete(*head, node->next);
 }
 
-void iic_slave_foreach(list_t *head, void (*func)(IIC_Slave *)) {
+void iic_slaveForeach(list_t *head, void (*func)(IIC_Slave *)) {
     UNUSED(func);
     list_foreach(*head, func);
 }
 
-uint32_t iic_data_transfer(IIC_Data *frame) {
+uint32_t iic_dataTransfer(IIC_Data *frame) {
 
     unsigned int *data = frame->data;
     if (crc_check(frame)) {
@@ -51,7 +51,7 @@ uint32_t iic_data_transfer(IIC_Data *frame) {
     }
 }
 
-uint8_t Get_iic_master_address(pci_device_t *IIC_Master_Controller) {
+uint8_t Get_iic_masterAddress(pci_device_t *IIC_Master_Controller) {
     // 获取IIC主机控制器基地址
     base_address_register bar = find_bar(*IIC_Master_Controller, 0);
     uint8_t base_address = *bar.address;
@@ -68,23 +68,23 @@ void iic_stop(IIC_Master *IIC_Master) {
     // 兼容性
 }
 
-void iic_send_start(IIC_Master *IIC_Master) {
+void iic_sendStart(IIC_Master *IIC_Master) {
     UNUSED(IIC_Master);
     // 起始信号兼容性
 }
 
-void iic_send_stop(IIC_Master *IIC_Master) {
+void iic_sendStop(IIC_Master *IIC_Master) {
     UNUSED(IIC_Master);
     // 停止信号兼容性
 }
 
-void iic_send_byte(IIC_Master *IIC_Master, unsigned char data) {
+void iic_sendByte(IIC_Master *IIC_Master, uint8_t data) {
     UNUSED(IIC_Master);
     UNUSED(data);
     // 发送字节兼容性
 }
 
-uint16_t iic_receive_byte(IIC_Master *IIC_Master) {
+uint8_t iic_receiveByte(IIC_Master *IIC_Master) {
     UNUSED(IIC_Master);
     // 接收字节兼容性
     return 0;
