@@ -27,6 +27,10 @@
 #define Freq_100 0x64
 #define Freq_400 0x190
 
+/**
+ * @struct IIC_Master
+ * @brief IIC主机控制器
+ */
 typedef struct IIC_Master{
     uint8_t Control;                // 控制寄存器
     uint8_t Status;                 // 状态寄存器
@@ -38,43 +42,54 @@ typedef struct IIC_Master{
     uint8_t Error;                  // 错误寄存器
 } IIC_Master;
 
+/**
+ * @struct IIC_Slave
+ * @brief IIC从机
+ */
 typedef struct IIC_Slave {
-    unsigned int address;           // 地址
-    unsigned int reg_address;       // 寄存器首地址
-    unsigned int freq;              // 频率
-    unsigned char flag;             // 状态
-    void (*init)(void);             // 设备初始化
+    uint32_t address;           // 地址
+    uint32_t reg_address;       // 寄存器首地址
+    uint32_t freq;              // 频率
+    uint8_t flag;             // 状态
     void (*probe)(void);            // 挂载设备
     void (*remove)(void);           // 卸载设备
 } IIC_Slave;
 
-typedef struct IIC_Slave_Node {
+/**
+ * @struct IIC_slaveNode
+ * @brief IIC从机节点
+ */
+typedef struct IIC_slaveNode {
     IIC_Slave slave;
     list_t next;
-} IIC_Slave_Node;
+} IIC_slaveNode;
 
+/**
+ * @struct IIC_Data
+ * @brief IIC数据
+ */
 typedef struct IIC_Data {
-    unsigned char start;            // 数据段始标（0x01）
-    unsigned char data_len;         // 数据长度（字节计）
-    unsigned int *data;             // 数据指针
-    unsigned char crc;              // CRC校验值
-    unsigned char stop;             // 数据段末标（0x01）
+    uint16_t start;            // 数据段始标（0x01）
+    uint16_t data_len;         // 数据长度（字节计）
+    uint32_t *data;             // 数据指针
+    uint16_t crc;              // CRC校验值
+    uint16_t stop;             // 数据段末标（0x01）
 } IIC_Data;
 
 #ifdef IIC_BASIC_IMPLEMENTATION
 
 bool crc_check(IIC_Data *);
-IIC_Slave_Node iic_slave_alloc(IIC_Slave*);
-void iic_slave_append(list_t *, IIC_Slave_Node *);
-void iic_slave_delete(list_t *, IIC_Slave_Node *);
-void iic_slave_foreach(list_t *, void (* )(IIC_Slave *));
-uint32_t iic_data_transfer(IIC_Data *);
-uint8_t Get_iic_master_address(pci_device_t *);
+IIC_slaveNode iic_slaveAlloc(IIC_Slave*);
+void iic_slaveAppend(list_t *, IIC_slaveNode *);
+void iic_slaveDelete(list_t *, IIC_slaveNode *);
+void iic_slaveForeach(list_t *, void (* )(IIC_Slave *));
+uint32_t iic_dataTransfer(IIC_Data *);
+uint8_t Get_iic_masterAddress(pci_device_t *);
 void iic_start(IIC_Master *);
 void iic_stop(IIC_Master *);
-void iic_send_start(IIC_Master *);
-void iic_send_stop(IIC_Master *);
-void iic_send_byte(IIC_Master *, unsigned char);
-uint16_t iic_receive_byte(IIC_Master *);
+void iic_sendStart(IIC_Master *);
+void iic_sendStop(IIC_Master *);
+void iic_sendByte(IIC_Master *, uint8_t);
+uint8_t iic_receiveByte(IIC_Master *);
 
 #endif
