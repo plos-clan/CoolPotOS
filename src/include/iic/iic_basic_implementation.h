@@ -6,7 +6,6 @@
 #  define IIC_BASIC_IMPLEMENTATION
 #endif
 
-#ifdef IIC_BASIC_IMPLEMENTATION
 
 #include "io.h"
 #include "crc.h"
@@ -62,6 +61,7 @@ typedef struct IIC_Data {
     unsigned char stop;             // 数据段末标（0x01）
 } IIC_Data;
 
+#ifdef IIC_BASIC_IMPLEMENTATION
 
 bool crc_check(IIC_Data *);
 IIC_Slave_Node iic_slave_alloc(IIC_Slave*);
