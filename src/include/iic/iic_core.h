@@ -1,7 +1,7 @@
 #pragma once
 
 //enable all implementation
-#define  ALL_IMPLEMENTATION    0x01
+#define  ALL_IMPLEMENTATION
 
 #include "iic_basic_implementation.h"
 

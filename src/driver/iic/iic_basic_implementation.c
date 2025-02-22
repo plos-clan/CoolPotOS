@@ -1,5 +1,5 @@
 //enable all implementation
-#define ALL_IMPLEMENTATION   0x01
+#define ALL_IMPLEMENTATION
 
 #include "iic/iic_basic_implementation.h"
 #include "krlibc.h"
