@@ -1,6 +1,4 @@
 #include "iic/iic_core.h"
-#include "iic/pca9685.h"
-#include "krlibc.h"
 
 /**
  * @brief IIC Master Controller Initialization
@@ -10,7 +8,6 @@
  * If the IIC Master Controller is found, it initializes it and allocates a linked list for slaves.
  * @return void
  */
-
 void init_iic(void) {
     pci_device_t *IIC_masterController = (pci_device_t *)(pci_find_class(0x0C800000));
     if (IIC_masterController == NULL) {
