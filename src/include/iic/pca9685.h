@@ -1,6 +1,5 @@
 #pragma once
 
-#include "krlibc.h"
 #include "iic/iic_basic_implementation.h"
 
 #ifdef IIC_BASIC_IMPLEMENTATION
