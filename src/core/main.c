@@ -20,7 +20,7 @@
 #include "pcie.h"
 #include "nvme.h"
 #include "ahci.h"
-#include "speaker.h"
+#include "xhci.h"
 #include "devfs.h"
 #include "pivfs.h"
 #include "shell.h"
@@ -75,8 +75,9 @@ void kmain(void) {
     vfs_init();
     vdisk_init();
     pcie_init();
-    //nvme_setup();
+    nvme_setup();
     //ahci_setup();
+    //xhci_setup();
 
     devfs_setup();
     pivfs_setup();

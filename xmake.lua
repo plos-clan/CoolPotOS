@@ -1,7 +1,7 @@
 set_project("CoolPotOS")
 
 add_rules("mode.debug", "mode.release")
-add_requires("zig")
+add_requires("clang")
 
 set_optimize("fastest")
 set_languages("c23")
@@ -70,7 +70,10 @@ target("iso")
             --"-enable-kvm",
             --"-d", "in_asm,int",
             --"-S","-s",
-            "-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
+            "-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
+            "-device","nec-usb-xhci,id=xhci",
+            "-device","usb-storage,bus=xhci.0,drive=usbdisk",
+            --"-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
             "-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
             "-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",

@@ -6,6 +6,7 @@
 #define KERNEL_NAME "CP_Kernel-x86_64-0.0.7" //内核编号
 #define MAX_CPU 256                          //最大支持CPU核心数
 #define STACK_SIZE 32768                     //栈大小(byte)
+#define MAX_WAIT_INDEX 100000                //阻塞最大循环数
 
 // 常用工具宏
 #define cpu_hlt while(1) __asm__("hlt")

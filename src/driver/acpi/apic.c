@@ -6,6 +6,7 @@
 #include "timer.h"
 #include "isr.h"
 #include "smp.h"
+#include "klog.h"
 
 bool x2apic_mode;
 uint64_t lapic_address;
@@ -25,12 +26,12 @@ void disable_pic() {
 }
 
 static void ioapic_write(uint32_t reg,uint32_t value) {
-    mmio_write32((uint32_t*)((uint64_t)ioapic_address), reg);
+    mmio_write32((uint32_t*)(ioapic_address), reg);
     mmio_write32((uint32_t*)((uint64_t)ioapic_address + 0x10), value);
 }
 
 static uint32_t ioapic_read(uint32_t reg){
-    mmio_write32((uint32_t*)((uint64_t)ioapic_address), reg);
+    mmio_write32((uint32_t*)(ioapic_address), reg);
     return mmio_read32((uint32_t*)((uint64_t)ioapic_address + 0x10));
 }
 
@@ -42,12 +43,12 @@ void ioapic_add(uint8_t vector, uint32_t irq) {
     ioapic_write(ioredtbl + 1, (uint32_t)(redirect >> 32));
 }
 
-static void lapic_write(uint32_t reg, uint64_t value) {
+static void lapic_write(uint32_t reg, uint32_t value) {
     if(x2apic_mode){
         wrmsr(0x800 + (reg >> 4), value);
         return;
     }
-    mmio_write64((uint32_t*)((uint64_t)lapic_address + reg), value);
+    mmio_write32((uint32_t*)((uint64_t)lapic_address + reg), value);
 }
 
 uint32_t lapic_read(uint32_t reg) {
@@ -59,15 +60,15 @@ uint32_t lapic_read(uint32_t reg) {
 
 uint64_t lapic_id() {
     uint32_t phy_id = lapic_read(LAPIC_REG_ID);
-    return x2apic_mode ? phy_id : (phy_id >> 24);
+    return phy_id; //x2apic_mode ? phy_id : (phy_id >> 24);
 }
 
 void local_apic_init(bool is_print) {
-    x2apic_mode = (smp_request.flags & 1U) != 0;
+    x2apic_mode = (smp_request.response->flags & 1U) != 0;
+
     lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
-    lapic_write(LAPIC_REG_TIMER_INITCNT, 0);
 
     uint64_t b = nanoTime();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t) 0));
@@ -107,7 +108,8 @@ void send_ipi(uint32_t apic_id, uint32_t command){
 }
 
 void apic_setup(MADT *madt) {
-    lapic_address = madt->local_apic_address;
+    lapic_address = (uint64_t)phys_to_virt(madt->local_apic_address);
+
     uint64_t current = 0;
     for (;;) {
         if (current + ((uint32_t) sizeof(MADT) - 1) >= madt->h.Length) {
@@ -116,6 +118,7 @@ void apic_setup(MADT *madt) {
         MadtHeader *header = (MadtHeader *) ((uint64_t) (&madt->entries) + current);
         if (header->entry_type == MADT_APIC_IO) {
             MadtIOApic *ioapic = (MadtIOApic *) ((uint64_t) (&madt->entries) + current);
+            logkf("ioapic : %p\n",ioapic);
             ioapic_address = ioapic->address;
         }
         current += (uint64_t) header->length;

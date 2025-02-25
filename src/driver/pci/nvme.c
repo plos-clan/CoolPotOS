@@ -11,6 +11,7 @@
 #include "alloc.h"
 #include "vdisk.h"
 #include "sprintf.h"
+#include "timer.h"
 #include "klog.h"
 
 void *NVME_DMA_MEMORY = 0;
@@ -18,8 +19,14 @@ NVME_NAMESPACE *nvme_device[10];
 
 int NVMEWaitingRDY(nvme_controller *ctrl, uint32_t rdy) {
     uint32_t csts;
+    int i = 0;
     while (rdy != ((csts = ctrl->CAP->CST) & NVME_CSTS_RDY)) {
+        if(i > MAX_WAIT_INDEX) {
+            return true;
+        }
         __asm__ __volatile__("pause");
+        i++;
+        usleep(1);
     }
     return 0;
 }
