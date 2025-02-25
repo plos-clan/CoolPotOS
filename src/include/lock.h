@@ -15,7 +15,7 @@
 #include "ctype.h"
 #include "klog.h"
 
-#define cpu_relax() do{ __asm__ volatile("pause\n": : :"memory"); logkf("LOCK\n"); }while(false);
+#define cpu_relax() do{ __asm__ volatile("pause\n": : :"memory"); }while(false);
 
 typedef union ticketlock ticketlock;
 

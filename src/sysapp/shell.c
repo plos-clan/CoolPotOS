@@ -47,6 +47,10 @@ static int gets(char *buf, int buf_size) {
             buf[index++] = c;
             printk("%c", c);
         }
+        if(index >= buf_size) {
+            printk("\nError: out of input bounds,\n");
+            break;
+        }
     }
     buf[index] = '\0';
     printk("%c", c);
