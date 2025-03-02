@@ -67,9 +67,11 @@ void terminal_set_color_scheme(size_t palette_index);
 
 void terminal_set_custom_color_scheme(const TerminalPalette *palette);
 
-size_t terminal_handle_keyboard(uint8_t *buffer, uint8_t scancode);
+void terminal_string_free(char *s);
 
-size_t terminal_handle_mouse_scroll(uint8_t *buffer, ptrdiff_t delta);
+char *terminal_handle_keyboard(uint8_t scancode);
+
+char *terminal_handle_mouse_scroll(ptrdiff_t delta);
 
 #ifdef __cplusplus
 }  // extern "C"

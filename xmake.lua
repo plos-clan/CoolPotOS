@@ -66,18 +66,22 @@ target("iso")
             "-cpu", "qemu64,+x2apic",
             "-smp", "4",
             "-serial", "stdio",
+            "-m","1024M",
             --"-no-reboot",
             --"-enable-kvm",
             --"-d", "in_asm,int",
             --"-S","-s",
-            "-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
-            "-device","nec-usb-xhci,id=xhci",
-            "-device","usb-storage,bus=xhci.0,drive=usbdisk",
+            --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
+            --"-device","nec-usb-xhci,id=xhci",
+            --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
             --"-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
-            "-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
+            --"-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
             "-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-            "-cdrom", config.buildir() .. "/CoolPotOS.iso"
+            --"-cdrom", config.buildir() .. "/CoolPotOS.iso",
+            "-drive","file="..config.buildir().."/CoolPotOS.iso,format=raw,id=cdrive,if=none,media=cdrom",
+            "-device","ide-cd,drive=cdrive",
+
         }
         
         os.execv("qemu-system-x86_64 " , flags)

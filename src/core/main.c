@@ -2,6 +2,7 @@
 #include "gop.h"
 #include "kprint.h"
 #include "terminal.h"
+#include "module.h"
 #include "hhdm.h"
 #include "frame.h"
 #include "heap.h"
@@ -20,7 +21,7 @@
 #include "pcie.h"
 #include "nvme.h"
 #include "ahci.h"
-#include "xhci.h"
+#include "ide.h"
 #include "devfs.h"
 #include "pivfs.h"
 #include "shell.h"
@@ -57,6 +58,7 @@ void kmain(void) {
     init_hhdm();
     init_frame();
     init_heap();
+    module_setup();
     init_terminal();
     init_tty();
     printk("CoolPotOS %s (Limine Bootloader) on an x86_64\n", KERNEL_NAME);
@@ -75,7 +77,8 @@ void kmain(void) {
     vfs_init();
     vdisk_init();
     pcie_init();
-    nvme_setup();
+    ide_setup();
+    //nvme_setup();
     //ahci_setup();
     //xhci_setup();
 

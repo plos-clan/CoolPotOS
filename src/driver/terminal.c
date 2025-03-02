@@ -4,6 +4,7 @@
 #include "atom_queue.h"
 #include "krlibc.h"
 #include "timer.h"
+#include "module.h"
 
 atom_queue *output_buffer;
 bool open_flush = false;
@@ -72,7 +73,15 @@ void init_terminal() {
             .address = framebuffer->address
     };
     float size = 10.0f * ((float) framebuffer->width / 1024);
-    terminal_init(&display, size, malloc, free, NULL);
+
+    cp_module_t *mod = get_module("sysfont");
+    if(mod == NULL){
+        logkf("Error: no default terminal font.\n");
+        cpu_hlt;
+    }
+    terminal_init(&display,mod->data,mod->size, size, malloc, free, NULL);
+
+    terminal_set_scroll_speed(3);
     setup_cpos_default();
     output_buffer = create_atom_queue(2048);
 }

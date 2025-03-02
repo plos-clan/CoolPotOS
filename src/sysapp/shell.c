@@ -13,6 +13,7 @@
 #include "pcb.h"
 #include "vfs.h"
 #include "sprintf.h"
+#include "pci.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
@@ -251,7 +252,7 @@ static void sys_info() {
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
     printk("*@@@@@@           @@@@@@*        Memory Usage: %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
-    printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor\n");
+    printk("-@@@@@@*         #@@@@@@:        64位操作系统, 基于x86架构的处理器\n");
     printk(" &@@@@@@*.     .#@@@@@@& \n");
     printk("  =@@@@@@@*----*@@@@@@@- \n");
     printk("  .#@@@@@@@@@@@@@@@@@#.    \n");
@@ -262,28 +263,28 @@ static void sys_info() {
 
 static void print_help() {
     printk("Usage <command|app_path> [argument...]\n");
-    printk("help h ?                 Get shell command help.\n");
-    printk("shutdown exit            Shutdown os.\n");
-    printk("reboot                   Reboot os.\n");
-    printk("lspci                    List all PCI devices.\n");
-    printk("sysinfo                  Get system information.\n");
-    printk("clear                    Clear terminal screen.\n");
-    printk("ps                       List all processes info.\n");
-    printk("pkill     <pid>          Stop a process.\n");
-    printk("cd        <path>         Change shell work path.\n");
-    printk("mkdir     <name>         Make a directory to vfs.\n");
-    printk("ls        [path]         List all file or directory.\n");
-    printk("echo      <message>      Print a message to terminal.\n");
+    printk("help h ?                 获取shell命令帮助列表.\n");
+    printk("shutdown exit            关闭操作系统.\n");
+    printk("reboot                   重启系统.\n");
+    printk("lspci/lspcie             列出所有PCI/PCIE设备.\n");
+    printk("sysinfo                  获取系统信息.\n");
+    printk("clear                    清空屏幕.\n");
+    printk("ps                       列出所有正在运行的进程.\n");
+    printk("pkill     <pid>          杀死指定进程.\n");
+    printk("cd        <path>         切换shell工作目录.\n");
+    printk("mkdir     <name>         创建一个文件夹.\n");
+    printk("ls        [path]         列出工作目录或指定目录下的所有文件或目录.\n");
+    printk("echo      <message>      打印一串信息.\n");
 }
 
 void shell_setup(){
-    printk("Welcome to CoolPotOS (%s)\n"
-           " * SourceCode:     https://github.com/plos-clan/CoolPotOS\n"
-           " * Website:        https://github.com/plos-clan\n"
+    printk("欢迎来到 CoolPotOS (%s)\n"
+           " * 开源链接:        https://github.com/plos-clan/CoolPotOS\n"
+           " * 组织网站:        https://github.com/plos-clan\n"
            " System information as of %s \n"
-           "  Process:               %d\n"
-           "  User login in:         Kernel\n"
-           "Copyright 2024 XIAOYI12 (Build by xmake clang)\n", KERNEL_NAME, get_date_time(),
+           "  进程数:               %d\n"
+           "  登录用户:             Kernel\n"
+           "MIT 开源协议 2024-2025 XIAOYI12 (构建于 xmake clang)\n", KERNEL_NAME, get_date_time(),
            get_all_task());
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
@@ -311,8 +312,10 @@ void shell_setup(){
             reboot_os();
         else if (!strcmp("clear", argv[0]))
             printk("\033[H\033[2J\033[3J");
-        else if (!strcmp("lspci", argv[0]))
+        else if (!strcmp("lspcie", argv[0]))
             print_all_pcie();
+        else if(!strcmp("lspci",argv[0]))
+            print_all_pci();
         else if (!strcmp("sysinfo", argv[0]))
             sys_info();
         else if (!strcmp("ps", argv[0]))

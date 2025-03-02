@@ -307,6 +307,10 @@ static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){
     uint16_t vendor_id = value_v & 0xffff;
     uint16_t device_id = value_d & 0xffff;
 
+    if(class_code == 0x060400 || (class_code & 0xFFFF00) == 0x060400){
+        return;
+    }
+
     pci_device_t device = malloc(sizeof(struct pci_device));
     device->name = pci_classname(class_code);
     device->vendor_id = vendor_id;
@@ -322,9 +326,7 @@ static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){
     }
     pci_device[device_number++] = device;
 
-    if(device->class_code == 0x060400 || (device->class_code & 0xFFFF00) == 0x060400){
-        return;
-    }
+
 }
 
 void print_all_pci() {

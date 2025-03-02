@@ -197,8 +197,7 @@ pcie_device_t *pcie_find_class(uint32_t class_code) {
 
 void pcie_init() {
     if (mcfg == NULL) {
-        pci_setup();
-        return;
+       goto pci;
     }
     mcfg_addr_to_entries(mcfg_entries);
     for (size_t i = 0; i < mcfg_entries_len; i++) {
@@ -207,6 +206,8 @@ void pcie_init() {
     }
     is_pcie = true;
     kinfo("PCIE device find %d",pci_device_number);
+    pci:
+    pci_setup();
 }
 
 /**

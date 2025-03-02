@@ -4,6 +4,7 @@
  */
 #include "nvme.h"
 #include "pcie.h"
+#include "pci.h"
 #include "kprint.h"
 #include "hhdm.h"
 #include "krlibc.h"
@@ -149,10 +150,20 @@ void NvmeWrite(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
 
 void nvme_setup() {
     pcie_device_t *device = pcie_find_class(0x10802);
+    nvme_capability *capability;
     if (device == NULL) {
-        return;
+        pci_device_t pciDevice = pci_find_class(0x10802);
+        if(pciDevice == NULL) return;
+        base_address_register reg = find_bar(pciDevice,0);
+        if(reg.address == NULL){
+            kerror("Nvme pci bar 0 is null.");
+            return;
+        }
+        capability = (nvme_capability *) phys_to_virt((uint64_t)reg.address);
+    }else{
+        capability = (nvme_capability *) phys_to_virt(device->bars[0].address);
     }
-    nvme_capability *capability = (nvme_capability *) phys_to_virt(device->bars[0].address);
+
     page_map_range_to(get_kernel_pagedir(), device->bars[0].address, 0x1000, KERNEL_PTE_FLAGS);
 
     if (!((capability->CAP >> 37) & 1)) {
