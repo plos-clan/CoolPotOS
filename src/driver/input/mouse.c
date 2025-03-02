@@ -3,13 +3,16 @@
 #include "krlibc.h"
 #include "kprint.h"
 #include "io.h"
-#include "klog.h"
+#include "terminal.h"
 #include "gop.h"
+#include "klog.h"
+#include "lock.h"
 
 MouseType type;
 mouse_dec mouse_decode;
 size_t mouse_x;
 size_t mouse_y;
+ticketlock mouse_lock;
 
 bool mousedecode(uint8_t data) {
     if (mouse_decode.phase == 0) {
@@ -42,15 +45,28 @@ bool mousedecode(uint8_t data) {
         if ((mouse_decode.buf[0] & 0x20) != 0)
             mouse_decode.y |= 0xffffff00;
         mouse_decode.y = -mouse_decode.y;
+        if(type == OnlyScroll || type == FiveButton){
+            mouse_decode.phase = 4;
+            return 0;
+        } else
+        return true;
+    }
+    if(mouse_decode.phase == 4){
+        mouse_decode.buf[3] = data;
+        mouse_decode.phase = 1;
+        int wheel_delta = mouse_decode.buf[3];
+        if(wheel_delta >= 255) wheel_delta = -1;
+
+        mouse_decode.scroll = -wheel_delta;
         return true;
     }
     return false;
 }
 
-
 __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
     UNUSED(frame);
     send_eoi();
+    ticket_lock(&mouse_lock);
     uint8_t data = io_in8(PS2_DATA_PORT);
     if (mousedecode(data)) {
         mouse_x += mouse_decode.x;
@@ -77,12 +93,25 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
         if (mouse_decode.btn & 0x04) {
             mouse_decode.center = true;
         }
+
+        char* result = terminal_handle_mouse_scroll(mouse_decode.scroll);
+
+        if (result) {
+            terminal_process(result);
+        }
+
+        terminal_string_free(result);
+
+        // 不知道会不会死锁不过大概率会（
+
+//        logkf("mouse x:%d y:%d right:%s left:%s center: %s scroll: %d\n",mouse_x,mouse_y,
+//              mouse_decode.right ? "true" : "false",
+//              mouse_decode.left ? "true" : "false",
+//              mouse_decode.center ? "true" : "false",
+//              mouse_decode.scroll
+//        );
     }
-//    logkf("mouse x:%d y:%d right:%s left:%s center: %s\n",mouse_x,mouse_y,
-//          mouse_decode.right ? "true" : "false",
-//          mouse_decode.left ? "true" : "false",
-//          mouse_decode.center ? "true" : "false"
-//          );
+    ticket_unlock(&mouse_lock);
 }
 
 static inline void wait_for_read() {

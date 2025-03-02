@@ -63,6 +63,15 @@ static inline uint64_t get_rflags() {
     return rflags;
 }
 
+static inline void insl(uint32_t port, uint32_t *addr, int cnt) {
+    __asm__ volatile("cld\n\t"
+                     "repne\n\t"
+                     "insl\n\t"
+            : "=D"(addr), "=c"(cnt)
+            : "d"(port), "0"(addr), "1"(cnt)
+            : "memory", "cc");
+}
+
 static inline void mmio_write32(uint32_t *addr, uint32_t data) {
     *(volatile uint32_t *) addr = data;
 }

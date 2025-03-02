@@ -20,12 +20,13 @@ typedef enum mouse_type {
 }MouseType;
 
 typedef struct{
-    uint8_t buf[3], phase;
+    uint8_t buf[4], phase;
     int x, y, btn;
     char roll;
     bool left;
     bool center;
     bool right;
+    int scroll;
 } mouse_dec;
 
 void keyboard_setup();
