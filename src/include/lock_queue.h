@@ -59,3 +59,10 @@ void queue_destroy(lock_queue *q);
  * @param argument 回调函数传入的参数
  */
 void queue_iterate(lock_queue *q, void (*callback)(void *,void*), void* argument);
+
+/**
+ * 迭代宏
+ * @param list 传入队列
+ * @param node 节点名
+ */
+#define queue_foreach(list, node) for(lock_node *node = (list)->head; node;node = node->next)

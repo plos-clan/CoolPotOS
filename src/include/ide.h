@@ -1,6 +1,5 @@
 #pragma once
 
-
 #define ATA_SR_BSY              0x80 // Busy
 #define ATA_SR_DRDY             0x40 // Drive ready
 #define ATA_SR_DF               0x20 // Drive write fault
@@ -94,4 +93,6 @@ struct ide_device {
     uint8_t  Model[41];    // Model in string.
 };
 
+uint8_t ide_read(uint8_t channel, uint8_t reg);
+void ide_write(uint8_t channel, uint8_t reg, uint8_t data);
 void ide_setup();

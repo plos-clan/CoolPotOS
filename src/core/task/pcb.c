@@ -67,28 +67,23 @@ void kill_proc(pcb_t task){
 }
 
 pcb_t found_pcb(int pid) {
-    pcb_t l = kernel_head_task;//获取头指针
-    while (l->pid != pid) {//查找进程
-        l = l->next;
-        if (l == NULL || l == kernel_head_task) return NULL;
-    }
-    return l;//返回PCB指针
+    return NULL;
 }
 
 void kill_all_proc() {
     close_interrupt;
     disable_scheduler();
     lapic_timer_stop();
-    pcb_t head = kernel_head_task;//获取头指针
-    while (1) {//遍历调度链表
-        head = head->next;
-        if (head == NULL || head->pid == kernel_head_task->pid) {
-            return;
-        }
-        if (head->pid == get_current_task()->pid) continue;
-        kill_proc(head);//结束进程
-        disable_scheduler();
-    }
+//    pcb_t head = kernel_head_task;//获取头指针
+//    while (1) {//遍历调度链表
+//        head = head->next;
+//        if (head == NULL || head->pid == kernel_head_task->pid) {
+//            return;
+//        }
+//        if (head->pid == get_current_task()->pid) continue;
+//        kill_proc(head);//结束进程
+//        disable_scheduler();
+//    }
 }
 
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
@@ -113,7 +108,6 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
     new_task->context0.rsp = (uint64_t) new_task + STACK_SIZE - sizeof(uint64_t) * 3; //设置上下文
     new_task->kernel_stack = (new_task->context0.rsp &= ~0xF); // 栈16字节对齐
     new_task->user_stack = new_task->kernel_stack; //内核级进程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
-    new_task->next = kernel_head_task;
     add_task(new_task);
     return new_task->pid;
 }
@@ -135,7 +129,6 @@ void init_pcb(){
     char name[50];
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(current_task->name, name, strlen(name));
-    current_task->next = kernel_head_task;
     pivfs_update(kernel_head_task);
 
     kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);

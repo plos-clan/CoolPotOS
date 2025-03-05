@@ -117,11 +117,11 @@ void apu_entry(){
     char name[50];
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(apu_idle->name, name, strlen(name));
-    apu_idle->next = kernel_head_task;
     smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
     if(cpu == NULL){
         return;
     }
+    cpu->idle_pcb = apu_idle;
     apu_idle->queue_index = queue_enqueue(cpu->scheduler_queue,apu_idle);
     if(apu_idle->queue_index == -1){
         logkf("Error: scheduler null %d\n",get_current_cpuid());
@@ -150,6 +150,7 @@ void apu_startup(struct limine_smp_request smp_request){
             cpus[MAX_CPU - 1].flags = 1;
             cpus[MAX_CPU - 1].scheduler_queue = queue_init();
             cpus[MAX_CPU - 1].iter_node = NULL;
+            cpus[MAX_CPU - 1].idle_pcb = kernel_head_task;
             continue;
         }
         cpus[info->processor_id].scheduler_queue = queue_init();

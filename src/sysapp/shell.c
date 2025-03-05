@@ -149,31 +149,38 @@ static void mkdir(int argc, char **argv) {
 }
 
 void ps() {
-    extern pcb_t kernel_head_task;
-    pcb_t longest_name = kernel_head_task;
-    size_t longest_name_len = 0;
-    while (longest_name != NULL) {
-        if (strlen(longest_name->name) > longest_name_len)
-            longest_name_len = strlen(longest_name->name);
-        longest_name = longest_name->next;
-        if(longest_name->pid == kernel_head_task->pid) break;
-    }
-    pcb_t pcb = kernel_head_task;
+    extern smp_cpu_t cpus[MAX_CPU];
 
+    size_t longest_name_len = 0;
     uint64_t all_time = 0;
-    uint64_t idle_time = kernel_head_task->cpu_timer;
     uint64_t mem_use = 0;
     uint32_t bytes = get_all_memusage();
     int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    extern pcb_t kernel_head_task;
+    uint64_t idle_time = kernel_head_task->cpu_timer;
     printk("PID  %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME");
-    while (pcb != NULL) {
-        all_time += pcb->cpu_timer;
-        if(pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
-        printk("%-5d%-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,
-               pcb->mem_usage,
-               pcb->task_level, pcb->cpu_clock,pcb->cpu_id);
-        pcb = pcb->next;
-        if(pcb->pid == kernel_head_task->pid) break;
+    for (size_t i = 0; i < MAX_CPU; i++) {
+        smp_cpu_t cpu = cpus[i];
+        if(cpu.flags == 1){
+            queue_foreach(cpu.scheduler_queue,queue){
+                pcb_t longest_name = (pcb_t)queue->data;
+                if (strlen(longest_name->name) > longest_name_len)
+                    longest_name_len = strlen(longest_name->name);
+            }
+        }
+    }
+    for (size_t i = 0; i < MAX_CPU; i++) {
+        smp_cpu_t cpu = cpus[i];
+        if(cpu.flags == 1){
+            queue_foreach(cpu.scheduler_queue,queue){
+                pcb_t pcb = (pcb_t) queue->data;
+                all_time += pcb->cpu_timer;
+                if(pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
+                printk("%-5d%-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,
+                       pcb->mem_usage,
+                       pcb->task_level, pcb->cpu_clock,pcb->cpu_id);
+            }
+        }
     }
     printk("   --- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n",idle_time * 100 / all_time,mem_use + memory,bytes > 10485760 ? "MB" : "KB",memory_size / 1024 / 1024);
 }
