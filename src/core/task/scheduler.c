@@ -10,7 +10,6 @@
 pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
 bool is_scheduler = false;
-uint64_t cpu_all_clock; //当前调度轮询的CPU总时间
 
 ticketlock scheduler_lock;
 
@@ -64,14 +63,8 @@ void remove_task(pcb_t task){
 }
 
 int get_all_task() {
-    int num = 1;
-    pcb_t pcb = kernel_head_task;
-    do {
-        pcb = pcb->next;
-        num++;
-        if (pcb == NULL || pcb->pid == kernel_head_task->pid) break;
-    } while (1);
-    return num;
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    return cpu != NULL ? cpu->scheduler_queue->size : 0;
 }
 
 void change_proccess(registers_t *reg,pcb_t taget){
@@ -120,7 +113,7 @@ void change_proccess(registers_t *reg,pcb_t taget){
 }
 
 /**
- * CP_Kernel 默认单核调度器 - 循环调度
+ * CP_Kernel 默认单核调度器 - 循环公平调度
  * @param reg 当前进程上下文
  */
 void scheduler(registers_t *reg){

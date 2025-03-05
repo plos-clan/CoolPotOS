@@ -26,7 +26,6 @@ struct process_control_block{
     uint64_t mem_usage;           // 内存利用率
     tty_t *tty;                   // tty设备
     size_t queue_index;           // 调度队列索引
-    struct process_control_block *next; // 下一个进程
 };
 
 typedef struct process_control_block *pcb_t;

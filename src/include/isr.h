@@ -9,6 +9,8 @@ enum InterruptIndex {
     keyboard,
     mouse,
     hpet_timer,
+    ide_primary,
+    ide_secondary
 };
 
 struct interrupt_frame {

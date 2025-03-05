@@ -120,15 +120,15 @@ static void update_process(char *path,pcb_t pcb,bool is_build){
 
 void pivfs_update(pcb_t kernel_head){
     if(kernel_head == NULL || pivfs_root == NULL) return;
-    pcb_t f = kernel_head;
-    do{
-        char buf[100];
-        sprintf(buf,"/proc/%d",f->pid);
-        vfs_node_t node = vfs_open(buf);
-        vfs_mkdir(buf);
-        if(node == NULL)
-            update_process(buf,f,true);
-        else update_process(buf,f,false);
-        f = f->next;
-    } while (f != NULL && f->pid != kernel_head->pid);
+//    pcb_t f = kernel_head;
+//    do{
+//        char buf[100];
+//        sprintf(buf,"/proc/%d",f->pid);
+//        vfs_node_t node = vfs_open(buf);
+//        vfs_mkdir(buf);
+//        if(node == NULL)
+//            update_process(buf,f,true);
+//        else update_process(buf,f,false);
+//        f = f->next;
+//    } while (f != NULL && f->pid != kernel_head->pid);
 }

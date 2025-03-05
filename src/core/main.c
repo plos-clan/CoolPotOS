@@ -76,13 +76,14 @@ void kmain(void) {
     free(date);
     vfs_init();
     vdisk_init();
+    devfs_setup();
     pcie_init();
     ide_setup();
     //nvme_setup();
     //ahci_setup();
     //xhci_setup();
 
-    devfs_setup();
+
     pivfs_setup();
     init_pcb();
     smp_setup();
