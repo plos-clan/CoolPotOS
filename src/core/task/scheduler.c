@@ -5,6 +5,7 @@
 #include "pivfs.h"
 #include "smp.h"
 #include "lock.h"
+#include "lock_queue.h"
 
 pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
@@ -25,15 +26,39 @@ void disable_scheduler(){
     is_scheduler = false;
 }
 
-void add_task(pcb_t new_task) {
-    if (new_task == NULL) return;
+int add_task(pcb_t new_task) {
+    if (new_task == NULL) return -1;
     ticket_lock(&scheduler_lock);
-    pcb_t tailt = kernel_head_task;
-    while (tailt->next != kernel_head_task) {
-        if (tailt->next == NULL) break;
-        tailt = tailt->next;
+
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    if(cpu == NULL){
+        ticket_unlock(&scheduler_lock);
+        return -1;
     }
-    tailt->next = new_task;
+    new_task->queue_index = queue_enqueue(cpu->scheduler_queue,new_task);
+    if(new_task->queue_index == -1){
+        logkf("Error: scheduler null %d\n",get_current_cpuid());
+        return -1;
+    }
+
+    if(new_task->pid == kernel_head_task->pid) goto ret;
+
+    pivfs_update(kernel_head_task);
+    ret:
+    ticket_unlock(&scheduler_lock);
+    return new_task->queue_index;
+}
+
+void remove_task(pcb_t task){
+    if(task == NULL) return;
+    ticket_lock(&scheduler_lock);
+
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    if(cpu == NULL){
+        ticket_unlock(&scheduler_lock);
+        return;
+    }
+    queue_remove_at(cpu->scheduler_queue,task->queue_index);
     pivfs_update(kernel_head_task);
     ticket_unlock(&scheduler_lock);
 }
@@ -95,17 +120,28 @@ void change_proccess(registers_t *reg,pcb_t taget){
 }
 
 /**
- * CP_Kernel 默认调度器 - 循环调度
- * TODO 只适用于单核调度所以做了进程的CPU归属判断
+ * CP_Kernel 默认单核调度器 - 循环调度
  * @param reg 当前进程上下文
  */
 void scheduler(registers_t *reg){
     if(is_scheduler){
         if(current_task != NULL){
-            pcb_t next = current_task->next;
-            while (next->cpu_id != get_current_cpuid()){
-                next = next->next;
+            smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+            if (cpu->iter_node == NULL) {
+                iter_head:
+                cpu->iter_node = cpu->scheduler_queue->head;
+            } else {
+                cpu->iter_node = cpu->iter_node->next;
+                if(cpu->iter_node == NULL) goto iter_head;
             }
+            void *data = NULL;
+            if (cpu->iter_node != NULL) {
+                data = cpu->iter_node->data;
+            }
+
+            pcb_t next = (pcb_t)data;
+           // logkf("p: %p\n",next);
+
             current_task->cpu_clock++;
             if(current_task->time_buf != NULL){
                 current_task->cpu_timer += get_time(current_task->time_buf);

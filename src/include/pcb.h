@@ -25,12 +25,20 @@ struct process_control_block{
     uint64_t user_stack;          // 用户栈
     uint64_t mem_usage;           // 内存利用率
     tty_t *tty;                   // tty设备
+    size_t queue_index;           // 调度队列索引
     struct process_control_block *next; // 下一个进程
 };
 
 typedef struct process_control_block *pcb_t;
 
-void add_task(pcb_t new_task);
+/**
+ * 向当下cpu核心的调度队列增加一个任务
+ * @param new_task
+ * @return == -1 ? 添加失败 : 返回的队列索引
+ */
+int add_task(pcb_t new_task);
+void remove_task(pcb_t task);
+
 void switch_to_user_mode(uint64_t func);
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name);
 pcb_t get_current_task();

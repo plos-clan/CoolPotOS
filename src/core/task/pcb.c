@@ -59,20 +59,11 @@ void kill_proc(pcb_t task){
     disable_scheduler(); // 终止调度器, 防止释放被杀进程时候调度到该进程发生错误
     free_tty(task->tty);
 
-    pcb_t head = kernel_head_task;
-    pcb_t last = NULL;
-    while (1) {
-        if (head->pid == task->pid) {
-            last->next = task->next;
-            free(task);
-            enable_scheduler();
-            open_interrupt;
-            ticket_unlock(&pcb_lock);
-            return;
-        }
-        last = head;
-        head = head->next;
-    }
+    remove_task(task);
+
+    enable_scheduler();
+    open_interrupt;
+    ticket_unlock(&pcb_lock);
 }
 
 pcb_t found_pcb(int pid) {
@@ -146,5 +137,6 @@ void init_pcb(){
     memcpy(current_task->name, name, strlen(name));
     current_task->next = kernel_head_task;
     pivfs_update(kernel_head_task);
+
     kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);
 }

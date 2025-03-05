@@ -4,7 +4,7 @@
 #include "krlibc.h"
 #include "io.h"
 #include "kprint.h"
-#include "acpi.h"
+#include "smp.h"
 #include "pcb.h"
 #include "terminal.h"
 
@@ -25,6 +25,12 @@ char keytable1[0x54] = { // 未按下Shift
         'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm',
         ',', '.', '/', 0, '*', 0, ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.'};
+
+static void key_callback(void *pcb_handle,void* scan_handle){
+    pcb_t cur = (pcb_t)pcb_handle;
+    uint8_t scancode = *((uint8_t*)scan_handle);
+    atom_push(cur->tty->keyboard_buffer, scancode);
+}
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     UNUSED(frame);
@@ -53,14 +59,12 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     }
 
     if (scancode < 0x80) {
-        if (kernel_head_task != NULL) {
-            pcb_t cur = kernel_head_task;
-            do {
-                cur = cur->next;
-                atom_push(cur->tty->keyboard_buffer, scancode);
-            } while (cur->pid != kernel_head_task->pid);
-        } else
-            printk("Keyboard scancode: %x\n", scancode);
+        smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+        if(cpu == NULL){
+            logkf("Error: keyboard cannot iteration scheduler queue.\n");
+            return;
+        }
+        queue_iterate(cpu->scheduler_queue,key_callback,&scancode);
     }
 }
 
