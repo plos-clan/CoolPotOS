@@ -76,12 +76,9 @@ target("iso")
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
             --"-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
             --"-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
-            "-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
+            --"-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-            --"-cdrom", config.buildir() .. "/CoolPotOS.iso",
-            "-drive","file="..config.buildir().."/CoolPotOS.iso,format=raw,id=cdrive,if=none,media=cdrom",
-            "-device","ide-cd,drive=cdrive",
-
+            "-cdrom", config.buildir() .. "/CoolPotOS.iso",
         }
         
         os.execv("qemu-system-x86_64 " , flags)

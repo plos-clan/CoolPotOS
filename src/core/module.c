@@ -25,7 +25,7 @@ void module_setup() {
         return;
     }
 
-    for (int i = 0; i < module.response->module_count; i++) {
+    for (size_t i = 0; i < module.response->module_count; i++) {
         struct limine_file *file = module.response->modules[i];
         logkf("Module %d: %s\n", i, file->path);
         if(!strcmp(file->path,"/sys/sysfont.ttf")){

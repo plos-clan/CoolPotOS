@@ -10,5 +10,5 @@ typedef struct {
 } cpu_t;
 
 void init_cpuid();
-
+bool cpuid_has_sse();
 cpu_t get_cpu_info();

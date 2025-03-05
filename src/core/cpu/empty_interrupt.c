@@ -7,7 +7,7 @@
 #include "krlibc.h"
 #include "io.h"
 
-#define INTERRUPT_HANDLE(id) void empty_handler_##id(interrupt_frame_t *frame){ UNUSED(frame); close_interrupt; send_eoi(); printk("Interrupt empty %d\n",id); update_terminal(); cpu_hlt; }
+#define INTERRUPT_HANDLE(id) void empty_handler_##id(interrupt_frame_t *frame){ UNUSED(frame); close_interrupt; send_eoi(); printk("Interrupt empty "#id"\n"); update_terminal(); cpu_hlt; }
 
 INTERRUPT_HANDLE(0)
 INTERRUPT_HANDLE(1)

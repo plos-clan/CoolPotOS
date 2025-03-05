@@ -19,7 +19,7 @@ extern bool x2apic_mode; //apic.c
 ticketlock apu_lock;
 
 smp_cpu_t cpus[MAX_CPU];
-
+uint32_t bsp_lapic_id;
 uint64_t cpu_count = 0;
 
 uint64_t cpu_num(){
@@ -118,21 +118,53 @@ void apu_entry(){
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(apu_idle->name, name, strlen(name));
     apu_idle->next = kernel_head_task;
-    add_task(apu_idle);
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    if(cpu == NULL){
+        return;
+    }
+    apu_idle->queue_index = queue_enqueue(cpu->scheduler_queue,apu_idle);
+    if(apu_idle->queue_index == -1){
+        logkf("Error: scheduler null %d\n",get_current_cpuid());
+    }
     pivfs_update(kernel_head_task);
     ticket_unlock(&apu_lock);
     cpu_hlt;
 }
 
+smp_cpu_t *get_cpu_smp(uint32_t processor_id){
+    if(processor_id == bsp_lapic_id) return &cpus[MAX_CPU - 1];
+    smp_cpu_t cpu = cpus[processor_id];
+    if(cpu.flags == 1){
+        return &cpus[processor_id];
+    } else return NULL;
+}
+
 void apu_startup(struct limine_smp_request smp_request){
     struct limine_smp_response *response = smp_request.response;
     cpu_count = response->cpu_count;
-    for (uint64_t i = 0; i < cpu_count && i < MAX_CPU; i++){
+    bsp_lapic_id = response->bsp_lapic_id;
+    for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++){
         struct limine_smp_info *info = response->cpus[i];
-        if(info->lapic_id == response->bsp_lapic_id) continue;
+        if(info->lapic_id == response->bsp_lapic_id) {
+            cpus[MAX_CPU - 1].lapic_id = response->bsp_lapic_id;
+            cpus[MAX_CPU - 1].flags = 1;
+            cpus[MAX_CPU - 1].scheduler_queue = queue_init();
+            cpus[MAX_CPU - 1].iter_node = NULL;
+            continue;
+        }
+        cpus[info->processor_id].scheduler_queue = queue_init();
         cpus[info->processor_id].lapic_id = info->lapic_id;
         cpus[info->processor_id].flags = 1;
+        cpus[info->processor_id].iter_node = NULL;
         info->goto_address = (void*)apu_entry;
+    }
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    if(cpu == NULL){
+        return;
+    }
+    kernel_head_task->queue_index = queue_enqueue(cpu->scheduler_queue,kernel_head_task);
+    if(kernel_head_task->queue_index == -1){
+        logkf("Error: scheduler null %d\n",get_current_cpuid());
     }
     kinfo("%d processors have been enabled.",cpu_count);
 }

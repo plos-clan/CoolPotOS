@@ -56,6 +56,7 @@ void pca9685_write(uint8_t reg, uint8_t data){
 uint8_t pca9685_read(uint8_t reg){
     //读取兼容性
     UNUSED(reg);
+    return 0;
 }
 
 /**
