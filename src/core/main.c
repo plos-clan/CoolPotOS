@@ -26,6 +26,22 @@
 #include "pivfs.h"
 #include "shell.h"
 #include "iic/iic_core.h"
+#include "smbios.h"
+
+// 编译器判断
+#if defined(__clang__)
+#	define COMPILER_NAME "clang"
+#	define STRINGIFY(x) #x
+#	define EXPAND(x) STRINGIFY(x)
+#	define COMPILER_VERSION EXPAND(__clang_major__.__clang_minor__.__clang_patchlevel__)
+#elif defined(__GNUC__)
+#	define COMPILER_NAME "gcc"
+#	define STRINGIFY(x) #x
+#	define EXPAND(x) STRINGIFY(x)
+#	define COMPILER_VERSION EXPAND(__GNUC__.__GNUC_MINOR__.__GNUC_PATCHLEVEL__)
+#else
+#	error "Unknown compiler"
+#endif
 
 __attribute__((used, section(".limine_requests")))
 static volatile LIMINE_BASE_REVISION(2)
@@ -61,9 +77,10 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (Limine Bootloader) on an x86_64\n", KERNEL_NAME);
+    printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME, COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
+	kinfo("SMBIOS %d.%d.0 present.\n",smbios_major_version(), smbios_minor_version());
     gdt_setup();
     idt_setup();
     page_setup();
