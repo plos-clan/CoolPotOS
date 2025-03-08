@@ -67,6 +67,7 @@
 * copi143 - 新版用户堆框架开发
 * QtLittleXu - 负责OS文档编写
 * ViudiraTech - PCI驱动优化
+* FengHeting - SMBIOS驱动开发
 * VinbeWan - IIC驱动程序开发
 * A4-Tacks - 编写一些构建脚本
 * wenxuanjun - OS 内存管理开发
