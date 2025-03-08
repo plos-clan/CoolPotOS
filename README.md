@@ -67,6 +67,7 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * copi143 - UserHeap Development
 * QtLittleXu - XuYuxuan OS Document
 * ViudiraTech - PCI driver optimization
+* FengHeting - SMBIOS driver Development
 * Vinbe Wan - IIC Development
 * A4-Tacks - Write some build scripts
 * wenxuanjun - OS Memory Manager Development
