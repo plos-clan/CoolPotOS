@@ -194,7 +194,7 @@ static uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function,uint8_t 
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
     io_out32(PCI_COMMAND_PORT, id);
     uint32_t result = io_in32(PCI_DATA_PORT);
-    return result >> (8 * (registeroffset % 4));
+    return result >> (8 * (registeroffset & 2) & 0xff);
 }
 
 static void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset, uint32_t value) {

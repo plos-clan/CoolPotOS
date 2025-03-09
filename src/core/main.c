@@ -53,6 +53,7 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
+extern void iso9660_regist(); //iso9660.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -80,11 +81,11 @@ void kmain(void) {
     printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME, COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
-	kinfo("SMBIOS %d.%d.0 present.\n",smbios_major_version(), smbios_minor_version());
     gdt_setup();
     idt_setup();
     page_setup();
     error_setup();
+    smbios_setup();
     acpi_setup();
     keyboard_setup();
     mouse_setup();
@@ -92,12 +93,14 @@ void kmain(void) {
     kinfo("RTC time %s", date);
     free(date);
     vfs_init();
+    iso9660_regist();
+
     vdisk_init();
     devfs_setup();
     pcie_init();
     ide_setup();
     //nvme_setup();
-    //ahci_setup();
+   // ahci_setup();
     //xhci_setup();
 
 
@@ -105,7 +108,7 @@ void kmain(void) {
     init_pcb();
     smp_setup();
     build_stream_device();
-    
+
     init_iic();
 
     /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");

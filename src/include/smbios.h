@@ -4,7 +4,7 @@
 // GPL-3.0 License
 
 #pragma once
-#include "stdint.h"
+#include "ctype.h"
 
 /* 入口点结构 */
 struct EntryPoint64 {
@@ -32,3 +32,5 @@ int smbios_major_version(void);
 
 /* 获取SMBIOS次版本 */
 int smbios_minor_version(void);
+
+void smbios_setup();

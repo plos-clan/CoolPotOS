@@ -23,6 +23,11 @@ typedef struct {
   uint32_t ansi_colors[16];
 } TerminalPalette;
 
+typedef struct {
+  const char *(*get)(void);
+  void (*set)(const char*);
+} TerminalClipboard;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -67,11 +72,13 @@ void terminal_set_color_scheme(size_t palette_index);
 
 void terminal_set_custom_color_scheme(const TerminalPalette *palette);
 
-void terminal_string_free(char *s);
+void terminal_set_clipboard(TerminalClipboard clipboard);
 
-char *terminal_handle_keyboard(uint8_t scancode);
+void terminal_set_pty_writer(void (*writer)(const uint8_t*));
 
-char *terminal_handle_mouse_scroll(ptrdiff_t delta);
+void terminal_handle_keyboard(uint8_t scancode);
+
+void terminal_handle_mouse_scroll(ptrdiff_t delta);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -19,7 +19,8 @@ void print_register(interrupt_frame_t *frame){
 }
 
 void print_task_info(pcb_t pcb){
-    printk("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
+    if(pcb == NULL) printk("Current process PID: 0 (Kernel) CPU%d\n",get_current_cpuid());
+    else printk("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
 }
 
 void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {

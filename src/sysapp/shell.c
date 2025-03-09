@@ -241,6 +241,21 @@ static void echo(int argc,char** argv){
     }
 }
 
+static void mount(int argc,char** argv){
+    if (argc < 3) {
+        printk("[Shell-MOUNT]: If there are too few parameters.\n");
+        return;
+    }
+    vfs_node_t p = vfs_open(argv[1]);
+    if (p == NULL) {
+        printk("Cannot found mount directory.\n");
+        return;
+    }
+    if (vfs_mount(argv[2], p) == -1) {
+        printk("Failed mount device [%s]\n", argv[2]);
+    }
+}
+
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
@@ -251,15 +266,15 @@ static void sys_info() {
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
     printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
-    printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         核心数:       %d\n", cpu_num());
-    printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         处理器:       %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",is_pcie ? "PCIE" : "PCI ", get_pcie_num());
-    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        分辨率:       %d x %d\n", framebuffer->width,framebuffer->height);
-    printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        时间:         %s\n", get_date_time());
-    printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        终端:         os_terminal\n");
-    printk("&@@@@@+           +@@@@@&        内核:         %s\n", KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        内存利用率:   %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
-    printk("-@@@@@@*         #@@@@@@:        64位操作系统, 基于x86架构的处理器\n");
+    printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
+    printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:    %d\n",is_pcie ? "PCIE" : "PCI ", get_pcie_num());
+    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n", framebuffer->width,framebuffer->height);
+    printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
+    printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Terminal:     os_terminal\n");
+    printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
+    printk("*@@@@@@           @@@@@@*        MemoryUsage:  %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
+    printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor.\n");
     printk(" &@@@@@@*.     .#@@@@@@& \n");
     printk("  =@@@@@@@*----*@@@@@@@- \n");
     printk("  .#@@@@@@@@@@@@@@@@@#.    \n");
@@ -270,28 +285,29 @@ static void sys_info() {
 
 static void print_help() {
     printk("Usage <command|app_path> [argument...]\n");
-    printk("help h ?                 获取shell命令帮助列表.\n");
-    printk("shutdown exit            关闭操作系统.\n");
-    printk("reboot                   重启系统.\n");
-    printk("lspci/lspcie             列出所有PCI/PCIE设备.\n");
-    printk("sysinfo                  获取系统信息.\n");
-    printk("clear                    清空屏幕.\n");
-    printk("ps                       列出所有正在运行的进程.\n");
-    printk("pkill     <pid>          杀死指定进程.\n");
-    printk("cd        <path>         切换shell工作目录.\n");
-    printk("mkdir     <name>         创建一个文件夹.\n");
-    printk("ls        [path]         列出工作目录或指定目录下的所有文件或目录.\n");
-    printk("echo      <message>      打印一串信息.\n");
+    printk("help h ?                 Get shell help info.\n");
+    printk("shutdown exit            Shutdown kernel.\n");
+    printk("reboot                   Restart kernel.\n");
+    printk("lspci/lspcie             List all PCI/PCIE devices.\n");
+    printk("sysinfo                  Get system info.\n");
+    printk("clear                    Clear screen.\n");
+    printk("ps                       List all running tasks.\n");
+    printk("pkill     <pid>          Kill a tasks.\n");
+    printk("cd        <path>         Change shell work path.\n");
+    printk("mkdir     <name>         Create a directory.\n");
+    printk("ls        [path]         List all file or directory.\n");
+    printk("echo      <message>      Print a message.\n");
+    printk("mount     <path> <dev>   Mount a device to path.\n");
 }
 
 void shell_setup(){
-    printk("欢迎来到 CoolPotOS (%s)\n"
-           " * 开源链接:        https://github.com/plos-clan/CoolPotOS\n"
-           " * 组织网站:        https://github.com/plos-clan\n"
+    printk("Welcome to CoolPotOS (%s)\n"
+           " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
+           " * Website:           https://github.com/plos-clan\n"
            " System information as of %s \n"
-           "  进程数:               %d\n"
-           "  登录用户:             Kernel\n"
-           "MIT 开源协议 2024-2025 XIAOYI12 (构建于 xmake clang)\n", KERNEL_NAME, get_date_time(),
+           "  Tasks:              %d\n"
+           "  Logged:             Kernel\n"
+           "MIT License 2024-2025 XIAOYI12 (Build by xmake&clang)\n", KERNEL_NAME, get_date_time(),
            get_all_task());
     char com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
@@ -337,6 +353,8 @@ void shell_setup(){
             ls(argc, argv);
         else if(!strcmp("echo",argv[0]))
             echo(argc,argv);
+        else if(!strcmp("mount",argv[0]))
+            mount(argc,argv);
         else if (!strcmp("test", argv[0])){
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n",i);

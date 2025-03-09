@@ -131,5 +131,5 @@ void init_pcb(){
     memcpy(current_task->name, name, strlen(name));
     pivfs_update(kernel_head_task);
 
-    kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);
+    kinfo("Load task schedule. | KernelProcess PID: %d", current_task->pid);
 }

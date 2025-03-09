@@ -47,13 +47,13 @@ void mcfg_addr_to_entries(MCFG_ENTRY **entries) {
 }
 
 uint32_t pcie_read_command(pcie_device_t *device, uint8_t offset) {
-    uint32_t address = (1 << 31) | (device->bus << 16) | (device->slot << 11) | (device->func << 8) | (offset & 0xFC);
+    uint32_t address = (0x80000000) | (device->bus << 16) | (device->slot << 11) | (device->func << 8) | (offset & 0xFC);
     io_out32(PCI_COMMAND_PORT,address);
     return io_in32(PCI_DATA_PORT);
 }
 
 void pcie_write_command(pcie_device_t *device,uint8_t offset,uint32_t value){
-    uint32_t address = (1 << 31) | (device->bus << 16) | (device->slot << 11) | (device->func << 8) | (offset & 0xFC);
+    uint32_t address = (0x80000000) | (device->bus << 16) | (device->slot << 11) | (device->func << 8) | (offset & 0xFC);
     io_out32(PCI_COMMAND_PORT,address);
     io_out32(PCI_DATA_PORT,value);
 }

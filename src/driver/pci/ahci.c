@@ -4,6 +4,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "alloc.h"
+#include "pcie.h"
 
 static uint32_t ahci_ports[32];
 static uint32_t port_total = 0;
@@ -114,7 +115,7 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) (cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
 
-    cmdtbl->prdt_entry[0].dba = (uint64_t)buf;
+    cmdtbl->prdt_entry[0].dba = (uint64_t) buf;
     cmdtbl->prdt_entry[0].dbau = 0;
     cmdtbl->prdt_entry[0].dbc = 0x200 - 1;
     cmdtbl->prdt_entry[0].i = 1;
@@ -182,28 +183,46 @@ void ahci_search_ports(HBA_MEM *abar) {
     }
 }
 
-void ahci_setup(){
-    pci_device_t device = pci_find_class(0x010601);
+void ahci_setup() {
+    pcie_device_t *device = pcie_find_class(0x010601);
     if (device == NULL) {
-        return;
+        pci_device_t pci_device = pci_find_class(0x010601);
+        if (pci_device == NULL) {
+            return;
+        }
+        uint32_t conf = pci_read_command_status(pci_device);
+        conf |= PCI_COMMAND_MEMORY;
+        conf |= PCI_RCMD_BUS_MASTER;
+        conf |= PCI_COMMAND_IO;
+        pci_write_command_status(pci_device, conf);
+        base_address_register reg = find_bar(pci_device, 5);
+        if (reg.type == input_output) {
+            kwarn("AHCI memory address is not aligned\n");
+            return;
+        }
+        hba_mem = phys_to_virt((uint64_t) reg.address);
+        printk("Loading pci ahci driver...\n");
+    } else {
+        uint32_t conf = pcie_read_command(device, 0x04);
+        conf |= PCI_RCMD_BUS_MASTER;
+        conf |= PCI_COMMAND_MEMORY;
+        conf |= PCI_COMMAND_IO;
+        pcie_write_command(device, 0x04, conf);
+        hba_mem = phys_to_virt(device->bars[5].address);
+        printk("Loading pcie ahci driver...\n");
     }
-    uint32_t i;
 
-    hba_mem = phys_to_virt((uint64_t)read_bar_n(device,5));
+    printk("Address: %p\n",hba_mem);
+    hba_mem->ghc |= AHCI_GHC_AE;
 
-    uint32_t conf = pci_read_command_status(device);
-    conf &= 0xffff0000;
-    conf |= 0x7; //允许产生中断
-    conf |= PCI_RCMD_DISABLE_INTR; // 切换MSI
-    conf |= PCI_RCMD_BUS_MASTER; // 启用总线主控制
-    conf |= PCI_RCMD_IO_ACCESS; // 启用IO空间访问
-    pci_write_command_status(device, conf);
+    uint32_t pi = hba_mem->pi;
+    printk("Ports Implemented: 0x%x\n", pi);
 
-    hba_mem->ghc |= (1 << 31);
-
-    ahci_ports_base_addr = (uint64_t)malloc(1048576);
+    ahci_ports_base_addr = (uint64_t) malloc(1048576);
 
     ahci_search_ports(hba_mem);
+    printk("AHCI loading disk - find %d device.\n", port_total);
+    uint32_t i;
     for (i = 0; i < port_total; i++) {
         ahci_port_rebase(&(hba_mem->ports[ahci_ports[i]]), ahci_ports[i]);
     }
@@ -225,5 +244,5 @@ void ahci_setup(){
               "AHCI_SEMB", buf.lba_capacity * 512 / 1024 / 1024);
     }
 
-    kinfo("AHCI init done - find %d device.",port_total);
+    kinfo("AHCI init done - find %d device.", port_total);
 }

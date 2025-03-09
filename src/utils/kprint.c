@@ -3,6 +3,9 @@
 #include "os_terminal.h"
 #include "sprintf.h"
 #include "pcb.h"
+#include "lock.h"
+
+ticketlock print_lock;
 
 static char *const color_codes[] = {
     [BLACK] = "0",
@@ -23,6 +26,7 @@ void add_color(char *dest, uint32_t color, int is_background) {
 }
 
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
+    ticket_lock(&print_lock);
     char buf[4096] = {0};
     add_color(buf, fcolor, false);
     add_color(buf, bcolor, true);
@@ -38,4 +42,5 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     if(get_current_task() != NULL)
         get_current_task()->tty->print(get_current_task()->tty,buf);
     else terminal_process(buf);
+    ticket_unlock(&print_lock);
 }
