@@ -74,12 +74,12 @@ void init_terminal() {
     };
     float size = 10.0f * ((float) framebuffer->width / 1024);
 
-    cp_module_t *mod = get_module("sysfont");
-    if(mod == NULL){
-        logkf("Error: no default terminal font.\n");
-        cpu_hlt;
-    }
-    terminal_init(&display,mod->data,mod->size, size, malloc, free, NULL);
+//    cp_module_t *mod = get_module("sysfont");
+//    if(mod == NULL){
+//        logkf("Error: no default terminal font.\n");
+//        cpu_hlt;
+//    }
+    terminal_init(&display, size, malloc, free, NULL);
 
     terminal_set_scroll_speed(3);
     setup_cpos_default();

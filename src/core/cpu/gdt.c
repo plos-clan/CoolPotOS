@@ -7,6 +7,7 @@ gdt_entries_t gdt_entries;
 struct gdt_register gdt_pointer;
 tss_t tss0;
 tss_stack_t tss_stack;
+extern uint32_t bsp_processor_id;
 
 extern smp_cpu_t cpus[MAX_CPU];
 
@@ -59,7 +60,7 @@ void tss_setup() {
 
 void set_kernel_stack(uint64_t rsp){
     uint64_t cpuid = get_current_cpuid();
-    if(cpuid == 0) tss0.rsp[0] = rsp;
+    if(cpuid == bsp_processor_id) tss0.rsp[0] = rsp;
     else {
         cpus[cpuid].tss0.rsp[0] = rsp;
     }

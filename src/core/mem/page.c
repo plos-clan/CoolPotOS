@@ -28,7 +28,9 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault, virtual address 0x%x\n", faulting_address);
-    logkf("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
+    if(get_current_task() != NULL){
+        logkf("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
+    }
     printk("\n");
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
            !(error_code & 0x1) ? "NotPresent" :
@@ -36,7 +38,9 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
            error_code & 0x4 ? "UserMode" :
            error_code & 0x8 ? "ReservedBitsSet" :
            error_code & 0x10 ? "DecodeAddress" : "Unknown",faulting_address);
-    printk("Current process PID: %d (%s) at CPU%d\n",get_current_task()->pid,get_current_task()->name,get_current_cpuid());
+    if(get_current_task() != NULL){
+        printk("Current process PID: %d (%s) at CPU%d\n",get_current_task()->pid,get_current_task()->name,get_current_cpuid());
+    }
     print_register(frame);
     update_terminal();
     cpu_hlt;

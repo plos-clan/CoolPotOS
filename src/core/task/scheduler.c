@@ -11,7 +11,11 @@ pcb_t current_task = NULL;
 pcb_t kernel_head_task = NULL;
 bool is_scheduler = false;
 
+extern uint64_t cpu_count; //smp.c
+extern uint32_t bsp_processor_id; //smp.c
+
 ticketlock scheduler_lock;
+ticketlock scheduler_lock_rw;
 
 pcb_t get_current_task(){
     return current_task;
@@ -29,20 +33,31 @@ int add_task(pcb_t new_task) {
     if (new_task == NULL) return -1;
     ticket_lock(&scheduler_lock);
 
-    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
-    if(cpu == NULL){
+    smp_cpu_t *cpu0 = get_cpu_smp(bsp_processor_id);
+    uint32_t cpuid = bsp_processor_id;
+
+//    for (int i = 0; i < cpu_count; i++) {
+//        smp_cpu_t *cpu = get_cpu_smp(i);
+//        if(cpu == NULL) continue;
+//        if(cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size){
+//            cpu0 = cpu;
+//            cpuid = i;
+//        }
+//    }
+
+    if(cpu0 == NULL){
         ticket_unlock(&scheduler_lock);
         return -1;
     }
-    new_task->queue_index = queue_enqueue(cpu->scheduler_queue,new_task);
+    new_task->cpu_id = cpuid;
+    new_task->queue_index = queue_enqueue(cpu0->scheduler_queue,new_task);
     if(new_task->queue_index == -1){
         logkf("Error: scheduler null %d\n",get_current_cpuid());
         return -1;
     }
+    if(new_task->pid == cpu0->idle_pcb->pid) goto ret;
 
-    if(new_task->pid == kernel_head_task->pid) goto ret;
-
-    pivfs_update(kernel_head_task);
+    //pivfs_update(kernel_head_task);
     ret:
     ticket_unlock(&scheduler_lock);
     return new_task->queue_index;
@@ -58,7 +73,7 @@ void remove_task(pcb_t task){
         return;
     }
     queue_remove_at(cpu->scheduler_queue,task->queue_index);
-    pivfs_update(kernel_head_task);
+    //pivfs_update(kernel_head_task);
     ticket_unlock(&scheduler_lock);
 }
 
@@ -109,17 +124,30 @@ void change_proccess(registers_t *reg,pcb_t taget){
     reg->rip = taget->context0.rip;
     reg->rsp = taget->context0.rsp;
 
+
     current_task = taget;
 }
 
 /**
- * CP_Kernel 默认单核调度器 - 循环公平调度
+ * CP_Kernel 默认多核调度器 - 循环公平调度
  * @param reg 当前进程上下文
  */
 void scheduler(registers_t *reg){
     if(is_scheduler){
         if(current_task != NULL){
+            ticket_lock(&scheduler_lock);
             smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+            if(cpu == NULL) {
+                logkf("Error: scheduler null %d\n",get_current_cpuid());
+                ticket_unlock(&scheduler_lock);
+                return;
+            }
+
+            if(cpu->scheduler_queue->size == 1){
+                ticket_unlock(&scheduler_lock);
+                return;
+            }
+
             if (cpu->iter_node == NULL) {
                 iter_head:
                 cpu->iter_node = cpu->scheduler_queue->head;
@@ -133,7 +161,6 @@ void scheduler(registers_t *reg){
             }
 
             pcb_t next = (pcb_t)data;
-           // logkf("p: %p\n",next);
 
             current_task->cpu_clock++;
             if(current_task->time_buf != NULL){
@@ -147,6 +174,8 @@ void scheduler(registers_t *reg){
                 change_proccess(reg,next);
                 enable_scheduler();
             }
+
+            ticket_unlock(&scheduler_lock);
         }
     }
     send_eoi();

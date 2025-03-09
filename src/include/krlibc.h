@@ -3,7 +3,7 @@
 /**
  * 定义CP_Kernel的各种属性
  */
-#define KERNEL_NAME "CP_Kernel-x86_64-0.0.7" //内核编号
+#define KERNEL_NAME "CP_Kernel-x86_64-0.0.8" //内核编号
 #define MAX_CPU 256                          //最大支持CPU核心数
 #define STACK_SIZE 32768                     //栈大小(byte)
 #define MAX_WAIT_INDEX 100000                //阻塞最大循环数
@@ -51,6 +51,8 @@ int strcmp(const char *s1, const char *s2);
 int64_t strtol(const char *str, char **endptr, int base);
 
 char *strdup(const char *str);
+
+char *strchrnul(const char *s, int c);
 
 int isspace(int c);
 
