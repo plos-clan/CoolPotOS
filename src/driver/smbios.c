@@ -15,7 +15,8 @@ static __volatile__ struct limine_smbios_request smbios_request = {
 int smbios_major_version(void) {
     struct EntryPoint64 *entry = (struct EntryPoint64 *) smbios_request.response->entry_64;
     if(entry == NULL){
-        return -1;
+        struct EntryPoint32 *entry32 = (struct EntryPoint32 *) smbios_request.response->entry_32;
+        return entry32 == NULL ? -1 : entry32->SMBIOSMajorVersion;
     }
     return entry->SMBIOSMajorVersion;
 }
@@ -24,7 +25,8 @@ int smbios_major_version(void) {
 int smbios_minor_version(void) {
     struct EntryPoint64 *entry = (struct EntryPoint64 *) smbios_request.response->entry_64;
     if(entry == NULL){
-        return -1;
+        struct EntryPoint32 *entry32 = (struct EntryPoint32 *)smbios_request.response->entry_32;
+        return entry32 == NULL ? -1 : entry32->SMBIOSMinorVersion;
     }
     return entry->SMBIOSMinorVersion;
 }
