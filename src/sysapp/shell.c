@@ -158,7 +158,6 @@ void ps() {
     int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
     extern pcb_t kernel_head_task;
     uint64_t idle_time = kernel_head_task->cpu_timer;
-    printk("PID  %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME");
     for (size_t i = 0; i < MAX_CPU; i++) {
         smp_cpu_t cpu = cpus[i];
         if(cpu.flags == 1){
@@ -169,6 +168,7 @@ void ps() {
             }
         }
     }
+    printk("PID  %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME");
     for (size_t i = 0; i < MAX_CPU; i++) {
         smp_cpu_t cpu = cpus[i];
         if(cpu.flags == 1){
@@ -275,9 +275,9 @@ static void sys_info() {
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
     printk("*@@@@@@           @@@@@@*        MemoryUsage:  %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
     printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor.\n");
-    printk(" &@@@@@@*.     .#@@@@@@& \n");
-    printk("  =@@@@@@@*----*@@@@@@@- \n");
-    printk("  .#@@@@@@@@@@@@@@@@@#.    \n");
+    printk(" &@@@@@@*.     .#@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    \033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m\n");
+    printk("  =@@@@@@@*----*@@@@@@@-         \n");
+    printk("  .#@@@@@@@@@@@@@@@@@#.          \n");
     printk("    .#@@@@@@@@@@@@@#.    \n");
     printk("      =&@@@@@@@@@&-      \n");
     printk("        -*&@@@&+:        \n");

@@ -15,10 +15,11 @@ extern uint64_t cpu_count; //smp.c
 extern uint32_t bsp_processor_id; //smp.c
 
 ticketlock scheduler_lock;
-ticketlock scheduler_lock_rw;
 
 pcb_t get_current_task(){
-    return current_task;
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    if(cpu == NULL) return NULL;
+    return cpu->current_pcb;
 }
 
 void enable_scheduler(){
@@ -36,14 +37,14 @@ int add_task(pcb_t new_task) {
     smp_cpu_t *cpu0 = get_cpu_smp(bsp_processor_id);
     uint32_t cpuid = bsp_processor_id;
 
-//    for (int i = 0; i < cpu_count; i++) {
-//        smp_cpu_t *cpu = get_cpu_smp(i);
-//        if(cpu == NULL) continue;
-//        if(cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size){
-//            cpu0 = cpu;
-//            cpuid = i;
-//        }
-//    }
+    for (int i = 0; i < cpu_count; i++) {
+        smp_cpu_t *cpu = get_cpu_smp(i);
+        if(cpu == NULL) continue;
+        if(cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size){
+            cpu0 = cpu;
+            cpuid = i;
+        }
+    }
 
     if(cpu0 == NULL){
         ticket_unlock(&scheduler_lock);
@@ -129,25 +130,23 @@ void change_proccess(registers_t *reg,pcb_t taget){
 }
 
 /**
- * CP_Kernel 默认多核调度器 - 循环公平调度
+ * CP_Kernel 默认多核调度器 - 循环绝对公平调度
  * @param reg 当前进程上下文
  */
 void scheduler(registers_t *reg){
     if(is_scheduler){
-        if(current_task != NULL){
-            ticket_lock(&scheduler_lock);
-            smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
-            if(cpu == NULL) {
-                logkf("Error: scheduler null %d\n",get_current_cpuid());
-                ticket_unlock(&scheduler_lock);
-                return;
-            }
-
+        ticket_lock(&scheduler_lock);
+        smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+        if(cpu == NULL) {
+            logkf("Error: scheduler null %d\n",get_current_cpuid());
+            ticket_unlock(&scheduler_lock);
+            return;
+        }
+        if(cpu->current_pcb != NULL){
             if(cpu->scheduler_queue->size == 1){
                 ticket_unlock(&scheduler_lock);
                 return;
             }
-
             if (cpu->iter_node == NULL) {
                 iter_head:
                 cpu->iter_node = cpu->scheduler_queue->head;
@@ -162,21 +161,20 @@ void scheduler(registers_t *reg){
 
             pcb_t next = (pcb_t)data;
 
-            current_task->cpu_clock++;
-            if(current_task->time_buf != NULL){
-                current_task->cpu_timer += get_time(current_task->time_buf);
-                current_task->time_buf = NULL;
+            cpu->current_pcb->cpu_clock++;
+            if(cpu->current_pcb->time_buf != NULL){
+                cpu->current_pcb->cpu_timer += get_time(cpu->current_pcb->time_buf);
+                cpu->current_pcb->time_buf = NULL;
             }
-            current_task->time_buf = alloc_timer();
+            cpu->current_pcb->time_buf = alloc_timer();
 
-            if(current_task->pid != next->pid) {
+            if(cpu->current_pcb->pid != next->pid) {
                 disable_scheduler();
                 change_proccess(reg,next);
                 enable_scheduler();
             }
-
-            ticket_unlock(&scheduler_lock);
         }
+        ticket_unlock(&scheduler_lock);
     }
     send_eoi();
 }

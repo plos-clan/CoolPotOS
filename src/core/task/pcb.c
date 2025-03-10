@@ -21,7 +21,7 @@ int now_pid = 0;
 _Noreturn void process_exit() {
     register uint64_t rax __asm__("rax");
     printk("Kernel Process exit, Code: %d\n", rax);
-    kill_proc(current_task);
+    kill_proc(get_current_task());
     while (1);
 }
 
@@ -46,8 +46,6 @@ void switch_to_user_mode(uint64_t func) {
     "r"((uint64_t)0x23),"r"(func),"r"((uint64_t)0x1b)
     :"memory");
 }
-
-
 
 void kill_proc(pcb_t task){
     if(task->task_level == TASK_KERNEL_LEVEL){
@@ -74,16 +72,6 @@ void kill_all_proc() {
     close_interrupt;
     disable_scheduler();
     lapic_timer_stop();
-//    pcb_t head = kernel_head_task;//获取头指针
-//    while (1) {//遍历调度链表
-//        head = head->next;
-//        if (head == NULL || head->pid == kernel_head_task->pid) {
-//            return;
-//        }
-//        if (head->pid == get_current_task()->pid) continue;
-//        kill_proc(head);//结束进程
-//        disable_scheduler();
-//    }
 }
 
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
@@ -129,6 +117,7 @@ void init_pcb(){
     char name[50];
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(current_task->name, name, strlen(name));
+    current_task->name[strlen(name)] = '\0';
     pivfs_update(kernel_head_task);
 
     kinfo("Load task schedule. | KernelProcess PID: %d", current_task->pid);

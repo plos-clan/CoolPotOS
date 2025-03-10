@@ -26,6 +26,7 @@ void print_task_info(pcb_t pcb){
 void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
     close_interrupt;
     ticket_lock(&error_lock);
+    logkf("Kernel Error: %s:0x%x\n",msg,code);
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
     print_task_info(get_current_task());
     print_register(frame);

@@ -6,10 +6,11 @@
 #include "kprint.h"
 #include "smp.h"
 #include "pcb.h"
-#include "terminal.h"
+#include "lock.h"
 
 static int caps_lock, shift, e0_flag = 0, ctrl = 0;
 int disable_flag = 0;
+ticketlock keyboard_lock;
 extern pcb_t kernel_head_task;
 extern smp_cpu_t cpus[MAX_CPU];
 
@@ -29,12 +30,15 @@ char keytable1[0x54] = { // 未按下Shift
 
 static void key_callback(void *pcb_handle,void* scan_handle){
     pcb_t cur = (pcb_t)pcb_handle;
+   // logkf("cur: %s cpuid: %d\n",cur->name,cur->cpu_id);
+    if(cur->cpu_id != get_current_cpuid()) return;
     uint8_t scancode = *((uint8_t*)scan_handle);
     atom_push(cur->tty->keyboard_buffer, scancode);
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     UNUSED(frame);
+    ticket_lock(&keyboard_lock);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     send_eoi();
@@ -67,15 +71,18 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
             }
         }
     }
+    ticket_unlock(&keyboard_lock);
 }
 
 int input_char_inSM() {
     int i = -1;
     pcb_t task = get_current_task();
     if (task == NULL) return 0;
+    task->tty->is_key_wait = true;
     do {
         i = atom_pop(task->tty->keyboard_buffer);
     } while (i == -1);
+    task->tty->is_key_wait = false;
     return i;
 }
 

@@ -43,6 +43,7 @@ tty_t *alloc_default_tty(){
     tty->width = framebuffer->width;
     tty->print = tty_kernel_print;
     tty->putchar = tty_kernel_putc;
+    tty->is_key_wait = false;
     tty->keyboard_buffer = create_atom_queue(1024);
     return tty;
 }
