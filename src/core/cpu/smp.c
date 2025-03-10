@@ -118,7 +118,7 @@ void apu_entry(){
     apu_idle->cpu_timer = nanoTime();
     apu_idle->time_buf = alloc_timer();
     apu_idle->cpu_id = get_current_cpuid();
-    apu_idle->context0.rip = (uint64_t)apu_hlt;
+   // apu_idle->context0.rip = (uint64_t)apu_hlt;
     char name[50];
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
     memcpy(apu_idle->name, name, strlen(name));
@@ -129,12 +129,12 @@ void apu_entry(){
         cpu_hlt;
     }
     cpu->idle_pcb = apu_idle;
+    cpu->current_pcb = apu_idle;
     apu_idle->queue_index = queue_enqueue(cpu->scheduler_queue,apu_idle);
     if(apu_idle->queue_index == -1){
         logkf("Error: scheduler null %d\n",get_current_cpuid());
         cpu_hlt;
     }
-    pivfs_update(kernel_head_task);
     logkf("APU %d started.\n",get_current_cpuid());
     ticket_unlock(&apu_lock);
     open_interrupt;
@@ -160,6 +160,7 @@ void apu_startup(struct limine_smp_request smp_request){
         if(info->lapic_id == response->bsp_lapic_id){
             bsp_processor_id = info->processor_id;
             cpus[info->processor_id].idle_pcb = kernel_head_task;
+            cpus[info->processor_id].current_pcb = kernel_head_task;
         } else {
             info->goto_address = (void*)apu_entry;
         }
