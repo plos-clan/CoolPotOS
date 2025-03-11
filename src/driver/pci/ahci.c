@@ -5,6 +5,7 @@
 #include "krlibc.h"
 #include "alloc.h"
 #include "pcie.h"
+#include "io.h"
 
 static uint32_t ahci_ports[32];
 static uint32_t port_total = 0;
@@ -185,6 +186,7 @@ void ahci_search_ports(HBA_MEM *abar) {
 
 void ahci_setup() {
     pcie_device_t *device = pcie_find_class(0x010601);
+    uint64_t phy_addr;
     if (device == NULL) {
         pci_device_t pci_device = pci_find_class(0x010601);
         if (pci_device == NULL) {
@@ -200,32 +202,27 @@ void ahci_setup() {
             kwarn("AHCI memory address is not aligned\n");
             return;
         }
-        hba_mem = phys_to_virt((uint64_t) reg.address);
-        printk("Loading pci ahci driver...\n");
+        hba_mem = (HBA_MEM*)reg.address;
     } else {
         uint32_t conf = pcie_read_command(device, 0x04);
         conf |= PCI_RCMD_BUS_MASTER;
         conf |= PCI_COMMAND_MEMORY;
         conf |= PCI_COMMAND_IO;
         pcie_write_command(device, 0x04, conf);
-        hba_mem = phys_to_virt(device->bars[5].address);
-        printk("Loading pcie ahci driver...\n");
+        hba_mem = (HBA_MEM*)device->bars[5].address;
     }
 
-    printk("Address: %p\n",hba_mem);
     hba_mem->ghc |= AHCI_GHC_AE;
-
-    uint32_t pi = hba_mem->pi;
-    printk("Ports Implemented: 0x%x\n", pi);
 
     ahci_ports_base_addr = (uint64_t) malloc(1048576);
 
     ahci_search_ports(hba_mem);
-    printk("AHCI loading disk - find %d device.\n", port_total);
     uint32_t i;
     for (i = 0; i < port_total; i++) {
         ahci_port_rebase(&(hba_mem->ports[ahci_ports[i]]), ahci_ports[i]);
     }
+
+    hba_mem->ghc |= AHCI_GHC_IE;
 
     for (i = 0; i < port_total; i++) {
         SATA_ident_t buf;

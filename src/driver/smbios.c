@@ -8,7 +8,8 @@
 
 __attribute__((used, section(".limine_requests")))
 static __volatile__ struct limine_smbios_request smbios_request = {
-        .id = LIMINE_SMBIOS_REQUEST
+        .id = LIMINE_SMBIOS_REQUEST,
+        .revision = 0
 };
 
 /* 获取SMBIOS主版本 */

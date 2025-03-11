@@ -1,6 +1,6 @@
 #include "terminal.h"
 #include "gop.h"
-#include "klog.h"
+#include "lock.h"
 #include "atom_queue.h"
 #include "krlibc.h"
 #include "timer.h"
@@ -8,6 +8,7 @@
 
 atom_queue *output_buffer;
 bool open_flush = false;
+ticketlock terminal_lock;
 
 static void setup_cpos_default() {
     TerminalPalette palette = {
@@ -37,12 +38,14 @@ static void setup_cpos_default() {
 }
 
 void update_terminal() {
+    ticket_lock(&terminal_lock);
     while (true) {
         char a = atom_pop(output_buffer);
         if (a == -1) break;
         terminal_process_char(a);
     }
     terminal_flush();
+    ticket_unlock(&terminal_lock);
 }
 
 int terminal_flush_service(void *pVoid) {

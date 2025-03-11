@@ -12,7 +12,6 @@
 #include "smp.h"
 #include "lock.h"
 
-extern pcb_t current_task; //scheduler.c
 extern pcb_t kernel_head_task;
 ticketlock pcb_lock;
 
@@ -101,24 +100,24 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
 }
 
 void init_pcb(){
-    kernel_head_task = current_task = (pcb_t)malloc(STACK_SIZE);
-    current_task->task_level = 0;
-    current_task->pid = now_pid++;
-    current_task->cpu_clock = 0;
-    current_task->directory = get_kernel_pagedir();
+    kernel_head_task = (pcb_t)malloc(STACK_SIZE);
+    kernel_head_task->task_level = 0;
+    kernel_head_task->pid = now_pid++;
+    kernel_head_task->cpu_clock = 0;
+    kernel_head_task->directory = get_kernel_pagedir();
     set_kernel_stack(get_rsp()); //给IDLE进程设置TSS内核栈, 不然这个进程炸了后会发生 DoubleFault
-    current_task->kernel_stack = current_task->context0.rsp = get_rsp();
-    current_task->user_stack = current_task->kernel_stack;
-    current_task->tty = get_default_tty();
-    current_task->context0.rflags = get_rflags();
-    current_task->cpu_timer = nanoTime();
-    current_task->time_buf = alloc_timer();
-    current_task->cpu_id = get_current_cpuid();
+    kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();
+    kernel_head_task->user_stack = kernel_head_task->kernel_stack;
+    kernel_head_task->tty = get_default_tty();
+    kernel_head_task->context0.rflags = get_rflags();
+    kernel_head_task->cpu_timer = nanoTime();
+    kernel_head_task->time_buf = alloc_timer();
+    kernel_head_task->cpu_id = get_current_cpuid();
     char name[50];
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
-    memcpy(current_task->name, name, strlen(name));
-    current_task->name[strlen(name)] = '\0';
+    memcpy(kernel_head_task->name, name, strlen(name));
+    kernel_head_task->name[strlen(name)] = '\0';
     pivfs_update(kernel_head_task);
 
-    kinfo("Load task schedule. | KernelProcess PID: %d", current_task->pid);
+    kinfo("Load task schedule. | KernelProcess PID: %d", kernel_head_task->pid);
 }
