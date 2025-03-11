@@ -100,7 +100,7 @@ void kmain(void) {
     pcie_init();
     ide_setup();
     //nvme_setup();
-   // ahci_setup();
+    ahci_setup();
     //xhci_setup();
 
 

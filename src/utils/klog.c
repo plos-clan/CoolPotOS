@@ -4,7 +4,7 @@
 #include "serial.h"
 #include "sprintf.h"
 
-//#define HARDWARE
+#define HARDWARE
 
 void logk(const char *str) {
     while (*str){

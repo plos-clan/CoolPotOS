@@ -30,8 +30,6 @@ char keytable1[0x54] = { // 未按下Shift
 
 static void key_callback(void *pcb_handle,void* scan_handle){
     pcb_t cur = (pcb_t)pcb_handle;
-   // logkf("cur: %s cpuid: %d\n",cur->name,cur->cpu_id);
-    if(cur->cpu_id != get_current_cpuid()) return;
     uint8_t scancode = *((uint8_t*)scan_handle);
     atom_push(cur->tty->keyboard_buffer, scancode);
 }
