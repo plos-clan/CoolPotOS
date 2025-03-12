@@ -59,4 +59,5 @@ uint32_t get_pci_num();
 bool pci_bar_present(pci_device_t device,uint8_t bar);
 int pci_find_capability(pci_device_t device, uint8_t cap_id);
 void pci_set_msi(pci_device_t device,uint8_t vector);
+uint8_t pci_get_drive_irq(uint8_t bus, uint8_t slot, uint8_t func);
 void pci_setup();

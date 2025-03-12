@@ -298,6 +298,11 @@ bool pci_bar_present(pci_device_t device,uint8_t bar){
     return read_pci(device,reg_index) != 0;
 }
 
+uint8_t pci_get_drive_irq(uint8_t bus, uint8_t slot, uint8_t func) {
+    return (uint8_t)
+            read_pci0(bus, slot, func, 0x3c);
+}
+
 static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){
     uint32_t value_c = read_pci0(BUS, Equipment, F, PCI_CONF_REVISION);
     uint32_t class_code = value_c >> 8;

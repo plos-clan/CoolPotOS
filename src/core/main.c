@@ -27,6 +27,8 @@
 #include "shell.h"
 #include "iic/iic_core.h"
 #include "smbios.h"
+#include "rtl8169.h"
+#include "pcnet.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -103,15 +105,17 @@ void kmain(void) {
     ahci_setup();
     //xhci_setup();
 
-
+    //rtl8169_setup();
+    //pcnet_setup();
     pivfs_setup();
     init_pcb();
     smp_setup();
     build_stream_device();
-
     init_iic();
 
-    /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
+
+
+    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
     //beep();
