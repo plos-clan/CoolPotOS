@@ -6,6 +6,7 @@
 #include "alloc.h"
 #include "pcie.h"
 #include "io.h"
+#include "klog.h"
 
 static uint32_t ahci_ports[32];
 static uint32_t port_total = 0;
@@ -13,12 +14,17 @@ static uint64_t ahci_ports_base_addr;
 HBA_MEM *hba_mem;
 
 static int check_type(HBA_PORT *port) {
-    uint32_t ssts = port->ssts;
+    port->cmd &= ~HBA_PxCMD_ST;
+    port->cmd &= ~HBA_PxCMD_FRE;
+    while (port->cmd & HBA_PxCMD_CR);
+    port->cmd |= HBA_PxCMD_FRE | HBA_PxCMD_ST;
 
+    uint32_t ssts = port->ssts;
     uint8_t ipm = (ssts >> 8) & 0x0F;
     uint8_t det = ssts & 0x0F;
-    if (det != HBA_PORT_DET_PRESENT) return AHCI_DEV_NULL;
-    if (ipm != HBA_PORT_IPM_ACTIVE) return AHCI_DEV_NULL;
+    if (det != HBA_PORT_DET_PRESENT || ipm != HBA_PORT_IPM_ACTIVE) return AHCI_DEV_NULL;
+
+    logkf("SATA drive found at port %d\n", port_total);
 
     switch (port->sig) {
         case SATA_SIG_ATAPI:
@@ -78,17 +84,17 @@ void ahci_port_rebase(HBA_PORT *port, int portno) {
     // Command list maxim size = 32*32 = 1K per port
     port->clb = ahci_ports_base_addr + (portno << 10);
     port->clbu = 0;
-    memset((void *) (port->clb), 0, 1024);
+    memset((void *) phys_to_virt(port->clb), 0, 1024);
 
     // FIS offset: 32K+256*portno
     // FIS entry size = 256 bytes per port
     port->fb = ahci_ports_base_addr + (32 << 10) + (portno << 8);
     port->fbu = 0;
-    memset((void *) (port->fb), 0, 256);
+    memset((void *) phys_to_virt(port->fb), 0, 256);
 
     // Command table offset: 40K + 8K*portno
     // Command table size = 256*32 = 8K per port
-    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) (port->clb);
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
     for (int i = 0; i < 32; i++) {
         cmdheader[i].prdtl = 8; // 8 prdt entries per command table
         // 256 bytes per command table, 64+16+48+16*8
@@ -107,7 +113,8 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     int slot = find_cmdslot(port);
     if (slot == -1) return false;
 
-    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) port->clb;
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
+    printk("cmdheader: %p\n",cmdheader);
     cmdheader += slot;
     cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 0;                                 // Read from device
@@ -115,7 +122,7 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     cmdheader->c = 1;
     HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) (cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
-
+    printk("MEMSET cmdtbl: %p\n",cmdtbl);
     cmdtbl->prdt_entry[0].dba = (uint64_t) buf;
     cmdtbl->prdt_entry[0].dbau = 0;
     cmdtbl->prdt_entry[0].dbc = 0x200 - 1;
@@ -123,7 +130,7 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
 
     // Setup command
     FIS_REG_H2D *cmdfis = (FIS_REG_H2D *) (&cmdtbl->cfis);
-
+    printk("cmdfis: %p\n",cmdfis);
     cmdfis->fis_type = FIS_TYPE_REG_H2D;
     cmdfis->c = 1;    // Command
     cmdfis->command = 0xec; // ATA IDENTIFY
@@ -140,6 +147,7 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
 
     port->ci = 1 << slot; // Issue command
 
+    printk("III slot: %d\n",slot);
     // Wait for completion
     while (1) {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
@@ -151,6 +159,8 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
             return false;
         }
     }
+
+    printk("I\n");
 
     // Check again
     if (port->is & HBA_PxIS_TFES) {
@@ -171,14 +181,17 @@ void ahci_search_ports(HBA_MEM *abar) {
             int dt = check_type(&abar->ports[i]);
             if (dt == AHCI_DEV_SATA) {
                 ahci_ports[port_total++] = i;
+                logkf("SATA drive found at port %d\n", i);
             } else if (dt == AHCI_DEV_SATAPI) {
                 ahci_ports[port_total++] = i;
+                logkf("SATAPI drive found at port %d\n", i);
             } else if (dt == AHCI_DEV_SEMB) {
+                logkf("SEMB drive found at port %d\n", i);
             } else if (dt == AHCI_DEV_PM) {
+                logkf("PM drive found at port %d\n", i);
             } else {
             }
         }
-
         pi >>= 1;
         i++;
     }
@@ -212,9 +225,11 @@ void ahci_setup() {
         hba_mem = (HBA_MEM*)device->bars[5].address;
     }
 
-    hba_mem->ghc |= AHCI_GHC_AE;
+    hba_mem->ghc |= (1 << 31);
 
     ahci_ports_base_addr = (uint64_t) malloc(1048576);
+
+    logkf("AHCI cap %x, vs %x\n", hba_mem->cap,hba_mem->vs);
 
     ahci_search_ports(hba_mem);
     uint32_t i;

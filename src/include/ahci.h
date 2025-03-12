@@ -68,9 +68,9 @@ typedef struct tagHBA_CMD_HEADER {
 } __attribute__((packed)) HBA_CMD_HEADER;
 
 typedef volatile struct tagHBA_PORT {
-    uint64_t clb;       // 0x00, command list base address, 1K-byte aligned
-    uint64_t clbu;      // 0x04, command list base address upper 32 bits
-    uint64_t fb;        // 0x08, FIS base address, 256-byte aligned
+    uint32_t clb;       // 0x00, command list base address, 1K-byte aligned
+    uint32_t clbu;      // 0x04, command list base address upper 32 bits
+    uint32_t fb;        // 0x08, FIS base address, 256-byte aligned
     uint32_t fbu;       // 0x0C, FIS base address upper 32 bits
     uint32_t is;        // 0x10, interrupt status
     uint32_t ie;        // 0x14, interrupt enable

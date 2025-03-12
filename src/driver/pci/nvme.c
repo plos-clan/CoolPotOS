@@ -164,7 +164,7 @@ void nvme_setup() {
         capability = (nvme_capability *) phys_to_virt(device->bars[0].address);
     }
 
-    page_map_range_to(get_kernel_pagedir(), device->bars[0].address, 0x1000, KERNEL_PTE_FLAGS);
+    page_map_range_to(get_kernel_pagedir(), device->bars[0].address, 0x1000 * 2, KERNEL_PTE_FLAGS);
 
     if (!((capability->CAP >> 37) & 1)) {
         kerror("Nvme controller does not support nvme command set.\n");

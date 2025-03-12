@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include "ctype.h"
 
 enum InterruptIndex {
@@ -10,7 +8,8 @@ enum InterruptIndex {
     mouse,
     hpet_timer,
     ide_primary,
-    ide_secondary
+    ide_secondary,
+    pcnet,
 };
 
 struct interrupt_frame {

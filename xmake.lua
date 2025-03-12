@@ -76,7 +76,7 @@ target("iso")
             --"-device","nec-usb-xhci,id=xhci",
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
             --"-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
-            --"-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
+            "-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
             --"-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso",
