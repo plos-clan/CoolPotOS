@@ -18,7 +18,7 @@ uint8_t ide_buf[2048]    = {0};
 volatile static uint8_t ide_irq_invoked  = 0;
 static uint8_t atapi_packet[12] = {0xA8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static int package[2];
-int drive_mapping[26] = {0};
+static int drive_mapping[26] = {0};
 
 void ide_wait_irq() {
     while (!ide_irq_invoked)

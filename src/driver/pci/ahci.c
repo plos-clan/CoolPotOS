@@ -5,12 +5,14 @@
 #include "krlibc.h"
 #include "alloc.h"
 #include "pcie.h"
-#include "page.h"
+#include "vdisk.h"
 #include "klog.h"
+#include "sprintf.h"
 
 static uint32_t ahci_ports[32];
 static uint32_t port_total = 0;
 static uint64_t ahci_ports_base_addr;
+static uint32_t drive_mapping[0xff] = {0};
 HBA_MEM *hba_mem;
 
 static int check_type(HBA_PORT *port) {
@@ -99,8 +101,9 @@ void ahci_port_rebase(HBA_PORT *port, int portno) {
         cmdheader[i].prdtl = 8; // 8 prdt entries per command table
         // 256 bytes per command table, 64+16+48+16*8
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
-        cmdheader[i].ctba = ((uint64_t)virt_to_phys(ahci_ports_base_addr)) + (40 << 10) + (portno << 13) + (i << 8);
-        cmdheader[i].ctbau = 0;
+        uint64_t phy_ctb = ((uint64_t)virt_to_phys(ahci_ports_base_addr)) + (40 << 10) + (portno << 13) + (i << 8);
+        cmdheader[i].ctba = phy_ctb & 0xFFFFFFFF;
+        cmdheader[i].ctbau = phy_ctb >> 32;
         memset(phys_to_virt(cmdheader[i].ctba), 0, 256);
     }
 
@@ -123,8 +126,9 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     cmdheader->c = 1;
     HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
-    cmdtbl->prdt_entry[0].dba = (uint64_t) buf;
-    cmdtbl->prdt_entry[0].dbau = 0;
+    uint64_t phys_buf = (uint64_t)virt_to_phys((uint64_t)buf);
+    cmdtbl->prdt_entry[0].dba = phys_buf & 0xFFFFFFFF;
+    cmdtbl->prdt_entry[0].dbau = phys_buf >> 32;
     cmdtbl->prdt_entry[0].dbc = 0x200 - 1;
     cmdtbl->prdt_entry[0].i = 1;
 
@@ -167,6 +171,182 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     return true;
 }
 
+bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf) {
+    port->is = (uint32_t) -1; // Clear pending interrupt bits
+    int spin = 0;       // Spin lock timeout counter
+    int slot = find_cmdslot(port);
+    if (slot == -1) return false;
+
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
+    cmdheader += slot;
+    cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
+    cmdheader->w = 1;                                 // 写硬盘
+    cmdheader->p = 1;
+    cmdheader->c = 1;
+    cmdheader->prdtl = (uint16_t) ((count - 1) >> 4) + 1; // PRDT entries count
+
+    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
+    memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
+
+    // 8K bytes (16 sectors) per PRDT
+    int i;
+    for (i = 0; i < cmdheader->prdtl - 1; i++) {
+        uint64_t phys_buf = (uint64_t)virt_to_phys((uint64_t)buf);
+        cmdtbl->prdt_entry[i].dba = phys_buf & 0xFFFFFFFF;
+        cmdtbl->prdt_entry[i].dbau = phys_buf >> 32;
+        cmdtbl->prdt_entry[i].dbc = 8 * 1024 - 1; // 8K bytes (this value should always be set to 1 less
+        // than the actual value)
+        cmdtbl->prdt_entry[i].i = 1;
+        buf += 4 * 1024; // 4K words
+        count -= 16;       // 16 sectors
+    }
+    // Last entry
+    uint64_t phys_buf = (uint64_t)virt_to_phys((uint64_t)buf);
+    cmdtbl->prdt_entry[i].dba = phys_buf & 0xFFFFFFFF;
+    cmdtbl->prdt_entry[i].dbau = phys_buf >> 32;
+    cmdtbl->prdt_entry[i].dbc = (count << 9) - 1; // 512 bytes per sector
+    cmdtbl->prdt_entry[i].i = 1;
+
+    // Setup command
+    FIS_REG_H2D *cmdfis = (FIS_REG_H2D *) (&cmdtbl->cfis);
+
+    cmdfis->fis_type = FIS_TYPE_REG_H2D;
+    cmdfis->c = 1; // Command
+    cmdfis->command = AHCI_CMD_WRITE_DMA_EXT;
+
+    cmdfis->lba0 = (uint8_t) startl;
+    cmdfis->lba1 = (uint8_t) (startl >> 8);
+    cmdfis->lba2 = (uint8_t) (startl >> 16);
+    cmdfis->device = 1 << 6; // LBA mode
+
+    cmdfis->lba3 = (uint8_t) (startl >> 24);
+    cmdfis->lba4 = (uint8_t) starth;
+    cmdfis->lba5 = (uint8_t) (starth >> 8);
+
+    cmdfis->countl = count & 0xFF;
+    cmdfis->counth = (count >> 8) & 0xFF;
+
+    // The below loop waits until the port is no longer busy before issuing a new
+    // command
+    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) {
+        spin++;
+    }
+    if (spin == 1000000) {
+        logk("Port is hung\n");
+        return false;
+    }
+
+    port->ci = 1 << slot; // Issue command
+
+    // Wait for completion
+    while (1) {
+        // In some longer duration reads, it may be helpful to spin on the DPS bit
+        // in the PxIS port field as well (1 << 5)
+        if ((port->ci & (1 << slot)) == 0) break;
+        if (port->is & HBA_PxIS_TFES) // Task file error
+        {
+            kwarn("Write ahci disk error\n");
+            return false;
+        }
+    }
+
+    // Check again
+    if (port->is & HBA_PxIS_TFES) {
+        kwarn("Write ahci disk error\n");
+        return false;
+    }
+
+    return true;
+}
+
+bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf) {
+    port->is = (uint32_t) -1; // Clear pending interrupt bits
+    int spin = 0;       // Spin lock timeout counter
+    int slot = find_cmdslot(port);
+    if (slot == -1) return false;
+
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
+    cmdheader += slot;
+    cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
+    cmdheader->w = 0;                                 // Read from device
+    cmdheader->c = 1;
+    cmdheader->p = 1;
+    cmdheader->prdtl = (uint16_t) ((count - 1) >> 4) + 1; // PRDT entries count
+
+    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
+    memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
+
+    // 8K bytes (16 sectors) per PRDT
+    int i;
+    for (i = 0; i < cmdheader->prdtl - 1; i++) {
+        uint64_t phys_buf = (uint64_t)virt_to_phys((uint64_t)buf);
+        cmdtbl->prdt_entry[i].dba = phys_buf & 0xFFFFFFFF;
+        cmdtbl->prdt_entry[i].dbau = phys_buf >> 32;
+        cmdtbl->prdt_entry[i].dbc = 8 * 1024 - 1; // 8K bytes (this value should always be set to 1 less
+        // than the actual value)
+        cmdtbl->prdt_entry[i].i = 1;
+        buf += 4 * 1024; // 4K words
+        count -= 16;       // 16 sectors
+    }
+    // Last entry
+    uint64_t phys_buf = (uint64_t)virt_to_phys((uint64_t)buf);
+    cmdtbl->prdt_entry[i].dba = phys_buf & 0xFFFFFFFF;
+    cmdtbl->prdt_entry[i].dbau = phys_buf >> 32;
+    cmdtbl->prdt_entry[i].dbc = (count << 9) - 1; // 512 bytes per sector
+    cmdtbl->prdt_entry[i].i = 1;
+
+    // Setup command
+    FIS_REG_H2D *cmdfis = (FIS_REG_H2D *) (&cmdtbl->cfis);
+
+    cmdfis->fis_type = FIS_TYPE_REG_H2D;
+    cmdfis->c = 1; // Command
+    cmdfis->command = AHCI_CMD_READ_DMA_EXT;
+
+    cmdfis->lba0 = (uint8_t) startl;
+    cmdfis->lba1 = (uint8_t) (startl >> 8);
+    cmdfis->lba2 = (uint8_t) (startl >> 16);
+    cmdfis->device = 1 << 6; // LBA mode
+
+    cmdfis->lba3 = (uint8_t) (startl >> 24);
+    cmdfis->lba4 = (uint8_t) starth;
+    cmdfis->lba5 = (uint8_t) (starth >> 8);
+
+    cmdfis->countl = count & 0xFF;
+    cmdfis->counth = (count >> 8) & 0xFF;
+
+    // The below loop waits until the port is no longer busy before issuing a new
+    // command
+    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) {
+        spin++;
+    }
+    if (spin == 1000000) {
+        logk("Port is hung\n");
+        return false;
+    }
+
+    port->ci = 1 << slot; // Issue command
+
+    // Wait for completion
+    while (1) {
+        // In some longer duration reads, it may be helpful to spin on the DPS bit
+        // in the PxIS port field as well (1 << 5)
+        if ((port->ci & (1 << slot)) == 0) break;
+        if (port->is & HBA_PxIS_TFES) // Task file error
+        {
+            kwarn("Read ahci disk error\n");
+            return false;
+        }
+    }
+
+    // Check again
+    if (port->is & HBA_PxIS_TFES) {
+        kwarn("Read ahci disk error\n");
+        return false;
+    }
+
+    return true;
+}
+
 void ahci_search_ports(HBA_MEM *abar) {
     // Search disk in implemented ports
     uint32_t pi = abar->pi;
@@ -193,9 +373,17 @@ void ahci_search_ports(HBA_MEM *abar) {
     }
 }
 
+static void ahci_vdisk_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+    //                    klog("mapping %d\n",drive_mapping[drive]);
+    ahci_read(&(hba_mem->ports[drive_mapping[drive]]), lba, 0, number, (uint16_t *) buffer);
+}
+
+static void ahci_vdisk_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+    ahci_write(&(hba_mem->ports[drive_mapping[drive]]), lba, 0, number, (uint16_t *) buffer);
+}
+
 void ahci_setup() {
     pcie_device_t *device = pcie_find_class(0x010601);
-    uint64_t phy_addr;
     if (device == NULL) {
         pci_device_t pci_device = pci_find_class(0x010601);
         if (pci_device == NULL) {
@@ -250,6 +438,20 @@ void ahci_setup() {
               type == AHCI_DEV_SATAPI ? "AHCI_SATAPI" :
               type == AHCI_DEV_PM ? "AHCI_PM" :
               "AHCI_SEMB", buf.lba_capacity * 512 / 1024 / 1024);
+
+        vdisk vd;
+        vd.size = buf.lba_capacity;
+        vd.type = VDISK_BLOCK;
+        vd.read = ahci_vdisk_read;
+        vd.write = ahci_vdisk_write;
+        vd.flag = type == AHCI_DEV_SATA ? 1 : (type == AHCI_DEV_SATAPI ? 2 : (AHCI_DEV_PM ? 3 : 0));
+        vd.sector_size = type == AHCI_DEV_SATA ? 512 : (type == SATA_SIG_ATAPI ? 2048 : 0);
+        char name[10];
+        sprintf(name, "sata%d", i);
+        strcpy(vd.drive_name, name);
+
+        int id = regist_vdisk(vd);
+        drive_mapping[id] = i;
     }
 
     kinfo("AHCI init done - find %d device.", port_total);
