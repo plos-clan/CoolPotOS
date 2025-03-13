@@ -60,7 +60,7 @@ typedef struct tagHBA_CMD_HEADER {
     volatile uint32_t prdbc; // Physical region descriptor byte count transferred
 
     // DW2, 3
-    uint64_t ctba;  // Command table descriptor base address (开发心得: 必须为物理地址!!!!)
+    uint32_t ctba;  // Command table descriptor base address (开发心得: 必须为物理地址!!!!)
     uint32_t ctbau; // Command table descriptor base address upper 32 bits
 
     // DW4 - 7
@@ -114,7 +114,7 @@ typedef volatile struct tagHBA_MEM {
 } __attribute__((packed)) HBA_MEM;
 
 typedef struct tagHBA_PRDT_ENTRY {
-    uint64_t dba;  // Data base address
+    uint32_t dba;  // Data base address
     uint32_t dbau; // Data base address upper 32 bits
     uint32_t rsv0; // Reserved
 
@@ -299,5 +299,6 @@ typedef struct SATA_Ident {
 void ahci_search_ports(HBA_MEM *abar);
 void ahci_port_rebase(HBA_PORT *port, int portno);
 bool ahci_identify(HBA_PORT *port, void *buf);
-
+bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
+bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
 void ahci_setup();
