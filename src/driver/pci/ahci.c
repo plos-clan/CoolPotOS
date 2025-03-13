@@ -5,7 +5,7 @@
 #include "krlibc.h"
 #include "alloc.h"
 #include "pcie.h"
-#include "io.h"
+#include "page.h"
 #include "klog.h"
 
 static uint32_t ahci_ports[32];
@@ -71,7 +71,7 @@ static int find_cmdslot(HBA_PORT *port) {
         if ((slots & 1) == 0) return i;
         slots >>= 1;
     }
-    kwarn("Cannot find free command list entry\n");
+    kwarn("Cannot find free command list entry");
     return -1;
 }
 
@@ -82,15 +82,15 @@ void ahci_port_rebase(HBA_PORT *port, int portno) {
     // Command list entry size = 32
     // Command list entry maxim count = 32
     // Command list maxim size = 32*32 = 1K per port
-    port->clb = ahci_ports_base_addr + (portno << 10);
+    port->clb = ((uint64_t)virt_to_phys(ahci_ports_base_addr)) + (portno << 10);
     port->clbu = 0;
-    memset((void *) phys_to_virt(port->clb), 0, 1024);
+    memset(phys_to_virt(port->clb), 0, 1024);
 
     // FIS offset: 32K+256*portno
     // FIS entry size = 256 bytes per port
-    port->fb = ahci_ports_base_addr + (32 << 10) + (portno << 8);
+    port->fb = ((uint64_t)virt_to_phys(ahci_ports_base_addr)) + (32 << 10) + (portno << 8);
     port->fbu = 0;
-    memset((void *) phys_to_virt(port->fb), 0, 256);
+    memset(phys_to_virt(port->fb), 0, 256);
 
     // Command table offset: 40K + 8K*portno
     // Command table size = 256*32 = 8K per port
@@ -99,9 +99,9 @@ void ahci_port_rebase(HBA_PORT *port, int portno) {
         cmdheader[i].prdtl = 8; // 8 prdt entries per command table
         // 256 bytes per command table, 64+16+48+16*8
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
-        cmdheader[i].ctba = ahci_ports_base_addr + (40 << 10) + (portno << 13) + (i << 8);
+        cmdheader[i].ctba = ((uint64_t)virt_to_phys(ahci_ports_base_addr)) + (40 << 10) + (portno << 13) + (i << 8);
         cmdheader[i].ctbau = 0;
-        memset((void *) cmdheader[i].ctba, 0, 256);
+        memset(phys_to_virt(cmdheader[i].ctba), 0, 256);
     }
 
     start_cmd(port); // Start command engine
@@ -113,16 +113,16 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     int slot = find_cmdslot(port);
     if (slot == -1) return false;
 
+    ((uint8_t*)ahci_ports_base_addr)[0] = 39;
+
     HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
-    printk("cmdheader: %p\n",cmdheader);
     cmdheader += slot;
     cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 0;                                 // Read from device
     cmdheader->prdtl = 1;                                 // PRDT entries count
     cmdheader->c = 1;
-    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) (cmdheader->ctba);
+    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
-    printk("MEMSET cmdtbl: %p\n",cmdtbl);
     cmdtbl->prdt_entry[0].dba = (uint64_t) buf;
     cmdtbl->prdt_entry[0].dbau = 0;
     cmdtbl->prdt_entry[0].dbc = 0x200 - 1;
@@ -130,7 +130,6 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
 
     // Setup command
     FIS_REG_H2D *cmdfis = (FIS_REG_H2D *) (&cmdtbl->cfis);
-    printk("cmdfis: %p\n",cmdfis);
     cmdfis->fis_type = FIS_TYPE_REG_H2D;
     cmdfis->c = 1;    // Command
     cmdfis->command = 0xec; // ATA IDENTIFY
@@ -141,13 +140,12 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
         spin++;
     }
     if (spin == 1000000) {
-        kwarn("Port is hung\n");
+        kwarn("Port is hung");
         return false;
     }
 
     port->ci = 1 << slot; // Issue command
 
-    printk("III slot: %d\n",slot);
     // Wait for completion
     while (1) {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
@@ -155,16 +153,14 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
         if ((port->ci & (1 << slot)) == 0) break;
         if (port->is & HBA_PxIS_TFES) // Task file error
         {
-            kwarn("Read ahci disk error\n");
+            kwarn("Read ahci disk error");
             return false;
         }
     }
 
-    printk("I\n");
-
     // Check again
     if (port->is & HBA_PxIS_TFES) {
-        kwarn("Read ahci disk error\n");
+        kwarn("Read ahci disk error");
         return false;
     }
 
@@ -212,7 +208,7 @@ void ahci_setup() {
         pci_write_command_status(pci_device, conf);
         base_address_register reg = find_bar(pci_device, 5);
         if (reg.type == input_output) {
-            kwarn("AHCI memory address is not aligned\n");
+            kwarn("AHCI memory address is not aligned");
             return;
         }
         hba_mem = (HBA_MEM*)reg.address;
@@ -225,11 +221,11 @@ void ahci_setup() {
         hba_mem = (HBA_MEM*)device->bars[5].address;
     }
 
-    hba_mem->ghc |= (1 << 31);
+    hba_mem->ghc |= AHCI_GHC_AE;
 
     ahci_ports_base_addr = (uint64_t) malloc(1048576);
 
-    logkf("AHCI cap %x, vs %x\n", hba_mem->cap,hba_mem->vs);
+    logkf("AHCI ahci addr %p\n", ahci_ports_base_addr);
 
     ahci_search_ports(hba_mem);
     uint32_t i;
@@ -243,7 +239,7 @@ void ahci_setup() {
         SATA_ident_t buf;
         int a = ahci_identify(&(hba_mem->ports[ahci_ports[i]]), &buf);
         if (!a) {
-            kwarn("SATA Drive identify error.\n");
+            kwarn("SATA Drive identify error.");
             continue;
         }
 
