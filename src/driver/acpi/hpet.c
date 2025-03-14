@@ -48,6 +48,7 @@ void hpet_init(Hpet *hpet) {
     uint32_t counterClockPeriod = hpet_addr->generalCapabilities >> 32;
     hpetPeriod = counterClockPeriod / 1000000;
     hpet_addr->generalConfiguration |= 1;
+    *(__volatile__ uint64_t *)(hpet_addr + 0xf0) = 0;
     register_interrupt_handler(timer, (void *) save_registers, 0, 0x8E);
     kinfo("Setup acpi hpet table (nano_time: %d).", (uint64_t) nanoTime());
 }
