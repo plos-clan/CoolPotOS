@@ -94,13 +94,7 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
             mouse_decode.center = true;
         }
 
-        char* result = terminal_handle_mouse_scroll(mouse_decode.scroll);
-
-        if (result) {
-            terminal_process(result);
-        }
-
-        terminal_string_free(result);
+        terminal_handle_mouse_scroll(mouse_decode.scroll);
 
         // 不知道会不会死锁不过大概率会（
 

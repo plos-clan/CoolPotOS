@@ -1,6 +1,6 @@
 #include "terminal.h"
 #include "gop.h"
-#include "klog.h"
+#include "lock.h"
 #include "atom_queue.h"
 #include "krlibc.h"
 #include "timer.h"
@@ -8,6 +8,7 @@
 
 atom_queue *output_buffer;
 bool open_flush = false;
+ticketlock terminal_lock;
 
 static void setup_cpos_default() {
     TerminalPalette palette = {
@@ -37,12 +38,14 @@ static void setup_cpos_default() {
 }
 
 void update_terminal() {
+    ticket_lock(&terminal_lock);
     while (true) {
         char a = atom_pop(output_buffer);
         if (a == -1) break;
         terminal_process_char(a);
     }
     terminal_flush();
+    ticket_unlock(&terminal_lock);
 }
 
 int terminal_flush_service(void *pVoid) {
@@ -74,12 +77,12 @@ void init_terminal() {
     };
     float size = 10.0f * ((float) framebuffer->width / 1024);
 
-    cp_module_t *mod = get_module("sysfont");
-    if(mod == NULL){
-        logkf("Error: no default terminal font.\n");
-        cpu_hlt;
-    }
-    terminal_init(&display,mod->data,mod->size, size, malloc, free, NULL);
+//    cp_module_t *mod = get_module("sysfont");
+//    if(mod == NULL){
+//        logkf("Error: no default terminal font.\n");
+//        cpu_hlt;
+//    }
+    terminal_init(&display, size, malloc, free, NULL);
 
     terminal_set_scroll_speed(3);
     setup_cpos_default();

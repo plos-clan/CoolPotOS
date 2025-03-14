@@ -12,7 +12,6 @@
 #include "smp.h"
 #include "lock.h"
 
-extern pcb_t current_task; //scheduler.c
 extern pcb_t kernel_head_task;
 ticketlock pcb_lock;
 
@@ -21,7 +20,7 @@ int now_pid = 0;
 _Noreturn void process_exit() {
     register uint64_t rax __asm__("rax");
     printk("Kernel Process exit, Code: %d\n", rax);
-    kill_proc(current_task);
+    kill_proc(get_current_task());
     while (1);
 }
 
@@ -46,8 +45,6 @@ void switch_to_user_mode(uint64_t func) {
     "r"((uint64_t)0x23),"r"(func),"r"((uint64_t)0x1b)
     :"memory");
 }
-
-
 
 void kill_proc(pcb_t task){
     if(task->task_level == TASK_KERNEL_LEVEL){
@@ -74,16 +71,6 @@ void kill_all_proc() {
     close_interrupt;
     disable_scheduler();
     lapic_timer_stop();
-//    pcb_t head = kernel_head_task;//获取头指针
-//    while (1) {//遍历调度链表
-//        head = head->next;
-//        if (head == NULL || head->pid == kernel_head_task->pid) {
-//            return;
-//        }
-//        if (head->pid == get_current_task()->pid) continue;
-//        kill_proc(head);//结束进程
-//        disable_scheduler();
-//    }
 }
 
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
@@ -113,23 +100,24 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
 }
 
 void init_pcb(){
-    kernel_head_task = current_task = (pcb_t)malloc(STACK_SIZE);
-    current_task->task_level = 0;
-    current_task->pid = now_pid++;
-    current_task->cpu_clock = 0;
-    current_task->directory = get_kernel_pagedir();
+    kernel_head_task = (pcb_t)malloc(STACK_SIZE);
+    kernel_head_task->task_level = 0;
+    kernel_head_task->pid = now_pid++;
+    kernel_head_task->cpu_clock = 0;
+    kernel_head_task->directory = get_kernel_pagedir();
     set_kernel_stack(get_rsp()); //给IDLE进程设置TSS内核栈, 不然这个进程炸了后会发生 DoubleFault
-    current_task->kernel_stack = current_task->context0.rsp = get_rsp();
-    current_task->user_stack = current_task->kernel_stack;
-    current_task->tty = get_default_tty();
-    current_task->context0.rflags = get_rflags();
-    current_task->cpu_timer = nanoTime();
-    current_task->time_buf = alloc_timer();
-    current_task->cpu_id = get_current_cpuid();
+    kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();
+    kernel_head_task->user_stack = kernel_head_task->kernel_stack;
+    kernel_head_task->tty = get_default_tty();
+    kernel_head_task->context0.rflags = get_rflags();
+    kernel_head_task->cpu_timer = nanoTime();
+    kernel_head_task->time_buf = alloc_timer();
+    kernel_head_task->cpu_id = get_current_cpuid();
     char name[50];
     sprintf(name,"CP_IDLE_CPU%lu",get_current_cpuid());
-    memcpy(current_task->name, name, strlen(name));
+    memcpy(kernel_head_task->name, name, strlen(name));
+    kernel_head_task->name[strlen(name)] = '\0';
     pivfs_update(kernel_head_task);
 
-    kinfo("Load task schedule. | KernelProcessName: %s PID: %d", current_task->name, current_task->pid);
+    kinfo("Load task schedule. | KernelProcess PID: %d", kernel_head_task->pid);
 }

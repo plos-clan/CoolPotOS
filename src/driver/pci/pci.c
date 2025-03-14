@@ -194,7 +194,7 @@ static uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function,uint8_t 
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
     io_out32(PCI_COMMAND_PORT, id);
     uint32_t result = io_in32(PCI_DATA_PORT);
-    return result >> (8 * (registeroffset % 4));
+    return result >> (8 * (registeroffset & 2) & 0xff);
 }
 
 static void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset, uint32_t value) {
@@ -296,6 +296,11 @@ void pci_write_command_status(pci_device_t device, uint32_t value) {
 bool pci_bar_present(pci_device_t device,uint8_t bar){
     uint8_t reg_index = 0x10 + bar * 4;
     return read_pci(device,reg_index) != 0;
+}
+
+uint8_t pci_get_drive_irq(uint8_t bus, uint8_t slot, uint8_t func) {
+    return (uint8_t)
+            read_pci0(bus, slot, func, 0x3c);
 }
 
 static void load_pci_device(uint32_t BUS, uint32_t Equipment, uint32_t F){

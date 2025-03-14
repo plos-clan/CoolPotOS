@@ -27,6 +27,8 @@
 #include "shell.h"
 #include "iic/iic_core.h"
 #include "smbios.h"
+#include "rtl8169.h"
+#include "pcnet.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -53,6 +55,7 @@ __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
+extern void iso9660_regist(); //iso9660.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -80,11 +83,11 @@ void kmain(void) {
     printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME, COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
-	kinfo("SMBIOS %d.%d.0 present.\n",smbios_major_version(), smbios_minor_version());
     gdt_setup();
     idt_setup();
     page_setup();
     error_setup();
+    smbios_setup();
     acpi_setup();
     keyboard_setup();
     mouse_setup();
@@ -92,28 +95,41 @@ void kmain(void) {
     kinfo("RTC time %s", date);
     free(date);
     vfs_init();
+    iso9660_regist();
+
     vdisk_init();
     devfs_setup();
     pcie_init();
     ide_setup();
     //nvme_setup();
-    //ahci_setup();
+    ahci_setup();
     //xhci_setup();
 
-
+    //rtl8169_setup();
+    //pcnet_setup();
     pivfs_setup();
     init_pcb();
     smp_setup();
     build_stream_device();
-    
     init_iic();
 
-    /*TODO*/ create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
+    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
     //beep();
     enable_scheduler();
     open_interrupt;
+
+//    vfs_node_t node = vfs_open("/dev/sata1");
+//    if(node != NULL){
+//        uint8_t *buf = malloc(512);
+//        if(vfs_read(node, buf, 0, 512) == VFS_STATUS_SUCCESS) {
+//            for (int i = 0; i < 512; i++) {
+//                printk("%02x ", buf[i]);
+//            }
+//            printk("\n");
+//        }
+//    } else kerror("Cannot open /dev/sata1");
 
     cpu_hlt;
 }

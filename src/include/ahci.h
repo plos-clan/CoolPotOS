@@ -10,6 +10,10 @@
 #define HBA_PxCMD_CR   0x8000
 #define HBA_PxIS_TFES  (1 << 30) /* TFES - Task File Error Status */
 
+#define AHCI_GHC_RST (0x00000001) /* reset controller; self-clear */
+#define AHCI_GHC_IE (0x00000002)  /* global IRQ enable */
+#define AHCI_GHC_AE (0x80000000)  /* AHCI enabled */
+
 #define AHCI_DEV_NULL   0
 #define AHCI_DEV_SATA   1
 #define AHCI_DEV_SEMB   2
@@ -56,17 +60,17 @@ typedef struct tagHBA_CMD_HEADER {
     volatile uint32_t prdbc; // Physical region descriptor byte count transferred
 
     // DW2, 3
-    uint64_t ctba;  // Command table descriptor base address
+    uint32_t ctba;  // Command table descriptor base address (开发心得: 必须为物理地址!!!!)
     uint32_t ctbau; // Command table descriptor base address upper 32 bits
 
     // DW4 - 7
     uint32_t rsv1[4]; // Reserved
-} HBA_CMD_HEADER;
+} __attribute__((packed)) HBA_CMD_HEADER;
 
 typedef volatile struct tagHBA_PORT {
-    uint64_t clb;       // 0x00, command list base address, 1K-byte aligned
-    uint64_t clbu;      // 0x04, command list base address upper 32 bits
-    uint64_t fb;        // 0x08, FIS base address, 256-byte aligned
+    uint32_t clb;       // 0x00, command list base address, 1K-byte aligned
+    uint32_t clbu;      // 0x04, command list base address upper 32 bits
+    uint32_t fb;        // 0x08, FIS base address, 256-byte aligned
     uint32_t fbu;       // 0x0C, FIS base address upper 32 bits
     uint32_t is;        // 0x10, interrupt status
     uint32_t ie;        // 0x14, interrupt enable
@@ -83,7 +87,7 @@ typedef volatile struct tagHBA_PORT {
     uint32_t fbs;       // 0x40, FIS-based switch control
     uint32_t rsv1[11];  // 0x44 ~ 0x6F, Reserved
     uint32_t vendor[4]; // 0x70 ~ 0x7F, vendor specific
-} HBA_PORT;
+} __attribute__((packed)) HBA_PORT;
 
 typedef volatile struct tagHBA_MEM {
     // 0x00 - 0x2B, Generic Host Control
@@ -107,10 +111,10 @@ typedef volatile struct tagHBA_MEM {
 
     // 0x100 - 0x10FF, Port control registers
     HBA_PORT ports[1]; // 1 ~ 32
-} HBA_MEM;
+} __attribute__((packed)) HBA_MEM;
 
 typedef struct tagHBA_PRDT_ENTRY {
-    uint64_t dba;  // Data base address
+    uint32_t dba;  // Data base address
     uint32_t dbau; // Data base address upper 32 bits
     uint32_t rsv0; // Reserved
 
@@ -118,7 +122,7 @@ typedef struct tagHBA_PRDT_ENTRY {
     uint32_t dbc  : 22; // Byte count, 4M max
     uint32_t rsv1 : 9;  // Reserved
     uint32_t i    : 1;  // Interrupt on completion
-} HBA_PRDT_ENTRY;
+} __attribute__((packed)) HBA_PRDT_ENTRY;
 
 typedef struct tagHBA_CMD_TBL {
     // 0x00
@@ -132,7 +136,7 @@ typedef struct tagHBA_CMD_TBL {
 
     // 0x80
     HBA_PRDT_ENTRY prdt_entry[1]; // Physical region descriptor table entries, 0 ~ 65535
-} HBA_CMD_TBL;
+} __attribute__((packed)) HBA_CMD_TBL;
 
 typedef struct tagFIS_REG_H2D {
     // DWORD 0
@@ -165,7 +169,7 @@ typedef struct tagFIS_REG_H2D {
 
     // DWORD 4
     uint8_t rsv1[4]; // Reserved
-} FIS_REG_H2D;
+} __attribute__((packed)) FIS_REG_H2D;
 
 typedef struct SATA_Ident {
     uint16_t config;        /* lots of obsolete bit flags */
@@ -290,10 +294,11 @@ typedef struct SATA_Ident {
                              DOWNLOAD MICROCODE  command for mode 03h */
     uint16_t words236_254[19];    /* Reserved */
     uint16_t integrity;           /* Cheksum, Signature */
-} SATA_ident_t;
+} __attribute__((packed)) SATA_ident_t;
 
 void ahci_search_ports(HBA_MEM *abar);
 void ahci_port_rebase(HBA_PORT *port, int portno);
-bool ahci_identify(HBA_PORT *port, void *buf);
-
+bool ahci_identify(HBA_PORT *port, void *buf,int type);
+bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
+bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
 void ahci_setup();

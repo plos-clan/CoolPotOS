@@ -19,12 +19,14 @@ void print_register(interrupt_frame_t *frame){
 }
 
 void print_task_info(pcb_t pcb){
-    printk("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
+    if(pcb == NULL) printk("Current process PID: 0 (Kernel) CPU%d\n",get_current_cpuid());
+    else printk("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
 }
 
 void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
     close_interrupt;
     ticket_lock(&error_lock);
+    logkf("Kernel Error: %s:0x%x\n",msg,code);
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
     print_task_info(get_current_task());
     print_register(frame);

@@ -5,6 +5,7 @@
 #include "kprint.h"
 #include "vdisk.h"
 #include "krlibc.h"
+#include "klog.h"
 
 extern vdisk vdisk_ctl[26]; //vdisk.c
 
@@ -51,6 +52,7 @@ static int devfs_read(void *file, void *addr, size_t offset, size_t size) {
     sector_size                      = vdisk_ctl[dev_id].sector_size;
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
+
     void *buf;
     if (vdisk_ctl[dev_id].type == VDISK_STREAM) goto read;
     if (offset > vdisk_ctl[dev_id].size) return VFS_STATUS_SUCCESS;
@@ -60,17 +62,16 @@ static int devfs_read(void *file, void *addr, size_t offset, size_t size) {
         if (size > padding_up_to_sector_size) { size = padding_up_to_sector_size; }
     }
     read:
+
     sectors_to_do = padding_up_to_sector_size / sector_size;
-    if (padding_up_to_sector_size == size) {
-        buf = addr;
+    if (padding_up_to_sector_size == size) { //统一物理地址
+        buf = malloc(size);
     } else {
         buf = malloc(padding_up_to_sector_size * 0x1000);
     }
     vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
-    if (padding_up_to_sector_size != size) {
-        memcpy(addr, buf, size);
-        free(buf);
-    }
+    memcpy(addr, buf, size);
+    free(buf);
     return (int)size;
 }
 
