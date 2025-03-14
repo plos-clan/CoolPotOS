@@ -535,7 +535,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
     vdisk vd;
     for (int i = 0; i < 4; i++)
         if (ide_devices[i].Reserved == 1) {
-            printk("IDE %d Found %s Drive %dMB - %s\n", i, ide_devices[i].Type ? "ATAPI" : "ATA",
+            kinfo("IDE %d Found %s Drive %dMB - %s", i, ide_devices[i].Type ? "ATAPI" : "ATA",
                   ide_devices[i].Size / 1024 / 2, ide_devices[i].Model);
             sprintf(vd.drive_name, "ide%d", i);
             if (ide_devices[i].Type == IDE_ATAPI) {

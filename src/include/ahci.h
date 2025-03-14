@@ -298,7 +298,7 @@ typedef struct SATA_Ident {
 
 void ahci_search_ports(HBA_MEM *abar);
 void ahci_port_rebase(HBA_PORT *port, int portno);
-bool ahci_identify(HBA_PORT *port, void *buf);
+bool ahci_identify(HBA_PORT *port, void *buf,int type);
 bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
 bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
 void ahci_setup();

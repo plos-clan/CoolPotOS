@@ -113,14 +113,23 @@ void kmain(void) {
     build_stream_device();
     init_iic();
 
-
-
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
     //beep();
     enable_scheduler();
     open_interrupt;
+
+//    vfs_node_t node = vfs_open("/dev/sata1");
+//    if(node != NULL){
+//        uint8_t *buf = malloc(512);
+//        if(vfs_read(node, buf, 0, 512) == VFS_STATUS_SUCCESS) {
+//            for (int i = 0; i < 512; i++) {
+//                printk("%02x ", buf[i]);
+//            }
+//            printk("\n");
+//        }
+//    } else kerror("Cannot open /dev/sata1");
 
     cpu_hlt;
 }
