@@ -69,4 +69,11 @@ void acpi_setup() {
         return;
     } else
         setup_facp(facp);
+
+    void* bgrt = find_table("BGRT");
+    if(bgrt == NULL) {
+    	kwarn("Cannot find acpi facp table.");
+    	return;
+    }// else
+    	// bgrt_setup(bgrt); 先空着，等以后补上
 }
