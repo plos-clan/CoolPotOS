@@ -80,7 +80,7 @@ target("iso")
             --"-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso",
-            "-hda", "disk.qcow2",
+            "-hda", "hda.img",
         }
         
         os.execv("qemu-system-x86_64 " , flags)
