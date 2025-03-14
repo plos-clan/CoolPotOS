@@ -55,3 +55,4 @@ Bienvenue pour créer des demandes de tirage ou des problèmes pour ce projet. E
 * CLimber-Rong - Développeur de Logiciels
 * shiyu - Débogage et Écrire des Commentaires
 * 27Onion - Traduire README en Français
+* suhuajun-github - Fix several bugs in the AHCI driver
