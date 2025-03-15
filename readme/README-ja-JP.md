@@ -42,8 +42,8 @@
 
 ## 貢献者
 
-* XIAOYI12 - OSの開発者
-* min0911Y - OSのファイルシステムの開発者
+* XIAOYI12 - OS開発者
+* min0911Y - OSのファイルシステム開発者
 * copi143 - 新しいユーザーヒープフレームワークの開発者
 * QtLittleXu - OSドキュメンテーションの作成
 * ViudiraTech - PCIドライバーの最適化
@@ -53,7 +53,7 @@
 * Minsecrus - メモリー使用量の最適化
 * CLimber-Rong - ソフトウェア開発者
 * shiyu - デバッグとコメントの作成
-* 27Onion - フランス語のREADME.mdの翻訳
+* 27Onion - フランス語READMEの翻訳
 * LY-Xiang - Actionsの最適化
 * suhuajun-github - AHCIドライバーでのバッグを修正
 
