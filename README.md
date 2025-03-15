@@ -5,6 +5,7 @@
 - **English**
 - [简体中文](readme/README-zh-CN.md)
 - [Français](readme/README-fr-FR.md)
+- [日本語](readme/README-ja-JP.md)
 
 ## Introduction
 

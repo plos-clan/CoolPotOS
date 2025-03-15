@@ -5,6 +5,7 @@
 - [English](/README.md)
 - **简体中文**
 - [Français](/readme/README-fr-FR.md)
+- [日本語](/readme/README-ja-JP.md)
 
 ## 介绍
 
@@ -34,7 +35,7 @@
 
 ## 许可协议
 
-该项目完全遵循 MIT 协议，任何人都可以免费使用它，另见 [LICENSE](LICENSE)。
+该项目完全遵循 MIT 协议，任何人都可以免费使用它，另见 [LICENSE](/LICENSE)。
 
 ## 贡献
 
