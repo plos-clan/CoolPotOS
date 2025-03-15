@@ -104,7 +104,7 @@ void pca9685_setPWM(uint8_t channel, int on, int off){
  */
 void pca9685_setServoPulse(uint8_t channel, int pulse){
     //Servo脉冲兼容性
-    int pulse = pulse*4096/20000;
+    pulse = pulse*4096/20000;
     pca9685_setPWM(channel, 0, pulse);
 
 }
