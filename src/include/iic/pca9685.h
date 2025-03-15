@@ -1,7 +1,6 @@
 #pragma once
 
 #include "krlibc.h"
-#include "math.h"
 #include "unistd.h"
 #include "iic/iic_basic_implementation.h"
 
