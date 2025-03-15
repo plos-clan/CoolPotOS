@@ -55,3 +55,4 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 * shiyu - Debugger and Comments Writer
 * 27Onion - Translated French README
 * LY-Xiang - Optimized actions process
+* suhuajun-github - Fix several bugs in the AHCI driver

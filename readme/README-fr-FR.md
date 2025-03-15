@@ -34,7 +34,6 @@ Vous devez les installer sur votre ordinateur:
 
 ## Licence 
 
-The project follows MIT license. Anyone can use it for free. See [LICENSE](LICENSE).
 Le projet suit la licence MIT. Tout le monde peut l'utiliser gratuitement. Voyez [LICENSE](LICENSE).
 
 ## Contribuer
@@ -55,4 +54,5 @@ Bienvenue pour créer des demandes de tirage ou des problèmes pour ce projet. E
 * CLimber-Rong - Développeur de Logiciels
 * shiyu - Débogage et Écrire des Commentaires
 * 27Onion - Traduire README en Français
-* suhuajun-github - Fix several bugs in the AHCI driver
+* LY-Xiang - Optimisé Actions
+* suhuajun-github - Correction de plusieurs bugs dans le pilote AHCI
