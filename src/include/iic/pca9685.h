@@ -1,7 +1,8 @@
 #pragma once
 
 #include "krlibc.h"
-
+#include "math.h"
+#include "unistd.h"
 #include "iic/iic_basic_implementation.h"
 
 #ifdef IIC_BASIC_IMPLEMENTATION
@@ -31,7 +32,7 @@ IIC_Slave init_pca9685(uint32_t );
 void pca9685_write(uint8_t , uint8_t );
 uint8_t pca9685_read(uint8_t );
 void pca9685_setPWMFreq(uint32_t );
-void pca9685_setPWM(uint8_t , uint8_t , uint8_t );
-void pca9685_setServoPulse(uint8_t , uint32_t );
+void pca9685_setPWM(uint8_t , int , int );
+void pca9685_setServoPulse(uint8_t , int );
 
 #endif
