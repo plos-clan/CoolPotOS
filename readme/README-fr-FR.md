@@ -5,6 +5,7 @@
 - [English](/README.md)
 - [简体中文](/readme/README-zh-CN.md)
 - **Français**
+- [日本語](/readme/README-ja-JP.md)
 
 ## Introduction
 
@@ -34,7 +35,7 @@ Vous devez les installer sur votre ordinateur:
 
 ## Licence 
 
-Le projet suit la licence MIT. Tout le monde peut l'utiliser gratuitement. Voyez [LICENSE](LICENSE).
+Le projet suit la licence MIT. Tout le monde peut l'utiliser gratuitement. Voyez [LICENSE](/LICENSE).
 
 ## Contribuer
 
