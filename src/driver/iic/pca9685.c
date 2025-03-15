@@ -76,7 +76,6 @@ void pca9685_setPWMFreq(uint32_t freq){
     pca9685_write(__MODE1, newmode);
     pca9685_write(__PRESCALE, (int)(prescale));
     pca9685_write(__MODE1, oldmode);
-    sleep(0.005);
     pca9685_write(__MODE1, (oldmode | 0x80));
 
 }
