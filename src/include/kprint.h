@@ -63,3 +63,11 @@
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...);
 
 #define printk(...) color_printk(WHITE, BLACK, __VA_ARGS__)
+
+/**
+ * 中断专用输出
+ * warning: 该函数会强行解开打印锁并越过原子缓冲队列直接向终端打印, 谨慎使用
+ * @param fmt
+ * @param ...
+ */
+void printe(const char *fmt, ...);

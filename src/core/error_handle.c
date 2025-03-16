@@ -10,24 +10,24 @@
 ticketlock error_lock;
 
 void print_register(interrupt_frame_t *frame){
-    printk("ss: 0x%p ", frame->ss);
-    printk("cs: 0x%p ", frame->cs);
-    printk("rsp: 0x%p \n", frame->rsp);
-    printk("rip: 0x%p ", frame->rip);
-    printk("rflags: 0x%p ", frame->rflags);
-    printk("cr3: 0x%p \n", get_cr3());
+    printe("ss: 0x%p ", frame->ss);
+    printe("cs: 0x%p ", frame->cs);
+    printe("rsp: 0x%p \n", frame->rsp);
+    printe("rip: 0x%p ", frame->rip);
+    printe("rflags: 0x%p ", frame->rflags);
+    printe("cr3: 0x%p \n", get_cr3());
 }
 
 void print_task_info(pcb_t pcb){
-    if(pcb == NULL) printk("Current process PID: 0 (Kernel) CPU%d\n",get_current_cpuid());
-    else printk("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
+    if(pcb == NULL) printe("Current process PID: 0 (Kernel) CPU%d\n",get_current_cpuid());
+    else printe("Current process PID: %d (%s) CPU%d\n",pcb->pid,pcb->name,get_current_cpuid());
 }
 
 void kernel_error(const char *msg,uint64_t code,interrupt_frame_t *frame) {
     close_interrupt;
     ticket_lock(&error_lock);
     logkf("Kernel Error: %s:0x%x\n",msg,code);
-    printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
+    printe("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n",msg,code);
     print_task_info(get_current_task());
     print_register(frame);
     update_terminal();
