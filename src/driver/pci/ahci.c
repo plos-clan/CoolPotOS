@@ -422,7 +422,7 @@ void ahci_setup() {
 
     hba_mem->ghc |= AHCI_GHC_AE;
 
-    ahci_ports_base_addr = (uint64_t) malloc(1048576);
+    ahci_ports_base_addr = (uint64_t) alloc_4k_aligned_mem(1048576);
 
     logkf("AHCI ahci addr %p\n", ahci_ports_base_addr);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#define ALIGNED_BASE 0x1000
+
 #include "limine.h"
 #include "alloc.h"
 #include "serial.h"
