@@ -56,6 +56,7 @@ static volatile LIMINE_REQUESTS_END_MARKER
 
 extern void error_setup(); //error_handle.c
 extern void iso9660_regist(); //iso9660.c
+extern pcb_t kernel_head_task; //scheduler.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -80,7 +81,8 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME, COMPILER_NAME, COMPILER_VERSION);
+    printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME, COMPILER_NAME,
+           COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     gdt_setup();
@@ -107,9 +109,11 @@ void kmain(void) {
 
     rtl8169_setup();
     //pcnet_setup();
+    disable_scheduler();
     pivfs_setup();
     init_pcb();
     smp_setup();
+
     build_stream_device();
     init_iic();
 
@@ -119,18 +123,6 @@ void kmain(void) {
     //beep();
     enable_scheduler();
     open_interrupt;
-
-//    vfs_node_t node = vfs_open("/dev/sata0");
-//    if(node != NULL){
-//        uint8_t *buf = malloc(512);
-//        memset(buf, 0, 512);
-//        if(vfs_read(node, buf, 0, 512) == VFS_STATUS_SUCCESS) {
-//            for (int i = 0; i < 512; i++) {
-//                logkf("%02x ", buf[i]);
-//            }
-//            logkf("\n");
-//        }
-//    } else kerror("Cannot open /dev/sata1");
 
     cpu_hlt;
 }

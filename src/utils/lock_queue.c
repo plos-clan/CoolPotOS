@@ -1,13 +1,15 @@
 #include "lock_queue.h"
 #include "alloc.h"
+#include "krlibc.h"
 
 lock_queue *queue_init() {
     lock_queue *q = malloc(sizeof(lock_queue));
+    memset(q, 0, sizeof(lock_queue));
     q->head = q->tail = NULL;
     q->next_index = 0;
     q->size = 0;
-    ticket_unlock(&q->lock);
-    ticket_unlock(&q->iter_lock);
+    ticket_init(&q->lock);
+    ticket_init(&q->iter_lock);
     return q;
 }
 
@@ -33,7 +35,7 @@ int queue_enqueue(lock_queue *q, void *data) {
 
 void *queue_remove_at(lock_queue *q, int index) {
     if (index < 0 || q == NULL) return NULL;
-    ticket_lock(&q->lock);
+    ticket_trylock(&q->lock);
     lock_node *current = q->head;
     lock_node *prev = NULL;
     while (current && current->index != index) {
@@ -60,7 +62,7 @@ void *queue_remove_at(lock_queue *q, int index) {
 }
 
 void *queue_dequeue(lock_queue *q) {
-    ticket_lock(&q->lock);
+    ticket_trylock(&q->lock);
     if (!q->head) {
         ticket_unlock(&q->lock);
         return NULL;
@@ -78,7 +80,7 @@ void *queue_dequeue(lock_queue *q) {
 }
 
 void queue_iterate(lock_queue *q, void (*callback)(void *,void *), void* argument) {
-    ticket_lock(&q->lock);
+    ticket_trylock(&q->lock);
     lock_node *current = q->head;
     while (current) {
         callback(current->data,argument);
@@ -88,7 +90,7 @@ void queue_iterate(lock_queue *q, void (*callback)(void *,void *), void* argumen
 }
 
 void queue_destroy(lock_queue *q) {
-    ticket_lock(&q->lock);
+    ticket_trylock(&q->lock);
     lock_node *current = q->head;
     while (current) {
         lock_node *next = current->next;

@@ -91,7 +91,7 @@ static void apu_gdt_setup(){
 void apu_entry(){
     __asm__ volatile("lidt %0" : : "m"(idt_pointer));
 
-    ticket_lock(&apu_lock);
+    ticket_trylock(&apu_lock);
     apu_gdt_setup();
 
     page_table_t *physical_table = virt_to_phys((uint64_t)get_kernel_pagedir()->table);
