@@ -109,9 +109,9 @@ void ahci_port_rebase(HBA_PORT *port, int portno) {
         cmdheader[i].prdtl = 8; // 8 prdt entries per command table
         // 256 bytes per command table, 64+16+48+16*8
         // Command table offset: 40K + 8K*portno + cmdheader_index*256
-        uint64_t phy_ctb = ((uint64_t) virt_to_phys(ahci_ports_base_addr)) + (40 << 10) + (portno << 13) + (i << 8);
-        cmdheader[i].ctba = phy_ctb & 0xFFFFFFFF;
-        cmdheader[i].ctbau = phy_ctb >> 32;
+        uint64_t phy_ctba = ((uint64_t) virt_to_phys(ahci_ports_base_addr)) + (40 << 10) + (portno << 13) + (i << 8);
+        cmdheader[i].ctba = phy_ctba & 0xFFFFFFFF;
+        cmdheader[i].ctbau = phy_ctba >> 32;
         memset(phys_to_virt(cmdheader[i].ctba), 0, 256);
     }
 
@@ -124,15 +124,16 @@ bool ahci_identify(HBA_PORT *port, void *buf, int type) {
     int slot = find_cmdslot(port);
     if (slot == -1) return false;
 
-    ((uint8_t *) ahci_ports_base_addr)[0] = 39;
-
-    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
+    uint64_t phy_cmd_handler = ((uint64_t) port->clbu << 32) | port->clb;
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(phy_cmd_handler);
     cmdheader += slot;
     cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 0;                                 // Read from device
     cmdheader->prdtl = 1;                                 // PRDT entries count
     cmdheader->c = 1;
-    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
+
+    uint64_t phy_cmd_tbl_handler = ((uint64_t) cmdheader->ctbau << 32) | cmdheader->ctba;
+    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(phy_cmd_tbl_handler);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
     uint64_t phys_buf = (uint64_t) virt_to_phys((uint64_t) buf);
     cmdtbl->prdt_entry[0].dba = phys_buf & 0xFFFFFFFF;
@@ -393,6 +394,18 @@ static void ahci_vdisk_write(int drive, uint8_t *buffer, uint32_t number, uint32
     ahci_write(&(hba_mem->ports[drive_mapping[drive]]), lba, 0, number, (uint16_t *) buffer);
 }
 
+void swap_and_terminate(uint8_t* src, char* dest, size_t len) {
+    for (size_t i = 0; i < len; i += 2) {
+        if (i + 1 < len) {
+            dest[i] = src[i + 1];
+            dest[i + 1] = src[i];
+        } else {
+            dest[i] = src[i];
+        }
+    }
+    dest[len] = '\0';
+}
+
 void ahci_setup() {
     pcie_device_t *device = pcie_find_class(0x010601);
     if (device == NULL) {
@@ -432,7 +445,7 @@ void ahci_setup() {
         ahci_port_rebase(&(hba_mem->ports[ahci_ports[i].port]), ahci_ports[i].port);
     }
 
-    //hba_mem->ghc |= AHCI_GHC_IE;
+    hba_mem->ghc |= AHCI_GHC_IE;
 
     for (i = 0; i < port_total; i++) {
         SATA_ident_t *buf = malloc(sizeof(SATA_ident_t));
@@ -443,12 +456,17 @@ void ahci_setup() {
         }
 
         int type = check_type(&hba_mem->ports[ahci_ports[i].port]);
-        kinfo("SATA %d Found %s Drive %dByte - %s", i,
-              type == AHCI_DEV_NULL ? "NoDevice" :
-              type == AHCI_DEV_SATA ? "AHCI_SATA" :
-              type == AHCI_DEV_SATAPI ? "AHCI_SATAPI" :
+
+        if(type == AHCI_DEV_NULL) continue;
+
+        char result[41];
+        swap_and_terminate(buf->model, result, 40); // 用于对AHCI设备的model进行字节交换
+
+        kinfo("%s %d Found Drive %dByte - %s",
+              type == AHCI_DEV_SATA ? "SATA" :
+              type == AHCI_DEV_SATAPI ? "SATAPI" :
               type == AHCI_DEV_PM ? "AHCI_PM" :
-              "AHCI_SEMB", buf->lba_capacity * 512, buf->model);
+              "AHCI_SEMB", i, buf->lba_capacity * 512, result);
 
         vdisk vd;
         vd.size = buf->lba_capacity;

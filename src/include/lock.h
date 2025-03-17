@@ -29,13 +29,17 @@ union ticketlock {
 
 static inline void ticket_lock(ticketlock *t) {
     uint16_t me = atomic_xadd(&t->s.users, 1);
-
     while (t->s.ticket != me) cpu_relax();
 }
 
 static inline void ticket_unlock(ticketlock *t) {
     barrier();
     t->s.ticket++;
+}
+
+static inline void ticket_init(ticketlock *t) {
+    t->u = 0;
+    t->s.ticket = 0;
 }
 
 static inline int ticket_trylock(ticketlock *t) {
