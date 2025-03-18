@@ -65,12 +65,12 @@ int regist_vdisk(vdisk vd) {
 bool have_vdisk(int drive) {
     int indx = drive;
     if (indx >= 26) {
-        return 0;
+        return false;
     }
-    if (vdisk_ctl[indx].flag) {
-        return 1;
+    if (vdisk_ctl[indx].flag > 0) {
+        return true;
     } else {
-        return 0;
+        return false;
     }
 }
 
@@ -89,7 +89,7 @@ int rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read
     if (indx >= 26) {
         return 0;
     }
-    if (vdisk_ctl[indx].flag) {
+    if (vdisk_ctl[indx].flag > 0) {
         if (read) {
             vdisk_ctl[indx].read(drive, buffer, number, lba);
         } else {

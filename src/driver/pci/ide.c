@@ -170,7 +170,7 @@ void ide_read_buffer(uint8_t channel, uint8_t reg, uint64_t buffer, uint32_t qua
     if (reg > 0x07 && reg < 0x0C) ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
 }
 
-uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba, uint8_t numsects, uint16_t selector, uint32_t edi) {
+uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba, uint8_t numsects, uint16_t selector, uint64_t edi) {
     uint8_t  lba_mode /* 0: CHS, 1:LBA28, 2: LBA48 */, dma /* 0: No DMA, 1: DMA */, cmd;
     uint8_t  lba_io[6];
     uint32_t channel  = ide_devices[drive].Channel; // Read the Channel.
