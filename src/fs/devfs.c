@@ -7,6 +7,10 @@
 #include "krlibc.h"
 #include "klog.h"
 
+/**
+ * 修复说明: 将 devfs_read 与  devfs_write 中读写缓冲区改用 malloc 重新申请
+ * 保证传入驱动的缓冲区地址可以被正确转换成物理地址
+ */
 extern vdisk vdisk_ctl[26]; //vdisk.c
 
 int devfs_id = 0;
@@ -64,7 +68,7 @@ static int devfs_read(void *file, void *addr, size_t offset, size_t size) {
     read:
 
     sectors_to_do = padding_up_to_sector_size / sector_size;
-    if (padding_up_to_sector_size == size) { //统一物理地址
+    if (padding_up_to_sector_size == size) {
         buf = malloc(size);
     } else {
         buf = malloc(padding_up_to_sector_size * 0x1000);
@@ -94,14 +98,14 @@ static int devfs_write(void *file, const void *addr, size_t offset, size_t size)
     sectors_to_do = padding_up_to_sector_size / sector_size;
 
     if (padding_up_to_sector_size == size) {
-        buf = (void *)addr;
+        buf = malloc(size);
     } else {
         buf = malloc(padding_up_to_sector_size);
         vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
-        memcpy(buf, addr, size);
     }
+    memcpy(buf, addr, size);
     vdisk_write(offset / sector_size, sectors_to_do, buf, dev_id);
-    if (padding_up_to_sector_size != size) { free(buf); }
+    free(buf);
     return (int)size;
 }
 

@@ -54,6 +54,13 @@ static volatile LIMINE_REQUESTS_START_MARKER
 __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER
 
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_stack_size_request stack_request = {
+    .id = LIMINE_STACK_SIZE_REQUEST,
+    .revision = 0,
+    .stack_size = 131072 //128K
+};
+
 extern void error_setup(); //error_handle.c
 extern void iso9660_regist(); //iso9660.c
 extern pcb_t kernel_head_task; //scheduler.c
@@ -123,6 +130,20 @@ void kmain(void) {
     //beep();
     enable_scheduler();
     open_interrupt;
+//
+//    vfs_node_t node = vfs_open("/dev/sata0");
+//    if (node != NULL) {
+//        uint8_t *buf = malloc(512);
+//        memset(buf, 0, 512);
+//        vfs_read(node, buf, 0, 512);
+//        for (int i = 0; i < 512; i++) {
+//            logkf("%02x ", buf[i]);
+//        }
+//        logkf("\n");
+//        free(buf);
+//        vfs_close(node);
+//    } else
+//        kerror("Cannot open /dev/sata1");
 
     cpu_hlt;
 }

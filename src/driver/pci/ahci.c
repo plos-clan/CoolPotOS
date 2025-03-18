@@ -184,7 +184,8 @@ bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count
     int slot = find_cmdslot(port);
     if (slot == -1) return false;
 
-    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
+    uint64_t phy_cmd_handler = ((uint64_t) port->clbu << 32) | port->clb;
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(phy_cmd_handler);
     cmdheader += slot;
     cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 1;                                 // 写硬盘
@@ -192,7 +193,8 @@ bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count
     cmdheader->c = 1;
     cmdheader->prdtl = (uint16_t) ((count - 1) >> 4) + 1; // PRDT entries count
 
-    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
+    uint64_t phy_cmd_tbl_handler = ((uint64_t) cmdheader->ctbau << 32) | cmdheader->ctba;
+    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(phy_cmd_tbl_handler);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
 
     // 8K bytes (16 sectors) per PRDT
@@ -272,7 +274,8 @@ bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count,
     int slot = find_cmdslot(port);
     if (slot == -1) return false;
 
-    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(port->clb);
+    uint64_t phy_cmd_handler = ((uint64_t) port->clbu << 32) | port->clb;
+    HBA_CMD_HEADER *cmdheader = (HBA_CMD_HEADER *) phys_to_virt(phy_cmd_handler);
     cmdheader += slot;
     cmdheader->cfl = sizeof(FIS_REG_H2D) / sizeof(uint32_t); // Command FIS size
     cmdheader->w = 0;                                 // Read from device
@@ -280,7 +283,8 @@ bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count,
     cmdheader->p = 1;
     cmdheader->prdtl = (uint16_t) ((count - 1) >> 4) + 1; // PRDT entries count
 
-    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(cmdheader->ctba);
+    uint64_t phy_cmd_tbl_handler = ((uint64_t) cmdheader->ctbau << 32) | cmdheader->ctba;
+    HBA_CMD_TBL *cmdtbl = (HBA_CMD_TBL *) phys_to_virt(phy_cmd_tbl_handler);
     memset(cmdtbl, 0, sizeof(HBA_CMD_TBL) + (cmdheader->prdtl - 1) * sizeof(HBA_PRDT_ENTRY));
 
     // 8K bytes (16 sectors) per PRDT
