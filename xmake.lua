@@ -3,7 +3,7 @@ set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
 add_requires("zig")
 
-set_optimize("fastest")
+--set_optimize("fastest")
 set_languages("c23")
 --set_warnings("all", "extra", "pedantic", "error")
 
@@ -14,7 +14,7 @@ add_cflags("-target x86_64-freestanding")
 add_ldflags("-target x86_64-freestanding")
 
 add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float","-nostdinc")
-add_cflags("-mcmodel=kernel")
+add_cflags("-mcmodel=kernel","-mno-red-zone")
 add_ldflags("-static","-nostdlib")
 
 target("kernel")

@@ -14,6 +14,7 @@
 
 extern pcb_t kernel_head_task;
 ticketlock pcb_lock;
+extern ticketlock scheduler_lock;
 
 int now_pid = 0;
 
@@ -100,6 +101,8 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name){
 }
 
 void init_pcb(){
+    ticket_init(&pcb_lock);
+    ticket_init(&scheduler_lock);
     kernel_head_task = (pcb_t)malloc(STACK_SIZE);
     kernel_head_task->task_level = 0;
     kernel_head_task->pid = now_pid++;

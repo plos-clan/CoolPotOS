@@ -22,6 +22,8 @@ smp_cpu_t cpus[MAX_CPU];
 uint32_t bsp_processor_id;
 uint64_t cpu_count = 0;
 
+static int16_t cpu_done_count = 0;
+
 static void apu_hlt(){
     cpu_hlt;
 }
@@ -91,7 +93,7 @@ static void apu_gdt_setup(){
 void apu_entry(){
     __asm__ volatile("lidt %0" : : "m"(idt_pointer));
 
-    ticket_trylock(&apu_lock);
+    ticket_lock(&apu_lock);
     apu_gdt_setup();
 
     page_table_t *physical_table = virt_to_phys((uint64_t)get_kernel_pagedir()->table);
@@ -126,6 +128,7 @@ void apu_entry(){
     smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
     if(cpu == NULL){
         logkf("Error: smp cpu info null %d\n",get_current_cpuid());
+        cpu->flags = 0;
         cpu_hlt;
     }
     cpu->idle_pcb = apu_idle;
@@ -135,7 +138,8 @@ void apu_entry(){
         logkf("Error: scheduler null %d\n",get_current_cpuid());
         cpu_hlt;
     }
-    logkf("APU %d started.\n",get_current_cpuid());
+    logkf("APU %d: %p %p started.\n",get_current_cpuid(),cpu->current_pcb,cpu->idle_pcb);
+    cpu_done_count++;
     ticket_unlock(&apu_lock);
     open_interrupt;
     apu_hlt();
@@ -149,6 +153,7 @@ smp_cpu_t *get_cpu_smp(uint32_t processor_id){
 }
 
 void apu_startup(struct limine_smp_request smp_request){
+    ticket_init(&apu_lock);
     struct limine_smp_response *response = smp_request.response;
     cpu_count = response->cpu_count;
     for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++){
@@ -165,13 +170,21 @@ void apu_startup(struct limine_smp_request smp_request){
             info->goto_address = (void*)apu_entry;
         }
     }
+
+    while (cpu_done_count < cpu_count && cpu_done_count < (MAX_CPU - 1)) __asm__ volatile("pause" ::: "memory");
+    logkf("APU %d processors have been enabled.\n",cpu_count);
+
     smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
     if(cpu == NULL){
         return;
     }
+    cpu->idle_pcb = kernel_head_task;
     kernel_head_task->queue_index = queue_enqueue(cpu->scheduler_queue,kernel_head_task);
     if(kernel_head_task->queue_index == -1){
         logkf("Error: scheduler null %d\n",get_current_cpuid());
     }
+
+
+
     kinfo("%d processors have been enabled.",cpu_count);
 }
