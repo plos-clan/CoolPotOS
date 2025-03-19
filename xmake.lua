@@ -85,14 +85,3 @@ target("iso")
         
         os.execv("qemu-system-x86_64 " , flags)
     end)
-
-
-
-
-
-
-
-
-
-
-

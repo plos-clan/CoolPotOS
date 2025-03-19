@@ -7,6 +7,8 @@
 #include "lock.h"
 #include "smp.h"
 
+extern void double_fault_asm(); //df_asm.S
+
 ticketlock error_lock;
 
 void print_register(interrupt_frame_t *frame){
@@ -79,7 +81,7 @@ void error_setup() {
     register_interrupt_handler(0, (void *) dived_error, 0, 0x8E);
     register_interrupt_handler(6, (void *) invalid_opcode, 0, 0x8E);
     register_interrupt_handler(7, (void*) device_not_available,0,0x8E);
-    register_interrupt_handler(8, (void *) double_fault, 1, 0x8E);
+    register_interrupt_handler(8, (void *) double_fault_asm, 1, 0x8E);
     register_interrupt_handler(10, (void*) invalid_tss, 0, 0x8E);
     register_interrupt_handler(11, (void *) segment_not_present, 0, 0x8E);
     register_interrupt_handler(12, (void *) stack_segment_fault, 0, 0x8E);

@@ -5,7 +5,6 @@
 
 #define barrier() __asm__ volatile("": : :"memory")
 
-
 #define spin_lock ticket_lock
 #define spin_unlock ticket_unlock
 #define spinlock ticketlock

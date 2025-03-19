@@ -57,7 +57,6 @@ int add_task(pcb_t new_task) {
         logkf("Error: scheduler null %d\n",get_current_cpuid());
         return -1;
     }
-    if(new_task->pid == cpu0->idle_pcb->pid) goto ret;
 
     //pivfs_update(kernel_head_task);
     ret:
