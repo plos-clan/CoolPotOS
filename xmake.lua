@@ -3,7 +3,7 @@ set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
 add_requires("zig")
 
---set_optimize("fastest")
+set_optimize("fastest")
 set_languages("c23")
 --set_warnings("all", "extra", "pedantic", "error")
 

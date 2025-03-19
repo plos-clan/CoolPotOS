@@ -27,7 +27,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame,uint64_t err
     switch_page_directory(get_kernel_pagedir());
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
-    logkf("Page fault, virtual address 0x%x\n", faulting_address);
+    logkf("Page fault, virtual address 0x%x %p\n", faulting_address,frame->rip);
     if(get_current_task() != NULL){
         logkf("Current process PID: %d (%s)\n",get_current_task()->pid,get_current_task()->name);
     }
