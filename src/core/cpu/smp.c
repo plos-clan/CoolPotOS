@@ -76,16 +76,19 @@ static void apu_gdt_setup(){
     : "memory"
     );
 
-    uint64_t address = ((uint64_t)(&cpu->tss0));
+    uint64_t address = (uint64_t) &(cpu->tss0);
     uint64_t low_base = (((address & 0xffffffU)) << 16U);
     uint64_t mid_base = (((((address >> 24U)) & 0xffU)) << 56U);
     uint64_t high_base = (address >> 32U);
     uint64_t access_byte = (((uint64_t)(0x89U)) << 40U);
-    uint64_t limit = ((uint64_t)((uint32_t)(sizeof(tss_t) - 1U)));
+    uint64_t limit = ((uint64_t)(uint32_t)(sizeof(tss_t) - 1U));
+
+    printk("",address); // 用于对抗编译器优化
+
     cpu->gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
     cpu->gdtEntries[6] = high_base;
 
-    cpu->tss0.ist[0] = ((uint64_t) &cpu->tss_stack) + sizeof(tss_stack_t);
+    cpu->tss0.ist[0] = ((uint64_t) &(cpu->tss_stack)) + sizeof(tss_stack_t);
 
     __asm__ volatile("ltr %[offset];" : : [offset]"rm"(0x28U) : "memory");
 }

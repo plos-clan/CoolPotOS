@@ -3,7 +3,7 @@
 /**
  * 定义CP_Kernel的各种属性
  */
-#define KERNEL_NAME "CP_Kernel-x86_64-0.0.8" //内核编号
+#define KERNEL_NAME "CP_Kernel-x86_64-0.1.0" //内核编号
 #define MAX_CPU (256*2)                      //最大支持CPU核心数 256
 #define STACK_SIZE 32768                     //栈大小(byte)
 #define MAX_WAIT_INDEX 100000                //阻塞最大循环数
