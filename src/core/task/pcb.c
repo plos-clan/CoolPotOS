@@ -56,6 +56,7 @@ void kill_proc(pcb_t task){
     close_interrupt;
     disable_scheduler(); // 终止调度器, 防止释放被杀进程时候调度到该进程发生错误
     free_tty(task->tty);
+    free(task->time_buf);
 
     remove_task(task);
 
