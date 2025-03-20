@@ -113,8 +113,7 @@ static const double rounders[10 + 1] = {
 void abort() {
     klogf(false, "Kernel abort panic\n");
     __asm__("cli");
-    while (1)
-        __asm__("hlt");
+    infinite_loop __asm__("hlt");
 }
 
 void fftostr() {}

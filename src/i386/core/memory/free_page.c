@@ -13,7 +13,7 @@ void put_directory(page_directory_t *dir) {
 void free_pages() {
     disable_scheduler();
     uint32_t ii;
-    do {
+    infinite_loop {
         ii = fifo8_get(fifo8);
         if (ii == -1 || ii == 0) { break; }
         page_directory_t *dir = (page_directory_t *)ii;
@@ -28,7 +28,7 @@ void free_pages() {
             kfree(table);
         }
         kfree(dir);
-    } while (1);
+    };
     enable_scheduler();
 }
 

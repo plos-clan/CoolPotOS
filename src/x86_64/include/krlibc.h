@@ -9,9 +9,7 @@
 #define MAX_WAIT_INDEX 100000                   // 阻塞最大循环数
 
 // 常用工具宏
-#define cpu_hlt                                                                                    \
-    while (1)                                                                                      \
-    __asm__("hlt")
+#define cpu_hlt infinite_loop __asm__("hlt")
 #define UNUSED(expr)                                                                               \
     do {                                                                                           \
         (void)(expr);                                                                              \

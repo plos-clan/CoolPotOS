@@ -21,7 +21,8 @@ int get_all_task() {
         pcb = pcb->next;
         if (pcb == NULL) break;
         num++;
-    } while (1); // 遍历进程控制器列表获取进程总数
+    }
+    infinite_loop; // 遍历进程控制器列表获取进程总数
     return num;
 }
 

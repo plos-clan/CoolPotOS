@@ -52,7 +52,7 @@ static void key_handle(registers_t *reg) {
 
     if (data < 0x80) { // 将扫描码传进进程
         pcb_t *task = running_proc_head;
-        while (1) {
+        infinite_loop {
             if (task->tty != NULL) {
                 if (e0_flag) fifo8_put(task->tty->fifo, 0xe0);
                 fifo8_put(task->tty->fifo, data);

@@ -344,7 +344,7 @@ void shell_setup() {
     shell_work_path = malloc(1024);
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
-    while (1) {
+    infinite_loop {
         printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ", shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
