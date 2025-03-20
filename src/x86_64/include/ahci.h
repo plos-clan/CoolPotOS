@@ -11,8 +11,8 @@
 #define HBA_PxIS_TFES  (1 << 30) /* TFES - Task File Error Status */
 
 #define AHCI_GHC_RST (0x00000001) /* reset controller; self-clear */
-#define AHCI_GHC_IE (0x00000002)  /* global IRQ enable */
-#define AHCI_GHC_AE (0x80000000)  /* AHCI enabled */
+#define AHCI_GHC_IE  (0x00000002) /* global IRQ enable */
+#define AHCI_GHC_AE  (0x80000000) /* AHCI enabled */
 
 #define AHCI_DEV_NULL   0
 #define AHCI_DEV_SATA   1
@@ -298,7 +298,7 @@ typedef struct SATA_Ident {
 
 void ahci_search_ports(HBA_MEM *abar);
 void ahci_port_rebase(HBA_PORT *port, int portno);
-bool ahci_identify(HBA_PORT *port, void *buf,int type);
+bool ahci_identify(HBA_PORT *port, void *buf, int type);
 bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
 bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
 void ahci_setup();

@@ -17,7 +17,7 @@
 
 #ifndef __cplusplus
 
-#define noreturn _Noreturn
+#    define noreturn _Noreturn
 
 #endif
 

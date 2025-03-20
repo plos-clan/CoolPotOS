@@ -1,7 +1,7 @@
 #include "vdisk.h"
+#include "fifo8.h"
 #include "klog.h"
 #include "krlibc.h"
-#include "fifo8.h"
 
 vdisk vdisk_ctl[26];
 
@@ -9,7 +9,7 @@ void vdisk_init() {
     for (int i = 0; i < 26; i++) {
         vdisk_ctl[i].flag = 0; // 设置为未使用
     }
-    klogf(true,"VDisk interface initialize.\n");
+    klogf(true, "VDisk interface initialize.\n");
 }
 
 int register_vdisk(vdisk vd) {
@@ -67,7 +67,7 @@ bool have_vdisk(int drive) {
 // 基于vdisk的通用读写
 
 static uint8_t *drive_name[16] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                             NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+                                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 static struct FIFO8 drive_fifo[16];
 
@@ -124,7 +124,8 @@ void Disk_Read(uint32_t lba, uint32_t number, void *buffer, int drive) {
             // printk("*buffer(%d %d) = %02x\n",lba,number,*(uint8_t *)buffer);
             for (int i = 0; i < number; i += SECTORS_ONCE) {
                 int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
-                rw_vdisk(drive, lba + i, (uint8_t *)((uint32_t)buffer + i * vdisk_ctl[drive].sector_size), sectors,
+                rw_vdisk(drive, lba + i,
+                         (uint8_t *)((uint32_t)buffer + i * vdisk_ctl[drive].sector_size), sectors,
                          1);
             }
             drive_semaphore_give(get_drive_code((uint8_t *)"DISK_DRIVE"));
@@ -159,7 +160,8 @@ void Disk_Write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
             // printk("*buffer(%d %d) = %02x\n",lba,number,*(uint8_t *)buffer);
             for (int i = 0; i < number; i += SECTORS_ONCE) {
                 int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
-                rw_vdisk(drive, lba + i, (uint8_t *)((uint32_t)buffer + i * vdisk_ctl[drive].sector_size), sectors,
+                rw_vdisk(drive, lba + i,
+                         (uint8_t *)((uint32_t)buffer + i * vdisk_ctl[drive].sector_size), sectors,
                          0);
             }
             drive_semaphore_give(get_drive_code((uint8_t *)"DISK_DRIVE"));

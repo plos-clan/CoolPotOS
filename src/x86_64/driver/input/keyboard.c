@@ -1,36 +1,36 @@
 #include "keyboard.h"
+#include "io.h"
 #include "isr.h"
 #include "klog.h"
-#include "krlibc.h"
-#include "io.h"
 #include "kprint.h"
-#include "smp.h"
-#include "pcb.h"
+#include "krlibc.h"
 #include "lock.h"
+#include "pcb.h"
+#include "smp.h"
 
-static int caps_lock, shift, e0_flag = 0, ctrl = 0;
-int disable_flag = 0;
-ticketlock keyboard_lock;
-extern pcb_t kernel_head_task;
+static int       caps_lock, shift, e0_flag = 0, ctrl = 0;
+int              disable_flag = 0;
+ticketlock       keyboard_lock;
+extern pcb_t     kernel_head_task;
 extern smp_cpu_t cpus[MAX_CPU];
 
 char keytable[0x54] = { // 按下Shift
-        0, 0x01, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
-        'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', 10, 0, 'A', 'S', 'D', 'F',
-        'G', 'H', 'J', 'K', 'L', ':', '\"', '~', 0, '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M',
-        '<', '>', '?', 0, '*', 0, ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, '7', 'D', '8', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.'};
+    0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
+    'W', 'E',  'R', 'T', 'Y', 'U', 'I',  'O', 'P', '{', '}', 10,  0,   'A', 'S',  'D',  'F',
+    'G', 'H',  'J', 'K', 'L', ':', '\"', '~', 0,   '|', 'Z', 'X', 'C', 'V', 'B',  'N',  'M',
+    '<', '>',  '?', 0,   '*', 0,   ' ',  0,   0,   0,   0,   0,   0,   0,   0,    0,    0,
+    0,   0,    0,   '7', 'D', '8', '-',  '4', '5', '6', '+', '1', '2', '3', '0',  '.'};
 
 char keytable1[0x54] = { // 未按下Shift
-        0, 0x01, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b', '\t', 'q',
-        'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', 10, 0, 'a', 's', 'd', 'f',
-        'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm',
-        ',', '.', '/', 0, '*', 0, ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.'};
+    0,   0x01, '1', '2', '3', '4', '5',  '6', '7', '8',  '9', '0', '-', '=', '\b', '\t', 'q',
+    'w', 'e',  'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', 10,  0,   'a', 's',  'd',  'f',
+    'g', 'h',  'j', 'k', 'l', ';', '\'', '`', 0,   '\\', 'z', 'x', 'c', 'v', 'b',  'n',  'm',
+    ',', '.',  '/', 0,   '*', 0,   ' ',  0,   0,   0,    0,   0,   0,   0,   0,    0,    0,
+    0,   0,    0,   '7', '8', '9', '-',  '4', '5', '6',  '+', '1', '2', '3', '0',  '.'};
 
-static void key_callback(void *pcb_handle,void* scan_handle){
-    pcb_t cur = (pcb_t)pcb_handle;
-    uint8_t scancode = *((uint8_t*)scan_handle);
+static void key_callback(void *pcb_handle, void *scan_handle) {
+    pcb_t   cur      = (pcb_t)pcb_handle;
+    uint8_t scancode = *((uint8_t *)scan_handle);
     atom_push(cur->tty->keyboard_buffer, scancode);
 }
 
@@ -64,16 +64,14 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     if (scancode < 0x80) {
         for (size_t i = 0; i < MAX_CPU; i++) {
             smp_cpu_t cpu = cpus[i];
-            if (cpu.flags == 1) {
-                queue_iterate(cpu.scheduler_queue, key_callback, &scancode);
-            }
+            if (cpu.flags == 1) { queue_iterate(cpu.scheduler_queue, key_callback, &scancode); }
         }
     }
     ticket_unlock(&keyboard_lock);
 }
 
 int input_char_inSM() {
-    int i = -1;
+    int   i    = -1;
     pcb_t task = get_current_task();
     if (task == NULL) return 0;
     task->tty->is_key_wait = true;
@@ -88,7 +86,7 @@ int kernel_getch() {
     uint8_t ch;
     ch = input_char_inSM(); // 扫描码
 
-    if (ch == 0xe0) {       // keytable之外的键（↑,↓,←,→）
+    if (ch == 0xe0) { // keytable之外的键（↑,↓,←,→）
         ch = input_char_inSM();
         if (ch == 0x48) { // ↑
             return -1;
@@ -112,6 +110,6 @@ int kernel_getch() {
 }
 
 void keyboard_setup() {
-    register_interrupt_handler(keyboard, (void *) keyboard_handler, 0, 0x8E);
+    register_interrupt_handler(keyboard, (void *)keyboard_handler, 0, 0x8E);
     kinfo("Setup PS/2 keyboard.");
 }

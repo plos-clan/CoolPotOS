@@ -3,9 +3,9 @@
 #include "lock.h"
 
 typedef struct LockNode {
-    void *data;
+    void            *data;
     struct LockNode *next;
-    int index;
+    int              index;
 } lock_node;
 
 typedef struct {
@@ -13,8 +13,8 @@ typedef struct {
     lock_node *tail;
     ticketlock lock;
     ticketlock iter_lock;
-    int size;
-    int next_index;
+    int        size;
+    int        next_index;
 } lock_queue;
 
 /**
@@ -58,11 +58,11 @@ void queue_destroy(lock_queue *q);
  * @param callback 回调函数
  * @param argument 回调函数传入的参数
  */
-void queue_iterate(lock_queue *q, void (*callback)(void *,void*), void* argument);
+void queue_iterate(lock_queue *q, void (*callback)(void *, void *), void *argument);
 
 /**
  * 迭代宏
  * @param list 传入队列
  * @param node 节点名
  */
-#define queue_foreach(list, node) for(lock_node *node = (list)->head; node;node = node->next)
+#define queue_foreach(list, node) for (lock_node *node = (list)->head; node; node = node->next)

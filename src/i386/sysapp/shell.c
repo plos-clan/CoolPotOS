@@ -1,20 +1,20 @@
 #include "shell.h"
-#include "krlibc.h"
-#include "klog.h"
-#include "keyboard.h"
 #include "cmos.h"
-#include "vfs.h"
-#include "pcb.h"
 #include "cpuid.h"
+#include "keyboard.h"
+#include "klog.h"
+#include "krlibc.h"
+#include "pcb.h"
 #include "pci.h"
-#include "video.h"
 #include "scheduler.h"
 #include "speaker.h"
+#include "vfs.h"
+#include "video.h"
 
 extern uint32_t get_all_memusage(); //free_page.c
 
 char *shell_work_path;
-char com_copy[100];
+char  com_copy[100];
 
 static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);
@@ -30,7 +30,7 @@ static char getc() {
 }
 
 static int gets(char *buf, int buf_size) {
-    int index = 0;
+    int  index = 0;
     char c;
     while ((c = getc()) != '\n') {
         if (c == '\b') {
@@ -49,12 +49,10 @@ static int gets(char *buf, int buf_size) {
 }
 
 int ends_with(const char *str, const char *suffix) {
-    size_t str_len = strlen(str);
+    size_t str_len    = strlen(str);
     size_t suffix_len = strlen(suffix);
 
-    if (suffix_len > str_len) {
-        return 0;
-    }
+    if (suffix_len > str_len) { return 0; }
 
     return strncmp(str + str_len - suffix_len, suffix, suffix_len) == 0;
 }
@@ -66,13 +64,15 @@ static int cmd_parse(char *cmd_str, char **argv, char token) {
         arg_idx++;
     }
     char *next = cmd_str;
-    int argc = 0;
+    int   argc = 0;
 
     while (*next) {
-        while (*next == token) *next++;
+        while (*next == token)
+            *next++;
         if (*next == 0) break;
         argv[argc] = next;
-        while (*next && *next != token) *next++;
+        while (*next && *next != token)
+            *next++;
         if (*next) *next++ = 0;
         if (argc > MAX_ARG_NR) return -1;
         argc++;
@@ -86,9 +86,7 @@ static void mkdir(int argc, char **argv) {
         printk("[Shell-MKDIR]: If there are too few parameters.\n");
         return;
     }
-    if (vfs_mkdir(argv[1]) == -1) {
-        printk("Failed create directory [%s].\n", argv[1]);
-    }
+    if (vfs_mkdir(argv[1]) == -1) { printk("Failed create directory [%s].\n", argv[1]); }
 }
 
 static void mount(int argc, char **argv) {
@@ -101,9 +99,7 @@ static void mount(int argc, char **argv) {
         printk("Cannot found mount directory.\n");
         return;
     }
-    if (vfs_mount(argv[2], p) == -1) {
-        printk("Failed mount device [%s]\n", argv[2]);
-    }
+    if (vfs_mount(argv[2], p) == -1) { printk("Failed mount device [%s]\n", argv[2]); }
 }
 
 static void ls(int argc, char **argv) {
@@ -112,10 +108,11 @@ static void ls(int argc, char **argv) {
         p = vfs_open(shell_work_path);
     } else {
         char *buf_h = com_copy + 5;
-        char bufx[100];
+        char  bufx[100];
         if (buf_h[0] != '/') {
             sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-        } else sprintf(bufx, "%s", buf_h);
+        } else
+            sprintf(bufx, "%s", buf_h);
         p = vfs_open(bufx);
     }
     if (p == NULL) {
@@ -123,7 +120,7 @@ static void ls(int argc, char **argv) {
         return;
     }
     list_foreach(p->child, i) {
-        vfs_node_t c = (vfs_node_t) i->data;
+        vfs_node_t c = (vfs_node_t)i->data;
         printk("%s ", c->name);
     }
     printk("\n");
@@ -135,23 +132,22 @@ static void read(int argc, char **argv) {
         return;
     }
     char *buf_h = com_copy + 5;
-    char bufx[100];
+    char  bufx[100];
     if (buf_h[0] != '/') {
         sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-    } else sprintf(bufx, "%s", buf_h);
+    } else
+        sprintf(bufx, "%s", buf_h);
     vfs_node_t file = vfs_open(bufx);
     if (file != NULL) {
         char *buf = kmalloc(file->size);
-        if (vfs_read(file, buf, 0, file->size) == -1) {
-            goto read_error;
-        }
+        if (vfs_read(file, buf, 0, file->size) == -1) { goto read_error; }
         for (size_t i = 0; i < file->size; i++) {
             printk("%c", buf[i]);
         }
         printk("\n");
         return;
     }
-    read_error:
+read_error:
     printk("Cannot read file.\n");
 }
 
@@ -163,10 +159,12 @@ static void reboot_os() {
     reboot();
 }
 
-static inline void foreach(list_t list) {
+static inline void foreach (list_t list) {
     list_foreach(list, node) {
-        vfs_node_t c = (vfs_node_t) node->data;
-        if (c->type == file_dir) foreach(c->child);
+        vfs_node_t c = (vfs_node_t)node->data;
+        if (c->type == file_dir)
+            foreach (c->child)
+                ;
         else {
             char *buf = kmalloc(c->size);
             vfs_read(c, buf, 0, c->size);
@@ -180,7 +178,7 @@ static void pkill(int argc, char **argv) {
         printk("[Shell-PKILL]: If there are too few parameters.\n");
         return;
     }
-    int pid = strtol(argv[1], NULL, 10);
+    int    pid = strtol(argv[1], NULL, 10);
     pcb_t *pcb = found_pcb(pid);
     if (pcb == NULL) {
         printk("Cannot find procces [%d]\n", pid);
@@ -193,8 +191,8 @@ static void pkill(int argc, char **argv) {
 void ps() {
     extern pcb_t *running_proc_head;
     // 找出最长进程名
-    pcb_t *longest_name = running_proc_head;
-    size_t longest_name_len = 0;
+    pcb_t        *longest_name     = running_proc_head;
+    size_t        longest_name_len = 0;
     while (longest_name != NULL) {
         if (strlen(longest_name->name) > longest_name_len)
             longest_name_len = strlen(longest_name->name);
@@ -205,8 +203,9 @@ void ps() {
     while (pcb != NULL) {
         printk("%-5d%-*s%10d        %-8s%-10d%-d\n", pcb->pid, longest_name_len, pcb->name,
                pcb->program_break_end - pcb->program_break,
-               pcb->task_level == TASK_KERNEL_LEVEL ? "Kernel" : pcb->task_level == TASK_SYSTEM_SERVICE_LEVEL ? "System"
-                                                                                                              : "User",
+               pcb->task_level == TASK_KERNEL_LEVEL           ? "Kernel"
+               : pcb->task_level == TASK_SYSTEM_SERVICE_LEVEL ? "System"
+                                                              : "User",
                pcb->task_level, pcb->cpu_clock);
         pcb = pcb->next;
     }
@@ -249,8 +248,8 @@ extern uint32_t phy_mem_size;
 static void sys_info() {
     cpu_t *cpu = get_cpuid();
 
-    uint32_t bytes = get_all_memusage();
-    float memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    uint32_t bytes  = get_all_memusage();
+    float    memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
@@ -258,13 +257,13 @@ static void sys_info() {
     printk("  .@@@@@@@@@@@:\033[36m+@@@@@@@:\033[39m         Process:      %d\n", get_all_task());
     printk("  &@@@@@@@@@@:\033[36m+@@@@@@@@:\033[39m         CPU:          %s\n", cpu->model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pci_num());
-    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n", get_vbe_width(),
-           get_vbe_height());
+    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",
+           get_vbe_width(), get_vbe_height());
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Console:      os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        Memory Usage: %0.2f%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",
-           (int) (phy_mem_size));
+    printk("*@@@@@@           @@@@@@*        Memory Usage: %0.2f%s / %dMB\n", memory,
+           bytes > 10485760 ? "MB" : "KB", (int)(phy_mem_size));
     printk("-@@@@@@*         #@@@@@@:        32-bit operating system, x86-based processor\n");
     printk(" &@@@@@@*.     .#@@@@@@& \n");
     printk(" =@@@@@@@@*---*@@@@@@@@- \n");
@@ -292,8 +291,8 @@ static void print_help() {
 }
 
 void setup_shell() {
-    uint32_t bytes = get_all_memusage();
-    float memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    uint32_t bytes  = get_all_memusage();
+    float    memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
 
     printk("Welcome to CoolPotOS (%s)\n"
            " * SourceCode:     https://github.com/plos-clan/CoolPotOS\n"
@@ -302,13 +301,14 @@ void setup_shell() {
            "  Process:               %d\n"
            "  User login in:         Kernel\n"
            "  Memory Usage:          %0.2f%s / %dMB\n"
-           "Copyright 2024 XIAOYI12 (Build by xmake zig_cc & nasm)\n", KERNEL_NAME, get_date_time(),
-           get_all_task(), memory, bytes > 10485760 ? "MB" : "KB", (int) (phy_mem_size));
-    char com[MAX_COMMAND_LEN];
+           "Copyright 2024 XIAOYI12 (Build by xmake zig_cc & nasm)\n",
+           KERNEL_NAME, get_date_time(), get_all_task(), memory, bytes > 10485760 ? "MB" : "KB",
+           (int)(phy_mem_size));
+    char  com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
-    shell_work_path = kmalloc(1024);
+    shell_work_path    = kmalloc(1024);
     shell_work_path[0] = '/';
-    int argc = -1;
+    int argc           = -1;
     while (1) {
         printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ", shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
@@ -352,12 +352,16 @@ void setup_shell() {
             char buf_h[14];
             if (!ends_with(argv[0], ".elf")) {
                 sprintf(buf_h, "%s.elf", argv[0]);
-            } else sprintf(buf_h, "%s", argv[0]);
+            } else
+                sprintf(buf_h, "%s", argv[0]);
             char bufx[15];
             if (buf_h[0] != '/') {
-                if (!strcmp(shell_work_path, "/")) sprintf(bufx, "/%s", buf_h);
-                else sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-            } else sprintf(bufx, "%s", buf_h);
+                if (!strcmp(shell_work_path, "/"))
+                    sprintf(bufx, "/%s", buf_h);
+                else
+                    sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+            } else
+                sprintf(bufx, "%s", buf_h);
 
             int pid;
             if ((pid = create_user_process(bufx, com_copy, "User", TASK_APPLICATION_LEVEL)) == -1)

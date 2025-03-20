@@ -3,11 +3,11 @@
 #define KERNEL_NAME "CP_Kernel-i386-0.4.4"
 
 #define KHEAP_INITIAL_SIZE 0xf00000
-#define STACK_SIZE 32768
+#define STACK_SIZE         32768
 
-#define USER_STACK_TOP 0xc2000000
+#define USER_STACK_TOP  0xc2000000
 #define USER_AREA_START 0x90000000
-#define USER_AREA_SIZE 0x2000000
+#define USER_AREA_SIZE  0x2000000
 
 #define INT_MAX 2147483647
 #define INT_MIN (-INT_MAX - 1)
@@ -19,7 +19,8 @@
 #define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
 
 #define TOLOWER(x) ((x) | 0x20)
-#define isxdigit(c) (('0' <= (c) && (c) <= '9') || ('a' <= (c) && (c) <= 'f') || ('A' <= (c) && (c) <= 'F'))
+#define isxdigit(c)                                                                                \
+    (('0' <= (c) && (c) <= '9') || ('a' <= (c) && (c) <= 'f') || ('A' <= (c) && (c) <= 'F'))
 
 #define mem_geti(addr)   ({ *(volatile ssize_t *)(addr); })
 #define mem_geti8(addr)  ({ *(volatile int8_t *)(addr); })
@@ -45,19 +46,21 @@
 #define mem_set32(addr, val) ({ *(volatile uint32_t *)(addr) = (uint32_t)(val); })
 #define mem_set64(addr, val) ({ *(volatile uint64_t *)(addr) = (uint64_t)(val); })
 
-#define page_line(ptr) do { \
-     alloc_frame_line(get_page((uint32_t)ptr,1,get_current_directory()),(uint32_t)ptr,1,1);                       \
-}while(0)
+#define page_line(ptr)                                                                             \
+    do {                                                                                           \
+        alloc_frame_line(get_page((uint32_t)ptr, 1, get_current_directory()), (uint32_t)ptr, 1,    \
+                         1);                                                                       \
+    } while (0)
 
-#define swap32(x)                                                              \
-  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) |                    \
-   (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
+#define swap32(x)                                                                                  \
+    ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) | (((x) & 0x0000ff00) << 8) |          \
+     (((x) & 0x000000ff) << 24))
 #define swap16(x) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8))
 
 #define waitif(cond)                                                                               \
-  ((void)({                                                                                        \
-    while (cond) {}                                                                                \
-  }))
+    ((void)({                                                                                      \
+        while (cond) {}                                                                            \
+    }))
 
 #define assert(condition, ...) (void)0
 
@@ -71,33 +74,37 @@
 
 #if LITTLE_ENDIAN
 
-#  define MAGIC16(a, b)                   ((uint16_t)(a) | ((uint16_t)(b) << 8))
-#  define MAGIC32(a, b, c, d)             ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
-#  define MAGIC64(a, b, c, d, e, f, g, h) (MAGIC32(a, b, c, d) | ((uint64_t)MAGIC32(e, f, g, h) << 32))
+#    define MAGIC16(a, b) ((uint16_t)(a) | ((uint16_t)(b) << 8))
+#    define MAGIC32(a, b, c, d)                                                                    \
+        ((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+#    define MAGIC64(a, b, c, d, e, f, g, h)                                                        \
+        (MAGIC32(a, b, c, d) | ((uint64_t)MAGIC32(e, f, g, h) << 32))
 
 #else
 
-#  define MAGIC16(a, b)                   ((uint16_t)(a) << 8 | (uint16_t)(b))
-#  define MAGIC32(a, b, c, d)             ((uint32_t)(a) << 24 | (uint32_t)(b) << 16 | (uint32_t)(c) << 8 | (uint32_t)(d))
-#  define MAGIC64(a, b, c, d, e, f, g, h) (((uint64_t)MAGIC32(a, b, c, d) << 32) | MAGIC32(e, f, g, h))
+#    define MAGIC16(a, b) ((uint16_t)(a) << 8 | (uint16_t)(b))
+#    define MAGIC32(a, b, c, d)                                                                    \
+        ((uint32_t)(a) << 24 | (uint32_t)(b) << 16 | (uint32_t)(c) << 8 | (uint32_t)(d))
+#    define MAGIC64(a, b, c, d, e, f, g, h)                                                        \
+        (((uint64_t)MAGIC32(a, b, c, d) << 32) | MAGIC32(e, f, g, h))
 
 #endif
 
 #ifndef __cplusplus
 
-#  define min(a, b)                                                                                \
-    ({                                                                                             \
-      auto _a = (a);                                                                               \
-      auto _b = (b);                                                                               \
-      _a < _b ? _a : _b;                                                                           \
-    })
+#    define min(a, b)                                                                              \
+        ({                                                                                         \
+            auto _a = (a);                                                                         \
+            auto _b = (b);                                                                         \
+            _a < _b ? _a : _b;                                                                     \
+        })
 
-#  define max(a, b)                                                                                \
-    ({                                                                                             \
-      auto _a = (a);                                                                               \
-      auto _b = (b);                                                                               \
-      _a > _b ? _a : _b;                                                                           \
-    })
+#    define max(a, b)                                                                              \
+        ({                                                                                         \
+            auto _a = (a);                                                                         \
+            auto _b = (b);                                                                         \
+            _a > _b ? _a : _b;                                                                     \
+        })
 
 #endif
 
@@ -106,14 +113,14 @@
 
 static inline void bzero(void *_s, size_t _n) {
     for (size_t i = 0; i < _n; i++) {
-        ((uint8_t *) _s)[i] = 0;
+        ((uint8_t *)_s)[i] = 0;
     }
 }
 
 typedef struct _xstr {
     size_t len;
     size_t hash;
-    char data[];
+    char   data[];
 } *xstr;
 
 float roundf(float number);
@@ -198,25 +205,25 @@ void shutdown(); //main.c
 void reboot();   //main.c
 
 #define streq(s1, s2)                                                                              \
-  ({                                                                                               \
-    char* _s1 = (s1), *_s2 = (s2);                                                                 \
-    (_s1 && _s2) ? strcmp(_s1, _s2) == 0 : _s1 == _s2;                                             \
-  })
+    ({                                                                                             \
+        char *_s1 = (s1), *_s2 = (s2);                                                             \
+        (_s1 && _s2) ? strcmp(_s1, _s2) == 0 : _s1 == _s2;                                         \
+    })
 
 #define strneq(s1, s2, n)                                                                          \
-  ({                                                                                               \
-    char* _s1 = (s1), *_s2 = (s2);                                                                 \
-    (_s1 && _s2) ? strncmp(_s1, _s2, n) == 0 : _s1 == _s2;                                         \
-  })
+    ({                                                                                             \
+        char *_s1 = (s1), *_s2 = (s2);                                                             \
+        (_s1 && _s2) ? strncmp(_s1, _s2, n) == 0 : _s1 == _s2;                                     \
+    })
 
 #define xstreq(s1, s2)                                                                             \
-  ({                                                                                               \
-    xstr _s1 = (s1), *_s2 = (s2);                                                                  \
-    (_s1 && _s2) ? (_s1->hash == _s2->hash ? xstrcmp(_s1, _s2) == 0 : false) : _s1 == _s2;         \
-  })
+    ({                                                                                             \
+        xstr _s1 = (s1), *_s2 = (s2);                                                              \
+        (_s1 && _s2) ? (_s1->hash == _s2->hash ? xstrcmp(_s1, _s2) == 0 : false) : _s1 == _s2;     \
+    })
 
 #define memeq(s1, s2, n)                                                                           \
-  ({                                                                                               \
-    char* _s1 = (s1), *_s2 = (s2);                                                                 \
-    (_s1 && _s2) ? memcmp(_s1, _s2, n) == 0 : _s1 == _s2;                                          \
-  })
+    ({                                                                                             \
+        char *_s1 = (s1), *_s2 = (s2);                                                             \
+        (_s1 && _s2) ? memcmp(_s1, _s2, n) == 0 : _s1 == _s2;                                      \
+    })

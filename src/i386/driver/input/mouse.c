@@ -3,8 +3,8 @@
  * Copyright 2024 by XingJiStudio
  */
 #include "mouse.h"
-#include "isr.h"
 #include "io.h"
+#include "isr.h"
 #include "klog.h"
 #include "video.h"
 
@@ -22,29 +22,27 @@ static void kb_wait() {
 
 static bool mouse_decode(uint8_t data) {
     if (mdec.phase == 0) {
-        if (data == 0xfa) {
-            mdec.phase = 1;
-        }
+        if (data == 0xfa) { mdec.phase = 1; }
         return false;
     }
     if (mdec.phase == 1) {
         if ((data & 0xc8) == 0x08) {
             mdec.buf[0] = data;
-            mdec.phase = 2;
+            mdec.phase  = 2;
         }
         return 0;
     }
     if (mdec.phase == 2) {
         mdec.buf[1] = data;
-        mdec.phase = 3;
+        mdec.phase  = 3;
         return 0;
     }
     if (mdec.phase == 3) {
         mdec.buf[2] = data;
-        mdec.phase = 1;
-        mdec.btn = mdec.buf[0] & 0x07;
-        mdec.x = mdec.buf[1];
-        mdec.y = mdec.buf[2];
+        mdec.phase  = 1;
+        mdec.btn    = mdec.buf[0] & 0x07;
+        mdec.x      = mdec.buf[1];
+        mdec.y      = mdec.buf[2];
 
         if ((mdec.buf[0] & 0x10) != 0) mdec.x |= 0xffffff00;
         if ((mdec.buf[0] & 0x20) != 0) mdec.y |= 0xffffff00;
@@ -65,19 +63,13 @@ static void mouse_handler(registers_t *reg) {
         if (mouse_x > get_vbe_width() - 1) mouse_x = get_vbe_width() - 1;
         if (mouse_y > get_vbe_height() - 1) mouse_y = get_vbe_height() - 1;
 
-        mdec.left = false;
+        mdec.left   = false;
         mdec.center = false;
-        mdec.right = false;
+        mdec.right  = false;
 
-        if(mdec.btn & 0x01){
-            mdec.left = true;
-        }
-        if(mdec.btn & 0x02){
-            mdec.right = true;
-        }
-        if(mdec.btn & 0x04) {
-            mdec.center = true;
-        }
+        if (mdec.btn & 0x01) { mdec.left = true; }
+        if (mdec.btn & 0x02) { mdec.right = true; }
+        if (mdec.btn & 0x04) { mdec.center = true; }
     }
 }
 
@@ -102,8 +94,8 @@ void mouse_init() {
 
     register_interrupt_handler(0x20 + MOUSE_IRQ, mouse_handler);
 
-    mouse_x = (get_vbe_width() - 16) / 2;
-    mouse_y = (get_vbe_height() - 28 - 29) / 2;
+    mouse_x    = (get_vbe_width() - 16) / 2;
+    mouse_y    = (get_vbe_height() - 28 - 29) / 2;
     mdec.phase = 0;
 
     klogf(true, "Load PS/2 Mouse device.\n");

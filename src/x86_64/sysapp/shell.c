@@ -1,27 +1,27 @@
 #include "shell.h"
-#include "limine.h"
-#include "smp.h"
-#include "kprint.h"
-#include "krlibc.h"
-#include "timer.h"
-#include "scheduler.h"
-#include "keyboard.h"
-#include "pcie.h"
 #include "cpuid.h"
 #include "gop.h"
 #include "heap.h"
-#include "pcb.h"
-#include "vfs.h"
-#include "sprintf.h"
-#include "pci.h"
+#include "keyboard.h"
+#include "kprint.h"
+#include "krlibc.h"
+#include "limine.h"
 #include "module.h"
+#include "pcb.h"
+#include "pci.h"
+#include "pcie.h"
+#include "scheduler.h"
+#include "smp.h"
+#include "sprintf.h"
+#include "timer.h"
+#include "vfs.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
 
-char *shell_work_path;
+char           *shell_work_path;
 extern uint64_t memory_size; //hhdm.c
-char com_copy[100];
+char            com_copy[100];
 
 static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);
@@ -37,7 +37,7 @@ static char getc() {
 }
 
 static int gets(char *buf, int buf_size) {
-    int index = 0;
+    int  index = 0;
     char c;
     while ((c = getc()) != '\n') {
         if (c == '\b') {
@@ -49,7 +49,7 @@ static int gets(char *buf, int buf_size) {
             buf[index++] = c;
             printk("%c", c);
         }
-        if(index >= buf_size) {
+        if (index >= buf_size) {
             printk("\nError: out of input bounds,\n");
             break;
         }
@@ -60,12 +60,10 @@ static int gets(char *buf, int buf_size) {
 }
 
 int ends_with(const char *str, const char *suffix) {
-    size_t str_len = strlen(str);
+    size_t str_len    = strlen(str);
     size_t suffix_len = strlen(suffix);
 
-    if (suffix_len > str_len) {
-        return 0;
-    }
+    if (suffix_len > str_len) { return 0; }
 
     return strncmp(str + str_len - suffix_len, suffix, suffix_len) == 0;
 }
@@ -77,13 +75,15 @@ static int cmd_parse(char *cmd_str, char **argv, char token) {
         arg_idx++;
     }
     char *next = cmd_str;
-    int argc = 0;
+    int   argc = 0;
 
     while (*next) {
-        while (*next == token) UNUSED(*next++);
+        while (*next == token)
+            UNUSED(*next++);
         if (*next == 0) break;
         argv[argc] = next;
-        while (*next && *next != token) UNUSED(*next++);
+        while (*next && *next != token)
+            UNUSED(*next++);
         if (*next) *next++ = 0;
         if (argc > MAX_ARG_NR) return -1;
         argc++;
@@ -138,31 +138,31 @@ static void mkdir(int argc, char **argv) {
         return;
     }
     char *buf_h = com_copy + 6;
-    char bufx[100];
+    char  bufx[100];
     if (buf_h[0] != '/') {
-        if(!strcmp(shell_work_path,"/"))
+        if (!strcmp(shell_work_path, "/"))
             sprintf(bufx, "/%s", buf_h);
-        else sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-    } else sprintf(bufx, "%s", buf_h);
-    if (vfs_mkdir(bufx) == -1) {
-        printk("Failed create directory [%s].\n", argv[1]);
-    }
+        else
+            sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+    } else
+        sprintf(bufx, "%s", buf_h);
+    if (vfs_mkdir(bufx) == -1) { printk("Failed create directory [%s].\n", argv[1]); }
 }
 
 void ps() {
     extern smp_cpu_t cpus[MAX_CPU];
 
-    size_t longest_name_len = 0;
-    uint64_t all_time = 0;
-    uint64_t mem_use = 0;
-    uint32_t bytes = get_all_memusage();
-    int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    size_t       longest_name_len = 0;
+    uint64_t     all_time         = 0;
+    uint64_t     mem_use          = 0;
+    uint32_t     bytes            = get_all_memusage();
+    int          memory           = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
     extern pcb_t kernel_head_task;
-    uint64_t idle_time = kernel_head_task->cpu_timer;
+    uint64_t     idle_time = kernel_head_task->cpu_timer;
     for (size_t i = 0; i < MAX_CPU; i++) {
         smp_cpu_t cpu = cpus[i];
-        if(cpu.flags == 1){
-            queue_foreach(cpu.scheduler_queue,queue){
+        if (cpu.flags == 1) {
+            queue_foreach(cpu.scheduler_queue, queue) {
                 pcb_t longest_name = (pcb_t)queue->data;
                 if (strlen(longest_name->name) > longest_name_len)
                     longest_name_len = strlen(longest_name->name);
@@ -172,18 +172,18 @@ void ps() {
     printk("PID  %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME");
     for (size_t i = 0; i < MAX_CPU; i++) {
         smp_cpu_t cpu = cpus[i];
-        if(cpu.flags == 1){
-            queue_foreach(cpu.scheduler_queue,queue){
-                pcb_t pcb = (pcb_t) queue->data;
-                all_time += pcb->cpu_timer;
-                if(pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
+        if (cpu.flags == 1) {
+            queue_foreach(cpu.scheduler_queue, queue) {
+                pcb_t pcb  = (pcb_t)queue->data;
+                all_time  += pcb->cpu_timer;
+                if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
                 printk("%-5d%-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,
-                       pcb->mem_usage,
-                       pcb->task_level, pcb->cpu_clock,pcb->cpu_id);
+                       pcb->mem_usage, pcb->task_level, pcb->cpu_clock, pcb->cpu_id);
             }
         }
     }
-    printk("   --- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n",idle_time * 100 / all_time,mem_use + memory,bytes > 10485760 ? "MB" : "KB",memory_size / 1024 / 1024);
+    printk("   --- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n", idle_time * 100 / all_time,
+           mem_use + memory, bytes > 10485760 ? "MB" : "KB", memory_size / 1024 / 1024);
 }
 
 static void ls(int argc, char **argv) {
@@ -192,12 +192,14 @@ static void ls(int argc, char **argv) {
         p = vfs_open(shell_work_path);
     } else {
         char *buf_h = com_copy + 3;
-        char bufx[100];
+        char  bufx[100];
         if (buf_h[0] != '/') {
-            if(!strcmp(shell_work_path,"/"))
+            if (!strcmp(shell_work_path, "/"))
                 sprintf(bufx, "/%s", buf_h);
-            else sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-        } else sprintf(bufx, "%s", buf_h);
+            else
+                sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+        } else
+            sprintf(bufx, "%s", buf_h);
         p = vfs_open(bufx);
     }
     if (p == NULL) {
@@ -205,7 +207,7 @@ static void ls(int argc, char **argv) {
         return;
     }
     list_foreach(p->child, i) {
-        vfs_node_t c = (vfs_node_t) i->data;
+        vfs_node_t c = (vfs_node_t)i->data;
         printk("%s ", c->name);
     }
     printk("\n");
@@ -216,7 +218,7 @@ static void pkill(int argc, char **argv) {
         printk("[Shell-PKILL]: If there are too few parameters.\n");
         return;
     }
-    int pid = strtol(argv[1], NULL, 10);
+    int   pid = strtol(argv[1], NULL, 10);
     pcb_t pcb = found_pcb(pid);
     if (pcb == NULL) {
         printk("Cannot find procces [%d]\n", pid);
@@ -225,24 +227,24 @@ static void pkill(int argc, char **argv) {
     kill_proc(pcb);
 }
 
-static void echo(int argc,char** argv){
+static void echo(int argc, char **argv) {
     if (argc == 1) {
         printk("[Shell-ECHO]: If there are too few parameters.\n");
         return;
     }
     vfs_node_t stdout = vfs_open("/dev/stdout");
-    if(stdout == NULL)
+    if (stdout == NULL)
         printk("ERROR: stream device is null.\n");
-    else{
-        char* buf = com_copy + 5;
-        if(vfs_write(stdout,buf,0, strlen(buf)) == VFS_STATUS_FAILED)
+    else {
+        char *buf = com_copy + 5;
+        if (vfs_write(stdout, buf, 0, strlen(buf)) == VFS_STATUS_FAILED)
             printk("stdout stream has error.\n");
         vfs_close(stdout);
         printk("\n");
     }
 }
 
-static void mount(int argc,char** argv){
+static void mount(int argc, char **argv) {
     if (argc < 3) {
         printk("[Shell-MOUNT]: If there are too few parameters.\n");
         return;
@@ -252,40 +254,37 @@ static void mount(int argc,char** argv){
         printk("Cannot found mount directory.\n");
         return;
     }
-    if (vfs_mount(argv[2], p) == -1) {
-        printk("Failed mount device [%s]\n", argv[2]);
-    }
+    if (vfs_mount(argv[2], p) == -1) { printk("Failed mount device [%s]\n", argv[2]); }
 }
 
-static void lmod(int argc,char** argv){
+static void lmod(int argc, char **argv) {
     if (argc == 1) {
         printk("[Shell-LMOD]: If there are too few parameters.\n");
         return;
     }
 
     extern cp_module_t module_ls[256];
-    extern int module_count;
+    extern int         module_count;
 
-    if(!strcmp(argv[1],"list")) {
+    if (!strcmp(argv[1], "list")) {
         printk("Model(Kernel) load in /sys/cpkrnl.elf\n");
         for (int i = 0; i < module_count; i++) {
-            printk("Model(%s) load in %s\n", module_ls[i].module_name,module_ls[i].path);
+            printk("Model(%s) load in %s\n", module_ls[i].module_name, module_ls[i].path);
         }
-    } else{
+    } else {
         cp_module_t *module = get_module(argv[1]);
-        if(module == NULL){
-            printk("Cannot find module [%s]\n",argv[1]);
+        if (module == NULL) {
+            printk("Cannot find module [%s]\n", argv[1]);
             return;
         }
-
     }
 }
 
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
-    uint32_t bytes = get_all_memusage();
-    int memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    uint32_t    bytes  = get_all_memusage();
+    int         memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
     extern bool is_pcie;
 
     printk("        -*&@@@&*-        \n");
@@ -293,14 +292,18 @@ static void sys_info() {
     printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:    %d\n",is_pcie ? "PCIE" : "PCI ", get_pcie_num());
-    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n", framebuffer->width,framebuffer->height);
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:    %d\n",
+           is_pcie ? "PCIE" : "PCI ", get_pcie_num());
+    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",
+           framebuffer->width, framebuffer->height);
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Terminal:     os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        MemoryUsage:  %d%s / %dMB\n", memory, bytes > 10485760 ? "MB" : "KB",(int) (memory_size / 1024 / 1024));
+    printk("*@@@@@@           @@@@@@*        MemoryUsage:  %d%s / %dMB\n", memory,
+           bytes > 10485760 ? "MB" : "KB", (int)(memory_size / 1024 / 1024));
     printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor.\n");
-    printk(" &@@@@@@*.     .#@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    \033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m\n");
+    printk(" &@@@@@@*.     .#@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    "
+           "\033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m\n");
     printk("  =@@@@@@@*----*@@@@@@@-         \n");
     printk("  .#@@@@@@@@@@@@@@@@@#.          \n");
     printk("    .#@@@@@@@@@@@@@#.    \n");
@@ -326,23 +329,23 @@ static void print_help() {
     printk("lmod      <module|list>  Load or list model.\n");
 }
 
-void shell_setup(){
+void shell_setup() {
     printk("Welcome to CoolPotOS (%s)\n"
            " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
            " * Website:           https://github.com/plos-clan\n"
            " System information as of %s \n"
            "  Tasks:              %d\n"
            "  Logged:             Kernel\n"
-           "MIT License 2024-2025 XIAOYI12 (Build by xmake&clang)\n", KERNEL_NAME, get_date_time(),
-           get_all_task());
-    char com[MAX_COMMAND_LEN];
+           "MIT License 2024-2025 XIAOYI12 (Build by xmake&clang)\n",
+           KERNEL_NAME, get_date_time(), get_all_task());
+    char  com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
-    int argc = -1;
+    int   argc      = -1;
     shell_work_path = malloc(1024);
-    memset(shell_work_path,0,1024);
+    memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
-    while (1){
-        printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ",shell_work_path);
+    while (1) {
+        printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ", shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
         strcpy(com_copy, com);
@@ -355,7 +358,7 @@ void shell_setup(){
 
         if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print_help();
-        }else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
+        } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
             shutdown_os();
         else if (!strcmp("reboot", argv[0]))
             reboot_os();
@@ -363,31 +366,31 @@ void shell_setup(){
             printk("\033[H\033[2J\033[3J");
         else if (!strcmp("lspcie", argv[0]))
             print_all_pcie();
-        else if(!strcmp("lspci",argv[0]))
+        else if (!strcmp("lspci", argv[0]))
             print_all_pci();
         else if (!strcmp("sysinfo", argv[0]))
             sys_info();
         else if (!strcmp("ps", argv[0]))
             ps();
         else if (!strcmp("pkill", argv[0]))
-            pkill(argc,argv);
+            pkill(argc, argv);
         else if (!strcmp("cd", argv[0]))
             cd(argc, argv);
         else if (!strcmp("mkdir", argv[0]))
             mkdir(argc, argv);
         else if (!strcmp("ls", argv[0]))
             ls(argc, argv);
-        else if(!strcmp("echo",argv[0]))
-            echo(argc,argv);
-        else if(!strcmp("mount",argv[0]))
-            mount(argc,argv);
-        else if (!strcmp("lmod",argv[0]))
-            lmod(argc,argv);
-        else if (!strcmp("test", argv[0])){
+        else if (!strcmp("echo", argv[0]))
+            echo(argc, argv);
+        else if (!strcmp("mount", argv[0]))
+            mount(argc, argv);
+        else if (!strcmp("lmod", argv[0]))
+            lmod(argc, argv);
+        else if (!strcmp("test", argv[0])) {
             for (int i = 0; i < 100; ++i) {
-                printk("count: %d\n",i);
+                printk("count: %d\n", i);
             }
         } else
-            printk("\033[31mUnknown command '%s'.\033[39m\n",com_copy);
+            printk("\033[31mUnknown command '%s'.\033[39m\n", com_copy);
     }
 }

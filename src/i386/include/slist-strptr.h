@@ -5,7 +5,7 @@
 #pragma GCC system_header
 
 #ifdef ALL_IMPLEMENTATION
-#  define SLIST_SP_IMPLEMENTATION
+#    define SLIST_SP_IMPLEMENTATION
 #endif
 
 /**
@@ -14,13 +14,13 @@
  */
 typedef struct slist_sp *slist_sp_t;
 struct slist_sp {
-    char *key;
-    void *val;
+    char      *key;
+    void      *val;
     slist_sp_t next;
 };
 
 #ifdef SLIST_SP_IMPLEMENTATION
-#  define extern static
+#    define extern static
 #endif
 
 /**
@@ -99,7 +99,7 @@ extern slist_sp_t slist_sp_search_node(slist_sp_t list, void *val) __THROW;
 extern slist_sp_t slist_sp_delete(slist_sp_t list, const char *key) __THROW;
 
 extern slist_sp_t slist_sp_delete_with(slist_sp_t list, const char *key, void (*free_value)(void *))
-__THROW;
+    __THROW;
 
 /**
  *\brief 在带字符串键的单向链表中删除指定节点
@@ -126,7 +126,7 @@ extern size_t slist_sp_length(slist_sp_t list) __THROW;
 extern void slist_sp_print(slist_sp_t list) __THROW;
 
 #ifdef SLIST_SP_IMPLEMENTATION
-#  undef extern
+#    undef extern
 #endif
 
 #ifdef SLIST_SP_IMPLEMENTATION
@@ -134,8 +134,8 @@ extern void slist_sp_print(slist_sp_t list) __THROW;
 static slist_sp_t slist_sp_alloc(const char *key, void *val) {
     slist_sp_t node = kmalloc(sizeof(*node));
     if (node == NULL) return NULL;
-    node->key = key ? strdup(key) : NULL;
-    node->val = val;
+    node->key  = key ? strdup(key) : NULL;
+    node->val  = val;
     node->next = NULL;
     return node;
 }
@@ -181,7 +181,7 @@ static slist_sp_t slist_sp_prepend(slist_sp_t list, const char *key, void *val) 
     if (node == NULL) return list;
 
     node->next = list;
-    list = node;
+    list       = node;
 
     return list;
 }
@@ -222,7 +222,7 @@ static slist_sp_t slist_sp_delete(slist_sp_t list, const char *key) {
 
     if (streq(list->key, key)) {
         slist_sp_t temp = list;
-        list = list->next;
+        list            = list->next;
         kfree(temp->key);
         kfree(temp);
         return list;
@@ -248,7 +248,7 @@ static slist_sp_t slist_sp_delete_with(slist_sp_t list, const char *key,
 
     if (streq(list->key, key)) {
         slist_sp_t temp = list;
-        list = list->next;
+        list            = list->next;
         kfree(temp->key);
         free_value(temp->val);
         kfree(temp);
@@ -275,7 +275,7 @@ static slist_sp_t slist_sp_delete_node(slist_sp_t list, slist_sp_t node) {
 
     if (list == node) {
         slist_sp_t temp = list;
-        list = list->next;
+        list            = list->next;
         kfree(temp->key);
         kfree(temp);
         return list;
@@ -301,7 +301,7 @@ static slist_sp_t slist_sp_delete_node_with(slist_sp_t list, slist_sp_t node,
 
     if (list == node) {
         slist_sp_t temp = list;
-        list = list->next;
+        list            = list->next;
         kfree(temp->key);
         free_value(temp->val);
         kfree(temp);
@@ -324,7 +324,7 @@ static slist_sp_t slist_sp_delete_node_with(slist_sp_t list, slist_sp_t node,
 }
 
 static size_t slist_sp_length(slist_sp_t slist_sp) {
-    size_t count = 0;
+    size_t     count   = 0;
     slist_sp_t current = slist_sp;
     while (current != NULL) {
         count++;
@@ -342,7 +342,7 @@ static void slist_sp_print(slist_sp_t slist_sp) {
     printk("NULL\n");
 }
 
-#  undef SLIST_SP_IMPLEMENTATION
+#    undef SLIST_SP_IMPLEMENTATION
 #endif
 
 /**

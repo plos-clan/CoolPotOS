@@ -1,8 +1,8 @@
 #include "tcb.h"
-#include "krlibc.h"
-#include "user_malloc.h"
-#include "scheduler.h"
 #include "io.h"
+#include "krlibc.h"
+#include "scheduler.h"
+#include "user_malloc.h"
 
 // 将新线程添加到调度链中
 static void add_thread(pcb_t *pcb, tcb_t thread) {
@@ -54,28 +54,29 @@ tcb_t create_kernel_subthread(pcb_t *pcb, void *func) {
     tcb_t thread = kmalloc(STACK_SIZE);
 
     // 初始化线程属性
-    thread->next = NULL;
-    thread->father_pcb = pcb;
-    thread->tid = pcb->now_tid++;
+    thread->next         = NULL;
+    thread->father_pcb   = pcb;
+    thread->tid          = pcb->now_tid++;
     thread->kernel_stack = thread;
-    thread->user_stack = pcb->user_stack;
+    thread->user_stack   = pcb->user_stack;
 
     // 更新调度时间片计数器
     pcb->sche_time++;
 
     // 设置堆栈和返回地址
-    uint32_t *stack_top = (uint32_t *) ((uint32_t) thread->kernel_stack + STACK_SIZE);
-    *(--stack_top) = (uint32_t) process_exit;
-    *(--stack_top) = (uint32_t) func;
+    uint32_t *stack_top = (uint32_t *)((uint32_t)thread->kernel_stack + STACK_SIZE);
+    *(--stack_top)      = (uint32_t)process_exit;
+    *(--stack_top)      = (uint32_t)func;
 
     // 设置上下文寄存器
-    thread->context.esp = (uint32_t) thread + STACK_SIZE - sizeof(uint32_t) * 3;
+    thread->context.esp    = (uint32_t)thread + STACK_SIZE - sizeof(uint32_t) * 3;
     thread->context.eflags = 0x200;
 
     // 将线程添加到链表中
     if (pcb->main_thread_head == NULL) {
         pcb->current_thread = pcb->main_thread_head = thread;
-    } else add_thread(pcb, thread);
+    } else
+        add_thread(pcb, thread);
 
     return thread;
 }
@@ -86,26 +87,27 @@ tcb_t create_user_thread(pcb_t *pcb, void *func) {
     tcb_t thread = kmalloc(STACK_SIZE);
 
     // 初始化线程属性
-    thread->next = NULL;
-    thread->father_pcb = pcb;
-    thread->tid = pcb->now_tid++;
+    thread->next         = NULL;
+    thread->father_pcb   = pcb;
+    thread->tid          = pcb->now_tid++;
     thread->kernel_stack = thread;
-    thread->user_stack = pcb->user_stack;
+    thread->user_stack   = pcb->user_stack;
 
     // 设置用户模式切换和返回地址
-    uint32_t *stack_top = (uint32_t *) ((uint32_t) thread->kernel_stack + STACK_SIZE);
-    *(--stack_top) = (uint32_t) func;
-    *(--stack_top) = (uint32_t) process_exit;
-    *(--stack_top) = (uint32_t) switch_to_user_mode;
+    uint32_t *stack_top = (uint32_t *)((uint32_t)thread->kernel_stack + STACK_SIZE);
+    *(--stack_top)      = (uint32_t)func;
+    *(--stack_top)      = (uint32_t)process_exit;
+    *(--stack_top)      = (uint32_t)switch_to_user_mode;
 
     // 设置上下文寄存器
-    thread->context.esp = (uint32_t) thread + STACK_SIZE - sizeof(uint32_t) * 3;
+    thread->context.esp    = (uint32_t)thread + STACK_SIZE - sizeof(uint32_t) * 3;
     thread->context.eflags = 0x200;
 
     // 将线程添加到链表中
     if (pcb->main_thread_head == NULL) {
         pcb->current_thread = pcb->main_thread_head = thread;
-    } else add_thread(pcb, thread);
+    } else
+        add_thread(pcb, thread);
 
     return thread;
 }

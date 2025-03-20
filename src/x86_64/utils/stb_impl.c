@@ -1,12 +1,12 @@
 #define STB_SPRINTF_IMPLEMENTATION
-#include "sprintf.h"
 #include "lock.h"
+#include "sprintf.h"
 
 ticketlock sprintf_lock;
 
-int sprintf(char *buf, char const *fmt, ...){
+int sprintf(char *buf, char const *fmt, ...) {
     ticket_lock(&sprintf_lock);
-    int result;
+    int     result;
     va_list va;
     va_start(va, fmt);
     result = STB_SPRINTF_DECORATE(vsprintfcb)(0, 0, buf, fmt, va);

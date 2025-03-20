@@ -9,29 +9,27 @@ void iic_init(void) {
         return;
     } else {
         klogf(true, "Find IIC Master Controller.\n");
-        IIC_Master *iic_master = (IIC_Master *) kmalloc(sizeof(IIC_Master));
-        unsigned int address = Get_iic_master_address(IIC_Master_Controller);
-        iic_master->Control = address;
+        IIC_Master  *iic_master       = (IIC_Master *)kmalloc(sizeof(IIC_Master));
+        unsigned int address          = Get_iic_master_address(IIC_Master_Controller);
+        iic_master->Control           = address;
         IIC_Slave_Node iic_slave_list = iic_slave_alloc(NULL);
     }
 }
 
-
 bool crc_check(IIC_Data *frame) {
 
     unsigned int *data = frame->data;
-    char crc = crc8(data, frame->data_len);
+    char          crc  = crc8(data, frame->data_len);
     if (crc != frame->crc) {
         return false;
-    }else{
+    } else {
         return true;
     }
 }
 
-
 IIC_Slave_Node iic_slave_alloc(IIC_Slave *slave) {
     IIC_Slave_Node node;
-    node.next = list_alloc(NULL);
+    node.next  = list_alloc(NULL);
     node.slave = *slave;
     return node;
 }
@@ -65,14 +63,13 @@ unsigned int iic_data_transfer(IIC_Data *frame) {
 
 unsigned int Get_iic_master_address(pci_device_t *IIC_Master_Controller) {
     // 获取IIC主机控制器基地址
-    base_address_register bar = find_bar(IIC_Master_Controller, 0);
-    unsigned int base_address = (unsigned int)(bar.address);
+    base_address_register bar          = find_bar(IIC_Master_Controller, 0);
+    unsigned int          base_address = (unsigned int)(bar.address);
     return base_address;
 }
 
 void iic_start(IIC_Master *IIC_Master) {
     // 启动兼容性
-
 }
 
 void iic_stop(IIC_Master *IIC_Master) {

@@ -6,7 +6,7 @@
 #pragma GCC system_header
 
 #ifdef ALL_IMPLEMENTATION
-#  define QUEUE_IMPLEMENTATION
+#    define QUEUE_IMPLEMENTATION
 #endif
 
 /**
@@ -20,7 +20,7 @@ struct queue_node {
 };
 
 #ifdef QUEUE_IMPLEMENTATION
-#  define extern static
+#    define extern static
 #endif
 
 /**
@@ -84,116 +84,116 @@ extern size_t queue_size(queue_t queue);
 extern void queue_print(queue_t queue);
 
 #ifdef QUEUE_IMPLEMENTATION
-#  undef extern
+#    undef extern
 #endif
 
 #ifdef QUEUE_IMPLEMENTATION
 
 static void queue_init(queue_t queue) {
-  if (queue == NULL) return;
-  queue->head = NULL;
-  queue->tail = NULL;
-  queue->size = 0;
+    if (queue == NULL) return;
+    queue->head = NULL;
+    queue->tail = NULL;
+    queue->size = 0;
 }
 
 static void queue_deinit(queue_t queue) {
-  if (queue == NULL) return;
+    if (queue == NULL) return;
 
-  queue_node_t current = queue->head;
-  while (current != NULL) {
-    queue_node_t temp = current;
-    current           = current->next;
-    kfree(temp);
-  }
+    queue_node_t current = queue->head;
+    while (current != NULL) {
+        queue_node_t temp = current;
+        current           = current->next;
+        kfree(temp);
+    }
 
-  queue->head = NULL;
-  queue->tail = NULL;
-  queue->size = 0;
+    queue->head = NULL;
+    queue->tail = NULL;
+    queue->size = 0;
 }
 
 static queue_t queue_alloc() {
-  queue_t queue = kmalloc(sizeof(*queue));
-  queue_init(queue);
-  return queue;
+    queue_t queue = kmalloc(sizeof(*queue));
+    queue_init(queue);
+    return queue;
 }
 
 static void queue_free(queue_t queue) {
-  if (queue == NULL) return;
+    if (queue == NULL) return;
 
-  queue_node_t current = queue->head;
-  while (current != NULL) {
-    queue_node_t temp = current;
-    current           = current->next;
-    kfree(temp);
-  }
+    queue_node_t current = queue->head;
+    while (current != NULL) {
+        queue_node_t temp = current;
+        current           = current->next;
+        kfree(temp);
+    }
 
-  kfree(queue);
+    kfree(queue);
 }
 
 static void queue_free_with(queue_t queue, free_t callback) {
-  if (queue == NULL) return;
+    if (queue == NULL) return;
 
-  queue_node_t current = queue->head;
-  while (current != NULL) {
-    queue_node_t temp = current;
-    if (callback) callback(current->data);
-    current = current->next;
-    kfree(temp);
-  }
+    queue_node_t current = queue->head;
+    while (current != NULL) {
+        queue_node_t temp = current;
+        if (callback) callback(current->data);
+        current = current->next;
+        kfree(temp);
+    }
 
-  kfree(queue);
+    kfree(queue);
 }
 
 static void queue_enqueue(queue_t queue, void *data) {
-  if (queue == NULL) return;
+    if (queue == NULL) return;
 
-  queue_node_t node = kmalloc(sizeof(*node));
-  node->data        = data;
-  node->next        = NULL;
+    queue_node_t node = kmalloc(sizeof(*node));
+    node->data        = data;
+    node->next        = NULL;
 
-  if (queue->head == NULL) {
-    queue->head = node;
-  } else {
-    queue->tail->next = node;
-  }
+    if (queue->head == NULL) {
+        queue->head = node;
+    } else {
+        queue->tail->next = node;
+    }
 
-  queue->tail = node;
-  queue->size++;
+    queue->tail = node;
+    queue->size++;
 }
 
 static void *queue_dequeue(queue_t queue) {
-  if (queue == NULL) return NULL;
-  if (queue->head == NULL) return NULL;
+    if (queue == NULL) return NULL;
+    if (queue->head == NULL) return NULL;
 
-  queue_node_t temp = queue->head;
-  void        *data = temp->data;
-  queue->head       = queue->head->next;
-  kfree(temp);
+    queue_node_t temp = queue->head;
+    void        *data = temp->data;
+    queue->head       = queue->head->next;
+    kfree(temp);
 
-  if (queue->head == NULL) queue->tail = NULL;
+    if (queue->head == NULL) queue->tail = NULL;
 
-  queue->size--;
-  return data;
+    queue->size--;
+    return data;
 }
 
 static bool queue_isempty(queue_t queue) {
-  return queue == NULL || queue->head == NULL;
+    return queue == NULL || queue->head == NULL;
 }
 
 static size_t queue_size(queue_t queue) {
-  return (queue == NULL) ? 0 : queue->size;
+    return (queue == NULL) ? 0 : queue->size;
 }
 
-#  ifdef __libplos__
+#    ifdef __libplos__
 static void queue_print(queue_t queue) {
-  queue_node_t current = queue->head;
-  while (current != NULL) {
-    printf("%p -> ", current->data);
-    current = current->next;
-  }
-  printf("NULL\n");
+    queue_node_t current = queue->head;
+    while (current != NULL) {
+        printf("%p -> ", current->data);
+        current = current->next;
+    }
+    printf("NULL\n");
 }
-#  endif
+#    endif
 
-#  undef QUEUE_IMPLEMENTATION
+#    undef QUEUE_IMPLEMENTATION
 #endif

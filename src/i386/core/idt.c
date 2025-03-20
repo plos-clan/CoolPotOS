@@ -17,9 +17,9 @@ idt_ptr_t idt_ptr;
  * @param num 中断向量号（0-255）
  * @param base ISR处理函数的基地址，会被分成高16位和低16位存储
  */
-void idt_use_reg(uint8_t num,uint32_t base){
+void idt_use_reg(uint8_t num, uint32_t base) {
     // 将基地址拆分为低位和高位部分，并分别填充到IDT条目中
-    idt_entries[num].base_low = base & 0xFFFF;
+    idt_entries[num].base_low  = base & 0xFFFF;
     idt_entries[num].base_high = (base >> 16) & 0xFFFF;
 
     // 填充段选择子（CS），这里设定为0x08，即内核代码段的选择子
@@ -40,7 +40,7 @@ void idt_use_reg(uint8_t num,uint32_t base){
  */
 void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     // 将基地址拆分为低位和高位部分，并分别填充到IDT条目中
-    idt_entries[num].base_low = base & 0xFFFF;
+    idt_entries[num].base_low  = base & 0xFFFF;
     idt_entries[num].base_high = (base >> 16) & 0xFFFF;
 
     // 填充段选择子（CS）
@@ -71,10 +71,9 @@ void isr_handler(registers_t regs) {
  */
 void irq_handler(registers_t regs) {
     // 如果是0x2b中断则不需要发送EOI，其余情况下发送EOI给主从PIC
-    if(regs.int_no != 0x2b) {
+    if (regs.int_no != 0x2b) {
         // 如果中断号>=40，则向从片PIC端口发送EOI命令
-        if (regs.int_no >= 40)
-            outb(0xA0, 0x20);
+        if (regs.int_no >= 40) outb(0xA0, 0x20);
         // 向主片PIC端口发送EOI命令
         outb(0x20, 0x20);
     }
@@ -102,7 +101,7 @@ void idt_install() {
     // 设置IDT的大小限制（255个条目）
     idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
     // 设置IDT的基地址
-    idt_ptr.base = (uint32_t) & idt_entries;
+    idt_ptr.base = (uint32_t)&idt_entries;
 
     // 将IDT的所有条目初始化为0
     memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
@@ -178,7 +177,5 @@ void idt_install() {
 #undef REGISTER_IRQ
 
     // 刷新IDT，加载新的IDT到CPU中
-    idt_flush((uint32_t) &idt_ptr);
+    idt_flush((uint32_t)&idt_ptr);
 }
-
-

@@ -1,38 +1,38 @@
 #include "devfs.h"
-#include "vdisk.h"
 #include "klog.h"
-#include "krlibc.h"
 #include "kmalloc.h"
+#include "krlibc.h"
 #include "page.h"
 #include "scheduler.h"
+#include "vdisk.h"
 
 #define ALL_IMPLEMENTATION
 #define SLIST_SP_IMPLEMENTATION
 #include "rbtree-strptr.h"
 
-int devfs_id = 0;
+int          devfs_id = 0;
 extern vdisk vdisk_ctl[26]; // core/vdisk.c
 rbtree_sp_t  dev_rbtree;
-vfs_node_t device_fs_node;
+vfs_node_t   device_fs_node;
 
 static void dummy() {}
 
-static int devfs_mkdir(void *parent,const char* name, vfs_node_t node) {
+static int devfs_mkdir(void *parent, const char *name, vfs_node_t node) {
     printk("You cannot create directory in devfs");
     node->fsid = 0; // 交给vfs处理
     return 0;
 }
 
-void print_devfs(){
+void print_devfs() {
     rbtree_sp_print_inorder(dev_rbtree);
     rbtree_sp_print_postorder(dev_rbtree);
     rbtree_sp_print_preorder(dev_rbtree);
 }
 
-int devfs_mount(const char* src, vfs_node_t node) {
-    if(src) return -1;
+int devfs_mount(const char *src, vfs_node_t node) {
+    if (src) return -1;
     node->fsid = devfs_id;
-    int i = 0;
+    int i      = 0;
     for (; have_vdisk(i); i++) {
         vfs_child_append(node, vdisk_ctl[i].DriveName, NULL);
         rbtree_sp_insert(dev_rbtree, vdisk_ctl[i].DriveName, (void *)i);
@@ -40,8 +40,8 @@ int devfs_mount(const char* src, vfs_node_t node) {
     return 0;
 }
 
-static int  devfs_read(void *file, void *addr, size_t offset, size_t size) {
-    int dev_id = (int)file;
+static int devfs_read(void *file, void *addr, size_t offset, size_t size) {
+    int dev_id      = (int)file;
     int sector_size = 0;
     if (vdisk_ctl[dev_id].flag == 0) return -1;
     sector_size                     = vdisk_ctl[dev_id].sector_size;
@@ -92,22 +92,22 @@ static int devfs_write(void *file, const void *addr, size_t offset, size_t size)
     return 0;
 }
 
-static void devfs_open(void *parent,const char* name, vfs_node_t node) {
+static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     node->handle = rbtree_sp_get(dev_rbtree, name);
     node->type   = file_block;
     node->size   = disk_Size((int)node->handle);
 }
 
 static struct vfs_callback callbacks = {
-        .mount   = devfs_mount,
-        .unmount = (void *)dummy,
-        .mkdir   = devfs_mkdir,
-        .mkfile  = (void *)dummy,
-        .open    = devfs_open,
-        .close   = (void *)dummy,
-        .stat    = devfs_stat,
-        .read    = devfs_read,
-        .write   = devfs_write,
+    .mount   = devfs_mount,
+    .unmount = (void *)dummy,
+    .mkdir   = devfs_mkdir,
+    .mkfile  = (void *)dummy,
+    .open    = devfs_open,
+    .close   = (void *)dummy,
+    .stat    = devfs_stat,
+    .read    = devfs_read,
+    .write   = devfs_write,
 };
 
 void devfs_regist() {
@@ -116,7 +116,7 @@ void devfs_regist() {
     device_fs_node = vfs_open("/dev");
     vfs_mount(NULL, device_fs_node);
 
-    klogf(true,"Device File System initialize.\n");
+    klogf(true, "Device File System initialize.\n");
 }
 
 int dev_get_sector_size(char *path) {

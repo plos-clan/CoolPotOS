@@ -12,6 +12,6 @@ struct UDPMessage {
 } __attribute__((packed));
 
 uint8_t *UDP_Packet(uint16_t dest_port, uint16_t src_port, uint8_t *data, uint32_t size);
-void udp_provider_send(uint32_t destip, uint32_t srcip, uint16_t dest_port,
-                       uint16_t src_port, uint8_t *data, uint32_t size);
-void udp_handler(void *base);
+void     udp_provider_send(uint32_t destip, uint32_t srcip, uint16_t dest_port, uint16_t src_port,
+                           uint8_t *data, uint32_t size);
+void     udp_handler(void *base);

@@ -3,28 +3,26 @@
  * Copyright by xingji-studio 2025
  */
 #include "nvme.h"
-#include "pcie.h"
-#include "pci.h"
-#include "kprint.h"
+#include "alloc.h"
 #include "hhdm.h"
+#include "klog.h"
+#include "kprint.h"
 #include "krlibc.h"
 #include "page.h"
-#include "alloc.h"
-#include "vdisk.h"
+#include "pci.h"
+#include "pcie.h"
 #include "sprintf.h"
 #include "timer.h"
-#include "klog.h"
+#include "vdisk.h"
 
-void *NVME_DMA_MEMORY = 0;
+void           *NVME_DMA_MEMORY = 0;
 NVME_NAMESPACE *nvme_device[10];
 
 int NVMEWaitingRDY(nvme_controller *ctrl, uint32_t rdy) {
     uint32_t csts;
-    int i = 0;
+    int      i = 0;
     while (rdy != ((csts = ctrl->CAP->CST) & NVME_CSTS_RDY)) {
-        if(i > MAX_WAIT_INDEX) {
-            return true;
-        }
+        if (i > MAX_WAIT_INDEX) { return true; }
         __asm__ __volatile__("pause");
         i++;
         usleep(1);
@@ -34,17 +32,17 @@ int NVMEWaitingRDY(nvme_controller *ctrl, uint32_t rdy) {
 
 void NVMEConfigureQ(nvme_controller *ctrl, NVME_QUEUE_COMMON *q, uint32_t idx, uint32_t len) {
     memset(q, 0, sizeof(NVME_QUEUE_COMMON));
-    q->DBL = (uint32_t *) (((uint8_t *) ctrl->CAP) + PAGE_SIZE + idx * ctrl->DST);
+    q->DBL = (uint32_t *)(((uint8_t *)ctrl->CAP) + PAGE_SIZE + idx * ctrl->DST);
     q->MSK = len - 1;
 }
 
 int NVMEConfigureCQ(nvme_controller *ctrl, NVME_COMPLETION_QUEUE *cq, uint32_t idx, uint32_t len) {
     NVMEConfigureQ(ctrl, &cq->COM, idx, len);
-    cq->CQE = 0;
+    cq->CQE          = 0;
     uint64_t phyAddr = 0;
     uint64_t pagCont = 1;
-    phyAddr = (uint64_t) malloc(pagCont * PAGE_SIZE);
-    cq->CQE = (NVME_COMPLETION_QUEUE_ENTRY *) phyAddr;
+    phyAddr          = (uint64_t)malloc(pagCont * PAGE_SIZE);
+    cq->CQE          = (NVME_COMPLETION_QUEUE_ENTRY *)phyAddr;
     memset(cq->CQE, 0, PAGE_SIZE);
     cq->COM.HAD = 0;
     cq->COM.TAL = 0;
@@ -54,11 +52,11 @@ int NVMEConfigureCQ(nvme_controller *ctrl, NVME_COMPLETION_QUEUE *cq, uint32_t i
 
 int NVMEConfigureSQ(nvme_controller *ctrl, NVME_SUBMISSION_QUEUE *sq, uint32_t idx, uint32_t len) {
     NVMEConfigureQ(ctrl, &sq->COM, idx, len);
-    sq->SQE = 0;
+    sq->SQE          = 0;
     uint64_t phyAddr = 0;
     uint64_t pagCont = 1;
-    phyAddr = (uint64_t) malloc(pagCont * PAGE_SIZE);
-    sq->SQE = (NVME_SUBMISSION_QUEUE_ENTRY *) phyAddr;
+    phyAddr          = (uint64_t)malloc(pagCont * PAGE_SIZE);
+    sq->SQE          = (NVME_SUBMISSION_QUEUE_ENTRY *)phyAddr;
     memset(sq->SQE, 0, PAGE_SIZE);
     sq->COM.HAD = 0;
     sq->COM.TAL = 0;
@@ -66,7 +64,8 @@ int NVMEConfigureSQ(nvme_controller *ctrl, NVME_SUBMISSION_QUEUE *sq, uint32_t i
     return 0;
 }
 
-NVME_COMPLETION_QUEUE_ENTRY NVMEWaitingCMD(NVME_SUBMISSION_QUEUE *sq, NVME_SUBMISSION_QUEUE_ENTRY *e) {
+NVME_COMPLETION_QUEUE_ENTRY NVMEWaitingCMD(NVME_SUBMISSION_QUEUE       *sq,
+                                           NVME_SUBMISSION_QUEUE_ENTRY *e) {
     NVME_COMPLETION_QUEUE_ENTRY errcqe;
     memset(&errcqe, 0xFF, sizeof(NVME_COMPLETION_QUEUE_ENTRY));
 
@@ -82,8 +81,8 @@ NVME_COMPLETION_QUEUE_ENTRY NVMEWaitingCMD(NVME_SUBMISSION_QUEUE *sq, NVME_SUBMI
 
     // Doorbell
     sq->COM.TAL++;
-    sq->COM.TAL %= (sq->COM.MSK + 1ULL);
-    sq->COM.DBL[0] = sq->COM.TAL;
+    sq->COM.TAL    %= (sq->COM.MSK + 1ULL);
+    sq->COM.DBL[0]  = sq->COM.TAL;
 
     // Check completion
     NVME_COMPLETION_QUEUE *cq = sq->ICQ;
@@ -92,43 +91,36 @@ NVME_COMPLETION_QUEUE_ENTRY NVMEWaitingCMD(NVME_SUBMISSION_QUEUE *sq, NVME_SUBMI
     }
 
     // Consume CQE
-    NVME_COMPLETION_QUEUE_ENTRY *cqe = cq->CQE + cq->COM.HAD;
-    uint16_t cqNextHAD = (cq->COM.HAD + 1) % (cq->COM.MSK + 1ULL);
-    if (cqNextHAD < cq->COM.HAD) {
-        cq->COM.PHA ^= 1;
-    }
+    NVME_COMPLETION_QUEUE_ENTRY *cqe       = cq->CQE + cq->COM.HAD;
+    uint16_t                     cqNextHAD = (cq->COM.HAD + 1) % (cq->COM.MSK + 1ULL);
+    if (cqNextHAD < cq->COM.HAD) { cq->COM.PHA ^= 1; }
     cq->COM.HAD = cqNextHAD;
 
-    if (cqe->QHD != sq->COM.HAD) {
-        sq->COM.HAD = cqe->QHD;
-    }
+    if (cqe->QHD != sq->COM.HAD) { sq->COM.HAD = cqe->QHD; }
     // Doorbell
     cq->COM.DBL[0] = cq->COM.HAD;
     return *cqe;
 }
 
 uint32_t NVMETransfer(NVME_NAMESPACE *ns, void *buf, uint64_t lba, uint32_t count, uint32_t write) {
-    if (!count)
-        return 0;
+    if (!count) return 0;
 
-    uint64_t bufAddr = (uint64_t) buf;
+    uint64_t bufAddr  = (uint64_t)buf;
     uint32_t maxCount = (PAGE_SIZE / ns->BSZ) - ((bufAddr & 0xFFF) / ns->BSZ);
-    if (count > maxCount)
-        count = maxCount;
-    if (count > ns->MXRS)
-        count = ns->MXRS;
+    if (count > maxCount) count = maxCount;
+    if (count > ns->MXRS) count = ns->MXRS;
     uint64_t size = count * ns->BSZ;
 
     NVME_SUBMISSION_QUEUE_ENTRY sqe;
     memset(&sqe, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
-    sqe.CDW0 = write ? NVME_SQE_OPC_IO_WRITE : NVME_SQE_OPC_IO_READ;
-    sqe.META = 0;
-    sqe.DATA[0] = (uint64_t) virt_to_phys(bufAddr);
-    sqe.DATA[1] = 0;
-    sqe.NSID = ns->NSID;
-    sqe.CDWA = lba;
-    sqe.CDWB = lba >> 32;
-    sqe.CDWC = (1UL << 31) | ((count - 1) & 0xFFFF);
+    sqe.CDW0                        = write ? NVME_SQE_OPC_IO_WRITE : NVME_SQE_OPC_IO_READ;
+    sqe.META                        = 0;
+    sqe.DATA[0]                     = (uint64_t)virt_to_phys(bufAddr);
+    sqe.DATA[1]                     = 0;
+    sqe.NSID                        = ns->NSID;
+    sqe.CDWA                        = lba;
+    sqe.CDWB                        = lba >> 32;
+    sqe.CDWC                        = (1UL << 31) | ((count - 1) & 0xFFFF);
     NVME_COMPLETION_QUEUE_ENTRY cqe = NVMEWaitingCMD(&ns->CTRL->ISQ, &sqe);
     if ((cqe.STS >> 1) & 0xFF) {
         if (write) {
@@ -149,19 +141,19 @@ void NvmeWrite(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
 }
 
 void nvme_setup() {
-    pcie_device_t *device = pcie_find_class(0x10802);
+    pcie_device_t   *device = pcie_find_class(0x10802);
     nvme_capability *capability;
     if (device == NULL) {
         pci_device_t pciDevice = pci_find_class(0x10802);
-        if(pciDevice == NULL) return;
-        base_address_register reg = find_bar(pciDevice,0);
-        if(reg.address == NULL){
+        if (pciDevice == NULL) return;
+        base_address_register reg = find_bar(pciDevice, 0);
+        if (reg.address == NULL) {
             kerror("Nvme pci bar 0 is null.");
             return;
         }
-        capability = (nvme_capability *) phys_to_virt((uint64_t)reg.address);
-    }else{
-        capability = (nvme_capability *) phys_to_virt(device->bars[0].address);
+        capability = (nvme_capability *)phys_to_virt((uint64_t)reg.address);
+    } else {
+        capability = (nvme_capability *)phys_to_virt(device->bars[0].address);
     }
 
     page_map_range_to(get_kernel_pagedir(), device->bars[0].address, 0x1000 * 2, KERNEL_PTE_FLAGS);
@@ -171,11 +163,11 @@ void nvme_setup() {
         return;
     }
 
-    nvme_controller *controller = (nvme_controller *) malloc(sizeof(nvme_controller));
+    nvme_controller *controller = (nvme_controller *)malloc(sizeof(nvme_controller));
     memset(controller, 0, sizeof(nvme_controller));
-    controller->DVC = device;
-    controller->CAP = capability;
-    controller->WTO = 500 * ((capability->CAP >> 24) & 0xFF);
+    controller->DVC     = device;
+    controller->CAP     = capability;
+    controller->WTO     = 500 * ((capability->CAP >> 24) & 0xFF);
     controller->CAP->CC = 0;
 
     if (NVMEWaitingRDY(controller, 0)) {
@@ -184,20 +176,18 @@ void nvme_setup() {
     }
 
     controller->DST = 4ULL << ((capability->CAP >> 32) & 0xF);
-    int rc = NVMEConfigureCQ(controller, &controller->ACQ, 1, PAGE_SIZE / sizeof(NVME_COMPLETION_QUEUE_ENTRY));
-    if (rc) {
-        return;
-    }
+    int rc          = NVMEConfigureCQ(controller, &controller->ACQ, 1,
+                                      PAGE_SIZE / sizeof(NVME_COMPLETION_QUEUE_ENTRY));
+    if (rc) { return; }
 
-    rc = NVMEConfigureSQ(controller, &controller->ASQ, 0, PAGE_SIZE / sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
-    if (rc) {
-        return;
-    }
+    rc = NVMEConfigureSQ(controller, &controller->ASQ, 0,
+                         PAGE_SIZE / sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
+    if (rc) { return; }
     controller->ASQ.ICQ = &controller->ACQ;
 
     controller->CAP->AQA = (controller->ACQ.COM.MSK << 16) | controller->ASQ.COM.MSK;
-    controller->CAP->ASQ = (uint64_t) virt_to_phys((uint64_t) controller->ASQ.SQE);
-    controller->CAP->ACQ = (uint64_t) virt_to_phys((uint64_t) controller->ACQ.CQE);
+    controller->CAP->ASQ = (uint64_t)virt_to_phys((uint64_t)controller->ASQ.SQE);
+    controller->CAP->ACQ = (uint64_t)virt_to_phys((uint64_t)controller->ACQ.CQE);
 
     controller->CAP->CC = 1 | (4 << 20) | (6 << 16);
     if (NVMEWaitingRDY(controller, 1)) {
@@ -209,12 +199,12 @@ void nvme_setup() {
     memset(identify, 0, sizeof(NVME_IDENTIFY_CONTROLLER));
     NVME_SUBMISSION_QUEUE_ENTRY sqe;
     memset(&sqe, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
-    sqe.CDW0 = NVME_SQE_OPC_ADMIN_IDENTIFY;
-    sqe.META = 0;
-    sqe.DATA[0] = (uint64_t) virt_to_phys((uint64_t) identify);
-    sqe.DATA[1] = 0;
-    sqe.NSID = 0;
-    sqe.CDWA = NVME_ADMIN_IDENTIFY_CNS_ID_CTRL;
+    sqe.CDW0                        = NVME_SQE_OPC_ADMIN_IDENTIFY;
+    sqe.META                        = 0;
+    sqe.DATA[0]                     = (uint64_t)virt_to_phys((uint64_t)identify);
+    sqe.DATA[1]                     = 0;
+    sqe.NSID                        = 0;
+    sqe.CDWA                        = NVME_ADMIN_IDENTIFY_CNS_ID_CTRL;
     NVME_COMPLETION_QUEUE_ENTRY cqe = NVMEWaitingCMD(&controller->ASQ, &sqe);
     if ((cqe.STS >> 1) & 0xFF) {
         kerror("Cannot identify nvme controller.");
@@ -224,15 +214,15 @@ void nvme_setup() {
     char buf[41];
     memcpy(buf, identify->SERN, sizeof(identify->SERN));
     buf[sizeof(identify->SERN)] = 0;
-    char *serialN = LeadingWhitespace(buf, buf + sizeof(identify->SERN));
+    char *serialN               = LeadingWhitespace(buf, buf + sizeof(identify->SERN));
     memcpy(controller->SER, serialN, strlen(serialN));
     memcpy(buf, identify->MODN, sizeof(identify->MODN));
     buf[sizeof(identify->MODN)] = 0;
-    serialN = LeadingWhitespace(buf, buf + sizeof(identify->MODN));
+    serialN                     = LeadingWhitespace(buf, buf + sizeof(identify->MODN));
     memcpy(controller->MOD, serialN, strlen(serialN));
 
     controller->NSC = identify->NNAM;
-    uint8_t mdts = identify->MDTS;
+    uint8_t mdts    = identify->MDTS;
     free(identify);
 
     if (controller->NSC == 0) {
@@ -241,7 +231,7 @@ void nvme_setup() {
     }
 
     { //Unsafe
-        uint32_t qidx = 3;
+        uint32_t qidx       = 3;
         uint32_t entryCount = 1 + (controller->CAP->CAP & 0xFFFF);
         if (entryCount > PAGE_SIZE / sizeof(NVME_COMPLETION_QUEUE_ENTRY))
             entryCount = PAGE_SIZE / sizeof(NVME_COMPLETION_QUEUE_ENTRY);
@@ -251,12 +241,12 @@ void nvme_setup() {
         }
         NVME_SUBMISSION_QUEUE_ENTRY ccq;
         memset(&ccq, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
-        ccq.CDW0 = NVME_SQE_OPC_ADMIN_CREATE_IO_CQ;
-        ccq.META = 0;
-        ccq.DATA[0] = (uint64_t) virt_to_phys((uint64_t) controller->ICQ.CQE);
+        ccq.CDW0    = NVME_SQE_OPC_ADMIN_CREATE_IO_CQ;
+        ccq.META    = 0;
+        ccq.DATA[0] = (uint64_t)virt_to_phys((uint64_t)controller->ICQ.CQE);
         ccq.DATA[1] = 0;
-        ccq.CDWA = (controller->ICQ.COM.MSK << 16) | (qidx >> 1);
-        ccq.CDWB = 1;
+        ccq.CDWA    = (controller->ICQ.COM.MSK << 16) | (qidx >> 1);
+        ccq.CDWB    = 1;
 
         cqe = NVMEWaitingCMD(&controller->ASQ, &ccq);
         if ((cqe.STS >> 1) & 0xFF) {
@@ -266,7 +256,7 @@ void nvme_setup() {
     }
 
     { // Unsafe
-        uint32_t qidx = 2;
+        uint32_t qidx       = 2;
         uint32_t entryCount = 1 + (controller->CAP->CAP & 0xFFFF);
         if (entryCount > PAGE_SIZE / sizeof(NVME_SUBMISSION_QUEUE_ENTRY))
             entryCount = PAGE_SIZE / sizeof(NVME_SUBMISSION_QUEUE_ENTRY);
@@ -276,12 +266,12 @@ void nvme_setup() {
         }
         NVME_SUBMISSION_QUEUE_ENTRY csq;
         memset(&csq, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
-        csq.CDW0 = NVME_SQE_OPC_ADMIN_CREATE_IO_SQ;
-        csq.META = 0;
-        csq.DATA[0] = (uint64_t) virt_to_phys((uint64_t) controller->ISQ.SQE);
+        csq.CDW0    = NVME_SQE_OPC_ADMIN_CREATE_IO_SQ;
+        csq.META    = 0;
+        csq.DATA[0] = (uint64_t)virt_to_phys((uint64_t)controller->ISQ.SQE);
         csq.DATA[1] = 0;
-        csq.CDWA = (controller->ICQ.COM.MSK << 16) | (qidx >> 1);
-        csq.CDWB = ((qidx >> 1) << 16) | 1;
+        csq.CDWA    = (controller->ICQ.COM.MSK << 16) | (qidx >> 1);
+        csq.CDWB    = ((qidx >> 1) << 16) | 1;
 
         cqe = NVMEWaitingCMD(&controller->ASQ, &csq);
         if ((cqe.STS >> 1) & 0xFF) {
@@ -296,17 +286,17 @@ void nvme_setup() {
         uint32_t nsid = nsidx + 1;
 
         NVME_IDENTIFY_NAMESPACE *identifyNS = malloc(sizeof(NVME_IDENTIFY_NAMESPACE));
-        uint64_t pagCont = 1;
+        uint64_t                 pagCont    = 1;
         memset(identifyNS, 0, PAGE_SIZE);
 
         memset(&sqe, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
-        sqe.CDW0 = NVME_SQE_OPC_ADMIN_IDENTIFY;
-        sqe.META = 0;
-        sqe.DATA[0] = (uint64_t) virt_to_phys((uint64_t) identifyNS);
+        sqe.CDW0    = NVME_SQE_OPC_ADMIN_IDENTIFY;
+        sqe.META    = 0;
+        sqe.DATA[0] = (uint64_t)virt_to_phys((uint64_t)identifyNS);
         sqe.DATA[1] = 0;
-        sqe.NSID = nsid;
-        sqe.CDWA = NVME_ADMIN_IDENTIFY_CNS_ID_NS;
-        cqe = NVMEWaitingCMD(&controller->ASQ, &sqe);
+        sqe.NSID    = nsid;
+        sqe.CDWA    = NVME_ADMIN_IDENTIFY_CNS_ID_NS;
+        cqe         = NVMEWaitingCMD(&controller->ASQ, &sqe);
         if ((cqe.STS >> 1) & 0xFF) {
             kerror("Nvme cannot identify namespace %08x", nsid);
             return;
@@ -314,21 +304,20 @@ void nvme_setup() {
 
         uint8_t currentLBAFormat = identifyNS->FLBA & 0xF;
         if (currentLBAFormat > identifyNS->NLBA) {
-            kerror("Nvme namespace %08x current LBA format %08x is beyond what the namespace supports %p.", nsid,
-                   currentLBAFormat, identifyNS->NLBA + 1, identifyNS);
+            kerror("Nvme namespace %08x current LBA format %08x is beyond what the namespace "
+                   "supports %p.",
+                   nsid, currentLBAFormat, identifyNS->NLBA + 1, identifyNS);
             return;
         }
 
-        if (!identifyNS->SIZE) {
-            return;
-        }
+        if (!identifyNS->SIZE) { return; }
 
         if (!NVME_DMA_MEMORY) {
-            pagCont = 1;
+            pagCont         = 1;
             NVME_DMA_MEMORY = malloc(pagCont * PAGE_SIZE);
         }
 
-        NVME_NAMESPACE *ns = (NVME_NAMESPACE *) malloc(sizeof(NVME_NAMESPACE));
+        NVME_NAMESPACE *ns = (NVME_NAMESPACE *)malloc(sizeof(NVME_NAMESPACE));
         memset(ns, 0, sizeof(NVME_NAMESPACE));
         ns->CTRL = controller;
         ns->NSID = nsid;
@@ -336,7 +325,7 @@ void nvme_setup() {
 
         NVME_LOGICAL_BLOCK_ADDRESS *fmt = identifyNS->LBAF + currentLBAFormat;
 
-        ns->BSZ = 1ULL << fmt->DS;
+        ns->BSZ  = 1ULL << fmt->DS;
         ns->META = fmt->MS;
         if (ns->BSZ > PAGE_SIZE) {
             kerror("Nvme namespace %08x block size > 4096.", nsid, ns->BSZ);
@@ -353,13 +342,13 @@ void nvme_setup() {
         vdisk disk;
         disk.type = VDISK_BLOCK;
         char name[10];
-        sprintf(name,"nvme%d",nsid);
-        strcpy(disk.drive_name,name);
-        disk.read = NvmeRead;
+        sprintf(name, "nvme%d", nsid);
+        strcpy(disk.drive_name, name);
+        disk.read  = NvmeRead;
         disk.write = NvmeWrite;
 
-        int c = regist_vdisk(disk);
+        int c          = regist_vdisk(disk);
         nvme_device[c] = ns;
-        printk("Nvme disk find (%s)\n",disk.drive_name);
+        printk("Nvme disk find (%s)\n", disk.drive_name);
     }
 }

@@ -1,20 +1,23 @@
 #pragma once
 
-#define cmpxchg(P, O, N) __sync_val_compare_and_swap((P), (O), (N))
+#define cmpxchg(P, O, N)  __sync_val_compare_and_swap((P), (O), (N))
 #define atomic_xadd(P, V) __sync_fetch_and_add((P), (V))
 
-#define barrier() __asm__ volatile("": : :"memory")
+#define barrier() __asm__ volatile("" : : : "memory")
 
-#define spin_lock ticket_lock
+#define spin_lock   ticket_lock
 #define spin_unlock ticket_unlock
-#define spinlock ticketlock
+#define spinlock    ticketlock
 
-#define SPINLOCK_INITIALIZER { 0, 0 };
+#define SPINLOCK_INITIALIZER {0, 0};
 
 #include "ctype.h"
 #include "klog.h"
 
-#define cpu_relax() do{ __asm__ volatile("pause\n": : :"memory"); }while(false);
+#define cpu_relax()                                                                                \
+    do {                                                                                           \
+        __asm__ volatile("pause\n" : : : "memory");                                                \
+    } while (false);
 
 typedef union ticketlock ticketlock;
 
@@ -28,7 +31,8 @@ union ticketlock {
 
 static inline void ticket_lock(ticketlock *t) {
     uint16_t me = atomic_xadd(&t->s.users, 1);
-    while (t->s.ticket != me) cpu_relax();
+    while (t->s.ticket != me)
+        cpu_relax();
 }
 
 static inline void ticket_unlock(ticketlock *t) {
@@ -37,15 +41,15 @@ static inline void ticket_unlock(ticketlock *t) {
 }
 
 static inline void ticket_init(ticketlock *t) {
-    t->u = 0;
+    t->u        = 0;
     t->s.ticket = 0;
 }
 
 static inline int ticket_trylock(ticketlock *t) {
-    uint16_t me = t->s.users;
-    uint16_t menew = me + 1;
-    unsigned cmp = ((unsigned) me << 16) + me;
-    unsigned cmpnew = ((unsigned) menew << 16) + me;
+    uint16_t me     = t->s.users;
+    uint16_t menew  = me + 1;
+    unsigned cmp    = ((unsigned)me << 16) + me;
+    unsigned cmpnew = ((unsigned)menew << 16) + me;
 
     if (cmpxchg(&t->u, cmp, cmpnew) == cmp) return 0;
 

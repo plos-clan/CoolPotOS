@@ -1,27 +1,29 @@
 #include "krlibc.h"
-#include "kmalloc.h"
 #include "acpi.h" //void sleep(u32 time)
-#include "timer.h" //void sleep(u32 time)
 #include "klog.h"
+#include "kmalloc.h"
+#include "timer.h" //void sleep(u32 time)
 
-#define ZEROPAD    1        /* pad with zero */
-#define SIGN    2        /* unsigned/signed long */
-#define PLUS    4        /* show plus */
-#define SPACE    8        /* space if plus */
-#define LEFT    16        /* left justified */
-#define SMALL    32        /* Must be 32 == 0x20 */
-#define SPECIAL    64        /* 0x */
+#define ZEROPAD 1  /* pad with zero */
+#define SIGN    2  /* unsigned/signed long */
+#define PLUS    4  /* show plus */
+#define SPACE   8  /* space if plus */
+#define LEFT    16 /* left justified */
+#define SMALL   32 /* Must be 32 == 0x20 */
+#define SPECIAL 64 /* 0x */
 
-#define __do_div(n, base) ({ \
-int __res; \
-__res = ((unsigned long) n) % (unsigned) base; \
-n = ((unsigned long) n) / (unsigned) base; \
-__res; })
+#define __do_div(n, base)                                                                          \
+    ({                                                                                             \
+        int __res;                                                                                 \
+        __res = ((unsigned long)n) % (unsigned)base;                                               \
+        n     = ((unsigned long)n) / (unsigned)base;                                               \
+        __res;                                                                                     \
+    })
 
 const char _plos_lut_alnum_lower[62] =
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const char _plos_lut_alnum_upper[62] =
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 static int skip_atoi(const char **s) {
     int i = 0;
@@ -31,25 +33,22 @@ static int skip_atoi(const char **s) {
     return i;
 }
 
-static char *number(char *str, long num, int base, int size, int precision,
-                    int type) {
+static char *number(char *str, long num, int base, int size, int precision, int type) {
     static const char digits[16] = "0123456789ABCDEF";
 
     char tmp[66];
     char c, sign, locase;
-    int i;
+    int  i;
 
     locase = (type & SMALL);
-    if (type & LEFT)
-        type &= ~ZEROPAD;
-    if (base < 2 || base > 16)
-        return NULL;
-    c = (type & ZEROPAD) ? '0' : ' ';
+    if (type & LEFT) type &= ~ZEROPAD;
+    if (base < 2 || base > 16) return NULL;
+    c    = (type & ZEROPAD) ? '0' : ' ';
     sign = 0;
     if (type & SIGN) {
         if (num < 0) {
             sign = '-';
-            num = -num;
+            num  = -num;
             size--;
         } else if (type & PLUS) {
             sign = '+';
@@ -71,14 +70,12 @@ static char *number(char *str, long num, int base, int size, int precision,
     else
         while (num != 0)
             tmp[i++] = (digits[__do_div(num, base)] | locase);
-    if (i > precision)
-        precision = i;
+    if (i > precision) precision = i;
     size -= precision;
     if (!(type & (ZEROPAD + LEFT)))
         while (size-- > 0)
             *str++ = ' ';
-    if (sign)
-        *str++ = sign;
+    if (sign) *str++ = sign;
     if (type & SPECIAL) {
         if (base == 8)
             *str++ = '0';
@@ -100,50 +97,42 @@ static char *number(char *str, long num, int base, int size, int precision,
 }
 
 static const double rounders[10 + 1] = {
-        0.5,                // 0
-        0.05,                // 1
-        0.005,                // 2
-        0.0005,                // 3
-        0.00005,            // 4
-        0.000005,            // 5
-        0.0000005,            // 6
-        0.00000005,            // 7
-        0.000000005,        // 8
-        0.0000000005,        // 9
-        0.00000000005        // 10
+    0.5,          // 0
+    0.05,         // 1
+    0.005,        // 2
+    0.0005,       // 3
+    0.00005,      // 4
+    0.000005,     // 5
+    0.0000005,    // 6
+    0.00000005,   // 7
+    0.000000005,  // 8
+    0.0000000005, // 9
+    0.00000000005 // 10
 };
 
 void abort() {
     klogf(false, "Kernel abort panic\n");
     __asm__("cli");
-    while (1) __asm__("hlt");
+    while (1)
+        __asm__("hlt");
 }
 
-void fftostr() {
-}
+void fftostr() {}
 
-void fltostr() {
-}
+void fltostr() {}
 
-void ftostr() {
-}
+void ftostr() {}
 
 int atoi(const char *pstr) {
-    int Ret_Integer = 0;
+    int Ret_Integer  = 0;
     int Integer_sign = 1;
 
-    if (pstr == NULL) {
-        return 0;
-    }
+    if (pstr == NULL) { return 0; }
     while (isspace(*pstr) == 0) {
         pstr++;
     }
-    if (*pstr == '-') {
-        Integer_sign = -1;
-    }
-    if (*pstr == '-' || *pstr == '+') {
-        pstr++;
-    }
+    if (*pstr == '-') { Integer_sign = -1; }
+    if (*pstr == '-' || *pstr == '+') { pstr++; }
     while (*pstr >= '0' && *pstr <= '9') {
         Ret_Integer = Ret_Integer * 10 + *pstr - '0';
         pstr++;
@@ -155,42 +144,47 @@ int atoi(const char *pstr) {
 
 char *ftoa(double f, char *buf, int precision) {
     char *ptr = buf;
-    char *p = ptr;
+    char *p   = ptr;
     char *p1;
-    char c;
-    long intPart;
+    char  c;
+    long  intPart;
 
-    if (precision > 10)
-        precision = 10;
+    if (precision > 10) precision = 10;
     if (f < 0) {
-        f = -f;
+        f      = -f;
         *ptr++ = '-';
     }
     if (precision < 0) {
-        if (f < 1.0) precision = 6;
-        else if (f < 10.0) precision = 5;
-        else if (f < 100.0) precision = 4;
-        else if (f < 1000.0) precision = 3;
-        else if (f < 10000.0) precision = 2;
-        else if (f < 100000.0) precision = 1;
-        else precision = 0;
+        if (f < 1.0)
+            precision = 6;
+        else if (f < 10.0)
+            precision = 5;
+        else if (f < 100.0)
+            precision = 4;
+        else if (f < 1000.0)
+            precision = 3;
+        else if (f < 10000.0)
+            precision = 2;
+        else if (f < 100000.0)
+            precision = 1;
+        else
+            precision = 0;
     }
-    if (precision)
-        f += rounders[precision];
-    intPart = f;
-    f -= intPart;
+    if (precision) f += rounders[precision];
+    intPart  = f;
+    f       -= intPart;
     if (!intPart)
         *ptr++ = '0';
     else {
         p = ptr;
         while (intPart) {
-            *p++ = '0' + intPart % 10;
+            *p++     = '0' + intPart % 10;
             intPart /= 10;
         }
         p1 = p;
         while (p > ptr) {
-            c = *--p;
-            *p = *ptr;
+            c      = *--p;
+            *p     = *ptr;
             *ptr++ = c;
         }
         ptr = p1;
@@ -198,10 +192,10 @@ char *ftoa(double f, char *buf, int precision) {
     if (precision) {
         *ptr++ = '.';
         while (precision--) {
-            f *= 10.0;
-            c = f;
-            *ptr++ = '0' + c;
-            f -= c;
+            f      *= 10.0;
+            c       = f;
+            *ptr++  = '0' + c;
+            f      -= c;
         }
     }
     *ptr = 0;
@@ -209,20 +203,20 @@ char *ftoa(double f, char *buf, int precision) {
 }
 
 float ceilf(float x) {
-    float fract = x - (int) x; // 获取小数部分
+    float fract = x - (int)x; // 获取小数部分
     if (fract > 0) {
-        return (int) x + 1; // 如果有小数部分，向上取整
+        return (int)x + 1; // 如果有小数部分，向上取整
     } else {
-        return (int) x; // 如果没有小数部分，直接返回整数部分
+        return (int)x; // 如果没有小数部分，直接返回整数部分
     }
 }
 
 float floorf(float x) {
-    float fract = x - (int) x; // 获取小数部分
+    float fract = x - (int)x; // 获取小数部分
     if (fract < 0) {
-        return (int) x - 1; // 如果是负数且有小数部分，向下取整
+        return (int)x - 1; // 如果是负数且有小数部分，向下取整
     } else {
-        return (int) x; // 如果是正数或没有小数部分，直接返回整数部分
+        return (int)x; // 如果是正数或没有小数部分，直接返回整数部分
     }
 }
 
@@ -243,28 +237,26 @@ double fabs(double x) {
 }
 
 double floor(double x) {
-    double fract = x - (int) x;
+    double fract = x - (int)x;
     if (fract < 0) {
-        return (int) x - 1;
+        return (int)x - 1;
     } else {
-        return (int) x;
+        return (int)x;
     }
 }
 
 double ceil(double x) {
-    double fract = x - (int) x; // 获取小数部分
+    double fract = x - (int)x; // 获取小数部分
     if (fract > 0) {
-        return (int) x + 1; // 如果有小数部分，向上取整
+        return (int)x + 1; // 如果有小数部分，向上取整
     } else {
-        return (int) x; // 如果没有小数部分，直接返回整数部分
+        return (int)x; // 如果没有小数部分，直接返回整数部分
     }
 }
 
 double fmod(double x, double y) {
-    if (y == 0) {
-        return __builtin_nanf("");
-    }
-    double intPart = x / y;
+    if (y == 0) { return __builtin_nanf(""); }
+    double intPart   = x / y;
     double remainder = x - intPart * y;
     if (remainder < 0) {
         remainder += y;
@@ -275,13 +267,13 @@ double fmod(double x, double y) {
 }
 
 double cos(double x) {
-    double sum = 0.0;
+    double sum  = 0.0;
     double term = 1.0;
-    int n = 0;
+    int    n    = 0;
 
     for (n = 0; term > 1e-15; n++) {
-        term = term * (-1) * (2 * n) * (2 * n - 1) / ((2 * n) * (2 * n - 1));
-        sum += term;
+        term  = term * (-1) * (2 * n) * (2 * n - 1) / ((2 * n) * (2 * n - 1));
+        sum  += term;
     }
 
     return sum;
@@ -290,15 +282,13 @@ double cos(double x) {
 double acos(double x) {
     double x0 = x;
     double x1;
-    double tolerance = 1e-15;
+    double tolerance      = 1e-15;
     double max_iterations = 1000;
-    int iterations = 0;
+    int    iterations     = 0;
 
     while (iterations < max_iterations) {
         x1 = x0 - (-1 / sqrt(1 - x0 * x0)) / (1 / cos(x0));
-        if (fabs(x1 - x0) < tolerance) {
-            break;
-        }
+        if (fabs(x1 - x0) < tolerance) { break; }
         x0 = x1;
         iterations++;
     }
@@ -307,16 +297,14 @@ double acos(double x) {
 }
 
 double sqrt(double number) {
-    if (number < 0) {
-        return __builtin_nanf("");
-    }
+    if (number < 0) { return __builtin_nanf(""); }
 
-    double x = number;
+    double x       = number;
     double epsilon = 1e-15;
     double diff;
 
     do {
-        x = (x + number / x) / 2;
+        x    = (x + number / x) / 2;
         diff = fabs(x - number / x);
     } while (diff > epsilon);
 
@@ -332,18 +320,18 @@ double pow(double x, int y) {
 }
 
 int vsprintf(char *buf, const char *fmt, va_list args) {
-    int len;
+    int           len;
     unsigned long num;
-    int i, base;
-    char *str;
-    const char *s;
+    int           i, base;
+    char         *str;
+    const char   *s;
 
-    int flags;        /* flags to number() */
+    int flags; /* flags to number() */
 
-    int field_width;    /* width of output field */
-    int precision;        /* min. # of digits for integers; max
+    int field_width; /* width of output field */
+    int precision;   /* min. # of digits for integers; max
 				   number of chars for from string */
-    int qualifier;        /* 'h', 'l', or 'L' for integer fields */
+    int qualifier;   /* 'h', 'l', or 'L' for integer fields */
 
     for (str = buf; *fmt; ++fmt) {
         if (*fmt != '%') {
@@ -353,24 +341,14 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
 
         /* process flags */
         flags = 0;
-        repeat:
-        ++fmt;        /* this also skips first '%' */
+    repeat:
+        ++fmt; /* this also skips first '%' */
         switch (*fmt) {
-            case '-':
-                flags |= LEFT;
-                goto repeat;
-            case '+':
-                flags |= PLUS;
-                goto repeat;
-            case ' ':
-                flags |= SPACE;
-                goto repeat;
-            case '#':
-                flags |= SPECIAL;
-                goto repeat;
-            case '0':
-                flags |= ZEROPAD;
-                goto repeat;
+        case '-': flags |= LEFT; goto repeat;
+        case '+': flags |= PLUS; goto repeat;
+        case ' ': flags |= SPACE; goto repeat;
+        case '#': flags |= SPECIAL; goto repeat;
+        case '0': flags |= ZEROPAD; goto repeat;
         }
 
         /* get field width */
@@ -380,11 +358,10 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
         else if (*fmt == '*') {
             ++fmt;
             /* it's the next argument */
-            field_width = va_arg(args,
-                                 int);
+            field_width = va_arg(args, int);
             if (field_width < 0) {
-                field_width = -field_width;
-                flags |= LEFT;
+                field_width  = -field_width;
+                flags       |= LEFT;
             }
         }
 
@@ -397,11 +374,9 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
             else if (*fmt == '*') {
                 ++fmt;
                 /* it's the next argument */
-                precision = va_arg(args,
-                                   int);
+                precision = va_arg(args, int);
             }
-            if (precision < 0)
-                precision = 0;
+            if (precision < 0) precision = 0;
         }
 
         /* get the conversion qualifier */
@@ -415,98 +390,79 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
         base = 10;
 
         switch (*fmt) {
-            case 'c':
-                if (!(flags & LEFT))
-                    while (--field_width > 0)
-                        *str++ = ' ';
-                *str++ = (unsigned char) va_arg(args,
-                                                int);
+        case 'c':
+            if (!(flags & LEFT))
                 while (--field_width > 0)
                     *str++ = ' ';
-                continue;
+            *str++ = (unsigned char)va_arg(args, int);
+            while (--field_width > 0)
+                *str++ = ' ';
+            continue;
 
-            case 's':
-                s = va_arg(args,
-                           char *);
-                len = strnlen(s, precision);
+        case 's':
+            s   = va_arg(args, char *);
+            len = strnlen(s, precision);
 
-                if (!(flags & LEFT))
-                    while (len < field_width--)
-                        *str++ = ' ';
-                for (i = 0; i < len; ++i)
-                    *str++ = *s++;
+            if (!(flags & LEFT))
                 while (len < field_width--)
                     *str++ = ' ';
-                continue;
+            for (i = 0; i < len; ++i)
+                *str++ = *s++;
+            while (len < field_width--)
+                *str++ = ' ';
+            continue;
 
-            case 'p':
-                if (field_width == -1) {
-                    field_width = 2 * sizeof(void *);
-                    flags |= ZEROPAD;
-                }
-                str = number(str, (unsigned long) va_arg(args,
-                                                         void *), 16,
-                             field_width, precision, flags);
-                continue;
+        case 'p':
+            if (field_width == -1) {
+                field_width  = 2 * sizeof(void *);
+                flags       |= ZEROPAD;
+            }
+            str =
+                number(str, (unsigned long)va_arg(args, void *), 16, field_width, precision, flags);
+            continue;
 
-            case 'n':
-                if (qualifier == 'l') {
-                    long *ip = va_arg(args,
-                                      long *);
-                    *ip = (str - buf);
-                } else {
-                    int *ip = va_arg(args,
-                                     int *);
-                    *ip = (str - buf);
-                }
-                continue;
+        case 'n':
+            if (qualifier == 'l') {
+                long *ip = va_arg(args, long *);
+                *ip      = (str - buf);
+            } else {
+                int *ip = va_arg(args, int *);
+                *ip     = (str - buf);
+            }
+            continue;
 
-            case '%':
-                *str++ = '%';
-                continue;
+        case '%':
+            *str++ = '%';
+            continue;
 
-                /* integer number formats - set up the flags and "break" */
-            case 'o':
-                base = 8;
-                break;
+            /* integer number formats - set up the flags and "break" */
+        case 'o': base = 8; break;
 
-            case 'x':
-                flags |= SMALL;
-            case 'X':
-                base = 16;
-                break;
+        case 'x': flags |= SMALL;
+        case 'X': base = 16; break;
 
-            case 'd':
-            case 'i':
-                flags |= SIGN;
-            case 'u':
-                break;
-            case 'f':
-                str = ftoa(va_arg(args, double), str, precision);
-                break;
+        case 'd':
+        case 'i': flags |= SIGN;
+        case 'u': break;
+        case 'f': str = ftoa(va_arg(args, double), str, precision); break;
 
-            default:
-                *str++ = '%';
-                if (*fmt)
-                    *str++ = *fmt;
-                else
-                    --fmt;
-                continue;
+        default:
+            *str++ = '%';
+            if (*fmt)
+                *str++ = *fmt;
+            else
+                --fmt;
+            continue;
         }
         if (qualifier == 'l')
-            num = va_arg(args,
-                         unsigned long);
+            num = va_arg(args, unsigned long);
         else if (qualifier == 'h') {
-            num = (unsigned short) va_arg(args,
-                                          int);
-            if (flags & SIGN)
-                num = (short) num;
+            num = (unsigned short)va_arg(args, int);
+            if (flags & SIGN) num = (short)num;
         } else if (flags & SIGN)
-            num = va_arg(args,
-                         int);
+            num = va_arg(args, int);
         else
-            num = va_arg(args,
-                         unsigned int);
+            num = va_arg(args, unsigned int);
         str = number(str, num, base, field_width, precision, flags);
     }
     *str = '\0';
@@ -518,10 +474,9 @@ void memclean(char *s, int len) {
 }
 
 void *memcpy(void *s, const void *ct, size_t n) {
-    if (NULL == s || NULL == ct || n <= 0)
-        return NULL;
+    if (NULL == s || NULL == ct || n <= 0) return NULL;
     for (size_t i = 0; i < n; ++i) {
-        *(char *) s++ = *(char *) ct++;
+        *(char *)s++ = *(char *)ct++;
     }
     return s;
 }
@@ -547,27 +502,27 @@ void *memset(void *s, int c, size_t n) {
 void *memmove(void *dest, const void *src, size_t num) {
     void *ret = dest;
     if (dest < src) {
-        while (num--)//前->后
+        while (num--) //前->后
         {
-            *(char *) dest = *(char *) src;
-            dest = (char *) dest + 1;
-            src = (char *) src + 1;
+            *(char *)dest = *(char *)src;
+            dest          = (char *)dest + 1;
+            src           = (char *)src + 1;
         }
     } else {
-        while (num--)//后->前
+        while (num--) //后->前
         {
-            *((char *) dest + num) = *((char *) src + num);
+            *((char *)dest + num) = *((char *)src + num);
         }
     }
     return ret;
 }
 
 void *memchr(const void *_s, int _c, size_t _n) {
-    uint8_t *s = (const uint8_t *) _s;
-    uint8_t *e = (const uint8_t *) ((uint8_t *) _s + _n);
+    uint8_t      *s = (const uint8_t *)_s;
+    uint8_t      *e = (const uint8_t *)((uint8_t *)_s + _n);
     const uint8_t c = _c;
     for (; s < e; s++)
-        if (*s == c) return (void *) s;
+        if (*s == c) return (void *)s;
     return NULL;
 }
 
@@ -589,25 +544,22 @@ size_t strlen(const char *str) {
 
 char *strchrnul(const char *s, int c) {
     while (*s) {
-        if ((*s++) == c)
-            break;
+        if ((*s++) == c) break;
     }
-    return (char *) s;
+    return (char *)s;
 }
 
 char *strtok(char *str, const char *delim) {
-    static char *src = NULL;
-    const char *indelim = delim;
-    int flag = 1, index = 0;
-    char *temp = NULL;
-    if (str == NULL) {
-        str = src;
-    }
+    static char *src     = NULL;
+    const char  *indelim = delim;
+    int          flag = 1, index = 0;
+    char        *temp = NULL;
+    if (str == NULL) { str = src; }
     for (; *str; str++) {
         delim = indelim;
         for (; *delim; delim++) {
             if (*str == *delim) {
-                *str = 0;
+                *str  = 0;
                 index = 1;
                 break;
             }
@@ -626,35 +578,36 @@ char *strtok(char *str, const char *delim) {
 }
 
 char *strstr(char *str1, char *str2) {
-    if (str1 == 0 || str2 == 0)return 0;
+    if (str1 == 0 || str2 == 0) return 0;
     const char *temp = 0;
-    const char *res = 0;
+    const char *res  = 0;
     while (*str1 != '\0') {
         temp = str1;
-        res = str2;
-        while (*temp == *res)++temp, ++res;
-        if (*res == '\0')return str1;
+        res  = str2;
+        while (*temp == *res)
+            ++temp, ++res;
+        if (*res == '\0') return str1;
         ++str1;
     }
     return 0;
 }
 
 char *strncpy(char *dest, const char *src, unsigned long long count) {
-    if (dest == 0 || src == 0)return 0;
+    if (dest == 0 || src == 0) return 0;
     char *ret = dest;
-    while (count)*dest = *src, ++dest, ++src, --count;
+    while (count)
+        *dest = *src, ++dest, ++src, --count;
     return ret;
 }
 
 char *strdup(const char *str) {
-    if (str == NULL)
-        return NULL;
+    if (str == NULL) return NULL;
 
-    char *strat = (char *) str;
-    int len = 0;
+    char *strat = (char *)str;
+    int   len   = 0;
     while (*str++ != '\0')
         len++;
-    char *ret = (char *) kmalloc(len + 1);
+    char *ret = (char *)kmalloc(len + 1);
 
     while ((*ret++ = *strat++) != '\0') {}
 
@@ -663,62 +616,51 @@ char *strdup(const char *str) {
 
 void strtoupper(char *str) {
     while (*str != '\0') {
-        if (*str >= 'a' && *str <= 'z') {
-            *str -= 32;
-        }
+        if (*str >= 'a' && *str <= 'z') { *str -= 32; }
         str++;
     }
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
-    const unsigned char *p1 = (const unsigned char *) s1,
-            *p2 = (const unsigned char *) s2;
+    const unsigned char *p1 = (const unsigned char *)s1, *p2 = (const unsigned char *)s2;
     while (n-- > 0) {
-        if (*p1 != *p2)
-            return *p1 - *p2;
-        if (*p1 == '\0')
-            return 0;
+        if (*p1 != *p2) return *p1 - *p2;
+        if (*p1 == '\0') return 0;
         p1++, p2++;
     }
     return 0;
 }
 
 int64_t strtol(const char *str, char **endptr, int base) {
-    const char *s;
+    const char   *s;
     unsigned long acc;
-    char c;
+    char          c;
     unsigned long cutoff;
-    int neg, any, cutlim;
+    int           neg, any, cutlim;
     s = str;
     do {
         c = *s++;
-    } while (isspace((unsigned char) c));
+    } while (isspace((unsigned char)c));
     if (c == '-') {
         neg = 1;
-        c = *s++;
+        c   = *s++;
     } else {
         neg = 0;
-        if (c == '+')
-            c = *s++;
+        if (c == '+') c = *s++;
     }
-    if ((base == 0 || base == 16) &&
-        c == '0' && (*s == 'x' || *s == 'X') &&
-        ((s[1] >= '0' && s[1] <= '9') ||
-         (s[1] >= 'A' && s[1] <= 'F') ||
+    if ((base == 0 || base == 16) && c == '0' && (*s == 'x' || *s == 'X') &&
+        ((s[1] >= '0' && s[1] <= '9') || (s[1] >= 'A' && s[1] <= 'F') ||
          (s[1] >= 'a' && s[1] <= 'f'))) {
-        c = s[1];
-        s += 2;
-        base = 16;
+        c     = s[1];
+        s    += 2;
+        base  = 16;
     }
-    if (base == 0)
-        base = c == '0' ? 8 : 10;
+    if (base == 0) base = c == '0' ? 8 : 10;
     acc = any = 0;
-    if (base < 2 || base > 36)
-        goto noconv;
+    if (base < 2 || base > 36) goto noconv;
 
-    cutoff = neg ? (unsigned long) -(LONG_MIN + LONG_MAX) + LONG_MAX
-                 : LONG_MAX;
-    cutlim = cutoff % base;
+    cutoff  = neg ? (unsigned long)-(LONG_MIN + LONG_MAX) + LONG_MAX : LONG_MAX;
+    cutlim  = cutoff % base;
     cutoff /= base;
     for (;; c = *s++) {
         if (c >= '0' && c <= '9')
@@ -729,12 +671,11 @@ int64_t strtol(const char *str, char **endptr, int base) {
             c -= 'a' - 10;
         else
             break;
-        if (c >= base)
-            break;
+        if (c >= base) break;
         if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
             any = -1;
         else {
-            any = 1;
+            any  = 1;
             acc *= base;
             acc += c;
         }
@@ -742,12 +683,10 @@ int64_t strtol(const char *str, char **endptr, int base) {
     if (any < 0) {
         acc = neg ? LONG_MIN : LONG_MAX;
     } else if (!any) {
-        noconv:
-        {}
+    noconv: {}
     } else if (neg)
         acc = -acc;
-    if (endptr != NULL)
-        *endptr = (char *) (any ? s - 1 : str);
+    if (endptr != NULL) *endptr = (char *)(any ? s - 1 : str);
     return (acc);
 }
 
@@ -770,7 +709,7 @@ int strcmp(const char *s1, const char *s2) {
             return 0;
         }
     } else {
-        return (int) (*s1 - *s2);
+        return (int)(*s1 - *s2);
     }
 }
 
@@ -785,22 +724,20 @@ char *strcat(char *dest, const char *src) {
     char *temp = dest;
     while (*temp != '\0')
         temp++;
-    while ((*temp++ = *src++) != '\0');
+    while ((*temp++ = *src++) != '\0')
+        ;
 }
 
 char *strchr(const char *str, int c) {
     while (*str != '\0') {
-        if (*str == c) {
-            return (char *) str;
-        }
+        if (*str == c) { return (char *)str; }
         str++;
     }
     return NULL;
 }
 
 int isspace(int c) {
-    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' ||
-            c == '\v');
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
 }
 
 int isdigit(int c) {
@@ -817,7 +754,7 @@ int isupper(int c) {
 
 int sprintf(char *buf, const char *fmt, ...) {
     va_list args;
-    int i;
+    int     i;
 
     va_start(args, fmt);
     i = vsprintf(buf, fmt, args);
@@ -827,7 +764,7 @@ int sprintf(char *buf, const char *fmt, ...) {
 
 void explicit_bzero(void *_s, size_t _n) {
     for (size_t i = 0; i < _n; i++) {
-        ((uint8_t *) _s)[i] = 0;
+        ((uint8_t *)_s)[i] = 0;
     }
 }
 

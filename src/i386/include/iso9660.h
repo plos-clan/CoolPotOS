@@ -112,9 +112,9 @@ typedef struct l9660_file;
 typedef struct l9660_fs {
 #ifdef L9660_SINGLEBUFFER
     union {
-    l9660_dirent root_dir_ent;
-    char         root_dir_pad[34];
-  };
+        l9660_dirent root_dir_ent;
+        char         root_dir_pad[34];
+    };
 #else
     /* Sector buffer to hold the PVD */
     l9660_vdesc pvd;
@@ -166,4 +166,3 @@ l9660_status l9660_openfs(l9660_fs *fs,
 
 bool read_sector(l9660_fs *fs, void *buf, uint32_t sector);
 void iso9660_regist();
-

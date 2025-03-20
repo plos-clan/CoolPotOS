@@ -1,14 +1,14 @@
-#include "timer.h"
 #include "acpi.h"
-#include "kprint.h"
 #include "hhdm.h"
-#include "krlibc.h"
-#include "isr.h"
-#include "scheduler.h"
-#include "pcb.h"
 #include "io.h"
+#include "isr.h"
+#include "kprint.h"
+#include "krlibc.h"
+#include "pcb.h"
+#include "scheduler.h"
+#include "timer.h"
 
-HpetInfo *hpet_addr;
+HpetInfo       *hpet_addr;
 static uint32_t hpetPeriod = 0;
 
 extern void save_registers(); //switch.S
@@ -21,19 +21,17 @@ extern void save_registers(); //switch.S
 
 void usleep(uint64_t nano) {
     uint64_t targetTime = nanoTime();
-    uint64_t after = 0;
+    uint64_t after      = 0;
     while (1) {
         uint64_t n = nanoTime();
         if (n < targetTime) {
-            after += 0xffffffff - targetTime + n;
-            targetTime = n;
+            after      += 0xffffffff - targetTime + n;
+            targetTime  = n;
         } else {
-            after += n - targetTime;
-            targetTime = n;
+            after      += n - targetTime;
+            targetTime  = n;
         }
-        if (after >= nano) {
-            return;
-        }
+        if (after >= nano) { return; }
     }
 }
 
@@ -44,11 +42,11 @@ uint64_t nanoTime() {
 }
 
 void hpet_init(Hpet *hpet) {
-    hpet_addr = phys_to_virt(hpet->base_address.address);
-    uint32_t counterClockPeriod = hpet_addr->generalCapabilities >> 32;
-    hpetPeriod = counterClockPeriod / 1000000;
-    hpet_addr->generalConfiguration |= 1;
-    *(__volatile__ uint64_t *)(hpet_addr + 0xf0) = 0;
-    register_interrupt_handler(timer, (void *) save_registers, 0, 0x8E);
-    kinfo("Setup acpi hpet table (nano_time: %p).", (uint64_t) nanoTime());
+    hpet_addr                                     = phys_to_virt(hpet->base_address.address);
+    uint32_t counterClockPeriod                   = hpet_addr->generalCapabilities >> 32;
+    hpetPeriod                                    = counterClockPeriod / 1000000;
+    hpet_addr->generalConfiguration              |= 1;
+    *(__volatile__ uint64_t *)(hpet_addr + 0xf0)  = 0;
+    register_interrupt_handler(timer, (void *)save_registers, 0, 0x8E);
+    kinfo("Setup acpi hpet table (nano_time: %p).", (uint64_t)nanoTime());
 }

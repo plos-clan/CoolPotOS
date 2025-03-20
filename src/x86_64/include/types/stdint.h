@@ -28,12 +28,12 @@ typedef __UINT32_TYPE__ uint32_t;
 typedef __UINT64_TYPE__ uint64_t;
 #endif
 
-typedef __UINT_LEAST8_TYPE__ uint_least8_t;
+typedef __UINT_LEAST8_TYPE__  uint_least8_t;
 typedef __UINT_LEAST16_TYPE__ uint_least16_t;
 typedef __UINT_LEAST32_TYPE__ uint_least32_t;
 typedef __UINT_LEAST64_TYPE__ uint_least64_t;
 
-typedef __UINT_FAST8_TYPE__ uint_fast8_t;
+typedef __UINT_FAST8_TYPE__  uint_fast8_t;
 typedef __UINT_FAST16_TYPE__ uint_fast16_t;
 typedef __UINT_FAST32_TYPE__ uint_fast32_t;
 typedef __UINT_FAST64_TYPE__ uint_fast64_t;
@@ -51,12 +51,12 @@ typedef __INT32_TYPE__ int32_t;
 typedef __INT64_TYPE__ int64_t;
 #endif
 
-typedef __INT_LEAST8_TYPE__ int_least8_t;
+typedef __INT_LEAST8_TYPE__  int_least8_t;
 typedef __INT_LEAST16_TYPE__ int_least16_t;
 typedef __INT_LEAST32_TYPE__ int_least32_t;
 typedef __INT_LEAST64_TYPE__ int_least64_t;
 
-typedef __INT_FAST8_TYPE__ int_fast8_t;
+typedef __INT_FAST8_TYPE__  int_fast8_t;
 typedef __INT_FAST16_TYPE__ int_fast16_t;
 typedef __INT_FAST32_TYPE__ int_fast32_t;
 typedef __INT_FAST64_TYPE__ int_fast64_t;
@@ -69,111 +69,111 @@ typedef __INTPTR_TYPE__ intptr_t;
 #endif
 
 typedef __UINTMAX_TYPE__ uintmax_t;
-typedef __INTMAX_TYPE__ intmax_t;
+typedef __INTMAX_TYPE__  intmax_t;
 
 /* Clang and GCC have different mechanisms for INT32_C and friends. */
 #ifdef __clang__
-#   ifndef __FREESTND_C_HDRS_C_JOIN
-#       define __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix) x ## suffix
-#       define __FREESTND_C_HDRS_C_JOIN(x, suffix) __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix)
-#   endif
+#    ifndef __FREESTND_C_HDRS_C_JOIN
+#        define __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix) x##suffix
+#        define __FREESTND_C_HDRS_C_JOIN(x, suffix)        __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix)
+#    endif
 
-#   undef INT8_C
-#   define INT8_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT8_C_SUFFIX__)
-#   undef INT16_C
-#   define INT16_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT16_C_SUFFIX__)
-#   undef INT32_C
-#   define INT32_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT32_C_SUFFIX__)
-#   undef INT64_C
-#   define INT64_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT64_C_SUFFIX__)
+#    undef INT8_C
+#    define INT8_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT8_C_SUFFIX__)
+#    undef INT16_C
+#    define INT16_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT16_C_SUFFIX__)
+#    undef INT32_C
+#    define INT32_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT32_C_SUFFIX__)
+#    undef INT64_C
+#    define INT64_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INT64_C_SUFFIX__)
 
-#   undef UINT8_C
-#   define UINT8_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT8_C_SUFFIX__)
-#   undef UINT16_C
-#   define UINT16_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT16_C_SUFFIX__)
-#   undef UINT32_C
-#   define UINT32_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT32_C_SUFFIX__)
-#   undef UINT64_C
-#   define UINT64_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT64_C_SUFFIX__)
+#    undef UINT8_C
+#    define UINT8_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT8_C_SUFFIX__)
+#    undef UINT16_C
+#    define UINT16_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT16_C_SUFFIX__)
+#    undef UINT32_C
+#    define UINT32_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT32_C_SUFFIX__)
+#    undef UINT64_C
+#    define UINT64_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINT64_C_SUFFIX__)
 
-#   undef INTMAX_C
-#   define INTMAX_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INTMAX_C_SUFFIX__)
-#   undef UINTMAX_C
-#   define UINTMAX_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINTMAX_C_SUFFIX__)
+#    undef INTMAX_C
+#    define INTMAX_C(x) __FREESTND_C_HDRS_C_JOIN(x, __INTMAX_C_SUFFIX__)
+#    undef UINTMAX_C
+#    define UINTMAX_C(x) __FREESTND_C_HDRS_C_JOIN(x, __UINTMAX_C_SUFFIX__)
 #else
-#   undef INT8_C
-#   define INT8_C(x) __INT8_C(x)
-#   undef INT16_C
-#   define INT16_C(x) __INT16_C(x)
-#   undef INT32_C
-#   define INT32_C(x) __INT32_C(x)
-#   undef INT64_C
-#   define INT64_C(x) __INT64_C(x)
+#    undef INT8_C
+#    define INT8_C(x) __INT8_C(x)
+#    undef INT16_C
+#    define INT16_C(x) __INT16_C(x)
+#    undef INT32_C
+#    define INT32_C(x) __INT32_C(x)
+#    undef INT64_C
+#    define INT64_C(x) __INT64_C(x)
 
-#   undef UINT8_C
-#   define UINT8_C(x) __UINT8_C(x)
-#   undef UINT16_C
-#   define UINT16_C(x) __UINT16_C(x)
-#   undef UINT32_C
-#   define UINT32_C(x) __UINT32_C(x)
-#   undef UINT64_C
-#   define UINT64_C(x) __UINT64_C(x)
+#    undef UINT8_C
+#    define UINT8_C(x) __UINT8_C(x)
+#    undef UINT16_C
+#    define UINT16_C(x) __UINT16_C(x)
+#    undef UINT32_C
+#    define UINT32_C(x) __UINT32_C(x)
+#    undef UINT64_C
+#    define UINT64_C(x) __UINT64_C(x)
 
-#   undef INTMAX_C
-#   define INTMAX_C(x) __INTMAX_C(x)
-#   undef UINTMAX_C
-#   define UINTMAX_C(x) __UINTMAX_C(x)
+#    undef INTMAX_C
+#    define INTMAX_C(x) __INTMAX_C(x)
+#    undef UINTMAX_C
+#    define UINTMAX_C(x) __UINTMAX_C(x)
 #endif
 
 #ifdef __UINT8_MAX__
-#   undef UINT8_MAX
-#   define UINT8_MAX __UINT8_MAX__
+#    undef UINT8_MAX
+#    define UINT8_MAX __UINT8_MAX__
 #endif
 #ifdef __UINT16_MAX__
-#   undef UINT16_MAX
-#   define UINT16_MAX __UINT16_MAX__
+#    undef UINT16_MAX
+#    define UINT16_MAX __UINT16_MAX__
 #endif
 #ifdef __UINT32_MAX__
-#   undef UINT32_MAX
-#   define UINT32_MAX __UINT32_MAX__
+#    undef UINT32_MAX
+#    define UINT32_MAX __UINT32_MAX__
 #endif
 #ifdef __UINT64_MAX__
-#   undef UINT64_MAX
-#   define UINT64_MAX __UINT64_MAX__
+#    undef UINT64_MAX
+#    define UINT64_MAX __UINT64_MAX__
 #endif
 
 #ifdef __INT8_MAX__
-#   undef INT8_MAX
-#   define INT8_MAX __INT8_MAX__
+#    undef INT8_MAX
+#    define INT8_MAX __INT8_MAX__
 #endif
 #ifdef __INT16_MAX__
-#   undef INT16_MAX
-#   define INT16_MAX __INT16_MAX__
+#    undef INT16_MAX
+#    define INT16_MAX __INT16_MAX__
 #endif
 #ifdef __INT32_MAX__
-#   undef INT32_MAX
-#   define INT32_MAX __INT32_MAX__
+#    undef INT32_MAX
+#    define INT32_MAX __INT32_MAX__
 #endif
 #ifdef __INT64_MAX__
-#   undef INT64_MAX
-#   define INT64_MAX __INT64_MAX__
+#    undef INT64_MAX
+#    define INT64_MAX __INT64_MAX__
 #endif
 
 #ifdef __INT8_MAX__
-#   undef INT8_MIN
-#   define INT8_MIN (-INT8_MAX - 1)
+#    undef INT8_MIN
+#    define INT8_MIN (-INT8_MAX - 1)
 #endif
 #ifdef __INT16_MAX__
-#   undef INT16_MIN
-#   define INT16_MIN (-INT16_MAX - 1)
+#    undef INT16_MIN
+#    define INT16_MIN (-INT16_MAX - 1)
 #endif
 #ifdef __INT32_MAX__
-#   undef INT32_MIN
-#   define INT32_MIN (-INT32_MAX - 1)
+#    undef INT32_MIN
+#    define INT32_MIN (-INT32_MAX - 1)
 #endif
 #ifdef __INT64_MAX__
-#   undef INT64_MIN
-#   define INT64_MIN (-INT64_MAX - 1)
+#    undef INT64_MIN
+#    define INT64_MIN (-INT64_MAX - 1)
 #endif
 
 #undef UINT_LEAST8_MAX
@@ -231,14 +231,14 @@ typedef __INTMAX_TYPE__ intmax_t;
 #define INT_FAST64_MIN (-INT_FAST64_MAX - 1)
 
 #ifdef __UINTPTR_MAX__
-#   undef UINTPTR_MAX
-#   define UINTPTR_MAX __UINTPTR_MAX__
+#    undef UINTPTR_MAX
+#    define UINTPTR_MAX __UINTPTR_MAX__
 #endif
 #ifdef __INTPTR_MAX__
-#   undef INTPTR_MAX
-#   define INTPTR_MAX __INTPTR_MAX__
-#   undef INTPTR_MIN
-#   define INTPTR_MIN (-INTPTR_MAX - 1)
+#    undef INTPTR_MAX
+#    define INTPTR_MAX __INTPTR_MAX__
+#    undef INTPTR_MIN
+#    define INTPTR_MIN (-INTPTR_MAX - 1)
 #endif
 
 #undef UINTMAX_MAX

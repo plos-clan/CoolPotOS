@@ -1,82 +1,84 @@
-#include "limine.h"
-#include "gop.h"
-#include "kprint.h"
-#include "terminal.h"
-#include "module.h"
-#include "hhdm.h"
-#include "frame.h"
-#include "heap.h"
-#include "krlibc.h"
 #include "acpi.h"
-#include "timer.h"
-#include "power.h"
-#include "description_table.h"
-#include "page.h"
-#include "vfs.h"
-#include "vdisk.h"
-#include "keyboard.h"
+#include "ahci.h"
 #include "cpuid.h"
-#include "smp.h"
+#include "description_table.h"
+#include "devfs.h"
+#include "frame.h"
+#include "gop.h"
+#include "heap.h"
+#include "hhdm.h"
+#include "ide.h"
+#include "iic/iic_core.h"
+#include "keyboard.h"
+#include "kprint.h"
+#include "krlibc.h"
+#include "limine.h"
+#include "module.h"
+#include "nvme.h"
+#include "page.h"
 #include "pcb.h"
 #include "pcie.h"
-#include "nvme.h"
-#include "ahci.h"
-#include "ide.h"
-#include "devfs.h"
-#include "pivfs.h"
-#include "shell.h"
-#include "iic/iic_core.h"
-#include "smbios.h"
-#include "rtl8169.h"
 #include "pcnet.h"
+#include "pivfs.h"
+#include "power.h"
+#include "rtl8169.h"
+#include "shell.h"
+#include "smbios.h"
+#include "smp.h"
+#include "terminal.h"
+#include "timer.h"
+#include "vdisk.h"
+#include "vfs.h"
 
 // 编译器判断
 #if defined(__clang__)
-#	define COMPILER_NAME "clang"
-#	define STRINGIFY(x) #x
-#	define EXPAND(x) STRINGIFY(x)
-#	define COMPILER_VERSION EXPAND(__clang_major__.__clang_minor__.__clang_patchlevel__)
+#    define COMPILER_NAME    "clang"
+#    define STRINGIFY(x)     #x
+#    define EXPAND(x)        STRINGIFY(x)
+#    define COMPILER_VERSION EXPAND(__clang_major__.__clang_minor__.__clang_patchlevel__)
 #elif defined(__GNUC__)
-#	define COMPILER_NAME "gcc"
-#	define STRINGIFY(x) #x
-#	define EXPAND(x) STRINGIFY(x)
-#	define COMPILER_VERSION EXPAND(__GNUC__.__GNUC_MINOR__.__GNUC_PATCHLEVEL__)
+#    define COMPILER_NAME    "gcc"
+#    define STRINGIFY(x)     #x
+#    define EXPAND(x)        STRINGIFY(x)
+#    define COMPILER_VERSION EXPAND(__GNUC__.__GNUC_MINOR__.__GNUC_PATCHLEVEL__)
 #else
-#	error "Unknown compiler"
+#    error "Unknown compiler"
 #endif
 
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(2)
+__attribute__((used, section(".limine_requests"))) static volatile LIMINE_BASE_REVISION(2)
 
-__attribute__((used, section(".limine_requests_start")))
-static volatile LIMINE_REQUESTS_START_MARKER
+    __attribute__((used,
+                   section(".limine_requests_start"))) static volatile LIMINE_REQUESTS_START_MARKER
 
-__attribute__((used, section(".limine_requests_end")))
-static volatile LIMINE_REQUESTS_END_MARKER
+    __attribute__((used,
+                   section(".limine_requests_end"))) static volatile LIMINE_REQUESTS_END_MARKER
 
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_stack_size_request stack_request = {
-    .id = LIMINE_STACK_SIZE_REQUEST,
-    .revision = 0,
-    .stack_size = 131072 //128K
+    __attribute__((used,
+                   section(".limine_requests"))) static volatile struct limine_stack_size_request
+    stack_request = {
+        .id         = LIMINE_STACK_SIZE_REQUEST,
+        .revision   = 0,
+        .stack_size = 131072 //128K
 };
 
-extern void error_setup(); //error_handle.c
-extern void iso9660_regist(); //iso9660.c
+extern void  error_setup();    //error_handle.c
+extern void  iso9660_regist(); //iso9660.c
 extern pcb_t kernel_head_task; //scheduler.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
     // kill_all_proc();
     power_off();
-    while (1);
+    while (1)
+        ;
 }
 
 _Noreturn void cp_reset() {
     printk("Rebooting %s...\n", KERNEL_NAME);
     // kill_all_proc();
     power_reset();
-    while (1);
+    while (1)
+        ;
 }
 
 void kmain(void) {
@@ -88,8 +90,8 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME, COMPILER_NAME,
-           COMPILER_VERSION);
+    printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME,
+           COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     gdt_setup();
@@ -125,25 +127,25 @@ void kmain(void) {
     init_iic();
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
-    create_kernel_thread((void *) shell_setup, NULL, "KernelShell");
+    create_kernel_thread((void *)shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
     //beep();
     enable_scheduler();
     open_interrupt;
-//
-//    vfs_node_t node = vfs_open("/dev/sata0");
-//    if (node != NULL) {
-//        uint8_t *buf = malloc(512);
-//        memset(buf, 0, 512);
-//        vfs_read(node, buf, 0, 512);
-//        for (int i = 0; i < 512; i++) {
-//            logkf("%02x ", buf[i]);
-//        }
-//        logkf("\n");
-//        free(buf);
-//        vfs_close(node);
-//    } else
-//        kerror("Cannot open /dev/sata1");
+    //
+    //    vfs_node_t node = vfs_open("/dev/sata0");
+    //    if (node != NULL) {
+    //        uint8_t *buf = malloc(512);
+    //        memset(buf, 0, 512);
+    //        vfs_read(node, buf, 0, 512);
+    //        for (int i = 0; i < 512; i++) {
+    //            logkf("%02x ", buf[i]);
+    //        }
+    //        logkf("\n");
+    //        free(buf);
+    //        vfs_close(node);
+    //    } else
+    //        kerror("Cannot open /dev/sata1");
 
     cpu_hlt;
 }

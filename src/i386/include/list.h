@@ -5,7 +5,7 @@
 #pragma GCC system_header
 
 #ifdef ALL_IMPLEMENTATION
-#  define LIST_IMPLEMENTATION
+#    define LIST_IMPLEMENTATION
 #endif
 
 /**
@@ -14,17 +14,17 @@
  */
 typedef struct list *list_t;
 struct list {
-  union {
-    void *data;
-    isize idata;
-    usize udata;
-  };
-  list_t prev;
-  list_t next;
+    union {
+        void *data;
+        isize idata;
+        usize udata;
+    };
+    list_t prev;
+    list_t next;
 };
 
 #ifdef LIST_IMPLEMENTATION
-#  define extern static
+#    define extern static
 #endif
 
 /**
@@ -133,221 +133,221 @@ extern size_t list_length(list_t list);
 extern void list_print(list_t list);
 
 #ifdef LIST_IMPLEMENTATION
-#  undef extern
+#    undef extern
 #endif
 
 #ifdef LIST_IMPLEMENTATION
 
 static list_t list_alloc(void *data) {
-  list_t node = kmalloc(sizeof(*node));
-  if (node == NULL) return NULL;
-  node->data = data;
-  node->prev = NULL;
-  node->next = NULL;
-  return node;
+    list_t node = kmalloc(sizeof(*node));
+    if (node == NULL) return NULL;
+    node->data = data;
+    node->prev = NULL;
+    node->next = NULL;
+    return node;
 }
 
 static list_t list_free(list_t list) {
-  while (list != NULL) {
-    list_t next = list->next;
-    kfree(list);
-    list = next;
-  }
-  return NULL;
+    while (list != NULL) {
+        list_t next = list->next;
+        kfree(list);
+        list = next;
+    }
+    return NULL;
 }
 
 static list_t list_free_with(list_t list, void (*free_data)(void *)) {
-  while (list != NULL) {
-    list_t next = list->next;
-    free_data(list->data);
-    kfree(list);
-    list = next;
-  }
-  return NULL;
+    while (list != NULL) {
+        list_t next = list->next;
+        free_data(list->data);
+        kfree(list);
+        list = next;
+    }
+    return NULL;
 }
 
 static list_t list_append(list_t list, void *data) {
-  list_t node = list_alloc(data);
-  if (node == NULL) return list;
+    list_t node = list_alloc(data);
+    if (node == NULL) return list;
 
-  if (list == NULL) {
-    list = node;
-  } else {
-    list_t current = list;
-    while (current->next != NULL) {
-      current = current->next;
+    if (list == NULL) {
+        list = node;
+    } else {
+        list_t current = list;
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = node;
+        node->prev    = current;
     }
-    current->next = node;
-    node->prev    = current;
-  }
 
-  return list;
+    return list;
 }
 
 static list_t list_prepend(list_t list, void *data) {
-  list_t node = list_alloc(data);
-  if (node == NULL) return list;
+    list_t node = list_alloc(data);
+    if (node == NULL) return list;
 
-  node->next = list;
-  if (list != NULL) list->prev = node;
-  list = node;
+    node->next = list;
+    if (list != NULL) list->prev = node;
+    list = node;
 
-  return list;
+    return list;
 }
 
 static void *list_pop(list_t *list_p) {
-  if (list_p == NULL || *list_p == NULL) return NULL;
-  list_t list = list_tail(*list_p);
-  if (*list_p == list) *list_p = list->prev;
-  if (list->prev) list->prev->next = NULL;
-  auto data = list->data;
-  kfree(list);
-  return data;
+    if (list_p == NULL || *list_p == NULL) return NULL;
+    list_t list = list_tail(*list_p);
+    if (*list_p == list) *list_p = list->prev;
+    if (list->prev) list->prev->next = NULL;
+    auto data = list->data;
+    kfree(list);
+    return data;
 }
 
 static list_t list_head(list_t list) {
-  if (list == NULL) return NULL;
-  for (; list->prev; list = list->prev) {}
-  return list;
+    if (list == NULL) return NULL;
+    for (; list->prev; list = list->prev) {}
+    return list;
 }
 
 static list_t list_tail(list_t list) {
-  if (list == NULL) return NULL;
-  for (; list->next; list = list->next) {}
-  return list;
+    if (list == NULL) return NULL;
+    for (; list->next; list = list->next) {}
+    return list;
 }
 
 static list_t list_nth(list_t list, size_t n) {
-  if (list == NULL) return NULL;
-  list = list_head(list);
-  for (size_t i = 0; i < n; i++) {
-    list = list->next;
     if (list == NULL) return NULL;
-  }
-  return list;
+    list = list_head(list);
+    for (size_t i = 0; i < n; i++) {
+        list = list->next;
+        if (list == NULL) return NULL;
+    }
+    return list;
 }
 
 static list_t list_nth_last(list_t list, size_t n) {
-  if (list == NULL) return NULL;
-  list = list_tail(list);
-  for (size_t i = 0; i < n; i++) {
-    list = list->prev;
     if (list == NULL) return NULL;
-  }
-  return list;
+    list = list_tail(list);
+    for (size_t i = 0; i < n; i++) {
+        list = list->prev;
+        if (list == NULL) return NULL;
+    }
+    return list;
 }
 
 static bool list_search(list_t list, void *data) {
-  list_t current = list;
-  while (current != NULL) {
-    if (current->data == data) return true;
-    current = current->next;
-  }
-  return false;
+    list_t current = list;
+    while (current != NULL) {
+        if (current->data == data) return true;
+        current = current->next;
+    }
+    return false;
 }
 
 static list_t list_delete(list_t list, void *data) {
-  if (list == NULL) return NULL;
+    if (list == NULL) return NULL;
 
-  if (list->data == data) {
-    list_t temp = list;
-    list        = list->next;
-    kfree(temp);
-    return list;
-  }
-
-  for (list_t current = list->next; current; current = current->next) {
-    if (current->data == data) {
-      current->prev->next = current->next;
-      if (current->next != NULL) current->next->prev = current->prev;
-      kfree(current);
-      break;
+    if (list->data == data) {
+        list_t temp = list;
+        list        = list->next;
+        kfree(temp);
+        return list;
     }
-  }
 
-  return list;
+    for (list_t current = list->next; current; current = current->next) {
+        if (current->data == data) {
+            current->prev->next = current->next;
+            if (current->next != NULL) current->next->prev = current->prev;
+            kfree(current);
+            break;
+        }
+    }
+
+    return list;
 }
 
 static list_t list_delete_with(list_t list, void *data, free_t callback) {
-  if (list == NULL) return NULL;
+    if (list == NULL) return NULL;
 
-  if (list->data == data) {
-    list_t temp = list;
-    list        = list->next;
-    if (callback) callback(temp->data);
-    kfree(temp);
-    return list;
-  }
-
-  for (list_t current = list->next; current; current = current->next) {
-    if (current->data == data) {
-      current->prev->next = current->next;
-      if (current->next != NULL) current->next->prev = current->prev;
-      if (callback) callback(current->data);
-      kfree(current);
-      break;
+    if (list->data == data) {
+        list_t temp = list;
+        list        = list->next;
+        if (callback) callback(temp->data);
+        kfree(temp);
+        return list;
     }
-  }
 
-  return list;
+    for (list_t current = list->next; current; current = current->next) {
+        if (current->data == data) {
+            current->prev->next = current->next;
+            if (current->next != NULL) current->next->prev = current->prev;
+            if (callback) callback(current->data);
+            kfree(current);
+            break;
+        }
+    }
+
+    return list;
 }
 
 static list_t list_delete_node(list_t list, list_t node) {
-  if (list == NULL || node == NULL) return list;
+    if (list == NULL || node == NULL) return list;
 
-  if (list == node) {
-    list_t temp = list;
-    list        = list->next;
-    kfree(temp);
+    if (list == node) {
+        list_t temp = list;
+        list        = list->next;
+        kfree(temp);
+        return list;
+    }
+
+    node->prev->next = node->next;
+    if (node->next != NULL) node->next->prev = node->prev;
+    kfree(node);
     return list;
-  }
-
-  node->prev->next = node->next;
-  if (node->next != NULL) node->next->prev = node->prev;
-  kfree(node);
-  return list;
 }
 
 static list_t list_delete_node_with(list_t list, list_t node, free_t callback) {
-  if (list == NULL || node == NULL) return list;
+    if (list == NULL || node == NULL) return list;
 
-  if (list == node) {
-    list_t temp = list;
-    list        = list->next;
-    if (callback) callback(temp->data);
-    kfree(temp);
+    if (list == node) {
+        list_t temp = list;
+        list        = list->next;
+        if (callback) callback(temp->data);
+        kfree(temp);
+        return list;
+    }
+
+    node->prev->next = node->next;
+    if (node->next != NULL) node->next->prev = node->prev;
+    if (callback) callback(node->data);
+    kfree(node);
     return list;
-  }
-
-  node->prev->next = node->next;
-  if (node->next != NULL) node->next->prev = node->prev;
-  if (callback) callback(node->data);
-  kfree(node);
-  return list;
 }
 
 static size_t list_length(list_t list) {
-  size_t count   = 0;
-  list_t current = list;
-  while (current != NULL) {
-    count++;
-    current = current->next;
-  }
-  return count;
+    size_t count   = 0;
+    list_t current = list;
+    while (current != NULL) {
+        count++;
+        current = current->next;
+    }
+    return count;
 }
 
-#  ifdef __libplos__
+#    ifdef __libplos__
 static void list_print(list_t list) {
-  list_t current = list;
-  while (current != NULL) {
-    printf("%p -> ", current->data);
-    current = current->next;
-  }
-  printf("NULL\n");
+    list_t current = list;
+    while (current != NULL) {
+        printf("%p -> ", current->data);
+        current = current->next;
+    }
+    printf("NULL\n");
 }
-#  endif
+#    endif
 
-#  undef LIST_IMPLEMENTATION
+#    undef LIST_IMPLEMENTATION
 #endif
 
 /**
@@ -388,7 +388,7 @@ static void list_print(list_t list) {
 #define list_delete_node(slist, node) ((slist) = list_delete_node(slist, node))
 
 #define list_delete_node_with(list, node, callback)                                                \
-  ((list) = list_delete_node_with(list, node, callback))
+    ((list) = list_delete_node_with(list, node, callback))
 
 /**
  *\brief 遍历链表中的节点并执行操作
@@ -403,33 +403,33 @@ static void list_print(list_t list) {
  *\param[in] node 用于迭代的节点指针变量
  */
 #define list_foreach_cnt(list, i, node, code)                                                      \
-  ({                                                                                               \
-    size_t i = 0;                                                                                  \
-    for (list_t node = (list); node; (node) = (node)->next, (i)++)                                 \
-      (code);                                                                                      \
-  })
+    ({                                                                                             \
+        size_t i = 0;                                                                              \
+        for (list_t node = (list); node; (node) = (node)->next, (i)++)                             \
+            (code);                                                                                \
+    })
 
 #define list_first_node(list, node, expr)                                                          \
-  ({                                                                                               \
-    list_t _match_ = NULL;                                                                         \
-    for (list_t node = (list); node; node = node->next) {                                          \
-      if ((expr)) {                                                                                \
-        _match_ = node;                                                                            \
-        break;                                                                                     \
-      }                                                                                            \
-    }                                                                                              \
-    _match_;                                                                                       \
-  })
+    ({                                                                                             \
+        list_t _match_ = NULL;                                                                     \
+        for (list_t node = (list); node; node = node->next) {                                      \
+            if ((expr)) {                                                                          \
+                _match_ = node;                                                                    \
+                break;                                                                             \
+            }                                                                                      \
+        }                                                                                          \
+        _match_;                                                                                   \
+    })
 
 #define list_first(list, _data_, expr)                                                             \
-  ({                                                                                               \
-    void *_match_ = NULL;                                                                          \
-    for (list_t node = (list); node; node = node->next) {                                          \
-      void *_data_ = node->data;                                                                   \
-      if ((expr)) {                                                                                \
-        _match_ = _data_;                                                                          \
-        break;                                                                                     \
-      }                                                                                            \
-    }                                                                                              \
-    _match_;                                                                                       \
-  })
+    ({                                                                                             \
+        void *_match_ = NULL;                                                                      \
+        for (list_t node = (list); node; node = node->next) {                                      \
+            void *_data_ = node->data;                                                             \
+            if ((expr)) {                                                                          \
+                _match_ = _data_;                                                                  \
+                break;                                                                             \
+            }                                                                                      \
+        }                                                                                          \
+        _match_;                                                                                   \
+    })

@@ -14,12 +14,12 @@
 void *ff_memalloc(/* Returns pointer to the allocated memory block (null if not enough core) */
                   uint32_t msize /* Number of bytes to allocate */
 ) {
-  return kmalloc((size_t)msize); /* Allocate a new memory block */
+    return kmalloc((size_t)msize); /* Allocate a new memory block */
 }
 
 void ff_memfree(void *mblock /* Pointer to the memory block to free (no effect if null) */
 ) {
-  kfree(mblock); /* Free the memory block */
+    kfree(mblock); /* Free the memory block */
 }
 
 #endif
@@ -40,7 +40,7 @@ void ff_memfree(void *mblock /* Pointer to the memory block to free (no effect i
 int ff_mutex_create(        /* Returns 1:Function succeeded or 0:Could not create the mutex */
                     int vol /* Mutex ID: Volume mutex (0 to FF_VOLUMES - 1) or system mutex (FF_VOLUMES) */
 ) {
-  return 1;
+    return 1;
 }
 
 /*------------------------------------------------------------------------*/

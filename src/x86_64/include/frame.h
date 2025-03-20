@@ -1,5 +1,5 @@
-#include "ctype.h"
 #include "bitmap.h"
+#include "ctype.h"
 
 typedef struct {
     Bitmap bitmap;

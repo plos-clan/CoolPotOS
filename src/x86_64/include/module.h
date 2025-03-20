@@ -4,12 +4,12 @@
 #include "limine.h"
 
 typedef struct {
-    bool is_use;
-    char module_name[20];
-    char *path;
+    bool     is_use;
+    char     module_name[20];
+    char    *path;
     uint8_t *data;
-    size_t size;
-}cp_module_t;
+    size_t   size;
+} cp_module_t;
 
-void module_setup();
+void         module_setup();
 cp_module_t *get_module(const char *module_name);

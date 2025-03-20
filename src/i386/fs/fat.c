@@ -1,10 +1,10 @@
 #include "fat.h"
 #include "fatfs/ff.h"
-#include "vfs.h"
-#include "krlibc.h"
 #include "klog.h"
+#include "krlibc.h"
+#include "vfs.h"
 
-#define error(msg) printk("[FatErr]: %s\n",msg)
+#define error(msg) printk("[FatErr]: %s\n", msg)
 
 static FATFS      volume[10];
 static vfs_node_t drive_number_mapping[10] = {NULL};
@@ -26,7 +26,7 @@ vfs_node_t fatfs_get_node_by_number(int number) {
     return drive_number_mapping[number];
 }
 
-int fatfs_mkdir(void *parent, const char* name, vfs_node_t node) {
+int fatfs_mkdir(void *parent, const char *name, vfs_node_t node) {
     file_t p        = parent;
     char  *new_path = kmalloc(strlen(p->path) + strlen(name) + 1 + 1);
     sprintf(new_path, "%s/%s", p->path, name);
@@ -36,7 +36,7 @@ int fatfs_mkdir(void *parent, const char* name, vfs_node_t node) {
     return 0;
 }
 
-int fatfs_mkfile(void *parent, const char* name, vfs_node_t node) {
+int fatfs_mkfile(void *parent, const char *name, vfs_node_t node) {
     file_t p        = parent;
     char  *new_path = kmalloc(strlen(p->path) + strlen(name) + 1 + 1);
     sprintf(new_path, "%s/%s", p->path, name);
@@ -70,7 +70,7 @@ int fatfs_writefile(file_t file, const void *addr, size_t offset, size_t size) {
     return 0;
 }
 
-void fatfs_open(void *parent, const char* name, vfs_node_t node) {
+void fatfs_open(void *parent, const char *name, vfs_node_t node) {
     file_t p        = parent;
     char  *new_path = kmalloc(strlen(p->path) + strlen(name) + 1 + 1);
     file_t new      = kmalloc(sizeof(struct file));
@@ -121,7 +121,7 @@ void fatfs_close(file_t handle) {
     assert(res == FR_OK);
 }
 
-int fatfs_mount(const char* src, vfs_node_t node) {
+int fatfs_mount(const char *src, vfs_node_t node) {
     if (!src) return -1;
     int drive = alloc_number();
     assert(drive != -1);
@@ -184,15 +184,15 @@ int fatfs_stat(void *handle, vfs_node_t node) {
 }
 
 static struct vfs_callback callbacks = {
-        .mount   = fatfs_mount,
-        .unmount = fatfs_unmount,
-        .open    = fatfs_open,
-        .close   = (vfs_close_t)fatfs_close,
-        .read    = (vfs_read_t)fatfs_readfile,
-        .write   = (vfs_write_t)fatfs_writefile,
-        .mkdir   = fatfs_mkdir,
-        .mkfile  = fatfs_mkfile,
-        .stat    = fatfs_stat,
+    .mount   = fatfs_mount,
+    .unmount = fatfs_unmount,
+    .open    = fatfs_open,
+    .close   = (vfs_close_t)fatfs_close,
+    .read    = (vfs_read_t)fatfs_readfile,
+    .write   = (vfs_write_t)fatfs_writefile,
+    .mkdir   = fatfs_mkdir,
+    .mkfile  = fatfs_mkfile,
+    .stat    = fatfs_stat,
 };
 
 void fatfs_regist() {

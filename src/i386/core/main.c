@@ -1,50 +1,50 @@
-#include "video.h"
-#include "multiboot.h"
-#include "description_table.h"
-#include "io.h"
-#include "tty.h"
-#include "klog.h"
-#include "timer.h"
 #include "acpi.h"
-#include "page.h"
-#include "free_page.h"
-#include "error.h"
-#include "pci.h"
-#include "ide.h"
 #include "ahci.h"
-#include "vdisk.h"
-#include "vfs.h"
+#include "cpuid.h"
+#include "description_table.h"
 #include "devfs.h"
+#include "error.h"
+#include "fpu.h"
+#include "free_page.h"
+#include "hda.h"
+#include "ide.h"
+#include "iic_core.h"
+#include "io.h"
+#include "keyboard.h"
+#include "klog.h"
+#include "krlibc.h"
+#include "mouse.h"
+#include "multiboot.h"
 #include "net.h"
 #include "os_terminal.h"
+#include "page.h"
 #include "pcb.h"
-#include "cpuid.h"
-#include "keyboard.h"
-#include "mouse.h"
+#include "pci.h"
 #include "scheduler.h"
-#include "krlibc.h"
-#include "syscall.h"
-#include "speaker.h"
-#include "fpu.h"
-#include "hda.h"
-#include "vsound.h"
 #include "shell.h"
-#include "iic_core.h"
-#include "os_terminal.h"
+#include "speaker.h"
+#include "syscall.h"
+#include "timer.h"
+#include "tty.h"
+#include "vdisk.h"
+#include "vfs.h"
+#include "video.h"
+#include "vsound.h"
 
 extern void *program_break_end;
 extern void *program_break;
 
 extern void iso9660_regist(); //iso9660.c
-extern void fatfs_regist(); //fat.c
-extern void pipfs_regist(); //pipfs.c
+extern void fatfs_regist();   //fat.c
+extern void pipfs_regist();   //pipfs.c
 
 _Noreturn void shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
     kill_all_proc();
     sleep(10);
     power_off();
-    while (1);
+    while (1)
+        ;
 }
 
 _Noreturn void reboot() {
@@ -52,7 +52,8 @@ _Noreturn void reboot() {
     kill_all_proc();
     sleep(10);
     power_reset();
-    while (1);
+    while (1)
+        ;
 }
 
 int terminal_manual_flush(void *arg) {
@@ -76,30 +77,29 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     vga_install();
     gdt_install();
     idt_install(); //8259A PIC初始化
-    tty_init(); //tty 设备初始化
+    tty_init();    //tty 设备初始化
     init_vbe(multiboot);
 
     default_terminal_setup();
-    extern void check_memory(multiboot_t *multiboot);
+    extern void check_memory(multiboot_t * multiboot);
     check_memory(multiboot);
 
-//    if (multiboot->flags & (1 << 2)) {
-//
-//    }
+    //    if (multiboot->flags & (1 << 2)) {
+    //
+    //    }
     disable_scheduler();
     page_init(multiboot); //分页开启
     setup_free_page();
     terminal_setup(false);
     printk("CoolPotOS %s (Limine Multiboot) on an i386\n", KERNEL_NAME);
-    printk("KernelArea: 0x00000000 - 0x%08x | GraphicsBuffer: 0x%08x \n",
-           program_break_end,
+    printk("KernelArea: 0x00000000 - 0x%08x | GraphicsBuffer: 0x%08x \n", program_break_end,
            multiboot->framebuffer_addr);
     init_cpuid();
     klogf(true, "Memory manager initialize.\n");
     setup_error();
-    init_fpu(); //初始化浮点处理器
-    acpi_install();  //ACPI初始化
-    init_timer(1); //RTC 时钟中断
+    init_fpu();     //初始化浮点处理器
+    acpi_install(); //ACPI初始化
+    init_timer(1);  //RTC 时钟中断
     vdisk_init();
     vfs_init();
     init_pci(); //pci设备列表加载, 所有PCI设备相关驱动初始化需在此函数后方调用
@@ -125,15 +125,15 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
 
     create_kernel_thread(terminal_manual_flush, NULL, "Terminal");
 
-    create_kernel_thread((void *) setup_shell, NULL, "Shell");
+    create_kernel_thread((void *)setup_shell, NULL, "Shell");
     klogf(true, "Enable kernel shell service.\n");
 
     // 挂载最后一个块设备(通常为引导设备)
     vfs_node_t dev = vfs_open("/dev");
-    vfs_node_t c = NULL;
-    bool win = false;
+    vfs_node_t c   = NULL;
+    bool       win = false;
     list_foreach(dev->child, i) {
-        c = (vfs_node_t) i->data;
+        c = (vfs_node_t)i->data;
         char buf[20];
         sprintf(buf, "/dev/%s", c->name);
         if (vfs_mount(buf, vfs_open("/")) != -1) {
