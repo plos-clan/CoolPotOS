@@ -9,7 +9,7 @@ set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
 
-target("kernel")
+target("kernel32")
     set_arch("i386")
     set_kind("binary")
     set_toolchains("@zig", "nasm")
@@ -33,9 +33,9 @@ target("kernel")
     add_asflags("-f", "elf32")
     add_ldflags("-T", "src/i386/linker.ld")
 
-target("iso")
+target("iso32")
     set_kind("phony")
-    add_deps("kernel")
+    add_deps("kernel32")
     set_default(true)
 
     on_build(function (target)
@@ -45,7 +45,7 @@ target("iso")
         if os.exists(iso_dir) then os.rmdir(iso_dir) end
         os.cp("assets", iso_dir)
 
-        local kernel = project.target("kernel")
+        local kernel = project.target("kernel32")
         os.cp(kernel:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
@@ -54,17 +54,20 @@ target("iso")
         print("ISO image created at: " .. iso_file)
     end)
 
-    on_run(function (target)
-        local misc = "-serial stdio -m 4096"
-        local speaker = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
-        local ahci = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
-        local kvm = " -enable-kvm"
-        local vga = " -vga std -global VGA.vgamem_mb=32 "
-        local net = " -net nic,model=pcnet -net user "
-        local audio = " -device sb16,audiodev=speaker -device intel-hda -device hda-micro,audiodev=speaker "
-        local flags = misc..speaker..vga..net..kvm..audio
+--     on_run(function (target)
+--         local misc = "-serial stdio -m 4096"
+--         local speaker = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
+--         local ahci = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
+--         local kvm = " -enable-kvm"
+--         local vga = " -vga std -global VGA.vgamem_mb=32 "
+--         local net = " -net nic,model=pcnet -net user "
+--         local audio = " -device sb16,audiodev=speaker -device intel-hda -device hda-micro,audiodev=speaker "
+--         local flags = misc..speaker..vga..net..kvm..audio
+--
+--         os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
+--     end)
 
-        os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
-    end)
-
-
+target("default_build")
+    set_kind("phony")
+    add_deps("iso32")
+    set_default(true)
