@@ -43,17 +43,17 @@ uint64_t IPParseMAC(uint32_t dstIP) {
     extern uint32_t ip;
     extern uint8_t  mac0;
     extern uint32_t gateway;
-    //extern struct TIMERCTL timerctl;
+    // extern struct TIMERCTL timerctl;
     if ((dstIP & 0xffffff00) != (ip & 0xffffff00)) { dstIP = gateway; }
     for (int i = 0; i != ARP_write_pointer; i++) {
         if (dstIP == ARP_ip_address[i]) { return ARP_mac_address[i]; }
     }
     ARP_flags = 1;
-    //printk("send\n");
+    // printk("send\n");
     ether_frame_provider_send(0xffffffffffff, 0x0806,
                               ARP_Packet(0xffffffffffff, dstIP, *(uint64_t *)&mac0, ip, 1),
                               sizeof(struct ARPMessage));
-    //printk("ok\n");
+    // printk("ok\n");
     /*
     uint32_t time = timerctl.count;
     while (ARP_flags) {

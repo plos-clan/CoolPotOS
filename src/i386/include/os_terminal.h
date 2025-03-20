@@ -107,7 +107,7 @@ static inline void terminal_setup(bool is_f3) {
 
     if (!is_f3) {
         cpos_default_color();
-        //terminal_set_color_scheme(0);
+        // terminal_set_color_scheme(0);
         return;
     }
     TerminalPalette palette = {

@@ -155,7 +155,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_REALLOC]     = syscall_realloc,
 };
 
-size_t syscall() { //由 asmfunc.c/asm_syscall_handler调用
+size_t syscall() { // 由 asmfunc.c/asm_syscall_handler调用
     io_cli();
     disable_scheduler();
     volatile size_t eax, ebx, ecx, edx, esi, edi;

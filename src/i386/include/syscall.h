@@ -12,7 +12,7 @@
 #define SYSCALL_POSIX_OPEN  8
 #define SYSCALL_POSIX_CLOSE 9
 #define SYSCALL_POSIX_READ  10
-#define SYSCALL_POSIX_SIZEX 11 //该调用并不属于POSIX规范, 是CP_Kernel为迎合程序需要做的扩展调用
+#define SYSCALL_POSIX_SIZEX 11 // 该调用并不属于POSIX规范, 是CP_Kernel为迎合程序需要做的扩展调用
 #define SYSCALL_POSIX_WRITE 12
 #define SYSCALL_REALLOC     13
 
@@ -119,5 +119,5 @@ struct cfile_posix {
 };
 typedef struct cfile_posix *cfile_t;
 
-void asm_syscall_handler(); //asmfunc.__asm__
+void asm_syscall_handler(); // asmfunc.__asm__
 void setup_syscall();

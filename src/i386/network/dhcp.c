@@ -93,7 +93,7 @@ void dhcp_handler(void *base) {
                 logkf("Subnet Mask: %d.%d.%d.%d\n", options[2], options[3], options[4], options[5]);
                 submask = swap32(*(uint32_t *)&options[2]);
             } else if (options[0] == MESSAGE_TYPE_ROUTER) {
-                //waitif(true);
+                // waitif(true);
                 logkf("Gateway: %d.%d.%d.%d\n", options[2], options[3], options[4], options[5]);
 
                 gateway = swap32(*(uint32_t *)&options[2]);

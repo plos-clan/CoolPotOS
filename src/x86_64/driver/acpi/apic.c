@@ -58,7 +58,7 @@ uint32_t lapic_read(uint32_t reg) {
 
 uint64_t lapic_id() {
     uint32_t phy_id = lapic_read(LAPIC_REG_ID);
-    return phy_id; //x2apic_mode ? phy_id : (phy_id >> 24);
+    return phy_id; // x2apic_mode ? phy_id : (phy_id >> 24);
 }
 
 void local_apic_init(bool is_print) {

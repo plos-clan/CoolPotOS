@@ -12,7 +12,7 @@ tty_t         defualt_tty;
 mpmc_queue_t *queue;
 ticketlock    tty_lock;
 
-extern bool open_flush; //terminal.c
+extern bool open_flush; // terminal.c
 
 static void tty_kernel_print(tty_t *tty, const char *msg) {
     UNUSED(tty);

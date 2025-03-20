@@ -20,7 +20,7 @@ void init_iic(void) {
         iic_master->Control         = address;
         IIC_slaveNode iic_slaveList = iic_slaveAlloc(NULL);
 
-        //Initiative PCA9685
+        // Initiative PCA9685
         IIC_Slave     pca9685     = init_pca9685(0x40);
         IIC_slaveNode pca9685Node = iic_slaveAlloc(&pca9685);
         iic_slaveAppend(&iic_slaveList.next, &pca9685Node);

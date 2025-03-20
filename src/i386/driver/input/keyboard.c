@@ -50,7 +50,7 @@ static void key_handle(registers_t *reg) {
 
     extern struct task_struct *running_proc_head;
 
-    if (data < 0x80) { //将扫描码传进进程
+    if (data < 0x80) { // 将扫描码传进进程
         pcb_t *task = running_proc_head;
         while (1) {
             if (task->tty != NULL) {

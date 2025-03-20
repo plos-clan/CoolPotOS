@@ -11,10 +11,10 @@
 #include "pivfs.h"
 #include "sprintf.h"
 
-extern struct idt_register idt_pointer;      //idt.c
-extern int                 now_pid;          //pcb.c
-extern pcb_t               kernel_head_task; //scheduler.c
-extern bool                x2apic_mode;      //apic.c
+extern struct idt_register idt_pointer;      // idt.c
+extern int                 now_pid;          // pcb.c
+extern pcb_t               kernel_head_task; // scheduler.c
+extern bool                x2apic_mode;      // apic.c
 
 ticketlock apu_lock;
 

@@ -374,7 +374,7 @@ void ahci_init() {
 
     page_line(hba_mem);
 
-    //允许产生中断
+    // 允许产生中断
     uint32_t conf  = pci_read_command_status(device->bus, device->slot, device->func);
     conf          &= 0xffff0000;
     conf          |= 0x7;

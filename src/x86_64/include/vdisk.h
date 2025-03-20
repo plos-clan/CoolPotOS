@@ -17,7 +17,7 @@ typedef struct {
     uint32_t     sector_size; // 扇区大小
     vdisk_flag_t type;
     char         drive_name[50];
-} vdisk; //块设备
+} vdisk; // 块设备
 
 void     build_stream_device();
 uint32_t disk_size(int drive);

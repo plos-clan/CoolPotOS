@@ -88,7 +88,7 @@ void setup_facp(acpi_facp_t *facp0) {
 }
 
 void power_reset() {
-    //uint8_t val;
+    // uint8_t val;
     if (!SCI_EN) return;
     while (1) {
         // write ICH port

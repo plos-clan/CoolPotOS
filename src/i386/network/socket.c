@@ -16,7 +16,7 @@ static void socket_tcp_send(struct Socket *socket, uint8_t *data, uint32_t size)
     tcp_provider_send(socket->remoteIP, socket->localIP, socket->remotePort, socket->localPort,
                       socket->seqNum, socket->ackNum, 0, 1, 0, 0, 0, 0, 0, 0, data, s);
     socket->seqNum += s;
-    //io_delay();
+    // io_delay();
 }
 
 void socket_init() {

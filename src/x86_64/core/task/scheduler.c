@@ -10,8 +10,8 @@
 pcb_t kernel_head_task = NULL;
 bool  is_scheduler     = false;
 
-extern uint64_t cpu_count;        //smp.c
-extern uint32_t bsp_processor_id; //smp.c
+extern uint64_t cpu_count;        // smp.c
+extern uint32_t bsp_processor_id; // smp.c
 
 ticketlock scheduler_lock;
 
@@ -74,7 +74,7 @@ void remove_task(pcb_t task) {
         return;
     }
     queue_remove_at(cpu->scheduler_queue, task->queue_index);
-    //pivfs_update(kernel_head_task);
+    // pivfs_update(kernel_head_task);
     ticket_unlock(&scheduler_lock);
 }
 

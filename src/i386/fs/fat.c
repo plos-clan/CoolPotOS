@@ -80,15 +80,15 @@ void fatfs_open(void *parent, const char *name, vfs_node_t node) {
     FRESULT res = f_stat(new_path, &fno);
     assert(res == FR_OK, "f_stat %d %s", res, new_path);
     if (fno.fattrib & AM_DIR) {
-        //node.
+        // node.
         node->type = file_dir;
         fp         = kmalloc(sizeof(DIR));
         res        = f_opendir(fp, new_path);
         assert(res == FR_OK);
         for (;;) {
-            //读取目录下的内容，再读会自动读下一个文件
+            // 读取目录下的内容，再读会自动读下一个文件
             res = f_readdir(fp, &fno);
-            //为空时表示所有项目读取完毕，跳出
+            // 为空时表示所有项目读取完毕，跳出
             if (res != FR_OK || fno.fname[0] == 0) break;
             vfs_child_append(node, fno.fname, NULL);
         }
@@ -147,9 +147,9 @@ int fatfs_mount(const char *src, vfs_node_t node) {
     FILINFO fno;
     FRESULT res;
     for (;;) {
-        //读取目录下的内容，再读会自动读下一个文件
+        // 读取目录下的内容，再读会自动读下一个文件
         res = f_readdir(h, &fno);
-        //为空时表示所有项目读取完毕，跳出
+        // 为空时表示所有项目读取完毕，跳出
         if (res != FR_OK || fno.fname[0] == 0) break;
         vfs_child_append(node, fno.fname, NULL);
     }

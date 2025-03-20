@@ -7,7 +7,7 @@
 #include "smp.h"
 #include "terminal.h"
 
-extern void double_fault_asm(); //df_asm.S
+extern void double_fault_asm(); // df_asm.S
 
 ticketlock error_lock;
 

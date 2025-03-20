@@ -230,7 +230,7 @@ void nvme_setup() {
         return;
     }
 
-    { //Unsafe
+    { // Unsafe
         uint32_t qidx       = 3;
         uint32_t entryCount = 1 + (controller->CAP->CAP & 0xFFFF);
         if (entryCount > PAGE_SIZE / sizeof(NVME_COMPLETION_QUEUE_ENTRY))

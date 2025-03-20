@@ -213,7 +213,7 @@ uint8_t hda_is_supported_sample_rate(uint32_t sample_rate) {
     uint32_t sample_rates[11] = {8000,  11025, 16000, 22050,  32000, 44100,
                                  48000, 88200, 96000, 176400, 192000};
     uint16_t mask             = 0x0000001;
-    //get bit of requested sample rate in capabilities
+    // get bit of requested sample rate in capabilities
     for (int i = 0; i < 11; i++) {
         if (sample_rates[i] == sample_rate) { break; }
         mask <<= 1;
@@ -460,7 +460,7 @@ void hda_init() {
     }
     klogf(true, "Loading Intel High Definition Audio driver...\n");
 
-    //打开中断 | 启用总线主控 | 启用MMIO
+    // 打开中断 | 启用总线主控 | 启用MMIO
     uint32_t d = read_pci(device->bus, device->slot, device->func, 0x04);
     write_pci(device->bus, device->slot, device->func, 0x04,
               ((d & ~((uint32_t)1 << 10)) | (1 << 2) | (1 << 1)));

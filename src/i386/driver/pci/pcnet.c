@@ -254,11 +254,11 @@ void PcnetSend(uint8_t *buffer, int size) {
          src >= buffer; src--, dst--)
         *dst = *src;
 
-    //printk("SENDING: ");
+    // printk("SENDING: ");
     for (int i = 0; i < (size > 128 ? 128 : size); i++) {
-        //printk("%02x ", buffer[i]);
+        // printk("%02x ", buffer[i]);
     }
-    //printk("\n");
+    // printk("\n");
     sendBufferDesc[sendDesc].avail  = 0;
     sendBufferDesc[sendDesc].flags  = 0x8300f000 | ((uint16_t)((-size) & 0xfff));
     sendBufferDesc[sendDesc].flags2 = 0;
@@ -283,7 +283,7 @@ void pcnet_setup() {
     register_interrupt_handler(pci_get_drive_irq(device->bus, device->slot, device->func) + 0x20,
                                PCNET_IRQ);
 
-    //启用IO端口和总线主控
+    // 启用IO端口和总线主控
     uint32_t conf  = pci_read_command_status(device->bus, device->slot, device->func);
     conf          &= 0xffff0000;
     conf          |= 0x5;

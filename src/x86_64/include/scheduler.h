@@ -22,8 +22,8 @@ typedef struct registers {
     uint64_t r13;
     uint64_t r14;
     uint64_t r15;
-    uint64_t vector;   //保留
-    uint64_t err_code; //保留
+    uint64_t vector;   // 保留
+    uint64_t err_code; // 保留
     // CPU自动压入
     uint64_t rip;
     uint64_t cs;

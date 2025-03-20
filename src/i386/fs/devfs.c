@@ -122,7 +122,7 @@ void devfs_regist() {
 int dev_get_sector_size(char *path) {
     vfs_node_t node = vfs_open(path);
     if (node == NULL) return -1;
-    if (node->fsid != devfs_id) return -1; //不是devfs
+    if (node->fsid != devfs_id) return -1; // 不是devfs
     int dev_id      = (int)node->handle;
     int sector_size = vdisk_ctl[dev_id].sector_size;
     return sector_size;
@@ -131,7 +131,7 @@ int dev_get_sector_size(char *path) {
 int dev_get_size(char *path) {
     vfs_node_t node = vfs_open(path);
     if (node == NULL) return -1;
-    if (node->fsid != devfs_id) return -1; //不是devfs
+    if (node->fsid != devfs_id) return -1; // 不是devfs
     int dev_id = (int)node->handle;
     int size   = disk_Size(dev_id);
     return size;
@@ -140,7 +140,7 @@ int dev_get_size(char *path) {
 int dev_get_type(char *path) {
     vfs_node_t node = vfs_open(path);
     if (node == NULL) return -1;
-    if (node->fsid != devfs_id) return -1; //不是devfs
+    if (node->fsid != devfs_id) return -1; // 不是devfs
     int dev_id = (int)node->handle;
     int type   = vdisk_ctl[dev_id].flag;
     return type;

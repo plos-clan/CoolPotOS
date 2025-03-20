@@ -304,30 +304,30 @@ void init_pci() {
     unsigned int   i, BUS, Equipment, F, ADDER, *i1;
     unsigned char *PCI_DATA = (char *)PCI_ADDR_BASE, *PCI_DATA1;
 
-    for (BUS = 0; BUS < 256; BUS++) {                      //查询总线
-        for (Equipment = 0; Equipment < 32; Equipment++) { //查询设备
-            for (F = 0; F < 8; F++) {                      //查询功能
+    for (BUS = 0; BUS < 256; BUS++) {                      // 查询总线
+        for (Equipment = 0; Equipment < 32; Equipment++) { // 查询设备
+            for (F = 0; F < 8; F++) {                      // 查询功能
                 pci_config(BUS, F, Equipment, 0);
                 if (io_in32(PCI_DATA_PORT) != 0xFFFFFFFF) {
-                    //当前插槽有设备
-                    //把当前设备信息映射到PCI数据区
+                    // 当前插槽有设备
+                    // 把当前设备信息映射到PCI数据区
                     int key = 1;
                     while (key) {
                         PCI_DATA1  = PCI_DATA;
-                        *PCI_DATA1 = 0xFF; //表占用标志
+                        *PCI_DATA1 = 0xFF; // 表占用标志
                         PCI_DATA1++;
-                        *PCI_DATA1 = BUS; //总线号
+                        *PCI_DATA1 = BUS; // 总线号
                         PCI_DATA1++;
-                        *PCI_DATA1 = Equipment; //设备号
+                        *PCI_DATA1 = Equipment; // 设备号
                         PCI_DATA1++;
-                        *PCI_DATA1 = F; //功能号
+                        *PCI_DATA1 = F; // 功能号
                         PCI_DATA1++;
                         PCI_DATA1 = PCI_DATA1 + 8;
                         for (ADDER = 0; ADDER < 256; ADDER = ADDER + 4) {
                             pci_config(BUS, F, Equipment, ADDER);
                             i  = io_in32(PCI_DATA_PORT);
                             i1 = (uint32_t *)i;
-                            //*i1 = PCI_DATA1;
+                            // *i1 = PCI_DATA1;
                             memcpy(PCI_DATA1, &i, 4);
                             PCI_DATA1 = PCI_DATA1 + 4;
                         }

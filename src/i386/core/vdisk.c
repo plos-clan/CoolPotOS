@@ -77,7 +77,7 @@ bool set_drive(uint8_t *name) {
     for (int i = 0; i != 16; i++) {
         if (drive_name[i] == NULL) {
             drive_name[i] = name;
-            //cir_queue8_init(&drive_fifo[i], 256, drive_buf[i]);
+            // cir_queue8_init(&drive_fifo[i], 256, drive_buf[i]);
             return true;
         }
     }
