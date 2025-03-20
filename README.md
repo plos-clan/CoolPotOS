@@ -47,7 +47,16 @@ You need to install them on your computer:
 
 ### Steps
 
-- Run `xmake run` on your terminal then it will build and run automatically
+#### i386
+
+In the build target default_build of xmake.lua, comment out add_deps("iso64") and uncomment add_deps("iso32").
+Also, comment out the run arguments for `xmake run x86_64` and uncomment the run arguments for `xmake run i386`.
+
+Run `xmake run` on your terminal then it will build and run automatically
+
+#### x86_64
+
+Run `xmake run` on your terminal then it will build and run automatically
 
 ## License
 

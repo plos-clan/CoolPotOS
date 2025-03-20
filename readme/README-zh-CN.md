@@ -31,7 +31,16 @@
 
 ### 步骤
 
-- 在终端上运行 `xmake run`，项目将开始构建并运行
+#### i386
+
+在 `xmake.lua` 的默认构建目标 `default_build` 中，注释掉 `add_deps("iso64")` 并取消注释 `add_deps("iso32")`。
+同时，注释掉 `xmake run x86_64` 下的运行参数，并取消注释 `xmake run i386` 下的运行参数。
+
+在终端上运行 `xmake run`，项目将开始构建并运行
+
+#### x86_64
+
+在终端上运行 `xmake run`，项目将开始构建并运行
 
 ## 许可协议
 
