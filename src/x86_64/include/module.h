@@ -5,7 +5,8 @@
 
 typedef struct {
     bool is_use;
-    char module_name[10];
+    char module_name[20];
+    char *path;
     uint8_t *data;
     size_t size;
 }cp_module_t;

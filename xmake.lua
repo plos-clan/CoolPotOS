@@ -5,31 +5,31 @@ add_requires("zig")
 
 set_optimize("fastest")
 set_languages("c23")
---set_warnings("all", "extra", "pedantic", "error")
+set_warnings("all", "extra")
 
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
-
-add_cflags("-target x86_64-freestanding")
-add_ldflags("-target x86_64-freestanding")
-
-add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float","-nostdinc")
-add_cflags("-mcmodel=kernel","-mno-red-zone")
-add_ldflags("-static","-nostdlib")
 
 target("kernel")
     set_kind("binary")
     set_toolchains("clang")
     set_default(false)
 
-    add_files("src/**/*.c")
-    add_files("src/**/*.S")
-    add_linkdirs("libs")
-    add_includedirs("libs")
-    add_includedirs("src/include")
-    add_includedirs("src/include/types")
-    add_includedirs("src/include/iic")
-    add_ldflags("-T src/linker.ld", "-e kmain")
+    add_cflags("-target x86_64-freestanding")
+    add_ldflags("-target x86_64-freestanding")
+
+    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float","-nostdinc")
+    add_cflags("-mcmodel=kernel","-mno-red-zone")
+    add_ldflags("-static","-nostdlib")
+
+    add_files("src/x86_64/**/*.c")
+    add_files("src/x86_64/**/*.S")
+    add_linkdirs("libs/x86_64")
+    add_includedirs("libs/x86_64")
+    add_includedirs("src/x86_64/include")
+    add_includedirs("src/x86_64/include/types")
+    add_includedirs("src/x86_64/include/iic")
+    add_ldflags("-T src/x86_64/linker.ld", "-e kmain")
 
     add_links("alloc")
     add_links("os_terminal")

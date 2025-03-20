@@ -14,6 +14,7 @@
 #include "vfs.h"
 #include "sprintf.h"
 #include "pci.h"
+#include "module.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
@@ -256,6 +257,30 @@ static void mount(int argc,char** argv){
     }
 }
 
+static void lmod(int argc,char** argv){
+    if (argc == 1) {
+        printk("[Shell-LMOD]: If there are too few parameters.\n");
+        return;
+    }
+
+    extern cp_module_t module_ls[256];
+    extern int module_count;
+
+    if(!strcmp(argv[1],"list")) {
+        printk("Model(Kernel) load in /sys/cpkrnl.elf\n");
+        for (int i = 0; i < module_count; i++) {
+            printk("Model(%s) load in %s\n", module_ls[i].module_name,module_ls[i].path);
+        }
+    } else{
+        cp_module_t *module = get_module(argv[1]);
+        if(module == NULL){
+            printk("Cannot find module [%s]\n",argv[1]);
+            return;
+        }
+
+    }
+}
+
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
@@ -298,6 +323,7 @@ static void print_help() {
     printk("ls        [path]         List all file or directory.\n");
     printk("echo      <message>      Print a message.\n");
     printk("mount     <path> <dev>   Mount a device to path.\n");
+    printk("lmod      <module|list>  Load or list model.\n");
 }
 
 void shell_setup(){
@@ -355,6 +381,8 @@ void shell_setup(){
             echo(argc,argv);
         else if(!strcmp("mount",argv[0]))
             mount(argc,argv);
+        else if (!strcmp("lmod",argv[0]))
+            lmod(argc,argv);
         else if (!strcmp("test", argv[0])){
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n",i);

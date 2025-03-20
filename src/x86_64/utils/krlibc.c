@@ -106,6 +106,16 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     return 0;
 }
 
+char *strchr(const char *s, int c) {
+    while (*s) {
+        if (*s == (char)c) {
+            return (char *)s;
+        }
+        s++;
+    }
+    return (*s == (char)c) ? (char *)s : NULL;
+}
+
 char *strcpy(char *dest, const char *src) {
     do {
         *dest++ = *src++;
@@ -225,3 +235,24 @@ char *strdup(const char *str) {
     return ret - (len + 1);
 }
 
+char *strncpy(char *dest, const char *src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = '\0';
+    }
+    return dest;
+}
+
+char *strrchr(const char *s, int c) {
+    char *last = NULL;
+    while (*s) {
+        if (*s == (char)c) {
+            last = (char *)s;
+        }
+        s++;
+    }
+    return (c == '\0') ? (char *)s : last;
+}
