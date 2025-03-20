@@ -11,6 +11,8 @@
 #include "scheduler.h"
 #include "timer.h"
 
+typedef struct process_control_block *pcb_t;
+
 struct process_control_block{
     uint8_t task_level;           // 进程优先级
     int pid;                      // 进程 PID
@@ -27,8 +29,6 @@ struct process_control_block{
     tty_t *tty;                   // tty设备
     size_t queue_index;           // 调度队列索引
 };
-
-typedef struct process_control_block *pcb_t;
 
 /**
  * 向当下cpu核心的调度队列增加一个任务

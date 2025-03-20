@@ -75,7 +75,7 @@ void local_apic_init(bool is_print) {
     for (;;) if (nanoTime() - b >= 1000000) break;
     uint64_t lapic_timer = (~(uint32_t) 0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     uint64_t calibrated_timer_initial = (uint64_t) ((uint64_t) (lapic_timer * 1000) / 250);
-    if(is_print) printk("Calibrated LAPIC timer: %d ticks per second.\n", calibrated_timer_initial);
+    if(is_print) kinfo("Calibrated LAPIC timer: %d ticks per second.", calibrated_timer_initial);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT,calibrated_timer_initial);
     if(is_print) kinfo("Setup local %s.",x2apic_mode ? "x2APIC" : "APIC");

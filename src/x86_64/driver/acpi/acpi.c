@@ -4,6 +4,15 @@
 #include "limine.h"
 #include "hhdm.h"
 
+#define load_table(name,func) do { \
+    void* name = find_table(#name); \
+    if(name == NULL) { \
+        kwarn("Cannot find acpi " #name " table."); \
+        return; \
+    } else \
+        func(name); \
+} while(0)
+
 XSDT *xsdt;
 
 __attribute__((used, section(".limine_requests")))
@@ -42,38 +51,10 @@ void acpi_setup() {
     }
     xsdt = (XSDT *) phys_to_virt((uint64_t) xsdt);
 
-    void *hpet = find_table("HPET");
-    if (hpet == NULL) {
-        kwarn("Cannot find acpi hpet table.");
-        return;
-    } else
-        hpet_init(hpet);
+    load_table(HPET, hpet_init);
+    load_table(APIC, apic_setup);
+    load_table(MCFG, pcie_setup);
+    load_table(FACP, setup_facp);
 
-    void *apic = find_table("APIC");
-    if (apic == NULL) {
-        kwarn("Cannot find acpi apic table.");
-        return;
-    } else
-        apic_setup(apic);
-
-    void* mcfg = find_table("MCFG");
-    if (mcfg == NULL) {
-        kwarn("Cannot find acpi mcfg table.");
-        return;
-    } else
-        pcie_setup(mcfg);
-
-    void* facp = find_table("FACP");
-    if(facp == NULL) {
-        kwarn("Cannot find acpi facp table.");
-        return;
-    } else
-        setup_facp(facp);
-
-    void* bgrt = find_table("BGRT");
-    if(bgrt == NULL) {
-    	kwarn("Cannot find acpi facp table.");
-    	return;
-    }// else
-    	// bgrt_setup(bgrt); 先空着，等以后补上
+ //   load_table(BGRT, bgrt_setup); //TODO 先空着，等以后补上
 }

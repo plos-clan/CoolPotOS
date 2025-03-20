@@ -16,7 +16,7 @@ acpi_facp_t *facp;
 void enable_acpi(){
     int i;
     if(io_in16(facp->pm1a_cnt_blk) & SCI_EN){
-        kwarn("ACPI already enabled.");
+        kinfo("ACPI already enabled.");
         return;
     }
 
