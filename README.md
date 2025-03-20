@@ -1,4 +1,3 @@
-
 <br>
 <br>
 
@@ -23,15 +22,18 @@
 
 ## Translations
 
-- [English](README.md)
-- [中文](README-zh-CN.md)
+- **English**
+- [简体中文](readme/README-zh-CN.md)
+- [Français](readme/README-fr-FR.md)
+- [日本語](readme/README-ja-JP.md)
 
 ## Introduction
 
-This is a simple operating system for x86_64 architecture.
+This is a simple operating system for x86 architecture.
 
-## Module
+## Modules
 
+* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 * `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 * `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
 
@@ -42,11 +44,11 @@ This is a simple operating system for x86_64 architecture.
 You need to install them on your computer:
 
 - Xmake
-- NASM (No x86_64)
-- Clang (you can install manually if xmake cannot download it for you)
+- NASM (only i386)
+- Zig (you need clang for x86_64)
 - Windows subsystem for Linux (Ubuntu 22.04)
-    - xorriso
-    - qemu-system-x86_64
+  - xorriso
+  - qemu-system-i386 / qemu-system-x86_64
 
 ### Steps
 
@@ -58,7 +60,7 @@ The project follows MIT license. Anyone can use it for free. See [LICENSE](LICEN
 
 ## Contributing
 
-Welcome to create pull requests or issues to this project. I am really happy to see it!
+Welcome to create pull requests or issues to this project. Then sit back and relax.
 
 ### Contributors
 
@@ -66,10 +68,14 @@ Welcome to create pull requests or issues to this project. I am really happy to 
 * min0911Y - OS FileSystem Development
 * copi143 - UserHeap Development
 * QtLittleXu - XuYuxuan OS Document
-* ViudiraTech - PCI driver optimization
-* FengHeting - SMBIOS driver Development
+* ViudiraTech - PCI Driver Optimization
 * Vinbe Wan - IIC Development
-* A4-Tacks - Write some build scripts
-* wenxuanjun - OS Memory Manager Development
-* Minsecrus - Memory usage optimization
+* A4-Tacks - Write Some Build Scripts
+* wenxuanjun - OS Developer
+* Minsecrus - Memory Usage Optimization
 * CLimber-Rong - Software Developer
+* shiyu - Debugger and Comments Writer
+* 27Onion - Translated French README
+* LY-Xiang - Optimized actions process
+* suhuajun-github - Fix several bugs in the AHCI driver
+* FengHeting - SMBIOS driver Development
