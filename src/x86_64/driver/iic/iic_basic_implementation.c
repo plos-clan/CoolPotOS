@@ -7,18 +7,17 @@
 bool crc_check(IIC_Data *frame) {
 
     unsigned int *data = frame->data;
-    char crc = crc8(data, frame->data_len);
+    char          crc  = crc8(data, frame->data_len);
     if (crc != frame->crc) {
         return false;
-    }else{
+    } else {
         return true;
     }
 }
 
-
 IIC_slaveNode iic_slaveAlloc(IIC_Slave *slave) {
     IIC_slaveNode node;
-    node.next = list_alloc(NULL);
+    node.next  = list_alloc(NULL);
     node.slave = *slave;
     return node;
 }
@@ -53,8 +52,8 @@ uint32_t iic_dataTransfer(IIC_Data *frame) {
 
 uint8_t Get_iic_masterAddress(pci_device_t *IIC_Master_Controller) {
     // 获取IIC主机控制器基地址
-    base_address_register bar = find_bar(*IIC_Master_Controller, 0);
-    uint8_t base_address = *bar.address;
+    base_address_register bar          = find_bar(*IIC_Master_Controller, 0);
+    uint8_t               base_address = *bar.address;
     return base_address;
 }
 

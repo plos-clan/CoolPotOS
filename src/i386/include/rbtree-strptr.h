@@ -3,17 +3,17 @@
 #pragma GCC system_header
 
 #ifdef ALL_IMPLEMENTATION
-#  define RBTREE_SP_IMPLEMENTATION
+#    define RBTREE_SP_IMPLEMENTATION
 #endif
 
 #ifdef RBTREE_SP_IMPLEMENTATION
-#  define SLIST_SP_IMPLEMENTATION
+#    define SLIST_SP_IMPLEMENTATION
 #endif
 
 #include "slist-strptr.h"
 
 #ifndef _RBTREE_ENUM_
-#  define _RBTREE_ENUM_
+#    define _RBTREE_ENUM_
 enum {
     RBT_RED,  // 红色节点
     RBT_BLACK // 黑色节点
@@ -26,16 +26,16 @@ enum {
  */
 typedef struct rbtree_sp *rbtree_sp_t;
 struct rbtree_sp {
-    uint32_t color;  /**< 节点颜色，取值为 RED 或 BLACK */
-    uint32_t hash;   /**< 节点键哈希值 */
-    slist_sp_t list;   /**< 节点值 */
+    uint32_t    color;  /**< 节点颜色，取值为 RED 或 BLACK */
+    uint32_t    hash;   /**< 节点键哈希值 */
+    slist_sp_t  list;   /**< 节点值 */
     rbtree_sp_t left;   /**< 左子节点指针 */
     rbtree_sp_t right;  /**< 右子节点指针 */
     rbtree_sp_t parent; /**< 父节点指针 */
 };
 
 #ifdef RBTREE_SP_IMPLEMENTATION
-#  define extern static
+#    define extern static
 #endif
 
 /**
@@ -107,7 +107,7 @@ extern void rbtree_sp_print_preorder(rbtree_sp_t root) __THROW;
 extern void rbtree_sp_print_postorder(rbtree_sp_t root) __THROW;
 
 #ifdef RBTREE_SP_IMPLEMENTATION
-#  undef extern
+#    undef extern
 #endif
 
 #ifdef RBTREE_SP_IMPLEMENTATION
@@ -135,8 +135,8 @@ static rbtree_sp_t rbtree_sp_right_rotate(rbtree_sp_t root, rbtree_sp_t y) __THR
  *\param[in] v 替换后的子树根节点
  *\return 替换后的树的根节点
  */
-static rbtree_sp_t rbtree_sp_transplant(rbtree_sp_t root, rbtree_sp_t u, rbtree_sp_t v)
-__THROW __wur;
+static rbtree_sp_t rbtree_sp_transplant(rbtree_sp_t root, rbtree_sp_t u, rbtree_sp_t v) __THROW
+__wur;
 
 /**
  *\brief 执行插入操作后修复红黑树性质
@@ -154,7 +154,7 @@ static rbtree_sp_t rbtree_sp_insert_fixup(rbtree_sp_t root, rbtree_sp_t z) __THR
  *\return 修复后的树的根节点
  */
 static rbtree_sp_t rbtree_sp_delete_fixup(rbtree_sp_t root, rbtree_sp_t x, rbtree_sp_t x_parent)
-__THROW __wur;
+    __THROW __wur;
 
 static uint32_t rbtree_sp_hash(const char *str) {
     uint32_t hash = 0;
@@ -166,12 +166,12 @@ static uint32_t rbtree_sp_hash(const char *str) {
 
 static rbtree_sp_t rbtree_sp_alloc(const char *key, void *value) {
     rbtree_sp_t node = kmalloc(sizeof(*node));
-    node->hash = rbtree_sp_hash(key);
-    node->list = slist_sp_alloc(key, value);
-    node->color = RBT_RED;
-    node->left = NULL;
-    node->right = NULL;
-    node->parent = NULL;
+    node->hash       = rbtree_sp_hash(key);
+    node->list       = slist_sp_alloc(key, value);
+    node->color      = RBT_RED;
+    node->left       = NULL;
+    node->right      = NULL;
+    node->parent     = NULL;
     return node;
 }
 
@@ -235,7 +235,7 @@ static rbtree_sp_t rbtree_sp_max(rbtree_sp_t root) {
 
 static rbtree_sp_t rbtree_sp_left_rotate(rbtree_sp_t root, rbtree_sp_t x) {
     rbtree_sp_t y = x->right;
-    x->right = y->left;
+    x->right      = y->left;
 
     if (y->left != NULL) y->left->parent = x;
 
@@ -248,7 +248,7 @@ static rbtree_sp_t rbtree_sp_left_rotate(rbtree_sp_t root, rbtree_sp_t x) {
     else
         x->parent->right = y;
 
-    y->left = x;
+    y->left   = x;
     x->parent = y;
 
     return root;
@@ -256,7 +256,7 @@ static rbtree_sp_t rbtree_sp_left_rotate(rbtree_sp_t root, rbtree_sp_t x) {
 
 static rbtree_sp_t rbtree_sp_right_rotate(rbtree_sp_t root, rbtree_sp_t y) {
     rbtree_sp_t x = y->left;
-    y->left = x->right;
+    y->left       = x->right;
 
     if (x->right != NULL) x->right->parent = y;
 
@@ -269,7 +269,7 @@ static rbtree_sp_t rbtree_sp_right_rotate(rbtree_sp_t root, rbtree_sp_t y) {
     else
         y->parent->right = x;
 
-    x->right = y;
+    x->right  = y;
     y->parent = x;
 
     return root;
@@ -293,34 +293,34 @@ static rbtree_sp_t rbtree_sp_insert_fixup(rbtree_sp_t root, rbtree_sp_t z) {
         if (z->parent == z->parent->parent->left) {
             rbtree_sp_t y = z->parent->parent->right;
             if (y != NULL && y->color == RBT_RED) {
-                z->parent->color = RBT_BLACK;
-                y->color = RBT_BLACK;
+                z->parent->color         = RBT_BLACK;
+                y->color                 = RBT_BLACK;
                 z->parent->parent->color = RBT_RED;
-                z = z->parent->parent;
+                z                        = z->parent->parent;
             } else {
                 if (z == z->parent->right) {
-                    z = z->parent;
+                    z    = z->parent;
                     root = rbtree_sp_left_rotate(root, z);
                 }
-                z->parent->color = RBT_BLACK;
+                z->parent->color         = RBT_BLACK;
                 z->parent->parent->color = RBT_RED;
-                root = rbtree_sp_right_rotate(root, z->parent->parent);
+                root                     = rbtree_sp_right_rotate(root, z->parent->parent);
             }
         } else {
             rbtree_sp_t y = z->parent->parent->left;
             if (y != NULL && y->color == RBT_RED) {
-                z->parent->color = RBT_BLACK;
-                y->color = RBT_BLACK;
+                z->parent->color         = RBT_BLACK;
+                y->color                 = RBT_BLACK;
                 z->parent->parent->color = RBT_RED;
-                z = z->parent->parent;
+                z                        = z->parent->parent;
             } else {
                 if (z == z->parent->left) {
-                    z = z->parent;
+                    z    = z->parent;
                     root = rbtree_sp_right_rotate(root, z);
                 }
-                z->parent->color = RBT_BLACK;
+                z->parent->color         = RBT_BLACK;
                 z->parent->parent->color = RBT_RED;
-                root = rbtree_sp_left_rotate(root, z->parent->parent);
+                root                     = rbtree_sp_left_rotate(root, z->parent->parent);
             }
         }
     }
@@ -368,54 +368,54 @@ static rbtree_sp_t rbtree_sp_delete_fixup(rbtree_sp_t root, rbtree_sp_t x, rbtre
         if (x == x_parent->left) {
             rbtree_sp_t w = x_parent->right;
             if (w->color == RBT_RED) {
-                w->color = RBT_BLACK;
+                w->color        = RBT_BLACK;
                 x_parent->color = RBT_RED;
-                root = rbtree_sp_left_rotate(root, x_parent);
-                w = x_parent->right;
+                root            = rbtree_sp_left_rotate(root, x_parent);
+                w               = x_parent->right;
             }
             if ((w->left == NULL || w->left->color == RBT_BLACK) &&
                 (w->right == NULL || w->right->color == RBT_BLACK)) {
                 w->color = RBT_RED;
-                x = x_parent;
+                x        = x_parent;
                 x_parent = x_parent->parent;
             } else {
                 if (w->right == NULL || w->right->color == RBT_BLACK) {
                     if (w->left != NULL) w->left->color = RBT_BLACK;
                     w->color = RBT_RED;
-                    root = rbtree_sp_right_rotate(root, w);
-                    w = x_parent->right;
+                    root     = rbtree_sp_right_rotate(root, w);
+                    w        = x_parent->right;
                 }
-                w->color = x_parent->color;
+                w->color        = x_parent->color;
                 x_parent->color = RBT_BLACK;
                 if (w->right != NULL) w->right->color = RBT_BLACK;
                 root = rbtree_sp_left_rotate(root, x_parent);
-                x = root;
+                x    = root;
             }
         } else {
             rbtree_sp_t w = x_parent->left;
             if (w->color == RBT_RED) {
-                w->color = RBT_BLACK;
+                w->color        = RBT_BLACK;
                 x_parent->color = RBT_RED;
-                root = rbtree_sp_right_rotate(root, x_parent);
-                w = x_parent->left;
+                root            = rbtree_sp_right_rotate(root, x_parent);
+                w               = x_parent->left;
             }
             if ((w->right == NULL || w->right->color == RBT_BLACK) &&
                 (w->left == NULL || w->left->color == RBT_BLACK)) {
                 w->color = RBT_RED;
-                x = x_parent;
+                x        = x_parent;
                 x_parent = x_parent->parent;
             } else {
                 if (w->left == NULL || w->left->color == RBT_BLACK) {
                     if (w->right != NULL) w->right->color = RBT_BLACK;
                     w->color = RBT_RED;
-                    root = rbtree_sp_left_rotate(root, w);
-                    w = x_parent->left;
+                    root     = rbtree_sp_left_rotate(root, w);
+                    w        = x_parent->left;
                 }
-                w->color = x_parent->color;
+                w->color        = x_parent->color;
                 x_parent->color = RBT_BLACK;
                 if (w->left != NULL) w->left->color = RBT_BLACK;
                 root = rbtree_sp_right_rotate(root, x_parent);
-                x = root;
+                x    = root;
             }
         }
     }
@@ -432,32 +432,32 @@ static rbtree_sp_t rbtree_sp_delete(rbtree_sp_t root, const char *key) {
 
     rbtree_sp_t x;
     rbtree_sp_t x_parent;
-    int32_t original_color = z->color;
+    int32_t     original_color = z->color;
 
     if (z->left == NULL) {
-        x = z->right;
+        x        = z->right;
         x_parent = z->parent;
-        root = rbtree_sp_transplant(root, z, z->right);
+        root     = rbtree_sp_transplant(root, z, z->right);
     } else if (z->right == NULL) {
-        x = z->left;
+        x        = z->left;
         x_parent = z->parent;
-        root = rbtree_sp_transplant(root, z, z->left);
+        root     = rbtree_sp_transplant(root, z, z->left);
     } else {
-        rbtree_sp_t y = rbtree_sp_min(z->right);
+        rbtree_sp_t y  = rbtree_sp_min(z->right);
         original_color = y->color;
-        x = y->right;
-        x_parent = y;
+        x              = y->right;
+        x_parent       = y;
         if (y->parent == z) {
             if (x != NULL) x->parent = y;
         } else {
-            root = rbtree_sp_transplant(root, y, y->right);
+            root     = rbtree_sp_transplant(root, y, y->right);
             y->right = z->right;
             if (y->right != NULL) y->right->parent = y;
         }
-        root = rbtree_sp_transplant(root, z, y);
-        y->left = z->left;
+        root            = rbtree_sp_transplant(root, z, y);
+        y->left         = z->left;
         y->left->parent = y;
-        y->color = z->color;
+        y->color        = z->color;
     }
 
     kfree(z);
@@ -512,7 +512,7 @@ static void rbtree_sp_print_postorder(rbtree_sp_t root) {
     _rbtree_sp_print_postorder(root, 0);
 }
 
-#  undef RBTREE_SP_IMPLEMENTATION
+#    undef RBTREE_SP_IMPLEMENTATION
 #endif
 
 /**

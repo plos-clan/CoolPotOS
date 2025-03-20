@@ -1,6 +1,6 @@
 #include "iso9660.h"
-#include "krlibc.h"
 #include "klog.h"
+#include "krlibc.h"
 
 #define l9660_seekdir(dir, pos) (l9660_seek(&(dir)->file, L9660_SEEK_SET, (pos)))
 #define l9660_telldir(dir)      (l9660_tell(&(dir)->file))
@@ -20,19 +20,19 @@
 #define PVD(vdesc) ((l9660_vdesc_primary *)(vdesc))
 
 #ifdef L9660_BIG_ENDIAN
-#  define READ16(v) (((v).be[1]) | ((v).be[0] << 8))
-#  define READ32(v) (((v).be[3]) | ((v).be[2] << 8) | ((v).be[1]) << 16 | ((v).be[0] << 24))
+#    define READ16(v) (((v).be[1]) | ((v).be[0] << 8))
+#    define READ32(v) (((v).be[3]) | ((v).be[2] << 8) | ((v).be[1]) << 16 | ((v).be[0] << 24))
 #else
-#  define READ16(v) (((v).le[0]) | ((v).le[1] << 8))
-#  define READ32(v) (((v).le[0]) | ((v).le[1] << 8) | ((v).le[2]) << 16 | ((v).le[3] << 24))
+#    define READ16(v) (((v).le[0]) | ((v).le[1] << 8))
+#    define READ32(v) (((v).le[0]) | ((v).le[1] << 8) | ((v).le[2]) << 16 | ((v).le[3] << 24))
 #endif
 
 #ifndef L9660_SINGLEBUFFER
-#  define HAVEBUFFER(f) (true)
-#  define BUF(f)        ((f)->buf)
+#    define HAVEBUFFER(f) (true)
+#    define BUF(f)        ((f)->buf)
 #else
-#  define HAVEBUFFER(f) ((f) == last_file)
-#  define BUF(f)        (gbuf)
+#    define HAVEBUFFER(f) ((f) == last_file)
+#    define BUF(f)        (gbuf)
 static l9660_file *last_file;
 static char        gbuf[2048];
 #endif
@@ -60,7 +60,7 @@ l9660_status l9660_openfs(l9660_fs *fs,
     l9660_vdesc_primary *pvd = PVD(&fs->pvd);
 #else
     last_file                = NULL;
-  l9660_vdesc_primary *pvd = PVD(gbuf);
+    l9660_vdesc_primary *pvd = PVD(gbuf);
 #endif
     uint32_t idx = 0x10;
     for (;;) {
@@ -191,7 +191,7 @@ l9660_status l9660_readdir(l9660_dir *dir, l9660_dirent **pdirent) {
     l9660_status rv;
     l9660_file  *f = &dir->file;
 
-    rebuffer:
+rebuffer:
     if (f->position >= f->length) {
         *pdirent    = NULL;
         f->position = 0;
@@ -223,11 +223,11 @@ l9660_status l9660_seek(l9660_file *f, int whence, int32_t offset) {
     uint32_t     cursect = fsector(f);
 
     switch (whence) {
-        case SEEK_SET: f->position = offset; break;
+    case SEEK_SET: f->position = offset; break;
 
-        case SEEK_CUR: f->position = f->position + offset; break;
+    case SEEK_CUR: f->position = f->position + offset; break;
 
-        case SEEK_END: f->position = f->length - offset; break;
+    case SEEK_END: f->position = f->length - offset; break;
     }
 
     if (fsector(f) != cursect && fsectoff(f) != 0) {
@@ -263,23 +263,23 @@ bool read_sector(l9660_fs *fs, void *buf, uint32_t sector) {
 }
 
 int iso9660_id = -1;
-int iso9660_mkdir(void *parent, const char* name, vfs_node_t node) {
+int iso9660_mkdir(void *parent, const char *name, vfs_node_t node) {
     return VFS_STATUS_FAILED;
 }
 
-int iso9660_mkfile(void *parent, const char* name, vfs_node_t node) {
+int iso9660_mkfile(void *parent, const char *name, vfs_node_t node) {
     return VFS_STATUS_FAILED;
 }
 
 int iso9660_readfile(file_t file, void *addr, size_t offset, size_t size) {
     if (file->type == file_dir) return VFS_STATUS_FAILED;
 
-    l9660_file  *fp = file->handle;
-    size = fp->length < size ? fp->length : size;
+    l9660_file *fp = file->handle;
+    size           = fp->length < size ? fp->length : size;
     l9660_status st;
     st = l9660_seek(fp, SEEK_SET, offset);
     if (st != L9660_OK) return VFS_STATUS_FAILED;
-    size_t read = 0;
+    size_t read       = 0;
     size_t total_read = 0;
     while (total_read < size) {
         st = l9660_read(fp, (char *)addr + total_read, size - total_read, &read);
@@ -320,8 +320,8 @@ static void iso9660_process_dir(l9660_dir *dir, vfs_node_t parent) {
         }
     }
 }
-void iso9660_open(void *parent, const char* name, vfs_node_t node) {
-    file_t p = parent;
+void iso9660_open(void *parent, const char *name, vfs_node_t node) {
+    file_t       p = parent;
     //TODO assert(p->type == file_dir); // it must be a directory
     l9660_dir   *p_dir  = (l9660_dir *)p->handle;
     l9660_dir   *c_dir  = (l9660_dir *)malloc(sizeof(l9660_dir));
@@ -359,8 +359,8 @@ void iso9660_close(file_t handle) {
     free(handle);
 }
 
-int iso9660_mount(const char* src, vfs_node_t node) {
-    if(src == NULL || ((uint64_t)src) == 1) return VFS_STATUS_FAILED;
+int iso9660_mount(const char *src, vfs_node_t node) {
+    if (src == NULL || ((uint64_t)src) == 1) return VFS_STATUS_FAILED;
     vfs_node_t device = vfs_open(src);
     if (device == NULL || device->type == file_dir) { return VFS_STATUS_FAILED; }
     l9660_fs    *fs     = (l9660_fs *)malloc(sizeof(l9660_fs));
@@ -397,15 +397,15 @@ int iso9660_stat(void *handle, vfs_node_t node) {
 }
 
 static struct vfs_callback iso_callbacks = {
-        .mount   = iso9660_mount,
-        .unmount = iso9660_unmount,
-        .open    = iso9660_open,
-        .close   = (vfs_close_t)iso9660_close,
-        .read    = (vfs_read_t)iso9660_readfile,
-        .write   = (vfs_write_t)iso9660_writefile,
-        .mkdir   = iso9660_mkdir,
-        .mkfile  = iso9660_mkfile,
-        .stat    = iso9660_stat,
+    .mount   = iso9660_mount,
+    .unmount = iso9660_unmount,
+    .open    = iso9660_open,
+    .close   = (vfs_close_t)iso9660_close,
+    .read    = (vfs_read_t)iso9660_readfile,
+    .write   = (vfs_write_t)iso9660_writefile,
+    .mkdir   = iso9660_mkdir,
+    .mkfile  = iso9660_mkfile,
+    .stat    = iso9660_stat,
 };
 
 void iso9660_regist() {

@@ -5,8 +5,8 @@
 
 typedef struct video_area {
     uint32_t *screen;
-    uint32_t width;
-    uint32_t height;
+    uint32_t  width;
+    uint32_t  height;
 } video_area_t;
 
 typedef struct {
@@ -27,9 +27,8 @@ void vga_writestring(const char *data);
 
 void vga_install(void);
 
-void put_bitmap(uint32_t *screen, uint8_t *bitmap, int x, int y,
-                int width, int heigh, unsigned bitmap_xsize,
-                unsigned xsize, unsigned fc);
+void put_bitmap(uint32_t *screen, uint8_t *bitmap, int x, int y, int width, int heigh,
+                unsigned bitmap_xsize, unsigned xsize, unsigned fc);
 
 void vbe_clear(uint32_t color);
 

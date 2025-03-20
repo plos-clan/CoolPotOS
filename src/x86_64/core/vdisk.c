@@ -1,10 +1,10 @@
 #include "vdisk.h"
 #include "devfs.h"
-#include "krlibc.h"
-#include "tty.h"
-#include "pcb.h"
 #include "keyboard.h"
 #include "kprint.h"
+#include "krlibc.h"
+#include "pcb.h"
+#include "tty.h"
 
 vdisk vdisk_ctl[26];
 
@@ -12,7 +12,7 @@ static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba
     UNUSED(lba);
     UNUSED(drive);
     for (size_t i = 0; i < number; i++) {
-        char c = (char) kernel_getch();
+        char c    = (char)kernel_getch();
         buffer[i] = c;
     }
 }
@@ -23,7 +23,8 @@ static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t l
     UNUSED(lba);
     if (get_current_task() == NULL) {
         tty = get_default_tty();
-    } else tty = get_current_task()->tty;
+    } else
+        tty = get_current_task()->tty;
     for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }
@@ -33,21 +34,21 @@ void build_stream_device() {
     vdisk stdout;
     stdout.type = VDISK_STREAM;
     strcpy(stdout.drive_name, "stdout");
-    stdout.flag = 1;
+    stdout.flag        = 1;
     stdout.sector_size = 1;
-    stdout.size = 1;
-    stdout.read = (void*)empty;
-    stdout.write = stdout_write;
+    stdout.size        = 1;
+    stdout.read        = (void *)empty;
+    stdout.write       = stdout_write;
     regist_vdisk(stdout);
 
     vdisk stdin;
     stdin.type = VDISK_STREAM;
     strcpy(stdin.drive_name, "stdin");
-    stdin.flag = 1;
+    stdin.flag        = 1;
     stdin.sector_size = 1;
-    stdin.size = 1;
-    stdin.write = (void*)empty;
-    stdin.read = stdin_read;
+    stdin.size        = 1;
+    stdin.write       = (void *)empty;
+    stdin.read        = stdin_read;
     regist_vdisk(stdin);
 }
 
@@ -64,9 +65,7 @@ int regist_vdisk(vdisk vd) {
 
 bool have_vdisk(int drive) {
     int indx = drive;
-    if (indx >= 26) {
-        return false;
-    }
+    if (indx >= 26) { return false; }
     if (vdisk_ctl[indx].flag > 0) {
         return true;
     } else {
@@ -86,9 +85,7 @@ uint32_t disk_size(int drive) {
 
 int rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read) {
     int indx = drive;
-    if (indx >= 26) {
-        return 0;
-    }
+    if (indx >= 26) { return 0; }
     if (vdisk_ctl[indx].flag > 0) {
         if (read) {
             vdisk_ctl[indx].read(drive, buffer, number, lba);
@@ -105,7 +102,8 @@ void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
     if (have_vdisk(drive)) {
         for (size_t i = 0; i < number; i += SECTORS_ONCE) {
             int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
-            rw_vdisk(drive, lba + i, (uint8_t *) ((uint64_t) buffer + i * vdisk_ctl[drive].sector_size), sectors, 1);
+            rw_vdisk(drive, lba + i,
+                     (uint8_t *)((uint64_t)buffer + i * vdisk_ctl[drive].sector_size), sectors, 1);
         }
     }
 }
@@ -114,8 +112,8 @@ void vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
     if (have_vdisk(drive)) {
         for (size_t i = 0; i < number; i += SECTORS_ONCE) {
             int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
-            rw_vdisk(drive, lba + i, (uint8_t *) ((uint64_t) buffer + i * vdisk_ctl[drive].sector_size), sectors,
-                     0);
+            rw_vdisk(drive, lba + i,
+                     (uint8_t *)((uint64_t)buffer + i * vdisk_ctl[drive].sector_size), sectors, 0);
         }
     }
 }

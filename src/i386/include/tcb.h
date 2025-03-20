@@ -14,12 +14,12 @@ struct thread_context {
 };
 
 struct cp_thread {
-    pcb_t *father_pcb; //父进程
-    int tid;           //线程ID
-    void *user_stack; // 用户栈
-    void *kernel_stack; // 内核栈
-    struct thread_context context; //线程上下文
-    tcb_t next;  // 线程链表
+    pcb_t                *father_pcb;   //父进程
+    int                   tid;          //线程ID
+    void                 *user_stack;   // 用户栈
+    void                 *kernel_stack; // 内核栈
+    struct thread_context context;      //线程上下文
+    tcb_t                 next;         // 线程链表
 };
 
 tcb_t create_user_thread(pcb_t *pcb, void *func);

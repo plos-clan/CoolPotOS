@@ -6,15 +6,15 @@
 #define SLIST_SP_IMPLEMENTATION
 #include "rbtree-strptr.h"
 
-int pipfs_id = 0;
-vfs_node_t pip_fs_node;
-rbtree_sp_t pip_rbtree;
+int           pipfs_id = 0;
+vfs_node_t    pip_fs_node;
+rbtree_sp_t   pip_rbtree;
 extern pcb_t *running_proc_head;
 
 static file_t file_alloc(size_t size) {
     file_t file = kmalloc(sizeof(struct file));
     if (file == NULL) return NULL;
-    file->size = size;
+    file->size   = size;
     file->blocks = kmalloc(size);
     memset(file->blocks, 0, size);
     return file;
@@ -45,16 +45,16 @@ void pipfs_close(file_t handle) {
 size_t pipfs_readfile(file_t file, void *addr, size_t offset, size_t size) {
     if (file == NULL || addr == NULL) return -1;
     for (size_t i = 0; i <= file->size; i++) {
-        file->blocks[i] = ((uint8_t*)addr)[i];
+        file->blocks[i] = ((uint8_t *)addr)[i];
     }
     return 0;
 }
 
 int pipfs_writefile(file_t file, const void *addr, size_t offset, size_t size) {
     if (file == NULL || addr == NULL) return -1;
-    if(get_current_proc()->task_level != TASK_KERNEL_LEVEL) return -1;
+    if (get_current_proc()->task_level != TASK_KERNEL_LEVEL) return -1;
     for (size_t i = 0; i <= file->size; i++) {
-        ((uint8_t*)addr)[i] = file->blocks[i];
+        ((uint8_t *)addr)[i] = file->blocks[i];
     }
     return 0;
 }
@@ -66,7 +66,7 @@ void pipfs_open(void *parent, const char *name, vfs_node_t node) {
 }
 
 int pipfs_mount(const char *src, vfs_node_t node) {
-    if(src != 1) return -1;
+    if (src != 1) return -1;
     node->fsid = pipfs_id;
 
     pipfs_update();
@@ -86,25 +86,25 @@ int pipfs_stat(void *file, vfs_node_t node) {
 }
 
 static struct vfs_callback callbacks = {
-        .mount   = pipfs_mount,
-        .unmount = pipfs_unmount,
-        .open    = pipfs_open,
-        .close   = (vfs_close_t) pipfs_close,
-        .read    = (vfs_read_t) pipfs_readfile,
-        .write   = (vfs_write_t) pipfs_writefile,
-        .mkdir   = pipfs_mkdir,
-        .mkfile  = pipfs_mkfile,
-        .stat    = pipfs_stat,
+    .mount   = pipfs_mount,
+    .unmount = pipfs_unmount,
+    .open    = pipfs_open,
+    .close   = (vfs_close_t)pipfs_close,
+    .read    = (vfs_read_t)pipfs_readfile,
+    .write   = (vfs_write_t)pipfs_writefile,
+    .mkdir   = pipfs_mkdir,
+    .mkfile  = pipfs_mkfile,
+    .stat    = pipfs_stat,
 };
 
-void pipfs_update(){
-    if(pip_fs_node != NULL) rbtree_sp_free(pip_rbtree);
+void pipfs_update() {
+    if (pip_fs_node != NULL) rbtree_sp_free(pip_rbtree);
     pip_fs_node = NULL;
-    pcb_t *l = running_proc_head;
-    while (1){
-        rbtree_sp_insert(pip_rbtree,l->name,l);
+    pcb_t *l    = running_proc_head;
+    while (1) {
+        rbtree_sp_insert(pip_rbtree, l->name, l);
         l = l->next;
-        if(l == NULL || l == running_proc_head) break;
+        if (l == NULL || l == running_proc_head) break;
     }
 }
 
@@ -114,7 +114,7 @@ void pipfs_regist() {
     pipfs_id = vfs_regist("pipfs", &callbacks);
     vfs_mkdir("/proc");
     pip_fs_node = vfs_open("/proc");
-    vfs_mount((void*)1, pip_fs_node);
+    vfs_mount((void *)1, pip_fs_node);
 
-    klogf(true,"Process File System initialize.\n");
+    klogf(true, "Process File System initialize.\n");
 }

@@ -1,61 +1,57 @@
-#include "keyboard.h"
-#include "isr.h"
-#include "krlibc.h"
-#include "kprint.h"
-#include "io.h"
-#include "terminal.h"
 #include "gop.h"
+#include "io.h"
+#include "isr.h"
+#include "keyboard.h"
 #include "klog.h"
+#include "kprint.h"
+#include "krlibc.h"
 #include "lock.h"
+#include "terminal.h"
 
-MouseType type;
-mouse_dec mouse_decode;
-size_t mouse_x;
-size_t mouse_y;
+MouseType  type;
+mouse_dec  mouse_decode;
+size_t     mouse_x;
+size_t     mouse_y;
 ticketlock mouse_lock;
 
 bool mousedecode(uint8_t data) {
     if (mouse_decode.phase == 0) {
-        if (data == 0xfa) {
-            mouse_decode.phase = 1;
-        }
+        if (data == 0xfa) { mouse_decode.phase = 1; }
         return false;
     }
     if (mouse_decode.phase == 1) {
         if ((data & 0xc8) == 0x08) {
             mouse_decode.buf[0] = data;
-            mouse_decode.phase = 2;
+            mouse_decode.phase  = 2;
         }
         return 0;
     }
     if (mouse_decode.phase == 2) {
         mouse_decode.buf[1] = data;
-        mouse_decode.phase = 3;
+        mouse_decode.phase  = 3;
         return 0;
     }
     if (mouse_decode.phase == 3) {
         mouse_decode.buf[2] = data;
-        mouse_decode.phase = 1;
-        mouse_decode.btn = mouse_decode.buf[0] & 0x07;
-        mouse_decode.x = mouse_decode.buf[1];
-        mouse_decode.y = mouse_decode.buf[2];
+        mouse_decode.phase  = 1;
+        mouse_decode.btn    = mouse_decode.buf[0] & 0x07;
+        mouse_decode.x      = mouse_decode.buf[1];
+        mouse_decode.y      = mouse_decode.buf[2];
 
-        if ((mouse_decode.buf[0] & 0x10) != 0)
-            mouse_decode.x |= 0xffffff00;
-        if ((mouse_decode.buf[0] & 0x20) != 0)
-            mouse_decode.y |= 0xffffff00;
+        if ((mouse_decode.buf[0] & 0x10) != 0) mouse_decode.x |= 0xffffff00;
+        if ((mouse_decode.buf[0] & 0x20) != 0) mouse_decode.y |= 0xffffff00;
         mouse_decode.y = -mouse_decode.y;
-        if(type == OnlyScroll || type == FiveButton){
+        if (type == OnlyScroll || type == FiveButton) {
             mouse_decode.phase = 4;
             return 0;
         } else
-        return true;
+            return true;
     }
-    if(mouse_decode.phase == 4){
+    if (mouse_decode.phase == 4) {
         mouse_decode.buf[3] = data;
-        mouse_decode.phase = 1;
-        int wheel_delta = mouse_decode.buf[3];
-        if(wheel_delta >= 255) wheel_delta = -1;
+        mouse_decode.phase  = 1;
+        int wheel_delta     = mouse_decode.buf[3];
+        if (wheel_delta >= 255) wheel_delta = -1;
 
         mouse_decode.scroll = -wheel_delta;
         return true;
@@ -71,49 +67,41 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
     if (mousedecode(data)) {
         mouse_x += mouse_decode.x;
         mouse_y += mouse_decode.y;
-        if (mouse_x < 0)
-            mouse_x = 0;
-        if (mouse_y < 0)
-            mouse_y = 0;
-        if (mouse_x > get_screen_width() - 1)
-            mouse_x = get_screen_width() - 1;
-        if (mouse_y > get_screen_height() - 1)
-            mouse_y = get_screen_height() - 1;
+        if (mouse_x < 0) mouse_x = 0;
+        if (mouse_y < 0) mouse_y = 0;
+        if (mouse_x > get_screen_width() - 1) mouse_x = get_screen_width() - 1;
+        if (mouse_y > get_screen_height() - 1) mouse_y = get_screen_height() - 1;
 
-        mouse_decode.left = false;
+        mouse_decode.left   = false;
         mouse_decode.center = false;
-        mouse_decode.right = false;
+        mouse_decode.right  = false;
 
-        if (mouse_decode.btn & 0x01) {
-            mouse_decode.left = true;
-        }
-        if (mouse_decode.btn & 0x02) {
-            mouse_decode.right = true;
-        }
-        if (mouse_decode.btn & 0x04) {
-            mouse_decode.center = true;
-        }
+        if (mouse_decode.btn & 0x01) { mouse_decode.left = true; }
+        if (mouse_decode.btn & 0x02) { mouse_decode.right = true; }
+        if (mouse_decode.btn & 0x04) { mouse_decode.center = true; }
 
         terminal_handle_mouse_scroll(mouse_decode.scroll);
 
         // 不知道会不会死锁不过大概率会（
 
-//        logkf("mouse x:%d y:%d right:%s left:%s center: %s scroll: %d\n",mouse_x,mouse_y,
-//              mouse_decode.right ? "true" : "false",
-//              mouse_decode.left ? "true" : "false",
-//              mouse_decode.center ? "true" : "false",
-//              mouse_decode.scroll
-//        );
+        //        logkf("mouse x:%d y:%d right:%s left:%s center: %s scroll: %d\n",mouse_x,mouse_y,
+        //              mouse_decode.right ? "true" : "false",
+        //              mouse_decode.left ? "true" : "false",
+        //              mouse_decode.center ? "true" : "false",
+        //              mouse_decode.scroll
+        //        );
     }
     ticket_unlock(&mouse_lock);
 }
 
 static inline void wait_for_read() {
-    while (!(io_in8(PS2_CMD_PORT) & KB_STATUS_OBF));
+    while (!(io_in8(PS2_CMD_PORT) & KB_STATUS_OBF))
+        ;
 }
 
 static inline void wait_for_write() {
-    while (io_in8(PS2_CMD_PORT) & KB_STATUS_IBF);
+    while (io_in8(PS2_CMD_PORT) & KB_STATUS_IBF)
+        ;
 }
 
 static bool send_command(uint8_t value) {
@@ -141,7 +129,7 @@ static MouseType get_mouse_type() {
 }
 
 void mouse_setup() {
-    register_interrupt_handler(mouse, (void*)mouse_handle, 0, 0x8E);
+    register_interrupt_handler(mouse, (void *)mouse_handle, 0, 0x8E);
     send_command(MOUSE_EN);
     type = get_mouse_type();
     kinfo("Setup PS/2 %s mouse.",

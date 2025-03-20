@@ -3,32 +3,37 @@
 /**
  * 定义CP_Kernel的各种属性
  */
-#define KERNEL_NAME "CP_Kernel-x86_64-0.1.0" //内核编号
-#define MAX_CPU (256*2)                      //最大支持CPU核心数 256
-#define STACK_SIZE 32768                     //栈大小(byte)
-#define MAX_WAIT_INDEX 100000                //阻塞最大循环数
+#define KERNEL_NAME    "CP_Kernel-x86_64-0.1.0" //内核编号
+#define MAX_CPU        (256 * 2)                //最大支持CPU核心数 256
+#define STACK_SIZE     32768                    //栈大小(byte)
+#define MAX_WAIT_INDEX 100000                   //阻塞最大循环数
 
 // 常用工具宏
-#define cpu_hlt while(1) __asm__("hlt")
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#define cpu_hlt                                                                                    \
+    while (1)                                                                                      \
+    __asm__("hlt")
+#define UNUSED(expr)                                                                               \
+    do {                                                                                           \
+        (void)(expr);                                                                              \
+    } while (0)
 #define __IRQHANDLER __attribute__((interrupt))
 
 #define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
 #define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
 
 #define waitif(cond)                                                                               \
-  ((void)({                                                                                        \
-    while (cond) {}                                                                                \
-  }))
+    ((void)({                                                                                      \
+        while (cond) {}                                                                            \
+    }))
 
 #define streq(s1, s2)                                                                              \
-  ({                                                                                               \
-    const char* _s1 = (s1), *_s2 = (s2);                                                                 \
-    (_s1 && _s2) ? strcmp(_s1, _s2) == 0 : _s1 == _s2;                                             \
-  })
+    ({                                                                                             \
+        const char *_s1 = (s1), *_s2 = (s2);                                                       \
+        (_s1 && _s2) ? strcmp(_s1, _s2) == 0 : _s1 == _s2;                                         \
+    })
 
-#include "limits.h"
 #include "ctype.h"
+#include "limits.h"
 
 static inline void empty() {}
 

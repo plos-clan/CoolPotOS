@@ -1,8 +1,8 @@
 #include "fpu.h"
-#include "scheduler.h"
 #include "io.h"
-#include "krlibc.h"
 #include "klog.h"
+#include "krlibc.h"
+#include "scheduler.h"
 
 // 处理FPU异常的处理函数
 void fpu_handler(registers_t *regs) {
@@ -15,17 +15,18 @@ void fpu_handler(registers_t *regs) {
     // 检查该进程是否已经初始化过FPU
     if (!current_proc->fpu_flag) {
         // 如果尚未初始化，则清除FPU的错误状态并进行初始化
-        __asm__ volatile("fnclex \n"  // 清除FPU错误状态
-                     "fninit \n"      // 初始化FPU
-                     :::"memory");
+        __asm__ volatile("fnclex \n" // 清除FPU错误状态
+                         "fninit \n" // 初始化FPU
+                         ::
+                             : "memory");
 
         // 将进程的FPU寄存器上下文重置为0
         memset(&(current_proc->context.fpu_regs), 0, sizeof(fpu_regs_t));
     } else {
         // 如果已经初始化，则从进程的上下文中恢复FPU状态
-        __asm__ volatile("frstor (%%eax) \n" // 恢复FPU状态
-                     ::"a"(&(current_proc->context.fpu_regs))  // 使用当前进程的FPU寄存器上下文
-                     : "memory");
+        __asm__ volatile("frstor (%%eax) \n"                      // 恢复FPU状态
+                         ::"a"(&(current_proc->context.fpu_regs)) // 使用当前进程的FPU寄存器上下文
+                         : "memory");
     }
 
     // 标记该进程已经初始化过FPU，避免重复处理
@@ -40,9 +41,9 @@ void switch_fpu(pcb_t *pcb) {
     // 检查该进程是否使用了FPU
     if (pcb->fpu_flag) {
         // 如果使用了，则将当前的FPU状态保存到进程的上下文中
-        __asm__ volatile("fnsave (%%eax) \n"  // 保存FPU状态
-                     ::"a"(&(pcb->context.fpu_regs))  // 保存到指定内存位置
-                     : "memory");
+        __asm__ volatile("fnsave (%%eax) \n"             // 保存FPU状态
+                         ::"a"(&(pcb->context.fpu_regs)) // 保存到指定内存位置
+                         : "memory");
     }
 
     // 恢复CR0寄存器的第2位和第3位，重新启用FPU功能

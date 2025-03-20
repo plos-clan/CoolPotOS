@@ -1,22 +1,14 @@
 #include "kprint.h"
 #include "krlibc.h"
-#include "os_terminal.h"
-#include "sprintf.h"
-#include "pcb.h"
 #include "lock.h"
+#include "os_terminal.h"
+#include "pcb.h"
+#include "sprintf.h"
 
 ticketlock print_lock;
 
-static char *const color_codes[] = {
-    [BLACK] = "0",
-    [RED] = "1",
-    [GREEN] = "2",
-    [YELLOW] = "3",
-    [BLUE] = "4",
-    [MAGENTA] = "5",
-    [CYAN] = "6",
-    [WHITE] = "7"
-};
+static char *const color_codes[] = {[BLACK] = "0", [RED] = "1",     [GREEN] = "2", [YELLOW] = "3",
+                                    [BLUE] = "4",  [MAGENTA] = "5", [CYAN] = "6",  [WHITE] = "7"};
 
 void add_color(char *dest, uint32_t color, int is_background) {
     strcat(dest, "\033[");
@@ -28,7 +20,7 @@ void add_color(char *dest, uint32_t color, int is_background) {
 void printe(const char *fmt, ...) {
     ticket_unlock(&print_lock);
     ticket_lock(&print_lock);
-    char buf[4096] = {0};
+    char    buf[4096] = {0};
     va_list args;
     va_start(args, fmt);
     stbsp_vsprintf(buf, fmt, args);
@@ -51,8 +43,9 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     strcat(buf, buf + 11);
     strcat(buf, "\033[0m");
 
-    if(get_current_task() != NULL)
-        get_current_task()->tty->print(get_current_task()->tty,buf);
-    else terminal_process(buf);
+    if (get_current_task() != NULL)
+        get_current_task()->tty->print(get_current_task()->tty, buf);
+    else
+        terminal_process(buf);
     ticket_unlock(&print_lock);
 }

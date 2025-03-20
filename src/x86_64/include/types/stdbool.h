@@ -17,17 +17,17 @@
 
 #ifndef __cplusplus
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
-    /* These do not need to be defined for C23+ */
-#else
-#  undef bool
-#  define bool _Bool
+#    if defined(__STDC_VERSION__) && __STDC_VERSION__ > 201710L
+/* These do not need to be defined for C23+ */
+#    else
+#        undef bool
+#        define bool _Bool
 
-#  undef true
-#  define true 1
-#  undef false
-#  define false 0
-#endif
+#        undef true
+#        define true 1
+#        undef false
+#        define false 0
+#    endif
 
 #endif
 

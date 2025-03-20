@@ -1,8 +1,8 @@
 #include "error.h"
-#include "isr.h"
-#include "scheduler.h"
-#include "klog.h"
 #include "io.h"
+#include "isr.h"
+#include "klog.h"
+#include "scheduler.h"
 
 // 处理除法错误异常（INT 0）
 static void DE_0(registers_t *reg) {
@@ -19,7 +19,7 @@ static void DE_0(registers_t *reg) {
 
         // 进入死循环，停止处理器执行
         while (1)
-            io_hlt();  // 执行HALT指令，暂停 CPU
+            io_hlt(); // 执行HALT指令，暂停 CPU
     } else {
         // 记录用户进程中的除法错误日志
         klogf(false, "[%s:%d] has divide error.\n", pcb->name, pcb->pid);
@@ -44,7 +44,7 @@ static void SS_12(registers_t *reg) {
 
         // 进入死循环，停止处理器执行
         while (1)
-            io_hlt();  // 执行HALT指令，暂停 CPU
+            io_hlt(); // 执行HALT指令，暂停 CPU
     } else {
         // 记录用户进程中的栈段故障日志
         klogf(false, "[%s:%d] has stack segment fault.\n", pcb->name, pcb->pid);
@@ -69,7 +69,7 @@ static void GP_13(registers_t *reg) {
 
         // 进入死循环，停止处理器执行
         while (1)
-            io_hlt();  // 执行HALT指令，暂停 CPU
+            io_hlt(); // 执行HALT指令，暂停 CPU
     } else {
         // 记录用户进程中的一般保护异常日志
         klogf(false, "[%s:%d] has General Protection.\n", pcb->name, pcb->pid);

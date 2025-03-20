@@ -10,13 +10,13 @@
  * They are implemented in buf.c
  */
 
-#define PTR_FREE(x)                                                            \
-  do {                                                                         \
-    if ((x) != NULL) {                                                         \
-      free(x);                                                                 \
-      (x) = NULL;                                                              \
-    }                                                                          \
-  } while (0)
+#define PTR_FREE(x)                                                                                \
+    do {                                                                                           \
+        if ((x) != NULL) {                                                                         \
+            free(x);                                                                               \
+            (x) = NULL;                                                                            \
+        }                                                                                          \
+    } while (0)
 
 /**
  * The queue type uses void* right now
@@ -42,9 +42,9 @@ typedef void *queue_entry_t;
  * logic.
  */
 typedef enum overwrite_behavior {
-    FAIL = 0,      /**< Do not overwrite the value; the operation fails. */
-    OVERWRITE = 1, /**< Allow overwriting the existing values. */
-    OVERWRITE_ENUM_MAX = 2 /**< Sentinel value for the maximum enum value. */
+    FAIL               = 0, /**< Do not overwrite the value; the operation fails. */
+    OVERWRITE          = 1, /**< Allow overwriting the existing values. */
+    OVERWRITE_ENUM_MAX = 2  /**< Sentinel value for the maximum enum value. */
 } overwrite_behavior_t;
 
 /**
@@ -73,24 +73,24 @@ typedef enum overwrite_behavior {
  * logic.
  */
 typedef enum status_code {
-    SUCCESS = 0, /**< The operation completed successfully. */
-    FAILURE = 1, /**< The operation encountered an error. */
-    FULL = 2,    /**< The resource is full and cannot accommodate more data. */
-    EMPTY = 3,   /**< The resource is empty and cannot provide more data. */
-    BUSY = 4,    /**< The resource is busy and cannot process the request at this
+    SUCCESS         = 0, /**< The operation completed successfully. */
+    FAILURE         = 1, /**< The operation encountered an error. */
+    FULL            = 2, /**< The resource is full and cannot accommodate more data. */
+    EMPTY           = 3, /**< The resource is empty and cannot provide more data. */
+    BUSY            = 4, /**< The resource is busy and cannot process the request at this
                   time. */
-    UNAVAILABLE = 5,    /**< The resource is unavailable for use. */
-    INVALID = 6,        /**< The operation was attempted with invalid input or
+    UNAVAILABLE     = 5, /**< The resource is unavailable for use. */
+    INVALID         = 6, /**< The operation was attempted with invalid input or
                          configuration. */
-    STATUS_ENUM_MAX = 7 /**< Sentinel value for the maximum enum value. */
+    STATUS_ENUM_MAX = 7  /**< Sentinel value for the maximum enum value. */
 } status_code_t;
 
 /**
  * The buffer struct
  */
 typedef struct mpmc_queue {
-    queue_entry_t *array; //< The actual storage array
-    bool *ready; //< A list of bools equal in length to the array. Used for
+    queue_entry_t       *array; //< The actual storage array
+    bool                *ready; //< A list of bools equal in length to the array. Used for
     // synchronization
     // These should be accessed atomically. If you use this in C++,
     // you can make the variables atomic. In C, make sure you access
@@ -99,13 +99,12 @@ typedef struct mpmc_queue {
     // is what's atomic. For example, a compare and swap or increment
     // (both forms of read-modify-write) may be done atomically. The
     // variable itself is just a variable. It's not atomic.
-    uint32_t capacity; // The capacity of the queue. Measured in units of
+    uint32_t             capacity; // The capacity of the queue. Measured in units of
     // "elements". Must be u32_max or less.
-    uint32_t head;     // The pointer to the head (place where writes happen to)
-    uint32_t tail;     // The pointer to the tail (place where reads happen from)
-    uint32_t element_size; // The size of one entry in the queue, in bytes
-    overwrite_behavior_t
-            overwrite_behavior; // Used to control behavior of the queue when full. If
+    uint32_t             head;         // The pointer to the head (place where writes happen to)
+    uint32_t             tail;         // The pointer to the tail (place where reads happen from)
+    uint32_t             element_size; // The size of one entry in the queue, in bytes
+    overwrite_behavior_t overwrite_behavior; // Used to control behavior of the queue when full. If
     // OVERWRITE, overwrite the oldest entries in the
     // queue. If FAIL, return failure.
 } mpmc_queue_t;
@@ -165,8 +164,7 @@ status_code_t put(mpmc_queue_t *queue, queue_entry_t *entry);
  *         - SUCCESS: The queue was successfully initialized.
  *         - INVALID: The provided arguments are invalid.
  */
-status_code_t init(mpmc_queue_t *queue, uint32_t capacity,
-                   uint32_t element_size,
+status_code_t init(mpmc_queue_t *queue, uint32_t capacity, uint32_t element_size,
                    overwrite_behavior_t overwrite_behavior);
 
 /**
@@ -197,5 +195,4 @@ status_code_t destroy(mpmc_queue_t *queue);
  *         - SUCCESS: The overwrite behavior was successfully updated.
  *         - INVALID: The provided arguments are invalid.
  */
-status_code_t set_overwrite_behavior(mpmc_queue_t *queue,
-                                     overwrite_behavior_t overwrite_behavior);
+status_code_t set_overwrite_behavior(mpmc_queue_t *queue, overwrite_behavior_t overwrite_behavior);

@@ -15,13 +15,13 @@ void init_iic(void) {
         return;
     } else {
         logkf((char *)("Find IIC Master Controller.\n"));
-        IIC_Master *iic_master = NULL;
-        unsigned int address = Get_iic_masterAddress(IIC_masterController);
-        iic_master->Control = address;
+        IIC_Master  *iic_master     = NULL;
+        unsigned int address        = Get_iic_masterAddress(IIC_masterController);
+        iic_master->Control         = address;
         IIC_slaveNode iic_slaveList = iic_slaveAlloc(NULL);
 
         //Initiative PCA9685
-        IIC_Slave pca9685 = init_pca9685(0x40);
+        IIC_Slave     pca9685     = init_pca9685(0x40);
         IIC_slaveNode pca9685Node = iic_slaveAlloc(&pca9685);
         iic_slaveAppend(&iic_slaveList.next, &pca9685Node);
         UNUSED(pca9685);

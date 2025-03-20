@@ -1,39 +1,39 @@
 #include "scheduler.h"
-#include "page.h"
-#include "krlibc.h"
 #include "description_table.h"
-#include "klog.h"
-#include "io.h"
 #include "fpu.h"
+#include "io.h"
+#include "klog.h"
+#include "krlibc.h"
+#include "page.h"
 
 extern void switch_to(struct context *prev, struct context *next); //asmfunc.asm
 
-pcb_t *current_pcb = NULL; //当前运行进程
+pcb_t *current_pcb       = NULL; //当前运行进程
 pcb_t *running_proc_head = NULL; //调度队列
-pcb_t *wait_proc_head = NULL; //等待队列
+pcb_t *wait_proc_head    = NULL; //等待队列
 
 bool can_sche = false; //调度标志位
 
 int get_all_task() {
-    int num = 1;
+    int    num = 1;
     pcb_t *pcb = running_proc_head;
     do {
         pcb = pcb->next;
         if (pcb == NULL) break;
         num++;
-    } while (1);//遍历进程控制器列表获取进程总数
+    } while (1); //遍历进程控制器列表获取进程总数
     return num;
 }
 
-void enable_scheduler() {//启动调度器
+void enable_scheduler() { //启动调度器
     can_sche = true;
 }
 
-void disable_scheduler() {//关闭调度器
+void disable_scheduler() { //关闭调度器
     can_sche = false;
 }
 
-pcb_t *get_current_proc() {//获取PCB指针
+pcb_t *get_current_proc() { //获取PCB指针
     return current_pcb;
 }
 
@@ -60,8 +60,7 @@ void scheduler_process(registers_t *reg) {
             current_pcb = running_proc_head;
 
             // 记录日志，确认下一个进程的状态
-            logkf("DEATH SCHEDULER %s\n",
-                  current_pcb->next->status == DEATH ? "YE" : "NO");
+            logkf("DEATH SCHEDULER %s\n", current_pcb->next->status == DEATH ? "YE" : "NO");
         }
 
         // 增加当前进程的CPU时钟计数器，用于跟踪使用的时间片
@@ -103,8 +102,7 @@ void default_scheduler(registers_t *reg, pcb_t *next) {
     // 确保当前进程与下一个进程不同，避免不必要的切换
     if (current_pcb != next) {
         // 如果下一个进程为NULL，设置为就绪队列的头部，确保循环调度
-        if (next == NULL)
-            next = running_proc_head;
+        if (next == NULL) next = running_proc_head;
 
         // 将当前进程的时间片重置为1次，可能在切换回该进程时使用
         current_pcb->sche_time = 1;
@@ -119,24 +117,24 @@ void default_scheduler(registers_t *reg, pcb_t *next) {
         switch_page_directory(current_pcb->pgd_dir);
 
         // 设置内核栈指针到新进程的内核栈顶部
-        set_kernel_stack((uintptr_t) current_pcb->kernel_stack + STACK_SIZE);
+        set_kernel_stack((uintptr_t)current_pcb->kernel_stack + STACK_SIZE);
 
         // 切换FPU（浮点单元）状态到新进程的上下文
         switch_fpu(current_pcb);
 
         // 保存当前寄存器状态到前一个进程的上下文中
-        prev->context.eip = reg->eip;    // 指令指针
-        prev->context.ds  = reg->ds;     // 数据段寄存器
-        prev->context.cs  = reg->cs;     // 代码段寄存器
-        prev->context.eax = reg->eax;    // 通用寄存器EAX的值
-        prev->context.ss  = reg->ss;     // 堆栈段寄存器
+        prev->context.eip = reg->eip; // 指令指针
+        prev->context.ds  = reg->ds;  // 数据段寄存器
+        prev->context.cs  = reg->cs;  // 代码段寄存器
+        prev->context.eax = reg->eax; // 通用寄存器EAX的值
+        prev->context.ss  = reg->ss;  // 堆栈段寄存器
 
         // 执行上下文切换，将CPU状态从前一个进程切换到新进程
         switch_to(&(prev->context), &(current_pcb->context));
 
         // 更新寄存器为新进程的上下文，准备执行新进程
-        reg->ds = current_pcb->context.ds;
-        reg->cs = current_pcb->context.cs;
+        reg->ds  = current_pcb->context.ds;
+        reg->cs  = current_pcb->context.cs;
         reg->eip = current_pcb->context.eip;
         reg->eax = current_pcb->context.eax;
         reg->ss  = current_pcb->context.ss;

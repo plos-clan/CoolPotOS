@@ -5,27 +5,27 @@
 #include <stdint.h>
 
 typedef enum {
-  Success,
-  MallocIsNull,
-  FreeIsNull,
-  FontBufferIsNull,
+    Success,
+    MallocIsNull,
+    FreeIsNull,
+    FontBufferIsNull,
 } TerminalInitResult;
 
 typedef struct {
-  size_t width;
-  size_t height;
-  uint32_t *address;
+    size_t    width;
+    size_t    height;
+    uint32_t *address;
 } TerminalDisplay;
 
 typedef struct {
-  uint32_t foreground;
-  uint32_t background;
-  uint32_t ansi_colors[16];
+    uint32_t foreground;
+    uint32_t background;
+    uint32_t ansi_colors[16];
 } TerminalPalette;
 
 typedef struct {
-  const char *(*get)(void);
-  void (*set)(const char*);
+    const char *(*get)(void);
+    void (*set)(const char *);
 } TerminalClipboard;
 
 #ifdef __cplusplus
@@ -33,21 +33,15 @@ extern "C" {
 #endif // __cplusplus
 
 #if defined(TERMINAL_EMBEDDED_FONT)
-TerminalInitResult terminal_init(const TerminalDisplay *display,
-                                 float font_size,
-                                 void *(*malloc)(size_t),
-                                 void (*free)(void*),
-                                 void (*serial_print)(const char*));
+TerminalInitResult terminal_init(const TerminalDisplay *display, float font_size,
+                                 void *(*malloc)(size_t), void (*free)(void *),
+                                 void (*serial_print)(const char *));
 #endif
 
 #if !defined(TERMINAL_EMBEDDED_FONT)
-TerminalInitResult terminal_init(const TerminalDisplay *display,
-                                 const uint8_t *font_buffer,
-                                 size_t font_buffer_size,
-                                 float font_size,
-                                 void *(*malloc)(size_t),
-                                 void (*free)(void*),
-                                 void (*serial_print)(const char*));
+TerminalInitResult terminal_init(const TerminalDisplay *display, const uint8_t *font_buffer,
+                                 size_t font_buffer_size, float font_size, void *(*malloc)(size_t),
+                                 void (*free)(void *), void (*serial_print)(const char *));
 #endif
 
 void terminal_destroy(void);
@@ -74,12 +68,12 @@ void terminal_set_custom_color_scheme(const TerminalPalette *palette);
 
 void terminal_set_clipboard(TerminalClipboard clipboard);
 
-void terminal_set_pty_writer(void (*writer)(const uint8_t*));
+void terminal_set_pty_writer(void (*writer)(const uint8_t *));
 
 void terminal_handle_keyboard(uint8_t scancode);
 
 void terminal_handle_mouse_scroll(ptrdiff_t delta);
 
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+} // extern "C"
+#endif // __cplusplus

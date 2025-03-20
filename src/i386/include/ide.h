@@ -75,10 +75,10 @@
 #include "ctypes.h"
 #include "isr.h"
 
-void ide_init();
-uint8_t   ide_read(uint8_t channel, uint8_t reg);
-void ide_write(uint8_t channel, uint8_t reg, uint8_t data);
-void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, uint32_t BAR4);
-void ide_read_sectors(uint8_t drive, uint8_t numsects, uint32_t lba, uint16_t es, uint32_t edi);
-void ide_write_sectors(uint8_t drive, uint8_t numsects, uint32_t lba, uint16_t es, uint32_t edi);
-void ide_read_buffer(uint8_t channel, uint8_t reg, uint32_t buffer, uint32_t quads);
+void    ide_init();
+uint8_t ide_read(uint8_t channel, uint8_t reg);
+void    ide_write(uint8_t channel, uint8_t reg, uint8_t data);
+void    ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, uint32_t BAR4);
+void    ide_read_sectors(uint8_t drive, uint8_t numsects, uint32_t lba, uint16_t es, uint32_t edi);
+void    ide_write_sectors(uint8_t drive, uint8_t numsects, uint32_t lba, uint16_t es, uint32_t edi);
+void    ide_read_buffer(uint8_t channel, uint8_t reg, uint32_t buffer, uint32_t quads);

@@ -1,6 +1,6 @@
 #include "timer.h"
-#include "isr.h"
 #include "io.h"
+#include "isr.h"
 #include "klog.h"
 #include "scheduler.h"
 
@@ -19,10 +19,10 @@ volatile uint32_t tick = 0;
  * @param regs 指向 CPU 寄存器状态的指针，用于保存和恢复进程上下文
  */
 static void timer_handle(registers_t *regs) {
-    io_cli();  // 禁用中断，防止中断嵌套导致问题
-    tick++;    // 增加全局时钟滴答计数
+    io_cli();                // 禁用中断，防止中断嵌套导致问题
+    tick++;                  // 增加全局时钟滴答计数
     scheduler_process(regs); // 调用调度器，进行进程切换
-    io_sti();  // 重新启用中断
+    io_sti();                // 重新启用中断
 }
 
 /**
@@ -30,10 +30,11 @@ static void timer_handle(registers_t *regs) {
  * 此函数提供了一个简单的忙等待延迟机制，使当前进程休眠指定的时钟滴答数。
  * @param timer 要休眠的时钟滴答数
  */
-void clock_sleep(uint32_t timer){
-    io_sti(); // 启用中断，确保 tick 计数器能够递增
+void clock_sleep(uint32_t timer) {
+    io_sti();                      // 启用中断，确保 tick 计数器能够递增
     uint32_t sleep = tick + timer; // 计算休眠结束时的 tick 值
-    while (tick < sleep); // 忙等待，直到 tick 达到目标值
+    while (tick < sleep)
+        ; // 忙等待，直到 tick 达到目标值
 }
 
 /**
@@ -61,8 +62,8 @@ void init_timer(uint32_t timer) {
     outb(0x43, 0x36); // 写入控制字到端口 0x43
 
     // 将分频系数的低字节和高字节分别写入 PIT 的通道 0 数据端口 (0x40)
-    uint8_t l = (uint8_t) (divisor & 0xFF);  // 获取分频系数的低字节
-    uint8_t h = (uint8_t) ((divisor >> 8) & 0xFF); // 获取分频系数的高字节
+    uint8_t l = (uint8_t)(divisor & 0xFF);        // 获取分频系数的低字节
+    uint8_t h = (uint8_t)((divisor >> 8) & 0xFF); // 获取分频系数的高字节
 
     outb(0x40, l); // 将低字节写入端口 0x40
     outb(0x40, h); // 将高字节写入端口 0x40

@@ -1,7 +1,7 @@
-#include "timer.h"
-#include "io.h"
 #include "alloc.h"
+#include "io.h"
 #include "sprintf.h"
+#include "timer.h"
 
 #define bcd2hex(n) ((n >> 4) * 10) + (n & 0xf)
 
@@ -48,10 +48,10 @@ int is_leap_year(int year) {
 }
 
 char *get_date_time() {
-    char *s = (char *) malloc(40);
-    int year = get_year(), month = get_mon(), day = get_day_of_month();
-    int hour = get_hour(), min = get_min(), sec = get_sec();
-    int day_of_months[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    char *s    = (char *)malloc(40);
+    int   year = get_year(), month = get_mon(), day = get_day_of_month();
+    int   hour = get_hour(), min = get_min(), sec = get_sec();
+    int   day_of_months[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     if (is_leap_year(year)) day_of_months[2]++;
 #ifdef NEED_UTC_8
     hour += 8;

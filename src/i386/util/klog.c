@@ -1,14 +1,14 @@
-#include <stdarg.h>
 #include "klog.h"
 #include "krlibc.h"
-#include "tty.h"
 #include "serial.h"
+#include "tty.h"
+#include <stdarg.h>
 
 #define STB_SPRINTF_IMPLEMENTATION
 
+#include "cmos.h"
 #include "stb_sprintf.h"
 #include "video.h"
-#include "cmos.h"
 
 extern tty_t default_tty;
 
@@ -43,7 +43,8 @@ void k_print(const char *message) {
     if (tty_status == TTY_VGA_OUTPUT) {
         extern void default_writestring(const char *data);
         default_writestring(message);
-    } else default_tty.print(&default_tty, message);
+    } else
+        default_tty.print(&default_tty, message);
 }
 
 void dlogf(char *fmt, ...) {

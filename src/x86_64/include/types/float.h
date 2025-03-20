@@ -28,14 +28,14 @@
 #undef LDBL_MANT_DIG
 #define LDBL_MANT_DIG __LDBL_MANT_DIG__
 
-#if (defined(__cplusplus) && __cplusplus >= 201103L) \
- || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
+#if (defined(__cplusplus) && __cplusplus >= 201103L) ||                                            \
+    (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
 
-#undef DECIMAL_DIG
-#define DECIMAL_DIG __DECIMAL_DIG__
+#    undef DECIMAL_DIG
+#    define DECIMAL_DIG __DECIMAL_DIG__
 
-#undef FLT_EVAL_METHOD
-#define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
+#    undef FLT_EVAL_METHOD
+#    define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
 
 #endif
 
@@ -95,29 +95,29 @@
 #undef LDBL_MIN
 #define LDBL_MIN __LDBL_MIN__
 
-#if (defined(__cplusplus) && __cplusplus >= 201703L) \
- || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#if (defined(__cplusplus) && __cplusplus >= 201703L) ||                                            \
+    (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 
-#undef FLT_DECIMAL_DIG
-#define FLT_DECIMAL_DIG __FLT_DECIMAL_DIG__
-#undef DBL_DECIMAL_DIG
-#define DBL_DECIMAL_DIG __DBL_DECIMAL_DIG__
-#undef LDBL_DECIMAL_DIG
-#define LDBL_DECIMAL_DIG __LDBL_DECIMAL_DIG__
+#    undef FLT_DECIMAL_DIG
+#    define FLT_DECIMAL_DIG __FLT_DECIMAL_DIG__
+#    undef DBL_DECIMAL_DIG
+#    define DBL_DECIMAL_DIG __DBL_DECIMAL_DIG__
+#    undef LDBL_DECIMAL_DIG
+#    define LDBL_DECIMAL_DIG __LDBL_DECIMAL_DIG__
 
-#undef FLT_TRUE_MIN
-#define FLT_TRUE_MIN __FLT_DENORM_MIN__
-#undef DBL_TRUE_MIN
-#define DBL_TRUE_MIN __DBL_DENORM_MIN__
-#undef LDBL_TRUE_MIN
-#define LDBL_TRUE_MIN __LDBL_DENORM_MIN__
+#    undef FLT_TRUE_MIN
+#    define FLT_TRUE_MIN __FLT_DENORM_MIN__
+#    undef DBL_TRUE_MIN
+#    define DBL_TRUE_MIN __DBL_DENORM_MIN__
+#    undef LDBL_TRUE_MIN
+#    define LDBL_TRUE_MIN __LDBL_DENORM_MIN__
 
-#undef FLT_HAS_SUBNORM
-#define FLT_HAS_SUBNORM __FLT_HAS_DENORM__
-#undef DBL_HAS_SUBNORM
-#define DBL_HAS_SUBNORM __DBL_HAS_DENORM__
-#undef LDBL_HAS_SUBNORM
-#define LDBL_HAS_SUBNORM __LDBL_HAS_DENORM__
+#    undef FLT_HAS_SUBNORM
+#    define FLT_HAS_SUBNORM __FLT_HAS_DENORM__
+#    undef DBL_HAS_SUBNORM
+#    define DBL_HAS_SUBNORM __DBL_HAS_DENORM__
+#    undef LDBL_HAS_SUBNORM
+#    define LDBL_HAS_SUBNORM __LDBL_HAS_DENORM__
 
 #endif
 

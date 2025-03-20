@@ -31,11 +31,13 @@
 
 #include "ctypes.h"
 
-void hda_init();
-void hda_stop();
+void     hda_init();
+void     hda_stop();
 uint32_t hda_verb(uint32_t codec, uint32_t node, uint32_t verb, uint32_t command);
-void hda_init_audio_selector(uint32_t codec, uint32_t node);
-uint16_t hda_return_sound_data_format(uint32_t sample_rate, uint32_t channels, uint32_t bits_per_sample);
-void hda_play_pcm(void *buffer, uint32_t size, uint32_t sample_rate, uint32_t channels, uint32_t bits_per_sample);
-uint8_t hda_is_supported_sample_rate(uint32_t sample_rate);
-void hda_regist();
+void     hda_init_audio_selector(uint32_t codec, uint32_t node);
+uint16_t hda_return_sound_data_format(uint32_t sample_rate, uint32_t channels,
+                                      uint32_t bits_per_sample);
+void     hda_play_pcm(void *buffer, uint32_t size, uint32_t sample_rate, uint32_t channels,
+                      uint32_t bits_per_sample);
+uint8_t  hda_is_supported_sample_rate(uint32_t sample_rate);
+void     hda_regist();

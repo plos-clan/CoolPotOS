@@ -19,7 +19,7 @@
 #define CHAR_BIT __CHAR_BIT__
 
 #ifndef MB_LEN_MAX
-#   define MB_LEN_MAX 1
+#    define MB_LEN_MAX 1
 #endif
 
 #undef SCHAR_MAX
@@ -29,25 +29,25 @@
 
 #undef UCHAR_MAX
 #if __SCHAR_MAX__ == __INT_MAX__
-#   define UCHAR_MAX (SCHAR_MAX * 2U + 1U)
+#    define UCHAR_MAX (SCHAR_MAX * 2U + 1U)
 #else
-#   define UCHAR_MAX (SCHAR_MAX * 2 + 1)
+#    define UCHAR_MAX (SCHAR_MAX * 2 + 1)
 #endif
 
 #ifdef __CHAR_UNSIGNED__
-#   undef CHAR_MAX
-#   define CHAR_MAX UCHAR_MAX
-#   undef CHAR_MIN
-#   if __SCHAR_MAX__ == __INT_MAX__
-#       define CHAR_MIN 0U
-#   else
-#       define CHAR_MIN 0
-#   endif
+#    undef CHAR_MAX
+#    define CHAR_MAX UCHAR_MAX
+#    undef CHAR_MIN
+#    if __SCHAR_MAX__ == __INT_MAX__
+#        define CHAR_MIN 0U
+#    else
+#        define CHAR_MIN 0
+#    endif
 #else
-#   undef CHAR_MAX
-#   define CHAR_MAX SCHAR_MAX
-#   undef CHAR_MIN
-#   define CHAR_MIN SCHAR_MIN
+#    undef CHAR_MAX
+#    define CHAR_MAX SCHAR_MAX
+#    undef CHAR_MIN
+#    define CHAR_MIN SCHAR_MIN
 #endif
 
 #undef SHRT_MAX
@@ -57,9 +57,9 @@
 
 #undef USHRT_MAX
 #if __SHRT_MAX__ == __INT_MAX__
-#   define USHRT_MAX (SHRT_MAX * 2U + 1U)
+#    define USHRT_MAX (SHRT_MAX * 2U + 1U)
 #else
-#   define USHRT_MAX (SHRT_MAX * 2 + 1)
+#    define USHRT_MAX (SHRT_MAX * 2 + 1)
 #endif
 
 #undef INT_MAX
@@ -80,13 +80,13 @@
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
-#undef LLONG_MAX
-#define LLONG_MAX __LONG_LONG_MAX__
-#undef LLONG_MIN
-#define LLONG_MIN (-LLONG_MAX - 1LL)
+#    undef LLONG_MAX
+#    define LLONG_MAX __LONG_LONG_MAX__
+#    undef LLONG_MIN
+#    define LLONG_MIN (-LLONG_MAX - 1LL)
 
-#undef ULLONG_MAX
-#define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
+#    undef ULLONG_MAX
+#    define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
 
 #endif
 

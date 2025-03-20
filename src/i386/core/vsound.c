@@ -1,6 +1,6 @@
 #include "vsound.h"
-#include "krlibc.h"
 #include "klog.h"
+#include "krlibc.h"
 #include "vfs.h"
 
 #define ALL_IMPLEMENTATION
@@ -14,24 +14,24 @@ static rbtree_sp_t vsound_list;
 
 static int samplerate_id(int rate) {
     switch (rate) {
-        case 8000: return 0;
-        case 11025: return 1;
-        case 16000: return 2;
-        case 22050: return 3;
-        case 24000: return 4;
-        case 32000: return 5;
-        case 44100: return 6;
-        case 47250: return 7;
-        case 48000: return 8;
-        case 50000: return 9;
-        case 88200: return 10;
-        case 96000: return 11;
-        case 176400: return 12;
-        case 192000: return 13;
-        case 352800: return 14;
-        case 384000: return 15;
-        case 768000: return 16;
-        default: return -1;
+    case 8000: return 0;
+    case 11025: return 1;
+    case 16000: return 2;
+    case 22050: return 3;
+    case 24000: return 4;
+    case 32000: return 5;
+    case 44100: return 6;
+    case 47250: return 7;
+    case 48000: return 8;
+    case 50000: return 9;
+    case 88200: return 10;
+    case 96000: return 11;
+    case 176400: return 12;
+    case 192000: return 13;
+    case 352800: return 14;
+    case 384000: return 15;
+    case 768000: return 16;
+    default: return -1;
     }
 }
 
@@ -187,7 +187,7 @@ void vsound_addbufs(vsound_t device, void *const *bufs, ssize_t len) {
     }
 }
 
-vsound_t vsound_find(const char* name) {
+vsound_t vsound_find(const char *name) {
     return rbtree_sp_get(vsound_list, name);
 }
 
@@ -327,7 +327,7 @@ int vsound_setvol(vsound_t snd, float vol) {
 
 vsound_t snd;
 
-void wav_player(const char* path){
+void wav_player(const char *path) {
     vfs_node_t n    = vfs_open(path);
     void      *buf1 = kmalloc(n->size);
     vfs_read(n, buf1, 0, n->size);
@@ -351,7 +351,7 @@ void wav_player(const char* path){
     kfree(buf1);
 }
 
-void mp3_player(const char* path) {
+void mp3_player(const char *path) {
     vfs_node_t n    = vfs_open(path);
     void      *buf1 = kmalloc(n->size);
     vfs_read(n, buf1, 0, n->size);
@@ -365,14 +365,14 @@ void mp3_player(const char* path) {
     snd->rate     = mp3.sampleRate;
     snd->volume   = 1;
 
-    printk("MP3 SAMPLE: %d %08x\n",samples,data);
+    printk("MP3 SAMPLE: %d %08x\n", samples, data);
 
     vsound_open(snd);
     for (int i = 0; i < samples; i += snd->bufsize / mp3.channels) {
         logkf("writing %d samples", i);
         vsound_write(snd, data + i * mp3.channels, snd->bufsize / mp3.channels);
         logkf("\r%d/%d sec", (int)((float)i / (float)mp3.sampleRate),
-               (int)((float)samples / (float)mp3.sampleRate));
+              (int)((float)samples / (float)mp3.sampleRate));
     }
     vsound_close(snd);
     kfree(data);

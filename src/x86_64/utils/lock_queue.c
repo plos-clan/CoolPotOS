@@ -6,8 +6,8 @@ lock_queue *queue_init() {
     lock_queue *q = malloc(sizeof(lock_queue));
     memset(q, 0, sizeof(lock_queue));
     q->head = q->tail = NULL;
-    q->next_index = 0;
-    q->size = 0;
+    q->next_index     = 0;
+    q->size           = 0;
     ticket_init(&q->lock);
     ticket_init(&q->iter_lock);
     return q;
@@ -16,8 +16,8 @@ lock_queue *queue_init() {
 int queue_enqueue(lock_queue *q, void *data) {
     lock_node *new_node = (lock_node *)malloc(sizeof(lock_node));
     if (!new_node) return -1;
-    new_node->data = data;
-    new_node->next = NULL;
+    new_node->data  = data;
+    new_node->next  = NULL;
     new_node->index = q->next_index++;
 
     ticket_lock(&q->lock);
@@ -37,9 +37,9 @@ void *queue_remove_at(lock_queue *q, int index) {
     if (index < 0 || q == NULL) return NULL;
     ticket_trylock(&q->lock);
     lock_node *current = q->head;
-    lock_node *prev = NULL;
+    lock_node *prev    = NULL;
     while (current && current->index != index) {
-        prev = current;
+        prev    = current;
         current = current->next;
     }
     if (!current) {
@@ -52,9 +52,7 @@ void *queue_remove_at(lock_queue *q, int index) {
     } else {
         q->head = current->next;
     }
-    if (!q->head) {
-        q->tail = NULL;
-    }
+    if (!q->head) { q->tail = NULL; }
     q->size--;
     free(current);
     ticket_unlock(&q->lock);
@@ -68,22 +66,20 @@ void *queue_dequeue(lock_queue *q) {
         return NULL;
     }
     lock_node *temp = q->head;
-    void *data = temp->data;
-    q->head = q->head->next;
-    if (!q->head) {
-        q->tail = NULL;
-    }
+    void      *data = temp->data;
+    q->head         = q->head->next;
+    if (!q->head) { q->tail = NULL; }
     q->size--;
     ticket_unlock(&q->lock);
     free(temp);
     return data;
 }
 
-void queue_iterate(lock_queue *q, void (*callback)(void *,void *), void* argument) {
+void queue_iterate(lock_queue *q, void (*callback)(void *, void *), void *argument) {
     ticket_trylock(&q->lock);
     lock_node *current = q->head;
     while (current) {
-        callback(current->data,argument);
+        callback(current->data, argument);
         current = current->next;
     }
     ticket_unlock(&q->lock);
@@ -102,4 +98,3 @@ void queue_destroy(lock_queue *q) {
     ticket_unlock(&q->iter_lock);
     free(q);
 }
-
