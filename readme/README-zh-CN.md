@@ -23,11 +23,11 @@
 您需要安装这些软件：
 
 - Xmake
-- NASM
-- Zig（如果 xmake 无法为您下载它，您可以手动安装）
+- NASM (x86_64架构无需此汇编器)
+- Zig (x86_64架构需要clang编译器)
 - Windows subsystem for Linux (Ubuntu 22.04)
     - xorriso
-    - qemu-system-i386
+    - qemu-system-i386 / qemu-system-x86_64
 
 ### 步骤
 
@@ -57,3 +57,4 @@
 * 27Onion - 翻译了法语README
 * LY-Xiang - 优化了 actions 流程
 * suhuajun-github - 修复AHCI驱动的BUG
+* FengHeting - SMBIOS 驱动开发

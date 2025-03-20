@@ -2,9 +2,9 @@ name: CI workflows
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main","x86_64"]
   pull_request:
-    branches: ["main"]
+    branches: ["main","x86_64"]
   workflow_dispatch:
 
 concurrency:
