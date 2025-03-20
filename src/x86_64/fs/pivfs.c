@@ -1,3 +1,7 @@
+/**
+ * Process Information Virtual File System
+ * 进程信息虚拟文件系统
+ */
 #define ALL_IMPLEMENTATION
 #include "pivfs.h"
 #include "kprint.h"
