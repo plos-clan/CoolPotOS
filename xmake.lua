@@ -3,35 +3,35 @@ set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
 add_requires("zig", "nasm")
 
-set_arch("i386")
 set_languages("c23")
 set_optimize("fastest")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
 
-add_cflags("-target x86-freestanding")
-add_arflags("-target x86-freestanding")
-add_ldflags("-target x86-freestanding")
-add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
-
 target("kernel")
+    set_arch("i386")
     set_kind("binary")
     set_toolchains("@zig", "nasm")
     set_toolset("as", "nasm")
 
+    add_cflags("-target x86-freestanding")
+    add_arflags("-target x86-freestanding")
+    add_ldflags("-target x86-freestanding")
+    add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
+
     set_default(false)
 
-    add_linkdirs("libs")
-    add_includedirs("src/include")
+    add_linkdirs("libs/i386")
+    add_includedirs("src/i386/include")
+    add_files("src/i386/**/*.asm", "src/i386/**/*.c")
 
     add_links("os_terminal")
     add_links("elf_parse")
     add_links("alloc")
-    add_files("src/**/*.asm", "src/**/*.c")
 
     add_asflags("-f", "elf32")
-    add_ldflags("-T", "linker.ld")
+    add_ldflags("-T", "src/i386/linker.ld")
 
 target("iso")
     set_kind("phony")
