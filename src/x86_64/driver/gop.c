@@ -1,11 +1,14 @@
 #include "gop.h"
 #include "limine.h"
+#include "ctype.h"
 #include <stddef.h>
 
 struct limine_framebuffer *framebuffer = NULL;
 
-__attribute__((used, section(".limine_requests"))) static volatile struct limine_framebuffer_request
-    framebuffer_request = {.id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
+LIMINE_REQUEST struct limine_framebuffer_request framebuffer_request = {
+        .id = LIMINE_FRAMEBUFFER_REQUEST,
+        .revision = 0
+};
 
 uint64_t get_screen_width() {
     return framebuffer->width;
