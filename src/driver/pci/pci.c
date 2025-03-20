@@ -159,8 +159,7 @@ uint32_t pci_get_port_base(uint8_t bus, uint8_t slot, uint8_t func) {
     for (int i = 0; i < 6; i++) {
         base_address_register bar = get_base_address_register(bus, slot, func, i);
         if (bar.type == input_output) {
-            io_port = (uint32_t)
-                    bar.address;
+            io_port = (uint32_t)bar.address;
         }
     }
     return io_port;
