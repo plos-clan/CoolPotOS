@@ -34,7 +34,7 @@ int is_transmit_empty() {
 }
 
 void write_serial(char a) {
-    //return;
+    // return;
     while (is_transmit_empty() == 0)
         ;
     io_out8(SERIAL_PORT, a);

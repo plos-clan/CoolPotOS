@@ -322,7 +322,7 @@ static void iso9660_process_dir(l9660_dir *dir, vfs_node_t parent) {
 }
 void iso9660_open(void *parent, const char *name, vfs_node_t node) {
     file_t       p = parent;
-    //TODO assert(p->type == file_dir); // it must be a directory
+    // TODO assert(p->type == file_dir); // it must be a directory
     l9660_dir   *p_dir  = (l9660_dir *)p->handle;
     l9660_dir   *c_dir  = (l9660_dir *)kmalloc(sizeof(l9660_dir));
     l9660_file  *c_file = (l9660_file *)kmalloc(sizeof(l9660_file));

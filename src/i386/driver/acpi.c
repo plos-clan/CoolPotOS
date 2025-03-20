@@ -36,7 +36,7 @@ static void AcpiPowerHandler(registers_t *irq) {
 
     io_out16((uint32_t)PM1a_EVT_BLK, status &= ~(1 << 8)); // clear bits
     dlogf("Shutdown OS...");
-    //TODO shutdown_kernel();
+    // TODO shutdown_kernel();
     power_off();
 
     // check if power button press
@@ -55,7 +55,7 @@ static void AcpiPowerHandler(registers_t *irq) {
     if (status & (1 << 8)) {
         io_out16((uint32_t)PM1b_EVT_BLK, status &= ~(1 << 8));
         dlogf("Shutdown OS...");
-        //TODO shutdown_kernel();
+        // TODO shutdown_kernel();
         power_off();
         return;
     }

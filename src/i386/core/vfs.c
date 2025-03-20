@@ -38,9 +38,9 @@ finline void do_open(vfs_node_t file) {
 }
 
 finline void do_update(vfs_node_t file) {
-    //assert(file->fsid != 0 || file->type != file_none);
+    // assert(file->fsid != 0 || file->type != file_none);
     if (file->type == file_none || file->handle == NULL) do_open(file);
-    //assert(file->type != file_none);
+    // assert(file->type != file_none);
 }
 
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle) {

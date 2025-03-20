@@ -24,14 +24,14 @@ IIC_Slave init_pca9685(uint32_t address) {
  * Probe the PCA9685 device.
  */
 void pca9685_probe(void) {
-    //挂载兼容性
+    // 挂载兼容性
 }
 
 /**
  * Remove the PCA9685 device.
  */
 void pca9685_remove(void) {
-    //移除兼容性
+    // 移除兼容性
 }
 
 /**
@@ -41,7 +41,7 @@ void pca9685_remove(void) {
  * @param data The byte to write.
  */
 void pca9685_write(uint8_t reg, uint8_t data) {
-    //写入兼容性
+    // 写入兼容性
     UNUSED(reg);
     UNUSED(data);
 }
@@ -54,7 +54,7 @@ void pca9685_write(uint8_t reg, uint8_t data) {
  * @return The byte read from the PCA9685 device.
  */
 uint8_t pca9685_read(uint8_t reg) {
-    //读取兼容性
+    // 读取兼容性
     UNUSED(reg);
     return 0;
 }
@@ -65,7 +65,7 @@ uint8_t pca9685_read(uint8_t reg) {
  * @param freq The new frequency for the PCA9685 device, in Hz.
  */
 void pca9685_setPWMFreq(uint32_t freq) {
-    //设置Freq兼容性
+    // 设置Freq兼容性
     double prescaleval  = 25000000.0;
     prescaleval        /= 4096.0;
     prescaleval        /= (double)freq;
@@ -87,7 +87,7 @@ void pca9685_setPWMFreq(uint32_t freq) {
  * @param off The value to set for the "off" duty cycle, in the range 0 to 4095.
  */
 void pca9685_setPWM(uint8_t channel, int on, int off) {
-    //PWM兼容性
+    // PWM兼容性
     pca9685_write(__LED0_ON_L + 4 * channel, on & 0xFF);
     pca9685_write(__LED0_ON_H + 4 * channel, on >> 8);
     pca9685_write(__LED0_OFF_L + 4 * channel, off & 0xFF);
@@ -101,7 +101,7 @@ void pca9685_setPWM(uint8_t channel, int on, int off) {
  * @param pulse The pulse width to set for the servo, in microseconds.
  */
 void pca9685_setServoPulse(uint8_t channel, int pulse) {
-    //Servo脉冲兼容性
+    // Servo脉冲兼容性
     pulse = pulse * 4096 / 20000;
     pca9685_setPWM(channel, 0, pulse);
 }

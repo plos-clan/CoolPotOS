@@ -6,13 +6,13 @@
 #include "krlibc.h"
 #include "page.h"
 
-extern void switch_to(struct context *prev, struct context *next); //asmfunc.asm
+extern void switch_to(struct context *prev, struct context *next); // asmfunc.asm
 
-pcb_t *current_pcb       = NULL; //当前运行进程
-pcb_t *running_proc_head = NULL; //调度队列
-pcb_t *wait_proc_head    = NULL; //等待队列
+pcb_t *current_pcb       = NULL; // 当前运行进程
+pcb_t *running_proc_head = NULL; // 调度队列
+pcb_t *wait_proc_head    = NULL; // 等待队列
 
-bool can_sche = false; //调度标志位
+bool can_sche = false; // 调度标志位
 
 int get_all_task() {
     int    num = 1;
@@ -21,19 +21,19 @@ int get_all_task() {
         pcb = pcb->next;
         if (pcb == NULL) break;
         num++;
-    } while (1); //遍历进程控制器列表获取进程总数
+    } while (1); // 遍历进程控制器列表获取进程总数
     return num;
 }
 
-void enable_scheduler() { //启动调度器
+void enable_scheduler() { // 启动调度器
     can_sche = true;
 }
 
-void disable_scheduler() { //关闭调度器
+void disable_scheduler() { // 关闭调度器
     can_sche = false;
 }
 
-pcb_t *get_current_proc() { //获取PCB指针
+pcb_t *get_current_proc() { // 获取PCB指针
     return current_pcb;
 }
 

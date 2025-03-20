@@ -11,7 +11,7 @@
 HpetInfo       *hpet_addr;
 static uint32_t hpetPeriod = 0;
 
-extern void save_registers(); //switch.S
+extern void save_registers(); // switch.S
 
 /*ASM CALL*/ registers_t *timer_handle(registers_t *reg) {
     close_interrupt;

@@ -53,5 +53,5 @@ void acpi_setup() {
     load_table(MCFG, pcie_setup);
     load_table(FACP, setup_facp);
 
-    //   load_table(BGRT, bgrt_setup); //TODO 先空着，等以后补上
+    //   load_table(BGRT, bgrt_setup); // TODO 先空着，等以后补上
 }

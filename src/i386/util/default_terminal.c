@@ -300,7 +300,7 @@ void default_draw_char(char c, int32_t x, int32_t y) {
     if (c == ' ') { return; }
 
     uint8_t *font = bafont;
-    //uint8_t *font = ascfont;
+    // uint8_t *font = ascfont;
 
     font += c * 16;
 

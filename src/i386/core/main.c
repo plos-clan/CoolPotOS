@@ -34,9 +34,9 @@
 extern void *program_break_end;
 extern void *program_break;
 
-extern void iso9660_regist(); //iso9660.c
-extern void fatfs_regist();   //fat.c
-extern void pipfs_regist();   //pipfs.c
+extern void iso9660_regist(); // iso9660.c
+extern void fatfs_regist();   // fat.c
+extern void pipfs_regist();   // pipfs.c
 
 _Noreturn void shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -70,14 +70,14 @@ int terminal_manual_flush(void *arg) {
  * @Noreturn
  */
 _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
-    //内核堆初始化
+    // 内核堆初始化
     program_break_end = program_break + 0x300000 + 1 + KHEAP_INITIAL_SIZE;
     memset(program_break, 0, program_break_end - program_break);
 
     vga_install();
     gdt_install();
-    idt_install(); //8259A PIC初始化
-    tty_init();    //tty 设备初始化
+    idt_install(); // 8259A PIC初始化
+    tty_init();    // tty 设备初始化
     init_vbe(multiboot);
 
     default_terminal_setup();
@@ -85,10 +85,10 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     check_memory(multiboot);
 
     //    if (multiboot->flags & (1 << 2)) {
-    //
+    //    //
     //    }
     disable_scheduler();
-    page_init(multiboot); //分页开启
+    page_init(multiboot); // 分页开启
     setup_free_page();
     terminal_setup(false);
     printk("CoolPotOS %s (Limine Multiboot) on an i386\n", KERNEL_NAME);
@@ -97,27 +97,27 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     init_cpuid();
     klogf(true, "Memory manager initialize.\n");
     setup_error();
-    init_fpu();     //初始化浮点处理器
-    acpi_install(); //ACPI初始化
-    init_timer(1);  //RTC 时钟中断
+    init_fpu();     // 初始化浮点处理器
+    acpi_install(); // ACPI初始化
+    init_timer(1);  // RTC 时钟中断
     vdisk_init();
     vfs_init();
-    init_pci(); //pci设备列表加载, 所有PCI设备相关驱动初始化需在此函数后方调用
+    init_pci(); // pci设备列表加载, 所有PCI设备相关驱动初始化需在此函数后方调用
 
     ide_init();
     ahci_init();
-    //hda_init();
-    //hda_regist();
+    // hda_init();
+    // hda_regist();
     iic_init();
 
     devfs_regist();
 
-    io_cli(); //ide等块设备驱动会打开中断以加载硬盘设备, 需重新关闭中断以继续初始化其余OS功能
+    io_cli(); // ide等块设备驱动会打开中断以加载硬盘设备, 需重新关闭中断以继续初始化其余OS功能
     iso9660_regist();
     fatfs_regist();
     init_pcb();
     pipfs_regist();
-    //net_setup();
+    // net_setup();
     keyboard_init();
     mouse_init();
 
@@ -150,10 +150,10 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     klogf(true, "Kernel load done!\n");
     beep();
     enable_scheduler();
-    io_sti(); //内核加载完毕, 打开中断以启动进程调度器, 开始运行
+    io_sti(); // 内核加载完毕, 打开中断以启动进程调度器, 开始运行
 
     while (1) {
         free_pages();
-        //io_hlt();
+        // io_hlt();
     }
 }

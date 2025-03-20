@@ -40,7 +40,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     send_eoi();
-    //printk("Key: %d",scancode);
+    // printk("Key: %d",scancode);
     if (scancode == 0xe0) {
         e0_flag = 1;
         return;

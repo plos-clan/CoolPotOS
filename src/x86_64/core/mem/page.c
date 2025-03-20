@@ -65,7 +65,7 @@ page_table_t *page_table_create(page_table_entry_t *entry) {
         return table;
     }
     page_table_t *table = (page_table_t *)phys_to_virt(
-        entry->value & 0xFFFFFFFFFFFFF000); //获取页帧物理基址并转换成虚拟地址
+        entry->value & 0xFFFFFFFFFFFFF000); // 获取页帧物理基址并转换成虚拟地址
     return table;
 }
 

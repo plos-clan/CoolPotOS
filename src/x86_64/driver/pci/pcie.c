@@ -110,10 +110,10 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
                 uint64_t bar_address = bar & 0xFFFFFFF0;
                 uint16_t bit         = (bar & ((1 << 3) | (1 << 2) | (1 << 1))) >> 1;
 
-                if (bit == 0) { //0b00
+                if (bit == 0) { // 0b00
                     pci_device->bars[i].address = bar & 0xFFFFFFFC;
                     pci_device->bars[i].mmio    = true;
-                } else if (bit == 2) { //0b10
+                } else if (bit == 2) { // 0b10
                     uint32_t bar_address_upper   = *((uint32_t *)bars_mmio_address + 1);
                     bar_address                 |= ((uint64_t)bar_address_upper << 32);
                     pci_device->bars[i].address  = bar_address;

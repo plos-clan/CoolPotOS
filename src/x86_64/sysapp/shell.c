@@ -20,7 +20,7 @@ extern void cp_shutdown();
 extern void cp_reset();
 
 char           *shell_work_path;
-extern uint64_t memory_size; //hhdm.c
+extern uint64_t memory_size; // hhdm.c
 char            com_copy[100];
 
 static inline int isprint_syshell(int c) {

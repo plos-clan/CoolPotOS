@@ -58,12 +58,12 @@ __attribute__((used, section(".limine_requests"))) static volatile LIMINE_BASE_R
     stack_request = {
         .id         = LIMINE_STACK_SIZE_REQUEST,
         .revision   = 0,
-        .stack_size = 131072 //128K
+        .stack_size = 131072 // 128K
 };
 
-extern void  error_setup();    //error_handle.c
-extern void  iso9660_regist(); //iso9660.c
-extern pcb_t kernel_head_task; //scheduler.c
+extern void  error_setup();    // error_handle.c
+extern void  iso9660_regist(); // iso9660.c
+extern pcb_t kernel_head_task; // scheduler.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -112,12 +112,12 @@ void kmain(void) {
     devfs_setup();
     pcie_init();
     ide_setup();
-    //nvme_setup();
+    // nvme_setup();
     ahci_setup();
-    //xhci_setup();
+    // xhci_setup();
 
     rtl8169_setup();
-    //pcnet_setup();
+    // pcnet_setup();
     disable_scheduler();
     pivfs_setup();
     init_pcb();
@@ -129,10 +129,10 @@ void kmain(void) {
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell");
     kinfo("Kernel load Done!");
-    //beep();
+    // beep();
     enable_scheduler();
     open_interrupt;
-    //
+    //    //
     //    vfs_node_t node = vfs_open("/dev/sata0");
     //    if (node != NULL) {
     //        uint8_t *buf = malloc(512);

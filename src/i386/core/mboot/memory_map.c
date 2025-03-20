@@ -6,21 +6,21 @@
 uint32_t phy_mem_size;
 
 void check_memory(multiboot_t *multiboot) {
-    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 30) { //计算总内存大小
+    if ((multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1 < 30) { // 计算总内存大小
         printk("CP_Kernel bootloader panic info:\n");
         printk("\033ff0000;Minimal RAM amount for CP_Kernel is 30 MB, but you have only %d "
                "MB.\033c6c6c6;\n",
-               (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1); //内存不足，输出错误信息
+               (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1); // 内存不足，输出错误信息
         printk("Please check your memory size, and restart CP_Kernel.\n");
         while (1)
-            io_hlt(); //死循环阻塞线程，防止系统启动
+            io_hlt(); // 死循环阻塞线程，防止系统启动
     }
-    phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024; //记录总内存大小
+    phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024; // 记录总内存大小
 }
 
 void show_memory_map(multiboot_t *mboot) {
-    uint32_t mmap_addr   = mboot->mmap_addr;   //获取内存起始地址
-    uint32_t mmap_length = mboot->mmap_length; //获取内存总长度
+    uint32_t mmap_addr   = mboot->mmap_addr;   // 获取内存起始地址
+    uint32_t mmap_length = mboot->mmap_length; // 获取内存总长度
 
     /*
     mmap_entry_t *mmap = (mmap_entry_t *) mmap_addr;
@@ -43,6 +43,6 @@ void show_memory_map(multiboot_t *mboot) {
 }
 
 void init_mmap(multiboot_t *multiboot) {
-    phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024; //计算总内存大小
-    show_memory_map(multiboot);                                          //显示内存映射信息
+    phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024; // 计算总内存大小
+    show_memory_map(multiboot);                                          // 显示内存映射信息
 }

@@ -14,52 +14,52 @@ enum class SoundFmt : i32 {
 #    define FMT(f) f
 #endif
     FMT(ukn) = -1,
-    //- 8bit / 1byte
+    // - 8bit / 1byte
     FMT(S8),
     FMT(U8),
-    //- 16bit / 2byte
+    // - 16bit / 2byte
     FMT(S16L),
     FMT(S16B),
     FMT(U16L),
     FMT(U16B),
-    //- 24bit / 3byte
+    // - 24bit / 3byte
     FMT(S24L),
     FMT(S24B),
     FMT(U24L),
     FMT(U24B),
-    //- 24bit / 4byte (low 3byte)
+    // - 24bit / 4byte (low 3byte)
     FMT(S24L32),
     FMT(S24B32),
     FMT(U24L32),
     FMT(U24B32),
-    //- 32bit / 4byte
+    // - 32bit / 4byte
     FMT(S32L),
     FMT(S32B),
     FMT(U32L),
     FMT(U32B),
-    //- 64bit / 8byte
+    // - 64bit / 8byte
     FMT(S64L),
     FMT(S64B),
     FMT(U64L),
     FMT(U64B),
-    //- 16bit / 2byte  <- float
+    // - 16bit / 2byte  <- float
     FMT(F16L),
     FMT(F16B),
-    //- 32bit / 4byte  <- float
+    // - 32bit / 4byte  <- float
     FMT(F32L),
     FMT(F32B),
-    //- 64bit / 8byte  <- float
+    // - 64bit / 8byte  <- float
     FMT(F64L),
     FMT(F64B),
-    //- 8bit / 1byte   <- Mu-Law
+    // - 8bit / 1byte   <- Mu-Law
     FMT(MU_LAW),
-    //- 8bit / 1byte   <- A-Law
+    // - 8bit / 1byte   <- A-Law
     FMT(A_LAW),
-    //- 4bit / 0.5byte <- Ima-ADPCM
+    // - 4bit / 0.5byte <- Ima-ADPCM
     FMT(IMA_ADPCM),
-    //- 计数
+    // - 计数
     FMT(CNT),
-    //- 按通道存储 (如果是就给 fmt 加上此值)
+    // - 按通道存储 (如果是就给 fmt 加上此值)
     FMT(PLANE) = 32,
 
 #if LITTLE_ENDIAN

@@ -160,7 +160,7 @@ void isr_handler(registers_t regs);
 void irq_handler(registers_t regs);
 void idt_install();
 
-void set_kernel_stack(uintptr_t stack); //切换内核栈
+void set_kernel_stack(uintptr_t stack); // 切换内核栈
 void gdt_flush(uint32_t gdtr);          // asmfunc.asm
 void tss_flush();                       // asmfunc.asm
 void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);

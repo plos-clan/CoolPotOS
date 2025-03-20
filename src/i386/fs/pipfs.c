@@ -75,7 +75,7 @@ int pipfs_mount(const char *src, vfs_node_t node) {
 }
 
 void pipfs_unmount(void *root) {
-    //
+    //    //
 }
 
 int pipfs_stat(void *file, vfs_node_t node) {
@@ -109,7 +109,7 @@ void pipfs_update() {
 }
 
 void pipfs_regist() {
-    //TODO pipfs
+    // TODO pipfs
     return;
     pipfs_id = vfs_regist("pipfs", &callbacks);
     vfs_mkdir("/proc");

@@ -81,10 +81,10 @@ void process_exit();
 
 void switch_to_user_mode(uint32_t func);
 
-void   kill_all_proc(); //终止所有进程
+void   kill_all_proc(); // 终止所有进程
 int    create_user_process(const char *path, const char *cmdline, char *name,
-                           uint8_t level);                                     //创建用户态进程
-int    create_kernel_thread(int (*_start)(void *arg), void *args, char *name); //创建内核线程
-void   kill_proc(pcb_t *pcb);                                                  //杀死指定进程
-pcb_t *found_pcb(int pid);                                                     //根据PID获取一个进程
+                           uint8_t level);                                     // 创建用户态进程
+int    create_kernel_thread(int (*_start)(void *arg), void *args, char *name); // 创建内核线程
+void   kill_proc(pcb_t *pcb);                                                  // 杀死指定进程
+pcb_t *found_pcb(int pid); // 根据PID获取一个进程
 void   init_pcb();

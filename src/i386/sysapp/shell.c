@@ -11,7 +11,7 @@
 #include "vfs.h"
 #include "video.h"
 
-extern uint32_t get_all_memusage(); //free_page.c
+extern uint32_t get_all_memusage(); // free_page.c
 
 char *shell_work_path;
 char  com_copy[100];

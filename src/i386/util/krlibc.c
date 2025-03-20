@@ -1,8 +1,8 @@
 #include "krlibc.h"
-#include "acpi.h" //void sleep(u32 time)
+#include "acpi.h" // void sleep(u32 time)
 #include "klog.h"
 #include "kmalloc.h"
-#include "timer.h" //void sleep(u32 time)
+#include "timer.h" // void sleep(u32 time)
 
 #define ZEROPAD 1  /* pad with zero */
 #define SIGN    2  /* unsigned/signed long */
@@ -502,14 +502,14 @@ void *memset(void *s, int c, size_t n) {
 void *memmove(void *dest, const void *src, size_t num) {
     void *ret = dest;
     if (dest < src) {
-        while (num--) //前->后
+        while (num--) // 前->后
         {
             *(char *)dest = *(char *)src;
             dest          = (char *)dest + 1;
             src           = (char *)src + 1;
         }
     } else {
-        while (num--) //后->前
+        while (num--) // 后->前
         {
             *((char *)dest + num) = *((char *)src + num);
         }

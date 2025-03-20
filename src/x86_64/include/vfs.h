@@ -34,9 +34,9 @@ enum {
     file_stream, // 流式设备，如终端
 };
 
-typedef struct vfs_callback { //VFS回调函数
-    vfs_mount_t   mount;      //挂载文件系统
-    vfs_unmount_t unmount;    //卸载文件系统 (虚拟文件系统不支持卸载)
+typedef struct vfs_callback { // VFS回调函数
+    vfs_mount_t   mount;      // 挂载文件系统
+    vfs_unmount_t unmount;    // 卸载文件系统 (虚拟文件系统不支持卸载)
     vfs_open_t    open;
     vfs_close_t   close;
     vfs_read_t    read;
@@ -46,7 +46,7 @@ typedef struct vfs_callback { //VFS回调函数
     vfs_stat_t    stat; // 检查文件状态信息
 } *vfs_callback_t;
 
-struct vfs_node {           //vfs节点
+struct vfs_node {           // vfs节点
     vfs_node_t parent;      // 父目录
     char      *name;        // 名称
     uint64_t   realsize;    // 项目真实占用的空间 (可选)
@@ -74,19 +74,19 @@ struct fd {
 extern struct vfs_callback vfs_empty_callback;
 extern vfs_node_t          rootdir;
 
-int        vfs_mkdir(const char *name);                           //创建文件夹节点
-int        vfs_mkfile(const char *name);                          //创建文件节点
-int        vfs_regist(const char *name, vfs_callback_t callback); //注册文件系统
+int        vfs_mkdir(const char *name);                           // 创建文件夹节点
+int        vfs_mkfile(const char *name);                          // 创建文件节点
+int        vfs_regist(const char *name, vfs_callback_t callback); // 注册文件系统
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
-int        vfs_close(vfs_node_t node); //关闭已打开的节点
+int        vfs_close(vfs_node_t node); // 关闭已打开的节点
 void       vfs_free(vfs_node_t vfs);
-vfs_node_t vfs_open(const char *str); //打开一个节点
+vfs_node_t vfs_open(const char *str); // 打开一个节点
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
-int        vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  //读取节点数据
-int        vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); //写入节点
-int        vfs_mount(const char *src, vfs_node_t node); //挂载指定设备至指定节点
+int        vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
+int        vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
+int        vfs_mount(const char *src, vfs_node_t node); // 挂载指定设备至指定节点
 int        vfs_unmount(const char *path);               // 卸载指定设备的挂载点
-vfs_node_t get_rootdir();                               //获取根节点
+vfs_node_t get_rootdir();                               // 获取根节点
 bool       vfs_init();

@@ -10,7 +10,7 @@
 #include "pcb.h"
 
 typedef struct smp_cpu {
-    uint8_t             flags; //标志位, CPU是否启用
+    uint8_t             flags; // 标志位, CPU是否启用
     uint64_t            lapic_id;
     gdt_entries_t       gdtEntries;
     struct gdt_register gdt_pointer;
@@ -18,7 +18,7 @@ typedef struct smp_cpu {
     tss_stack_t         tss_stack;
     pcb_t               idle_pcb;
     pcb_t               current_pcb;
-    lock_queue         *scheduler_queue; //该核心的进程调度队列
+    lock_queue         *scheduler_queue; // 该核心的进程调度队列
     lock_node          *iter_node;       // 该核心当前迭代的节点
 } __attribute__((packed)) smp_cpu_t;
 
