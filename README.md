@@ -1,12 +1,10 @@
-<br>
-<br>
+<div style="height: 3em;"></div>
 
 <h1 align="center">CoolPotOS</h1>
 
 <div align="center"><strong>A simple toy operating system.</strong></div>
 
-<br>
-<br>
+<div style="height: 3em;"></div>
 
 <div align="center">
 <img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
@@ -16,26 +14,23 @@
 <img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
 </div>
 
-
-
 <hr>
 
-## Translations
-
-- **English**
-- [简体中文](readme/README-zh-CN.md)
-- [Français](readme/README-fr-FR.md)
-- [日本語](readme/README-ja-JP.md)
+Languages
+: *English*
+| [简体中文](readme/README-zh-CN.md)
+| [Français](readme/README-fr-FR.md)
+| [日本語](readme/README-ja-JP.md)
 
 ## Introduction
 
-This is a simple operating system for x86 architecture.
+This is a simple operating system for [ia32](https://en.wikipedia.org/wiki/IA-32) and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
 
 ## Modules
 
-* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
-* `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-* `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
+- `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+- `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+- `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
 
 ## Build & Run
 
@@ -47,8 +42,8 @@ You need to install them on your computer:
 - NASM (only i386)
 - Zig (you need clang for x86_64)
 - Windows subsystem for Linux (Ubuntu 22.04)
-    - xorriso
-    - qemu-system-i386 / qemu-system-x86_64
+  - xorriso
+  - qemu-system-i386 / qemu-system-x86_64
 
 ### Steps
 
@@ -56,7 +51,7 @@ You need to install them on your computer:
 
 ## License
 
-The project follows MIT license. Anyone can use it for free. See [LICENSE](LICENSE).
+This project is licensed under [MIT License](LICENSE).
 
 ## Contributing
 
@@ -64,18 +59,18 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 
 ### Contributors
 
-* XIAOYI12 - OS Development
-* min0911Y - OS FileSystem Development
-* copi143 - UserHeap Development
-* QtLittleXu - XuYuxuan OS Document
-* ViudiraTech - PCI Driver Optimization
-* Vinbe Wan - IIC Development
-* A4-Tacks - Write Some Build Scripts
-* wenxuanjun - OS Developer
-* Minsecrus - Memory Usage Optimization
-* CLimber-Rong - Software Developer
-* shiyu - Debugger and Comments Writer
-* 27Onion - Translated French README
-* LY-Xiang - Optimized actions process
-* suhuajun-github - Fix several bugs in the AHCI driver
-* FengHeting - SMBIOS driver Development
+- XIAOYI12 - OS Development
+- min0911Y - OS FileSystem Development
+- copi143 - UserHeap Development
+- QtLittleXu - XuYuxuan OS Document
+- ViudiraTech - PCI Driver Optimization
+- Vinbe Wan - IIC Development
+- A4-Tacks - Write Some Build Scripts
+- wenxuanjun - OS Developer
+- Minsecrus - Memory Usage Optimization
+- CLimber-Rong - Software Developer
+- shiyu - Debugger and Comments Writer
+- 27Onion - Translated French README
+- LY-Xiang - Optimized actions process
+- suhuajun-github - Fix several bugs in the AHCI driver
+- FengHeting - SMBIOS driver Development

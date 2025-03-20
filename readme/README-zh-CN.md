@@ -9,12 +9,12 @@
 
 ## 介绍
 
-这是一个基于 x86 架构的简单操作系统。
+这是一个在 [ia32](https://en.wikipedia.org/wiki/IA-32) 或 [amd64](https://en.wikipedia.org/wiki/X86-64) 架构上运行的简单操作系统。
 
 ## 模块
 
-* `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
-* `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+- `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+- `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 
 ## 构建并运行
 
@@ -26,8 +26,8 @@
 - NASM (x86_64架构无需此汇编器)
 - Zig (x86_64架构需要clang编译器)
 - Windows subsystem for Linux (Ubuntu 22.04)
-    - xorriso
-    - qemu-system-i386 / qemu-system-x86_64
+  - xorriso
+  - qemu-system-i386 / qemu-system-x86_64
 
 ### 步骤
 
@@ -43,18 +43,18 @@
 
 ### 贡献者们
 
-* XIAOYI12 - 负责主要的OS开发
-* min0911Y - 负责OS文件系统开发
-* copi143 - 新版用户堆框架开发
-* QtLittleXu - 负责OS文档编写
-* ViudiraTech - PCI驱动优化
-* VinbeWan - IIC驱动程序开发
-* A4-Tacks - 编写一些构建脚本
-* wenxuanjun - OS 重构开发
-* Minsecrus - OS 内存统计算法优化
-* CLimber-Rong - 软件开发
-* shiyu - 负责到处捉虫和帮助代码添加注释
-* 27Onion - 翻译了法语README
-* LY-Xiang - 优化了 actions 流程
-* suhuajun-github - 修复AHCI驱动的BUG
-* FengHeting - SMBIOS 驱动开发
+- XIAOYI12 - 负责主要的OS开发
+- min0911Y - 负责OS文件系统开发
+- copi143 - 新版用户堆框架开发
+- QtLittleXu - 负责OS文档编写
+- ViudiraTech - PCI驱动优化
+- VinbeWan - IIC驱动程序开发
+- A4-Tacks - 编写一些构建脚本
+- wenxuanjun - OS 重构开发
+- Minsecrus - OS 内存统计算法优化
+- CLimber-Rong - 软件开发
+- shiyu - 负责到处捉虫和帮助代码添加注释
+- 27Onion - 翻译了法语README
+- LY-Xiang - 优化了 actions 流程
+- suhuajun-github - 修复AHCI驱动的BUG
+- FengHeting - SMBIOS 驱动开发
