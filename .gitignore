@@ -1,14 +1,17 @@
+# Clangd cache
+/.cache
+
 # Xmake cache
-.xmake/
-build/
-CMakeLists.txt
+/.xmake
+/build
+/compile_commands.json
 
 # Disk cache
 *.qcow2
 
 # IDE Config
-.idea/
-.vscode/
+.idea
+.vscode
 cmake-build-debug/
 
 # MacOS Cache
@@ -16,4 +19,3 @@ cmake-build-debug/
 
 # Compiled Apps
 assets/*.elf
-
