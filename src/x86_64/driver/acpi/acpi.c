@@ -16,9 +16,10 @@
 
 XSDT *xsdt;
 
-__attribute__((
-    used, section(".limine_requests"))) static volatile struct limine_rsdp_request rsdp_request = {
-    .id = LIMINE_RSDP_REQUEST, .revision = 0};
+LIMINE_REQUEST struct limine_rsdp_request rsdp_request = {
+        .id = LIMINE_RSDP_REQUEST,
+        .revision = 0
+};
 
 void *find_table(const char *name) {
     uint64_t  entry_count = (xsdt->h.Length - 32) / 8;

@@ -12,8 +12,7 @@ bool     x2apic_mode;
 uint64_t lapic_address;
 uint64_t ioapic_address;
 
-__attribute__((
-    used, section(".limine_requests"))) static volatile struct limine_smp_request smp_request = {
+LIMINE_REQUEST struct limine_smp_request smp_request = {
     .id       = LIMINE_SMP_REQUEST,
     .revision = 0,
     .response = NULL,
