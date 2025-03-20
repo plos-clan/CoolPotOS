@@ -55,18 +55,7 @@ target("iso32")
         print("ISO image created at: " .. iso_file)
     end)
 
---     on_run(function (target)
---         local misc = "-serial stdio -m 4096"
---         local speaker = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
---         local ahci = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
---         local kvm = " -enable-kvm"
---         local vga = " -vga std -global VGA.vgamem_mb=32 "
---         local net = " -net nic,model=pcnet -net user "
---         local audio = " -device sb16,audiodev=speaker -device intel-hda -device hda-micro,audiodev=speaker "
---         local flags = misc..speaker..vga..net..kvm..audio
---
---         os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
---     end)
+
 
 target("kernel64")
     set_kind("binary")
@@ -120,29 +109,42 @@ target("iso64")
 target("default_build")
     set_kind("phony")
     add_deps("iso64")
+    --add_deps("iso32")
     set_default(true)
 
     on_run(function (target)
         import("core.project.config")
-        local flags = {
-                "-M", "q35",
-                "-cpu", "qemu64,+x2apic",
-                "-smp", "4",
-                "-serial", "stdio",
-                "-m","1024M",
-                --"-no-reboot",
-                --"-enable-kvm",
-                --"-d", "in_asm,int",
-                --"-S","-s",
-                --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
-                --"-device","nec-usb-xhci,id=xhci",
-                --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
-                --"-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
-                --"-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
-                --"-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
-                "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-                "-cdrom", config.buildir() .. "/CoolPotOS.iso",
-        }
-        os.execv("qemu-system-x86_64 " , flags)
-        end)
+-- x86_64 xmake run
+            local flags = {
+                            "-M", "q35",
+                            "-cpu", "qemu64,+x2apic",
+                            "-smp", "4",
+                            "-serial", "stdio",
+                            "-m","1024M",
+                            --"-no-reboot",
+                            --"-enable-kvm",
+                            --"-d", "in_asm,int",
+                            --"-S","-s",
+                            --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
+                            --"-device","nec-usb-xhci,id=xhci",
+                            --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
+                            --"-device","ahci,id=ahci","-drive","file=./disk.qcow2,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
+                            --"-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
+                            --"-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
+                            "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
+                            "-cdrom", config.buildir() .. "/CoolPotOS.iso",
+                    }
+            os.execv("qemu-system-x86_64 " , flags)
 
+-- i386 xmake run
+--             local misc = "-serial stdio -m 4096"
+--             local speaker = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
+--             local ahci = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
+--                 local kvm = " -enable-kvm"
+--                 local vga = " -vga std -global VGA.vgamem_mb=32 "
+--                 local net = " -net nic,model=pcnet -net user "
+--                 local audio = " -device sb16,audiodev=speaker -device intel-hda -device hda-micro,audiodev=speaker "
+--                 local flags = misc..speaker..vga..net..kvm..audio
+--
+--             os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
+    end)
