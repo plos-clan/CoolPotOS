@@ -1,3 +1,8 @@
+/**
+ * Virtual File System Interface
+ * 虚拟文件系统接口
+ * Create by min0911Y & zhouzhihao & copi143
+ */
 #define ALL_IMPLEMENTATION
 
 #include "vfs.h"

@@ -1,3 +1,7 @@
+/**
+ * Device Virtual File System
+ * 设备虚拟文件系统
+ */
 #define ALL_IMPLEMENTATION
 #include "devfs.h"
 #include "klog.h"
@@ -7,10 +11,6 @@
 #include "vdisk.h"
 #include "vfs.h"
 
-/**
- * 修复说明: 将 devfs_read 与  devfs_write 中读写缓冲区改用 malloc 重新申请
- * 保证传入驱动的缓冲区地址可以被正确转换成物理地址
- */
 extern vdisk vdisk_ctl[26]; // vdisk.c
 
 int                devfs_id   = 0;
