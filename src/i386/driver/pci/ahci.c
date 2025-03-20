@@ -47,7 +47,7 @@ static void stop_cmd(HBA_PORT *port) {
     port->cmd &= ~HBA_PxCMD_FRE;
 
     // Wait until FR (bit14), CR (bit15) are cleared
-    while (1) {
+    infinite_loop {
         if (port->cmd & HBA_PxCMD_FR) continue;
         if (port->cmd & HBA_PxCMD_CR) continue;
         break;
@@ -168,7 +168,7 @@ bool ahci_identify(HBA_PORT *port, void *buf) {
     port->ci = 1 << slot; // Issue command
 
     // Wait for completion
-    while (1) {
+    infinite_loop {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
         if ((port->ci & (1 << slot)) == 0) break;
@@ -254,7 +254,7 @@ bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count,
     port->ci = 1 << slot; // Issue command
 
     // Wait for completion
-    while (1) {
+    infinite_loop {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
         if ((port->ci & (1 << slot)) == 0) break;
@@ -340,7 +340,7 @@ bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count
     port->ci = 1 << slot; // Issue command
 
     // Wait for completion
-    while (1) {
+    infinite_loop {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
         if ((port->ci & (1 << slot)) == 0) break;

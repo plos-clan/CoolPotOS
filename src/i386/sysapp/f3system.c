@@ -105,7 +105,7 @@ void f3system_setup() {
     terminal_destroy();
     terminal_setup(true);
     update_flush();
-    while (1) {
+    infinite_loop {
         key();
         if (sel == -1) break;
         update_flush();

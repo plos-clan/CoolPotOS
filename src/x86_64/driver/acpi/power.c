@@ -90,7 +90,7 @@ void setup_facp(acpi_facp_t *facp0) {
 void power_reset() {
     // uint8_t val;
     if (!SCI_EN) return;
-    while (1) {
+    infinite_loop {
         // write ICH port
         io_out8(0x92, 0x01);
         // send RESET_VAL
@@ -100,7 +100,7 @@ void power_reset() {
 
 void power_off() {
     if (!SCI_EN) return;
-    while (1) {
+    infinite_loop {
         io_out16((uint32_t)facp->pm1a_cnt_blk, SLP_TYPa | SLP_EN);
         if (!facp->pm1b_cnt_blk) { io_out16((uint32_t)facp->pm1b_cnt_blk, SLP_TYPb | SLP_EN); }
     }

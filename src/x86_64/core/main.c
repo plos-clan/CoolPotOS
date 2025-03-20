@@ -45,20 +45,16 @@
 #    error "Unknown compiler"
 #endif
 
-__attribute__((used, section(".limine_requests"))) static volatile LIMINE_BASE_REVISION(2)
+USED SECTION(".limine_requests_start") static const volatile LIMINE_REQUESTS_START_MARKER;
 
-    __attribute__((used,
-                   section(".limine_requests_start"))) static volatile LIMINE_REQUESTS_START_MARKER
+USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
 
-    __attribute__((used,
-                   section(".limine_requests_end"))) static volatile LIMINE_REQUESTS_END_MARKER
+LIMINE_REQUEST LIMINE_BASE_REVISION(2);
 
-    __attribute__((used,
-                   section(".limine_requests"))) static volatile struct limine_stack_size_request
-    stack_request = {
-        .id         = LIMINE_STACK_SIZE_REQUEST,
-        .revision   = 0,
-        .stack_size = 131072 // 128K
+LIMINE_REQUEST struct limine_stack_size_request stack_request = {
+    .id         = LIMINE_STACK_SIZE_REQUEST,
+    .revision   = 0,
+    .stack_size = 131072 // 128K
 };
 
 extern void  error_setup();    // error_handle.c
@@ -69,16 +65,14 @@ _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
     // kill_all_proc();
     power_off();
-    while (1)
-        ;
+    infinite_loop;
 }
 
 _Noreturn void cp_reset() {
     printk("Rebooting %s...\n", KERNEL_NAME);
     // kill_all_proc();
     power_reset();
-    while (1)
-        ;
+    infinite_loop;
 }
 
 void kmain(void) {

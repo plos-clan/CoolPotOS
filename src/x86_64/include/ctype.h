@@ -11,5 +11,12 @@ typedef ssize_t         isize;
 
 typedef void (*free_t)(void *ptr);
 
-#define __wur __attribute__((warn_unused_result))
-#define _rest __restrict
+#define infinite_loop while (true)
+
+#define __attr(...) __attribute__((__VA_ARGS__))
+#define __wur       __attribute__((warn_unused_result))
+#define _rest       __restrict
+
+#define USED           __attr(used)
+#define SECTION(name)  __attr(section(name))
+#define LIMINE_REQUEST USED SECTION(".limine_requests") static const volatile

@@ -22,8 +22,7 @@ _Noreturn void process_exit() {
     register uint64_t rax __asm__("rax");
     printk("Kernel Process exit, Code: %d\n", rax);
     kill_proc(get_current_task());
-    while (1)
-        ;
+    infinite_loop;
 }
 
 void switch_to_user_mode(uint64_t func) {

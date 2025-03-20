@@ -50,7 +50,7 @@ int terminal_flush_service(void *pVoid) {
     UNUSED(pVoid);
     terminal_set_auto_flush(0);
     open_flush = true;
-    while (1) {
+    infinite_loop {
         update_terminal();
         usleep(100);
     }
