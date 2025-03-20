@@ -1,49 +1,36 @@
-name: CI workflows
+name: CI Workflow
 
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-  workflow_dispatch:
-
-concurrency:
-  group: build
-  cancel-in-progress: false
 
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
-    env:
-      apt-packages: xorriso mtools nasm
+    name: Build
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Cache apt packages
-      uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: ${{ env.apt-packages }}
+      - name: Install packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: xorriso nasm clang mtools
+          version: 1.0
 
-    - name: Install Dependencies
-      run: sudo apt-get install ${{ env.apt-packages }} -y
+      - name: Setup BuildTools
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+          actions-cache-folder: '.xmake-cache'
 
-    - name: Setup BuildTools
-      uses: xmake-io/github-action-setup-xmake@v1
-      with:
-        xmake-version: latest
-        actions-cache-folder: .xmake-cache
-        package-cache: true
-        build-cache: true
-        project-path: .
-        
-    - name: Build Kernel
-      run: xmake build -y
-        
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: CoolPotOS
-        path: build/CoolPotOS.iso
-        compression-level: 9
+      - name: Build Kernel
+        run: xmake build -y
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoolPotOS
+          path: build/CoolPotOS.iso
+          compression-level: 9
