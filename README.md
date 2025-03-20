@@ -47,8 +47,8 @@ You need to install them on your computer:
 - NASM (only i386)
 - Zig (you need clang for x86_64)
 - Windows subsystem for Linux (Ubuntu 22.04)
-  - xorriso
-  - qemu-system-i386 / qemu-system-x86_64
+    - xorriso
+    - qemu-system-i386 / qemu-system-x86_64
 
 ### Steps
 
