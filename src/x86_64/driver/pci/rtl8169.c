@@ -9,17 +9,6 @@ RTL8169_Regs *rtl8169;
 RTL8169_Desc  tx_desc[TX_DESC_COUNT] __attribute__((aligned(256)));
 RTL8169_Desc  rx_desc[RX_DESC_COUNT] __attribute__((aligned(256)));
 
-void rtl8169_reset() {
-    rtl8169->Command = 0x10;
-    while (rtl8169->Command & 0x10)
-        __asm__ volatile("pause");
-}
-
-void rtl8169_setup_descriptors() {
-    rtl8169->TxDesc = (uint32_t)virt_to_phys((uint64_t)&tx_desc); // 设置 TX 描述符基地址
-    rtl8169->RxDesc = (uint32_t)&rx_desc;                         // 设置 RX 描述符基地址
-}
-
 void rtl8169_setup() {
     pcie_device_t *device = pcie_find_class(0x020000);
     if (device == NULL) {
@@ -50,10 +39,16 @@ void rtl8169_setup() {
         rtl8169 = phys_to_virt((uint64_t)rtl8169);
     }
 
-    rtl8169->Command = 0x0C;
-    rtl8169_setup_descriptors();
+    volatile uint32_t *rtl8169_mmio = (volatile uint32_t *)(((uint64_t)rtl8169) & ~0xF);
 
-    kinfo("Rtl8169 mac: %x:%x:%x:%x:%x:%x", rtl8169->MAC[0] & 0xFF, (rtl8169->MAC[0] >> 8) & 0xFF,
-          (rtl8169->MAC[0] >> 16) & 0xFF, (rtl8169->MAC[0] >> 24) & 0xFF, rtl8169->MAC[1] & 0xFF,
-          (rtl8169->MAC[1] >> 8) & 0xFF);
+    rtl8169_mmio[0x37 / 4] |= (1 << 4);
+    while (rtl8169_mmio[0x37 / 4] & (1 << 4)) {
+        __asm__("pause");
+    }
+    uint8_t mac[6];
+    for (int i = 0; i < 6; i++) {
+        mac[i] = (rtl8169_mmio[0x00 + i] & 0xFF);
+    }
+
+    kinfo("Rtl8169 mac: %x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }

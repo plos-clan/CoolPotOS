@@ -74,11 +74,11 @@ page_directory_t *get_kernel_pagedir() {
 }
 
 page_directory_t *get_current_directory() {
-    return current_directory;
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    return cpu != NULL ? cpu->directory : current_directory;
 }
 
-static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table,
-                                      int level) {
+static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table, int level) {
     if (level == 0) {
         for (int i = 0; i < 512; i++) {
             new_table->entries[i].value = source_table->entries[i].value;
@@ -127,7 +127,10 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
 }
 
 void switch_page_directory(page_directory_t *dir) {
-    current_directory            = dir;
+    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    if(cpu != NULL){
+        cpu->directory = dir;
+    } else current_directory = dir;
     page_table_t *physical_table = virt_to_phys((uint64_t)dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }

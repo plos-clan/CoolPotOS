@@ -8,6 +8,7 @@
 #include "limine.h"
 #include "lock_queue.h"
 #include "pcb.h"
+#include "page.h"
 
 typedef struct smp_cpu {
     uint8_t             flags; // 标志位, CPU是否启用
@@ -18,6 +19,7 @@ typedef struct smp_cpu {
     tss_stack_t         tss_stack;
     pcb_t               idle_pcb;
     pcb_t               current_pcb;
+    page_directory_t   *directory;
     lock_queue         *scheduler_queue; // 该核心的进程调度队列
     lock_node          *iter_node;       // 该核心当前迭代的节点
 } __attribute__((packed)) smp_cpu_t;
