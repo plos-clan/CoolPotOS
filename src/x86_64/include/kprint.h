@@ -66,3 +66,10 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...);
  * @param ...
  */
 void printe(const char *fmt, ...);
+
+/**
+ * 内核模块用链接输出
+ * @param fmt
+ * @param ...
+ */
+void cp_printf(const char *fmt, ...);

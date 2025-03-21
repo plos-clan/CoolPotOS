@@ -46,6 +46,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                get_current_task()->name, get_current_cpuid());
     }
     print_register(frame);
+    terminal_flush();
     update_terminal();
     cpu_hlt;
 }
@@ -133,6 +134,14 @@ void switch_page_directory(page_directory_t *dir) {
     } else current_directory = dir;
     page_table_t *physical_table = virt_to_phys((uint64_t)dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
+}
+
+void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64_t length,
+                              uint64_t flags){
+    for (uint64_t i = 0; i < length; i += 0x1000) {
+        uint64_t var = (uint64_t)addr + i;
+        page_map_to(directory, var, alloc_frames(1), flags);
+    }
 }
 
 void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t length,
