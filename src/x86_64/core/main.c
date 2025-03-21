@@ -126,6 +126,7 @@ void kmain(void) {
     // beep();
     enable_scheduler();
     open_interrupt;
+
     //    //
     //    vfs_node_t node = vfs_open("/dev/sata0");
     //    if (node != NULL) {
