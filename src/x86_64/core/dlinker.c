@@ -68,7 +68,6 @@ void load_segment(Elf64_Phdr *phdr, void *elf) {
 bool mmap_phdr_segment(Elf64_Ehdr *ehdr,Elf64_Phdr *phdrs){
     size_t i = 0;
     while (i < ehdr->e_phnum && phdrs[i].p_type != PT_LOAD){
-        printk("phdr[%d].p_type = %d\n",i,phdrs[i].p_type);
         i++;
     }
     if (i == ehdr->e_phnum) {
