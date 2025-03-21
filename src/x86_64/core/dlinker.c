@@ -3,6 +3,19 @@
 #include "krlibc.h"
 #include "page.h"
 #include "frame.h"
+#include "alloc.h"
+
+dlfunc_t *func_table;
+int funs_num = 0;
+
+static dlfunc_t *find_func(const char *name) {
+    for (int i = 0; i < funs_num; i++) {
+        if (strcmp(func_table[i].name, name) == 0) {
+            return &func_table[i];
+        }
+    }
+    return NULL;
+}
 
 void *resolve_symbol(Elf64_Sym *symtab, char *strtab, uint32_t sym_idx) {
     return (void *)symtab[sym_idx].st_value;
@@ -77,8 +90,11 @@ void handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab)
     while (rela_entry->r_offset != 0) {
         Elf64_Sym *sym = &symtab[ELF64_R_SYM(rela_entry->r_info)];
         char* sym_name = &strtab[sym->st_name];
-        if (strcmp(sym_name, "printf") == 0) {
-            *(void **)rela_entry->r_offset = cp_printf;
+        dlfunc_t *func = find_func(sym_name);
+        if (func != NULL) {
+            *(void **)rela_entry->r_offset = func->addr;
+        } else{
+            kwarn("Failed relocating %s at %p to %p", sym_name, rela_entry->r_offset, func->addr);
         }
         rela_entry++;
     }
@@ -178,4 +194,26 @@ void dlinker_load(cp_module_t *module) {
     }
     int ret = dlmain();
     kinfo("Kernel model load done! Return code:%d.",ret);
+}
+
+void register_library_func(const char *name, void *func) {
+    if(funs_num >= 256){
+        kwarn("Too many functions in dynamic library.");
+        return;
+    }
+    func_table[funs_num].name = malloc(strlen(name));
+    strcpy(func_table[funs_num].name, name);
+    func_table[funs_num].addr = func;
+    funs_num++;
+}
+
+void dlinker_init() {
+    func_table = malloc(sizeof(dlfunc_t) * 256);
+    funs_num = 0;
+
+    register_library_func("printf", cp_printf);
+    register_library_func("malloc", malloc);
+    register_library_func("free", free);
+
+    kinfo("Dynamic linker initialized.");
 }

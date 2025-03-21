@@ -18,7 +18,7 @@
 #include "page.h"
 #include "pcb.h"
 #include "pcie.h"
-#include "pcnet.h"
+#include "dlinker.h"
 #include "pivfs.h"
 #include "power.h"
 #include "rtl8169.h"
@@ -92,6 +92,7 @@ void kmain(void) {
     idt_setup();
     page_setup();
     error_setup();
+    dlinker_init();
     smbios_setup();
     acpi_setup();
     keyboard_setup();
