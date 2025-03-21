@@ -5,7 +5,7 @@
 #include "keyboard.h"
 #include "kprint.h"
 #include "krlibc.h"
-#include "limine.h"
+#include "dlinker.h"
 #include "module.h"
 #include "pcb.h"
 #include "pci.h"
@@ -277,6 +277,7 @@ static void lmod(int argc, char **argv) {
             printk("Cannot find module [%s]\n", argv[1]);
             return;
         }
+        dlinker_load(module);
     }
 }
 
@@ -329,7 +330,7 @@ static void print_help() {
     printk("lmod      <module|list>  Load or list model.\n");
 }
 
-void shell_setup() {
+_Noreturn void shell_setup() {
     printk("Welcome to CoolPotOS (%s)\n"
            " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
            " * Website:           https://github.com/plos-clan\n"

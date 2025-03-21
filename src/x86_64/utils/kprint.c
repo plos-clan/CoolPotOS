@@ -49,3 +49,24 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
         terminal_process(buf);
     ticket_unlock(&print_lock);
 }
+
+void cp_printf(const char *fmt, ...) {
+    ticket_lock(&print_lock);
+    char buf[4096] = {0};
+    add_color(buf, WHITE, false);
+    add_color(buf, BLACK, true);
+
+    va_list args;
+    va_start(args, fmt);
+    stbsp_vsprintf(buf + 11, fmt, args);
+    va_end(args);
+
+    strcat(buf, buf + 11);
+    strcat(buf, "\033[0m");
+
+    if (get_current_task() != NULL)
+        get_current_task()->tty->print(get_current_task()->tty, buf);
+    else
+        terminal_process(buf);
+    ticket_unlock(&print_lock);
+}
