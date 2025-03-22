@@ -29,6 +29,7 @@
 #include "timer.h"
 #include "vdisk.h"
 #include "vfs.h"
+#include "pcnet.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -111,8 +112,8 @@ void kmain(void) {
     ahci_setup();
     // xhci_setup();
 
-    rtl8169_setup();
-    // pcnet_setup();
+    // rtl8169_setup();
+    pcnet_setup();
     disable_scheduler();
     pivfs_setup();
     init_pcb();

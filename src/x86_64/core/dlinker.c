@@ -196,6 +196,10 @@ void dlinker_load(cp_module_t *module) {
 }
 
 void register_library_func(const char *name, void *func) {
+    if(name == NULL || func == NULL){
+        kwarn("Invalid function name or address.");
+        return;
+    }
     if(funs_num >= 256){
         kwarn("Too many functions in dynamic library.");
         return;
@@ -213,6 +217,7 @@ void dlinker_init() {
     register_library_func("printf", cp_printf);
     register_library_func("malloc", malloc);
     register_library_func("free", free);
+    register_library_func("register_library_func", register_library_func);
 
     kinfo("Dynamic linker initialized.");
 }
