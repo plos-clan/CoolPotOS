@@ -23,6 +23,7 @@ typedef struct {
     uint8_t               bus;
     uint8_t               slot;
     uint8_t               func;
+    uint16_t              msi_offset;
     pcie_bar_base_address bars[6];
 } pcie_device_t;
 
@@ -33,3 +34,4 @@ void           print_all_pcie();
 uint32_t       get_pcie_num();
 uint32_t       pcie_read_command(pcie_device_t *device, uint8_t offset);
 void           pcie_write_command(pcie_device_t *device, uint8_t offset, uint32_t value);
+void           pcie_set_msi(pcie_device_t *device, uint8_t vector);

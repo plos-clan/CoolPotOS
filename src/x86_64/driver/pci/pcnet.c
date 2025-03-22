@@ -16,13 +16,15 @@ void pcnet_setup() {
         conf          |= PCI_RCMD_BUS_MASTER;
         conf          |= PCI_COMMAND_IO;
         pci_write_command_status(pci_device, conf);
-        base_address_register reg = find_bar(pci_device, 0);
-        if (reg.address == NULL) {
-            kerror("Pcnet pci bar 0 is null.");
-            return;
-        }
-        ioapic_add(pcnet, pci_get_drive_irq(pci_device->bus, pci_device->slot, pci_device->func));
+        pci_set_msi(pci_device, pcnet);
     } else {
-        ioapic_add(pcnet, pci_get_drive_irq(device->bus, device->slot, device->func));
+        uint32_t conf = pcie_read_command(device, 0x04);
+        conf         |= PCI_COMMAND_MEMORY;
+        conf         |= PCI_RCMD_BUS_MASTER;
+        conf         |= PCI_COMMAND_IO;
+        pcie_write_command(device, 0x04, conf);
+        pcie_set_msi(device, pcnet);
     }
+
+    kinfo("Setup pcnet driver.");
 }

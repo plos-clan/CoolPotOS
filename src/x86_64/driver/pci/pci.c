@@ -182,7 +182,7 @@ pci_device_t pci_find_class(uint32_t class_code) {
     return NULL;
 }
 
-static uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function, uint8_t registeroffset) {
+uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function, uint8_t registeroffset) {
     uint32_t id = 1U << 31 | ((bus & 0xff) << 16) | ((dev & 0x1f) << 11) |
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
     io_out32(PCI_COMMAND_PORT, id);
@@ -190,7 +190,7 @@ static uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function, uint8_t
     return result >> (8 * (registeroffset & 2) & 0xff);
 }
 
-static void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset,
+void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset,
                        uint32_t value) {
     uint32_t id = 1 << 31 | ((bus & 0xff) << 16) | ((device & 0x1f) << 11) |
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
