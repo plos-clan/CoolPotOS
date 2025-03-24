@@ -1,5 +1,4 @@
 #include "pcnet.h"
-#include "acpi.h"
 #include "io.h"
 #include "isr.h"
 #include "kprint.h"
@@ -7,9 +6,9 @@
 #include "pcie.h"
 
 void pcnet_setup() {
-    pcie_device_t *device = pcie_find_class(0x10220000);
+    pcie_device_t *device = pcie_find_class(0x020000);
     if (device == NULL) {
-        pci_device_t pci_device = pci_find_class(0x10220000);
+        pci_device_t pci_device = pci_find_class(0x020000);
         if (pci_device == NULL) return;
         uint32_t conf  = pci_read_command_status(pci_device);
         conf          |= PCI_COMMAND_MEMORY;
