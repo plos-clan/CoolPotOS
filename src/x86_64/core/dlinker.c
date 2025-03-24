@@ -4,6 +4,9 @@
 #include "page.h"
 #include "frame.h"
 #include "alloc.h"
+#include "timer.h"
+#include "sprintf.h"
+#include "klog.h"
 
 dlfunc_t *func_table;
 int funs_num = 0;
@@ -84,7 +87,7 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr,Elf64_Phdr *phdrs){
     return true;
 }
 
-void handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab) {
+bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab) {
     Elf64_Rela *rela_entry = rela_start;
     while (rela_entry->r_offset != 0) {
         Elf64_Sym *sym = &symtab[ELF64_R_SYM(rela_entry->r_info)];
@@ -93,10 +96,12 @@ void handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab)
         if (func != NULL) {
             *(void **)rela_entry->r_offset = func->addr;
         } else{
-            kwarn("Failed relocating %s at %p to %p", sym_name, rela_entry->r_offset, func->addr);
+            kwarn("Failed relocating %s at %p", sym_name, rela_entry->r_offset);
+            return false;
         }
         rela_entry++;
     }
+    return true;
 }
 
 void *find_symbol_address(const char *symbol_name, Elf64_Sym *symtab, char *strtab,size_t symtabsz) {
@@ -152,7 +157,9 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs,Elf64_Ehdr *ehdr){
             *reloc_addr = (uint64_t)((char *)ehdr + r->r_addend);
         }
     }
-    handle_relocations(jmprel, symtab, strtab);
+    if(!handle_relocations(jmprel, symtab, strtab)){
+        return NULL;
+    }
 
     void* entry = find_symbol_address("dlmain",symtab,strtab,symtabsz);
     if(entry == NULL){
@@ -204,7 +211,8 @@ void register_library_func(const char *name, void *func) {
         kwarn("Too many functions in dynamic library.");
         return;
     }
-    func_table[funs_num].name = malloc(strlen(name));
+    func_table[funs_num].name = malloc(strlen(name) + 1);
+    memset(func_table[funs_num].name,0,strlen(name) + 1);
     strcpy(func_table[funs_num].name, name);
     func_table[funs_num].addr = func;
     funs_num++;
@@ -218,6 +226,8 @@ void dlinker_init() {
     register_library_func("malloc", malloc);
     register_library_func("free", free);
     register_library_func("register_library_func", register_library_func);
+    register_library_func("get_hour\0", get_hour);
+    register_library_func("get_min", get_min);
 
     kinfo("Dynamic linker initialized.");
 }

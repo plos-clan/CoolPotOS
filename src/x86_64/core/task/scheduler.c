@@ -87,6 +87,9 @@ void change_proccess(registers_t *reg, pcb_t current_task0, pcb_t taget) {
     switch_page_directory(taget->directory);
     set_kernel_stack(taget->kernel_stack);
 
+    save_fpu_context(&current_task0->fpu_context);
+    restore_fpu_context(&taget->fpu_context);
+
     current_task0->context0.r15    = reg->r15;
     current_task0->context0.r14    = reg->r14;
     current_task0->context0.r13    = reg->r13;

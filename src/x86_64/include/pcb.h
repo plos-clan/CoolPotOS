@@ -10,6 +10,7 @@
 #include "scheduler.h"
 #include "timer.h"
 #include "tty.h"
+#include "fpu.h"
 
 typedef struct process_control_block *pcb_t;
 
@@ -22,6 +23,8 @@ struct process_control_block {
     uint64_t          cpu_id;       // 由哪个CPU负责该进程运行
     timer_t          *time_buf;     // 计时器句柄
     TaskContext       context0;     // 进程上下文
+    fpu_context_t     fpu_context;  // 浮点寄存器上下文
+    bool              fpu_flags;    // 浮点启用标志
     page_directory_t *directory;    // 进程页目录
     uint64_t          kernel_stack; // 内核栈
     uint64_t          user_stack;   // 用户栈

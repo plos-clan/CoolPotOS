@@ -8,7 +8,7 @@
 #include "limine.h"
 #include "lock.h"
 #include "pcb.h"
-#include "pivfs.h"
+#include "fpu.h"
 #include "sprintf.h"
 
 extern struct idt_register idt_pointer;      // idt.c
@@ -101,6 +101,8 @@ void apu_entry() {
     if (x2apic_mode) { ia32_apic_base |= 1 << 10; }
     wrmsr(0x1b, ia32_apic_base);
     local_apic_init(false);
+
+    float_processor_setup();
 
     pcb_t apu_idle       = (pcb_t)malloc(STACK_SIZE);
     apu_idle->task_level = 0;
