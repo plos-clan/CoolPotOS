@@ -17,16 +17,8 @@ void add_color(char *dest, uint32_t color, int is_background) {
     strcat(dest, "m");
 }
 
-void printe(const char *fmt, ...) {
-    ticket_unlock(&print_lock);
-    ticket_lock(&print_lock);
-    char    buf[4096] = {0};
-    va_list args;
-    va_start(args, fmt);
-    stbsp_vsprintf(buf, fmt, args);
-    va_end(args);
-    terminal_process(buf);
-    ticket_unlock(&print_lock);
+void init_print_lock() {
+    ticket_init(&print_lock);
 }
 
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {

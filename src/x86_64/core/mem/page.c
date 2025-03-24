@@ -23,6 +23,7 @@ static bool is_huge_page(page_table_entry_t *entry) {
 
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t error_code) {
     close_interrupt;
+    init_print_lock();
     disable_scheduler();
     switch_page_directory(get_kernel_pagedir());
     uint64_t faulting_address;
@@ -31,8 +32,8 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     if (get_current_task() != NULL) {
         logkf("Current process PID: %d (%s)\n", get_current_task()->pid, get_current_task()->name);
     }
-    printe("\n");
-    printe(
+    printk("\n");
+    printk(
         "\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
         !(error_code & 0x1) ? "NotPresent"
         : error_code & 0x2  ? "WriteError"
