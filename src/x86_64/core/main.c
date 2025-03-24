@@ -64,14 +64,12 @@ extern pcb_t kernel_head_task; // scheduler.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
-    // kill_all_proc();
     power_off();
     infinite_loop;
 }
 
 _Noreturn void cp_reset() {
     printk("Rebooting %s...\n", KERNEL_NAME);
-    // kill_all_proc();
     power_reset();
     infinite_loop;
 }
@@ -93,6 +91,7 @@ void kmain(void) {
     idt_setup();
     page_setup();
     error_setup();
+    float_processor_setup();
     dlinker_init();
     smbios_setup();
     acpi_setup();
@@ -127,6 +126,7 @@ void kmain(void) {
     kinfo("Kernel load Done!");
     // beep();
     enable_scheduler();
+
     open_interrupt;
 
     //    //

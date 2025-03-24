@@ -39,6 +39,16 @@ static inline void flush_tlb(uint64_t addr) {
     __asm__ volatile("invlpg (%0)" ::"r"(addr) : "memory");
 }
 
+static inline uint64_t get_cr0(void) {
+    uint64_t cr0;
+    __asm__ volatile("mov %%cr0, %0" : "=r"(cr0));
+    return cr0;
+}
+
+static inline void set_cr0(uint64_t cr0) {
+    __asm__ volatile("mov %0, %%cr0" : : "r"(cr0));
+}
+
 static inline uint64_t get_cr3(void) {
     uint64_t cr0;
     __asm__ volatile("mov %%cr3, %0" : "=r"(cr0));
