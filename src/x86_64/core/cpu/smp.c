@@ -142,29 +142,30 @@ smp_cpu_t *get_cpu_smp(uint32_t processor_id) {
     smp_cpu_t *cpu = &cpus[processor_id];
     if (cpu->flags == 1) {
         return &cpus[processor_id];
-    } else
-        return NULL;
+    }
+    return NULL;
 }
 
 void apu_startup(struct limine_smp_request smp_request) {
     ticket_init(&apu_lock);
     struct limine_smp_response *response = smp_request.response;
     cpu_count                            = response->cpu_count;
-    for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++) {
-        struct limine_smp_info *info             = response->cpus[i];
-        cpus[info->processor_id].scheduler_queue = queue_init();
-        cpus[info->processor_id].iter_node       = NULL;
-        cpus[info->processor_id].lapic_id        = info->lapic_id;
+    for (uint64_t i = 0; i <= cpu_count && i < MAX_CPU - 1; i++) {
+        struct limine_smp_info *info = response->cpus[i];
+        size_t cpuid0 = info == NULL ? i : info->processor_id;
+        cpus[cpuid0].scheduler_queue = queue_init();
+        cpus[cpuid0].iter_node       = NULL;
+        cpus[cpuid0].lapic_id        = info == NULL ? i : info->lapic_id;
+        if(info == NULL) continue;
         if (info->lapic_id == response->bsp_lapic_id) {
-            cpus[info->processor_id].flags       = 1;
-            bsp_processor_id                     = info->processor_id;
-            cpus[info->processor_id].idle_pcb    = kernel_head_task;
-            cpus[info->processor_id].current_pcb = kernel_head_task;
+            cpus[cpuid0].flags       = 1;
+            bsp_processor_id         = info->processor_id;
+            cpus[cpuid0].idle_pcb    = kernel_head_task;
+            cpus[cpuid0].current_pcb = kernel_head_task;
         } else {
             info->goto_address = (void *)apu_entry;
         }
     }
-
     while (cpu_done_count < (cpu_count - 1) && cpu_done_count < (MAX_CPU - 1)) {
         __asm__ volatile("pause" ::: "memory");
     }

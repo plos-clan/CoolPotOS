@@ -19,4 +19,4 @@ typedef void (*free_t)(void *ptr);
 
 #define USED           __attr(used)
 #define SECTION(name)  __attr(section(name))
-#define LIMINE_REQUEST USED SECTION(".limine_requests") static const volatile
+#define LIMINE_REQUEST USED SECTION(".limine_requests") static volatile
