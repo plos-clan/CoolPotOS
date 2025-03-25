@@ -15,6 +15,7 @@
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
+#include "cpusp.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
@@ -101,6 +102,7 @@ static void reboot_os() {
 }
 
 static void cd(int argc, char **argv) {
+    UNUSED(argv);
     if (argc == 1) {
         printk("If there are too few parameters.\n");
         return;
@@ -182,11 +184,13 @@ void ps() {
             }
         }
     }
-    printk("   --- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\n", idle_time * 100 / all_time,
+    printk("   --- CPU Usage: %d%% IPS: %d | Memory Usage: %d%s/%dMB ---\n", idle_time * 100 / all_time,
+           get_cpu_speed(),
            mem_use + memory, bytes > 10485760 ? "MB" : "KB", memory_size / 1024 / 1024);
 }
 
 static void ls(int argc, char **argv) {
+    UNUSED(argv);
     vfs_node_t p;
     if (argc == 1) {
         p = vfs_open(shell_work_path);
@@ -228,6 +232,7 @@ static void pkill(int argc, char **argv) {
 }
 
 static void echo(int argc, char **argv) {
+    UNUSED(argv);
     if (argc == 1) {
         printk("[Shell-ECHO]: If there are too few parameters.\n");
         return;

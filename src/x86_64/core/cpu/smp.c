@@ -22,7 +22,7 @@ smp_cpu_t cpus[MAX_CPU];
 uint32_t  bsp_processor_id;
 uint64_t  cpu_count = 0;
 
-static int16_t cpu_done_count = 0;
+static uint64_t cpu_done_count = 0;
 
 static void apu_hlt() {
     cpu_hlt;
@@ -127,7 +127,7 @@ void apu_entry() {
     cpu->current_pcb             = apu_idle;
     cpu->flags                   = 1;
     apu_idle->queue_index        = queue_enqueue(cpu->scheduler_queue, apu_idle);
-    if (apu_idle->queue_index == -1) {
+    if (apu_idle->queue_index == (size_t)-1) {
         logkf("Error: scheduler null %d\n", get_current_cpuid());
         cpu_hlt;
     }
@@ -175,7 +175,7 @@ void apu_startup(struct limine_smp_request smp_request) {
     if (cpu == NULL) { return; }
     cpu->idle_pcb                 = kernel_head_task;
     kernel_head_task->queue_index = queue_enqueue(cpu->scheduler_queue, kernel_head_task);
-    if (kernel_head_task->queue_index == -1) {
+    if (kernel_head_task->queue_index == (size_t)-1) {
         logkf("Error: scheduler null %d\n", get_current_cpuid());
     }
 

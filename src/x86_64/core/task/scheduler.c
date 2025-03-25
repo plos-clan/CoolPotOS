@@ -36,7 +36,7 @@ int add_task(pcb_t new_task) {
     smp_cpu_t *cpu0  = get_cpu_smp(bsp_processor_id);
     uint32_t   cpuid = bsp_processor_id;
 
-    for (int i = 0; i < cpu_count; i++) {
+    for (size_t i = 0; i < cpu_count; i++) {
         smp_cpu_t *cpu = get_cpu_smp(i);
         if (cpu == NULL) continue;
         if (cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size) {
@@ -53,13 +53,12 @@ int add_task(pcb_t new_task) {
     }
     new_task->cpu_id      = cpuid;
     new_task->queue_index = queue_enqueue(cpu0->scheduler_queue, new_task);
-    if (new_task->queue_index == -1) {
+    if (new_task->queue_index == (size_t)-1) {
         logkf("Error: scheduler null %d\n", get_current_cpuid());
         return -1;
     }
 
 //pivfs_update(kernel_head_task);
-ret:
     ticket_unlock(&scheduler_lock);
     return new_task->queue_index;
 }
