@@ -142,7 +142,7 @@ void ide_write(uint8_t channel, uint8_t reg, uint8_t data) {
 }
 
 uint8_t ide_read(uint8_t channel, uint8_t reg) {
-    uint8_t result;
+    uint8_t result = 0;
     if (reg > 0x07 && reg < 0x0C)
         ide_write(channel, ATA_REG_CONTROL, 0x80 | channels[channel].nIEN);
     if (reg < 0x08)
@@ -151,8 +151,7 @@ uint8_t ide_read(uint8_t channel, uint8_t reg) {
         result = io_in8(channels[channel].base + reg - 0x06);
     else if (reg < 0x0E)
         result = io_in8(channels[channel].ctrl + reg - 0x0A);
-    else if (reg < 0x16)
-        result = io_in8(channels[channel].bmide + reg - 0x0E);
+    else result = io_in8(channels[channel].bmide + reg - 0x0E);
     if (reg > 0x07 && reg < 0x0C) ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
     return result;
 }
@@ -181,7 +180,7 @@ uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba, uint8_t n
                        uint16_t selector, uint64_t edi) {
     uint8_t  lba_mode /* 0: CHS, 1:LBA28, 2: LBA48 */, dma /* 0: No DMA, 1: DMA */, cmd;
     uint8_t  lba_io[6];
-    uint32_t channel  = ide_devices[drive].Channel; // Read the Channel.
+    uint8_t  channel  = ide_devices[drive].Channel; // Read the Channel.
     uint32_t slavebit = ide_devices[drive].Drive;   // Read the Drive [Master/Slave]
     uint32_t bus      = channels[channel].base;     // Bus Base, like 0x1F0 which is also data port.
     uint32_t words    = 256; // Almost every ATA drive has a sector-size of 512-byte.
@@ -276,7 +275,7 @@ uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba, uint8_t n
         uint16_t *word_ = (uint16_t *)edi;
         for (i = 0; i < numsects; i++) {
             klog("read %d", i);
-            if ((err = ide_polling(channel, 1)) != NULL)
+            if ((err = ide_polling(channel, 1)) != 0)
                 return err; // Polling, set error and exit if there is.
 
             klog("words=%d bus=%d", words, bus);

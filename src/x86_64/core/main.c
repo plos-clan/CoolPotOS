@@ -30,6 +30,7 @@
 #include "vdisk.h"
 #include "vfs.h"
 #include "pcnet.h"
+#include "cpusp.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -55,7 +56,7 @@ LIMINE_REQUEST LIMINE_BASE_REVISION(2);
 LIMINE_REQUEST struct limine_stack_size_request stack_request = {
     .id         = LIMINE_STACK_SIZE_REQUEST,
     .revision   = 0,
-    .stack_size = 131072 // 128K
+    .stack_size = KERNEL_ST_SZ // 128K
 };
 
 extern void  error_setup();    // error_handle.c
@@ -123,6 +124,7 @@ void kmain(void) {
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell");
+    create_kernel_thread((void *)cpu_speed_test,NULL,"CPUSpeed");
     kinfo("Kernel load Done!");
     // beep();
     enable_scheduler();
