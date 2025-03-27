@@ -122,9 +122,10 @@ void kmain(void) {
     build_stream_device();
     init_iic();
 
-    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush");
-    create_kernel_thread((void *)shell_setup, NULL, "KernelShell");
-    create_kernel_thread((void *)cpu_speed_test,NULL,"CPUSpeed");
+    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush",NULL);
+    create_kernel_thread((void *)cpu_speed_test,NULL,"CPUSpeed",NULL);
+    pgb_t shell_group = create_process_group("Shell Service");
+    create_kernel_thread((void *)shell_setup, NULL, "KernelShell",shell_group);
     kinfo("Kernel load Done!");
     // beep();
     enable_scheduler();

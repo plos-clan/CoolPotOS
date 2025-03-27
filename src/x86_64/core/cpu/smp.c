@@ -12,10 +12,9 @@
 #include "sprintf.h"
 
 extern struct idt_register idt_pointer;      // idt.c
-extern int                 now_pid;          // pcb.c
 extern pcb_t               kernel_head_task; // scheduler.c
 extern bool                x2apic_mode;      // apic.c
-
+extern pgb_t               kernel_group;     // pcb.c
 ticketlock apu_lock;
 
 smp_cpu_t cpus[MAX_CPU];
@@ -106,7 +105,7 @@ void apu_entry() {
 
     pcb_t apu_idle       = (pcb_t)malloc(STACK_SIZE);
     apu_idle->task_level = 0;
-    apu_idle->pid        = now_pid++;
+    apu_idle->pid        = kernel_group->pid_index++;
     apu_idle->cpu_clock  = 0;
     apu_idle->directory  = get_kernel_pagedir();
     set_kernel_stack(get_rsp());
@@ -131,6 +130,8 @@ void apu_entry() {
         logkf("Error: scheduler null %d\n", get_current_cpuid());
         cpu_hlt;
     }
+    apu_idle->parent_group = kernel_group;
+    apu_idle->group_index = queue_enqueue(kernel_group->pcb_queue,apu_idle);
     logkf("APU %d: %p %p started.\n", get_current_cpuid(), cpu->current_pcb, cpu->idle_pcb);
     cpu_done_count++;
     ticket_unlock(&apu_lock);

@@ -83,7 +83,7 @@ int get_all_task() {
 }
 
 void change_proccess(registers_t *reg, pcb_t current_task0, pcb_t taget) {
-    switch_page_directory(taget->directory);
+    switch_page_directory(taget->parent_group->page_dir);
     set_kernel_stack(taget->kernel_stack);
 
     save_fpu_context(&current_task0->fpu_context);

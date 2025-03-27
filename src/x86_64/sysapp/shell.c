@@ -19,6 +19,7 @@
 
 extern void cp_shutdown();
 extern void cp_reset();
+extern lock_queue *pgb_queue;
 
 char           *shell_work_path;
 extern uint64_t memory_size; // hhdm.c
@@ -151,42 +152,60 @@ static void mkdir(int argc, char **argv) {
     if (vfs_mkdir(bufx) == -1) { printk("Failed create directory [%s].\n", argv[1]); }
 }
 
-void ps() {
-    extern smp_cpu_t cpus[MAX_CPU];
-
-    size_t       longest_name_len = 0;
-    uint64_t     all_time         = 0;
-    uint64_t     mem_use          = 0;
-    uint32_t     bytes            = get_all_memusage();
-    int          memory           = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-    extern pcb_t kernel_head_task;
-    uint64_t     idle_time = kernel_head_task->cpu_timer;
-    for (size_t i = 0; i < MAX_CPU; i++) {
-        smp_cpu_t cpu = cpus[i];
-        if (cpu.flags == 1) {
-            queue_foreach(cpu.scheduler_queue, queue) {
-                pcb_t longest_name = (pcb_t)queue->data;
-                if (strlen(longest_name->name) > longest_name_len)
-                    longest_name_len = strlen(longest_name->name);
+void ps(int argc, char** argv) {
+    size_t longest_name_len = 0;
+    if (argc == 1) {
+        queue_foreach(pgb_queue,thread){
+            pgb_t longest_name = (pgb_t)thread->data;
+            if (strlen(longest_name->name) > longest_name_len)
+                longest_name_len = strlen(longest_name->name);
+        }
+        printk("GID  %-*s  TaskNum\n", longest_name_len, "NAME");
+        queue_foreach(pgb_queue,thread){
+            pgb_t pgb = (pgb_t)thread->data;
+            printk("%-5d%-*s  %-7d\n",pgb->pgb_id,longest_name_len,pgb->name,pgb->pcb_queue->size);
+        }
+    } else if (strcmp(argv[1],"pcb") == 0){
+        extern smp_cpu_t cpus[MAX_CPU];
+        uint32_t bytes           = get_all_memusage();
+        size_t   longest_pgb_len = 0;
+        uint64_t all_time        = 0;
+        uint64_t mem_use         = 0;
+        int      memory          = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+        extern pcb_t kernel_head_task;
+        uint64_t idle_time = kernel_head_task->cpu_timer;
+        for (size_t i = 0; i < MAX_CPU; i++) {
+            smp_cpu_t cpu = cpus[i];
+            if (cpu.flags == 1) {
+                queue_foreach(cpu.scheduler_queue, queue) {
+                    pcb_t longest_name = (pcb_t) queue->data;
+                    if (strlen(longest_name->name) > longest_name_len)
+                        longest_name_len = strlen(longest_name->name);
+                    if (strlen(longest_name->parent_group->name) > longest_pgb_len)
+                        longest_pgb_len = strlen(longest_name->parent_group->name);
+                }
             }
         }
-    }
-    printk("PID  %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME");
-    for (size_t i = 0; i < MAX_CPU; i++) {
-        smp_cpu_t cpu = cpus[i];
-        if (cpu.flags == 1) {
-            queue_foreach(cpu.scheduler_queue, queue) {
-                pcb_t pcb  = (pcb_t)queue->data;
-                all_time  += pcb->cpu_timer;
-                if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
-                printk("%-5d%-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,
-                       pcb->mem_usage, pcb->task_level, pcb->cpu_clock, pcb->cpu_id);
+        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len, "NAME",
+               longest_pgb_len, "GROUP");
+        for (size_t i = 0; i < MAX_CPU; i++) {
+            smp_cpu_t cpu = cpus[i];
+            if (cpu.flags == 1) {
+                queue_foreach(cpu.scheduler_queue, queue) {
+                    pcb_t pcb = (pcb_t) queue->data;
+                    all_time += pcb->cpu_timer;
+                    if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
+                    printk("%-5d%-*s %-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,
+                           longest_pgb_len, pcb->parent_group->name,
+                           pcb->mem_usage, pcb->task_level, pcb->cpu_clock, pcb->cpu_id);
+                }
             }
         }
-    }
-    printk("   --- CPU Usage: %d%% IPS: %d | Memory Usage: %d%s/%dMB ---\n", idle_time * 100 / all_time,
-           get_cpu_speed(),
-           mem_use + memory, bytes > 10485760 ? "MB" : "KB", memory_size / 1024 / 1024);
+        printk("   --- CPU Usage: %d%% IPS: %d | Memory Usage: %d%s/%dMB ---\n", idle_time * 100 / all_time,
+               get_cpu_speed(),
+               mem_use + memory, bytes > 10485760 ? "MB" : "KB", memory_size / 1024 / 1024);
+    } else
+        printk("Unknown argument, please entry 'help'.\n");
 }
 
 static void ls(int argc, char **argv) {
@@ -298,7 +317,7 @@ static void sys_info() {
     printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:    %d\n",
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",
            is_pcie ? "PCIE" : "PCI ", get_pcie_num());
     printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",
            framebuffer->width, framebuffer->height);
@@ -325,7 +344,7 @@ static void print_help() {
     printk("lspci/lspcie             List all PCI/PCIE devices.\n");
     printk("sysinfo                  Get system info.\n");
     printk("clear                    Clear screen.\n");
-    printk("ps                       List all running tasks.\n");
+    printk("ps        [pcb]          List task group or all running tasks.\n");
     printk("pkill     <pid>          Kill a tasks.\n");
     printk("cd        <path>         Change shell work path.\n");
     printk("mkdir     <name>         Create a directory.\n");
@@ -377,7 +396,7 @@ _Noreturn void shell_setup() {
         else if (!strcmp("sysinfo", argv[0]))
             sys_info();
         else if (!strcmp("ps", argv[0]))
-            ps();
+            ps(argc,argv);
         else if (!strcmp("pkill", argv[0]))
             pkill(argc, argv);
         else if (!strcmp("cd", argv[0]))
