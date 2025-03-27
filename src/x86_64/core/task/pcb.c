@@ -12,17 +12,18 @@
 #include "sprintf.h"
 #include "timer.h"
 
-extern pcb_t      kernel_head_task;
+extern tcb_t      kernel_head_task;
 ticketlock        pcb_lock;
 extern ticketlock scheduler_lock;
 
 lock_queue *pgb_queue;
-pgb_t kernel_group;
+pcb_t kernel_group;
 
 int now_pid = 0;
 
 _Noreturn void process_exit() {
-    register uint64_t rax __asm__("rax");
+    uint64_t rax = 0;
+    __asm__("movq %%rax,%0" :: "r"(rax):);
     printk("Kernel Process exit, Code: %d\n", rax);
     kill_proc(get_current_task());
     infinite_loop;
@@ -50,15 +51,23 @@ void switch_to_user_mode(uint64_t func) {
                      : "memory");
 }
 
-void kill_proc(pcb_t task) {
+void kill_proc(pcb_t pcb){
+    queue_foreach(pcb->pcb_queue,node){
+        tcb_t tcb = (tcb_t)node->data;
+        kill_thread(tcb);
+    }
+    free_tty(pcb->tty);
+    free(pcb);
+}
+
+void kill_thread(tcb_t task) {
     if (task->task_level == TASK_KERNEL_LEVEL) {
         kerror("Cannot stop kernel thread.");
         return;
     }
     ticket_lock(&pcb_lock);
     close_interrupt;
-    disable_scheduler(); // 终止调度器, 防止释放被杀进程时候调度到该进程发生错误
-    free_tty(task->tty);
+    disable_scheduler(); // 终止调度器, 防止释放被杀线程时候调度到该线程发生错误
     free(task->time_buf);
 
     remove_task(task);
@@ -68,7 +77,22 @@ void kill_proc(pcb_t task) {
     ticket_unlock(&pcb_lock);
 }
 
-pcb_t found_pcb(int pid) {
+pcb_t found_pcb(int pid){
+    queue_foreach(pgb_queue,node){
+        pcb_t pcb = (pcb_t)node->data;
+        if(pcb->pgb_id == pid) return pcb;
+    }
+    return NULL;
+}
+
+tcb_t found_thread(pcb_t pcb,int tid) {
+    if(pcb == NULL) return NULL;
+    queue_foreach(pcb->pcb_queue,node){
+        tcb_t thread = (tcb_t)node->data;
+        if(thread->pid == tid){
+            return thread;
+        }
+    }
     return NULL;
 }
 
@@ -78,20 +102,23 @@ void kill_all_proc() {
     lapic_timer_stop();
 }
 
-pgb_t create_process_group(char* name){
-    pgb_t new_pgb = malloc(sizeof(struct pcb_group_block));
+pcb_t create_process_group(char* name){
+    pcb_t new_pgb = malloc(sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
     strcpy(new_pgb->name,name);
-    new_pgb->pcb_queue = queue_init();
-    new_pgb->pid_index = 0;
-    new_pgb->page_dir  = get_kernel_pagedir();
+    new_pgb->pcb_queue   = queue_init();
+    new_pgb->pid_index   = 0;
+    new_pgb->tty         = alloc_default_tty(); //初始化TTY设备
+    new_pgb->page_dir    = get_kernel_pagedir();
     new_pgb->queue_index = queue_enqueue(pgb_queue,new_pgb);
     return new_pgb;
 }
 
-int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pgb_t pgb_group) {
-    pcb_t new_task = (pcb_t)malloc(STACK_SIZE);
-    memset(new_task, 0, sizeof(struct process_control_block));
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pcb_t pgb_group) {
+    close_interrupt;
+    disable_scheduler();
+    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
+    memset(new_task, 0, sizeof(struct thread_control_block));
 
     if(pgb_group == NULL){
         new_task->group_index = queue_enqueue(kernel_group->pcb_queue,new_task);
@@ -107,7 +134,6 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pgb_t 
     new_task->cpu_clock  = 0;
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
-    new_task->tty        = alloc_default_tty(); // 初始化TTY设备
     new_task->cpu_id     = get_current_cpuid();
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
@@ -118,10 +144,11 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pgb_t 
     new_task->context0.rip    = (uint64_t)_start;
     new_task->context0.rsp    = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
     new_task->kernel_stack    = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
-    new_task->user_stack      = new_task->kernel_stack; // 内核级进程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
+    new_task->user_stack      = new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
 
     add_task(new_task);
-
+    enable_scheduler();
+    open_interrupt;
     return new_task->pid;
 }
 
@@ -130,21 +157,22 @@ void init_pcb() {
     ticket_init(&scheduler_lock);
     pgb_queue = queue_init();
 
-    kernel_group = malloc(sizeof(struct pcb_group_block));
+    kernel_group = malloc(sizeof(struct process_control_block));
     strcpy(kernel_group->name,"System");
     kernel_group->pid_index = kernel_group->pgb_id = now_pid++;
     kernel_group->pcb_queue = queue_init();
     kernel_group->queue_index = queue_enqueue(pgb_queue,kernel_group);
     kernel_group->page_dir  = get_kernel_pagedir();
+    kernel_group->tty       = get_default_tty();
 
-    kernel_head_task                  = (pcb_t)malloc(STACK_SIZE);
+    kernel_head_task                  = (tcb_t)malloc(STACK_SIZE);
+    kernel_head_task->parent_group    = kernel_group;
     kernel_head_task->task_level      = 0;
     kernel_head_task->pid             = kernel_group->pid_index++;
     kernel_head_task->cpu_clock       = 0;
-    set_kernel_stack(get_rsp()); // 给IDLE进程设置TSS内核栈, 不然这个进程炸了后会发生 DoubleFault
+    set_kernel_stack(get_rsp()); // 给IDLE线程设置TSS内核栈, 不然这个线程炸了后会发生 DoubleFault
     kernel_head_task->kernel_stack    = kernel_head_task->context0.rsp = get_rsp();
     kernel_head_task->user_stack      = kernel_head_task->kernel_stack;
-    kernel_head_task->tty             = get_default_tty();
     kernel_head_task->context0.rflags = get_rflags();
     kernel_head_task->cpu_timer       = nanoTime();
     kernel_head_task->time_buf        = alloc_timer();
@@ -154,8 +182,7 @@ void init_pcb() {
     memcpy(kernel_head_task->name, name, strlen(name));
     kernel_head_task->name[strlen(name)] = '\0';
     pivfs_update(kernel_head_task);
-    kernel_head_task->parent_group = kernel_group;
     kernel_head_task->group_index = queue_enqueue(kernel_group->pcb_queue,kernel_head_task);
 
-    kinfo("Load task schedule. | KernelProcess PID: %d", kernel_head_task->pid);
+    kinfo("Load task schedule. | Process(%s) PID: %d",kernel_group->name, kernel_head_task->pid);
 }

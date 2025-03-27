@@ -30,7 +30,9 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault, virtual address 0x%x %p\n", faulting_address, frame->rip);
     if (get_current_task() != NULL) {
-        logkf("Current process PID: %d (%s)\n", get_current_task()->pid, get_current_task()->name);
+        logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
+              get_current_task()->name,
+              get_current_task()->parent_group->name);
     }
     printk("\n");
     printk(
@@ -43,8 +45,8 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                             : "Unknown",
         faulting_address);
     if (get_current_task() != NULL) {
-        printk("Current process PID: %d (%s) at CPU%d\n", get_current_task()->pid,
-               get_current_task()->name, get_current_cpuid());
+        printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->pid,
+               get_current_task()->name,get_current_task()->parent_group->name, get_current_cpuid());
     }
     print_register(frame);
     terminal_flush();

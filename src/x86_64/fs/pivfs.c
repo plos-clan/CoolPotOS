@@ -1,6 +1,6 @@
 /**
  * Process Information Virtual File System
- * 进程信息虚拟文件系统
+ * 线程信息虚拟文件系统
  */
 #define ALL_IMPLEMENTATION
 #include "pivfs.h"
@@ -113,16 +113,16 @@ void pivfs_setup() {
     }
 }
 
-static void update_process(char *path, pcb_t pcb, bool is_build) {
+static void update_process(char *path, tcb_t pcb, bool is_build) {
     char buf[50];
     sprintf(buf, "%s/name", path);
 
     if (is_build) { vfs_mkfile(buf); }
 }
 
-void pivfs_update(pcb_t kernel_head) {
+void pivfs_update(tcb_t kernel_head) {
     if (kernel_head == NULL || pivfs_root == NULL) return;
-    //    pcb_t f = kernel_head;
+    //    tcb_t f = kernel_head;
     //    do{
     //        char buf[100];
     //        sprintf(buf,"/proc/%d",f->pid);

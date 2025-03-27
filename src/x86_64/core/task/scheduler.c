@@ -7,7 +7,7 @@
 #include "pivfs.h"
 #include "smp.h"
 
-pcb_t kernel_head_task = NULL;
+tcb_t kernel_head_task = NULL;
 bool  is_scheduler     = false;
 
 extern uint64_t cpu_count;        // smp.c
@@ -15,7 +15,7 @@ extern uint32_t bsp_processor_id; // smp.c
 
 ticketlock scheduler_lock;
 
-pcb_t get_current_task() {
+tcb_t get_current_task() {
     smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
     if (cpu == NULL) return NULL;
     return cpu->current_pcb;
@@ -29,7 +29,7 @@ void disable_scheduler() {
     is_scheduler = false;
 }
 
-int add_task(pcb_t new_task) {
+int add_task(tcb_t new_task) {
     if (new_task == NULL) return -1;
     ticket_lock(&scheduler_lock);
 
@@ -58,12 +58,11 @@ int add_task(pcb_t new_task) {
         return -1;
     }
 
-//pivfs_update(kernel_head_task);
     ticket_unlock(&scheduler_lock);
     return new_task->queue_index;
 }
 
-void remove_task(pcb_t task) {
+void remove_task(tcb_t task) {
     if (task == NULL) return;
     ticket_lock(&scheduler_lock);
 
@@ -73,7 +72,6 @@ void remove_task(pcb_t task) {
         return;
     }
     queue_remove_at(cpu->scheduler_queue, task->queue_index);
-    // pivfs_update(kernel_head_task);
     ticket_unlock(&scheduler_lock);
 }
 
@@ -82,7 +80,7 @@ int get_all_task() {
     return cpu != NULL ? cpu->scheduler_queue->size : 0;
 }
 
-void change_proccess(registers_t *reg, pcb_t current_task0, pcb_t taget) {
+void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
     switch_page_directory(taget->parent_group->page_dir);
     set_kernel_stack(taget->kernel_stack);
 
@@ -130,7 +128,7 @@ void change_proccess(registers_t *reg, pcb_t current_task0, pcb_t taget) {
 
 /**
  * CP_Kernel 默认多核调度器 - 循环绝对公平调度
- * @param reg 当前进程上下文
+ * @param reg 当前任务上下文
  */
 void scheduler(registers_t *reg) {
     if (is_scheduler) {
@@ -156,7 +154,7 @@ void scheduler(registers_t *reg) {
             void *data = NULL;
             if (cpu->iter_node != NULL) { data = cpu->iter_node->data; }
 
-            pcb_t next = (pcb_t)data;
+            tcb_t next = (tcb_t)data;
 
             cpu->current_pcb->cpu_clock++;
             if (cpu->current_pcb->time_buf != NULL) {
