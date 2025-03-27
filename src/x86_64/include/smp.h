@@ -17,10 +17,10 @@ typedef struct smp_cpu {
     struct gdt_register gdt_pointer;
     tss_t               tss0;
     tss_stack_t         tss_stack;
-    pcb_t               idle_pcb;
-    pcb_t               current_pcb;
+    tcb_t               idle_pcb;
+    tcb_t               current_pcb;
     page_directory_t   *directory;
-    lock_queue         *scheduler_queue; // 该核心的进程调度队列
+    lock_queue         *scheduler_queue; // 该核心的线程调度队列
     lock_node          *iter_node;       // 该核心当前迭代的节点
 } __attribute__((packed)) smp_cpu_t;
 

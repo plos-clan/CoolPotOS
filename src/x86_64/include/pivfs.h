@@ -18,4 +18,4 @@ typedef struct pipfs_handle {
 } pivfs_handle_t;
 
 void pivfs_setup();
-void pivfs_update(pcb_t kernel_head);
+void pivfs_update(tcb_t kernel_head);

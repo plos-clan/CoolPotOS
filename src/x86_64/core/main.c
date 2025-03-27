@@ -61,7 +61,7 @@ LIMINE_REQUEST struct limine_stack_size_request stack_request = {
 
 extern void  error_setup();    // error_handle.c
 extern void  iso9660_regist(); // iso9660.c
-extern pcb_t kernel_head_task; // scheduler.c
+extern tcb_t kernel_head_task; // scheduler.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -124,7 +124,7 @@ void kmain(void) {
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush",NULL);
     create_kernel_thread((void *)cpu_speed_test,NULL,"CPUSpeed",NULL);
-    pgb_t shell_group = create_process_group("Shell Service");
+    pcb_t shell_group = create_process_group("Shell Service");
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell",shell_group);
     kinfo("Kernel load Done!");
     // beep();

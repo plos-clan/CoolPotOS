@@ -24,7 +24,7 @@ static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t l
     if (get_current_task() == NULL) {
         tty = get_default_tty();
     } else
-        tty = get_current_task()->tty;
+        tty = get_current_task()->parent_group->tty;
     for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }

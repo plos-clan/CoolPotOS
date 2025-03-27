@@ -156,13 +156,13 @@ void ps(int argc, char** argv) {
     size_t longest_name_len = 0;
     if (argc == 1) {
         queue_foreach(pgb_queue,thread){
-            pgb_t longest_name = (pgb_t)thread->data;
+            pcb_t longest_name = (pcb_t)thread->data;
             if (strlen(longest_name->name) > longest_name_len)
                 longest_name_len = strlen(longest_name->name);
         }
         printk("GID  %-*s  TaskNum\n", longest_name_len, "NAME");
         queue_foreach(pgb_queue,thread){
-            pgb_t pgb = (pgb_t)thread->data;
+            pcb_t pgb = (pcb_t)thread->data;
             printk("%-5d%-*s  %-7d\n",pgb->pgb_id,longest_name_len,pgb->name,pgb->pcb_queue->size);
         }
     } else if (strcmp(argv[1],"pcb") == 0){
@@ -172,13 +172,13 @@ void ps(int argc, char** argv) {
         uint64_t all_time        = 0;
         uint64_t mem_use         = 0;
         int      memory          = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-        extern pcb_t kernel_head_task;
+        extern tcb_t kernel_head_task;
         uint64_t idle_time = kernel_head_task->cpu_timer;
         for (size_t i = 0; i < MAX_CPU; i++) {
             smp_cpu_t cpu = cpus[i];
             if (cpu.flags == 1) {
                 queue_foreach(cpu.scheduler_queue, queue) {
-                    pcb_t longest_name = (pcb_t) queue->data;
+                    tcb_t longest_name = (tcb_t) queue->data;
                     if (strlen(longest_name->name) > longest_name_len)
                         longest_name_len = strlen(longest_name->name);
                     if (strlen(longest_name->parent_group->name) > longest_pgb_len)
@@ -192,7 +192,7 @@ void ps(int argc, char** argv) {
             smp_cpu_t cpu = cpus[i];
             if (cpu.flags == 1) {
                 queue_foreach(cpu.scheduler_queue, queue) {
-                    pcb_t pcb = (pcb_t) queue->data;
+                    tcb_t pcb = (tcb_t) queue->data;
                     all_time += pcb->cpu_timer;
                     if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
                     printk("%-5d%-*s %-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len, pcb->name,

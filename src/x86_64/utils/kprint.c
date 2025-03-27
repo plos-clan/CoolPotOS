@@ -36,7 +36,7 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     strcat(buf, "\033[0m");
 
     if (get_current_task() != NULL)
-        get_current_task()->tty->print(get_current_task()->tty, buf);
+        get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
     else
         terminal_process(buf);
     ticket_unlock(&print_lock);
@@ -57,7 +57,7 @@ void cp_printf(const char *fmt, ...) {
     strcat(buf, "\033[0m");
 
     if (get_current_task() != NULL)
-        get_current_task()->tty->print(get_current_task()->tty, buf);
+        get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
     else
         terminal_process(buf);
     ticket_unlock(&print_lock);

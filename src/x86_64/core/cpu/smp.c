@@ -12,9 +12,9 @@
 #include "sprintf.h"
 
 extern struct idt_register idt_pointer;      // idt.c
-extern pcb_t               kernel_head_task; // scheduler.c
+extern tcb_t               kernel_head_task; // scheduler.c
 extern bool                x2apic_mode;      // apic.c
-extern pgb_t               kernel_group;     // pcb.c
+extern pcb_t               kernel_group;     // pcb.c
 ticketlock apu_lock;
 
 smp_cpu_t cpus[MAX_CPU];
@@ -103,14 +103,13 @@ void apu_entry() {
 
     float_processor_setup();
 
-    pcb_t apu_idle       = (pcb_t)malloc(STACK_SIZE);
+    tcb_t apu_idle       = (tcb_t)malloc(STACK_SIZE);
     apu_idle->task_level = 0;
     apu_idle->pid        = kernel_group->pid_index++;
     apu_idle->cpu_clock  = 0;
     set_kernel_stack(get_rsp());
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
     apu_idle->user_stack                            = apu_idle->kernel_stack;
-    apu_idle->tty                                   = get_default_tty();
     apu_idle->context0.rflags                       = get_rflags() | 0x200;
     apu_idle->cpu_timer                             = nanoTime();
     apu_idle->time_buf                              = alloc_timer();
