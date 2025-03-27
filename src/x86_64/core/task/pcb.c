@@ -108,7 +108,6 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pgb_t 
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
     new_task->tty        = alloc_default_tty(); // 初始化TTY设备
-    new_task->directory  = get_kernel_pagedir();
     new_task->cpu_id     = get_current_cpuid();
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);

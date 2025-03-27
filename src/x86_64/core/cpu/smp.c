@@ -107,7 +107,6 @@ void apu_entry() {
     apu_idle->task_level = 0;
     apu_idle->pid        = kernel_group->pid_index++;
     apu_idle->cpu_clock  = 0;
-    apu_idle->directory  = get_kernel_pagedir();
     set_kernel_stack(get_rsp());
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
     apu_idle->user_stack                            = apu_idle->kernel_stack;
