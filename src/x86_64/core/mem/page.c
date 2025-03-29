@@ -65,12 +65,11 @@ page_table_t *page_table_create(page_table_entry_t *entry) {
     if (entry->value == (uint64_t)NULL) {
         uint64_t frame      = alloc_frames(1);
         entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
-        page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0xFFFFFFFFFFFFF000);
+        page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0x000fffffffff000);
         page_table_clear(table);
         return table;
     }
-    page_table_t *table = (page_table_t *)phys_to_virt(
-        entry->value & 0xFFFFFFFFFFFFF000); // 获取页帧物理基址并转换成虚拟地址
+    page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0x000fffffffff000);
     return table;
 }
 
@@ -84,34 +83,31 @@ page_directory_t *get_current_directory() {
 }
 
 static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table, int level) {
-    if (level == 0) {
-        for (int i = 0; i < 512; i++) {
-            new_table->entries[i].value = source_table->entries[i].value;
-        }
-        return;
-    }
-
     for (int i = 0; i < 512; i++) {
-        if (source_table->entries[i].value == 0) {
-            new_table->entries[i].value = 0;
+        page_table_entry_t *entry = &source_table->entries[i];
+
+        if (level == 1 || entry->value == 0 || is_huge_page(entry)) {
+            new_table->entries[i].value = entry->value;
             continue;
         }
-        page_table_t *source_next_level = (page_table_t *)phys_to_virt(source_table->entries[i].value & 0xFFFFFFFFFFFFF000);
-        page_table_t *new_next_level = page_table_create(&(new_table->entries[i]));
 
-        new_table->entries[i].value =
-            (uint64_t) virt_to_phys((uint64_t)new_next_level) | (source_table->entries[i].value & 0xFFF);
-        copy_page_table_recursive(source_next_level, new_next_level, level - 1);
+        uint64_t frame = alloc_frames(1);
+        page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
+        new_table->entries[i].value = frame | (entry->value & 0xFFF);
+
+        page_table_t *source_page_table_next = phys_to_virt(entry->value & 0x000fffffffff000);
+        page_table_t *target_page_table_next = new_page_table;
+
+        copy_page_table_recursive(source_page_table_next, target_page_table_next, level - 1);
     }
 }
 
 page_directory_t *clone_directory(page_directory_t *src) {
     ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
-    uint64_t phy_frame              = alloc_frames(2);
-    page_map_range_to(get_current_directory(),phy_frame,PAGE_SIZE * 2,KERNEL_PTE_FLAGS);
+    uint64_t phy_frame              = alloc_frames(1);
     new_directory->table            = phys_to_virt(phy_frame);
-    copy_page_table_recursive(src->table, new_directory->table, 3);
+    copy_page_table_recursive(src->table, new_directory->table, 4);
     ticket_unlock(&page_lock);
     return new_directory;
 }
@@ -127,7 +123,7 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
     page_table_t *l2_table = page_table_create(&(l3_table->entries[l3_index]));
     page_table_t *l1_table = page_table_create(&(l2_table->entries[l2_index]));
 
-    l1_table->entries[l1_index].value = (frame & 0xFFFFFFFFFFFFF000) | flags;
+    l1_table->entries[l1_index].value = (frame & 0x000fffffffff000) | flags;
 
     flush_tlb(addr);
 }

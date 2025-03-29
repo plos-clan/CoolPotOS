@@ -45,7 +45,7 @@ int add_task(tcb_t new_task) {
         }
     }
 
-    logkf("Add task CPU %d idle: %p\n", new_task->pid, cpuid, cpu0->idle_pcb);
+    logkf("Add task PID: %d, CPU %d, idle: %#p\n", new_task->pid, cpuid, cpu0->idle_pcb);
 
     if (cpu0 == NULL) {
         ticket_unlock(&scheduler_lock);

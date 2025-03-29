@@ -3,7 +3,7 @@
 #define PTE_PRESENT    (0x1 << 0)
 #define PTE_WRITEABLE  (0x1 << 1)
 #define PTE_USER       (0x1 << 2)
-#define PTE_HUGE       (0x1 << 3)
+#define PTE_HUGE       (0x1 << 7)
 #define PTE_NO_EXECUTE (((uint64_t)0x1) << 63)
 
 #define KERNEL_PTE_FLAGS (PTE_PRESENT | PTE_WRITEABLE | PTE_NO_EXECUTE)
