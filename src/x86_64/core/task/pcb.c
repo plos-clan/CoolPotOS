@@ -117,7 +117,7 @@ pcb_t create_process_group(char* name){
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pcb_t pgb_group) {
     close_interrupt;
     disable_scheduler();
-    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
+    tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
     memset(new_task, 0, sizeof(struct thread_control_block));
 
     if(pgb_group == NULL){

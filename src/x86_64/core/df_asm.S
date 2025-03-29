@@ -8,9 +8,13 @@
 .section .text
 
 .extern double_fault
+.extern double_fault_page
+
 .global double_fault_asm
 
 double_fault_asm:
+    MOV RAX, qword ptr [double_fault_page]
+    MOV CR3, RAX
     LEA RSP, df_stack + 4096
     JMP double_fault
 

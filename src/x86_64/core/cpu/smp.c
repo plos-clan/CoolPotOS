@@ -155,6 +155,7 @@ void apu_startup(struct limine_smp_request smp_request) {
         cpus[cpuid0].scheduler_queue = queue_init();
         cpus[cpuid0].iter_node       = NULL;
         cpus[cpuid0].lapic_id        = info == NULL ? i : info->lapic_id;
+        cpus[cpuid0].directory       = get_kernel_pagedir();
         if(info == NULL) continue;
         if (info->lapic_id == response->bsp_lapic_id) {
             cpus[cpuid0].flags       = 1;

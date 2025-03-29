@@ -17,18 +17,19 @@ ticketlock page_lock;
 page_directory_t  kernel_page_dir;
 page_directory_t *current_directory = NULL;
 
+uint64_t double_fault_page = 0;
+
 static bool is_huge_page(page_table_entry_t *entry) {
-    return (((uint64_t)entry) & PTE_HUGE) != 0;
+    return (((uint64_t)entry->value) & PTE_HUGE) != 0;
 }
 
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t error_code) {
     close_interrupt;
     init_print_lock();
     disable_scheduler();
-    switch_page_directory(get_kernel_pagedir());
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
-    logkf("Page fault, virtual address 0x%x %p\n", faulting_address, frame->rip);
+    logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
     if (get_current_task() != NULL) {
         logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
               get_current_task()->name,
@@ -95,12 +96,11 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
             new_table->entries[i].value = 0;
             continue;
         }
-        page_table_t *source_next_level =
-            (page_table_t *)phys_to_virt(source_table->entries[i].value & 0xFFFFFFFFFFFFF000);
+        page_table_t *source_next_level = (page_table_t *)phys_to_virt(source_table->entries[i].value & 0xFFFFFFFFFFFFF000);
         page_table_t *new_next_level = page_table_create(&(new_table->entries[i]));
-        new_table->entries[i].value =
-            (uint64_t)new_next_level | (source_table->entries[i].value & 0xFFF);
 
+        new_table->entries[i].value =
+            (uint64_t) virt_to_phys((uint64_t)new_next_level) | (source_table->entries[i].value & 0xFFF);
         copy_page_table_recursive(source_next_level, new_next_level, level - 1);
     }
 }
@@ -108,7 +108,9 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
 page_directory_t *clone_directory(page_directory_t *src) {
     ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
-    new_directory->table            = malloc(sizeof(page_table_t));
+    uint64_t phy_frame              = alloc_frames(2);
+    page_map_range_to(get_current_directory(),phy_frame,PAGE_SIZE * 2,KERNEL_PTE_FLAGS);
+    new_directory->table            = phys_to_virt(phy_frame);
     copy_page_table_recursive(src->table, new_directory->table, 3);
     ticket_unlock(&page_lock);
     return new_directory;
@@ -128,6 +130,16 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
     l1_table->entries[l1_index].value = (frame & 0xFFFFFFFFFFFFF000) | flags;
 
     flush_tlb(addr);
+}
+
+void switch_process_page_directory(page_directory_t *dir){
+    disable_scheduler();
+    close_interrupt;
+    pcb_t pcb = get_current_task()->parent_group;
+    pcb->page_dir = dir;
+    switch_page_directory(dir);
+    enable_scheduler();
+    open_interrupt;
 }
 
 void switch_page_directory(page_directory_t *dir) {
@@ -158,6 +170,7 @@ void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t len
 void page_setup() {
     page_table_t *kernel_page_table = (page_table_t *)phys_to_virt(get_cr3());
     kernel_page_dir                 = (page_directory_t){.table = kernel_page_table};
+    double_fault_page               = get_cr3();
     register_interrupt_handler(14, (void *)page_fault_handle, 0, 0x8E);
     current_directory = &kernel_page_dir;
     kinfo("Kernel page table in 0x%p", kernel_page_table);
