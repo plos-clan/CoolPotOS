@@ -127,27 +127,27 @@ void kmain(void) {
     pcb_t shell_group = create_process_group("Shell Service");
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell",shell_group);
     kinfo("Kernel load Done!");
+
     // beep();
     enable_scheduler();
 
     open_interrupt;
 
-    //page_directory_t *dir = clone_directory(get_kernel_pagedir());
+    page_directory_t *dir = clone_directory(get_kernel_pagedir());
+    kinfo("clooned dir: %#p\n", dir->table);
+    // for (int i = 0; i < 512; i++) {
+    //     logkf("page ml4 clone: %#p source:%#p\n", dir->table->entries[i], get_current_directory()->table->entries[i]);
+    // }
 
+    switch_process_page_directory(dir);
+    cpu_hlt;
+    printk("??\n");
 
-//    for (int i = 0; i < 512; i++) {
-//        logkf("page ml4 clone:%p source:%p\n",dir->table->entries[i],get_current_directory()->table->entries[i]);
-//    }
+    page_map_to(dir,0x10000,0x10000,KERNEL_PTE_FLAGS);
 
-    //switch_process_page_directory(dir);
-    //cpu_hlt;
-    //printk("??\n");
-
-//    page_map_to(dir,0x10000,0x10000,KERNEL_PTE_FLAGS);
-//
-//    int* a = (int*)0x10000;
-//    *a = 1;
-//    printk("A: %d\n",*a);
+    int* a = (int*)0x10000;
+    *a = 1;
+    printk("A: %d\n",*a);
 
     //    //
     //    vfs_node_t node = vfs_open("/dev/sata0");
