@@ -14,11 +14,11 @@
 
 typedef struct page_table_entry {
     uint64_t value;
-} page_table_entry_t;
+} __attribute__((packed)) page_table_entry_t;
 
 typedef struct {
     page_table_entry_t entries[512];
-} page_table_t;
+} __attribute__((packed)) page_table_t;
 
 typedef struct page_directory {
     page_table_t *table;
@@ -31,6 +31,16 @@ void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t len
 void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64_t length,
                               uint64_t flags);
 page_directory_t *clone_directory(page_directory_t *src);
-void              switch_page_directory(page_directory_t *dir);
+/**
+ * 多核页切换(不会切换进程的页表, 一般用于进程上下文切换)
+ * @param dir 目标页表
+ */
+void switch_page_directory(page_directory_t *dir);
+
+/**
+ * 进程页切换(一般用于内核主动性页表切换)
+ * @param dir 目标页表
+ */
+void switch_process_page_directory(page_directory_t *dir);
 page_directory_t *get_current_directory();
 void              page_setup();

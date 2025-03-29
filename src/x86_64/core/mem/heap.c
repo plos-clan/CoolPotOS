@@ -5,7 +5,7 @@
 #include "page.h"
 
 uint64_t get_all_memusage() {
-    return 0x400000;
+    return KERNEL_HEAP;
 }
 
 /*
@@ -18,11 +18,11 @@ void *calloc(size_t a, size_t b) {
 }
 
 void *alloc_4k_aligned_mem(size_t size) {
-    void *p        = malloc(size < PAGE_SIZE ? size + 0xFFF : size);
+    void *p        = malloc(size < PAGE_SIZE ? size + PAGE_SIZE : size);
     void *pAligned = (void *)((uint64_t)p + 0xFFF & ~0xFFF);
     return pAligned;
 }
 
 void init_heap() {
-    heap_init((uint8_t *)(physical_memory_offset + 0x3c0f000), 0x400000);
+    heap_init((uint8_t *)(physical_memory_offset + 0x3c0f000), KERNEL_HEAP);
 }

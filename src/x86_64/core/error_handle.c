@@ -6,6 +6,7 @@
 #include "pcb.h"
 #include "smp.h"
 #include "terminal.h"
+#include "gop.h"
 
 extern void double_fault_asm(); // df_asm.S
 
@@ -44,7 +45,10 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
 
 __IRQHANDLER void double_fault(interrupt_frame_t *frame, uint64_t error_code) {
     close_interrupt;
-    kernel_error("Double fault", error_code, frame);
+    disable_scheduler();
+    logkf("Double Fault\n");
+    gop_clear(0x7c0d0d);
+    cpu_hlt;
 }
 
 __IRQHANDLER void dived_error(interrupt_frame_t *frame) {

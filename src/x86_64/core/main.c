@@ -132,6 +132,23 @@ void kmain(void) {
 
     open_interrupt;
 
+    //page_directory_t *dir = clone_directory(get_kernel_pagedir());
+
+
+//    for (int i = 0; i < 512; i++) {
+//        logkf("page ml4 clone:%p source:%p\n",dir->table->entries[i],get_current_directory()->table->entries[i]);
+//    }
+
+    //switch_process_page_directory(dir);
+    //cpu_hlt;
+    //printk("??\n");
+
+//    page_map_to(dir,0x10000,0x10000,KERNEL_PTE_FLAGS);
+//
+//    int* a = (int*)0x10000;
+//    *a = 1;
+//    printk("A: %d\n",*a);
+
     //    //
     //    vfs_node_t node = vfs_open("/dev/sata0");
     //    if (node != NULL) {
