@@ -148,12 +148,3 @@ target("default_build")
 
         -- os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
     end)
-
-
-
-target("format")
-    on_run(function (target)
-        import("core.project.config")
-        shell_command = "find src/ libs/ -type f \\( -name \"*.c\" -o -name \"*.cpp\" -o -name \"*.h\" -o -name \"*.hpp\" \\) -exec clang-format -i {} +"
-        os.exec(shell_command)
-    end)
