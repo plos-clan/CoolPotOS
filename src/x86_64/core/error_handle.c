@@ -1,3 +1,4 @@
+#include "gop.h"
 #include "io.h"
 #include "isr.h"
 #include "kprint.h"
@@ -6,7 +7,6 @@
 #include "pcb.h"
 #include "smp.h"
 #include "terminal.h"
-#include "gop.h"
 
 extern void double_fault_asm(); // df_asm.S
 
@@ -25,7 +25,8 @@ void print_task_info(tcb_t pcb) {
     if (pcb == NULL)
         printk("No process load, CPU%d\n", get_current_cpuid());
     else
-        printk("Current process PID: %d:%s (%s) CPU%d\n", pcb->pid, pcb->name, pcb->parent_group->name, get_current_cpuid());
+        printk("Current process PID: %d:%s (%s) CPU%d\n", pcb->pid, pcb->name,
+               pcb->parent_group->name, get_current_cpuid());
 }
 
 void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {

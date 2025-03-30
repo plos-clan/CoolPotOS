@@ -1,8 +1,10 @@
 #include "acpi.h"
 #include "ahci.h"
 #include "cpuid.h"
+#include "cpusp.h"
 #include "description_table.h"
 #include "devfs.h"
+#include "dlinker.h"
 #include "frame.h"
 #include "gop.h"
 #include "heap.h"
@@ -18,19 +20,17 @@
 #include "page.h"
 #include "pcb.h"
 #include "pcie.h"
-#include "dlinker.h"
+#include "pcnet.h"
 #include "pivfs.h"
 #include "power.h"
-#include "syscall.h"
 #include "shell.h"
 #include "smbios.h"
 #include "smp.h"
+#include "syscall.h"
 #include "terminal.h"
 #include "timer.h"
 #include "vdisk.h"
 #include "vfs.h"
-#include "pcnet.h"
-#include "cpusp.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -124,11 +124,11 @@ void kmain(void) {
 
     setup_syscall();
 
-    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush",NULL);
-    create_kernel_thread((void *)cpu_speed_test,NULL,"CPUSpeed",NULL);
+    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
+    create_kernel_thread((void *)cpu_speed_test, NULL, "CPUSpeed", NULL);
 
     pcb_t shell_group = create_process_group("Shell Service", NULL);
-    create_kernel_thread((void *)shell_setup, NULL, "KernelShell",shell_group);
+    create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
 
     kinfo("Kernel load Done!");
 

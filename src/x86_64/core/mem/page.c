@@ -32,8 +32,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
     if (get_current_task() != NULL) {
         logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
-              get_current_task()->name,
-              get_current_task()->parent_group->name);
+              get_current_task()->name, get_current_task()->parent_group->name);
     }
     printk("\n");
     printk(
@@ -47,7 +46,8 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         faulting_address);
     if (get_current_task() != NULL) {
         printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->pid,
-               get_current_task()->name,get_current_task()->parent_group->name, get_current_cpuid());
+               get_current_task()->name, get_current_task()->parent_group->name,
+               get_current_cpuid());
     }
     print_register(frame);
     terminal_flush();
@@ -82,7 +82,8 @@ page_directory_t *get_current_directory() {
     return cpu != NULL ? cpu->directory : current_directory;
 }
 
-static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table, int level) {
+static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table,
+                                      int level) {
     for (int i = 0; i < 512; i++) {
         page_table_entry_t *entry = &source_table->entries[i];
 
@@ -91,9 +92,9 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
             continue;
         }
 
-        uint64_t frame = alloc_frames(1);
+        uint64_t      frame          = alloc_frames(1);
         page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
-        new_table->entries[i].value = frame | (entry->value & 0xFFF);
+        new_table->entries[i].value  = frame | (entry->value & 0xFFF);
 
         page_table_t *source_page_table_next = phys_to_virt(entry->value & 0x000fffffffff000);
         page_table_t *target_page_table_next = new_page_table;
@@ -105,7 +106,7 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
 page_directory_t *clone_directory(page_directory_t *src) {
     ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
-    uint64_t phy_frame              = alloc_frames(1);
+    uint64_t          phy_frame     = alloc_frames(1);
     new_directory->table            = phys_to_virt(phy_frame);
     copy_page_table_recursive(src->table, new_directory->table, 4);
     ticket_unlock(&page_lock);
@@ -128,10 +129,10 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
     flush_tlb(addr);
 }
 
-void switch_process_page_directory(page_directory_t *dir){
+void switch_process_page_directory(page_directory_t *dir) {
     disable_scheduler();
     close_interrupt;
-    pcb_t pcb = get_current_task()->parent_group;
+    pcb_t pcb     = get_current_task()->parent_group;
     pcb->page_dir = dir;
     switch_page_directory(dir);
     enable_scheduler();
@@ -140,16 +141,17 @@ void switch_process_page_directory(page_directory_t *dir){
 
 void switch_page_directory(page_directory_t *dir) {
     smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
-    if(cpu != NULL){
+    if (cpu != NULL) {
         cpu->directory = dir;
-    } else current_directory = dir;
+    } else
+        current_directory = dir;
     page_table_t *physical_table = virt_to_phys((uint64_t)dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }
 
-uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags){
-    if(length == 0) return -1;
-    size_t p = length / PAGE_SIZE;
+uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags) {
+    if (length == 0) return -1;
+    size_t   p    = length / PAGE_SIZE;
     uint64_t addr = alloc_frames(p == 0 ? 1 : p);
     for (uint64_t i = 0; i < length; i += 0x1000) {
         uint64_t var = (uint64_t)addr + i;
@@ -159,7 +161,7 @@ uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_
 }
 
 void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64_t length,
-                              uint64_t flags){
+                              uint64_t flags) {
     for (uint64_t i = 0; i < length; i += 0x1000) {
         uint64_t var = (uint64_t)addr + i;
         page_map_to(directory, var, alloc_frames(1), flags);

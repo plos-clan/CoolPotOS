@@ -6,10 +6,8 @@
 #include "kprint.h"
 #include "limine.h"
 
-LIMINE_REQUEST struct limine_smbios_request smbios_request = {
-        .id = LIMINE_SMBIOS_REQUEST,
-        .revision = 0
-};
+LIMINE_REQUEST struct limine_smbios_request smbios_request = {.id       = LIMINE_SMBIOS_REQUEST,
+                                                              .revision = 0};
 
 /* 获取SMBIOS主版本 */
 int smbios_major_version(void) {

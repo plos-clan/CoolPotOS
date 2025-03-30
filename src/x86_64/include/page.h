@@ -35,7 +35,7 @@ page_directory_t *clone_directory(page_directory_t *src);
  * 多核页切换(不会切换进程的页表, 一般用于进程上下文切换)
  * @param dir 目标页表
  */
-void switch_page_directory(page_directory_t *dir);
+void              switch_page_directory(page_directory_t *dir);
 
 /**
  * 进程页切换(一般用于内核主动性页表切换)

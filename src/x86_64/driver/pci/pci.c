@@ -191,7 +191,7 @@ uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function, uint8_t regist
 }
 
 void write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset,
-                       uint32_t value) {
+                uint32_t value) {
     uint32_t id = 1 << 31 | ((bus & 0xff) << 16) | ((device & 0x1f) << 11) |
                   ((function & 0x07) << 8) | (registeroffset & 0xfc);
     io_out32(PCI_COMMAND_PORT, id);

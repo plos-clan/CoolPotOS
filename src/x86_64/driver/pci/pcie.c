@@ -190,20 +190,25 @@ pcie_device_t *pcie_find_class(uint32_t class_code) {
 }
 
 int pcie_find_capability(pcie_device_t *device, uint8_t cap_id) {
-    uint8_t pos = (uint8_t)(read_pci0(device->bus,device->slot,device->func, PCI_CAPABILITY_LIST) & 0xFF);
+    uint8_t pos =
+        (uint8_t)(read_pci0(device->bus, device->slot, device->func, PCI_CAPABILITY_LIST) & 0xFF);
     if (pos == 0) { return 0; }
 
     while (pos != 0) {
-        uint8_t id = (uint8_t)(read_pci0(device->bus,device->slot,device->func, pos + PCI_CAP_LIST_ID) & 0xFF);
+        uint8_t id =
+            (uint8_t)(read_pci0(device->bus, device->slot, device->func, pos + PCI_CAP_LIST_ID) &
+                      0xFF);
         if (id == cap_id) { return pos; }
-        pos = (uint8_t)(read_pci0(device->bus,device->slot,device->func, pos + PCI_CAP_LIST_NEXT) & 0xFF);
+        pos =
+            (uint8_t)(read_pci0(device->bus, device->slot, device->func, pos + PCI_CAP_LIST_NEXT) &
+                      0xFF);
     }
     return 0;
 }
 
 void pcie_set_msi(pcie_device_t *device, uint8_t vector) {
     device->msi_offset = pcie_find_capability(device, PCI_CAP_ID_MSI);
-    uint32_t msg_ctrl  = read_pci0(device->bus,device->slot,device->func, device->msi_offset + 2);
+    uint32_t msg_ctrl  = read_pci0(device->bus, device->slot, device->func, device->msi_offset + 2);
     uint8_t  reg0      = 0x4;
     uint8_t  reg1      = 0x8;
 
@@ -211,11 +216,11 @@ void pcie_set_msi(pcie_device_t *device, uint8_t vector) {
 
     uint64_t address = (0xfee << 20) | (lapic_id() << 12);
     uint8_t  data    = vector;
-    write_pci0(device->bus,device->slot,device->func, device->msi_offset + reg0, address);
-    write_pci0(device->bus,device->slot,device->func, device->msi_offset + reg1, data);
+    write_pci0(device->bus, device->slot, device->func, device->msi_offset + reg0, address);
+    write_pci0(device->bus, device->slot, device->func, device->msi_offset + reg1, data);
     msg_ctrl |= 1;
     msg_ctrl &= ~(7 << 4);
-    write_pci0(device->bus,device->slot,device->func, device->msi_offset + 2, msg_ctrl);
+    write_pci0(device->bus, device->slot, device->func, device->msi_offset + 2, msg_ctrl);
 }
 
 void pcie_init() {
