@@ -1,6 +1,6 @@
 #pragma once
 
-#include "elf.h"
+#include "elf_util.h"
 #include "module.h"
 
 typedef int (*dlmain_t)(void);

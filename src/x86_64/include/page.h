@@ -42,5 +42,15 @@ void switch_page_directory(page_directory_t *dir);
  * @param dir 目标页表
  */
 void switch_process_page_directory(page_directory_t *dir);
+
+/**
+ * 分配一页大小的内存
+ * @param directory 页目录
+ * @param length 长度(字节为单位)
+ * @param flags 页标志
+ * @return == -1 ? 未分配成功 : 地址
+ */
+uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags);
+
 page_directory_t *get_current_directory();
 void              page_setup();

@@ -147,6 +147,17 @@ void switch_page_directory(page_directory_t *dir) {
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }
 
+uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags){
+    if(length == 0) return -1;
+    size_t p = length / PAGE_SIZE;
+    uint64_t addr = alloc_frames(p == 0 ? 1 : p);
+    for (uint64_t i = 0; i < length; i += 0x1000) {
+        uint64_t var = (uint64_t)addr + i;
+        page_map_to(directory, var, var, flags);
+    }
+    return addr;
+}
+
 void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64_t length,
                               uint64_t flags){
     for (uint64_t i = 0; i < length; i += 0x1000) {

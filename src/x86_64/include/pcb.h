@@ -24,12 +24,13 @@ struct process_control_block {
     size_t            queue_index;  // 进程队列索引
     page_directory_t *page_dir;     // 进程页表
     tty_t            *tty;          // tty设备
+
 };
 
 struct thread_control_block {
     pcb_t             parent_group; // 父进程
     uint8_t           task_level;   // 线程权限等级
-    int               pid;          // 线程私有 PID
+    int               pid;          // 线程 TID
     char              name[50];     // 线程名
     uint64_t          cpu_clock;    // CPU 调度时间片
     uint64_t          cpu_timer;    // CPU 占用时间
@@ -53,7 +54,7 @@ struct thread_control_block {
 int  add_task(tcb_t new_task);
 void remove_task(tcb_t task);
 
-void  switch_to_user_mode(uint64_t func);
+void switch_to_user_mode(uint64_t func);
 
 /**
  * 创建内核线程
@@ -61,16 +62,26 @@ void  switch_to_user_mode(uint64_t func);
  * @param args 传入参数
  * @param name 线程名
  * @param pgb_group == NULL ? 无父进程自动进入System进程 : 添加至指定的进程
- * @return 该线程私有 pid
+ * @return 线程 tid
  */
-int   create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pcb_t pgb_group);
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pcb_t pgb_group);
+
+/**
+ * 创建用户态线程
+ * @param _start 线程入口点
+ * @param name 线程名
+ * @param pcb 父进程(父进程页表不能使用内核页表, 需调用clone_directory拷贝一个新页表使用)
+ * @return == -1 ? 创建失败 : 线程 tid
+ */
+int create_user_thread(void (*_start)(void), char *name, pcb_t pcb);
 
 /**
  * 创建一个进程
  * @param name 进程名
+ * @param directory == NULL ? 使用内核页表 : 使用新页表
  * @return 进程指针
  */
-pcb_t create_process_group(char* name);
+pcb_t create_process_group(char* name,page_directory_t *directory);
 
 /**
  * 获取当前运行的线程(多核下会获取当前CPU正在调度的线程)

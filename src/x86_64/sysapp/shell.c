@@ -16,6 +16,7 @@
 #include "timer.h"
 #include "vfs.h"
 #include "cpusp.h"
+#include "elf_util.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
@@ -305,6 +306,28 @@ static void lmod(int argc, char **argv) {
     }
 }
 
+static void luser(int argc,char**argv){
+    if (argc == 1) {
+        printk("[Shell-LMOD]: If there are too few parameters.\n");
+        return;
+    }
+
+    cp_module_t *module = get_module(argv[1]);
+    if (module == NULL) {
+        printk("Cannot find module [%s]\n", argv[1]);
+        return;
+    }
+
+    page_directory_t *up = clone_directory(get_kernel_pagedir());
+    void *main = load_executor_elf(module,up);
+    if(main == NULL) {
+        kwarn("Cannot load elf file.");
+        return;
+    }
+    pcb_t user_task = create_process_group(module->module_name, up);
+    create_user_thread(main,"main",user_task);
+}
+
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
@@ -352,6 +375,7 @@ static void print_help() {
     printk("echo      <message>      Print a message.\n");
     printk("mount     <path> <dev>   Mount a device to path.\n");
     printk("lmod      <module|list>  Load or list model.\n");
+    printk("luser     <module>       Load a user application.\n");
 }
 
 _Noreturn void shell_setup() {
@@ -411,6 +435,8 @@ _Noreturn void shell_setup() {
             mount(argc, argv);
         else if (!strcmp("lmod", argv[0]))
             lmod(argc, argv);
+        else if (!strcmp("luser", argv[0]))
+            luser(argc,argv);
         else if (!strcmp("test", argv[0])) {
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n", i);
