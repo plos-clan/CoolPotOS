@@ -11,7 +11,7 @@ typedef struct {
     size_t   size;
 } cp_module_t;
 
-void         module_setup();
+void module_setup();
 
 /**
  * 根据module_name获取模块

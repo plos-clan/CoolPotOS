@@ -5,10 +5,7 @@
 cp_module_t module_ls[256];
 int         module_count = 0;
 
-LIMINE_REQUEST struct limine_module_request module = {
-    .id = LIMINE_MODULE_REQUEST,
-    .revision = 0
-};
+LIMINE_REQUEST struct limine_module_request module = {.id = LIMINE_MODULE_REQUEST, .revision = 0};
 
 void extract_name(const char *input, char *output, size_t output_size) {
     const char *name = strrchr(input, '/');

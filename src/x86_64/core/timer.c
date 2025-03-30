@@ -2,8 +2,8 @@
 #include "alloc.h"
 
 timer_t *alloc_timer() {
-    timer_t *timer0  = malloc(sizeof(timer_t));
-    if(timer0 == NULL) return NULL;
+    timer_t *timer0 = malloc(sizeof(timer_t));
+    if (timer0 == NULL) return NULL;
     timer0->old_time = nanoTime();
     return timer0;
 }

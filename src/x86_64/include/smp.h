@@ -7,8 +7,8 @@
 #include "description_table.h"
 #include "limine.h"
 #include "lock_queue.h"
-#include "pcb.h"
 #include "page.h"
+#include "pcb.h"
 
 typedef struct smp_cpu {
     uint8_t             flags; // 标志位, CPU是否启用

@@ -63,5 +63,6 @@ uint8_t               pci_get_drive_irq(uint8_t bus, uint8_t slot, uint8_t func)
 void                  pci_setup();
 
 // pcie call func
-uint32_t              read_pci0(uint32_t bus, uint32_t dev, uint32_t function, uint8_t registeroffset);
-void                  write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset, uint32_t value);
+uint32_t read_pci0(uint32_t bus, uint32_t dev, uint32_t function, uint8_t registeroffset);
+void     write_pci0(uint8_t bus, uint8_t device, uint8_t function, uint8_t registeroffset,
+                    uint32_t value);

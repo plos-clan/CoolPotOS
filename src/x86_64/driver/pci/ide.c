@@ -151,7 +151,8 @@ uint8_t ide_read(uint8_t channel, uint8_t reg) {
         result = io_in8(channels[channel].base + reg - 0x06);
     else if (reg < 0x0E)
         result = io_in8(channels[channel].ctrl + reg - 0x0A);
-    else result = io_in8(channels[channel].bmide + reg - 0x0E);
+    else
+        result = io_in8(channels[channel].bmide + reg - 0x0E);
     if (reg > 0x07 && reg < 0x0C) ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
     return result;
 }

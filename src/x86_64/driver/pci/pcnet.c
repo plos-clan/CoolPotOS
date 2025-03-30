@@ -17,10 +17,10 @@ void pcnet_setup() {
         pci_write_command_status(pci_device, conf);
         pci_set_msi(pci_device, pcnet);
     } else {
-        uint32_t conf = pcie_read_command(device, 0x04);
-        conf         |= PCI_COMMAND_MEMORY;
-        conf         |= PCI_RCMD_BUS_MASTER;
-        conf         |= PCI_COMMAND_IO;
+        uint32_t conf  = pcie_read_command(device, 0x04);
+        conf          |= PCI_COMMAND_MEMORY;
+        conf          |= PCI_RCMD_BUS_MASTER;
+        conf          |= PCI_COMMAND_IO;
         pcie_write_command(device, 0x04, conf);
         pcie_set_msi(device, pcnet);
     }

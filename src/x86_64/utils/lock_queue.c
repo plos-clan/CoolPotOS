@@ -14,7 +14,7 @@ lock_queue *queue_init() {
 }
 
 int queue_enqueue(lock_queue *q, void *data) {
-    if(q == NULL) return -1;
+    if (q == NULL) return -1;
     lock_node *new_node = (lock_node *)malloc(sizeof(lock_node));
     if (!new_node) return -1;
     new_node->data  = data;

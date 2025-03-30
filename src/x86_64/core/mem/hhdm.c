@@ -1,10 +1,7 @@
 #include "hhdm.h"
 #include "limine.h"
 
-LIMINE_REQUEST struct limine_hhdm_request hhdm_request = {
-        .id = LIMINE_HHDM_REQUEST,
-        .revision = 0
-};
+LIMINE_REQUEST struct limine_hhdm_request hhdm_request = {.id = LIMINE_HHDM_REQUEST, .revision = 0};
 
 uint64_t physical_memory_offset = 0;
 

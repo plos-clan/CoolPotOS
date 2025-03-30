@@ -1,6 +1,7 @@
 #include "smp.h"
 #include "alloc.h"
 #include "description_table.h"
+#include "fpu.h"
 #include "hhdm.h"
 #include "io.h"
 #include "kprint.h"
@@ -8,14 +9,13 @@
 #include "limine.h"
 #include "lock.h"
 #include "pcb.h"
-#include "fpu.h"
 #include "sprintf.h"
 
 extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c
 extern bool                x2apic_mode;      // apic.c
 extern pcb_t               kernel_group;     // pcb.c
-ticketlock apu_lock;
+ticketlock                 apu_lock;
 
 smp_cpu_t cpus[MAX_CPU];
 uint32_t  bsp_processor_id;
@@ -129,7 +129,7 @@ void apu_entry() {
         cpu_hlt;
     }
     apu_idle->parent_group = kernel_group;
-    apu_idle->group_index = queue_enqueue(kernel_group->pcb_queue,apu_idle);
+    apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
     logkf("APU %d: %p %p started.\n", get_current_cpuid(), cpu->current_pcb, cpu->idle_pcb);
     cpu_done_count++;
     ticket_unlock(&apu_lock);
@@ -139,9 +139,7 @@ void apu_entry() {
 
 smp_cpu_t *get_cpu_smp(uint32_t processor_id) {
     smp_cpu_t *cpu = &cpus[processor_id];
-    if (cpu->flags == 1) {
-        return &cpus[processor_id];
-    }
+    if (cpu->flags == 1) { return &cpus[processor_id]; }
     return NULL;
 }
 
@@ -150,13 +148,13 @@ void apu_startup(struct limine_smp_request smp_request) {
     struct limine_smp_response *response = smp_request.response;
     cpu_count                            = response->cpu_count;
     for (uint64_t i = 0; i <= cpu_count && i < MAX_CPU - 1; i++) {
-        struct limine_smp_info *info = response->cpus[i];
-        size_t cpuid0 = info == NULL ? i : info->processor_id;
-        cpus[cpuid0].scheduler_queue = queue_init();
-        cpus[cpuid0].iter_node       = NULL;
-        cpus[cpuid0].lapic_id        = info == NULL ? i : info->lapic_id;
-        cpus[cpuid0].directory       = get_kernel_pagedir();
-        if(info == NULL) continue;
+        struct limine_smp_info *info   = response->cpus[i];
+        size_t                  cpuid0 = info == NULL ? i : info->processor_id;
+        cpus[cpuid0].scheduler_queue   = queue_init();
+        cpus[cpuid0].iter_node         = NULL;
+        cpus[cpuid0].lapic_id          = info == NULL ? i : info->lapic_id;
+        cpus[cpuid0].directory         = get_kernel_pagedir();
+        if (info == NULL) continue;
         if (info->lapic_id == response->bsp_lapic_id) {
             cpus[cpuid0].flags       = 1;
             bsp_processor_id         = info->processor_id;
