@@ -142,6 +142,13 @@ void scheduler(registers_t *reg) {
             return;
         }
         if (cpu->current_pcb != NULL) {
+            cpu->current_pcb->cpu_clock++;
+            if (cpu->current_pcb->time_buf != NULL) {
+                cpu->current_pcb->cpu_timer += get_time(cpu->current_pcb->time_buf);
+                cpu->current_pcb->time_buf   = NULL;
+            }
+            cpu->current_pcb->time_buf = alloc_timer();
+
             if (cpu->scheduler_queue->size == 1) {
                 ticket_unlock(&scheduler_lock);
                 send_eoi();
@@ -158,13 +165,6 @@ void scheduler(registers_t *reg) {
             if (cpu->iter_node != NULL) { data = cpu->iter_node->data; }
 
             tcb_t next = (tcb_t)data;
-
-            cpu->current_pcb->cpu_clock++;
-            if (cpu->current_pcb->time_buf != NULL) {
-                cpu->current_pcb->cpu_timer += get_time(cpu->current_pcb->time_buf);
-                cpu->current_pcb->time_buf   = NULL;
-            }
-            cpu->current_pcb->time_buf = alloc_timer();
 
             if (cpu->current_pcb->pid != next->pid) {
                 disable_scheduler();
