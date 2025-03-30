@@ -166,7 +166,7 @@ void scheduler(registers_t *reg) {
 
             tcb_t next = (tcb_t)data;
 
-            if (cpu->current_pcb->pid != next->pid) {
+            if (cpu->current_pcb->parent_group != next->parent_group || cpu->current_pcb->pid != next->pid) {
                 disable_scheduler();
                 change_proccess(reg, cpu->current_pcb, next);
                 cpu->current_pcb = next;
