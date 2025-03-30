@@ -138,11 +138,13 @@ void scheduler(registers_t *reg) {
         if (cpu == NULL) {
             logkf("Error: scheduler null %d\n", get_current_cpuid());
             ticket_unlock(&scheduler_lock);
+            send_eoi();
             return;
         }
         if (cpu->current_pcb != NULL) {
             if (cpu->scheduler_queue->size == 1) {
                 ticket_unlock(&scheduler_lock);
+                send_eoi();
                 return;
             }
             if (cpu->iter_node == NULL) {
