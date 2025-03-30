@@ -104,7 +104,7 @@ void apu_entry() {
     float_processor_setup();
 
     tcb_t apu_idle       = (tcb_t)malloc(STACK_SIZE);
-    apu_idle->task_level = 0;
+    apu_idle->task_level = TASK_KERNEL_LEVEL;
     apu_idle->pid        = kernel_group->pid_index++;
     apu_idle->cpu_clock  = 0;
     set_kernel_stack(get_rsp());

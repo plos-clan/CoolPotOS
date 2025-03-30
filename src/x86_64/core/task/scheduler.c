@@ -36,14 +36,14 @@ int add_task(tcb_t new_task) {
     smp_cpu_t *cpu0  = get_cpu_smp(bsp_processor_id);
     uint32_t   cpuid = bsp_processor_id;
 
-    for (size_t i = 0; i < cpu_count; i++) {
-        smp_cpu_t *cpu = get_cpu_smp(i);
-        if (cpu == NULL) continue;
-        if (cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size) {
-            cpu0  = cpu;
-            cpuid = i;
-        }
-    }
+//    for (size_t i = 0; i < cpu_count; i++) {
+//        smp_cpu_t *cpu = get_cpu_smp(i);
+//        if (cpu == NULL) continue;
+//        if (cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size) {
+//            cpu0  = cpu;
+//            cpuid = i;
+//        }
+//    }
 
     logkf("Add task PID: %d, CPU %d, idle: %#p\n", new_task->pid, cpuid, cpu0->idle_pcb);
 
@@ -132,6 +132,7 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
  */
 void scheduler(registers_t *reg) {
     if (is_scheduler) {
+        logkf("cpu cur: %d\n",get_current_cpuid());
         ticket_lock(&scheduler_lock);
         smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
         if (cpu == NULL) {

@@ -102,35 +102,75 @@ void kill_all_proc() {
     lapic_timer_stop();
 }
 
-pcb_t create_process_group(char* name){
+pcb_t create_process_group(char* name,page_directory_t *directory){
     pcb_t new_pgb = malloc(sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
     strcpy(new_pgb->name,name);
     new_pgb->pcb_queue   = queue_init();
     new_pgb->pid_index   = 0;
     new_pgb->tty         = alloc_default_tty(); //初始化TTY设备
-    new_pgb->page_dir    = get_kernel_pagedir();
+    new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->queue_index = queue_enqueue(pgb_queue,new_pgb);
     return new_pgb;
 }
 
-int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pcb_t pgb_group) {
+int create_user_thread(void (*_start)(void), char *name, pcb_t pcb){
+    if(pcb == NULL || name == NULL || _start == NULL) return -1;
+
     close_interrupt;
     disable_scheduler();
     tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
     memset(new_task, 0, sizeof(struct thread_control_block));
 
-    if(pgb_group == NULL){
+    if(pcb == NULL){
         new_task->group_index = queue_enqueue(kernel_group->pcb_queue,new_task);
         new_task->pid = kernel_group->pid_index++;
         new_task->parent_group = kernel_group;
     } else{
-        queue_enqueue(pgb_group->pcb_queue,new_task);
-        new_task->pid = pgb_group->pid_index++;
-        new_task->parent_group = pgb_group;
+        queue_enqueue(pcb->pcb_queue,new_task);
+        new_task->pid = pcb->pid_index++;
+        new_task->parent_group = pcb;
     }
 
-    new_task->task_level = 0;
+    new_task->task_level = TASK_KERNEL_LEVEL;
+    new_task->cpu_clock  = 0;
+    new_task->cpu_timer  = 0;
+    new_task->mem_usage  = get_all_memusage();
+    new_task->cpu_id     = get_current_cpuid();
+    memcpy(new_task->name, name, strlen(name) + 1);
+    uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
+    *(--stack_top)            = (uint64_t) _start;
+    *(--stack_top)            = (uint64_t) process_exit;
+    *(--stack_top)            = (uint64_t) switch_to_user_mode;
+    new_task->context0.rflags = 0x202;
+    new_task->context0.rip    = (uint64_t) switch_to_user_mode;
+    new_task->context0.rsp    = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
+    new_task->kernel_stack    = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+    new_task->user_stack      = page_alloc_random(pcb->page_dir,STACK_SIZE,PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+
+    add_task(new_task);
+    enable_scheduler();
+    open_interrupt;
+    return new_task->pid;
+}
+
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name,pcb_t pcb) {
+    close_interrupt;
+    disable_scheduler();
+    tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
+    memset(new_task, 0, sizeof(struct thread_control_block));
+
+    if(pcb == NULL){
+        new_task->group_index = queue_enqueue(kernel_group->pcb_queue,new_task);
+        new_task->pid = kernel_group->pid_index++;
+        new_task->parent_group = kernel_group;
+    } else{
+        queue_enqueue(pcb->pcb_queue,new_task);
+        new_task->pid = pcb->pid_index++;
+        new_task->parent_group = pcb;
+    }
+
+    new_task->task_level = TASK_KERNEL_LEVEL;
     new_task->cpu_clock  = 0;
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
