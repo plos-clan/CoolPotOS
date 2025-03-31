@@ -131,26 +131,11 @@ void kmain(void) {
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
 
     kinfo("Kernel load Done!");
+    usleep(1000000);
 
     // beep();
-    enable_scheduler();
-
     open_interrupt;
-
-    //    //
-    //    vfs_node_t node = vfs_open("/dev/sata0");
-    //    if (node != NULL) {
-    //        uint8_t *buf = malloc(512);
-    //        memset(buf, 0, 512);
-    //        vfs_read(node, buf, 0, 512);
-    //        for (int i = 0; i < 512; i++) {
-    //            logkf("%02x ", buf[i]);
-    //        }
-    //        logkf("\n");
-    //        free(buf);
-    //        vfs_close(node);
-    //    } else
-    //        kerror("Cannot open /dev/sata1");
+    enable_scheduler();
 
     cpu_hlt;
 }

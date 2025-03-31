@@ -30,6 +30,13 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
+    logkf("Type: %s\n",
+        !(error_code & 0x1) ? "NotPresent"
+        : error_code & 0x2  ? "WriteError"
+        : error_code & 0x4  ? "UserMode"
+        : error_code & 0x8  ? "ReservedBitsSet"
+        : error_code & 0x10 ? "DecodeAddress"
+        : "Unknown");
     if (get_current_task() != NULL) {
         logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
               get_current_task()->name, get_current_task()->parent_group->name);
@@ -106,6 +113,7 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
 page_directory_t *clone_directory(page_directory_t *src) {
     ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
+    not_null_assets(new_directory);
     uint64_t          phy_frame     = alloc_frames(1);
     new_directory->table            = phys_to_virt(phy_frame);
     copy_page_table_recursive(src->table, new_directory->table, 4);

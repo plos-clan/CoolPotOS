@@ -392,6 +392,7 @@ _Noreturn void shell_setup() {
     char *argv[MAX_ARG_NR];
     int   argc      = -1;
     shell_work_path = malloc(1024);
+    not_null_assets(shell_work_path);
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
     infinite_loop {

@@ -16,6 +16,7 @@ extern void save_registers(); // switch.S
 /*ASM CALL*/ registers_t *timer_handle(registers_t *reg) {
     close_interrupt;
     scheduler(reg);
+    send_eoi();
     return reg;
 }
 

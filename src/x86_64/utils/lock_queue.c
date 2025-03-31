@@ -4,6 +4,7 @@
 
 lock_queue *queue_init() {
     lock_queue *q = malloc(sizeof(lock_queue));
+    not_null_assets(q);
     memset(q, 0, sizeof(lock_queue));
     q->head = q->tail = NULL;
     q->next_index     = 0;

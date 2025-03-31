@@ -20,6 +20,22 @@ struct interrupt_frame {
     uint64_t ss;
 };
 
+static inline struct interrupt_frame get_current_registers() {
+    struct interrupt_frame state;
+    __asm__ volatile (
+            "lea (%%rip), %0\n"
+            "mov %%cs, %1\n"
+            "pushfq\n"
+            "pop %2\n"
+            "mov %%rsp, %3\n"
+            "mov %%ss, %4\n"
+            : "=r" (state.rip), "=r" (state.cs), "=r" (state.rflags), "=r" (state.rsp), "=r" (state.ss)
+            :
+            : "memory"
+            );
+    return state;
+}
+
 typedef struct interrupt_frame interrupt_frame_t;
 void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame);
 void print_register(interrupt_frame_t *frame);
