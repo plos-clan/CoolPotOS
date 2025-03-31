@@ -31,9 +31,12 @@ void print_task_info(tcb_t pcb) {
 
 void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     close_interrupt;
+    disable_scheduler();
     init_print_lock();
     ticket_lock(&error_lock);
     logkf("Kernel Error: %s:0x%x\n", msg, code);
+    logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->pid, get_current_task()->name,
+            get_current_task()->parent_group->name, get_current_cpuid());
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n", msg,
            code);
     print_task_info(get_current_task());
@@ -42,6 +45,15 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     ticket_unlock(&error_lock);
     for (;;)
         cpu_hlt;
+}
+
+void not_null_assets(void* ptr){
+    if(ptr == NULL){
+        close_interrupt;
+        disable_scheduler();
+        interrupt_frame_t frame = get_current_registers();
+        kernel_error("KERNEL_NULL_HANDLE",0x0,&frame);
+    }
 }
 
 __IRQHANDLER void double_fault(interrupt_frame_t *frame, uint64_t error_code) {

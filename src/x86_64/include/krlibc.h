@@ -37,6 +37,8 @@
 
 static inline void empty() {}
 
+void not_null_assets(void* ptr); // error_handle.c defined
+
 int memcmp(const void *a_, const void *b_, size_t size);
 
 void *memcpy(void *s, const void *ct, size_t n);

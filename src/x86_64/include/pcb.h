@@ -16,6 +16,13 @@
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
 
+typedef enum {
+    RUNNING,
+    WAIT,
+    DEATH,
+    START,
+}TaskStatus;
+
 struct process_control_block {
     char              name[50];    // 进程名
     int               pid_index;   // 线程PID累加索引
@@ -30,6 +37,7 @@ struct thread_control_block {
     pcb_t         parent_group; // 父进程
     uint8_t       task_level;   // 线程权限等级
     int           pid;          // 线程 TID
+    TaskStatus    status;       // 线程状态
     char          name[50];     // 线程名
     uint64_t      cpu_clock;    // CPU 调度时间片
     uint64_t      cpu_timer;    // CPU 占用时间
@@ -38,6 +46,7 @@ struct thread_control_block {
     TaskContext   context0;     // 线程上下文
     fpu_context_t fpu_context;  // 浮点寄存器上下文
     bool          fpu_flags;    // 浮点启用标志
+    uint64_t      main;         // 入口函数地址
     uint64_t      kernel_stack; // 内核栈
     uint64_t      user_stack;   // 用户栈
     uint64_t      mem_usage;    // 内存利用率

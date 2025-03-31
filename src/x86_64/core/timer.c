@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "alloc.h"
+#include "krlibc.h"
 
 timer_t *alloc_timer() {
     timer_t *timer0 = malloc(sizeof(timer_t));

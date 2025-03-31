@@ -36,14 +36,14 @@ int add_task(tcb_t new_task) {
     smp_cpu_t *cpu0  = get_cpu_smp(bsp_processor_id);
     uint32_t   cpuid = bsp_processor_id;
 
-    //    for (size_t i = 0; i < cpu_count; i++) {
-    //        smp_cpu_t *cpu = get_cpu_smp(i);
-    //        if (cpu == NULL) continue;
-    //        if (cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size) {
-    //            cpu0  = cpu;
-    //            cpuid = i;
-    //        }
-    //    }
+    for (size_t i = 0; i < cpu_count; i++) {
+        smp_cpu_t *cpu = get_cpu_smp(i);
+        if (cpu == NULL) continue;
+        if (cpu->flags == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size) {
+            cpu0  = cpu;
+            cpuid = i;
+        }
+    }
 
     logkf("Add task PID: %d, CPU %d, idle: %#p\n", new_task->pid, cpuid, cpu0->idle_pcb);
 
@@ -105,6 +105,11 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
     current_task0->context0.rflags = reg->rflags;
     current_task0->context0.rip    = reg->rip;
     current_task0->context0.rsp    = reg->rsp;
+    current_task0->context0.ss     = reg->ss;
+    current_task0->context0.es     = reg->es;
+    current_task0->context0.gs     = reg->gs;
+    current_task0->context0.cs     = reg->cs;
+    current_task0->context0.ds     = reg->ds;
 
     reg->r15    = taget->context0.r15;
     reg->r14    = taget->context0.r14;
@@ -124,6 +129,11 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
     reg->rflags = taget->context0.rflags;
     reg->rip    = taget->context0.rip;
     reg->rsp    = taget->context0.rsp;
+    reg->ss     = taget->context0.ss;
+    reg->es     = taget->context0.es;
+    reg->ds     = taget->context0.ds;
+    reg->cs     = taget->context0.cs;
+    reg->gs     = taget->context0.gs;
 }
 
 /**
@@ -132,13 +142,11 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
  */
 void scheduler(registers_t *reg) {
     if (is_scheduler) {
-        logkf("cpu cur: %d\n", get_current_cpuid());
         ticket_lock(&scheduler_lock);
         smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
         if (cpu == NULL) {
             logkf("Error: scheduler null %d\n", get_current_cpuid());
             ticket_unlock(&scheduler_lock);
-            send_eoi();
             return;
         }
         if (cpu->current_pcb != NULL) {
@@ -151,7 +159,6 @@ void scheduler(registers_t *reg) {
 
             if (cpu->scheduler_queue->size == 1) {
                 ticket_unlock(&scheduler_lock);
-                send_eoi();
                 return;
             }
             if (cpu->iter_node == NULL) {
@@ -176,5 +183,4 @@ void scheduler(registers_t *reg) {
         }
         ticket_unlock(&scheduler_lock);
     }
-    send_eoi();
 }
