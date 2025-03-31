@@ -3,7 +3,7 @@
 /**
  * 定义cpinl内核的各种属性
  */
-#define KERNEL_NAME    "cpinl-x86_64-0.1.2" // 内核编号
+#define KERNEL_NAME    "cpinl-x86_64-0.1.4" // 内核编号
 #define MAX_CPU        (256)                // 最大支持CPU核心数 256
 #define KERNEL_HEAP    0x800000             // 内核堆大小 8MB
 #define STACK_SIZE     32768                // 栈大小(byte)
