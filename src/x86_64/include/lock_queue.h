@@ -37,7 +37,7 @@ int queue_enqueue(lock_queue *q, void *data);
  * @param index 索引
  * @return 被删除节点的句柄
  */
-void *queue_remove_at(lock_queue *q, int index);
+void *queue_remove_at(lock_queue *q, size_t index);
 
 /**
  * 出队操作

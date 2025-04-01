@@ -17,10 +17,10 @@ typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
 
 typedef enum {
-    RUNNING,
-    WAIT,
-    DEATH,
-    START,
+    RUNNING, // 运行中
+    WAIT,    // 线程阻塞
+    DEATH,   // 死亡(无法被调度)
+    START,   // 准备调度
 }TaskStatus;
 
 struct process_control_block {
@@ -31,6 +31,7 @@ struct process_control_block {
     size_t            queue_index; // 进程队列索引
     page_directory_t *page_dir;    // 进程页表
     tty_t            *tty;         // tty设备
+    TaskStatus        status;      // 进程状态
 };
 
 struct thread_control_block {

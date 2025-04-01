@@ -74,11 +74,13 @@ int input_char_inSM() {
     int   i    = -1;
     tcb_t task = get_current_task();
     if (task == NULL) return 0;
+    task->status = WAIT;
     task->parent_group->tty->is_key_wait = true;
     do {
         i = atom_pop(task->parent_group->tty->keyboard_buffer);
     } while (i == -1);
     task->parent_group->tty->is_key_wait = false;
+    task->status = RUNNING;
     return i;
 }
 
