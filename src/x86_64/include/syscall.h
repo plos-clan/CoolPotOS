@@ -26,6 +26,6 @@
 
 #include "ctype.h"
 
-typedef uint64_t (*syscall_t)(uint64_t , uint64_t , uint64_t , uint64_t , uint64_t);
+typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
 void setup_syscall();

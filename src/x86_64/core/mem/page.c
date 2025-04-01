@@ -14,13 +14,13 @@
 
 ticketlock page_lock;
 
-page_directory_t  kernel_page_dir;
+page_directory_t kernel_page_dir;
 page_directory_t *current_directory = NULL;
 
 uint64_t double_fault_page = 0;
 
 static bool is_huge_page(page_table_entry_t *entry) {
-    return (((uint64_t)entry->value) & PTE_HUGE) != 0;
+    return (((uint64_t) entry->value) & PTE_HUGE) != 0;
 }
 
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t error_code) {
@@ -31,26 +31,25 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
     logkf("Type: %s\n",
-        !(error_code & 0x1) ? "NotPresent"
-        : error_code & 0x2  ? "WriteError"
-        : error_code & 0x4  ? "UserMode"
-        : error_code & 0x8  ? "ReservedBitsSet"
-        : error_code & 0x10 ? "DecodeAddress"
-        : "Unknown");
+          !(error_code & 0x1) ? "NotPresent"
+          : error_code & 0x2 ? "WriteError"
+          : error_code & 0x4 ? "UserMode"
+          : error_code & 0x8 ? "ReservedBitsSet"
+          : error_code & 0x10 ? "DecodeAddress"
+          : "Unknown");
     if (get_current_task() != NULL) {
         logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
               get_current_task()->name, get_current_task()->parent_group->name);
     }
     printk("\n");
-    printk(
-        "\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
-        !(error_code & 0x1) ? "NotPresent"
-        : error_code & 0x2  ? "WriteError"
-        : error_code & 0x4  ? "UserMode"
-        : error_code & 0x8  ? "ReservedBitsSet"
-        : error_code & 0x10 ? "DecodeAddress"
-                            : "Unknown",
-        faulting_address);
+    printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
+            !(error_code & 0x1) ? "NotPresent"
+            : error_code & 0x2 ? "WriteError"
+            : error_code & 0x4 ? "UserMode"
+            : error_code & 0x8 ? "ReservedBitsSet"
+            : error_code & 0x10 ? "DecodeAddress"
+            : "Unknown",
+            faulting_address);
     if (get_current_task() != NULL) {
         printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->pid,
                get_current_task()->name, get_current_task()->parent_group->name,
@@ -69,14 +68,14 @@ void page_table_clear(page_table_t *table) {
 }
 
 page_table_t *page_table_create(page_table_entry_t *entry) {
-    if (entry->value == (uint64_t)NULL) {
+    if (entry->value == (uint64_t) NULL) {
         uint64_t frame      = alloc_frames(1);
         entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
-        page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0x000fffffffff000);
+        page_table_t *table = (page_table_t *) phys_to_virt(entry->value & 0x000fffffffff000);
         page_table_clear(table);
         return table;
     }
-    page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0x000fffffffff000);
+    page_table_t *table = (page_table_t *) phys_to_virt(entry->value & 0x000fffffffff000);
     return table;
 }
 
@@ -99,8 +98,8 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
             continue;
         }
 
-        uint64_t      frame          = alloc_frames(1);
-        page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
+        uint64_t frame               = alloc_frames(1);
+        page_table_t *new_page_table = (page_table_t *) phys_to_virt(frame);
         new_table->entries[i].value  = frame | (entry->value & 0xFFF);
 
         page_table_t *source_page_table_next = phys_to_virt(entry->value & 0x000fffffffff000);
@@ -114,8 +113,8 @@ page_directory_t *clone_directory(page_directory_t *src) {
     ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     not_null_assets(new_directory);
-    uint64_t          phy_frame     = alloc_frames(1);
-    new_directory->table            = phys_to_virt(phy_frame);
+    uint64_t phy_frame   = alloc_frames(1);
+    new_directory->table = phys_to_virt(phy_frame);
     copy_page_table_recursive(src->table, new_directory->table, 4);
     ticket_unlock(&page_lock);
     return new_directory;
@@ -153,16 +152,16 @@ void switch_page_directory(page_directory_t *dir) {
         cpu->directory = dir;
     } else
         current_directory = dir;
-    page_table_t *physical_table = virt_to_phys((uint64_t)dir->table);
+    page_table_t *physical_table = virt_to_phys((uint64_t) dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }
 
 uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags) {
     if (length == 0) return -1;
-    size_t   p    = length / PAGE_SIZE;
+    size_t p      = length / PAGE_SIZE;
     uint64_t addr = alloc_frames(p == 0 ? 1 : p);
     for (uint64_t i = 0; i < length; i += 0x1000) {
-        uint64_t var = (uint64_t)addr + i;
+        uint64_t var = (uint64_t) addr + i;
         page_map_to(directory, var, var, flags);
     }
     return addr;
@@ -171,7 +170,7 @@ uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_
 void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64_t length,
                               uint64_t flags) {
     for (uint64_t i = 0; i < length; i += 0x1000) {
-        uint64_t var = (uint64_t)addr + i;
+        uint64_t var = (uint64_t) addr + i;
         page_map_to(directory, var, alloc_frames(1), flags);
     }
 }
@@ -179,16 +178,16 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
 void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t length,
                        uint64_t flags) {
     for (uint64_t i = 0; i < length; i += 0x1000) {
-        uint64_t var = (uint64_t)phys_to_virt(frame + i);
+        uint64_t var = (uint64_t) phys_to_virt(frame + i);
         page_map_to(directory, var, frame + i, flags);
     }
 }
 
 void page_setup() {
-    page_table_t *kernel_page_table = (page_table_t *)phys_to_virt(get_cr3());
-    kernel_page_dir                 = (page_directory_t){.table = kernel_page_table};
-    double_fault_page               = get_cr3();
-    register_interrupt_handler(14, (void *)page_fault_handle, 0, 0x8E);
+    page_table_t *kernel_page_table = (page_table_t *) phys_to_virt(get_cr3());
+    kernel_page_dir   = (page_directory_t) {.table = kernel_page_table};
+    double_fault_page = get_cr3();
+    register_interrupt_handler(14, (void *) page_fault_handle, 0, 0x8E);
     current_directory = &kernel_page_dir;
     kinfo("Kernel page table in 0x%p", kernel_page_table);
 }
