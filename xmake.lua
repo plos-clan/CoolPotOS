@@ -123,7 +123,7 @@ target("default_build")
             --"-enable-kvm",
             -- "-d", "in_asm,int",
             -- "-d", "int",
-            -- "-S","-s",
+            "-S","-s",
             --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
             --"-device","nec-usb-xhci,id=xhci",
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",

@@ -54,13 +54,13 @@ USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_M
 LIMINE_REQUEST LIMINE_BASE_REVISION(2);
 
 LIMINE_REQUEST struct limine_stack_size_request stack_request = {
-    .id         = LIMINE_STACK_SIZE_REQUEST,
-    .revision   = 0,
-    .stack_size = KERNEL_ST_SZ // 128K
+        .id         = LIMINE_STACK_SIZE_REQUEST,
+        .revision   = 0,
+        .stack_size = KERNEL_ST_SZ // 128K
 };
 
-extern void  error_setup();    // error_handle.c
-extern void  iso9660_regist(); // iso9660.c
+extern void error_setup();    // error_handle.c
+extern void iso9660_regist(); // iso9660.c
 extern tcb_t kernel_head_task; // scheduler.c
 
 _Noreturn void cp_shutdown() {
@@ -125,10 +125,10 @@ void kmain(void) {
     setup_syscall();
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
-    create_kernel_thread((void *)cpu_speed_test, NULL, "CPUSpeed", NULL);
+    create_kernel_thread((void *) cpu_speed_test, NULL, "CPUSpeed", NULL);
 
     pcb_t shell_group = create_process_group("Shell Service", NULL);
-    create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
+    create_kernel_thread((void *) shell_setup, NULL, "KernelShell", shell_group);
 
     kinfo("Kernel load Done!");
     usleep(1000000);

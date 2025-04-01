@@ -3,9 +3,17 @@
 .section .text
 
 .global asm_syscall_entry
+.global asm_syscall_handle
+
 .extern syscall_handle
 
-asm_syscall_entry:
+asm_syscall_handle: //syscall指令式高效系统调用
+    SWAPGS
+    CALL syscall_handle
+    SWAPGS
+    SYSRET
+
+asm_syscall_entry: //通用中断陷阱门式系统调用
     PUSH 0 //对齐
     PUSH 0 //对齐
     PUSH R15
