@@ -58,6 +58,9 @@ void kill_proc(pcb_t pcb) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
     }
+    pcb->status = DEATH;
+    queue_destroy(pcb->pcb_queue);
+    queue_remove_at(pgb_queue,pcb->queue_index);
     free_tty(pcb->tty);
     free(pcb);
 }
@@ -70,6 +73,7 @@ void kill_thread(tcb_t task) {
     ticket_lock(&pcb_lock);
     close_interrupt;
     disable_scheduler(); // 终止调度器, 防止释放被杀线程时候调度到该线程发生错误
+    task->status = DEATH;
     free(task->time_buf);
 
     remove_task(task);
@@ -111,6 +115,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory) {
     new_pgb->tty         = alloc_default_tty(); //初始化TTY设备
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->queue_index = queue_enqueue(pgb_queue, new_pgb);
+    new_pgb->status = START;
     return new_pgb;
 }
 
@@ -145,13 +150,14 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     *(--stack_top)            = (uint64_t)switch_to_user_mode;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
-    new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
-    new_task->user_stack =
+    new_task->context0.rsp    = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
+    new_task->kernel_stack    = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+    new_task->user_stack      =
         page_alloc_random(pcb->page_dir, STACK_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    new_task->main = (uint64_t)_start;
-    new_task->context0.cs = 0x8;
-    new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
+    new_task->main            = (uint64_t)_start;
+    new_task->context0.cs     = 0x8;
+    new_task->context0.ss     = new_task->context0.es = new_task->context0.ds = 0x10;
+    new_task->status          = START;
 
     add_task(new_task);
     enable_scheduler();
@@ -188,11 +194,12 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     *(--stack_top)            = (uint64_t)_start;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)_start;
-    new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
-    new_task->user_stack = new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
-    new_task->context0.cs = 0x8;
-    new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
+    new_task->context0.rsp    = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
+    new_task->kernel_stack    = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+    new_task->user_stack      = new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
+    new_task->context0.cs     = 0x8;
+    new_task->context0.ss     = new_task->context0.es = new_task->context0.ds = 0x10;
+    new_task->status          = START;
 
     add_task(new_task);
     enable_scheduler();
@@ -207,11 +214,12 @@ void init_pcb() {
 
     kernel_group = malloc(sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
-    kernel_group->pid_index = kernel_group->pgb_id = now_pid++;
-    kernel_group->pcb_queue                        = queue_init();
-    kernel_group->queue_index                      = queue_enqueue(pgb_queue, kernel_group);
-    kernel_group->page_dir                         = get_kernel_pagedir();
-    kernel_group->tty                              = get_default_tty();
+    kernel_group->pid_index   = kernel_group->pgb_id = now_pid++;
+    kernel_group->pcb_queue   = queue_init();
+    kernel_group->queue_index = queue_enqueue(pgb_queue, kernel_group);
+    kernel_group->page_dir    = get_kernel_pagedir();
+    kernel_group->tty         = get_default_tty();
+    kernel_group->status      = RUNNING;
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;
@@ -225,6 +233,7 @@ void init_pcb() {
     kernel_head_task->cpu_timer       = nanoTime();
     kernel_head_task->time_buf        = alloc_timer();
     kernel_head_task->cpu_id          = get_current_cpuid();
+    kernel_head_task->status          = RUNNING;
     char name[50];
     sprintf(name, "CP_IDLE_CPU%lu", get_current_cpuid());
     memcpy(kernel_head_task->name, name, strlen(name));

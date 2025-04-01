@@ -35,7 +35,7 @@ int queue_enqueue(lock_queue *q, void *data) {
     return new_node->index;
 }
 
-void *queue_remove_at(lock_queue *q, int index) {
+void *queue_remove_at(lock_queue *q, size_t index) {
     if (index < 0 || q == NULL) return NULL;
     ticket_trylock(&q->lock);
     lock_node *current = q->head;

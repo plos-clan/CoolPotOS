@@ -1,8 +1,10 @@
 #include "syscall.h"
 #include "io.h"
+#include "krlibc.h"
 #include "kprint.h"
 #include "scheduler.h"
 #include "keyboard.h"
+#include "pcb.h"
 
 extern void asm_syscall_entry();
 
@@ -28,10 +30,18 @@ syscall_(getch) {
     return kernel_getch();
 }
 
+syscall_(exit) {
+    int exit_code = arg0;
+    get_current_task()->status = DEATH;
+    cpu_hlt;
+    return 0;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
         [SYSCALL_PUTC] = syscall_putc,
         [SYSCALL_PRINT] = syscall_print,
         [SYSCALL_GETCH] = syscall_getch,
+        [SYSCALL_EXIT] = syscall_exit,
 };
 
 registers_t *syscall_handle(registers_t *reg) {

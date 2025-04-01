@@ -188,7 +188,7 @@ void ps(int argc, char **argv) {
                 }
             }
         }
-        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     ProcessorID\n", longest_name_len,
+        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  ProcessorID\n", longest_name_len,
                "NAME", longest_pgb_len, "GROUP");
         for (size_t i = 0; i < MAX_CPU; i++) {
             smp_cpu_t cpu = cpus[i];
@@ -197,9 +197,14 @@ void ps(int argc, char **argv) {
                     tcb_t pcb  = (tcb_t)queue->data;
                     all_time  += pcb->cpu_timer;
                     if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
-                    printk("%-5d%-*s %-*s  %-10d %-10d%-10dCPU%-d\n", pcb->pid, longest_name_len,
+                    printk("%-5d%-*s %-*s  %-10d %-10d%-10d%sCPU%-d\n", pcb->pid, longest_name_len,
                            pcb->name, longest_pgb_len, pcb->parent_group->name, pcb->mem_usage,
-                           pcb->task_level, pcb->cpu_clock, pcb->cpu_id);
+                           pcb->task_level, pcb->cpu_clock,
+                           pcb->status == RUNNING ? "Running " :
+                           pcb->status == START   ? "Start   " :
+                           pcb->status == WAIT    ? "Wait    " :
+                                                    "Death   "
+                           , pcb->cpu_id);
                 }
             }
         }

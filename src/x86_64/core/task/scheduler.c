@@ -45,8 +45,6 @@ int add_task(tcb_t new_task) {
         }
     }
 
-    logkf("Add task PID: %d, CPU %d, idle: %#p\n", new_task->pid, cpuid, cpu0->idle_pcb);
-
     if (cpu0 == NULL) {
         ticket_unlock(&scheduler_lock);
         return -1;
@@ -54,7 +52,6 @@ int add_task(tcb_t new_task) {
     new_task->cpu_id = cpuid;
     new_task->queue_index = queue_enqueue(cpu0->scheduler_queue, new_task);
     if (new_task->queue_index == (size_t) -1) {
-        logkf("Error: scheduler null %d\n", get_current_cpuid());
         return -1;
     }
 
@@ -157,6 +154,8 @@ void scheduler(registers_t *reg) {
             }
             cpu->current_pcb->time_buf = alloc_timer();
 
+            // 下一任务选取
+            tcb_t next;
             if (cpu->scheduler_queue->size == 1) {
                 ticket_unlock(&scheduler_lock);
                 return;
@@ -164,18 +163,24 @@ void scheduler(registers_t *reg) {
             if (cpu->iter_node == NULL) {
                 iter_head:
                 cpu->iter_node = cpu->scheduler_queue->head;
+                next = (tcb_t)cpu->iter_node->data;
             } else {
+                resche:
                 cpu->iter_node = cpu->iter_node->next;
                 if (cpu->iter_node == NULL) goto iter_head;
+                next = (tcb_t) cpu->iter_node->data;
+                not_null_assets(next);
+                if(next->status == DEATH) goto resche;
             }
-            void *data = NULL;
-            if (cpu->iter_node != NULL) { data = cpu->iter_node->data; }
 
-            tcb_t next = (tcb_t) data;
-
+            // 正式切换
             if (cpu->current_pcb->parent_group != next->parent_group ||
                 cpu->current_pcb->pid != next->pid) {
                 disable_scheduler();
+                if(cpu->current_pcb->status == RUNNING)
+                    cpu->current_pcb->status = START;
+                if(next->status == START)
+                    next->status = RUNNING;
                 change_proccess(reg, cpu->current_pcb, next);
                 cpu->current_pcb = next;
                 enable_scheduler();
