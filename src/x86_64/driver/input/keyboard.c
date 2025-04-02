@@ -8,8 +8,7 @@
 #include "pcb.h"
 #include "smp.h"
 
-static int       caps_lock, shift, e0_flag = 0, ctrl = 0;
-int              disable_flag = 0;
+static int       caps_lock, shift, ctrl = 0;
 ticketlock       keyboard_lock;
 extern tcb_t     kernel_head_task;
 extern smp_cpu_t cpus[MAX_CPU];
@@ -39,11 +38,6 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     send_eoi();
-    // printk("Key: %d",scancode);
-    if (scancode == 0xe0) {
-        e0_flag = 1;
-        return;
-    }
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
     }
@@ -60,7 +54,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         ctrl = 0;
     }
 
-    if (scancode < 0x80) {
+    if (scancode < 0x80 || scancode == 0xe0) {
         for (size_t i = 0; i < MAX_CPU; i++) {
             smp_cpu_t cpu = cpus[i];
             if (cpu.flags == 1) { queue_iterate(cpu.scheduler_queue, key_callback, &scancode); }
@@ -85,18 +79,19 @@ int input_char_inSM() {
 
 int kernel_getch() {
     uint8_t ch;
-    ch = input_char_inSM(); // 扫描码
-
+    do {
+        ch = input_char_inSM(); // 扫描码
+    } while (ch == 0xff);
     if (ch == 0xe0) { // keytable之外的键（↑,↓,←,→）
         ch = input_char_inSM();
         if (ch == 0x48) { // ↑
-            return -1;
-        } else if (ch == 0x50) { // ↓
             return -2;
-        } else if (ch == 0x4b) { // ←
+        } else if (ch == 0x50) { // ↓
             return -3;
-        } else if (ch == 0x4d) { // →
+        } else if (ch == 0x4b) { // ←
             return -4;
+        } else if (ch == 0x4d) { // →
+            return -5;
         }
     }
     // 返回扫描码(keytable之内)对应的ASCII码
