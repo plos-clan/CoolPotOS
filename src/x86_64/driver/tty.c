@@ -1,9 +1,7 @@
 #include "tty.h"
-#include "alloc.h"
 #include "gop.h"
 #include "kprint.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "lock.h"
 #include "mpmc_queue.h"
 #include "terminal.h"
@@ -15,7 +13,6 @@ ticketlock    tty_lock;
 extern bool open_flush; // terminal.c
 
 static void tty_kernel_print(tty_t *tty, const char *msg) {
-    UNUSED(tty);
     if (open_flush)
         terminal_puts(msg);
     else {
@@ -26,7 +23,6 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
 }
 
 static void tty_kernel_putc(tty_t *tty, int c) {
-    UNUSED(tty);
     if (open_flush)
         terminal_putc((char)c);
     else {

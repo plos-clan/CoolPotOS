@@ -3,7 +3,7 @@
  * Copyright by xingji-studio 2025
  */
 #include "nvme.h"
-#include "alloc.h"
+#include "heap.h"
 #include "hhdm.h"
 #include "klog.h"
 #include "kprint.h"

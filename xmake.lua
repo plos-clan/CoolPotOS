@@ -65,6 +65,7 @@ target("kernel64")
 
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float","-nostdinc")
     add_cflags("-mcmodel=kernel","-mno-red-zone")
+    add_cflags("-Wno-unused-parameter")
     add_ldflags("-static","-nostdlib")
 
     add_files("src/x86_64/**/*.c")

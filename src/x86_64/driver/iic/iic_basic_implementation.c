@@ -31,7 +31,6 @@ void iic_slaveDelete(list_t *head, IIC_slaveNode *node) {
 }
 
 void iic_slaveForeach(list_t *head, void (*func)(IIC_Slave *)) {
-    UNUSED(func);
     list_foreach(*head, func);
 }
 
@@ -58,33 +57,26 @@ uint8_t Get_iic_masterAddress(pci_device_t *IIC_Master_Controller) {
 }
 
 void iic_start(IIC_Master *IIC_Master) {
-    UNUSED(IIC_Master);
     // 启动兼容性
 }
 
 void iic_stop(IIC_Master *IIC_Master) {
-    UNUSED(IIC_Master);
     // 兼容性
 }
 
 void iic_sendStart(IIC_Master *IIC_Master) {
-    UNUSED(IIC_Master);
     // 起始信号兼容性
 }
 
 void iic_sendStop(IIC_Master *IIC_Master) {
-    UNUSED(IIC_Master);
     // 停止信号兼容性
 }
 
 void iic_sendByte(IIC_Master *IIC_Master, uint8_t data) {
-    UNUSED(IIC_Master);
-    UNUSED(data);
     // 发送字节兼容性
 }
 
 uint8_t iic_receiveByte(IIC_Master *IIC_Master) {
-    UNUSED(IIC_Master);
     // 接收字节兼容性
     return 0;
 }

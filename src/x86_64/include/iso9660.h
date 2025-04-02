@@ -107,7 +107,7 @@ typedef union {
     char               _bits[2048];
 } l9660_vdesc;
 
-typedef struct l9660_file;
+struct l9660_file;
 
 typedef struct l9660_fs {
 #ifdef L9660_SINGLEBUFFER

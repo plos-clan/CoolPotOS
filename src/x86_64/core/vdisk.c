@@ -9,8 +9,6 @@
 vdisk vdisk_ctl[26];
 
 static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    UNUSED(lba);
-    UNUSED(drive);
     for (size_t i = 0; i < number; i++) {
         char c    = (char)kernel_getch();
         buffer[i] = c;
@@ -19,8 +17,6 @@ static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba
 
 static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     tty_t *tty;
-    UNUSED(drive);
-    UNUSED(lba);
     if (get_current_task() == NULL) {
         tty = get_default_tty();
     } else

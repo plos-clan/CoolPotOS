@@ -6,7 +6,6 @@
 #define ALL_IMPLEMENTATION
 
 #include "vfs.h"
-#include "alloc.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "list.h"
@@ -138,7 +137,6 @@ err:
 }
 
 int vfs_regist(const char *name, vfs_callback_t callback) {
-    UNUSED(name);
     if (callback == NULL) return VFS_STATUS_FAILED;
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         if (((void **)callback)[i] == NULL) return VFS_STATUS_FAILED;
@@ -235,8 +233,6 @@ void vfs_free_child(vfs_node_t vfs) {
 int vfs_mount(const char *src, vfs_node_t node) {
     if (node == NULL) return VFS_STATUS_FAILED;
     if (node->type != file_dir) return VFS_STATUS_FAILED;
-    void *handle = NULL;
-    UNUSED(handle);
     for (int i = 1; i < fs_nextid; i++) {
         if (fs_callbacks[i]->mount(src, node) == 0) {
             node->fsid = i;

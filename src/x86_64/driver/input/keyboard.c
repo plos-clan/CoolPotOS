@@ -35,7 +35,6 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
-    UNUSED(frame);
     ticket_lock(&keyboard_lock);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);

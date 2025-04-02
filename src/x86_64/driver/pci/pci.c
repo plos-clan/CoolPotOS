@@ -1,6 +1,6 @@
 #include "pci.h"
 #include "acpi.h"
-#include "alloc.h"
+#include "heap.h"
 #include "hhdm.h"
 #include "io.h"
 #include "kprint.h"

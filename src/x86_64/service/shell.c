@@ -104,7 +104,6 @@ static void reboot_os() {
 }
 
 static void cd(int argc, char **argv) {
-    UNUSED(argv);
     if (argc == 1) {
         printk("If there are too few parameters.\n");
         return;
@@ -161,11 +160,11 @@ void ps(int argc, char **argv) {
             if (strlen(longest_name->name) > longest_name_len)
                 longest_name_len = strlen(longest_name->name);
         }
-        printk("GID  %-*s  TaskNum\n", longest_name_len, "NAME");
+        printk("GID  %-*s  TaskNum User\n", longest_name_len, "NAME");
         queue_foreach(pgb_queue, thread) {
             pcb_t pgb = (pcb_t)thread->data;
-            printk("%-5d%-*s  %-7d\n", pgb->pgb_id, longest_name_len, pgb->name,
-                   pgb->pcb_queue->size);
+            printk("%-5d%-*s  %-7d %s\n", pgb->pgb_id, longest_name_len, pgb->name,
+                   pgb->pcb_queue->size,pgb->user->name);
         }
     } else if (strcmp(argv[1], "pcb") == 0) {
         extern smp_cpu_t cpus[MAX_CPU];
@@ -216,7 +215,6 @@ void ps(int argc, char **argv) {
 }
 
 static void ls(int argc, char **argv) {
-    UNUSED(argv);
     vfs_node_t p;
     if (argc == 1) {
         p = vfs_open(shell_work_path);
@@ -258,7 +256,6 @@ static void pkill(int argc, char **argv) {
 }
 
 static void echo(int argc, char **argv) {
-    UNUSED(argv);
     if (argc == 1) {
         printk("[Shell-ECHO]: If there are too few parameters.\n");
         return;
@@ -330,7 +327,7 @@ static void luser(int argc, char **argv) {
         kwarn("Cannot load elf file.");
         return;
     }
-    pcb_t user_task = create_process_group(module->module_name, up);
+    pcb_t user_task = create_process_group(module->module_name, up, get_current_task()->parent_group->user);
     create_user_thread(main, "main", user_task);
 }
 
@@ -390,9 +387,9 @@ _Noreturn void shell_setup() {
            " * Website:           https://github.com/plos-clan\n"
            " System information as of %s \n"
            "  Tasks:              %d\n"
-           "  Logged:             Kernel\n"
+           "  Logged:             %s\n"
            "MIT License 2024-2025 XIAOYI12 (Build by xmake&clang)\n",
-           KERNEL_NAME, get_date_time(), get_all_task());
+           KERNEL_NAME, get_date_time(), get_all_task(),get_current_task()->parent_group->user->name);
     char  com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];
     int   argc      = -1;
@@ -401,7 +398,9 @@ _Noreturn void shell_setup() {
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
     infinite_loop {
-        printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ", shell_work_path);
+        printk("\033[32m%s@localhost: \033[34m%s \033[39m$ ",
+               get_current_task()->parent_group->user->name,
+               shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
         strcpy(com_copy, com);

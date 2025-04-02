@@ -1,5 +1,5 @@
 #include "smp.h"
-#include "alloc.h"
+#include "heap.h"
 #include "description_table.h"
 #include "fpu.h"
 #include "hhdm.h"

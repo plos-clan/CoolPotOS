@@ -1,4 +1,4 @@
-#include "alloc.h"
+#include "heap.h"
 #include "io.h"
 #include "sprintf.h"
 #include "timer.h"

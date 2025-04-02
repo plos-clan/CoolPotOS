@@ -60,7 +60,6 @@ bool mousedecode(uint8_t data) {
 }
 
 __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
-    UNUSED(frame);
     send_eoi();
     ticket_lock(&mouse_lock);
     uint8_t data = io_in8(PS2_DATA_PORT);
