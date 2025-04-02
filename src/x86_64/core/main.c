@@ -16,12 +16,11 @@
 #include "krlibc.h"
 #include "limine.h"
 #include "module.h"
-#include "nvme.h"
+#include "sysuser.h"
 #include "page.h"
 #include "pcb.h"
 #include "pcie.h"
 #include "pcnet.h"
-#include "pivfs.h"
 #include "power.h"
 #include "shell.h"
 #include "smbios.h"
@@ -94,6 +93,7 @@ void kmain(void) {
     error_setup();
     float_processor_setup();
     dlinker_init();
+    user_setup();
     smbios_setup();
     acpi_setup();
     keyboard_setup();
@@ -115,7 +115,6 @@ void kmain(void) {
     // rtl8169_setup();
     pcnet_setup();
     disable_scheduler();
-    pivfs_setup();
     init_pcb();
     smp_setup();
 
@@ -123,15 +122,13 @@ void kmain(void) {
     init_iic();
 
     setup_syscall();
+    kinfo("Kernel load Done!");
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
     create_kernel_thread((void *) cpu_speed_test, NULL, "CPUSpeed", NULL);
 
-    pcb_t shell_group = create_process_group("Shell Service", NULL);
+    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL);
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell", shell_group);
-
-    kinfo("Kernel load Done!");
-    usleep(1000000);
 
     // beep();
     open_interrupt;

@@ -1,5 +1,5 @@
 #include "atom_queue.h"
-#include "alloc.h"
+#include "heap.h"
 #include "io.h"
 #include "krlibc.h"
 

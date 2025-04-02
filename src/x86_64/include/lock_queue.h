@@ -5,7 +5,7 @@
 typedef struct LockNode {
     void            *data;
     struct LockNode *next;
-    int              index;
+    size_t           index;
 } lock_node;
 
 typedef struct {
@@ -29,7 +29,7 @@ lock_queue *queue_init();
  * @param data 存储的句柄
  * @return 该节点的索引
  */
-int queue_enqueue(lock_queue *q, void *data);
+size_t queue_enqueue(lock_queue *q, void *data);
 
 /**
  * 删除指定索引的节点

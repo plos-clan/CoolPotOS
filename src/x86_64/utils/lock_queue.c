@@ -1,5 +1,5 @@
 #include "lock_queue.h"
-#include "alloc.h"
+#include "heap.h"
 #include "krlibc.h"
 
 lock_queue *queue_init() {
@@ -14,7 +14,7 @@ lock_queue *queue_init() {
     return q;
 }
 
-int queue_enqueue(lock_queue *q, void *data) {
+size_t queue_enqueue(lock_queue *q, void *data) {
     if (q == NULL) return -1;
     lock_node *new_node = (lock_node *)malloc(sizeof(lock_node));
     if (!new_node) return -1;
@@ -36,7 +36,7 @@ int queue_enqueue(lock_queue *q, void *data) {
 }
 
 void *queue_remove_at(lock_queue *q, size_t index) {
-    if (index < 0 || q == NULL) return NULL;
+    if (q == NULL) return NULL;
     ticket_trylock(&q->lock);
     lock_node *current = q->head;
     lock_node *prev    = NULL;

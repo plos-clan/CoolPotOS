@@ -1,12 +1,11 @@
 #include "pcb.h"
-#include "alloc.h"
+#include "heap.h"
 #include "description_table.h"
 #include "heap.h"
 #include "io.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
-#include "pivfs.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -24,8 +23,8 @@ int now_pid = 0;
 _Noreturn void process_exit() {
     uint64_t rax = 0;
     __asm__("movq %%rax,%0" ::"r"(rax) :);
-    printk("Kernel Process exit, Code: %d\n", rax);
-    kill_proc(get_current_task());
+    printk("Kernel thread exit, Code: %d\n", rax);
+    kill_thread(get_current_task());
     infinite_loop;
 }
 
@@ -61,7 +60,6 @@ void kill_proc(pcb_t pcb) {
     pcb->status = DEATH;
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue,pcb->queue_index);
-    free_tty(pcb->tty);
     free(pcb);
 }
 
@@ -106,13 +104,14 @@ void kill_all_proc() {
     lapic_timer_stop();
 }
 
-pcb_t create_process_group(char *name, page_directory_t *directory) {
+pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle) {
     pcb_t new_pgb   = malloc(sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
     strcpy(new_pgb->name, name);
     new_pgb->pcb_queue   = queue_init();
     new_pgb->pid_index   = 0;
-    new_pgb->tty         = alloc_default_tty(); //初始化TTY设备
+    new_pgb->tty         = alloc_default_tty();
+    new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->queue_index = queue_enqueue(pgb_queue, new_pgb);
     new_pgb->status = START;
@@ -218,6 +217,7 @@ void init_pcb() {
     kernel_group->pcb_queue   = queue_init();
     kernel_group->queue_index = queue_enqueue(pgb_queue, kernel_group);
     kernel_group->page_dir    = get_kernel_pagedir();
+    kernel_group->user        = get_kernel_user();
     kernel_group->tty         = get_default_tty();
     kernel_group->status      = RUNNING;
 
@@ -238,7 +238,6 @@ void init_pcb() {
     sprintf(name, "CP_IDLE_CPU%lu", get_current_cpuid());
     memcpy(kernel_head_task->name, name, strlen(name));
     kernel_head_task->name[strlen(name)] = '\0';
-    pivfs_update(kernel_head_task);
     kernel_head_task->group_index = queue_enqueue(kernel_group->pcb_queue, kernel_head_task);
 
     kinfo("Load task schedule. | Process(%s) PID: %d", kernel_group->name, kernel_head_task->pid);

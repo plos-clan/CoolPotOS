@@ -1,5 +1,5 @@
 #include "krlibc.h"
-#include "alloc.h"
+#include "heap.h"
 
 int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;

@@ -1,5 +1,5 @@
 #include "ahci.h"
-#include "alloc.h"
+#include "heap.h"
 #include "hhdm.h"
 #include "klog.h"
 #include "kprint.h"

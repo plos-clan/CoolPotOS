@@ -12,6 +12,7 @@
 #include "scheduler.h"
 #include "timer.h"
 #include "tty.h"
+#include "sysuser.h"
 
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
@@ -30,7 +31,8 @@ struct process_control_block {
     lock_queue       *pcb_queue;   // 线程队列
     size_t            queue_index; // 进程队列索引
     page_directory_t *page_dir;    // 进程页表
-    tty_t            *tty;         // tty设备
+    ucb_t             user;        // 用户会话
+    tty_t            *tty;         // TTY设备
     TaskStatus        status;      // 进程状态
 };
 
@@ -88,9 +90,10 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb);
  * 创建一个进程
  * @param name 进程名
  * @param directory == NULL ? 使用内核页表 : 使用新页表
+ * @param user_handle == NULL ? 内核会话 ? 指定用户会话
  * @return 进程指针
  */
-pcb_t create_process_group(char *name, page_directory_t *directory);
+pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle);
 
 /**
  * 获取当前运行的线程(多核下会获取当前CPU正在调度的线程)

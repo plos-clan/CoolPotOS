@@ -4,7 +4,6 @@
 #include "lock.h"
 #include "lock_queue.h"
 #include "pcb.h"
-#include "pivfs.h"
 #include "smp.h"
 
 tcb_t kernel_head_task = NULL;

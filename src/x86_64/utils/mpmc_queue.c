@@ -1,5 +1,5 @@
 #include "mpmc_queue.h"
-#include "alloc.h"
+#include "heap.h"
 #include "kprint.h"
 #include "krlibc.h"
 

@@ -1,5 +1,5 @@
 #include "dlinker.h"
-#include "alloc.h"
+#include "heap.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "sprintf.h"
@@ -15,7 +15,7 @@ static dlfunc_t *find_func(const char *name) {
     return NULL;
 }
 
-void *resolve_symbol(Elf64_Sym *symtab, char *strtab, uint32_t sym_idx) {
+void *resolve_symbol(Elf64_Sym *symtab, uint32_t sym_idx) {
     return (void *)symtab[sym_idx].st_value;
 }
 
@@ -63,7 +63,7 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
     char       *strtab = NULL;
     Elf64_Rela *rel    = NULL;
     Elf64_Rela *jmprel = NULL;
-    size_t      relsz = 0, jmprelsz = 0, symtabsz = 0;
+    size_t      relsz = 0, symtabsz = 0;
 
     while (dyn_entry->d_tag != DT_NULL) {
         switch (dyn_entry->d_tag) {
@@ -85,7 +85,7 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
         uint32_t    type       = ELF64_R_TYPE(r->r_info);
 
         if (type == R_X86_64_GLOB_DAT || type == R_X86_64_JUMP_SLOT) {
-            *reloc_addr = (uint64_t)resolve_symbol(symtab, strtab, sym_idx);
+            *reloc_addr = (uint64_t)resolve_symbol(symtab, sym_idx);
         } else if (type == R_X86_64_RELATIVE) {
             *reloc_addr = (uint64_t)((char *)ehdr + r->r_addend);
         }

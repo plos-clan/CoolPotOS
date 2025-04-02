@@ -1,5 +1,5 @@
 #include "timer.h"
-#include "alloc.h"
+#include "heap.h"
 #include "krlibc.h"
 
 timer_t *alloc_timer() {
