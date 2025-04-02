@@ -7,6 +7,7 @@
 #include "limine.h"
 #include "smp.h"
 #include "timer.h"
+#include "krlibc.h"
 
 bool     x2apic_mode;
 uint64_t lapic_address;
@@ -134,5 +135,6 @@ void apic_setup(MADT *madt) {
 }
 
 void smp_setup() {
+    UNUSED(ioapic_read);
     apu_startup(smp_request);
 }

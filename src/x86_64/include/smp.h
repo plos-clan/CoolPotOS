@@ -24,6 +24,10 @@ typedef struct smp_cpu {
     lock_node          *iter_node;       // 该核心当前迭代的节点
 } __attribute__((packed)) smp_cpu_t;
 
+/**
+ * 获取当前CPUID
+ * @return cpuid
+ */
 uint64_t   get_current_cpuid();
 void       smp_setup();
 void       apu_startup(struct limine_smp_request smp_request);

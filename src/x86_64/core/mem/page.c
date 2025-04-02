@@ -112,7 +112,7 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
 page_directory_t *clone_directory(page_directory_t *src) {
     ticket_lock(&page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
-    not_null_assets(new_directory);
+    if(new_directory == NULL) return NULL;
     uint64_t phy_frame   = alloc_frames(1);
     new_directory->table = phys_to_virt(phy_frame);
     copy_page_table_recursive(src->table, new_directory->table, 4);

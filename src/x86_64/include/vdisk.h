@@ -22,6 +22,12 @@ typedef struct {
 void     build_stream_device();
 uint32_t disk_size(int drive);
 int      vdisk_init();
+
+/**
+ * 注册一个硬盘设备
+ * @param vd 硬盘设备
+ * @return 注册编号
+ */
 int      regist_vdisk(vdisk vd);
 bool     have_vdisk(int drive);
 void     vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive);

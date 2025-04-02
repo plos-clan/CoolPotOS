@@ -124,7 +124,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
 
     close_interrupt;
     disable_scheduler();
-    tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
+    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
     not_null_assets(new_task);
     memset(new_task, 0, sizeof(struct thread_control_block));
 

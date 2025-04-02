@@ -216,6 +216,12 @@ void pcie_setup(MCFG *mcfg);
 void *find_table(const char *name);
 
 uint64_t lapic_id();
+
+/**
+ * 发送CPU间中断
+ * @param apic_id CPU lapic_id
+ * @param command 命令
+ */
 void     send_ipi(uint32_t apic_id, uint32_t command);
 void     ioapic_add(uint8_t vector, uint32_t irq);
 uint32_t lapic_read(uint32_t reg);

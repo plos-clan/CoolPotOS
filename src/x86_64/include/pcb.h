@@ -101,6 +101,11 @@ void  kill_all_proc();
 void  kill_proc(pcb_t task);
 void  kill_thread(tcb_t tcb);
 
+/**
+ * 以指定PID查找进程
+ * @param pid 进程ID
+ * @return == NULL ? 未找到进程 : 进程指针
+ */
 pcb_t found_pcb(int pid);
 /**
  * 从指定进程内查找线程
