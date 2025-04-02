@@ -37,13 +37,13 @@ enum {
 typedef struct vfs_callback { // VFS回调函数
     vfs_mount_t   mount;      // 挂载文件系统
     vfs_unmount_t unmount;    // 卸载文件系统 (虚拟文件系统不支持卸载)
-    vfs_open_t    open;
-    vfs_close_t   close;
-    vfs_read_t    read;
-    vfs_write_t   write;
-    vfs_mk_t      mkdir;
-    vfs_mk_t      mkfile;
-    vfs_stat_t    stat; // 检查文件状态信息
+    vfs_open_t    open;       // 打开一个文件句柄
+    vfs_close_t   close;      // 关闭一个文件句柄
+    vfs_read_t    read;       // 读取文件
+    vfs_write_t   write;      // 写入文件
+    vfs_mk_t      mkdir;      // 创建文件夹
+    vfs_mk_t      mkfile;     // 创建文件
+    vfs_stat_t    stat;       // 检查文件状态信息
 } *vfs_callback_t;
 
 struct vfs_node {           // vfs节点
@@ -60,7 +60,7 @@ struct vfs_node {           // vfs节点
     uint8_t    type;        // 类型
     uint16_t   fsid;        // 文件系统的 id
     void      *handle;      // 操作文件的句柄
-    list_t     child;       //
+    list_t     child;       // 子节点
     vfs_node_t root;        // 根目录
 };
 
