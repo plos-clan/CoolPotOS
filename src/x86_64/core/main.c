@@ -30,6 +30,7 @@
 #include "timer.h"
 #include "vdisk.h"
 #include "vfs.h"
+#include "killer.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -114,25 +115,27 @@ void kmain(void) {
 
     // rtl8169_setup();
     pcnet_setup();
+    init_iic();
     disable_scheduler();
     init_pcb();
     smp_setup();
 
     build_stream_device();
-    init_iic();
 
+
+    killer_setup();
     setup_syscall();
     kinfo("Kernel load Done!");
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
-    create_kernel_thread((void *) cpu_speed_test, NULL, "CPUSpeed", NULL);
 
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL);
     create_kernel_thread((void *) shell_setup, NULL, "KernelShell", shell_group);
+    create_kernel_thread((void *) cpu_speed_test, NULL, "CPUSpeed", NULL);
 
     // beep();
     open_interrupt;
     enable_scheduler();
 
-    cpu_hlt;
+    halt_service();
 }

@@ -160,11 +160,16 @@ void ps(int argc, char **argv) {
             if (strlen(longest_name->name) > longest_name_len)
                 longest_name_len = strlen(longest_name->name);
         }
-        printk("GID  %-*s  TaskNum User\n", longest_name_len, "NAME");
+        printk("GID  %-*s  TaskNum Status  User\n", longest_name_len, "NAME");
         queue_foreach(pgb_queue, thread) {
             pcb_t pgb = (pcb_t)thread->data;
-            printk("%-5d%-*s  %-7d %s\n", pgb->pgb_id, longest_name_len, pgb->name,
-                   pgb->pcb_queue->size,pgb->user->name);
+            printk("%-5d%-*s  %-7d %s%s\n", pgb->pgb_id, longest_name_len, pgb->name,
+                   pgb->pcb_queue->size,
+                   pgb->status == RUNNING ? "Running " :
+                   pgb->status == START   ? "Start   " :
+                   pgb->status == WAIT    ? "Wait    " :
+                                            "Death   "
+                   ,pgb->user->name);
         }
     } else if (strcmp(argv[1], "pcb") == 0) {
         extern smp_cpu_t cpus[MAX_CPU];
@@ -202,7 +207,8 @@ void ps(int argc, char **argv) {
                            pcb->status == RUNNING ? "Running " :
                            pcb->status == START   ? "Start   " :
                            pcb->status == WAIT    ? "Wait    " :
-                                                    "Death   "
+                           pcb->status == DEATH   ? "Death   " :
+                                                    "Out     "
                            , pcb->cpu_id);
                 }
             }

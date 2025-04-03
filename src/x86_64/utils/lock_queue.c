@@ -46,6 +46,7 @@ void *queue_remove_at(lock_queue *q, size_t index) {
     }
     if (!current) {
         ticket_unlock(&q->lock);
+        logkf("Delete fault\n");
         return NULL;
     }
     void *data = current->data;
@@ -56,6 +57,7 @@ void *queue_remove_at(lock_queue *q, size_t index) {
     }
     if (!q->head) { q->tail = NULL; }
     q->size--;
+    current->data = NULL;
     free(current);
     ticket_unlock(&q->lock);
     return data;

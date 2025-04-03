@@ -10,12 +10,14 @@
 #include "smp.h"
 #include "sprintf.h"
 #include "timer.h"
+#include "killer.h"
 
 extern tcb_t      kernel_head_task;
 ticketlock        pcb_lock;
 extern ticketlock scheduler_lock;
 
 lock_queue *pgb_queue;
+
 pcb_t       kernel_group;
 
 int now_pid = 0;
@@ -52,37 +54,49 @@ void switch_to_user_mode(uint64_t func) {
                      : "memory");
 }
 
-void kill_proc(pcb_t pcb) {
-    close_interrupt;
-    disable_scheduler();
+void kill_proc(pcb_t pcb){
+    if(pcb == NULL) return;
+    pcb->status = DEATH;
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
     }
-    pcb->status = DEATH;
+    add_death_proc(pcb);
+}
+
+void kill_proc0(pcb_t pcb) {
+    close_interrupt;
+    disable_scheduler();
+
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue,pcb->queue_index);
 
+    logkf("Killing\n");
     logkf("Process %s killed.\n", pcb->name);
-
     free_tty(pcb->tty);
     free_page_directory(pcb->page_dir);
     free(pcb);
+    logkf("Kill win!\n");
     open_interrupt;
     enable_scheduler();
 }
 
-void kill_thread(tcb_t task) {
+void kill_thread(tcb_t task){
+    if(task == NULL) return;
     if (task->task_level == TASK_KERNEL_LEVEL) {
         kerror("Cannot stop kernel thread.");
         return;
     }
-    ticket_lock(&pcb_lock);
     task->status = DEATH;
+    smp_cpu_t *cpu = get_cpu_smp(task->cpu_id);
+    task->death_index = queue_enqueue(cpu->death_queue, task);
+}
+
+void kill_thread0(tcb_t task) {
     if(task->time_buf != NULL)
         free(task->time_buf);
+    task->status = OUT;
     remove_task(task);
-    ticket_unlock(&pcb_lock);
 }
 
 pcb_t found_pcb(int pid) {
@@ -213,7 +227,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
 void init_pcb() {
     ticket_init(&pcb_lock);
     ticket_init(&scheduler_lock);
-    pgb_queue = queue_init();
+    pgb_queue        = queue_init();
 
     kernel_group = malloc(sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
