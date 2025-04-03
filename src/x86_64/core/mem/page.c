@@ -134,21 +134,19 @@ static void free_page_table_recursive(page_table_t *table, int level) {
             if(entry->value & PTE_PRESENT &&
                entry->value & PTE_WRITEABLE &&
                entry->value & PTE_USER){
-                logkf("Freeing page table entry at %p\n", entry->value & 0x000fffffffff000);
                 free_frame(entry->value & 0x000fffffffff000);
             }
         } else{
             free_page_table_recursive(phys_to_virt(entry->value & 0x000fffffffff000), level - 1);
         }
     }
-    logkf("Freeing page table at %p\n", physical_address & 0x000fffffffff000);
     free_frame(physical_address & 0x000fffffffff000);
 }
 
 void free_page_directory(page_directory_t *dir){
     ticket_lock(&page_lock);
     free_page_table_recursive(dir->table, 4);
-    free_frame((uint64_t)dir->table);
+    free_frame((uint64_t)virt_to_phys((uint64_t)dir->table));
     free(dir);
     ticket_unlock(&page_lock);
 }

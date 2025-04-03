@@ -18,10 +18,11 @@ typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
 
 typedef enum {
-    RUNNING, // 运行中
-    WAIT,    // 线程阻塞
-    DEATH,   // 死亡(无法被调度)
-    START,   // 准备调度
+    CREATE = 0,  // 创建中
+    RUNNING = 1, // 运行中
+    WAIT = 2,    // 线程阻塞
+    DEATH = 3,   // 死亡(无法被调度)
+    START = 4,   // 准备调度
 }TaskStatus;
 
 struct process_control_block {

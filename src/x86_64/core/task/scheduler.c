@@ -172,13 +172,15 @@ void scheduler(registers_t *reg) {
                 if(next->status == DEATH || next->parent_group->status == DEATH) goto resche;
             }
 
+            //logkf("Scheduler: %d:%s -> %d:%s\n", cpu->current_pcb->status,cpu->current_pcb->name,next->status,next->name);
+
             // 正式切换
             if (cpu->current_pcb->parent_group != next->parent_group ||
                 cpu->current_pcb->pid != next->pid) {
                 disable_scheduler();
                 if(cpu->current_pcb->status == RUNNING)
                     cpu->current_pcb->status = START;
-                if(next->status == START)
+                if(next->status == START || next->status == CREATE)
                     next->status = RUNNING;
                 change_proccess(reg, cpu->current_pcb, next);
                 cpu->current_pcb = next;

@@ -30,7 +30,8 @@ char keytable1[0x54] = { // 未按下Shift
 static void key_callback(void *pcb_handle, void *scan_handle) {
     tcb_t   cur      = (tcb_t)pcb_handle;
     uint8_t scancode = *((uint8_t *)scan_handle);
-    atom_push(cur->parent_group->tty->keyboard_buffer, scancode);
+    if(cur->status == DEATH) return;
+    queue_enqueue(cur->parent_group->tty->keyboard_buffer, (void*)scancode);
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
@@ -70,7 +71,8 @@ int input_char_inSM() {
     task->status = WAIT;
     task->parent_group->tty->is_key_wait = true;
     do {
-        i = atom_pop(task->parent_group->tty->keyboard_buffer);
+        i = (int)queue_dequeue(task->parent_group->tty->keyboard_buffer);
+        __asm__ volatile("pause");
     } while (i == -1);
     task->parent_group->tty->is_key_wait = false;
     task->status = RUNNING;
