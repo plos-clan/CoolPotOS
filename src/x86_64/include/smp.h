@@ -20,8 +20,9 @@ typedef struct smp_cpu {
     tcb_t               idle_pcb;
     tcb_t               current_pcb;
     page_directory_t   *directory;
-    lock_queue         *scheduler_queue; // 该核心的线程调度队列
-    lock_node          *iter_node;       // 该核心当前迭代的节点
+    lock_queue         *death_queue;        // 死亡线程队列
+    lock_queue         *scheduler_queue;    // 该核心的线程调度队列
+    lock_node          *iter_node;          // 该核心当前迭代的节点
 } __attribute__((packed)) smp_cpu_t;
 
 /**

@@ -10,6 +10,7 @@
 #include "lock.h"
 #include "pcb.h"
 #include "sprintf.h"
+#include "killer.h"
 
 extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c
@@ -22,10 +23,6 @@ uint32_t  bsp_processor_id;
 uint64_t  cpu_count = 0;
 
 static uint64_t cpu_done_count = 0;
-
-static void apu_hlt() {
-    cpu_hlt;
-}
 
 uint64_t cpu_num() {
     return cpu_count;
@@ -115,7 +112,7 @@ void apu_entry() {
     apu_idle->cpu_timer                             = nanoTime();
     apu_idle->time_buf                              = alloc_timer();
     apu_idle->cpu_id                                = get_current_cpuid();
-    apu_idle->context0.rip                          = (uint64_t)apu_hlt;
+    apu_idle->context0.rip                          = (uint64_t)halt_service;
     char name[50];
     sprintf(name, "CP_IDLE_CPU%lu", get_current_cpuid());
     memcpy(apu_idle->name, name, strlen(name));
@@ -135,7 +132,7 @@ void apu_entry() {
     cpu_done_count++;
     ticket_unlock(&apu_lock);
     open_interrupt;
-    apu_hlt();
+    halt_service();
 }
 
 smp_cpu_t *get_cpu_smp(uint32_t processor_id) {
@@ -152,6 +149,7 @@ void apu_startup(struct limine_smp_request smp_request) {
         struct limine_smp_info *info   = response->cpus[i];
         size_t                  cpuid0 = info == NULL ? i : info->processor_id;
         cpus[cpuid0].scheduler_queue   = queue_init();
+        cpus[cpuid0].death_queue       = queue_init();
         cpus[cpuid0].iter_node         = NULL;
         cpus[cpuid0].lapic_id          = info == NULL ? i : info->lapic_id;
         cpus[cpuid0].directory         = get_kernel_pagedir();

@@ -62,7 +62,7 @@ void remove_task(tcb_t task) {
     if (task == NULL) return;
     ticket_lock(&scheduler_lock);
 
-    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
+    smp_cpu_t *cpu = get_cpu_smp(task->cpu_id);
     if (cpu == NULL) {
         ticket_unlock(&scheduler_lock);
         return;
@@ -169,7 +169,9 @@ void scheduler(registers_t *reg) {
                 if (cpu->iter_node == NULL) goto iter_head;
                 next = (tcb_t) cpu->iter_node->data;
                 not_null_assets(next);
-                if(next->status == DEATH || next->parent_group->status == DEATH) goto resche;
+                if(next->status == DEATH ||
+                   next->status == OUT ||
+                   next->parent_group->status == DEATH) goto resche;
             }
 
             //logkf("Scheduler: %d:%s -> %d:%s\n", cpu->current_pcb->status,cpu->current_pcb->name,next->status,next->name);
@@ -180,8 +182,11 @@ void scheduler(registers_t *reg) {
                 disable_scheduler();
                 if(cpu->current_pcb->status == RUNNING)
                     cpu->current_pcb->status = START;
-                if(next->status == START || next->status == CREATE)
+                if(next->status == START || next->status == CREATE){
                     next->status = RUNNING;
+                    next->parent_group->status = RUNNING;
+                }
+
                 change_proccess(reg, cpu->current_pcb, next);
                 cpu->current_pcb = next;
                 enable_scheduler();

@@ -21,8 +21,9 @@ typedef enum {
     CREATE = 0,  // 创建中
     RUNNING = 1, // 运行中
     WAIT = 2,    // 线程阻塞
-    DEATH = 3,   // 死亡(无法被调度)
+    DEATH = 3,   // 死亡(无法被调度, 线程状态为等待处死)
     START = 4,   // 准备调度
+    OUT = 5,     // 已被处死(线程状态)
 }TaskStatus;
 
 struct process_control_block {
@@ -31,6 +32,7 @@ struct process_control_block {
     int               pgb_id;      // 进程ID
     lock_queue       *pcb_queue;   // 线程队列
     size_t            queue_index; // 进程队列索引
+    size_t            death_index; // 死亡队列索引
     page_directory_t *page_dir;    // 进程页表
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备
@@ -56,6 +58,7 @@ struct thread_control_block {
     uint64_t      mem_usage;    // 内存利用率
     size_t        queue_index;  // 调度队列索引
     size_t        group_index;  // 进程队列索引
+    size_t        death_index;  // 死亡队列索引
 };
 
 /**
@@ -119,3 +122,6 @@ pcb_t found_pcb(int pid);
  */
 tcb_t found_thread(pcb_t pcb, int tid);
 void  init_pcb();
+
+void kill_proc0(pcb_t pcb);
+void kill_thread0(tcb_t task);
