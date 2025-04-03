@@ -169,7 +169,7 @@ void scheduler(registers_t *reg) {
                 if (cpu->iter_node == NULL) goto iter_head;
                 next = (tcb_t) cpu->iter_node->data;
                 not_null_assets(next);
-                if(next->status == DEATH) goto resche;
+                if(next->status == DEATH || next->parent_group->status == DEATH) goto resche;
             }
 
             // 正式切换

@@ -67,6 +67,12 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
 page_directory_t *clone_directory(page_directory_t *src);
 
 /**
+ * 释放指定页表 (不得为内核页, 内核页由引导程序提供,不遵循页框分配器的规则)
+ * @param dir 待释放页表
+ */
+void free_page_directory(page_directory_t *dir);
+
+/**
  * 多核页切换(不会切换进程的页表, 一般用于进程上下文切换)
  * @param dir 目标页表
  */

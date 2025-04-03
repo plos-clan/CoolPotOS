@@ -87,8 +87,7 @@ page_directory_t *get_current_directory() {
     return cpu != NULL ? cpu->directory : current_directory;
 }
 
-static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table,
-                                      int level) {
+static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table, int level) {
     for (int i = 0; i < 512; i++) {
         page_table_entry_t *entry = &source_table->entries[i];
 
@@ -117,6 +116,41 @@ page_directory_t *clone_directory(page_directory_t *src) {
     copy_page_table_recursive(src->table, new_directory->table, 4);
     ticket_unlock(&page_lock);
     return new_directory;
+}
+
+static void free_page_table_recursive(page_table_t *table, int level) {
+    uint64_t virtual_address = (uint64_t)table;
+    uint64_t physical_address = (uint64_t)virt_to_phys(virtual_address);
+    if(level == 0){
+        free_frame(physical_address & 0x000fffffffff000);
+        return;
+    }
+
+    for (int i = 0; i < 512; i++) {
+        page_table_entry_t *entry = &table->entries[i];
+        if(entry->value == 0 || is_huge_page(entry)) continue;
+
+        if (level == 1) {
+            if(entry->value & PTE_PRESENT &&
+               entry->value & PTE_WRITEABLE &&
+               entry->value & PTE_USER){
+                logkf("Freeing page table entry at %p\n", entry->value & 0x000fffffffff000);
+                free_frame(entry->value & 0x000fffffffff000);
+            }
+        } else{
+            free_page_table_recursive(phys_to_virt(entry->value & 0x000fffffffff000), level - 1);
+        }
+    }
+    logkf("Freeing page table at %p\n", physical_address & 0x000fffffffff000);
+    free_frame(physical_address & 0x000fffffffff000);
+}
+
+void free_page_directory(page_directory_t *dir){
+    ticket_lock(&page_lock);
+    free_page_table_recursive(dir->table, 4);
+    free_frame((uint64_t)dir->table);
+    free(dir);
+    ticket_unlock(&page_lock);
 }
 
 void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags) {

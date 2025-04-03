@@ -60,6 +60,15 @@ void init_frame() {
     logkf("Available memory: %lld MiB\n", (origin_frames / 256));
 }
 
+void free_frame(uint64_t addr){
+    if (addr == 0) return;
+    size_t frame_index = addr / 4096;
+    if(frame_index == 0) return;
+    Bitmap *bitmap = &frame_allocator.bitmap;
+    bitmap_set(bitmap, frame_index, true);
+    frame_allocator.usable_frames++;
+}
+
 uint64_t alloc_frames(size_t count) {
     Bitmap *bitmap      = &frame_allocator.bitmap;
     size_t  frame_index = bitmap_find_range(bitmap, count, true);
