@@ -79,7 +79,8 @@ void kill_thread(tcb_t task) {
     }
     ticket_lock(&pcb_lock);
     task->status = DEATH;
-    free(task->time_buf);
+    if(task->time_buf != NULL)
+        free(task->time_buf);
     remove_task(task);
     ticket_unlock(&pcb_lock);
 }
@@ -140,7 +141,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
         new_task->parent_group = pcb;
     }
 
-    new_task->task_level = TASK_KERNEL_LEVEL;
+    new_task->task_level = TASK_APPLICATION_LEVEL;
     new_task->cpu_clock  = 0;
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();

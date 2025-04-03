@@ -40,12 +40,13 @@ tty_t *alloc_default_tty() {
     tty->print           = tty_kernel_print;
     tty->putchar         = tty_kernel_putc;
     tty->is_key_wait     = false;
-    tty->keyboard_buffer = create_atom_queue(1024);
+    tty->keyboard_buffer = queue_init();
     return tty;
 }
 
 void free_tty(tty_t *tty) {
-    free_queue(tty->keyboard_buffer);
+    if(tty == NULL) return;
+    queue_destroy(tty->keyboard_buffer);
     free(tty);
 }
 
@@ -57,7 +58,7 @@ void init_tty() {
     defualt_tty.video_ram       = framebuffer->address;
     defualt_tty.width           = framebuffer->width;
     defualt_tty.height          = framebuffer->height;
-    defualt_tty.keyboard_buffer = create_atom_queue(1024);
+    defualt_tty.keyboard_buffer = queue_init();
     defualt_tty.print           = tty_kernel_print;
     defualt_tty.putchar         = tty_kernel_putc;
     queue                       = malloc(sizeof(mpmc_queue_t));
