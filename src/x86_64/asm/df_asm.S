@@ -17,4 +17,3 @@ double_fault_asm:
     MOV CR3, RAX
     LEA RSP, df_stack + 4096
     JMP double_fault
-

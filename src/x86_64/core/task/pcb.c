@@ -53,6 +53,8 @@ void switch_to_user_mode(uint64_t func) {
 }
 
 void kill_proc(pcb_t pcb) {
+    close_interrupt;
+    disable_scheduler();
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
@@ -60,7 +62,14 @@ void kill_proc(pcb_t pcb) {
     pcb->status = DEATH;
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue,pcb->queue_index);
+
+    logkf("Process %s killed.\n", pcb->name);
+
+    free_tty(pcb->tty);
+    free_page_directory(pcb->page_dir);
     free(pcb);
+    open_interrupt;
+    enable_scheduler();
 }
 
 void kill_thread(tcb_t task) {
@@ -69,15 +78,9 @@ void kill_thread(tcb_t task) {
         return;
     }
     ticket_lock(&pcb_lock);
-    close_interrupt;
-    disable_scheduler(); // 终止调度器, 防止释放被杀线程时候调度到该线程发生错误
     task->status = DEATH;
     free(task->time_buf);
-
     remove_task(task);
-
-    enable_scheduler();
-    open_interrupt;
     ticket_unlock(&pcb_lock);
 }
 
