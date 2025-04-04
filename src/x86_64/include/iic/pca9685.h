@@ -2,6 +2,7 @@
 
 #include "iic/iic_basic_implementation.h"
 #include "krlibc.h"
+#include "timer.h"
 
 #ifdef IIC_BASIC_IMPLEMENTATION
 #    define PCA9685_IMPLEMENTATION
@@ -28,7 +29,7 @@ void      pca9685_remove(void);
 IIC_Slave init_pca9685(uint32_t);
 void      pca9685_write(uint8_t, uint8_t);
 uint8_t   pca9685_read(uint8_t);
-void      pca9685_setPWMFreq(uint32_t);
+void      pca9685_setPWMFreq(float);
 void      pca9685_setPWM(uint8_t, int, int);
 void      pca9685_setServoPulse(uint8_t, int);
 
