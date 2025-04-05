@@ -60,13 +60,16 @@ void kill_proc(pcb_t pcb){
         kerror("Cannot kill System process.");
         return;
     }
+    close_interrupt;
+    disable_scheduler();
     pcb->status = DEATH;
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
     }
-    logkf("Kill PROC II\n");
     add_death_proc(pcb);
+    enable_scheduler();
+    open_interrupt;
 }
 
 void kill_proc0(pcb_t pcb) {
@@ -95,6 +98,7 @@ void kill_thread(tcb_t task){
     task->status = DEATH;
     smp_cpu_t *cpu = get_cpu_smp(task->cpu_id);
     task->death_index = lock_queue_enqueue(cpu->death_queue, task);
+    logkf("%s killed %d.\n", task->name, task->death_index);
     ticket_unlock(&cpu->death_queue->lock);
 }
 

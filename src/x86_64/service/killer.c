@@ -11,11 +11,13 @@ _Noreturn void halt_service(){
         smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
         if (cpu == NULL) continue;
         tcb_t task = NULL;
+        ticket_lock(&cpu->death_queue->lock);
         queue_foreach(cpu->death_queue, node) {
             task = (tcb_t)node->data;
             if (task == NULL) continue;
             break;
         }
+        ticket_unlock(&cpu->death_queue->lock);
         if(task == NULL || task->status != DEATH) continue;
         logkf("Thread %s killed %p.\n", task->name, task);
         queue_remove_at(cpu->death_queue,task->queue_index);
