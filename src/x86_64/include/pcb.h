@@ -13,6 +13,7 @@
 #include "timer.h"
 #include "tty.h"
 #include "sysuser.h"
+#include "syscall.h"
 
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;

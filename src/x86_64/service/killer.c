@@ -20,6 +20,7 @@ _Noreturn void halt_service(){
         logkf("Thread %s killed %p.\n", task->name, task);
         queue_remove_at(cpu->death_queue,task->queue_index);
         kill_thread0(task);
+        logkf("Free thread\n");
         queue_remove_at(task->parent_group->pcb_queue,task->group_index);
         free(task);
     }
@@ -36,14 +37,16 @@ _Noreturn void killer_service(){
             task = (pcb_t)node->data;
             if (task == NULL) continue;
             bool is_out = true;
-            queue_foreach(task->pcb_queue, node) {
-                tcb_t thread = (tcb_t)node->data;
+            ticket_trylock(&task->pcb_queue->lock);
+            queue_foreach(task->pcb_queue, node0) {
+                tcb_t thread = (tcb_t)node0->data;
                 if (thread == NULL) continue;
                 if (thread->status != OUT) {
                     is_out = false;
                     break;
                 }
             }
+            ticket_unlock(&task->pcb_queue->lock);
             if(is_out) break;
             task = NULL;
         }

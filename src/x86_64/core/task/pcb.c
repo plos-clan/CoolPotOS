@@ -56,11 +56,16 @@ void switch_to_user_mode(uint64_t func) {
 
 void kill_proc(pcb_t pcb){
     if(pcb == NULL) return;
+    if(pcb->pgb_id == kernel_group->pgb_id) {
+        kerror("Cannot kill System process.");
+        return;
+    }
     pcb->status = DEATH;
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
     }
+    logkf("Kill PROC II\n");
     add_death_proc(pcb);
 }
 
@@ -89,7 +94,8 @@ void kill_thread(tcb_t task){
     }
     task->status = DEATH;
     smp_cpu_t *cpu = get_cpu_smp(task->cpu_id);
-    task->death_index = queue_enqueue(cpu->death_queue, task);
+    task->death_index = lock_queue_enqueue(cpu->death_queue, task);
+    ticket_unlock(&cpu->death_queue->lock);
 }
 
 void kill_thread0(tcb_t task) {
@@ -174,7 +180,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->main            = (uint64_t)_start;
     new_task->context0.cs     = 0x8;
     new_task->context0.ss     = new_task->context0.es = new_task->context0.ds = 0x10;
-    new_task->status          = START;
+    new_task->status          = CREATE;
 
     add_task(new_task);
     enable_scheduler();
@@ -216,7 +222,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->user_stack      = new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
     new_task->context0.cs     = 0x8;
     new_task->context0.ss     = new_task->context0.es = new_task->context0.ds = 0x10;
-    new_task->status          = START;
+    new_task->status          = CREATE;
 
     add_task(new_task);
     enable_scheduler();

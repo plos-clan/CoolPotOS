@@ -259,6 +259,7 @@ static void pkill(int argc, char **argv) {
         return;
     }
     kill_proc(pcb);
+    kinfo("Kill process (%d).\n", pid);
 }
 
 static void echo(int argc, char **argv) {
@@ -335,6 +336,7 @@ static void luser(int argc, char **argv) {
     }
     pcb_t user_task = create_process_group(module->module_name, up, get_current_task()->parent_group->user);
     create_user_thread(main, "main", user_task);
+    logkf("User application %s : %d : index: %d loaded.\n", module->module_name , user_task->pgb_id, user_task->queue_index);
 }
 
 static void sys_info() {

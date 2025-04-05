@@ -6,7 +6,8 @@
 #include "keyboard.h"
 #include "pcb.h"
 
-extern void asm_syscall_entry();
+extern void        asm_syscall_entry();
+extern lock_queue *pgb_queue;
 
 static inline void enable_syscall() {
     uint64_t efer;
@@ -46,9 +47,10 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
 };
 
 registers_t *syscall_handle(registers_t *reg) {
-    if (0 <= reg->rax && reg->rax < MAX_SYSCALLS && syscall_handlers[reg->rax] != NULL) {
-        reg->rax = ((syscall_t) syscall_handlers[reg->rax])(reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
-    } else reg->rax = -1;
+    size_t syscall_id = reg->rax;
+    if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
+        reg->rax = ((syscall_t) syscall_handlers[syscall_id])(reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+    }
     return reg;
 }
 
