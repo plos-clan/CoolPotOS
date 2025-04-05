@@ -49,7 +49,9 @@ int add_task(tcb_t new_task) {
         return -1;
     }
     new_task->cpu_id = cpuid;
-    new_task->queue_index = queue_enqueue(cpu0->scheduler_queue, new_task);
+    new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
+    ticket_unlock(&cpu0->scheduler_queue->lock);
+
     if (new_task->queue_index == (size_t) -1) {
         return -1;
     }

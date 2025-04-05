@@ -32,6 +32,14 @@ lock_queue *queue_init();
 size_t queue_enqueue(lock_queue *q, void *data);
 
 /**
+ * 入队操作(需手动解锁)
+ * @param q 队列
+ * @param data 存储句柄
+ * @return 该节点索引
+ */
+size_t lock_queue_enqueue(lock_queue *q, void *data);
+
+/**
  * 删除指定索引的节点
  * @param q 队列
  * @param index 索引

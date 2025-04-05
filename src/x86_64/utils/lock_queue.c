@@ -14,6 +14,34 @@ lock_queue *queue_init() {
     return q;
 }
 
+size_t lock_queue_enqueue(lock_queue *q, void *data) {
+    if (q == NULL) return -1;
+    lock_node *new_node = (lock_node *)malloc(sizeof(lock_node));
+    if (!new_node) return -1;
+    new_node->data  = data;
+    new_node->next  = NULL;
+    new_node->index = q->next_index++;
+
+    ticket_lock(&q->lock);
+
+    if (q->head == NULL) {
+        q->head = new_node;
+    } else {
+        lock_node *current = q->head;
+        infinite_loop {
+            if (current->next == NULL) {
+                current->next = new_node;
+                break;
+            }
+            current = current->next;
+        }
+    }
+    q->tail = new_node;
+    q->size++;
+
+    return new_node->index;
+}
+
 size_t queue_enqueue(lock_queue *q, void *data) {
     if (q == NULL) return -1;
     lock_node *new_node = (lock_node *)malloc(sizeof(lock_node));
@@ -23,10 +51,18 @@ size_t queue_enqueue(lock_queue *q, void *data) {
     new_node->index = q->next_index++;
 
     ticket_lock(&q->lock);
-    if (q->tail) {
-        q->tail->next = new_node;
-    } else {
+
+    if (q->head == NULL) {
         q->head = new_node;
+    } else {
+        lock_node *current = q->head;
+        infinite_loop {
+            if (current->next == NULL) {
+                current->next = new_node;
+                break;
+            }
+            current = current->next;
+        }
     }
     q->tail = new_node;
     q->size++;
@@ -44,7 +80,7 @@ void *queue_remove_at(lock_queue *q, size_t index) {
         prev    = current;
         current = current->next;
     }
-    if (!current) {
+    if (current == NULL) {
         ticket_unlock(&q->lock);
         logkf("Delete fault\n");
         return NULL;
