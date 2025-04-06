@@ -135,7 +135,7 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
 }
 
 /**
- * Cpinl 内核默认多核调度器 - 循环绝对公平调度
+ * CP_Kernel 内核默认多核调度器 - 循环绝对公平调度
  * @param reg 当前任务上下文
  */
 void scheduler(registers_t *reg) {
