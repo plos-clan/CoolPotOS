@@ -75,28 +75,26 @@ void *queue_remove_at(lock_queue *q, size_t index) {
     if (q == NULL) return NULL;
     ticket_lock(&q->lock);
     lock_node *current = q->head;
-    lock_node *prev    = NULL;
-    while (current && current->index != index) {
-        prev    = current;
+    lock_node *previous = NULL;
+
+    while (current != NULL) {
+        if (current->index == index) {
+            if (previous == NULL) {
+                lock_node *new_head = current->next;
+                q->head = new_head;
+            } else {
+                previous->next = current->next;
+            }
+            free(current);
+            q->size--;
+            ticket_unlock(&q->lock);
+            return NULL;
+        }
+        previous = current;
         current = current->next;
     }
-    if (current == NULL) {
-        ticket_unlock(&q->lock);
-        logkf("Delete fault\n");
-        return NULL;
-    }
-    void *data = current->data;
-    if (prev) {
-        prev->next = current->next;
-    } else {
-        q->head = current->next;
-    }
-    if (!q->head) { q->tail = NULL; }
-    q->size--;
-    current->data = NULL;
-    free(current);
     ticket_unlock(&q->lock);
-    return data;
+    return NULL;
 }
 
 void *queue_dequeue(lock_queue *q) {

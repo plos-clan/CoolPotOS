@@ -18,11 +18,11 @@ _Noreturn void halt_service(){
             break;
         }
         ticket_unlock(&cpu->death_queue->lock);
-        if(task == NULL || task->status != DEATH) continue;
-        logkf("Thread %s killed %p.\n", task->name, task);
-        queue_remove_at(cpu->death_queue,task->queue_index);
+        if(task == NULL || task->status != DEATH){
+            continue;
+        }
+        queue_remove_at(cpu->death_queue,task->death_index);
         kill_thread0(task);
-        logkf("Free thread\n");
         queue_remove_at(task->parent_group->pcb_queue,task->group_index);
         free(task);
     }
@@ -39,7 +39,7 @@ _Noreturn void killer_service(){
             task = (pcb_t)node->data;
             if (task == NULL) continue;
             bool is_out = true;
-            ticket_trylock(&task->pcb_queue->lock);
+            ticket_lock(&task->pcb_queue->lock);
             queue_foreach(task->pcb_queue, node0) {
                 tcb_t thread = (tcb_t)node0->data;
                 if (thread == NULL) continue;
@@ -60,7 +60,8 @@ _Noreturn void killer_service(){
 
 void add_death_proc(pcb_t task) {
     if (task == NULL) return;
-    task->death_index = queue_enqueue(death_proc_queue, task);
+    task->death_index = lock_queue_enqueue(death_proc_queue, task);
+    ticket_unlock(&death_proc_queue->lock);
 }
 
 void killer_setup(){

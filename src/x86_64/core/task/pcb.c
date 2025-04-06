@@ -79,12 +79,9 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue,pcb->queue_index);
 
-    logkf("Killing\n");
-    logkf("Process %s killed.\n", pcb->name);
     free_tty(pcb->tty);
     free_page_directory(pcb->page_dir);
     free(pcb);
-    logkf("Kill win!\n");
     open_interrupt;
     enable_scheduler();
 }
@@ -95,10 +92,9 @@ void kill_thread(tcb_t task){
         kerror("Cannot stop kernel thread.");
         return;
     }
-    task->status = DEATH;
-    smp_cpu_t *cpu = get_cpu_smp(task->cpu_id);
+    task->status      = DEATH;
+    smp_cpu_t *cpu    = get_cpu_smp(task->cpu_id);
     task->death_index = lock_queue_enqueue(cpu->death_queue, task);
-    logkf("%s killed %d.\n", task->name, task->death_index);
     ticket_unlock(&cpu->death_queue->lock);
 }
 
@@ -141,7 +137,8 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->tty         = alloc_default_tty();
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
-    new_pgb->queue_index = queue_enqueue(pgb_queue, new_pgb);
+    new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
+    ticket_unlock(&pgb_queue->lock);
     new_pgb->status = START;
     return new_pgb;
 }
@@ -156,11 +153,13 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     memset(new_task, 0, sizeof(struct thread_control_block));
 
     if (pcb == NULL) {
-        new_task->group_index  = queue_enqueue(kernel_group->pcb_queue, new_task);
+        new_task->group_index  = lock_queue_enqueue(kernel_group->pcb_queue, new_task);
+        ticket_unlock(&kernel_group->pcb_queue->lock);
         new_task->pid          = kernel_group->pid_index++;
         new_task->parent_group = kernel_group;
     } else {
-        queue_enqueue(pcb->pcb_queue, new_task);
+        new_task->group_index  = lock_queue_enqueue(pcb->pcb_queue, new_task);
+        ticket_unlock(&pcb->pcb_queue->lock);
         new_task->pid          = pcb->pid_index++;
         new_task->parent_group = pcb;
     }
