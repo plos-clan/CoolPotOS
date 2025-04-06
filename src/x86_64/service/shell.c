@@ -259,7 +259,7 @@ static void pkill(int argc, char **argv) {
         return;
     }
     kill_proc(pcb);
-    kinfo("Kill process (%d).\n", pid);
+    kinfo("Kill process (%d).", pid);
 }
 
 static void echo(int argc, char **argv) {
