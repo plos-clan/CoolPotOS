@@ -1,5 +1,4 @@
 #include "bitmap.h"
-#include "klog.h"
 
 void bitmap_init(Bitmap *bitmap, uint8_t *buffer, size_t size) {
     bitmap->buffer = buffer;
