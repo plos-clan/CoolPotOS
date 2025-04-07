@@ -1,0 +1,19 @@
+*.s linguist-language=Assembly
+
+*.asm linguist-language=Assembly
+
+*.lua linguist-language=Lua
+
+*.c linguist-language=C
+
+*.h linguist-language=C
+
+*.ld linguist-detectable=false
+
+libs/** linguist-vendored
+readme/** linguist-vendored
+assets/** linguist-vendored
+.github/** linguist-vendored
+
+.clang-format linguist-vendored
+.clang-tidy linguist-vendored
