@@ -12,11 +12,11 @@
 #include "ide.h"
 #include "iic/iic_core.h"
 #include "keyboard.h"
+#include "killer.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "limine.h"
 #include "module.h"
-#include "sysuser.h"
 #include "page.h"
 #include "pcb.h"
 #include "pcie.h"
@@ -26,11 +26,11 @@
 #include "smbios.h"
 #include "smp.h"
 #include "syscall.h"
+#include "sysuser.h"
 #include "terminal.h"
 #include "timer.h"
 #include "vdisk.h"
 #include "vfs.h"
-#include "killer.h"
 #include "xhci.h"
 
 // 编译器判断
@@ -50,7 +50,7 @@
 
 // Git哈希判断
 #ifndef GIT_VERSION
-#define GIT_VERSION "unknown"
+#    define GIT_VERSION "unknown"
 #endif
 
 USED SECTION(".limine_requests_start") static const volatile LIMINE_REQUESTS_START_MARKER;
@@ -60,13 +60,13 @@ USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_M
 LIMINE_REQUEST LIMINE_BASE_REVISION(2);
 
 LIMINE_REQUEST struct limine_stack_size_request stack_request = {
-        .id         = LIMINE_STACK_SIZE_REQUEST,
-        .revision   = 0,
-        .stack_size = KERNEL_ST_SZ // 128K
+    .id         = LIMINE_STACK_SIZE_REQUEST,
+    .revision   = 0,
+    .stack_size = KERNEL_ST_SZ // 128K
 };
 
-extern void error_setup();    // error_handle.c
-extern void iso9660_regist(); // iso9660.c
+extern void  error_setup();    // error_handle.c
+extern void  iso9660_regist(); // iso9660.c
 extern tcb_t kernel_head_task; // scheduler.c
 
 _Noreturn void cp_shutdown() {
@@ -90,8 +90,8 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME,
-           GIT_VERSION, COMPILER_NAME, COMPILER_VERSION);
+    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
+           COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     gdt_setup();
@@ -117,7 +117,6 @@ void kmain(void) {
     ide_setup();
     // nvme_setup();
     ahci_setup();
-    xhci_setup();
 
     // rtl8169_setup();
     pcnet_setup();
@@ -128,16 +127,16 @@ void kmain(void) {
 
     build_stream_device();
 
-
     killer_setup();
     setup_syscall();
+    xhci_setup();
     kinfo("Kernel load Done!");
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
 
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL);
-    create_kernel_thread((void *) shell_setup, NULL, "KernelShell", shell_group);
-    create_kernel_thread((void *) cpu_speed_test, NULL, "CPUSpeed", NULL);
+    create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
+    create_kernel_thread((void *)cpu_speed_test, NULL, "CPUSpeed", NULL);
 
     // beep();
     open_interrupt;

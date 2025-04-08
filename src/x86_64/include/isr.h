@@ -10,6 +10,7 @@ enum InterruptIndex {
     ide_primary,
     ide_secondary,
     pcnet,
+    xhci,
 };
 
 struct interrupt_frame {
@@ -22,17 +23,16 @@ struct interrupt_frame {
 
 static inline struct interrupt_frame get_current_registers() {
     struct interrupt_frame state;
-    __asm__ volatile (
-            "lea (%%rip), %0\n"
-            "mov %%cs, %1\n"
-            "pushfq\n"
-            "pop %2\n"
-            "mov %%rsp, %3\n"
-            "mov %%ss, %4\n"
-            : "=r" (state.rip), "=r" (state.cs), "=r" (state.rflags), "=r" (state.rsp), "=r" (state.ss)
-            :
-            : "memory"
-            );
+    __asm__ volatile("lea (%%rip), %0\n"
+                     "mov %%cs, %1\n"
+                     "pushfq\n"
+                     "pop %2\n"
+                     "mov %%rsp, %3\n"
+                     "mov %%ss, %4\n"
+                     : "=r"(state.rip), "=r"(state.cs), "=r"(state.rflags), "=r"(state.rsp),
+                       "=r"(state.ss)
+                     :
+                     : "memory");
     return state;
 }
 
