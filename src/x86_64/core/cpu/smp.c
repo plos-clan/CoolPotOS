@@ -147,13 +147,7 @@ void apu_startup(struct limine_smp_request smp_request) {
     cpu_count                            = response->cpu_count;
     for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++) {
         struct limine_smp_info *info = response->cpus[i];
-        if (info == NULL) {
-            logkf("Error: smp response info == null\n");
-            infinite_loop {
-                __asm__ volatile("cli");
-                __asm__ volatile("hlt");
-            }
-        }
+        if (info == NULL) goto bsd_init;
         size_t cpuid0                = info->processor_id;
         cpus[cpuid0].scheduler_queue = queue_init();
         cpus[cpuid0].death_queue     = queue_init();
@@ -174,6 +168,7 @@ void apu_startup(struct limine_smp_request smp_request) {
     }
     logkf("APU %d processors have been enabled.\n", cpu_count);
 
+    bsd_init: {}
     smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
     if (cpu == NULL) { return; }
     cpu->idle_pcb                 = kernel_head_task;

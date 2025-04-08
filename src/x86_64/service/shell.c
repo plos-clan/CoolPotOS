@@ -348,7 +348,7 @@ static void sys_info() {
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
-    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
+    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS Stellar Nyan Edition\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",
@@ -390,13 +390,13 @@ static void print_help() {
 }
 
 _Noreturn void shell_setup() {
-    printk("Welcome to CoolPotOS (%s)\n"
+    printk("Welcome to CoolPotOS Stellar Nyan Edition (%s)\n"
            " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
            " * Website:           https://github.com/plos-clan\n"
            " System information as of %s \n"
            "  Tasks:              %d\n"
            "  Logged:             %s\n"
-           "MIT License 2024-2025 XIAOYI12 (Build by xmake&clang)\n",
+           "MIT License 2024-2025 plos-clan (Build by xmake&clang)\n",
            KERNEL_NAME, get_date_time(), get_all_task(),get_current_task()->parent_group->user->name);
     char  com[MAX_COMMAND_LEN];
     char *argv[MAX_ARG_NR];

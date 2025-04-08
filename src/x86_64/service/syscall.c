@@ -57,5 +57,5 @@ registers_t *syscall_handle(registers_t *reg) {
 void setup_syscall() {
     UNUSED(enable_syscall);
     register_interrupt_handler(0x80, asm_syscall_entry, 0, 0x8E | 0x60);
-    kinfo("Setup cpinl syscall table.");
+    kinfo("Setup CP_Kernel syscall table.");
 }
