@@ -1,16 +1,16 @@
 #include "smp.h"
-#include "heap.h"
 #include "description_table.h"
 #include "fpu.h"
+#include "heap.h"
 #include "hhdm.h"
 #include "io.h"
+#include "killer.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "limine.h"
 #include "lock.h"
 #include "pcb.h"
 #include "sprintf.h"
-#include "killer.h"
 
 extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c
@@ -100,7 +100,7 @@ void apu_entry() {
 
     float_processor_setup();
 
-    tcb_t apu_idle       = (tcb_t)malloc(STACK_SIZE);
+    tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
     not_null_assets(apu_idle);
     apu_idle->task_level = TASK_KERNEL_LEVEL;
     apu_idle->pid        = kernel_group->pid_index++;
@@ -145,15 +145,21 @@ void apu_startup(struct limine_smp_request smp_request) {
     ticket_init(&apu_lock);
     struct limine_smp_response *response = smp_request.response;
     cpu_count                            = response->cpu_count;
-    for (uint64_t i = 0; i <= cpu_count && i < MAX_CPU - 1; i++) {
-        struct limine_smp_info *info   = response->cpus[i];
-        size_t                  cpuid0 = info == NULL ? i : info->processor_id;
-        cpus[cpuid0].scheduler_queue   = queue_init();
-        cpus[cpuid0].death_queue       = queue_init();
-        cpus[cpuid0].iter_node         = NULL;
-        cpus[cpuid0].lapic_id          = info == NULL ? i : info->lapic_id;
-        cpus[cpuid0].directory         = get_kernel_pagedir();
-        if (info == NULL) continue;
+    for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++) {
+        struct limine_smp_info *info = response->cpus[i];
+        if (info == NULL) {
+            logkf("Error: smp response info == null\n");
+            infinite_loop {
+                __asm__ volatile("cli");
+                __asm__ volatile("hlt");
+            }
+        }
+        size_t cpuid0                = info->processor_id;
+        cpus[cpuid0].scheduler_queue = queue_init();
+        cpus[cpuid0].death_queue     = queue_init();
+        cpus[cpuid0].iter_node       = NULL;
+        cpus[cpuid0].lapic_id        = info->lapic_id;
+        cpus[cpuid0].directory       = get_kernel_pagedir();
         if (info->lapic_id == response->bsp_lapic_id) {
             cpus[cpuid0].flags       = 1;
             bsp_processor_id         = info->processor_id;
