@@ -48,6 +48,11 @@
 #    error "Unknown compiler"
 #endif
 
+// Git哈希判断
+#ifndef GIT_VERSION
+#define GIT_VERSION "unknown"
+#endif
+
 USED SECTION(".limine_requests_start") static const volatile LIMINE_REQUESTS_START_MARKER;
 
 USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
@@ -85,8 +90,8 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (%s version %s) (Limine Bootloader) on an x86_64\n", KERNEL_NAME,
-           COMPILER_NAME, COMPILER_VERSION);
+    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME,
+           GIT_VERSION, COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     gdt_setup();
