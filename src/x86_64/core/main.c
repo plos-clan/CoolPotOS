@@ -31,6 +31,7 @@
 #include "vdisk.h"
 #include "vfs.h"
 #include "killer.h"
+#include "xhci.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -111,7 +112,7 @@ void kmain(void) {
     ide_setup();
     // nvme_setup();
     ahci_setup();
-    // xhci_setup();
+    xhci_setup();
 
     // rtl8169_setup();
     pcnet_setup();

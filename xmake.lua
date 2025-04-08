@@ -1,8 +1,6 @@
 set_project("CoolPotOS")
-
 add_rules("mode.debug", "mode.release")
-add_requires("zig","nasm")
-
+--add_requires("zig","nasm") --编译 i386 时候需要解开这条语句的注释
 set_optimize("fastest")
 set_languages("c23")
 set_warnings("all", "extra")
@@ -11,6 +9,7 @@ set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
 
 target("kernel32")
+
     set_arch("i386")
     set_kind("binary")
     set_toolchains("@zig", "nasm")
