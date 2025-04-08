@@ -12,4 +12,6 @@ void xhci_setup() {
     pcie_write_command(device, 2, command);
 
     kinfo("Loading USB 3.0 driver.");
+
+
 }
