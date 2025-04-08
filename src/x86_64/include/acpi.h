@@ -224,6 +224,7 @@ uint64_t lapic_id();
  */
 void     send_ipi(uint32_t apic_id, uint32_t command);
 void     ioapic_add(uint8_t vector, uint32_t irq);
+void     ioapic_enable(uint8_t vector);
 uint32_t lapic_read(uint32_t reg);
 void     local_apic_init(bool is_print);
 

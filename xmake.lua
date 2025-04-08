@@ -69,6 +69,15 @@ target("kernel64")
 
     add_files("src/x86_64/**/*.c")
     add_files("src/x86_64/**/*.S")
+
+     before_build(function (target)
+            local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
+            if hash then
+                hash = hash:trim()
+                target:add("defines", "GIT_VERSION=\"" .. hash .. "\"")
+            end
+        end)
+
     add_linkdirs("libs/x86_64")
     add_includedirs("libs/x86_64")
     add_includedirs("src/x86_64/include")
