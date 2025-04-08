@@ -90,7 +90,7 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
+    printk("CoolPotOS - Stellar Nyan Edition (git:%s) (%s version %s) on an x86_64\n", GIT_VERSION,
            COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);

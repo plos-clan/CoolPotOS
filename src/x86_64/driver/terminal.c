@@ -11,27 +11,31 @@ bool        open_flush = false;
 ticketlock  terminal_lock;
 
 static void setup_cpos_default() {
-    TerminalPalette palette = {
-        .background  = 0x000000,
-        .foreground  = 0xffffff,
-        .ansi_colors = {[0] = 0x000000,
-                        [1] = 0xe96161,
-                        [2] = 0x00df00,
-                        [3] = 0xa2734c,
-                        [4] = 0x002fe2,
-                        [5] = 0xa347ba,
-                        [6] = 0x377d6e,
-                        [7] = 0xc6c6c6,
+    TerminalPalette palette = { //特别更新配色方案
+            .background  = 0x1e1b29,  // 深靛紫 - 夜猫底
+            .foreground  = 0xfafaff,  // 奶油白 - 轻柔文字
 
-                        [8]  = 0x111111,
-                        [9]  = 0xdf1200,
-                        [10] = 0x00df00,
-                        [11] = 0xa2734c,
-                        [12] = 0x0036ff,
-                        [13] = 0xa347ba,
-                        [14] = 0x377d6e,
-                        [15] = 0xffffff}
+            .ansi_colors = {
+                    [0]  = 0x1e1b29,  // black - 深底色
+                    [1]  = 0xff6b81,  // red - 草莓粉（错误提示）
+                    [2]  = 0xa7f0ba,  // green - 奶绿（成功）
+                    [3]  = 0xffd47e,  // yellow - 柔焦奶油黄
+                    [4]  = 0xa0d8ef,  // blue - 天空蓝
+                    [5]  = 0xd7aefb,  // magenta - 薰衣紫
+                    [6]  = 0x9bf6e1,  // cyan - 薄荷青
+                    [7]  = 0xececec,  // white - 柔白灰
+
+                    [8]  = 0x39324b,  // bright black - 低亮背景衬色
+                    [9]  = 0xff5e6e,  // bright red - 闪亮莓粉
+                    [10] = 0xc1ffd7,  // bright green - 萌草绿
+                    [11] = 0xffeb99,  // bright yellow - 糖黄
+                    [12] = 0xb8e0ff,  // bright blue - 果冻蓝
+                    [13] = 0xf6b3f6,  // bright magenta - 樱花紫
+                    [14] = 0xadf0f0,  // bright cyan - 奶薄荷蓝
+                    [15] = 0xffffff   // bright white - 纯白
+            }
     };
+
     terminal_set_custom_color_scheme(&palette);
 }
 
