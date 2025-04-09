@@ -3,7 +3,6 @@
 #include "gop.h"
 #include "krlibc.h"
 #include "lock.h"
-#include "module.h"
 #include "timer.h"
 
 atom_queue *output_buffer;
@@ -11,28 +10,15 @@ bool        open_flush = false;
 ticketlock  terminal_lock;
 
 static void setup_cpos_default() {
-    TerminalPalette palette = { //特别更新配色方案
-            .background  = 0x1e1b29,  // 深靛紫 - 夜猫底
-            .foreground  = 0xfafaff,  // 奶油白 - 轻柔文字
+    TerminalPalette palette = {
+            .background  = 0x0d0d1a,
+            .foreground  = 0xeaeaea,
 
             .ansi_colors = {
-                    [0]  = 0x1e1b29,  // black - 深底色
-                    [1]  = 0xff6b81,  // red - 草莓粉（错误提示）
-                    [2]  = 0xa7f0ba,  // green - 奶绿（成功）
-                    [3]  = 0xffd47e,  // yellow - 柔焦奶油黄
-                    [4]  = 0xa0d8ef,  // blue - 天空蓝
-                    [5]  = 0xd7aefb,  // magenta - 薰衣紫
-                    [6]  = 0x9bf6e1,  // cyan - 薄荷青
-                    [7]  = 0xececec,  // white - 柔白灰
-
-                    [8]  = 0x39324b,  // bright black - 低亮背景衬色
-                    [9]  = 0xff5e6e,  // bright red - 闪亮莓粉
-                    [10] = 0xc1ffd7,  // bright green - 萌草绿
-                    [11] = 0xffeb99,  // bright yellow - 糖黄
-                    [12] = 0xb8e0ff,  // bright blue - 果冻蓝
-                    [13] = 0xf6b3f6,  // bright magenta - 樱花紫
-                    [14] = 0xadf0f0,  // bright cyan - 奶薄荷蓝
-                    [15] = 0xffffff   // bright white - 纯白
+                    0x0d0d1a, 0xe84a5f, 0x50fa7b, 0xfacc60,
+                    0x61aeee, 0xc074ec, 0x40e0d0, 0xbebec2,
+                    0x2f2f38, 0xff6f91, 0x8affc1, 0xffe99b,
+                    0x9ddfff, 0xd69fff, 0xb2ffff, 0xffffff
             }
     };
 
