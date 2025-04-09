@@ -69,6 +69,8 @@ char *strncpy(char *dest, const char *src, size_t n);
 
 char *strrchr(const char *s, int c);
 
+char* strtok(char* str, const char* delim);
+
 static inline char *LeadingWhitespace(char *beg, char *end) {
     while (end > beg && *--end <= 0x20) {
         *end = 0;

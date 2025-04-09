@@ -147,6 +147,39 @@ int isspace(int c) {
     return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v');
 }
 
+char* strtok(char* str, const char* delim) {
+    static char* last = NULL;
+    if (str) {
+        last = str;
+    } else if (!last) {
+        return NULL;
+    }
+
+    char* start = last;
+    while (*start && strchr(delim, *start)) {
+        start++;
+    }
+
+    if (*start == '\0') {
+        last = NULL;
+        return NULL;
+    }
+
+    char* end = start;
+    while (*end && !strchr(delim, *end)) {
+        end++;
+    }
+
+    if (*end) {
+        *end = '\0';
+        last = end + 1;
+    } else {
+        last = NULL;
+    }
+
+    return start;
+}
+
 int64_t strtol(const char *str, char **endptr, int base) {
     const char *s;
     uint64_t acc;

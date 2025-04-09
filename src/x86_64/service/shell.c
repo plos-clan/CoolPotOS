@@ -62,39 +62,6 @@ static int gets(char *buf, int buf_size) {
     return index;
 }
 
-int ends_with(const char *str, const char *suffix) {
-    size_t str_len    = strlen(str);
-    size_t suffix_len = strlen(suffix);
-
-    if (suffix_len > str_len) { return 0; }
-
-    return strncmp(str + str_len - suffix_len, suffix, suffix_len) == 0;
-}
-
-static int cmd_parse(char *cmd_str, char **argv, char token) {
-    int arg_idx = 0;
-    while (arg_idx < MAX_ARG_NR) {
-        argv[arg_idx] = NULL;
-        arg_idx++;
-    }
-    char *next = cmd_str;
-    int   argc = 0;
-
-    while (*next) {
-        while (*next == token)
-            UNUSED(*next++);
-        if (*next == 0) break;
-        argv[argc] = next;
-        while (*next && *next != token)
-            UNUSED(*next++);
-        if (*next) *next++ = 0;
-        if (argc > MAX_ARG_NR) return -1;
-        argc++;
-    }
-
-    return argc;
-}
-
 static void shutdown_os() {
     cp_shutdown();
 }
@@ -307,6 +274,7 @@ static void lmod(int argc, char **argv) {
             printk("Model(%s) load in %s\n", module_ls[i].module_name, module_ls[i].path);
         }
     } else {
+        if(!strcmp(argv[1], "Kernel")) return;
         cp_module_t *module = get_module(argv[1]);
         if (module == NULL) {
             printk("Cannot find module [%s]\n", argv[1]);
@@ -348,7 +316,7 @@ static void sys_info() {
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
-    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS Stellar Nyan Edition\n");
+    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",
@@ -389,8 +357,59 @@ static void print_help() {
     printk("luser     <module>       Load a user application.\n");
 }
 
+char** split_by_space(const char* input, int* count) {
+    char** tokens = (char**)malloc(MAX_ARG_NR * sizeof(char*));
+    if (!tokens) return NULL;
+
+    int token_index = 0;
+    int i = 0;
+    int start = -1;
+    int len = strlen(input);
+
+    while (i <= len) {
+        if (input[i] != ' ' && input[i] != '\0') {
+            if (start == -1) start = i;
+        } else {
+            if (start != -1) {
+                int token_len = i - start;
+                char* token = (char*)malloc(token_len + 1);
+                if (!token) {
+                    for (int j = 0; j < token_index; j++) free(tokens[j]);
+                    free(tokens);
+                    return NULL;
+                }
+
+                memcpy(token, &input[start], token_len);
+                token[token_len] = '\0';
+                tokens[token_index++] = token;
+
+                if (token_index >= MAX_ARG_NR) break;
+                start = -1;
+            }
+        }
+        i++;
+    }
+
+    tokens[token_index] = NULL; // 最后加个 NULL 结束
+    if (count) *count = token_index;
+    return tokens;
+}
+
+void trim(char *str) {
+    while (*str && isspace((unsigned char)*str)) {
+        str++;
+    }
+
+    char *end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) {
+        end--;
+    }
+
+    *(end + 1) = '\0';
+}
+
 _Noreturn void shell_setup() {
-    printk("Welcome to CoolPotOS Stellar Nyan Edition (%s)\n"
+    printk("Welcome to CoolPotOS (%s)\n"
            " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
            " * Website:           https://github.com/plos-clan\n"
            " System information as of %s \n"
@@ -398,26 +417,23 @@ _Noreturn void shell_setup() {
            "  Logged:             %s\n"
            "MIT License 2024-2025 plos-clan (Build by xmake&clang)\n",
            KERNEL_NAME, get_date_time(), get_all_task(),get_current_task()->parent_group->user->name);
-    char  com[MAX_COMMAND_LEN];
-    char *argv[MAX_ARG_NR];
-    int   argc      = -1;
+    char  *com;
+    char **argv;
+    int    argc;
     shell_work_path = malloc(1024);
     not_null_assets(shell_work_path);
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
     infinite_loop {
+        com  = malloc(MAX_COMMAND_LEN);
         printk("\033[32m%s@localhost: \033[34m%s \033[39m$ ",
                get_current_task()->parent_group->user->name,
                shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
         strcpy(com_copy, com);
-        argc = cmd_parse(com, argv, ' ');
-
-        if (argc == -1) {
-            printk("[Shell]: Error: out of arguments buffer\n");
-            continue;
-        }
+        trim(com);
+        argv = split_by_space(com, &argc);
 
         if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print_help();
@@ -457,5 +473,11 @@ _Noreturn void shell_setup() {
             }
         } else
             printk("\033[31mUnknown command '%s'.\033[39m\n", com_copy);
+
+        for (int i = 0; i < argc; i++) {
+            free(argv[i]);
+        }
+        free(com);
+        free(argv);
     }
 }
