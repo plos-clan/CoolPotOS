@@ -11,7 +11,6 @@ MCFG          *mcfg;
 uint64_t       mcfg_entries_len = 0;
 pcie_device_t *pci_devices[PCI_DEVICE_MAX];
 uint32_t       pci_device_number = 0;
-bool           is_pcie = false; // 是否是PCIE模式 (CP_Kernel无法加载PCIE驱动时候会切换回默认的PCI)
 
 static uint64_t get_device_mmio_physical_address(uint16_t segment_group, uint8_t bus,
                                                  uint8_t device, uint8_t function) {
@@ -162,15 +161,10 @@ void pci_scan_segment(uint16_t segment_group) {
 }
 
 uint32_t get_pcie_num() {
-    return is_pcie ? pci_device_number : get_pci_num();
+    return get_pci_num() - pci_device_number;
 }
 
 void print_all_pcie() {
-    if (!is_pcie) {
-        print_all_pci();
-        printk("Model: PCI\n");
-        return;
-    }
     printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
     for (size_t i = 0; i < pci_device_number; i++) {
         pcie_device_t *device = pci_devices[i];
@@ -178,7 +172,6 @@ void print_all_pcie() {
                device->func, device->vendor_id, device->device_id, device->class_code,
                device->name);
     }
-    printk("Model: PCIE\n");
 }
 
 pcie_device_t *pcie_find_class(uint32_t class_code) {
@@ -230,7 +223,6 @@ void pcie_init() {
         uint16_t segment_group = mcfg_entries[i]->pci_segment_group;
         pci_scan_segment(segment_group);
     }
-    is_pcie = true;
     kinfo("PCIE device find %d", pci_device_number);
 pci:
     pci_setup();
