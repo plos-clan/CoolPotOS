@@ -312,15 +312,13 @@ static void sys_info() {
 
     uint32_t    bytes  = get_all_memusage();
     int         memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-    extern bool is_pcie;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
     printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",
-           is_pcie ? "PCIE" : "PCI ", get_pcie_num());
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pcie_num());
     printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",
            framebuffer->width, framebuffer->height);
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
