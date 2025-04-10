@@ -1,10 +1,11 @@
-<div style="height: 3em;"></div>
+<div align="center">
+  
+  <img height="200px"
+    src="https://github.com/user-attachments/assets/9542ad95-0f48-43ad-9617-a750db84e907"
+   alt=""/>     
+  <h1 align="center">CoolPotOS</h1>
 
-<h1 align="center">CoolPotOS</h1>
-
-<div align="center"><strong>A simple toy operating system.</strong></div>
-
-<div style="height: 3em;"></div>
+### A simple toy operating system.
 
 <div align="center">
 <img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
@@ -12,6 +13,8 @@
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
 <img alt="GitHub issues" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
 <img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
+</div>
+
 </div>
 
 <hr>
