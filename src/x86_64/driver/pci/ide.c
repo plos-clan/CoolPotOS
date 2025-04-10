@@ -393,11 +393,7 @@ uint8_t ide_atapi_read(uint8_t drive, uint32_t lba, uint8_t numsects, uint16_t s
         }
     }
 
-    // (X): Waiting for an IRQ:
-    // ------------------------------------------------------------------
-    ide_wait_irq();
-
-    // (XI): Waiting for BSY & DRQ to clear:
+    // (X): Waiting for BSY & DRQ to clear:
     // ------------------------------------------------------------------
 
     waitif(ide_read(channel, ATA_REG_STATUS) & (ATA_SR_BSY | ATA_SR_DRQ));
