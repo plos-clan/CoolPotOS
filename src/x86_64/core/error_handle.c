@@ -23,10 +23,10 @@ void print_register(interrupt_frame_t *frame) {
 
 void print_task_info(tcb_t pcb) {
     if (pcb == NULL)
-        printk("No process load, CPU%d\n", get_current_cpuid());
+        printk("No process load, CPU%d\n", cpu->id);
     else
         printk("Current process PID: %d:%s (%s) CPU%d\n", pcb->pid, pcb->name,
-               pcb->parent_group->name, get_current_cpuid());
+               pcb->parent_group->name, cpu->id);
 }
 
 void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
@@ -35,8 +35,8 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     init_print_lock();
     ticket_lock(&error_lock);
     logkf("Kernel Error: %s:0x%x\n", msg, code);
-    logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->pid, get_current_task()->name,
-          get_current_task()->parent_group->name, get_current_cpuid());
+    logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->pid,
+          get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n", msg,
            code);
     print_task_info(get_current_task());
@@ -100,12 +100,12 @@ __IRQHANDLER void stack_segment_fault(interrupt_frame_t *frame, uint64_t error_c
 }
 
 void error_setup() {
-    register_interrupt_handler(0, (void *) dived_error, 0, 0x8E);
-    register_interrupt_handler(6, (void *) invalid_opcode, 0, 0x8E);
-    register_interrupt_handler(7, (void *) device_not_available, 0, 0x8E);
-    register_interrupt_handler(8, (void *) double_fault_asm, 1, 0x8E);
-    register_interrupt_handler(10, (void *) invalid_tss, 0, 0x8E);
-    register_interrupt_handler(11, (void *) segment_not_present, 0, 0x8E);
-    register_interrupt_handler(12, (void *) stack_segment_fault, 0, 0x8E);
-    register_interrupt_handler(13, (void *) general_protection_fault, 0, 0x8E);
+    register_interrupt_handler(0, (void *)dived_error, 0, 0x8E);
+    register_interrupt_handler(6, (void *)invalid_opcode, 0, 0x8E);
+    register_interrupt_handler(7, (void *)device_not_available, 0, 0x8E);
+    register_interrupt_handler(8, (void *)double_fault_asm, 1, 0x8E);
+    register_interrupt_handler(10, (void *)invalid_tss, 0, 0x8E);
+    register_interrupt_handler(11, (void *)segment_not_present, 0, 0x8E);
+    register_interrupt_handler(12, (void *)stack_segment_fault, 0, 0x8E);
+    register_interrupt_handler(13, (void *)general_protection_fault, 0, 0x8E);
 }

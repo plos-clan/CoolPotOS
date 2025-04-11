@@ -10,22 +10,22 @@
 #include "lock_queue.h"
 #include "page.h"
 #include "scheduler.h"
+#include "syscall.h"
+#include "sysuser.h"
 #include "timer.h"
 #include "tty.h"
-#include "sysuser.h"
-#include "syscall.h"
 
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
 
 typedef enum {
-    CREATE = 0,  // 创建中
+    CREATE  = 0, // 创建中
     RUNNING = 1, // 运行中
-    WAIT = 2,    // 线程阻塞
-    DEATH = 3,   // 死亡(无法被调度, 线程状态为等待处死)
-    START = 4,   // 准备调度
-    OUT = 5,     // 已被处死(线程状态)
-}TaskStatus;
+    WAIT    = 2, // 线程阻塞
+    DEATH   = 3, // 死亡(无法被调度, 线程状态为等待处死)
+    START   = 4, // 准备调度
+    OUT     = 5, // 已被处死(线程状态)
+} TaskStatus;
 
 struct process_control_block {
     char              name[50];    // 进程名
@@ -61,6 +61,9 @@ struct thread_control_block {
     size_t        group_index;  // 进程队列索引
     size_t        death_index;  // 死亡队列索引
 };
+
+static __attr(address_space(257)) struct thread_control_block *const tcb =
+    (__attr(address_space(257)) void *)0;
 
 /**
  * 向当下cpu核心的调度队列增加一个任务
@@ -126,3 +129,5 @@ void  init_pcb();
 
 void kill_proc0(pcb_t pcb);
 void kill_thread0(tcb_t task);
+
+void change_current_tcb(tcb_t new_tcb);

@@ -132,24 +132,23 @@ void ps(int argc, char **argv) {
             pcb_t pgb = (pcb_t)thread->data;
             printk("%-5d%-*s  %-7d %s%s\n", pgb->pgb_id, longest_name_len, pgb->name,
                    pgb->pcb_queue->size,
-                   pgb->status == RUNNING ? "Running " :
-                   pgb->status == START   ? "Start   " :
-                   pgb->status == WAIT    ? "Wait    " :
-                                            "Death   "
-                   ,pgb->user->name);
+                   pgb->status == RUNNING ? "Running "
+                   : pgb->status == START ? "Start   "
+                   : pgb->status == WAIT  ? "Wait    "
+                                          : "Death   ",
+                   pgb->user->name);
         }
     } else if (strcmp(argv[1], "pcb") == 0) {
-        extern smp_cpu_t cpus[MAX_CPU];
-        uint32_t         bytes           = get_all_memusage();
-        size_t           longest_pgb_len = 0;
-        uint64_t         all_time        = 0;
-        uint64_t         mem_use         = 0;
-        int              memory          = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-        extern tcb_t     kernel_head_task;
-        uint64_t         idle_time = kernel_head_task->cpu_timer;
+        uint32_t     bytes           = get_all_memusage();
+        size_t       longest_pgb_len = 0;
+        uint64_t     all_time        = 0;
+        uint64_t     mem_use         = 0;
+        int          memory          = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+        extern tcb_t kernel_head_task;
+        uint64_t     idle_time = kernel_head_task->cpu_timer;
         for (size_t i = 0; i < MAX_CPU; i++) {
-            smp_cpu_t cpu = cpus[i];
-            if (cpu.flags == 1) {
+            smp_cpu_t cpu = smp_cpus[i];
+            if (cpu.ready == 1) {
                 queue_foreach(cpu.scheduler_queue, queue) {
                     tcb_t longest_name = (tcb_t)queue->data;
                     if (strlen(longest_name->name) > longest_name_len)
@@ -159,11 +158,11 @@ void ps(int argc, char **argv) {
                 }
             }
         }
-        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  ProcessorID\n", longest_name_len,
-               "NAME", longest_pgb_len, "GROUP");
+        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  ProcessorID\n",
+               longest_name_len, "NAME", longest_pgb_len, "GROUP");
         for (size_t i = 0; i < MAX_CPU; i++) {
-            smp_cpu_t cpu = cpus[i];
-            if (cpu.flags == 1) {
+            smp_cpu_t cpu = smp_cpus[i];
+            if (cpu.ready == 1) {
                 queue_foreach(cpu.scheduler_queue, queue) {
                     tcb_t pcb  = (tcb_t)queue->data;
                     all_time  += pcb->cpu_timer;
@@ -171,12 +170,12 @@ void ps(int argc, char **argv) {
                     printk("%-5d%-*s %-*s  %-10d %-10d%-10d%sCPU%-d\n", pcb->pid, longest_name_len,
                            pcb->name, longest_pgb_len, pcb->parent_group->name, pcb->mem_usage,
                            pcb->task_level, pcb->cpu_clock,
-                           pcb->status == RUNNING ? "Running " :
-                           pcb->status == START   ? "Start   " :
-                           pcb->status == WAIT    ? "Wait    " :
-                           pcb->status == DEATH   ? "Death   " :
-                                                    "Out     "
-                           , pcb->cpu_id);
+                           pcb->status == RUNNING ? "Running "
+                           : pcb->status == START ? "Start   "
+                           : pcb->status == WAIT  ? "Wait    "
+                           : pcb->status == DEATH ? "Death   "
+                                                  : "Out     ",
+                           pcb->cpu_id);
                 }
             }
         }
@@ -274,7 +273,7 @@ static void lmod(int argc, char **argv) {
             printk("Model(%s) load in %s\n", module_ls[i].module_name, module_ls[i].path);
         }
     } else {
-        if(!strcmp(argv[1], "Kernel")) return;
+        if (!strcmp(argv[1], "Kernel")) return;
         cp_module_t *module = get_module(argv[1]);
         if (module == NULL) {
             printk("Cannot find module [%s]\n", argv[1]);
@@ -302,16 +301,18 @@ static void luser(int argc, char **argv) {
         kwarn("Cannot load elf file.");
         return;
     }
-    pcb_t user_task = create_process_group(module->module_name, up, get_current_task()->parent_group->user);
+    pcb_t user_task =
+        create_process_group(module->module_name, up, get_current_task()->parent_group->user);
     create_user_thread(main, "main", user_task);
-    logkf("User application %s : %d : index: %d loaded.\n", module->module_name , user_task->pgb_id, user_task->queue_index);
+    logkf("User application %s : %d : index: %d loaded.\n", module->module_name, user_task->pgb_id,
+          user_task->queue_index);
 }
 
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
-    uint32_t    bytes  = get_all_memusage();
-    int         memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    uint32_t bytes  = get_all_memusage();
+    int      memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
@@ -355,30 +356,31 @@ static void print_help() {
     printk("luser     <module>       Load a user application.\n");
 }
 
-char** split_by_space(const char* input, int* count) {
-    char** tokens = (char**)malloc(MAX_ARG_NR * sizeof(char*));
+char **split_by_space(const char *input, int *count) {
+    char **tokens = (char **)malloc(MAX_ARG_NR * sizeof(char *));
     if (!tokens) return NULL;
 
     int token_index = 0;
-    int i = 0;
-    int start = -1;
-    int len = strlen(input);
+    int i           = 0;
+    int start       = -1;
+    int len         = strlen(input);
 
     while (i <= len) {
         if (input[i] != ' ' && input[i] != '\0') {
             if (start == -1) start = i;
         } else {
             if (start != -1) {
-                int token_len = i - start;
-                char* token = (char*)malloc(token_len + 1);
+                int   token_len = i - start;
+                char *token     = (char *)malloc(token_len + 1);
                 if (!token) {
-                    for (int j = 0; j < token_index; j++) free(tokens[j]);
+                    for (int j = 0; j < token_index; j++)
+                        free(tokens[j]);
                     free(tokens);
                     return NULL;
                 }
 
                 memcpy(token, &input[start], token_len);
-                token[token_len] = '\0';
+                token[token_len]      = '\0';
                 tokens[token_index++] = token;
 
                 if (token_index >= MAX_ARG_NR) break;
@@ -414,7 +416,8 @@ _Noreturn void shell_setup() {
            "  Tasks:              %d\n"
            "  Logged:             %s\n"
            "MIT License 2024-2025 plos-clan (Build by xmake&clang)\n",
-           KERNEL_NAME, get_date_time(), get_all_task(),get_current_task()->parent_group->user->name);
+           KERNEL_NAME, get_date_time(), get_all_task(),
+           get_current_task()->parent_group->user->name);
     char  *com;
     char **argv;
     int    argc;
@@ -423,10 +426,9 @@ _Noreturn void shell_setup() {
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
     infinite_loop {
-        com  = malloc(MAX_COMMAND_LEN);
+        com = malloc(MAX_COMMAND_LEN);
         printk("\033[32m%s@localhost: \033[34m%s \033[39m$ ",
-               get_current_task()->parent_group->user->name,
-               shell_work_path);
+               get_current_task()->parent_group->user->name, shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
         strcpy(com_copy, com);

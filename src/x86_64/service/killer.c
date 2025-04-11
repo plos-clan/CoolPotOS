@@ -1,15 +1,14 @@
 #include "killer.h"
+#include "heap.h"
 #include "lock_queue.h"
 #include "smp.h"
-#include "heap.h"
 
-lock_queue *death_proc_queue;   // 死亡进程队列
+lock_queue *death_proc_queue; // 死亡进程队列
 
-_Noreturn void halt_service(){
-    infinite_loop{
+_Noreturn void halt_service() {
+    infinite_loop {
         __asm__ volatile("hlt");
-        smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
-        if (cpu == NULL) continue;
+        if (!cpu->ready) continue;
         tcb_t task = NULL;
         ticket_lock(&cpu->death_queue->lock);
         queue_foreach(cpu->death_queue, node) {
@@ -18,20 +17,18 @@ _Noreturn void halt_service(){
             break;
         }
         ticket_unlock(&cpu->death_queue->lock);
-        if(task == NULL || task->status != DEATH){
-            continue;
-        }
-        queue_remove_at(cpu->death_queue,task->death_index);
+        if (task == NULL || task->status != DEATH) { continue; }
+        queue_remove_at(cpu->death_queue, task->death_index);
         kill_thread0(task);
-        queue_remove_at(task->parent_group->pcb_queue,task->group_index);
+        queue_remove_at(task->parent_group->pcb_queue, task->group_index);
         free(task);
     }
 }
 
-_Noreturn void killer_service(){
-    while (1){
-        if(death_proc_queue->size == 0){
-            __asm__ volatile("pause":::"memory");
+_Noreturn void killer_service() {
+    while (1) {
+        if (death_proc_queue->size == 0) {
+            __asm__ volatile("pause" ::: "memory");
             continue;
         }
         pcb_t task = NULL;
@@ -49,11 +46,11 @@ _Noreturn void killer_service(){
                 }
             }
             ticket_unlock(&task->pcb_queue->lock);
-            if(is_out) break;
+            if (is_out) break;
             task = NULL;
         }
-        if(task == NULL) continue;
-        queue_remove_at(death_proc_queue,task->death_index);
+        if (task == NULL) continue;
+        queue_remove_at(death_proc_queue, task->death_index);
         kill_proc0(task);
     }
 }
@@ -64,7 +61,7 @@ void add_death_proc(pcb_t task) {
     ticket_unlock(&death_proc_queue->lock);
 }
 
-void killer_setup(){
+void killer_setup() {
     death_proc_queue = queue_init();
-    create_kernel_thread((void*)killer_service, NULL, "KillerService", NULL);
+    create_kernel_thread((void *)killer_service, NULL, "KillerService", NULL);
 }
