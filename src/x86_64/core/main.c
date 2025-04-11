@@ -81,7 +81,9 @@ _Noreturn void cp_reset() {
     infinite_loop;
 }
 
-void kmain(void) {
+void kmain() {
+    gdt_setup();
+    idt_setup();
     init_gop();
     init_serial();
     init_hhdm();
@@ -90,12 +92,10 @@ void kmain(void) {
     module_setup();
     init_terminal();
     init_tty();
-    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n",KERNEL_NAME, GIT_VERSION,
+    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
            COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
-    gdt_setup();
-    idt_setup();
     page_setup();
     error_setup();
     float_processor_setup();

@@ -51,8 +51,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         faulting_address);
     if (get_current_task() != NULL) {
         printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->pid,
-               get_current_task()->name, get_current_task()->parent_group->name,
-               get_current_cpuid());
+               get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
     }
     print_register(frame);
     terminal_flush();
@@ -83,8 +82,7 @@ page_directory_t *get_kernel_pagedir() {
 }
 
 page_directory_t *get_current_directory() {
-    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
-    return cpu != NULL ? cpu->directory : current_directory;
+    return cpu->ready ? cpu->directory : current_directory;
 }
 
 static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table,
@@ -178,11 +176,11 @@ void switch_process_page_directory(page_directory_t *dir) {
 }
 
 void switch_page_directory(page_directory_t *dir) {
-    smp_cpu_t *cpu = get_cpu_smp(get_current_cpuid());
-    if (cpu != NULL) {
+    if (cpu->ready) {
         cpu->directory = dir;
-    } else
+    } else {
         current_directory = dir;
+    }
     page_table_t *physical_table = virt_to_phys((uint64_t)dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }

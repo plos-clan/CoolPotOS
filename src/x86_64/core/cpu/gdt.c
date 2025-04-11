@@ -1,4 +1,5 @@
 #include "description_table.h"
+#include "io.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "smp.h"
@@ -8,8 +9,6 @@ struct gdt_register gdt_pointer;
 tss_t               tss0;
 tss_stack_t         tss_stack;
 extern uint32_t     bsp_processor_id;
-
-extern smp_cpu_t cpus[MAX_CPU];
 
 void gdt_setup() {
     gdt_entries[0] = 0x0000000000000000U;
@@ -38,6 +37,14 @@ void gdt_setup() {
         :
         : [ptr] "m"(gdt_pointer), [cseg] "rm"((uint16_t)0x8U), [dseg] "rm"((uint16_t)0x10U)
         : "memory");
+
+    uint32_t   boot_id  = get_current_cpuid();
+    smp_cpu_t *boot_cpu = &smp_cpus[boot_id];
+    wrmsr(0xC0000100, 0);
+    wrmsr(0xC0000101, (uint64_t)boot_cpu);
+    wrmsr(0xC0000102, (uint64_t)boot_cpu);
+    cpu->id = boot_id;
+
     tss_setup();
 }
 
@@ -57,8 +64,8 @@ void tss_setup() {
 }
 
 void set_kernel_stack(uint64_t rsp) {
-    uint64_t cpuid = get_current_cpuid();
+    uint64_t cpuid = cpu->id;
     if (cpuid == bsp_processor_id)
         tss0.rsp[0] = rsp;
-    else { cpus[cpuid].tss0.rsp[0] = rsp; }
+    else { smp_cpus[cpuid].tss0.rsp[0] = rsp; }
 }
