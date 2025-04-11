@@ -23,10 +23,6 @@ save_registers:
     PUSH RCX
     PUSH RBX
     PUSH RAX
-    MOV  RAX, GS
-    PUSH RAX
-    MOV  RAX, FS
-    PUSH RAX
     MOV  RAX, ES
     PUSH RAX
     MOV  RAX, DS
@@ -38,10 +34,6 @@ save_registers:
     MOV DS, RAX
     POP RAX
     MOV ES, RAX
-    POP RAX
-    MOV FS, RAX
-    POP RAX
-    MOV GS, RAX
     POP RAX
     POP RBX
     POP RCX

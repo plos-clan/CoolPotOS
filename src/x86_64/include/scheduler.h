@@ -5,8 +5,6 @@
 typedef struct registers {
     uint64_t ds;
     uint64_t es;
-    uint64_t fs;
-    uint64_t gs;
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;
@@ -51,7 +49,7 @@ typedef struct {
     uint64_t rdx;
     uint64_t rdi;
     uint64_t rsi;
-    uint64_t ss,cs,gs,ds,es;
+    uint64_t ss, cs, ds, es;
 } TaskContext;
 
 /**

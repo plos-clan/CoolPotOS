@@ -4,7 +4,7 @@
  * 定义CP_Kernel内核的各种属性
  */
 #define KERNEL_NAME    "CP_Kernel-x86_64-0.1.6" // 内核编号
-#define MAX_CPU        (256)                    // 最大支持CPU核心数 256
+#define MAX_CPU        256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP    0x800000                 // 内核堆大小 8MB
 #define STACK_SIZE     32768                    // 栈大小(byte)
 #define KERNEL_ST_SZ   131072                   // 增强栈大小 128k
@@ -69,7 +69,7 @@ char *strncpy(char *dest, const char *src, size_t n);
 
 char *strrchr(const char *s, int c);
 
-char* strtok(char* str, const char* delim);
+char *strtok(char *str, const char *delim);
 
 static inline char *LeadingWhitespace(char *beg, char *end) {
     while (end > beg && *--end <= 0x20) {
