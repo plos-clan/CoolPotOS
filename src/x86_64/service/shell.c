@@ -416,24 +416,25 @@ _Noreturn void shell_setup() {
            "  Tasks:              %d\n"
            "  Logged:             %s\n"
            "MIT License 2024-2025 plos-clan (Build by xmake&clang)\n",
-           KERNEL_NAME, get_date_time(), get_all_task(),
-           get_current_task()->parent_group->user->name);
-    char  *com;
-    char **argv;
-    int    argc;
+           KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
+    char *line      = malloc(MAX_COMMAND_LEN);
     shell_work_path = malloc(1024);
     not_null_assets(shell_work_path);
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
     infinite_loop {
-        com = malloc(MAX_COMMAND_LEN);
-        printk("\033[32m%s@localhost: \033[34m%s \033[39m$ ",
-               get_current_task()->parent_group->user->name, shell_work_path);
-        if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
+        printk("\033[32m%s@localhost: \033[34m%s \033[39m$ ", tcb->parent_group->user->name,
+               shell_work_path);
+        if (gets(line, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
-        strcpy(com_copy, com);
-        trim(com);
-        argv = split_by_space(com, &argc);
+        strcpy(com_copy, line);
+        trim(line);
+        int    argc;
+        char **argv = split_by_space(line, &argc);
+        if (argc == 0) {
+            free(argv);
+            continue;
+        }
 
         if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print_help();
@@ -477,7 +478,6 @@ _Noreturn void shell_setup() {
         for (int i = 0; i < argc; i++) {
             free(argv[i]);
         }
-        free(com);
         free(argv);
     }
 }

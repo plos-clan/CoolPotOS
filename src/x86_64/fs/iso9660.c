@@ -299,10 +299,10 @@ int iso9660_writefile(file_t file, const void *addr, size_t offset, size_t size)
 
 static void iso9660_process_dir(l9660_dir *dir, vfs_node_t parent) {
     for (;;) {
-        l9660_dirent *dent;
+        l9660_dirent *dent = NULL;
         l9660_readdir(dir, &dent);
 
-        if (dent == 0) break;
+        if (dent == NULL) break;
         int j = 0;
         if (memcmp("\0", dent->name, dent->name_len) == 0) {
             continue;

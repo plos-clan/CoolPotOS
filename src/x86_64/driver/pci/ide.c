@@ -296,7 +296,7 @@ uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba, uint8_t n
             // asm("mov %%ax, %%ds" ::"a"(selector));
             // asm("rep outsw" ::"c"(words), "d"(bus), "S"(edi));  // Send Data
             // asm("popw %ds");
-            for (int h = 0; h < words; h++) {
+            for (uint32_t h = 0; h < words; h++) {
                 io_out16(bus, word_[i * words + h]);
             }
         }
@@ -369,7 +369,8 @@ uint8_t ide_atapi_read(uint8_t drive, uint32_t lba, uint8_t numsects, uint16_t s
     // (VII): Waiting for the driver to finish or return an error code:
     // ------------------------------------------------------------------
 
-    if ((err = ide_polling(channel, 1)) != NULL) return err; // Polling and return if error.
+    err = ide_polling(channel, 1);
+    if (err != 0) return err; // Polling and return if error.
 
     // (VIII): Sending the packet data:
     // ------------------------------------------------------------------
@@ -384,10 +385,11 @@ uint8_t ide_atapi_read(uint8_t drive, uint32_t lba, uint8_t numsects, uint16_t s
 
     uint16_t *_word = (uint16_t *)edi;
     for (i = 0; i < numsects; i++) {
-        ide_wait_irq();                                          // Wait for an IRQ.
-        if ((err = ide_polling(channel, 1)) != NULL) return err; // Polling and return if error.
+        ide_wait_irq(); // Wait for an IRQ.
+        err = ide_polling(channel, 1);
+        if (err != 0) return err; // Polling and return if error.
         klog("words = %d\n", words);
-        for (int h = 0; h < words; h++) {
+        for (uint32_t h = 0; h < words; h++) {
             uint16_t a           = io_in16(bus);
             _word[i * words + h] = a;
         }
