@@ -53,6 +53,7 @@ uint32_t USBEnumerate(USB_HUB *hub) {
         if (!count) {
             hub->OP->DCC(hub, port);
             free(common);
+            continue;
         }
         hub->DC    += count;
         common->A1  = ALL_USB_DEVICE;
