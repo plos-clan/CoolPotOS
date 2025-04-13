@@ -11,6 +11,7 @@ enum InterruptIndex {
     ide_secondary,
     pcnet,
     xhci,
+	sb16,
 };
 
 struct interrupt_frame {
