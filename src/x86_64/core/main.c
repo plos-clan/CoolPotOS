@@ -88,6 +88,7 @@ void kmain() {
     init_serial();
     init_hhdm();
     init_frame();
+    page_setup();
     init_heap();
     module_setup();
     init_terminal();
@@ -96,7 +97,6 @@ void kmain() {
            COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
-    page_setup();
     error_setup();
     float_processor_setup();
     dlinker_init();

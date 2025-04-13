@@ -41,7 +41,7 @@ int terminal_flush_service(void *pVoid) {
     open_flush = true;
     infinite_loop {
         update_terminal();
-        usleep(100);
+        nsleep(100);
     }
     return 0;
 }

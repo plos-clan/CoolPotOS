@@ -454,6 +454,7 @@ void ahci_setup() {
         int a = ahci_identify(&(hba_mem->ports[ahci_ports[i].port]), buf, ahci_ports[i].type);
         if (!a) {
             kwarn("SATA Drive identify error.");
+            free(buf);
             continue;
         }
 

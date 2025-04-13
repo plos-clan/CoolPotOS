@@ -24,12 +24,12 @@ void enable_acpi() {
         io_out8(SMI_CMD, facp->acpi_enable);
         for (i = 0; i < 300; i++) {
             if (io_in16(facp->pm1a_cnt_blk) & SCI_EN) break;
-            usleep(5);
+            nsleep(5);
         }
         if (facp->pm1b_cnt_blk) {
             for (int i = 0; i < 300; i++) {
                 if (io_in16(facp->pm1b_cnt_blk) & SCI_EN) break;
-                usleep(5);
+                nsleep(5);
             }
         }
         if (i < 300)
