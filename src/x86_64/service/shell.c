@@ -17,6 +17,8 @@
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
+#include "sb16.h"
+#include "wav_util.h"
 
 extern void        cp_shutdown();
 extern void        cp_reset();
@@ -308,6 +310,23 @@ static void luser(int argc, char **argv) {
           user_task->queue_index);
 }
 
+static void sound(int argc, char **argv){
+    if (argc == 1) {
+        printk("[Shell-SOUND]: If there are too few parameters.\n");
+        return;
+    }
+
+    cp_module_t *module = get_module(argv[1]);
+    if (module == NULL) {
+        printk("Cannot find module [%s]\n", argv[1]);
+        return;
+    }
+
+    sb16_set_sample_rate(44100);
+    sb16_set_volume(15, 15);
+    sb16_play(module->data, module->size);
+}
+
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
@@ -468,6 +487,8 @@ _Noreturn void shell_setup() {
             lmod(argc, argv);
         else if (!strcmp("luser", argv[0]))
             luser(argc, argv);
+        else if (!strcmp("sound", argv[0]))
+            sound(argc, argv);
         else if (!strcmp("test", argv[0])) {
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n", i);

@@ -16,55 +16,52 @@ static const uint8_t COUNT_PORT[8] = {0x01, 0x03, 0x05, 0x07, 0xC2, 0xC6, 0xCA, 
 static const uint32_t DMA_ADDR_MAX = 1 << 24;
 
 /* Sending commands to the DMA controller */
-void dma_start(uint8_t mode, uint8_t channel, uint32_t *address, uint32_t size)
-{
-	mode |= (channel % 4);
+void dma_start(uint8_t mode, uint8_t channel, uint32_t *address, uint32_t size) {
+    mode |= (channel % 4);
 
-	if (channel > 4 && size % 2 != 0) return;
+    if (channel > 4 && size % 2 != 0) return;
 
-	uint32_t addr = (uint32_t)(uintptr_t)address;
-	if (!(addr < DMA_ADDR_MAX)) return;
-	if (!(addr + size < DMA_ADDR_MAX)) return;
+    uint32_t addr = (uint32_t) (uintptr_t) address;
+    if (!(addr < DMA_ADDR_MAX)) return;
+    if (!(addr + size < DMA_ADDR_MAX)) return;
 
-	uint8_t page = addr >> 16;
-	uint16_t offset = (channel > 4 ? addr / 2 : addr) & 0xffff;
-	size = (channel > 4 ? size / 2 : size) - 1;
+    uint8_t page = addr >> 16;
+    uint16_t offset = (channel > 4 ? addr / 2 : addr) & 0xffff;
+    size = (channel > 4 ? size / 2 : size) - 1;
 
-	close_interrupt;
+    close_interrupt;
 
-	/* Setting up DMA channels */
-	io_out8(MASK_REG[channel], 0x04 | (channel % 4));
+    /* Setting up DMA channels */
+    io_out8(MASK_REG[channel], 0x04 | (channel % 4));
 
-	/* Unmask the DMA channel */
-	io_out8(CLEAR_REG[channel], 0x00);
+    /* Unmask the DMA channel */
+    io_out8(CLEAR_REG[channel], 0x00);
 
-	/* Send the specified pattern to DMA */
-	io_out8(MODE_REG[channel], mode);
+    /* Send the specified pattern to DMA */
+    io_out8(MODE_REG[channel], mode);
 
-	/* The physical page where the data is sent */
-	io_out8(PAGE_PORT[channel], page);
+    /* The physical page where the data is sent */
+    io_out8(PAGE_PORT[channel], page);
 
-	/* Send offset address */
-	io_out8(ADDR_PORT[channel], LOW_BYTE(offset));
-	io_out8(ADDR_PORT[channel], HIGH_BYTE(offset));
+    /* Send offset address */
+    io_out8(ADDR_PORT[channel], LOW_BYTE(offset));
+    io_out8(ADDR_PORT[channel], HIGH_BYTE(offset));
 
-	/* The length of the data sent */
-	io_out8(COUNT_PORT[channel], LOW_BYTE(size));
-	io_out8(COUNT_PORT[channel], HIGH_BYTE(size));
+    /* The length of the data sent */
+    io_out8(COUNT_PORT[channel], LOW_BYTE(size));
+    io_out8(COUNT_PORT[channel], HIGH_BYTE(size));
 
-	/* So enable DMA_channel */
-	io_out8(MASK_REG[channel], (channel % 4));
-	open_interrupt;
+    /* So enable DMA_channel */
+    io_out8(MASK_REG[channel], (channel % 4));
+    open_interrupt;
 }
 
 /* Sending data using DMA */
-void dma_send(uint8_t channel, uint32_t *address, uint32_t size)
-{
-	dma_start(0x48, channel, address, size);
+void dma_send(uint8_t channel, uint32_t *address, uint32_t size) {
+    dma_start(0x48, channel, address, size);
 }
 
 /* Receiving data using DMA */
-void dma_recv(uint8_t channel, uint32_t *address, uint32_t size)
-{
-	dma_start(0x44, channel, address, size);
+void dma_recv(uint8_t channel, uint32_t *address, uint32_t size) {
+    dma_start(0x44, channel, address, size);
 }
