@@ -90,6 +90,7 @@ void io_apic_init() {
     ioapic_address = (uint64_t)phys_to_virt(ioapic_address);
     ioapic_add((uint8_t)timer, 0);
     ioapic_add((uint8_t)keyboard, 1);
+    ioapic_add((uint8_t)sb16, 5);
     ioapic_add((uint8_t)mouse, 12);
     ioapic_add((uint8_t)ide_primary, 14);
     ioapic_add((uint8_t)ide_secondary, 15);

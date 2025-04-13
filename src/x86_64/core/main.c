@@ -32,6 +32,7 @@
 #include "vdisk.h"
 #include "vfs.h"
 #include "xhci.h"
+#include "sb16.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -81,6 +82,13 @@ _Noreturn void cp_reset() {
     infinite_loop;
 }
 
+/*
+void sb16_test_sound() {
+    sb16_set_sample_rate(115200);
+    sb16_set_volume(15, 15);
+    sb16_play(音频数据, 数据大小);
+}*/
+
 void kmain() {
     gdt_setup();
     idt_setup();
@@ -117,6 +125,7 @@ void kmain() {
     ide_setup();
     // nvme_setup();
     ahci_setup();
+	sb16_init();
 
     // rtl8169_setup();
     pcnet_setup();
