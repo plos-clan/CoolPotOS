@@ -103,7 +103,7 @@ uint8_t ide_polling(uint8_t channel, uint32_t advanced_check) {
     while (a & ATA_SR_BSY) {
         klog("a=%d\n", a & ATA_SR_BSY); // Wait for BSY to be zero.
         a = ide_read(channel, ATA_REG_STATUS);
-        usleep(10);
+        nsleep(10);
     }
     klog("II OK");
     if (advanced_check) {
@@ -476,10 +476,10 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
 
             // (I) Select Drive:
             ide_write(i, ATA_REG_HDDEVSEL, 0xA0 | (j << 4)); // Select Drive.
-            usleep(10);                                      // Wait 1ms for drive select to work.
+            nsleep(10);                                      // Wait 1ms for drive select to work.
             // (II) Send ATA Identify Command:
             ide_write(i, ATA_REG_COMMAND, ATA_CMD_IDENTIFY);
-            usleep(10); // This function should be implemented in your OS. which waits
+            nsleep(10); // This function should be implemented in your OS. which waits
             // for 1 ms. it is based on System Timer Device Driver.
             // (III) Polling:
             if (ide_read(i, ATA_REG_STATUS) == 0) continue; // If Status = 0, No Device.
@@ -505,7 +505,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
                     continue; // Unknown Type (may not be a device).
 
                 ide_write(i, ATA_REG_COMMAND, ATA_CMD_IDENTIFY_PACKET);
-                usleep(10);
+                nsleep(10);
             }
 
             // (V) Read Identification Space of the Device:

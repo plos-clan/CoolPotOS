@@ -22,7 +22,7 @@ typedef struct timer {
 } timer_t;
 
 //void timer_handle(void); __attribute__((naked));
-void     usleep(uint64_t nano);
+void     nsleep(uint64_t nano);
 uint64_t nanoTime();
 
 uint32_t get_hour();

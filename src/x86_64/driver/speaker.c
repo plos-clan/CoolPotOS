@@ -22,12 +22,12 @@ static void nosound() {
 
 void beepX(uint32_t n, uint32_t d) {
     play_sound(n);
-    usleep(d * 1000);
+    nsleep(d * 1000);
     nosound();
 }
 
 void beep() {
     play_sound(1175);
-    usleep(10 * 1000);
+    nsleep(10 * 1000);
     nosound();
 }
