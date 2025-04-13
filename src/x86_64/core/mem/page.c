@@ -218,5 +218,4 @@ void page_setup() {
     double_fault_page               = get_cr3();
     register_interrupt_handler(14, (void *)page_fault_handle, 0, 0x8E);
     current_directory = &kernel_page_dir;
-    kinfo("Kernel page table in 0x%p", kernel_page_table);
 }

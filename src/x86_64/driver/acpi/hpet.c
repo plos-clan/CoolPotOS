@@ -20,7 +20,7 @@ extern void save_registers(); // switch.S
     return reg;
 }
 
-void usleep(uint64_t nano) {
+void nsleep(uint64_t nano) {
     uint64_t targetTime = nanoTime();
     uint64_t after      = 0;
     infinite_loop {

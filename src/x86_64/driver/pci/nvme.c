@@ -25,7 +25,7 @@ int NVMEWaitingRDY(nvme_controller *ctrl, uint32_t rdy) {
         if (i > MAX_WAIT_INDEX) { return true; }
         __asm__ __volatile__("pause");
         i++;
-        usleep(1);
+        nsleep(1);
     }
     return 0;
 }
