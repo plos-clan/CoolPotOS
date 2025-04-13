@@ -142,6 +142,7 @@ target("default_build")
             "-net","nic,model=pcnet","-net","user",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso",
+            "-audiodev", "sdl,id=audio0", "-device", "sb16,audiodev=audio0",
         }
         os.execv("qemu-system-x86_64 " , flags)
        -- os.execv("echo " , flags)
