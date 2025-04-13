@@ -18,7 +18,6 @@
 #include "timer.h"
 #include "vfs.h"
 #include "sb16.h"
-#include "wav_util.h"
 
 extern void        cp_shutdown();
 extern void        cp_reset();
