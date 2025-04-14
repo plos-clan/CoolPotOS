@@ -9,6 +9,7 @@
 #include "sprintf.h"
 #include "timer.h"
 #include "vdisk.h"
+#include "page.h"
 
 typedef struct ahci_port_ary {
     uint32_t port;
@@ -438,7 +439,7 @@ void ahci_setup() {
 
     hba_mem->ghc |= AHCI_GHC_AE;
 
-    ahci_ports_base_addr = (uint64_t)alloc_4k_aligned_mem(1048576);
+    ahci_ports_base_addr = (uint64_t)aligned_alloc(PAGE_SIZE,1048576);
 
     ahci_search_ports(hba_mem);
     uint32_t i;
