@@ -76,7 +76,7 @@ read:
     vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
     memcpy(addr, buf, size);
     free(buf);
-    return (int)size;
+    return VFS_STATUS_SUCCESS;
 }
 
 static int devfs_write(void *file, const void *addr, size_t offset, size_t size) {
@@ -106,7 +106,7 @@ write:
     memcpy(buf, addr, size);
     vdisk_write(offset / sector_size, sectors_to_do, buf, dev_id);
     free(buf);
-    return (int)size;
+    return VFS_STATUS_SUCCESS;
 }
 
 static struct vfs_callback devfs_callbacks = {

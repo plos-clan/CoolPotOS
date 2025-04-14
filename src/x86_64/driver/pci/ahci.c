@@ -432,14 +432,12 @@ void ahci_setup() {
         conf          |= PCI_COMMAND_MEMORY;
         conf          |= PCI_COMMAND_IO;
         pcie_write_command(device, 0x04, conf);
-        hba_mem = (HBA_MEM *)device->bars[5].address;
+        hba_mem = (HBA_MEM *) phys_to_virt(device->bars[5].address);
     }
 
     hba_mem->ghc |= AHCI_GHC_AE;
 
     ahci_ports_base_addr = (uint64_t)alloc_4k_aligned_mem(1048576);
-
-    logkf("AHCI ahci addr %p\n", ahci_ports_base_addr);
 
     ahci_search_ports(hba_mem);
     uint32_t i;
