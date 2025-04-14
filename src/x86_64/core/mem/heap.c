@@ -23,6 +23,7 @@ void *alloc_4k_aligned_mem(size_t size) {
 }
 
 void init_heap() {
-    page_map_range_to_random(get_kernel_pagedir(), (uint64_t)phys_to_virt(KERNEL_HEAP_START), KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
+    page_map_range_to_random(get_kernel_pagedir(), (uint64_t)phys_to_virt(KERNEL_HEAP_START),
+                             KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
     heap_init(phys_to_virt(KERNEL_HEAP_START), KERNEL_HEAP_SIZE);
 }

@@ -9,9 +9,9 @@ typedef enum {
     Ordinary, // 普通
     Super,    // 提升
     Kernel    // 内核态
-}UserLevel;
+} UserLevel;
 
-struct user_control_block{
+struct user_control_block {
     char      name[50];         // 用户名
     int       uid;              // 用户ID
     UserLevel permission_level; // 权限等级
@@ -29,4 +29,4 @@ ucb_t create_user(const char *name, UserLevel permission_level);
  * @return 用户会话
  */
 ucb_t get_kernel_user();
-void user_setup();
+void  user_setup();

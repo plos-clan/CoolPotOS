@@ -22,15 +22,15 @@ elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir);
  * @param is_user ? 用户态映射 : 内核态映射
  * @return 映射是否成功
  */
-bool      mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *directory,
-                            bool is_user);
+bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *directory,
+                       bool is_user);
 
 /**
  * 校验ELF文件头
  * @param ehdr 文件头
  * @return 是否是ELF文件
  */
-bool      elf_test_head(Elf64_Ehdr *ehdr);
+bool elf_test_head(Elf64_Ehdr *ehdr);
 
 /**
  * 加载一个ELF段
@@ -39,4 +39,4 @@ bool      elf_test_head(Elf64_Ehdr *ehdr);
  * @param directory 页表
  * @param is_user ? 用户态 : 内核态
  */
-void      load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user);
+void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user);

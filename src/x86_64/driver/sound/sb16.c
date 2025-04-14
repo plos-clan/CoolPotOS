@@ -1,16 +1,16 @@
-#include "io.h"
-#include "kprint.h"
-#include "isr.h"
-#include "dma.h"
 #include "sb16.h"
-#include "timer.h"
+#include "dma.h"
 #include "frame.h"
-#include "page.h"
 #include "hhdm.h"
+#include "io.h"
+#include "isr.h"
 #include "klog.h"
+#include "kprint.h"
+#include "page.h"
+#include "timer.h"
 
-static volatile bool sig = false;
-uint64_t buf_phy = 0;
+static volatile bool sig     = false;
+uint64_t             buf_phy = 0;
 
 /* sb16 interrupt handler */
 __attribute__((interrupt)) static void sb16_handler(interrupt_frame_t *frame) {
@@ -23,7 +23,8 @@ __attribute__((interrupt)) static void sb16_handler(interrupt_frame_t *frame) {
 
 /* Send data to port sb16 */
 static void sb_out(uint8_t value) {
-    while (io_in8(SB_WRITE) & 0x80);
+    while (io_in8(SB_WRITE) & 0x80)
+        ;
     io_out8(SB_WRITE, value);
 }
 
@@ -76,8 +77,9 @@ void sb16_send_data(const uint8_t *data, size_t size) {
 
     if (size > DMA_BUF_SIZE) size = DMA_BUF_SIZE;
 
-    for (size_t i = 0; i < size; i++) ((uint8_t *) phys_to_virt(buf_phy))[i] = data[i];
-    dma_send(5, (uint32_t *) buf_phy, size);
+    for (size_t i = 0; i < size; i++)
+        ((uint8_t *)phys_to_virt(buf_phy))[i] = data[i];
+    dma_send(5, (uint32_t *)buf_phy, size);
 
     sb_out(0xB0);
     sb_out(0x10);
@@ -93,7 +95,7 @@ void sb16_play(const uint8_t *data, size_t size) {
         if (chunk > DMA_BUF_SIZE) chunk = DMA_BUF_SIZE;
         sb16_send_data(data + offset, chunk);
         waitif(sig == false);
-        sig = false;
+        sig     = false;
         offset += chunk;
     }
 }

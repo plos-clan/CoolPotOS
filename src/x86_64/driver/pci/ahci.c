@@ -432,7 +432,7 @@ void ahci_setup() {
         conf          |= PCI_COMMAND_MEMORY;
         conf          |= PCI_COMMAND_IO;
         pcie_write_command(device, 0x04, conf);
-        hba_mem = (HBA_MEM *) phys_to_virt(device->bars[5].address);
+        hba_mem = (HBA_MEM *)phys_to_virt(device->bars[5].address);
     }
 
     hba_mem->ghc |= AHCI_GHC_AE;

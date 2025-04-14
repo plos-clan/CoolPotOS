@@ -7,7 +7,9 @@
 
 #define MAX_SYSCALLS 256
 
-#define syscall_(name) uint64_t syscall_##name(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4)
+#define syscall_(name)                                                                             \
+    uint64_t syscall_##name(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,            \
+                            uint64_t arg4)
 
 // Cpinl/CP_Kernel 通用系统调用编号定义
 #define SYSCALL_PUTC        1 // 向终端put一个字符

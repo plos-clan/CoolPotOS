@@ -10,7 +10,7 @@ timer_t *alloc_timer() {
 }
 
 uint64_t get_time(timer_t *timer1) {
-    if(timer1 == NULL) return 0;
+    if (timer1 == NULL) return 0;
     uint64_t time0 = nanoTime() - timer1->old_time;
     free(timer1);
     return time0;

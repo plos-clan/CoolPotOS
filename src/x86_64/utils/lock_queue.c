@@ -23,7 +23,6 @@ size_t lock_queue_enqueue(lock_queue *q, void *data) {
     new_node->next  = NULL;
     new_node->index = q->next_index++;
 
-
     if (q->head == NULL) {
         q->head = new_node;
     } else {
@@ -74,14 +73,14 @@ size_t queue_enqueue(lock_queue *q, void *data) {
 void *queue_remove_at(lock_queue *q, size_t index) {
     if (q == NULL) return NULL;
     ticket_lock(&q->lock);
-    lock_node *current = q->head;
+    lock_node *current  = q->head;
     lock_node *previous = NULL;
 
     while (current != NULL) {
         if (current->index == index) {
             if (previous == NULL) {
                 lock_node *new_head = current->next;
-                q->head = new_head;
+                q->head             = new_head;
             } else {
                 previous->next = current->next;
             }
@@ -91,7 +90,7 @@ void *queue_remove_at(lock_queue *q, size_t index) {
             return NULL;
         }
         previous = current;
-        current = current->next;
+        current  = current->next;
     }
     ticket_unlock(&q->lock);
     return NULL;
