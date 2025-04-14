@@ -12,12 +12,12 @@
 #include "pcb.h"
 #include "pci.h"
 #include "pcie.h"
+#include "sb16.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
-#include "sb16.h"
 
 extern void        cp_shutdown();
 extern void        cp_reset();
@@ -309,7 +309,7 @@ static void luser(int argc, char **argv) {
           user_task->queue_index);
 }
 
-static void sound(int argc, char **argv){
+static void sound(int argc, char **argv) {
     if (argc == 1) {
         printk("[Shell-SOUND]: If there are too few parameters.\n");
         return;

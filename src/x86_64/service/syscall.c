@@ -1,29 +1,29 @@
 #include "syscall.h"
 #include "io.h"
-#include "krlibc.h"
-#include "kprint.h"
-#include "scheduler.h"
 #include "keyboard.h"
+#include "kprint.h"
+#include "krlibc.h"
 #include "pcb.h"
+#include "scheduler.h"
 
 extern void        asm_syscall_entry();
 extern lock_queue *pgb_queue;
 
 static inline void enable_syscall() {
     uint64_t efer;
-    efer = rdmsr(MSR_EFER);
+    efer  = rdmsr(MSR_EFER);
     efer |= 1;
     wrmsr(MSR_EFER, efer);
 }
 
 syscall_(putc) {
-    char c = *((char *) arg0);
+    char c = *((char *)arg0);
     printk("%c", c);
     return 0;
 }
 
 syscall_(print) {
-    printk("%s", (char *) arg0);
+    printk("%s", (char *)arg0);
     return 0;
 }
 
@@ -40,16 +40,17 @@ syscall_(exit) {
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-        [SYSCALL_PUTC]  = syscall_putc,
-        [SYSCALL_PRINT] = syscall_print,
-        [SYSCALL_GETCH] = syscall_getch,
-        [SYSCALL_EXIT]  = syscall_exit,
+    [SYSCALL_PUTC]  = syscall_putc,
+    [SYSCALL_PRINT] = syscall_print,
+    [SYSCALL_GETCH] = syscall_getch,
+    [SYSCALL_EXIT]  = syscall_exit,
 };
 
 registers_t *syscall_handle(registers_t *reg) {
     size_t syscall_id = reg->rax;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
-        reg->rax = ((syscall_t) syscall_handlers[syscall_id])(reg->rbx, reg->rcx, reg->rdx, reg->rsi, reg->rdi);
+        reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rbx, reg->rcx, reg->rdx, reg->rsi,
+                                                             reg->rdi);
     }
     return reg;
 }

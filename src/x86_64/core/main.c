@@ -22,6 +22,7 @@
 #include "pcie.h"
 #include "pcnet.h"
 #include "power.h"
+#include "sb16.h"
 #include "shell.h"
 #include "smbios.h"
 #include "smp.h"
@@ -32,7 +33,6 @@
 #include "vdisk.h"
 #include "vfs.h"
 #include "xhci.h"
-#include "sb16.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -125,7 +125,7 @@ void kmain() {
     ide_setup();
     // nvme_setup();
     ahci_setup();
-	sb16_init();
+    sb16_init();
 
     // rtl8169_setup();
     pcnet_setup();
@@ -152,17 +152,17 @@ void kmain() {
     enable_scheduler();
 
     vfs_node_t device = vfs_open("/dev/sata0");
-    if(device != NULL) {
+    if (device != NULL) {
         uint8_t *data = malloc(512);
-        int a = vfs_read(device, data,0, 512);
-        if(a == VFS_STATUS_SUCCESS){
+        int      a    = vfs_read(device, data, 0, 512);
+        if (a == VFS_STATUS_SUCCESS) {
             kinfo("Read data from /dev/sata0");
-            for(int i = 0; i < 512; i++) {
+            for (int i = 0; i < 512; i++) {
                 logkf("%02x ", data[i]);
             }
             logkf("\n");
         } else {
-            kerror("Failed to read from /dev/sata0 %d\n",a);
+            kerror("Failed to read from /dev/sata0 %d\n", a);
         }
         vfs_close(device);
     } else {

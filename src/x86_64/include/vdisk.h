@@ -28,7 +28,7 @@ int      vdisk_init();
  * @param vd 硬盘设备
  * @return 注册编号
  */
-int      regist_vdisk(vdisk vd);
-bool     have_vdisk(int drive);
-void     vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive);
-void     vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive);
+int  regist_vdisk(vdisk vd);
+bool have_vdisk(int drive);
+void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive);
+void vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive);

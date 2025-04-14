@@ -19,5 +19,5 @@ void *realloc(void *ptr, size_t size);
 void *alloc_4k_aligned_mem(size_t size);
 
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+} // extern "C"
+#endif // __cplusplus

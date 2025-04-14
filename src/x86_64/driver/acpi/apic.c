@@ -4,10 +4,10 @@
 #include "isr.h"
 #include "klog.h"
 #include "kprint.h"
+#include "krlibc.h"
 #include "limine.h"
 #include "smp.h"
 #include "timer.h"
-#include "krlibc.h"
 
 bool     x2apic_mode;
 uint64_t lapic_address;
@@ -99,9 +99,9 @@ void io_apic_init() {
 }
 
 void ioapic_enable(uint8_t vector) {
-    uint64_t index = 0x10 + ((vector - 32) * 2);
-    uint64_t value = (uint64_t)ioapic_read(index + 1) << 32 | (uint64_t)ioapic_read(index);
-    value &= (~0x10000UL);
+    uint64_t index  = 0x10 + ((vector - 32) * 2);
+    uint64_t value  = (uint64_t)ioapic_read(index + 1) << 32 | (uint64_t)ioapic_read(index);
+    value          &= (~0x10000UL);
     ioapic_write(index, (uint32_t)(value & 0xFFFFFFFF));
     ioapic_write(index + 1, (uint32_t)(value >> 32));
 }

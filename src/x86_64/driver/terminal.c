@@ -11,15 +11,12 @@ ticketlock  terminal_lock;
 
 static void setup_cpos_default() {
     TerminalPalette palette = {
-            .background  = 0x0d0d1a,
-            .foreground  = 0xeaeaea,
+        .background = 0x0d0d1a,
+        .foreground = 0xeaeaea,
 
-            .ansi_colors = {
-                    0x0d0d1a, 0xe84a5f, 0x50fa7b, 0xfacc60,
-                    0x61aeee, 0xc074ec, 0x40e0d0, 0xbebec2,
-                    0x2f2f38, 0xff6f91, 0x8affc1, 0xffe99b,
-                    0x9ddfff, 0xd69fff, 0xb2ffff, 0xffffff
-            }
+        .ansi_colors = {0x0d0d1a, 0xe84a5f, 0x50fa7b, 0xfacc60, 0x61aeee, 0xc074ec, 0x40e0d0,
+                        0xbebec2, 0x2f2f38, 0xff6f91, 0x8affc1, 0xffe99b, 0x9ddfff, 0xd69fff,
+                        0xb2ffff, 0xffffff}
     };
 
     terminal_set_custom_color_scheme(&palette);

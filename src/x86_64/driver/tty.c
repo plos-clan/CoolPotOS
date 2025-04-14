@@ -45,7 +45,7 @@ tty_t *alloc_default_tty() {
 }
 
 void free_tty(tty_t *tty) {
-    if(tty == NULL) return;
+    if (tty == NULL) return;
     queue_destroy(tty->keyboard_buffer);
     free(tty);
 }
