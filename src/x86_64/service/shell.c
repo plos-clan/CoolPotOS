@@ -315,13 +315,14 @@ static void sound(int argc, char **argv) {
         return;
     }
 
-    cp_module_t *module = get_module(argv[1]);
+    cp_module_t *module = get_module(argv[2]);
     if (module == NULL) {
-        printk("Cannot find module [%s]\n", argv[1]);
+        printk("Cannot find module [%s]\n", argv[2]);
         return;
     }
-
-    sb16_set_sample_rate(44100);
+    int rate = strtol(argv[1], NULL, 10);
+    printk("Playing file [%s] at [%d]\n", module->module_name, rate);
+    sb16_set_sample_rate(rate);
     sb16_set_volume(15, 15);
     sb16_play(module->data, module->size);
 }
@@ -372,6 +373,7 @@ static void print_help() {
     printk("mount     <path> <dev>   Mount a device to path.\n");
     printk("lmod      <module|list>  Load or list model.\n");
     printk("luser     <module>       Load a user application.\n");
+    printk("sound     <a><module>    Sound a module file.\n");
 }
 
 char **split_by_space(const char *input, int *count) {
