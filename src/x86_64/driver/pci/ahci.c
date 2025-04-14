@@ -7,6 +7,7 @@
 #include "pci.h"
 #include "pcie.h"
 #include "sprintf.h"
+#include "timer.h"
 #include "vdisk.h"
 
 typedef struct ahci_port_ary {

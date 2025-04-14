@@ -59,6 +59,9 @@ target("kernel64")
     set_toolchains("clang")
     set_default(false)
 
+    add_cflags("-Dmalloc=_fuck_malloc", "-Dfree=_fuck_free", "-Dget_allocator_size=_fuck_malloc_usable_size", "-Drealloc=_fuck_realloc")
+    add_ldflags("-Wl,--defsym=_real_malloc=malloc", "-Wl,--defsym=_real_free=free", "-Wl,--defsym=_real_realloc=realloc")
+
     add_cflags("-target x86_64-freestanding")
     add_ldflags("-target x86_64-freestanding")
 
@@ -69,6 +72,7 @@ target("kernel64")
 
     add_files("src/x86_64/**/*.c")
     add_files("src/x86_64/**/*.S")
+    add_files("src/x86_64/fuck-alloc.c")
 
      before_build(function (target)
             local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
