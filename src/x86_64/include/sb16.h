@@ -1,6 +1,9 @@
 #ifndef INCLUDE_SB16_H_
 #define INCLUDE_SB16_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #define SB_MIXER      0x224 // DSP Mixer port
 #define SB_MIXER_DATA 0x225 // DSP Mixer data port
 #define SB_RESET      0x226 // DSP Reset
