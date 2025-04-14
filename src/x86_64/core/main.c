@@ -33,6 +33,7 @@
 #include "vdisk.h"
 #include "vfs.h"
 #include "xhci.h"
+#include "modfs.h"
 
 // 编译器判断
 #if defined(__clang__)
@@ -121,6 +122,7 @@ void kmain() {
 
     vdisk_init();
     devfs_setup();
+    modfs_setup();
     pcie_init();
     ide_setup();
     // nvme_setup();
@@ -151,23 +153,23 @@ void kmain() {
     open_interrupt;
     enable_scheduler();
 
-    vfs_node_t device = vfs_open("/dev/sata0");
-    if (device != NULL) {
-        uint8_t *data = malloc(512);
-        int      a    = vfs_read(device, data, 0, 512);
-        if (a == VFS_STATUS_SUCCESS) {
-            kinfo("Read data from /dev/sata0");
-            for (int i = 0; i < 512; i++) {
-                logkf("%02x ", data[i]);
-            }
-            logkf("\n");
-        } else {
-            kerror("Failed to read from /dev/sata0 %d\n", a);
-        }
-        vfs_close(device);
-    } else {
-        kerror("Cannot open /dev/sata0");
-    }
+//    vfs_node_t device = vfs_open("/dev/sata0");
+//    if (device != NULL) {
+//        uint8_t *data = malloc(512);
+//        int      a    = vfs_read(device, data, 0, 512);
+//        if (a == VFS_STATUS_SUCCESS) {
+//            kinfo("Read data from /dev/sata0");
+//            for (int i = 0; i < 512; i++) {
+//                logkf("%02x ", data[i]);
+//            }
+//            logkf("\n");
+//        } else {
+//            kerror("Failed to read from /dev/sata0 %d\n", a);
+//        }
+//        vfs_close(device);
+//    } else {
+//        kerror("Cannot open /dev/sata0");
+//    }
 
     halt_service();
 }
