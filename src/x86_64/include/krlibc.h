@@ -9,7 +9,7 @@
 #define KERNEL_HEAP_SIZE  0x800000                 // 内核堆大小 8MB
 #define STACK_SIZE        32768                    // 栈大小(byte)
 #define KERNEL_ST_SZ      131072                   // 增强栈大小 128k
-#define MAX_WAIT_INDEX    100000                   // 阻塞最大循环数
+#define MAX_WAIT_INDEX    1000000                  // 阻塞最大循环数
 
 // 常用工具宏
 #define cpu_hlt infinite_loop __asm__("hlt")

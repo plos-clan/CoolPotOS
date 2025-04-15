@@ -4,11 +4,11 @@
  */
 #define ALL_IMPLEMENTATION
 #include "modfs.h"
-#include "module.h"
-#include "vfs.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "module.h"
 #include "rbtree-strptr.h"
+#include "vfs.h"
 
 extern int         module_count;
 int                modfs_id   = 0;
@@ -22,7 +22,7 @@ static int modfs_mkdir(void *handle, const char *name, vfs_node_t node) {
 }
 
 static int modfs_mount(const char *handle, vfs_node_t node) {
-    if (handle != (void*)1) return VFS_STATUS_FAILED;
+    if (handle != (void *)1) return VFS_STATUS_FAILED;
     if (modfs_root) {
         kerror("Module file system has been mounted.");
         return VFS_STATUS_FAILED;
@@ -50,29 +50,27 @@ static void modfs_open(void *parent, const char *name, vfs_node_t node) {
 }
 
 static int modfs_read(void *file, void *addr, size_t offset, size_t size) {
-    if(file == NULL) return VFS_STATUS_FAILED;
+    if (file == NULL) return VFS_STATUS_FAILED;
     cp_module_t *mod = (cp_module_t *)file;
-    if (offset + size > mod->size) {
-        return VFS_STATUS_FAILED;
-    }
+    if (offset + size > mod->size) { return VFS_STATUS_FAILED; }
     void *buffer = mod->data + offset;
     memcpy(addr, buffer, size);
     return VFS_STATUS_SUCCESS;
 }
 
 static struct vfs_callback modfs_callbacks = {
-        .mount   = modfs_mount,
-        .unmount = (void *)empty,
-        .mkdir   = modfs_mkdir,
-        .close   = (void *)empty,
-        .stat    = modfs_stat,
-        .open    = modfs_open,
-        .read    = modfs_read,
-        .write   = (void*)empty,
-        .mkfile  = (void *)empty,
+    .mount   = modfs_mount,
+    .unmount = (void *)empty,
+    .mkdir   = modfs_mkdir,
+    .close   = (void *)empty,
+    .stat    = modfs_stat,
+    .open    = modfs_open,
+    .read    = modfs_read,
+    .write   = (void *)empty,
+    .mkfile  = (void *)empty,
 };
 
-void modfs_setup(){
+void modfs_setup() {
     modfs_id = vfs_regist("modfs", &modfs_callbacks);
     vfs_mkdir("/mod");
     vfs_node_t mod = vfs_open("/mod");
@@ -80,7 +78,7 @@ void modfs_setup(){
         kerror("'mod' handle is null.");
         return;
     }
-    if (vfs_mount((const char *) 1, mod) == VFS_STATUS_FAILED) {
+    if (vfs_mount((const char *)1, mod) == VFS_STATUS_FAILED) {
         kerror("Cannot mount module file system.");
         return;
     }

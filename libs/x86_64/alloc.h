@@ -77,5 +77,5 @@ void *realloc(void *ptr, size_t new_size);
 size_t usable_size(void *ptr);
 
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+} // extern "C"
+#endif // __cplusplus

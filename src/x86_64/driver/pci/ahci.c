@@ -4,12 +4,12 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "page.h"
 #include "pci.h"
 #include "pcie.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vdisk.h"
-#include "page.h"
 
 typedef struct ahci_port_ary {
     uint32_t port;
@@ -42,6 +42,25 @@ static int check_type(HBA_PORT *port) {
     case SATA_SIG_PM: return AHCI_DEV_PM;
     default: return AHCI_DEV_SATA;
     }
+}
+
+static void sata_create_fis(FIS_REG_H2D *cmdfis, uint8_t command, uint64_t lba,
+                            uint16_t sector_count) {
+    memset(cmdfis, 0, sizeof(FIS_REG_H2D));
+    cmdfis->fis_type = FIS_TYPE_REG_H2D;
+    cmdfis->c        = 1; // Command
+    cmdfis->command  = command;
+    cmdfis->device   = 0;
+
+    cmdfis->lba0 = SATA_LBA_COMPONENT(lba, 0);
+    cmdfis->lba1 = SATA_LBA_COMPONENT(lba, 8);
+    cmdfis->lba2 = SATA_LBA_COMPONENT(lba, 16);
+    cmdfis->lba3 = SATA_LBA_COMPONENT(lba, 24);
+
+    cmdfis->lba4 = SATA_LBA_COMPONENT(lba, 32);
+    cmdfis->lba5 = SATA_LBA_COMPONENT(lba, 40);
+
+    cmdfis->countl = sector_count;
 }
 
 static void start_cmd(HBA_PORT *port) {
@@ -143,18 +162,15 @@ bool ahci_identify(HBA_PORT *port, void *buf, int type) {
 
     // Setup command
     FIS_REG_H2D *cmdfis = (FIS_REG_H2D *)(&cmdtbl->cfis);
-    cmdfis->fis_type    = FIS_TYPE_REG_H2D;
-    cmdfis->c           = 1; // Command
-    cmdfis->command     = type == AHCI_DEV_SATAPI
-                              ? 0xa1
-                              : (type == AHCI_DEV_SATA ? 0xec : 0); // SATAPI/SATA/PM IDENTIFY
+    sata_create_fis(cmdfis, type == AHCI_DEV_SATAPI ? 0xa1 : (type == AHCI_DEV_SATA ? 0xec : 0), 0,
+                    0);
 
     // The below loop waits until the port is no longer busy before issuing a new
     // command
     while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) {
         spin++;
     }
-    if (spin == 1000000) {
+    if (spin == MAX_WAIT_INDEX) {
         kwarn("Port is hung");
         return false;
     }
@@ -175,7 +191,10 @@ bool ahci_identify(HBA_PORT *port, void *buf, int type) {
     // Check again
     if (port->is & HBA_PxIS_TFES) { return false; }
 
+    //if(type == AHCI_DEV_SATA)
     return true;
+    // Init satapi device.
+    sata_create_fis(cmdfis, ATA_PACKET, 512 << 8, 0);
 }
 
 bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf) {
@@ -379,6 +398,7 @@ void ahci_search_ports(HBA_MEM *abar) {
                 ary.port                 = i;
                 ary.type                 = dt;
                 ahci_ports[port_total++] = ary;
+                logkf("SATAPI drive found at port %d\n", i);
             } else if (dt == AHCI_DEV_SEMB) {
                 logkf("SEMB drive found at port %d\n", i);
             } else if (dt == AHCI_DEV_PM) {
@@ -439,10 +459,10 @@ void ahci_setup() {
 
     hba_mem->ghc |= AHCI_GHC_AE;
 
-    ahci_ports_base_addr = (uint64_t)aligned_alloc(PAGE_SIZE,1048576);
+    ahci_ports_base_addr = (uint64_t)aligned_alloc(PAGE_SIZE, 1048576);
 
     ahci_search_ports(hba_mem);
-    uint32_t i;
+    size_t i;
     for (i = 0; i < port_total; i++) {
         ahci_port_rebase(&(hba_mem->ports[ahci_ports[i].port]), ahci_ports[i].port);
     }
