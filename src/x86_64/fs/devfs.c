@@ -70,8 +70,10 @@ read:
     sectors_to_do = padding_up_to_sector_size / sector_size;
     if (padding_up_to_sector_size == size) {
         buf = malloc(size);
+        memset(buf, 0, size);
     } else {
         buf = malloc(padding_up_to_sector_size * 0x1000);
+        memset(buf, 0, padding_up_to_sector_size * 0x1000);
     }
     vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
     memcpy(addr, buf, size);

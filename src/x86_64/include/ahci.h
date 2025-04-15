@@ -36,7 +36,19 @@
 #define HBA_PORT_IPM_ACTIVE  1
 #define HBA_PORT_DET_PRESENT 3
 
+#define SCSI_CDB16 16
+#define SCSI_CDB12 12
+#define SCSI_READ_CAPACITY_16 0x9e
+#define SCSI_READ_CAPACITY_10 0x25
+#define SCSI_READ_BLOCKS_16 0x88
+#define SCSI_READ_BLOCKS_12 0xa8
+#define SCSI_WRITE_BLOCKS_16 0x8a
+#define SCSI_WRITE_BLOCKS_12 0xaa
+
 #define SATA_LBA_COMPONENT(lba, offset) ((uint8_t)(((lba) >> (offset)) & 0xff))
+#define SCSI_FLIP(val)                                            \
+    ((((val) & 0x000000ff) << 24) | (((val) & 0x0000ff00) << 8) | \
+     (((val) & 0x00ff0000) >> 8) | (((val) & 0xff000000) >> 24))
 
 #include "ctype.h"
 
@@ -52,13 +64,23 @@ typedef enum {
 } FIS_TYPE;
 
 typedef struct tagSCSI_cdb12 {
-    uint8_t  opcode;
-    uint8_t  reserved1;
-    uint32_t lba;
+    uint8_t opcode;
+    uint8_t misc1;
+    uint32_t lba_be;
     uint32_t length;
-    uint8_t  reserved2[3];
-    uint8_t  control;
+    uint8_t misc2;
+    uint8_t ctrl;
 } __attribute__((packed)) SCSI_cdb12;
+
+typedef struct tagSCSI_cdb16{
+    uint8_t opcode;
+    uint8_t misc1;
+    uint32_t lba_be_hi;
+    uint32_t lba_be_lo;
+    uint32_t length;
+    uint8_t misc2;
+    uint8_t ctrl;
+} __attribute__((packed)) SCSI_cdb16;
 
 typedef struct tagHBA_CMD_HEADER {
     // DW0

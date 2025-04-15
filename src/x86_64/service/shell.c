@@ -327,6 +327,30 @@ static void sound(int argc, char **argv) {
     sb16_play(module->data, module->size);
 }
 
+static void read(int argc, char **argv){
+    if (argc == 1) {
+        printk("[Shell-READ]: If there are too few parameters.\n");
+        return;
+    }
+    vfs_node_t file = vfs_open(argv[1]);
+    if (file == NULL) {
+        printk("Cannot found file [%s]\n", argv[1]);
+        return;
+    }
+    char *buf = malloc(file->size + 1);
+    if(vfs_read(file,buf,0,file->size) == VFS_STATUS_FAILED){
+        printk("Cannot read file [%s]\n", argv[1]);
+        return;
+    }
+    for (size_t i = 0; i < file->size; i++) {
+        printk("%c", buf[i]);
+        logkf("%c", buf[i]);
+    }
+    printk("\n");
+    free(buf);
+    vfs_close(file);
+}
+
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
@@ -374,6 +398,7 @@ static void print_help() {
     printk("lmod      <module|list>  Load or list model.\n");
     printk("luser     <module>       Load a user application.\n");
     printk("sound     <a><module>    Sound a module file.\n");
+    printk("read      <path>         Print a file data.\n");
 }
 
 char **split_by_space(const char *input, int *count) {
@@ -490,6 +515,8 @@ _Noreturn void shell_setup() {
             luser(argc, argv);
         else if (!strcmp("sound", argv[0]))
             sound(argc, argv);
+        else if (!strcmp("read", argv[0]))
+            read(argc, argv);
         else if (!strcmp("test", argv[0])) {
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n", i);
