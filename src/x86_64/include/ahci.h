@@ -14,6 +14,14 @@
 #define AHCI_GHC_IE  (0x00000002) /* global IRQ enable */
 #define AHCI_GHC_AE  (0x80000000) /* AHCI enabled */
 
+#define ATA_IDENTIFY_DEVICE        0xec
+#define ATA_IDENTIFY_PAKCET_DEVICE 0xa1
+#define ATA_PACKET                 0xa0
+#define ATA_READ_DMA_EXT           0x25
+#define ATA_READ_DMA               0xc8
+#define ATA_WRITE_DMA_EXT          0x35
+#define ATA_WRITE_DMA              0xca
+
 #define AHCI_DEV_NULL   0
 #define AHCI_DEV_SATA   1
 #define AHCI_DEV_SEMB   2
@@ -28,6 +36,8 @@
 #define HBA_PORT_IPM_ACTIVE  1
 #define HBA_PORT_DET_PRESENT 3
 
+#define SATA_LBA_COMPONENT(lba, offset) ((uint8_t)(((lba) >> (offset)) & 0xff))
+
 #include "ctype.h"
 
 typedef enum {
@@ -40,6 +50,15 @@ typedef enum {
     FIS_TYPE_PIO_SETUP = 0x5F, // PIO setup FIS - device to host
     FIS_TYPE_DEV_BITS  = 0xA1, // Set device bits FIS - device to host
 } FIS_TYPE;
+
+typedef struct tagSCSI_cdb12 {
+    uint8_t  opcode;
+    uint8_t  reserved1;
+    uint32_t lba;
+    uint32_t length;
+    uint8_t  reserved2[3];
+    uint8_t  control;
+} __attribute__((packed)) SCSI_cdb12;
 
 typedef struct tagHBA_CMD_HEADER {
     // DW0
