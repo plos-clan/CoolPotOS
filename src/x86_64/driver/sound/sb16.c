@@ -30,7 +30,7 @@ static void sb_out(uint8_t value) {
 
 /* Initialize sb16 sound card */
 void sb16_init(void) {
-    sb_reset();
+    if(!sb_reset()) return;
 
     buf_phy = alloc_frames(PADDING_UP(DMA_BUF_SIZE, PAGE_SIZE) / PAGE_SIZE);
 
@@ -43,15 +43,16 @@ void sb16_init(void) {
 }
 
 /* Reset sb16 sound card */
-void sb_reset(void) {
+bool sb_reset(void) {
     io_out8(SB_RESET, 1);
     nsleep(5000);
     io_out8(SB_RESET, 0);
 
     if (io_in8(SB_STATE) == 0x80) {
         kinfo("SB16: Reset OK, state = 0x%x", io_in8(SB_READ));
+        return true;
     } else {
-        kinfo("SB16: Reset failed.");
+        return false;
     }
 }
 

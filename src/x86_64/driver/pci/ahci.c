@@ -16,6 +16,8 @@ typedef struct ahci_port_ary {
     int      type;
 } AHCI_PORT_ARY;
 
+static uint32_t cdb_size[] = {SCSI_CDB12, SCSI_CDB16, 0, 0};
+
 static AHCI_PORT_ARY ahci_ports[32];
 static uint32_t      port_total = 0;
 static uint64_t      ahci_ports_base_addr;
@@ -61,6 +63,21 @@ static void sata_create_fis(FIS_REG_H2D *cmdfis, uint8_t command, uint64_t lba,
     cmdfis->lba5 = SATA_LBA_COMPONENT(lba, 40);
 
     cmdfis->countl = sector_count;
+}
+
+void scsi_create_packet12(SCSI_cdb12 *cdb,uint8_t opcode,uint32_t lba,uint32_t alloc_size){
+    memset(cdb, 0, sizeof(SCSI_cdb12));
+    cdb->opcode = opcode;
+    cdb->lba_be = SCSI_FLIP(lba);
+    cdb->length = SCSI_FLIP(alloc_size);
+}
+
+void scsi_create_packet16(SCSI_cdb16 *cdb,uint8_t opcode,uint64_t lba,uint32_t alloc_size){
+    memset(cdb, 0, sizeof(SCSI_cdb16));
+    cdb->opcode = opcode;
+    cdb->lba_be_hi = SCSI_FLIP((uint32_t)(lba >> 32));
+    cdb->lba_be_lo = SCSI_FLIP((uint32_t)lba);
+    cdb->length = SCSI_FLIP(alloc_size);
 }
 
 static void start_cmd(HBA_PORT *port) {
@@ -191,10 +208,32 @@ bool ahci_identify(HBA_PORT *port, void *buf, int type) {
     // Check again
     if (port->is & HBA_PxIS_TFES) { return false; }
 
-    //if(type == AHCI_DEV_SATA)
-    return true;
-    // Init satapi device.
+    if(type == AHCI_DEV_SATAPI) return true;
     sata_create_fis(cmdfis, ATA_PACKET, 512 << 8, 0);
+
+    SATA_ident_t *buf_ident = (SATA_ident_t *)buf;
+    uint32_t cdb_size0 = cdb_size[buf_ident->config & 0x3];
+    if(cdb_size0 == SCSI_CDB12){
+        SCSI_cdb12 *cdb12 = (SCSI_cdb12 *)cmdtbl->acmd;
+        scsi_create_packet12(cdb12, SCSI_READ_CAPACITY_10, 0, 512 << 8);
+    } else{
+        SCSI_cdb16 *cdb16 = (SCSI_cdb16 *)cmdtbl->acmd;
+        scsi_create_packet16(cdb16, SCSI_READ_CAPACITY_16, 0, 512);
+        cdb16->misc1 = 0x10; // service action
+    }
+
+    cmdheader->prdbc = 0;
+    cmdheader->a = 1;
+
+    while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) {
+        spin++;
+    }
+    if (spin == MAX_WAIT_INDEX) {
+        kwarn("SATAPI port is hung");
+        return false;
+    }
+
+    return true;
 }
 
 bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf) {

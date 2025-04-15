@@ -145,13 +145,32 @@ void kmain() {
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
 
-    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL);
-    create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
+    //pcb_t shell_group = create_process_group("Shell Service", NULL, NULL);
+    //create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
     create_kernel_thread((void *)cpu_speed_test, NULL, "CPUSpeed", NULL);
 
     // beep();
     open_interrupt;
     enable_scheduler();
+
+    vfs_node_t device = vfs_open("/dev/sata0");
+    if(device == NULL) {
+        kerror("Cannot open /dev/sata0");
+    } else {
+        uint8_t *data = malloc(512);
+        memset(data, 0, 512);
+        if(vfs_read(device,data,0,512) == VFS_STATUS_SUCCESS) {
+            kinfo("Read data from /dev/sata0");
+            for (size_t i = 0; i < 512; i++) {
+                logkf("%02x ", data[i]);
+            }
+            logkf("\n");
+        } else {
+            kerror("Failed to read from /dev/sata0");
+        }
+        free(data);
+        vfs_close(device);
+    }
 
     halt_service();
 }

@@ -31,7 +31,7 @@
 void sb16_init(void);
 
 /* Reset sb16 sound card */
-void sb_reset(void);
+bool sb_reset(void);
 
 /* Set the default volume of the sb16 sound card */
 void sb16_set_volume(uint8_t left, uint8_t right);
