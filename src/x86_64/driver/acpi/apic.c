@@ -64,8 +64,9 @@ uint64_t lapic_id() {
 void local_apic_init(bool is_print) {
     x2apic_mode = (smp_request.response->flags & 1U) != 0;
 
-    lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
+
+    lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
 
     uint64_t b = nanoTime();
