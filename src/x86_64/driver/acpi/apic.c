@@ -4,7 +4,6 @@
 #include "isr.h"
 #include "klog.h"
 #include "kprint.h"
-#include "krlibc.h"
 #include "limine.h"
 #include "smp.h"
 #include "timer.h"
@@ -64,8 +63,9 @@ uint64_t lapic_id() {
 void local_apic_init(bool is_print) {
     x2apic_mode = (smp_request.response->flags & 1U) != 0;
 
-    lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
+    if (x2apic_mode) { wrmsr(0x1b, rdmsr(0x1b) | 1 << 10); }
 
+    lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
     lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
 

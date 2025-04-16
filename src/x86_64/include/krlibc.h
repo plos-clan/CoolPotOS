@@ -3,7 +3,7 @@
 /**
  * 定义CP_Kernel内核的各种属性
  */
-#define KERNEL_NAME       "CP_Kernel-x86_64-0.1.6" // 内核编号
+#define KERNEL_NAME       "CP_Kernel-x86_64-0.1.7" // 内核编号
 #define MAX_CPU           256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START 0x3c0f000                // 内核堆起始地址(未加偏移)
 #define KERNEL_HEAP_SIZE  0x800000                 // 内核堆大小 8MB

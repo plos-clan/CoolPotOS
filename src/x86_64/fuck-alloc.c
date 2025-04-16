@@ -24,7 +24,9 @@ static size_t *_malloc_rng(size_t *buf, size_t len) {
 }
 
 void *_real_malloc(size_t size);
-void  _real_free(void *ptr);
+
+void _real_free(void *ptr);
+
 void *_real_realloc(void *ptr, size_t size);
 
 #define PORT 0x3f8
@@ -108,6 +110,7 @@ void *_fuck_malloc(size_t size) {
     if (_is_sti_) __asm__ volatile("sti");
     return addr;
 }
+
 void _fuck_free(void *ptr) {
     const bool _is_sti_ = ({
                               size_t flags;
@@ -143,7 +146,8 @@ void _fuck_free(void *ptr) {
     spin_unlock(&malloc_lock);
     if (_is_sti_) __asm__ volatile("sti");
 }
-size_t _fuck_malloc_usable_size(void *ptr) {
+
+size_t _fuck_usable_size(void *ptr) {
     const bool _is_sti_ = ({
                               size_t flags;
                               __asm__ volatile("pushf\n\t"
@@ -172,6 +176,7 @@ size_t _fuck_malloc_usable_size(void *ptr) {
     if (_is_sti_) __asm__ volatile("sti");
     return (len - 8) * sizeof(size_t);
 }
+
 void *_fuck_realloc(void *ptr, size_t size) {
     const bool _is_sti_ = ({
                               size_t flags;

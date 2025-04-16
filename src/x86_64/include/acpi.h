@@ -9,6 +9,7 @@
 #define LAPIC_REG_TIMER_CURCNT  0x390
 #define LAPIC_REG_TIMER_INITCNT 0x380
 #define LAPIC_REG_TIMER         0x320
+#define LAPIC_REG_TIMER         0x320
 #define LAPIC_REG_SPURIOUS      0xf0
 #define LAPIC_REG_TIMER_DIV     0x3e0
 
@@ -211,6 +212,7 @@ typedef struct facp_table      acpi_facp_t;
 void acpi_setup();
 
 void apic_setup(MADT *madt);
+
 void pcie_setup(MCFG *mcfg);
 
 void *find_table(const char *name);
@@ -222,11 +224,15 @@ uint64_t lapic_id();
  * @param apic_id CPU lapic_id
  * @param command 命令
  */
-void     send_ipi(uint32_t apic_id, uint32_t command);
-void     ioapic_add(uint8_t vector, uint32_t irq);
-void     ioapic_enable(uint8_t vector);
+void send_ipi(uint32_t apic_id, uint32_t command);
+
+void ioapic_add(uint8_t vector, uint32_t irq);
+
+void ioapic_enable(uint8_t vector);
+
 uint32_t lapic_read(uint32_t reg);
-void     local_apic_init(bool is_print);
+
+void local_apic_init(bool is_print);
 
 void setup_facp(acpi_facp_t *facp);
 

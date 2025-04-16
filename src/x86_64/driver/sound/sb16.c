@@ -30,7 +30,7 @@ static void sb_out(uint8_t value) {
 
 /* Initialize sb16 sound card */
 void sb16_init(void) {
-    if(!sb_reset()) return;
+    if (!sb_reset()) return;
 
     buf_phy = alloc_frames(PADDING_UP(DMA_BUF_SIZE, PAGE_SIZE) / PAGE_SIZE);
 
