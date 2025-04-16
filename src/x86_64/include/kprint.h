@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ctype.h"
 #include <stdarg.h>
 

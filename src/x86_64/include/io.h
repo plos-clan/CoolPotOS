@@ -88,13 +88,13 @@ static inline uint32_t mmio_read32(void *addr) {
     return *(volatile uint32_t *)addr;
 }
 
-static inline uint64_t mmio_read64(void *addr) {
-    return *(volatile uint64_t *)addr;
-}
-
-static inline void mmio_write64(void *addr, uint64_t data) {
-    *(volatile uint64_t *)addr = data;
-}
+//static inline uint64_t mmio_read64(void *addr) {
+//    return *(volatile uint64_t *)addr;
+//}
+//
+//static inline void mmio_write64(void *addr, uint64_t data) {
+//    *(volatile uint64_t *)addr = data;
+//}
 
 static inline uint64_t rdmsr(uint32_t msr) {
     uint32_t eax, edx;
@@ -108,7 +108,7 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
     __asm__ volatile("wrmsr" : : "c"(msr), "a"(eax), "d"(edx));
 }
 
-static inline uint64_t load(uint64_t *addr) {
+static uint64_t load(uint64_t *addr) {
     uint64_t ret = 0;
     __asm__ volatile("lock xadd %[ret], %[addr];"
                      : [addr] "+m"(*addr), [ret] "+r"(ret)
@@ -117,9 +117,28 @@ static inline uint64_t load(uint64_t *addr) {
     return ret;
 }
 
-static inline void store(uint64_t *addr, uint32_t value) {
+static void store(uint64_t *addr, uint32_t value) {
     __asm__ volatile("lock xchg %[value], %[addr];"
                      : [addr] "+m"(*addr), [value] "+r"(value)
                      :
                      : "memory");
 }
+
+//static bool load_bool(bool *addr) {
+//    uint8_t ret = 0;
+//    uint8_t *addr_byte = (uint8_t*)addr;
+//    __asm__ volatile("lock xaddb %[ret], %[addr];"
+//            : [addr] "+m"(*addr_byte), [ret] "+r"(ret)
+//    :
+//    : "memory");
+//    return (bool)ret;
+//}
+//
+//static void store_bool(bool* addr, bool value) {
+//    uint8_t val_byte = value ? 1 : 0;
+//    uint8_t* addr_byte = (uint8_t*)addr;
+//    __asm__ volatile("lock xchgb %[value], %[addr];"
+//            : [addr] "+m"(*addr_byte), [value] "+q"(val_byte)
+//    :
+//    : "memory");
+//}

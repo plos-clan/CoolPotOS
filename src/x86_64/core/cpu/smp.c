@@ -90,19 +90,12 @@ static void apu_gdt_setup() {
 void apu_entry() {
     ticket_lock(&apu_lock);
     apu_gdt_setup();
-    __asm__ volatile("lidt %0" : : "m"(idt_pointer));
+    __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
 
-    page_table_t *physical_table = virt_to_phys((uint64_t)get_kernel_pagedir()->table);
-    __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
-
-    uint64_t ia32_apic_base  = rdmsr(0x1b);
-    ia32_apic_base          |= 1 << 11;
-    if (x2apic_mode) { ia32_apic_base |= 1 << 10; }
-    wrmsr(0x1b, ia32_apic_base);
     local_apic_init(false);
 
     float_processor_setup();
-
+    logkf("CPU%d: (%d) loading\n", cpu->id, cpu->lapic_id);
     tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
     not_null_assets(apu_idle);
     apu_idle->task_level = TASK_KERNEL_LEVEL;
@@ -130,7 +123,7 @@ void apu_entry() {
     }
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
-    logkf("APU %d: %p %p started.\n", cpu->id, tcb, cpu->idle_pcb);
+    logkf("APU %d: %p started.\n", cpu->id, cpu->idle_pcb);
     cpu_done_count++;
     ticket_unlock(&apu_lock);
     open_interrupt;
@@ -166,7 +159,6 @@ void apu_startup(struct limine_smp_request smp_request) {
     while (cpu_done_count < (cpu_count - 1) && cpu_done_count < (MAX_CPU - 1)) {
         __asm__ volatile("pause" ::: "memory");
     }
-    logkf("APU %d processors have been enabled.\n", cpu_count);
 
     cpu->idle_pcb                 = kernel_head_task;
     kernel_head_task->queue_index = queue_enqueue(cpu->scheduler_queue, kernel_head_task);

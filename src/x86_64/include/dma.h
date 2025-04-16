@@ -9,10 +9,12 @@
  *
  */
 
-#ifndef INCLUDE_DMA_H_
-#define INCLUDE_DMA_H_
+#pragma once
 
-#include "types/stdint.h"
+#ifndef INCLUDE_DMA_H_
+#    define INCLUDE_DMA_H_
+
+#    include "types/stdint.h"
 
 /* Sending commands to the DMA controller */
 void dma_start(uint8_t mode, uint8_t channel, uint32_t *address, uint32_t size);

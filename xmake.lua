@@ -49,7 +49,7 @@ target("iso32")
         os.cp(kernel:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
-        local xorriso_flags = "-b sys/limine-bios-cd.bin -no-emul-boot -boot-info-table"
+        local xorriso_flags = "-b limine-bios-cd.bin -no-emul-boot -boot-info-table"
         os.run("xorriso -as mkisofs %s %s -o %s", xorriso_flags, iso_dir, iso_file)
         print("ISO image created at: " .. iso_file)
     end)
@@ -59,28 +59,27 @@ target("kernel64")
     set_toolchains("clang")
     set_default(false)
 
-    add_cflags("-Dmalloc=_fuck_malloc", "-Dfree=_fuck_free", "-Dget_allocator_size=_fuck_malloc_usable_size", "-Drealloc=_fuck_realloc")
-    add_ldflags("-Wl,--defsym=_real_malloc=malloc", "-Wl,--defsym=_real_free=free", "-Wl,--defsym=_real_realloc=realloc")
-
     add_cflags("-target x86_64-freestanding")
     add_ldflags("-target x86_64-freestanding")
 
-    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float","-nostdinc")
-    add_cflags("-mcmodel=kernel","-mno-red-zone")
-    add_cflags("-Wno-unused-parameter")
-    add_ldflags("-static","-nostdlib")
+    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
+    add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto")
+    add_ldflags("-static", "-nostdlib", "-flto", "-fuse-ld=lld")
+
+    add_cflags("-Dmalloc=_fuck_malloc", "-Dfree=_fuck_free", "-Drealloc=_fuck_realloc")
+    add_ldflags("-Wl,--defsym=_real_malloc=malloc", "-Wl,--defsym=_real_free=free", "-Wl,--defsym=_real_realloc=realloc")
 
     add_files("src/x86_64/**/*.c")
     add_files("src/x86_64/**/*.S")
     add_files("src/x86_64/fuck-alloc.c")
 
-     before_build(function (target)
-            local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
-            if hash then
-                hash = hash:trim()
-                target:add("defines", "GIT_VERSION=\"" .. hash .. "\"")
-            end
-        end)
+    before_build(function (target)
+      local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
+        if hash then
+          hash = hash:trim()
+          target:add("defines", "GIT_VERSION=\"" .. hash .. "\"")
+        end
+    end)
 
     add_linkdirs("libs/x86_64")
     add_includedirs("libs/x86_64")
@@ -92,7 +91,6 @@ target("kernel64")
     add_links("alloc")
     add_links("os_terminal")
 
-
 target("iso64")
     set_kind("phony")
     add_deps("kernel64")
@@ -102,7 +100,9 @@ target("iso64")
         import("core.project.project")
 
         local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/*", iso_dir .. "/")
+        os.cp("assets/sys", iso_dir .. "/sys")
+        os.cp("assets/limine.conf", iso_dir .. "/limine.conf")
+        os.cp("assets/limine-uefi-cd.bin", iso_dir .. "/limine-uefi-cd.bin")
 
         local target = project.target("kernel64")
         os.cp(target:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
@@ -128,12 +128,13 @@ target("default_build")
         -- x86_64 xmake run
         local flags = {
             "-M", "q35",
-            "-cpu", "qemu64,+x2apic",
+            --"-cpu", "qemu64,+x2apic",
+            "-cpu", "host",
             "-smp", "4",
             "-serial", "stdio",
             "-m","1024M",
             --"-no-reboot",
-            --"-enable-kvm",
+            "-enable-kvm",
             -- "-d", "in_asm,int",
             -- "-d", "int",
             --"-S","-s",

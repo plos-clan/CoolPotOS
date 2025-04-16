@@ -327,7 +327,7 @@ static void sound(int argc, char **argv) {
     sb16_play(module->data, module->size);
 }
 
-static void read(int argc, char **argv){
+static void read(int argc, char **argv) {
     if (argc == 1) {
         printk("[Shell-READ]: If there are too few parameters.\n");
         return;
@@ -338,7 +338,7 @@ static void read(int argc, char **argv){
         return;
     }
     char *buf = malloc(file->size + 1);
-    if(vfs_read(file,buf,0,file->size) == VFS_STATUS_FAILED){
+    if (vfs_read(file, buf, 0, file->size) == VFS_STATUS_FAILED) {
         printk("Cannot read file [%s]\n", argv[1]);
         return;
     }

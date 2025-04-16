@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ctype.h"
 
 extern uint64_t physical_memory_offset;

@@ -2254,7 +2254,8 @@ static void drmp3d_synth(float *xl, drmp3d_sample_t *dstl, int nch, float *lins)
             DRMP3_V2(3)
             DRMP3_V1(4)
             DRMP3_V2(5)
-            DRMP3_V1(6) DRMP3_V2(7)
+            DRMP3_V1(6)
+            DRMP3_V2(7)
 
             {
 #            ifndef DR_MP3_FLOAT_OUTPUT
@@ -2370,7 +2371,8 @@ static void drmp3d_synth(float *xl, drmp3d_sample_t *dstl, int nch, float *lins)
         DRMP3_S2(3)
         DRMP3_S1(4)
         DRMP3_S2(5)
-        DRMP3_S1(6) DRMP3_S2(7)
+        DRMP3_S1(6)
+        DRMP3_S2(7)
 
             dstr[(15 - i) * nch] = drmp3d_scale_pcm(a[1]);
         dstr[(17 + i) * nch]     = drmp3d_scale_pcm(b[1]);

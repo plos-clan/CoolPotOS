@@ -153,24 +153,5 @@ void kmain() {
     open_interrupt;
     enable_scheduler();
 
-    vfs_node_t device = vfs_open("/dev/sata0");
-    if (device == NULL) {
-        kerror("Cannot open /dev/sata0");
-    } else {
-        uint8_t *data = malloc(512);
-        memset(data, 0, 512);
-        if (vfs_read(device, data, 0, 512) == VFS_STATUS_SUCCESS) {
-            kinfo("Read data from /dev/sata0");
-            for (size_t i = 0; i < 512; i++) {
-                logkf("%02x ", data[i]);
-            }
-            logkf("\n");
-        } else {
-            kerror("Failed to read from /dev/sata0");
-        }
-        free(data);
-        vfs_close(device);
-    }
-
     halt_service();
 }
