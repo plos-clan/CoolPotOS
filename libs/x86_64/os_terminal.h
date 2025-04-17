@@ -42,8 +42,7 @@ extern "C" {
 #if defined(TERMINAL_EMBEDDED_FONT)
 
 TerminalInitResult terminal_init(const TerminalDisplay *display, float font_size,
-                                 void *(*malloc)(size_t), void (*free)(void *),
-                                 void (*serial_print)(const char *));
+                                 void *(*malloc)(size_t), void (*free)(void *));
 
 #endif
 

@@ -13,6 +13,7 @@ PHDRS
     text PT_LOAD;
     rodata PT_LOAD;
     data PT_LOAD;
+    ksymtab PT_LOAD;
 }
 
 SECTIONS
@@ -51,6 +52,8 @@ SECTIONS
         *(.data .data.*)
     } :data
 
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+
     /* NOTE: .bss needs to be the last thing mapped to :data, otherwise lots of */
     /* unnecessary zeros will be written to the binary. */
     /* If you need, for example, .init_array and .fini_array, those should be placed */
@@ -59,6 +62,16 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
     } :data
+
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+
+    .ksymtab ALIGN(0x1000) : ALIGN(0x1000) {
+        __ksymtab_start = .;
+        KEEP(*(.ksymtab))
+        __ksymtab_end = .;
+    } :ksymtab
+
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {

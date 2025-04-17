@@ -19,8 +19,10 @@
 #include "timer.h"
 #include "vfs.h"
 
-extern void        cp_shutdown();
-extern void        cp_reset();
+extern void cp_shutdown();
+
+extern void cp_reset();
+
 extern lock_queue *pgb_queue;
 
 char           *shell_work_path;
@@ -383,7 +385,7 @@ static void sys_info() {
 static void print_help() {
     printk("Usage <command|app_path> [argument...]\n");
     printk("help h ?                 Get shell help info.\n");
-    printk("shutdown exit            Shutdown kernel.\n");
+    printk("shutdown exit poweroff   Shutdown kernel.\n");
     printk("reboot                   Restart kernel.\n");
     printk("lspci/lspcie             List all PCI/PCIE devices.\n");
     printk("sysinfo                  Get system info.\n");
@@ -397,7 +399,7 @@ static void print_help() {
     printk("mount     <path> <dev>   Mount a device to path.\n");
     printk("lmod      <module|list>  Load or list model.\n");
     printk("luser     <module>       Load a user application.\n");
-    printk("sound     <a><module>    Sound a module file.\n");
+    printk("sound     <a> <module>   Sound a module file.\n");
     printk("read      <path>         Print a file data.\n");
 }
 
@@ -483,7 +485,8 @@ _Noreturn void shell_setup() {
 
         if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print_help();
-        } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
+        } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]) ||
+                   !strcmp("poweroff", argv[0]))
             shutdown_os();
         else if (!strcmp("reboot", argv[0]))
             reboot_os();

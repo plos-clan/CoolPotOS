@@ -1,19 +1,7 @@
 #include "dlinker.h"
-#include "heap.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "sprintf.h"
-#include "timer.h"
-
-dlfunc_t *func_table;
-int       funs_num = 0;
-
-static dlfunc_t *find_func(const char *name) {
-    for (int i = 0; i < funs_num; i++) {
-        if (strcmp(func_table[i].name, name) == 0) { return &func_table[i]; }
-    }
-    return NULL;
-}
 
 void *resolve_symbol(Elf64_Sym *symtab, uint32_t sym_idx) {
     return (void *)symtab[sym_idx].st_value;
@@ -137,32 +125,7 @@ void dlinker_load(cp_module_t *module) {
     kinfo("Kernel model load done! Return code:%d.", ret);
 }
 
-void register_library_func(const char *name, void *func) {
-    if (name == NULL || func == NULL) {
-        kwarn("Invalid function name or address.");
-        return;
-    }
-    if (funs_num >= 256) {
-        kwarn("Too many functions in dynamic library.");
-        return;
-    }
-    func_table[funs_num].name = malloc(strlen(name) + 1);
-    memset(func_table[funs_num].name, 0, strlen(name) + 1);
-    strcpy(func_table[funs_num].name, name);
-    func_table[funs_num].addr = func;
-    funs_num++;
-}
-
 void dlinker_init() {
-    func_table = malloc(sizeof(dlfunc_t) * 256);
-    funs_num   = 0;
-
-    register_library_func("printf", cp_printf);
-    register_library_func("malloc", malloc);
-    register_library_func("free", free);
-    register_library_func("register_library_func", register_library_func);
-    register_library_func("get_hour\0", get_hour);
-    register_library_func("get_min", get_min);
-
+    find_kernel_symbol();
     kinfo("Dynamic linker initialized.");
 }
