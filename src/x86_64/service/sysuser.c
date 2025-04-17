@@ -30,5 +30,5 @@ void user_setup() {
     strcpy(kernel_user->name, "Kernel");
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;
-    kinfo("User system setup, (%s uid:%d).", kernel_user->name, kernel_user->uid);
+    kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
 }

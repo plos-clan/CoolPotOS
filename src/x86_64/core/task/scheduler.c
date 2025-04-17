@@ -7,8 +7,8 @@
 #include "pcb.h"
 #include "smp.h"
 
-tcb_t kernel_head_task = NULL;
-bool  is_scheduler     = false;
+tcb_t         kernel_head_task = NULL;
+volatile bool is_scheduler     = false;
 
 extern uint64_t cpu_count;        // smp.c
 extern uint32_t bsp_processor_id; // smp.c
