@@ -1,20 +1,26 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "ctype.h"
 
 typedef enum {
     Success,
     MallocIsNull,
     FreeIsNull,
     FontBufferIsNull,
+    InvalidDisplayInfo,
 } TerminalInitResult;
 
 typedef struct {
     size_t    width;
     size_t    height;
-    uint32_t *address;
+    uint32_t *buffer;
+    size_t    pitch;
+    uint8_t   red_mask_size;
+    uint8_t   red_mask_shift;
+    uint8_t   green_mask_size;
+    uint8_t   green_mask_shift;
+    uint8_t   blue_mask_size;
+    uint8_t   blue_mask_shift;
 } TerminalDisplay;
 
 typedef struct {
@@ -25,6 +31,7 @@ typedef struct {
 
 typedef struct {
     const char *(*get)(void);
+
     void (*set)(const char *);
 } TerminalClipboard;
 
@@ -33,9 +40,11 @@ extern "C" {
 #endif // __cplusplus
 
 #if defined(TERMINAL_EMBEDDED_FONT)
+
 TerminalInitResult terminal_init(const TerminalDisplay *display, float font_size,
                                  void *(*malloc)(size_t), void (*free)(void *),
                                  void (*serial_print)(const char *));
+
 #endif
 
 #if !defined(TERMINAL_EMBEDDED_FONT)
@@ -58,7 +67,7 @@ void terminal_set_scroll_speed(size_t speed);
 
 void terminal_set_auto_flush(bool auto_flush);
 
-void terminal_set_auto_crnl(bool auto_crnl);
+void terminal_set_crnl_mapping(bool auto_crnl);
 
 void terminal_set_bell_handler(void (*handler)(void));
 
