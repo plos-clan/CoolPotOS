@@ -68,6 +68,7 @@ void local_apic_init(bool is_print) {
     lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
     lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
+    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(0x1000));
 
     uint64_t b = nanoTime();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t)0));

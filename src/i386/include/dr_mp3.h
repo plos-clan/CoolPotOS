@@ -2374,14 +2374,14 @@ static void drmp3d_synth(float *xl, drmp3d_sample_t *dstl, int nch, float *lins)
         DRMP3_S1(6)
         DRMP3_S2(7)
 
-            dstr[(15 - i) * nch] = drmp3d_scale_pcm(a[1]);
-        dstr[(17 + i) * nch]     = drmp3d_scale_pcm(b[1]);
-        dstl[(15 - i) * nch]     = drmp3d_scale_pcm(a[0]);
-        dstl[(17 + i) * nch]     = drmp3d_scale_pcm(b[0]);
-        dstr[(47 - i) * nch]     = drmp3d_scale_pcm(a[3]);
-        dstr[(49 + i) * nch]     = drmp3d_scale_pcm(b[3]);
-        dstl[(47 - i) * nch]     = drmp3d_scale_pcm(a[2]);
-        dstl[(49 + i) * nch]     = drmp3d_scale_pcm(b[2]);
+        dstr[(15 - i) * nch] = drmp3d_scale_pcm(a[1]);
+        dstr[(17 + i) * nch] = drmp3d_scale_pcm(b[1]);
+        dstl[(15 - i) * nch] = drmp3d_scale_pcm(a[0]);
+        dstl[(17 + i) * nch] = drmp3d_scale_pcm(b[0]);
+        dstr[(47 - i) * nch] = drmp3d_scale_pcm(a[3]);
+        dstr[(49 + i) * nch] = drmp3d_scale_pcm(b[3]);
+        dstl[(47 - i) * nch] = drmp3d_scale_pcm(a[2]);
+        dstl[(49 + i) * nch] = drmp3d_scale_pcm(b[2]);
     }
 #        endif
 }

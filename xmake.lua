@@ -64,6 +64,7 @@ target("kernel64")
 
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
     add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto")
+    add_cflags("-Wno-unused-parameter","-Wno-unused-function")
     add_ldflags("-static", "-nostdlib", "-flto", "-fuse-ld=lld")
 
     add_cflags("-Dmalloc=_fuck_malloc", "-Dfree=_fuck_free", "-Drealloc=_fuck_realloc")
