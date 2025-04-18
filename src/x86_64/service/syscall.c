@@ -6,7 +6,8 @@
 #include "pcb.h"
 #include "scheduler.h"
 
-extern void        asm_syscall_entry();
+extern void asm_syscall_entry();
+
 extern lock_queue *pgb_queue;
 
 static inline void enable_syscall() {
@@ -14,21 +15,6 @@ static inline void enable_syscall() {
     efer  = rdmsr(MSR_EFER);
     efer |= 1;
     wrmsr(MSR_EFER, efer);
-}
-
-syscall_(putc) {
-    char c = *((char *)arg0);
-    printk("%c", c);
-    return 0;
-}
-
-syscall_(print) {
-    printk("%s", (char *)arg0);
-    return 0;
-}
-
-syscall_(getch) {
-    return kernel_getch();
 }
 
 syscall_(exit) {
@@ -39,11 +25,17 @@ syscall_(exit) {
     return 0;
 }
 
+syscall_(abort) {
+    logkf("Process %s abort.\n", get_current_task()->parent_group->name);
+    kill_proc(get_current_task()->parent_group);
+    cpu_hlt;
+    return 0;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_PUTC]  = syscall_putc,
-    [SYSCALL_PRINT] = syscall_print,
-    [SYSCALL_GETCH] = syscall_getch,
     [SYSCALL_EXIT]  = syscall_exit,
+    [SYSCALL_ABORT] = syscall_abort,
+
 };
 
 registers_t *syscall_handle(registers_t *reg) {

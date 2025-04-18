@@ -197,7 +197,7 @@ vfs_node_t get_rootdir() {
 
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     vfs_node_t node = malloc(sizeof(struct vfs_node));
-    not_null_assets(node);
+    not_null_assets(node, "vfs alloc null");
     if (node == NULL) return NULL;
     memset(node, 0, sizeof(struct vfs_node));
     node->parent = parent;

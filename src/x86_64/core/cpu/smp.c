@@ -94,7 +94,7 @@ void apu_entry() {
     local_apic_init(false);
     float_processor_setup();
     tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
-    not_null_assets(apu_idle);
+    not_null_assets(apu_idle, "apu idle null");
     apu_idle->task_level = TASK_KERNEL_LEVEL;
     apu_idle->pid        = kernel_group->pid_index++;
     apu_idle->cpu_clock  = 0;

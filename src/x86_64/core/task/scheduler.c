@@ -61,12 +61,9 @@ void remove_task(tcb_t task) {
     if (task == NULL) return;
     ticket_lock(&scheduler_lock);
 
-    smp_cpu_t *cpu = get_cpu_smp(task->cpu_id);
-    if (cpu == NULL) {
-        ticket_unlock(&scheduler_lock);
-        return;
-    }
-    queue_remove_at(cpu->scheduler_queue, task->queue_index);
+    smp_cpu_t *smp = get_cpu_smp(task->cpu_id);
+    not_null_assets(smp, "remove task null");
+    queue_remove_at(smp->scheduler_queue, task->queue_index);
     ticket_unlock(&scheduler_lock);
 }
 
@@ -172,7 +169,7 @@ void scheduler(registers_t *reg) {
         cpu->iter_node = cpu->iter_node->next;
         if (cpu->iter_node == NULL) goto iter_head;
         next = (tcb_t)cpu->iter_node->data;
-        not_null_assets(next);
+        not_null_assets(next, "scheduler next null");
         if (next->status == DEATH || next->status == OUT || next->parent_group->status == DEATH)
             goto resche;
     }
