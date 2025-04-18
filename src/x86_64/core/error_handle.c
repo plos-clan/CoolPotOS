@@ -34,9 +34,12 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     disable_scheduler();
     init_print_lock();
     ticket_lock(&error_lock);
-    logkf("Kernel Error: %s:0x%x\n", msg, code);
-    logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->pid,
-          get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
+    logkf("Kernel Error: %s:0x%x %d %p\n", msg, code, cpu->id, frame->rip); // 679a0
+    if (get_current_task() == NULL) {
+        logkf("Current process PID: NULL CPU%d\n", cpu->id);
+    } else
+        logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->pid,
+              get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n", msg,
            code);
     print_task_info(get_current_task());

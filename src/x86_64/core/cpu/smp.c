@@ -22,7 +22,7 @@ smp_cpu_t smp_cpus[MAX_CPU];
 uint32_t  bsp_processor_id;
 uint64_t  cpu_count = 0;
 
-static uint64_t cpu_done_count = 0;
+static volatile uint64_t cpu_done_count = 0;
 
 uint64_t cpu_num() {
     return cpu_count;
@@ -91,11 +91,8 @@ void apu_entry() {
     ticket_lock(&apu_lock);
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
-
     local_apic_init(false);
-
     float_processor_setup();
-    logkf("CPU%d: (%d) loading\n", cpu->id, cpu->lapic_id);
     tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
     not_null_assets(apu_idle);
     apu_idle->task_level = TASK_KERNEL_LEVEL;
@@ -116,14 +113,17 @@ void apu_entry() {
     cpu->idle_pcb                = apu_idle;
     cpu->ready                   = true;
     change_current_tcb(apu_idle);
-    apu_idle->queue_index = queue_enqueue(cpu->scheduler_queue, apu_idle);
-    if (apu_idle->queue_index == (size_t)-1) {
-        logkf("Error: scheduler null %d\n", cpu->id);
-        cpu_hlt;
-    }
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
-    logkf("APU %d: %p started.\n", cpu->id, cpu->idle_pcb);
+    apu_idle->queue_index  = queue_enqueue(cpu->scheduler_queue, apu_idle);
+    if (apu_idle->queue_index == (size_t)-1) {
+        kerror("Unable to add task to scheduler queue for CPU%d", cpu->id);
+        cpu->ready = false;
+        cpu_done_count++;
+        ticket_unlock(&apu_lock);
+        open_interrupt;
+        cpu_hlt;
+    }
     cpu_done_count++;
     ticket_unlock(&apu_lock);
     open_interrupt;
