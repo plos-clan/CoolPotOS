@@ -147,7 +147,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     close_interrupt;
     disable_scheduler();
     tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
-    not_null_assets(new_task);
+    not_null_assets(new_task, "create user task null");
     memset(new_task, 0, sizeof(struct thread_control_block));
 
     if (pcb == NULL) {
@@ -193,7 +193,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     close_interrupt;
     disable_scheduler();
     tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
-    not_null_assets(new_task);
+    not_null_assets(new_task, "create kernel task null");
     memset(new_task, 0, sizeof(struct thread_control_block));
 
     if (pcb == NULL) {

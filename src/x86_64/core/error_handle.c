@@ -6,6 +6,7 @@
 #include "lock.h"
 #include "pcb.h"
 #include "smp.h"
+#include "sprintf.h"
 #include "terminal.h"
 
 extern void double_fault_asm(); // df_asm.S
@@ -50,12 +51,15 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
         cpu_hlt;
 }
 
-void not_null_assets(void *ptr) {
+void not_null_assets(void *ptr, const char *message) {
     if (ptr == NULL) {
         close_interrupt;
         disable_scheduler();
         interrupt_frame_t frame = get_current_registers();
-        kernel_error("KERNEL_NULL_HANDLE", 0x0, &frame);
+        char              buf[1024];
+        sprintf(buf, "KERNEL_NULL_HANDLE: %s\n", message);
+        buf[1023] = '\0';
+        kernel_error(buf, 0x0, &frame);
     }
 }
 

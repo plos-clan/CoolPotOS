@@ -466,7 +466,7 @@ _Noreturn void shell_setup() {
            KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
     char *line      = malloc(MAX_COMMAND_LEN);
     shell_work_path = malloc(1024);
-    not_null_assets(shell_work_path);
+    not_null_assets(shell_work_path, "shell work path null");
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
     infinite_loop {
