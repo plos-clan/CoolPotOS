@@ -1,6 +1,6 @@
 set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
---add_requires("zig","nasm") --编译 i386 时候需要解开这条语句的注释
+add_requires("zig","nasm") --编译 i386 时候需要解开这条语句的注释
 set_optimize("fastest")
 set_languages("c23")
 set_warnings("all", "extra")
@@ -121,7 +121,7 @@ target("iso64")
 target("default_build")
     set_kind("phony")
     add_deps("iso64")
-    --add_deps("iso32")
+    add_deps("iso32")
     set_default(true)
 
     on_run(function (target)
