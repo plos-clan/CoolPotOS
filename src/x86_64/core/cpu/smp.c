@@ -70,7 +70,7 @@ static void apu_gdt_setup() {
     wrmsr(0xC0000102, (uint64_t)this_cpu);
     cpu->id = this_id;
 
-    uint64_t address     = (uint64_t)&(this_cpu->tss0);
+    uint64_t address     = (uint64_t) & (this_cpu->tss0);
     uint64_t low_base    = (((address & 0xffffffU)) << 16U);
     uint64_t mid_base    = (((((address >> 24U)) & 0xffU)) << 56U);
     uint64_t high_base   = (address >> 32U);
@@ -82,7 +82,7 @@ static void apu_gdt_setup() {
     cpu->gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
     cpu->gdtEntries[6] = high_base;
 
-    cpu->tss0.ist[0] = ((uint64_t)&(this_cpu->tss_stack)) + sizeof(tss_stack_t);
+    cpu->tss0.ist[0] = ((uint64_t) & (this_cpu->tss_stack)) + sizeof(tss_stack_t);
 
     __asm__ volatile("ltr %[offset]\n\t" : : [offset] "rm"(0x28U) : "memory");
 }

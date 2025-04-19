@@ -42,6 +42,17 @@ typedef struct IIC_Master {
 } IIC_Master;
 
 /**
+ * @struct IIC_Adapter
+ * @brief IIC适配器
+ */
+typedef struct IIC_Adapter {
+    void       (*iic_sendStart)(IIC_Master *);
+    void       (*iic_sendStop)(IIC_Master *);
+    void       (*iic_sendByte)(IIC_Master *, uint8_t);
+    uint8_t    (*iic_receiveByte)(IIC_Master *);
+} IIC_Adapter;
+
+/**
  * @struct IIC_Slave
  * @brief IIC从机
  */
@@ -60,7 +71,7 @@ typedef struct IIC_Slave {
  */
 typedef struct IIC_slaveNode {
     IIC_Slave slave;
-    list_t    next;
+    list_t    slave_node;
 } IIC_slaveNode;
 
 /**
@@ -86,9 +97,5 @@ uint32_t      iic_dataTransfer(IIC_Data *);
 uint8_t       Get_iic_masterAddress(pci_device_t *);
 void          iic_start(IIC_Master *);
 void          iic_stop(IIC_Master *);
-void          iic_sendStart(IIC_Master *);
-void          iic_sendStop(IIC_Master *);
-void          iic_sendByte(IIC_Master *, uint8_t);
-uint8_t       iic_receiveByte(IIC_Master *);
 
 #endif
