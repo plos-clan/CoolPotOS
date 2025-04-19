@@ -17,17 +17,17 @@ bool crc_check(IIC_Data *frame) {
 
 IIC_slaveNode iic_slaveAlloc(IIC_Slave *slave) {
     IIC_slaveNode node;
-    node.next  = list_alloc(NULL);
-    node.slave = *slave;
+    node.slave_node = list_alloc(slave);
+    node.slave      = *slave;
     return node;
 }
 
 void iic_slaveAppend(list_t *head, IIC_slaveNode *node) {
-    list_append(*head, node->next);
+    list_append(*head, node->slave_node);
 }
 
 void iic_slaveDelete(list_t *head, IIC_slaveNode *node) {
-    list_delete(*head, node->next);
+    list_delete(*head, node->slave_node);
 }
 
 void iic_slaveForeach(list_t *head, void (*func)(IIC_Slave *)) {
@@ -49,8 +49,19 @@ uint32_t iic_dataTransfer(IIC_Data *frame) {
     }
 }
 
+/**
+ * @brief Get the base address of the IIC Master Controller.
+ *
+ * This function is used to get the base address of the IIC Master Controller.
+ * It takes a pointer to a pci_device_t as an argument, which is the PCI device
+ * structure of the IIC Master Controller.
+ *
+ * @param IIC_Master_Controller The pointer to the pci_device_t of the IIC Master Controller.
+ *
+ * @return The base address of the IIC Master Controller.
+ */
 uint8_t Get_iic_masterAddress(pci_device_t *IIC_Master_Controller) {
-    // 获取IIC主机控制器基地址
+    
     base_address_register bar          = find_bar(*IIC_Master_Controller, 0);
     uint8_t               base_address = *bar.address;
     return base_address;
@@ -62,21 +73,4 @@ void iic_start(IIC_Master *IIC_Master) {
 
 void iic_stop(IIC_Master *IIC_Master) {
     // 兼容性
-}
-
-void iic_sendStart(IIC_Master *IIC_Master) {
-    // 起始信号兼容性
-}
-
-void iic_sendStop(IIC_Master *IIC_Master) {
-    // 停止信号兼容性
-}
-
-void iic_sendByte(IIC_Master *IIC_Master, uint8_t data) {
-    // 发送字节兼容性
-}
-
-uint8_t iic_receiveByte(IIC_Master *IIC_Master) {
-    // 接收字节兼容性
-    return 0;
 }

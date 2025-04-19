@@ -144,9 +144,9 @@ int create_user_process(const char *path, const char *cmdline, char *name, uint8
     create_user_thread(new_task, (void *)_start); // 创建用户线程
 
     uint32_t *stack_top = (uint32_t *)((uint32_t)new_task->kernel_stack + STACK_SIZE); // 设置内核栈
-    *(--stack_top)      = (uint32_t)_start;
-    *(--stack_top)      = (uint32_t)process_exit;
-    *(--stack_top)      = (uint32_t)switch_to_user_mode;
+    *(--stack_top)           = (uint32_t)_start;
+    *(--stack_top)           = (uint32_t)process_exit;
+    *(--stack_top)           = (uint32_t)switch_to_user_mode;
     new_task->context.esp    = (uint32_t)new_task + STACK_SIZE - sizeof(uint32_t) * 3;
     new_task->context.eflags = 0x200;
 
@@ -182,7 +182,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args,
     *(--stack_top)      = (uint32_t)process_exit;
     *(--stack_top)      = (uint32_t)_start;
 
-    new_task->context.esp    = (uint32_t)new_task + STACK_SIZE - sizeof(uint32_t) * 3; // 设置上下文
+    new_task->context.esp = (uint32_t)new_task + STACK_SIZE - sizeof(uint32_t) * 3; // 设置上下文
     new_task->context.eflags = 0x200;
 
     add_task(new_task); // 添加到调度链

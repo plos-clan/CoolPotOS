@@ -41,11 +41,11 @@ static uint32_t test_frame(uint32_t frame_addr) {
     return (frames[idx] & (0x1U << off));    // 检查物理内存块状态
 }
 
-uint32_t first_frame() {                                               // 获取第一个空闲物理块
+uint32_t first_frame() { // 获取第一个空闲物理块
     for (int i = 0; i < INDEX_FROM_BIT(0xFFFFFFFF / PAGE_SIZE); i++) { // 遍历物理内存块
-        if (frames[i] != 0xffffffff) {                                 // 检查当前内存块是否已分配
-            for (int j = 0; j < 32; j++) {                             // 遍历当前内存块的每一位
-                uint32_t toTest = 0x1U << j;                           // 检查当前位是否为空闲
+        if (frames[i] != 0xffffffff) {       // 检查当前内存块是否已分配
+            for (int j = 0; j < 32; j++) {   // 遍历当前内存块的每一位
+                uint32_t toTest = 0x1U << j; // 检查当前位是否为空闲
                 if (!(frames[i] & toTest)) { // 找到第一个空闲内存块，计算并返回编号
                     return i * 4 * 8 + j;
                 }
@@ -164,7 +164,7 @@ page_directory_t *clone_directory(page_directory_t *src) {
             dir->table_phy[i] = src->table_phy[i];
         } else { // 源页面目录项的页面表与内核页面目录的页面表不同，克隆页面表
             uint32_t phys;
-            dir->tables[i]    = clone_table(src->tables[i], &phys); // 设置页面目录项的属性
+            dir->tables[i] = clone_table(src->tables[i], &phys); // 设置页面目录项的属性
             dir->table_phy[i] = phys | 0x07;
         }
     }

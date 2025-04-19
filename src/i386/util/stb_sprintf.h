@@ -640,7 +640,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
                 n64 |= (((stbsp__uint64)1) << 52);
             n64 <<= (64 - 56);
             if (pr < 15) n64 += ((((stbsp__uint64)8) << 56) >> (pr * 4));
-            // add leading chars
+                // add leading chars
 
 #        ifdef STB_SPRINTF_MSVC_MODE
             *s++ = '0';
@@ -1388,8 +1388,8 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsnprintf)(char *buf, int count, char 
         c.count  = count;
         c.length = 0;
 
-        STB_SPRINTF_DECORATE(vsprintfcb)(stbsp__clamp_callback, &c, stbsp__clamp_callback(0, &c, 0),
-                                         fmt, va);
+        STB_SPRINTF_DECORATE(vsprintfcb)
+        (stbsp__clamp_callback, &c, stbsp__clamp_callback(0, &c, 0), fmt, va);
 
         // zero-terminate
         l = (int)(c.buf - buf);
