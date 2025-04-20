@@ -1,3 +1,9 @@
+/**
+ * Feature Shell version 1.0.0beta
+ * By linzhichen114
+ * GOD BLESS - NOT CRASH
+ */
+
 #include "shell.h"
 #include "cpuid.h"
 #include "cpusp.h"
@@ -12,17 +18,14 @@
 #include "pcb.h"
 #include "pci.h"
 #include "pcie.h"
-#include "sb16.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
 
-extern void cp_shutdown();
-
-extern void cp_reset();
-
+extern void        cp_shutdown();
+extern void        cp_reset();
 extern lock_queue *pgb_queue;
 
 char           *shell_work_path;
@@ -56,7 +59,7 @@ static int gets(char *buf, int buf_size) {
             printk("%c", c);
         }
         if (index >= buf_size) {
-            printk("\nError: out of input bounds,\n");
+            kernel_error("\nFATAL: OUT OF INPUT BOUNDS\n", (uint64_t)"FATAL ERROR", NULL);
             break;
         }
     }
@@ -311,48 +314,6 @@ static void luser(int argc, char **argv) {
           user_task->queue_index);
 }
 
-static void sound(int argc, char **argv) {
-    if (argc == 1) {
-        printk("[Shell-SOUND]: If there are too few parameters.\n");
-        return;
-    }
-
-    cp_module_t *module = get_module(argv[2]);
-    if (module == NULL) {
-        printk("Cannot find module [%s]\n", argv[2]);
-        return;
-    }
-    int rate = strtol(argv[1], NULL, 10);
-    printk("Playing file [%s] at [%d]\n", module->module_name, rate);
-    sb16_set_sample_rate(rate);
-    sb16_set_volume(15, 15);
-    sb16_play(module->data, module->size);
-}
-
-static void read(int argc, char **argv) {
-    if (argc == 1) {
-        printk("[Shell-READ]: If there are too few parameters.\n");
-        return;
-    }
-    vfs_node_t file = vfs_open(argv[1]);
-    if (file == NULL) {
-        printk("Cannot found file [%s]\n", argv[1]);
-        return;
-    }
-    char *buf = malloc(file->size + 1);
-    if (vfs_read(file, buf, 0, file->size) == VFS_STATUS_FAILED) {
-        printk("Cannot read file [%s]\n", argv[1]);
-        return;
-    }
-    for (size_t i = 0; i < file->size; i++) {
-        printk("%c", buf[i]);
-        logkf("%c", buf[i]);
-    }
-    printk("\n");
-    free(buf);
-    vfs_close(file);
-}
-
 static void sys_info() {
     cpu_t cpu = get_cpu_info();
 
@@ -361,7 +322,7 @@ static void sys_info() {
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
-    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         OSName:       CoolPotOS\n");
+    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         Operating System Name:       CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pcie_num());
@@ -370,7 +331,7 @@ static void sys_info() {
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
     printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Terminal:     os_terminal\n");
     printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        MemoryUsage:  %d%s / %dMB\n", memory,
+    printk("*@@@@@@           @@@@@@*        Memory Usage:  %d%s / %dMB\n", memory,
            bytes > 10485760 ? "MB" : "KB", (int)(memory_size / 1024 / 1024));
     printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor.\n");
     printk(" &@@@@@@*.     .#@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    "
@@ -385,7 +346,7 @@ static void sys_info() {
 static void print_help() {
     printk("Usage <command|app_path> [argument...]\n");
     printk("help h ?                 Get shell help info.\n");
-    printk("shutdown exit poweroff   Shutdown kernel.\n");
+    printk("shutdown exit            Shutdown kernel.\n");
     printk("reboot                   Restart kernel.\n");
     printk("lspci/lspcie             List all PCI/PCIE devices.\n");
     printk("sysinfo                  Get system info.\n");
@@ -399,8 +360,6 @@ static void print_help() {
     printk("mount     <path> <dev>   Mount a device to path.\n");
     printk("lmod      <module|list>  Load or list model.\n");
     printk("luser     <module>       Load a user application.\n");
-    printk("sound     <a> <module>   Sound a module file.\n");
-    printk("read      <path>         Print a file data.\n");
 }
 
 char **split_by_space(const char *input, int *count) {
@@ -456,21 +415,51 @@ void trim(char *str) {
 }
 
 _Noreturn void shell_setup() {
-    printk("Welcome to CoolPotOS (%s)\n"
-           " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
-           " * Website:           https://github.com/plos-clan\n"
-           " System information as of %s \n"
-           "  Tasks:              %d\n"
-           "  Logged:             %s\n"
-           "MIT License 2024-2025 plos-clan (Build by xmake&clang)\n",
-           KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
+    //printk("Welcome to CoolPotOS (%s)!\n"
+    //       " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
+    //       " * Website:           https://github.com/plos-clan\n"
+    //       " System information as of %s \n"
+    //       "  Tasks:              %d\n"
+    //       "  Logged:             %s\n"
+    //       "MIT License 2024-2025 plos-clan\n",
+    //       KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
+    printk("\033[H\033[2J\033[3J");
+    printk("\033[32mWelcome to \033[1mCoolPotOS\033[0m!\n");
+    sys_info();
+    //create_user("Shell", Ordinary);
     char *line      = malloc(MAX_COMMAND_LEN);
     shell_work_path = malloc(1024);
-    not_null_assets(shell_work_path, "shell work path null");
+    not_null_assets(shell_work_path, "AT YOUR FEATURE SHELL, VARIABLE 'shell_work_path'");
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
+    
+    /* If this CP_kernel's version is not develop version, set this variable to FALSE. */
+    const bool IS_DEVELOP_VERSION = true;
+
+    if (IS_DEVELOP_VERSION) {printk("[ \033[34mNOTE\033[0m ] System is auto login with \033[1mKernel\033[0m.\n");}
+    else
+    {
+        // login now
+        printk("Username: ");
+        char username[MAX_COMMAND_LEN];
+        gets(username, MAX_COMMAND_LEN); // read username
+        if (!strcmp(username, "Ordinary")) {
+            strcpy(tcb->parent_group->user->name, "Ordinary");
+            tcb->parent_group->user->uid              = 2;
+            tcb->parent_group->user->permission_level = Ordinary;
+        } else if (!strcmp(username, "Kernel")) {
+            strcpy(tcb->parent_group->user->name, "Kernel");
+            tcb->parent_group->user->uid              = 0;
+            tcb->parent_group->user->permission_level = Kernel;
+        } else {
+            printk("\033[31mError: No user named '%s'\nPress any key to reboot...\033[0m", username);
+            getc();
+            cp_reset();
+        }
+    }
+
     infinite_loop {
-        printk("\033[32m%s@localhost: \033[34m%s \033[39m$ ", tcb->parent_group->user->name,
+        printk("\033[41m%% %s\033[0m@\033[32mlocalhost: \033[34m%s> ", tcb->parent_group->user->name,
                shell_work_path);
         if (gets(line, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
@@ -485,8 +474,7 @@ _Noreturn void shell_setup() {
 
         if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
             print_help();
-        } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]) ||
-                   !strcmp("poweroff", argv[0]))
+        } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
             shutdown_os();
         else if (!strcmp("reboot", argv[0]))
             reboot_os();
@@ -516,17 +504,13 @@ _Noreturn void shell_setup() {
             lmod(argc, argv);
         else if (!strcmp("luser", argv[0]))
             luser(argc, argv);
-        else if (!strcmp("sound", argv[0]))
-            sound(argc, argv);
-        else if (!strcmp("read", argv[0]))
-            read(argc, argv);
         else if (!strcmp("test", argv[0])) {
             for (int i = 0; i < 100; ++i) {
                 printk("count: %d\n", i);
             }
-        } else
-            printk("\033[31mUnknown command '%s'.\033[39m\n", com_copy);
-
+        } else {
+            kerror("\033[31mshell: command `%s' not found\033[39m\n", com_copy);
+        }
         for (int i = 0; i < argc; i++) {
             free(argv[i]);
         }
