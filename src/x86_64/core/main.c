@@ -20,7 +20,7 @@
 #include "module.h"
 #include "page.h"
 #include "pcb.h"
-#include "pcie.h"
+#include "pci.h"
 #include "pcnet.h"
 #include "power.h"
 #include "sb16.h"
@@ -123,7 +123,7 @@ void kmain() {
     vdisk_init();
     devfs_setup();
     modfs_setup();
-    pcie_init();
+    pci_init();
     ide_setup();
     // nvme_setup();
     ahci_setup();

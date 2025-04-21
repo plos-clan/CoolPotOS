@@ -61,9 +61,7 @@ uint32_t iic_dataTransfer(IIC_Data *frame) {
  * @return The base address of the IIC Master Controller.
  */
 uint8_t Get_iic_masterAddress(pci_device_t *IIC_Master_Controller) {
-
-    base_address_register bar          = find_bar(*IIC_Master_Controller, 0);
-    uint8_t               base_address = *bar.address;
+    uint8_t base_address = *(uint8_t *)IIC_Master_Controller->bars[0].address;
     return base_address;
 }
 

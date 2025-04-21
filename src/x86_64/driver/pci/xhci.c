@@ -2,6 +2,7 @@
 #include "alloc.h"
 #include "io.h"
 #include "kprint.h"
+#include "pci.h"
 #include "scheduler.h"
 
 #define klog(...)                                                                                  \
@@ -37,7 +38,7 @@ void InterruptXHCI(interrupt_frame_t *frame) {
 
 void xhci_setup() {
     // Foreach device list
-    pcie_device_t *dvc = pcie_find_class(0x0C0330);
+    pci_device_t *dvc = pci_find_class(0x0C0330);
     if (!dvc) { return; }
     SetupXHCIControllerPCI(dvc);
 }
@@ -275,7 +276,7 @@ FAILED:;
     return 1;
 }
 
-void SetupXHCIControllerPCI(pcie_device_t *dvc) {
+void SetupXHCIControllerPCI(pci_device_t *dvc) {
     XHCI_OPERARTION.DTC = XHCIHUBDetect;
     XHCI_OPERARTION.RST = XHCIHUBReset;
     XHCI_OPERARTION.DCC = XHCIHUBDisconnect;
@@ -300,10 +301,12 @@ uint32_t XHCICommand(XHCI_CONTROLLER *controller, XHCI_TRANSFER_BLOCK *trb) {
     controller->DR[0] = 0;
     return XHCIWaitCompletion(controller, &controller->CMD);
 }
+
 uint32_t XHCIHUBDetect(USB_HUB *hub, uint32_t port) {
     XHCI_CONTROLLER *controller = (XHCI_CONTROLLER *)hub->CTRL;
     return (controller->PR[port].PSC & XHCI_PORTSC_CCS);
 }
+
 uint32_t XHCIHUBReset(USB_HUB *hub, uint32_t port) {
     XHCI_CONTROLLER *controller = (XHCI_CONTROLLER *)hub->CTRL;
     if (!(controller->PR[port].PSC & XHCI_PORTSC_CCS)) return (uint32_t)-1;
@@ -336,10 +339,12 @@ uint32_t XHCIHUBReset(USB_HUB *hub, uint32_t port) {
     }
     return SPEED_XHCI[(controller->PR[port].PSC >> 10) & 0xF];
 }
+
 uint32_t XHCIHUBDisconnect(USB_HUB *hub, uint32_t port) {
     // XXX - should turn the port power off.
     return 0;
 }
+
 uint64_t XHCICreateInputContext(USB_COMMON *usbdev, uint32_t maxepid) {
     XHCI_CONTROLLER            *controller = (XHCI_CONTROLLER *)usbdev->CTRL;
     uint64_t                    size = (sizeof(XHCI_INPUT_CONTROL_CONTEXT) << controller->CSZ) * 33;
@@ -381,6 +386,7 @@ uint64_t XHCICreateInputContext(USB_COMMON *usbdev, uint32_t maxepid) {
     sctx->RHPN = usbdev->PORT + 1;
     return (uint64_t)icctx;
 }
+
 USB_PIPE *XHCICreatePipe(USB_COMMON *common, USB_PIPE *upipe, USB_ENDPOINT *epdesc) {
     if (!epdesc) {
         // Free
@@ -583,6 +589,7 @@ USB_PIPE *XHCICreatePipe(USB_COMMON *common, USB_PIPE *upipe, USB_ENDPOINT *epde
     free_frame((uint64_t)virt_to_phys((uint64_t)in));
     return upipe;
 }
+
 uint32_t XHCITransfer(USB_PIPE *pipe, USB_DEVICE_REQUEST *req, void *data, uint32_t xferlen,
                       uint32_t wait) {
     XHCI_PIPE          *xpipe      = (XHCI_PIPE *)pipe;
@@ -634,6 +641,7 @@ uint32_t XHCITransfer(USB_PIPE *pipe, USB_DEVICE_REQUEST *req, void *data, uint3
     if (cc != 1) { return cc; }
     return 0;
 }
+
 void XHCICreateTransferRing(XHCI_TRANSFER_RING *tr) {
     uint64_t pagePhysAddress = (uint64_t)alloc_frames(1);
     uint64_t pageAddress     = (uint64_t)phys_to_virt(pagePhysAddress);

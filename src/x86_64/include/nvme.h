@@ -15,7 +15,7 @@
 #define NVME_ADMIN_IDENTIFY_CNS_ACT_NSL 0x02U
 
 #include "ctype.h"
-#include "pcie.h"
+#include "pci.h"
 
 typedef struct NVME_CONTROLLER nvme_controller;
 
@@ -78,7 +78,7 @@ typedef struct _NVME_SUBMISSION_QUEUE {
 } __attribute__((packed)) NVME_SUBMISSION_QUEUE;
 
 typedef struct NVME_CONTROLLER {
-    pcie_device_t        *DVC;
+    pci_device_t         *DVC;
     nvme_capability      *CAP;
     NVME_COMPLETION_QUEUE ACQ;
     NVME_SUBMISSION_QUEUE ASQ;

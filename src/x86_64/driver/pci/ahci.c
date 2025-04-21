@@ -6,7 +6,6 @@
 #include "krlibc.h"
 #include "page.h"
 #include "pci.h"
-#include "pcie.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vdisk.h"
@@ -472,29 +471,15 @@ void swap_and_terminate(uint8_t *src, char *dest, size_t len) {
 }
 
 void ahci_setup() {
-    pcie_device_t *device = pcie_find_class(0x010601);
-    if (device == NULL) {
-        pci_device_t pci_device = pci_find_class(0x010601);
-        if (pci_device == NULL) { return; }
-        uint32_t conf  = pci_read_command_status(pci_device);
-        conf          |= PCI_COMMAND_MEMORY;
-        conf          |= PCI_RCMD_BUS_MASTER;
-        conf          |= PCI_COMMAND_IO;
-        pci_write_command_status(pci_device, conf);
-        base_address_register reg = find_bar(pci_device, 5);
-        if (reg.type == input_output) {
-            kwarn("AHCI memory address is not aligned");
-            return;
-        }
-        hba_mem = (HBA_MEM *)reg.address;
-    } else {
-        uint32_t conf  = pcie_read_command(device, 0x04);
-        conf          |= PCI_RCMD_BUS_MASTER;
-        conf          |= PCI_COMMAND_MEMORY;
-        conf          |= PCI_COMMAND_IO;
-        pcie_write_command(device, 0x04, conf);
-        hba_mem = (HBA_MEM *)phys_to_virt(device->bars[5].address);
-    }
+    pci_device_t *device = pci_find_class(0x010601);
+    if (device == NULL) { return; }
+
+    uint32_t conf  = pci_read_command(device, 0x04);
+    conf          |= PCI_RCMD_BUS_MASTER;
+    conf          |= PCI_COMMAND_MEMORY;
+    conf          |= PCI_COMMAND_IO;
+    pci_write_command(device, 0x04, conf);
+    hba_mem = (HBA_MEM *)phys_to_virt(device->bars[5].address);
 
     hba_mem->ghc |= AHCI_GHC_AE;
 
