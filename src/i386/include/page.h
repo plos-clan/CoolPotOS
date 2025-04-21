@@ -32,12 +32,12 @@ typedef struct page_directory {
     uint32_t               physicalAddr;
 } __attribute__((packed)) page_directory_t;
 
-page_directory_t *get_current_directory(); // 获取当前页表 (一般是当前进程的页目录)
+page_directory_t *get_current_directory();                // 获取当前页表 (一般是当前进程的页目录)
 page_directory_t *clone_directory(page_directory_t *src); // 拷贝指定页目录
 void              alloc_frame_line(page_t *page, uint32_t line, int is_kernel,
                                    int is_writable); // 映射指定地址的物理页框到指定页
-void              alloc_frame(page_t *page, int is_kernel, int is_writable); // 映射一个页
-void              free_frame(page_t *page);                                  // 释放一个页框
-page_t *get_page(uint32_t address, int make, page_directory_t *dir); // 获取指定地址的页
-void    switch_page_directory(page_directory_t *dir);                // 切换页表
-void    page_init(multiboot_t *mboot);
+void              alloc_frame(page_t *page, int is_kernel, int is_writable);   // 映射一个页
+void              free_frame(page_t *page);                                    // 释放一个页框
+page_t           *get_page(uint32_t address, int make, page_directory_t *dir); // 获取指定地址的页
+void              switch_page_directory(page_directory_t *dir);                // 切换页表
+void              page_init(multiboot_t *mboot);

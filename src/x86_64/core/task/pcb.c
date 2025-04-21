@@ -175,7 +175,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
     new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF); // 栈16字节对齐
+    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
     new_task->user_stack =
         page_alloc_random(pcb->page_dir, STACK_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     new_task->main        = (uint64_t)_start;
@@ -219,7 +219,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)_start;
     new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF); // 栈16字节对齐
+    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
     new_task->user_stack =
         new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
     new_task->context0.cs = 0x8;

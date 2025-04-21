@@ -115,17 +115,17 @@ void init_pcnet_card() {
     io_out16(pcnet_io_base + RAP16, CSR0);
     io_out16(pcnet_io_base + RDP16, 0x0004); // 暂时停止所有传输,用于初始化PCNET网卡
 
-    initBlock.mode = 0;
+    initBlock.mode                    = 0;
     initBlock.reserved1numSendBuffers = (0 << 4) | 3; // 高4位是reserved1 低4位是numSendBuffers
     initBlock.reserved2numRecvBuffers = (0 << 4) | 3; // 高4位是reserved2 低4位是numRecvBuffers
-    initBlock.mac0           = mac0;
-    initBlock.mac1           = mac1;
-    initBlock.mac2           = mac2;
-    initBlock.mac3           = mac3;
-    initBlock.mac4           = mac4;
-    initBlock.mac5           = mac5;
-    initBlock.reserved3      = 0;
-    initBlock.logicalAddress = 0;
+    initBlock.mac0                    = mac0;
+    initBlock.mac1                    = mac1;
+    initBlock.mac2                    = mac2;
+    initBlock.mac3                    = mac3;
+    initBlock.mac4                    = mac4;
+    initBlock.mac5                    = mac5;
+    initBlock.reserved3               = 0;
+    initBlock.logicalAddress          = 0;
 
     sendBufferDesc =
         (struct BufferDescriptor *)(((uint32_t)&sendBufferDescMemory[0] + 15) & 0xfffffff0);

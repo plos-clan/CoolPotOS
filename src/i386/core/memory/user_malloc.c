@@ -61,7 +61,7 @@ static void *sbrk(pcb_t *pcb, int incr) {
         } else {
         alloc_error:
             klogf(false, "OUT_OF_MEMORY_ERROR: Cannot alloc user heap.\n"); // 记录错误信息
-            printk("UserHeapEnd: %08x\n", pcb->program_break_end); // 记录当前堆末尾地址
+            printk("UserHeapEnd: %08x\n", pcb->program_break_end);          // 记录当前堆末尾地址
             return (void *)-1;
         }
     }
@@ -81,8 +81,8 @@ void *user_malloc(pcb_t *pcb, size_t nbytes) {
         pagesz = n = getpagesize();                          // 获取系统页面大小
         op         = (union overhead *)sbrk(pcb, 0);         // 获取当前的堆尾地址
         n          = n - sizeof(*op) - ((long)op & (n - 1)); // 计算可用内存
-        if (n < 0) n += pagesz; // 若剩余内存不足，扩展一个页面
-        if (n) {                // 若剩余内存不为0，尝试扩展堆
+        if (n < 0) n += pagesz;                              // 若剩余内存不足，扩展一个页面
+        if (n) {                                             // 若剩余内存不为0，尝试扩展堆
             if (sbrk(pcb, n) == (char *)-1) { return (NULL); }
         }
         bucket = 0; // 初始化桶索引和内存块大小
@@ -109,7 +109,7 @@ void *user_malloc(pcb_t *pcb, size_t nbytes) {
         bucket++; // 增加桶索引
     }
     if ((op = nextf[bucket]) == NULL) {
-        morecore(pcb, bucket); // 若当前桶索引对应的内存块链表为空，调用函数扩展内存
+        morecore(pcb, bucket);              // 若当前桶索引对应的内存块链表为空，调用函数扩展内存
         if ((op = nextf[bucket]) == NULL) { // 判断扩展是否成功
             return (NULL);
         }
@@ -137,7 +137,7 @@ static void morecore(pcb_t *pcb, int bucket) {
     if (sz <= 0)            // 分配失败
         return;
     if (sz < pagesz) {
-        amt = pagesz; // 如果所需内存块大小小于页面大小，分配一个页面大小的内存
+        amt   = pagesz;   // 如果所需内存块大小小于页面大小，分配一个页面大小的内存
         nblks = amt / sz; // 计算可分配的内存块数量
     } else {
         amt   = sz + pagesz; // 否则分配所需内存块大小加上一个页面大小的内存
@@ -149,7 +149,7 @@ static void morecore(pcb_t *pcb, int bucket) {
     nextf[bucket] = op; // 初始化内存块链表
     while (--nblks > 0) {
         op->ov_next = (union overhead *)((caddr_t)op + sz); // 设置下一个内存块指针
-        op = (union overhead *)((caddr_t)op + sz); // 移动指针至下一个内存块的首地址
+        op          = (union overhead *)((caddr_t)op + sz); // 移动指针至下一个内存块的首地址
     }
 }
 
@@ -165,8 +165,8 @@ void user_free(void *cp) {
 #else
     if (op->ov_magic != MAGIC) return; // 直接返回，不进行释放操作
 #endif
-#ifdef RCHECK                        // 若宏被定义，进行额外验证
-    ASSERT(op->ov_rmagic == RMAGIC); // 确保右边界有效
+#ifdef RCHECK                                                        // 若宏被定义，进行额外验证
+    ASSERT(op->ov_rmagic == RMAGIC);                                 // 确保右边界有效
     ASSERT(*(u_short *)((caddr_t)(op + 1) + op->ov_size) == RMAGIC); // 确保内存块的末尾有效
 #endif
     size = op->ov_index;       // 计算内存块大小
