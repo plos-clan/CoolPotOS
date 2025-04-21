@@ -22,7 +22,7 @@ void *find_table(const char *name) {
     uint64_t  entry_count = (xsdt->h.Length - 32) / 8;
     uint64_t *t           = (uint64_t *)((char *)xsdt + offsetof(XSDT, PointerToOtherSDT));
     for (uint64_t i = 0; i < entry_count; i++) {
-        uint64_t ptr      = (uint64_t)phys_to_virt((uint64_t) * (t + i));
+        uint64_t ptr      = (uint64_t)phys_to_virt((uint64_t)*(t + i));
         uint8_t  signa[5] = {0};
         memcpy(signa, ((struct ACPISDTHeader *)ptr)->Signature, 4);
         if (memcmp(signa, name, 4) == 0) { return (void *)ptr; }

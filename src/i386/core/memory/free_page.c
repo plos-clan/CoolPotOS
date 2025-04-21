@@ -35,7 +35,7 @@ void free_pages() {
 uint32_t get_all_memusage() { // 获取总内存占用
     extern void *program_break;
     extern void *program_break_end;
-    uint32_t bytes = (uint32_t)program_break_end - (uint32_t)program_break; // 获取内核内存占用
+    uint32_t     bytes = (uint32_t)program_break_end - (uint32_t)program_break; // 获取内核内存占用
 
     extern pcb_t *running_proc_head;
     pcb_t        *pcb = running_proc_head;

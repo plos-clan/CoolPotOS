@@ -46,10 +46,10 @@ typedef struct IIC_Master {
  * @brief IIC适配器
  */
 typedef struct IIC_Adapter {
-    void       (*iic_sendStart)(IIC_Master *);
-    void       (*iic_sendStop)(IIC_Master *);
-    void       (*iic_sendByte)(IIC_Master *, uint8_t);
-    uint8_t    (*iic_receiveByte)(IIC_Master *);
+    void (*iic_sendStart)(IIC_Master *);
+    void (*iic_sendStop)(IIC_Master *);
+    void (*iic_sendByte)(IIC_Master *, uint8_t);
+    uint8_t (*iic_receiveByte)(IIC_Master *);
 } IIC_Adapter;
 
 /**

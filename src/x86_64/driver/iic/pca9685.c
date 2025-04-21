@@ -62,7 +62,7 @@ uint8_t pca9685_read(uint8_t reg) {
  * @param freq The new frequency for the PCA9685 device, in Hz.
  */
 void pca9685_setPWMFreq(float freq) {
-    
+
     freq               *= 0.92;
     double prescaleval  = 25000000;
     prescaleval        /= 4096;

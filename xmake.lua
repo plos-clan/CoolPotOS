@@ -129,13 +129,12 @@ target("default_build")
         -- x86_64 xmake run
         local flags = {
             "-M", "q35",
-            --"-cpu", "qemu64,+x2apic",
-            "-cpu", "host",
+            "-cpu", "qemu64,+x2apic",
             "-smp", "4",
             "-serial", "stdio",
             "-m","1024M",
             --"-no-reboot",
-            "-enable-kvm",
+            --"-enable-kvm",
             -- "-d", "in_asm,int",
             -- "-d", "int",
             --"-S","-s",

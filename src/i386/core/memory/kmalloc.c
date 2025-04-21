@@ -132,8 +132,8 @@ void *kmalloc(size_t nbytes) {
 
 void *kcalloc(size_t nelem, size_t elsize) {
     void *ptr = kmalloc(nelem * elsize); // 调用函数分配内存
-    memset(ptr, 0, nelem * elsize); // 格式化内存（这么说应该比较合适来着QwQ）
-    return ptr;                     // 返回内存指针
+    memset(ptr, 0, nelem * elsize);      // 格式化内存（这么说应该比较合适来着QwQ）
+    return ptr;                          // 返回内存指针
 }
 
 static void morecore(int bucket) {
@@ -258,7 +258,7 @@ static int findbucket(union overhead *freep, int srchlen) {
     for (i = 0; i < NBUCKETS; i++) { // 遍历所有桶
         j = 0;
         for (p = nextf[i]; p && j != srchlen; p = p->ov_next) { // 遍历当前桶的内存块链表
-            if (p == freep) // 找到合适的内存块，返回索引
+            if (p == freep)                                     // 找到合适的内存块，返回索引
                 return (i);
             j++;
         }

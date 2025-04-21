@@ -24,8 +24,10 @@
 #include "timer.h"
 #include "vfs.h"
 
-extern void        cp_shutdown();
-extern void        cp_reset();
+extern void cp_shutdown();
+
+extern void cp_reset();
+
 extern lock_queue *pgb_queue;
 
 char           *shell_work_path;
@@ -322,7 +324,8 @@ static void sys_info() {
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
-    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         Operating System Name:       CoolPotOS\n");
+    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         Operating System Name:       "
+           "CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pcie_num());
@@ -415,51 +418,22 @@ void trim(char *str) {
 }
 
 _Noreturn void shell_setup() {
-    //printk("Welcome to CoolPotOS (%s)!\n"
-    //       " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
-    //       " * Website:           https://github.com/plos-clan\n"
-    //       " System information as of %s \n"
-    //       "  Tasks:              %d\n"
-    //       "  Logged:             %s\n"
-    //       "MIT License 2024-2025 plos-clan\n",
-    //       KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
-    printk("\033[H\033[2J\033[3J");
-    printk("\033[32mWelcome to \033[1mCoolPotOS\033[0m!\n");
-    sys_info();
-    //create_user("Shell", Ordinary);
+    printk("Welcome to CoolPotOS (%s)!\n"
+           " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
+           " * Website:           https://github.com/plos-clan\n"
+           " System information as of %s \n"
+           "  Tasks:              %d\n"
+           "  Logged:             %s\n"
+           "MIT License 2024-2025 plos-clan\n",
+           KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
     char *line      = malloc(MAX_COMMAND_LEN);
     shell_work_path = malloc(1024);
-    not_null_assets(shell_work_path, "AT YOUR FEATURE SHELL, VARIABLE 'shell_work_path'");
+    not_null_assets(shell_work_path, "work path null");
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
-    
-    /* If this CP_kernel's version is not develop version, set this variable to FALSE. */
-    const bool IS_DEVELOP_VERSION = true;
-
-    if (IS_DEVELOP_VERSION) {printk("[ \033[34mNOTE\033[0m ] System is auto login with \033[1mKernel\033[0m.\n");}
-    else
-    {
-        // login now
-        printk("Username: ");
-        char username[MAX_COMMAND_LEN];
-        gets(username, MAX_COMMAND_LEN); // read username
-        if (!strcmp(username, "Ordinary")) {
-            strcpy(tcb->parent_group->user->name, "Ordinary");
-            tcb->parent_group->user->uid              = 2;
-            tcb->parent_group->user->permission_level = Ordinary;
-        } else if (!strcmp(username, "Kernel")) {
-            strcpy(tcb->parent_group->user->name, "Kernel");
-            tcb->parent_group->user->uid              = 0;
-            tcb->parent_group->user->permission_level = Kernel;
-        } else {
-            printk("\033[31mError: No user named '%s'\nPress any key to reboot...\033[0m", username);
-            getc();
-            cp_reset();
-        }
-    }
 
     infinite_loop {
-        printk("\033[41m%% %s\033[0m@\033[32mlocalhost: \033[34m%s> ", tcb->parent_group->user->name,
+        printk("\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s> ", tcb->parent_group->user->name,
                shell_work_path);
         if (gets(line, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
