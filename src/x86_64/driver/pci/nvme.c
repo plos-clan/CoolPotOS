@@ -10,7 +10,6 @@
 #include "krlibc.h"
 #include "page.h"
 #include "pci.h"
-#include "pcie.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vdisk.h"
@@ -141,20 +140,10 @@ void NvmeWrite(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
 }
 
 void nvme_setup() {
-    pcie_device_t   *device = pcie_find_class(0x10802);
+    pci_device_t    *device = pci_find_class(0x10802);
     nvme_capability *capability;
-    if (device == NULL) {
-        pci_device_t pciDevice = pci_find_class(0x10802);
-        if (pciDevice == NULL) return;
-        base_address_register reg = find_bar(pciDevice, 0);
-        if (reg.address == NULL) {
-            kerror("Nvme pci bar 0 is null.");
-            return;
-        }
-        capability = (nvme_capability *)phys_to_virt((uint64_t)reg.address);
-    } else {
-        capability = (nvme_capability *)phys_to_virt(device->bars[0].address);
-    }
+    if (device == NULL) { return; }
+    capability = (nvme_capability *)phys_to_virt(device->bars[0].address);
 
     page_map_range_to(get_kernel_pagedir(), device->bars[0].address, 0x1000 * 2, KERNEL_PTE_FLAGS);
 

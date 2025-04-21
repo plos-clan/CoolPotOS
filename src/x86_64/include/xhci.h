@@ -6,7 +6,7 @@
 #include "frame.h"
 #include "hhdm.h"
 #include "pcb.h"
-#include "pcie.h"
+#include "pci.h"
 #include "usb.h"
 
 #define XHCI_TIME_POSTPOWER 20
@@ -454,19 +454,34 @@ typedef enum _XHCI_TRB_TYPE {
 
 extern const uint32_t SPEED_XHCI[];
 
-void             xhci_setup();
-void             SetupXHCIControllerPCI(pcie_device_t *);
+void xhci_setup();
+
+void SetupXHCIControllerPCI(pci_device_t *);
+
 XHCI_CONTROLLER *SetupXHCIController(uint64_t);
-uint32_t         ConfigureXHCI(XHCI_CONTROLLER *);
-void             XHCIQueueTRB(XHCI_TRANSFER_RING *, XHCI_TRANSFER_BLOCK *);
-void             XHCICopyTRB(XHCI_TRANSFER_RING *, XHCI_TRANSFER_BLOCK *);
-void             XHCIDoorbell(XHCI_CONTROLLER *, uint32_t, uint32_t);
-uint32_t         XHCIProcessEvent(XHCI_CONTROLLER *);
-uint32_t         XHCIWaitCompletion(XHCI_CONTROLLER *, XHCI_TRANSFER_RING *);
-uint32_t         XHCICommand(XHCI_CONTROLLER *, XHCI_TRANSFER_BLOCK *);
-uint32_t         XHCIHUBDetect(USB_HUB *, uint32_t);
-uint32_t         XHCIHUBReset(USB_HUB *, uint32_t);
-uint32_t         XHCIHUBDisconnect(USB_HUB *, uint32_t);
-USB_PIPE        *XHCICreatePipe(USB_COMMON *, USB_PIPE *, USB_ENDPOINT *);
-uint32_t         XHCITransfer(USB_PIPE *, USB_DEVICE_REQUEST *, void *, uint32_t, uint32_t);
-void             XHCICreateTransferRing(XHCI_TRANSFER_RING *);
+
+uint32_t ConfigureXHCI(XHCI_CONTROLLER *);
+
+void XHCIQueueTRB(XHCI_TRANSFER_RING *, XHCI_TRANSFER_BLOCK *);
+
+void XHCICopyTRB(XHCI_TRANSFER_RING *, XHCI_TRANSFER_BLOCK *);
+
+void XHCIDoorbell(XHCI_CONTROLLER *, uint32_t, uint32_t);
+
+uint32_t XHCIProcessEvent(XHCI_CONTROLLER *);
+
+uint32_t XHCIWaitCompletion(XHCI_CONTROLLER *, XHCI_TRANSFER_RING *);
+
+uint32_t XHCICommand(XHCI_CONTROLLER *, XHCI_TRANSFER_BLOCK *);
+
+uint32_t XHCIHUBDetect(USB_HUB *, uint32_t);
+
+uint32_t XHCIHUBReset(USB_HUB *, uint32_t);
+
+uint32_t XHCIHUBDisconnect(USB_HUB *, uint32_t);
+
+USB_PIPE *XHCICreatePipe(USB_COMMON *, USB_PIPE *, USB_ENDPOINT *);
+
+uint32_t XHCITransfer(USB_PIPE *, USB_DEVICE_REQUEST *, void *, uint32_t, uint32_t);
+
+void XHCICreateTransferRing(XHCI_TRANSFER_RING *);

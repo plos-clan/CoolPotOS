@@ -4,7 +4,6 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "pci.h"
-#include "pcie.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vdisk.h"
@@ -565,11 +564,8 @@ __IRQHANDLER void ide_irq(interrupt_frame_t *reg) {
 }
 
 void ide_setup() {
-    pcie_device_t *pcie_d = pcie_find_class(0x10100);
-    if (pcie_d == NULL) {
-        pci_device_t pci_d = pci_find_class(0x10100);
-        if (pci_d == NULL) return;
-    }
+    pci_device_t *pcie_d = pci_find_class(0x10100);
+    if (pcie_d == NULL) { return; }
     register_interrupt_handler(ide_primary, ide_irq, 0, 0x8E);
     register_interrupt_handler(ide_secondary, ide_irq, 0, 0x8E);
     ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);

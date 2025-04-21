@@ -17,7 +17,6 @@
 #include "module.h"
 #include "pcb.h"
 #include "pci.h"
-#include "pcie.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -236,6 +235,16 @@ static void pkill(int argc, char **argv) {
     kinfo("Kill process (%d).", pid);
 }
 
+void print_all_pci() {
+    printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
+    for (size_t i = 0; i < get_pci_num(); i++) {
+        pci_device_t *device = pci_devices[i];
+        printk("%03d:%02d:%02d\t[0x%04X:0x%04X]\t<0x%08x>\t%s\n", device->bus, device->slot,
+               device->func, device->vendor_id, device->device_id, device->class_code,
+               device->name);
+    }
+}
+
 static void echo(int argc, char **argv) {
     if (argc == 1) {
         printk("[Shell-ECHO]: If there are too few parameters.\n");
@@ -317,10 +326,10 @@ static void luser(int argc, char **argv) {
 }
 
 static void sys_info() {
-    cpu_t cpu = get_cpu_info();
-
-    uint32_t bytes  = get_all_memusage();
-    int      memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    cpu_t        cpu = get_cpu_info();
+    extern MCFG *mcfg;
+    uint32_t     bytes  = get_all_memusage();
+    int          memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
@@ -328,7 +337,8 @@ static void sys_info() {
            "CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        PCI Device:   %d\n", get_pcie_num());
+    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",
+           mcfg == NULL ? "PCI " : "PCIE", get_pci_num());
     printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",
            framebuffer->width, framebuffer->height);
     printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
@@ -454,8 +464,6 @@ _Noreturn void shell_setup() {
             reboot_os();
         else if (!strcmp("clear", argv[0]))
             printk("\033[H\033[2J\033[3J");
-        else if (!strcmp("lspcie", argv[0]))
-            print_all_pcie();
         else if (!strcmp("lspci", argv[0]))
             print_all_pci();
         else if (!strcmp("sysinfo", argv[0]))

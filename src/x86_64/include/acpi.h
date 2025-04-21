@@ -213,7 +213,7 @@ void acpi_setup();
 
 void apic_setup(MADT *madt);
 
-void pcie_setup(MCFG *mcfg);
+void pci_setup(MCFG *mcfg0);
 
 void *find_table(const char *name);
 

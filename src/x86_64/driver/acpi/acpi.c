@@ -48,7 +48,7 @@ void acpi_setup() {
 
     load_table(HPET, hpet_init);
     load_table(APIC, apic_setup);
-    load_table(MCFG, pcie_setup);
+    load_table(MCFG, pci_setup);
     load_table(FACP, setup_facp);
 
     //   load_table(BGRT, bgrt_setup); // TODO 先空着，等以后补上
