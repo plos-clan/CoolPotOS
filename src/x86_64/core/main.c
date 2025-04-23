@@ -55,6 +55,8 @@
 #    define GIT_VERSION "unknown"
 #endif
 
+void kmain();
+
 USED SECTION(".limine_requests_start") static const volatile LIMINE_REQUESTS_START_MARKER;
 
 USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
@@ -65,6 +67,12 @@ LIMINE_REQUEST struct limine_stack_size_request stack_request = {
     .id         = LIMINE_STACK_SIZE_REQUEST,
     .revision   = 0,
     .stack_size = KERNEL_ST_SZ // 128K
+};
+
+LIMINE_REQUEST struct limine_entry_point_request entry = {
+    .id       = LIMINE_ENTRY_POINT_REQUEST,
+    .revision = 3,
+    .entry    = &kmain,
 };
 
 extern void  error_setup();    // error_handle.c

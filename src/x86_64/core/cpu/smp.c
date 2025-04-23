@@ -34,6 +34,14 @@ uint32_t get_current_cpuid() {
     return edx;
 }
 
+static __attr(naked) void _setcs_helper() {
+    __asm__ volatile("pop %%rax\n\t"
+                     "push %%rbx\n\t"
+                     "push %%rax\n\t"
+                     "lretq\n\t" ::
+                         : "memory");
+}
+
 static void apu_gdt_setup() {
     uint32_t   this_id  = get_current_cpuid();
     smp_cpu_t *this_cpu = &smp_cpus[this_id];
@@ -50,19 +58,15 @@ static void apu_gdt_setup() {
     });
 
     __asm__ volatile("lgdt %[ptr]\n\t"
-                     "push %[cseg]\n\t"
-                     "lea 1f, %%rax\n\t"
-                     "push %%rax\n\t"
-                     "lretq\n\t"
-                     "1:\n\t"
+                     "call *%%rax\n\t"
                      "mov %[dseg], %%ds\n\t"
                      "mov %[dseg], %%fs\n\t"
                      "mov %[dseg], %%gs\n\t"
                      "mov %[dseg], %%es\n\t"
                      "mov %[dseg], %%ss\n\t"
                      :
-                     : [ptr] "m"(this_cpu->gdt_pointer), [cseg] "rm"((uint16_t)0x8U),
-                       [dseg] "rm"((uint16_t)0x10U)
+                     : [ptr] "m"(this_cpu->gdt_pointer), [dseg] "rm"((uint16_t)0x10U),
+                       "a"(&_setcs_helper), "b"((uint16_t)0x8U)
                      : "memory");
 
     wrmsr(0xC0000100, 0);

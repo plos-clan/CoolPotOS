@@ -9,8 +9,6 @@
 #include "sprintf.h"
 #include "terminal.h"
 
-extern void double_fault_asm(); // df_asm.S
-
 ticketlock error_lock;
 
 void print_register(interrupt_frame_t *frame) {
@@ -63,8 +61,14 @@ void not_null_assets(void *ptr, const char *message) {
     }
 }
 
+extern uint64_t double_fault_page;
+
+static uint8_t double_fault_stack[0x1000] __attr(aligned(0x1000));
+
 __IRQHANDLER void double_fault(interrupt_frame_t *frame, uint64_t error_code) {
     close_interrupt;
+    __asm__ volatile("mov %0, %%cr3" : : "r"(double_fault_page) : "memory");
+    __asm__ volatile("mov %0, %%rsp" : : "r"(double_fault_stack + 0x1000) : "memory");
     disable_scheduler();
     logkf("Double Fault\n");
     gop_clear(0x7c0d0d);
@@ -110,7 +114,7 @@ void error_setup() {
     register_interrupt_handler(0, (void *)dived_error, 0, 0x8E);
     register_interrupt_handler(6, (void *)invalid_opcode, 0, 0x8E);
     register_interrupt_handler(7, (void *)device_not_available, 0, 0x8E);
-    register_interrupt_handler(8, (void *)double_fault_asm, 1, 0x8E);
+    register_interrupt_handler(8, (void *)double_fault, 1, 0x8E);
     register_interrupt_handler(10, (void *)invalid_tss, 0, 0x8E);
     register_interrupt_handler(11, (void *)segment_not_present, 0, 0x8E);
     register_interrupt_handler(12, (void *)stack_segment_fault, 0, 0x8E);
