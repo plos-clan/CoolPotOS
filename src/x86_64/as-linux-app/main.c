@@ -1,25 +1,11 @@
-#include "basedefs.h"
-#include "syscall.h"
+#include "linuxapp/basedefs.h"
+#include "linuxapp/syscall.h"
+#include "sprintf.h"
+#include "krlibc.h"
 
 #define STDIN  0
 #define STDOUT 1
 #define STDERR 2
-
-static usize strlen(const char *str) {
-    usize len = 0;
-    while (str[len] != '\0') {
-        len++;
-    }
-    return len;
-}
-
-static int strncmp(const char *s1, const char *s2, usize n) {
-    for (usize i = 0; i < n; i++) {
-        if (s1[i] != s2[i]) return s1[i] - s2[i];
-        if (s1[i] == '\0') return 0;
-    }
-    return 0;
-}
 
 static int open(const char *filename, int flags) {
     return __syscall(2, filename, flags);
@@ -77,91 +63,95 @@ static int uname(struct utsname *buf) {
     return __syscall(63, buf);
 }
 
-static void say_hello() {
-    int fd = open("/etc/os-release", 0);
-    if (fd < 0) return;
+void printf(const char *fmt, ...) {
+    char buf[1024];
+    va_list args;
+    va_start(args, fmt);
+    stbsp_vsprintf(buf, fmt, args);
+    va_end(args);
+    write(STDOUT, buf, strlen(buf));
+}
 
-    char  os_release[1024];
-    isize bytes_read = read(fd, os_release, sizeof(os_release) - 1);
-    if (bytes_read <= 0) return;
-    os_release[bytes_read] = '\0';
+#define MAX_ARGS 16
 
-    char *id_pos      = 0;
-    char *version_pos = 0;
-    char *line        = os_release;
-    while (line < os_release + bytes_read) {
-        if (strncmp(line, "ID=", 3) == 0) id_pos = line + 3;
-        if (strncmp(line, "VERSION_CODENAME=", 17) == 0) version_pos = line + 17;
-        while (*line && *line != '\n') {
-            line++;
-        }
-        if (*line == '\n') line++;
+void parse_args(char *input, char **argv) {
+    int argc = 0;
+    while (*input && argc < MAX_ARGS - 1) {
+        // 跳过前导空格
+        while (*input == ' ') input++;
+        if (*input == '\0') break;
+
+        argv[argc++] = input;
+
+        // 找下一个空格并替换成 \0
+        while (*input && *input != ' ') input++;
+        if (*input == ' ') *input++ = '\0';
     }
+    argv[argc] = NULL;
+}
 
-    if (id_pos && version_pos) {
-        char *end = id_pos;
-        while (*end && *end != '\n')
-            end++;
-        *end = '\0';
-
-        end = version_pos;
-        while (*end && *end != '\n')
-            end++;
-        *end = '\0';
-
-        write(STDERR, "\033[32m", 5);
-        wws(STDERR, "Hello there, ", 13);
-        wws(STDERR, id_pos, strlen(id_pos));
-        wws(STDERR, " ", 1);
-        wws(STDERR, version_pos, strlen(version_pos));
-        wws(STDERR, "! CoolPotOS sends its greetings from your userspace!", 52);
-        write(STDERR, "\033[m\n\033[32m", 9);
-        usleep(250000);
-        wws(STDERR, "I might be running under you through QEMU or VirtualBox soon.", 61);
-        write(STDERR, "\033[m\n\033[32m", 9);
-        usleep(250000);
-        wws(STDERR, "Maybe we could be friends? I promise not to take too many resources!", 68);
-        write(STDERR, "\033[m\n", 4);
-    }
-
-    close(fd);
+static void help(){
+    printf("Usage <command|app_path> [argument...]\n");
+    printf("help h ?                 Get shell help info.\n");
+    printf("exit                     Exit coolpotos.\n");
+    printf("clear                    Clear screen.\n");
 }
 
 void _start() {
     usleep(500000);
-    write(STDERR, "\033[33m", 5);
-    struct utsname buf;
-    if (uname(&buf) == 0) {
-        wws(STDERR, "Oops! CoolPotOS kernel got lost in ", 35);
-        wws(STDERR, buf.sysname, strlen(buf.sysname));
-        wws(STDERR, "-land!", 6);
-    } else {
-        wws(STDERR, "Oops! CoolPotOS kernel is running in userspace!", 47);
+    printf("\033[33mWelcome to Linux subsystem for CoolPotOS! (%s)\n",KERNEL_NAME);
+
+    struct utsname info;
+    __syscall(63, &info);
+    printf("\033[32m%s(%s) %s\n",info.sysname,info.machine,info.release);
+
+    char buffer[256];
+    char cwd[256];
+
+    while (1) {
+        long ret = __syscall(SYS_getcwd, (long)cwd, (long)sizeof(cwd));
+        printf("\033[32m%s(%s)\033[0m@%s \033[34m%s\033[0m$ ",info.sysname,info.machine,info.nodename,ret >= 0 ? cwd : "?");
+        int len = read(STDIN, buffer, 256);
+        buffer[len - 1] = 0;
+        if(strlen(buffer) <= 0) {
+            continue;
+        }
+
+        char *argv[MAX_ARGS];
+        parse_args(buffer, argv);
+
+        if (strcmp(argv[0], "exit") == 0) {
+            exit(0);
+        } else if(strcmp(argv[0], "help") == 0||strcmp(argv[0], "?") == 0||strcmp(argv[0], "h") == 0){
+            help();
+            continue;
+        } else if(strcmp(argv[0], "clear") == 0) {
+            printf("\033[H\033[J");
+            continue;
+        }
+
+        char work_path[256];
+        if(argv[0][0] == '/') {
+            stbsp_snprintf(work_path, sizeof(work_path), "%s", argv[0]);
+        } else if(argv[0][0] == '.') {
+            stbsp_snprintf(work_path, sizeof(work_path), "%s/%s", cwd, argv[0]);
+        } else {
+            stbsp_snprintf(work_path, sizeof(work_path), "/usr/bin/%s", argv[0]);
+        }
+        argv[0] = work_path;
+
+        char *envp[] = { "PATH=/bin:/usr/bin", NULL };
+
+        pid_t pid = (pid_t)(__syscall(SYS_fork,0));
+        if (pid == 0) {
+            __syscall(SYS_execve,argv[0], argv, envp);
+            printf("unknown command '%s'\n", buffer);
+            exit(1);
+        } else {
+            __syscall(SYS_wait4,pid, NULL, 0);
+        }
     }
-    write(STDERR, "\033[m\n\033[33m", 9);
-    usleep(250000);
-    wws(STDERR, "I'm a kernel, not a regular application!", 40);
-    write(STDERR, "\033[m\n\033[33m", 9);
-    usleep(250000);
-    wws(STDERR, "This is like finding a fish riding a bicycle...", 47);
-    write(STDERR, "\033[m\n", 4);
-    usleep(500000);
-    write(STDERR, "==================================================\n", 51);
-    usleep(500000);
-    say_hello();
-    usleep(500000);
-    write(STDERR, "==================================================\n", 51);
-    usleep(500000);
-    write(STDERR, "\033[34m", 5);
-    wws(STDERR, "I really should be running on bare metal or in a virtual machine.", 65);
-    write(STDERR, "\033[m\n\033[34m", 9);
-    usleep(250000);
-    wws(STDERR, "Please help me find my way back to where I belong.", 50);
-    write(STDERR, "\033[m\n\033[34m", 9);
-    usleep(250000);
-    wws(STDERR, "Self-terminating now... Hope to see you in VM-land soon!", 56);
-    write(STDERR, "\033[m\n", 4);
-    exit(42);
+
     while (true) {
         asm volatile("hlt");
     }
