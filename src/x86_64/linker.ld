@@ -1,81 +1,130 @@
-/* Tell the linker that we want an x86_64 ELF64 output file */
 OUTPUT_FORMAT(elf64-x86-64)
 
-/* We want the symbol kmain to be our entry point */
-ENTRY(kmain)
+ENTRY(_start)
 
-/* Define the program headers we want so the bootloader gives us the right */
-/* MMU permissions; this also allows us to exert more control over the linking */
-/* process. */
-PHDRS
-{
-    limine_requests PT_LOAD;
-    text PT_LOAD;
-    rodata PT_LOAD;
-    data PT_LOAD;
-    ksymtab PT_LOAD;
+PHDRS {
+    limine_requests PT_LOAD FLAGS(4);
+    dyn PT_LOAD FLAGS(4);
+    text PT_LOAD FLAGS(5);
+    rodata PT_LOAD FLAGS(4);
+    data PT_LOAD FLAGS(6);
+    ksymtab PT_LOAD FLAGS(4);
+    dynamic PT_DYNAMIC FLAGS(6);
 }
 
-SECTIONS
-{
-    /* We want to be placed in the topmost 2GiB of the address space, for optimisations */
-    /* and because that is what the Limine spec mandates. */
-    /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
-    /* that is the beginning of the region. */
-    . = 0xffffffff80000000;
+SECTIONS {
+    . = ALIGN(4096);
 
-    /* Define a section to contain the Limine requests and assign it to its own PHDR */
-    .limine_requests : {
+    .limine_requests : ALIGN(8) {
         KEEP(*(.limine_requests_start))
         KEEP(*(.limine_requests))
         KEEP(*(.limine_requests_end))
-    } :limine_requests
+    } : limine_requests
 
-    /* Move to the next memory page for .text */
-    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    /* ===== ===== ===== ===== ===== */
 
-    .text : {
+    . = ALIGN(4096);
+
+    .gnu.hash : ALIGN(8) {
+        *(.gnu.hash .gnu.hash.*)
+    } : dyn
+
+    .dynsym : ALIGN(8) {
+        *(.dynsym .dynsym.*)
+    } : dyn
+
+    .dynstr : ALIGN(8) {
+        *(.dynstr .dynstr.*)
+    } : dyn
+
+    .rela.dyn : ALIGN(8) {
+        *(.rela.dyn .rela.dyn.*)
+    } : dyn
+
+    .rela.plt : ALIGN(8) {
+        *(.rela.plt .rela.plt.*)
+    } : dyn
+
+    /* ===== ===== ===== ===== ===== */
+
+    . = ALIGN(4096);
+
+    .init : ALIGN(8) {
+        *(.init .init.*)
+    } : text
+
+    .plt : ALIGN(8) {
+        *(.plt .plt.*)
+    } : text
+
+    .plt.got : ALIGN(8) {
+        *(.plt.got .plt.got.*)
+    } : text
+
+    .text : ALIGN(8) {
         *(.text .text.*)
-    } :text
+    } : text
 
-    /* Move to the next memory page for .rodata */
-    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    .fini : ALIGN(8) {
+        *(.fini .fini.*)
+    } : text
 
-    .rodata : {
+    /* ===== ===== ===== ===== ===== */
+
+    . = ALIGN(4096);
+
+    .rodata : ALIGN(8) {
         *(.rodata .rodata.*)
-    } :rodata
+    } : rodata
 
-    /* Move to the next memory page for .data */
-    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    /* ===== ===== ===== ===== ===== */
 
-    .data : {
+    . = ALIGN(4096);
+
+    .init_array : ALIGN(8) {
+        *(.init_array .init_array.*)
+    } : data
+
+    .fini_array : ALIGN(8) {
+        *(.fini_array .fini_array.*)
+    } : data
+
+    .data.rel.ro : ALIGN(8) {
+        *(.data.rel.ro .data.rel.ro.*)
+    } : data
+
+    .dynamic : ALIGN(8) {
+        *(.dynamic .dynamic.*)
+    } : data : dynamic
+
+    .got : ALIGN(8) {
+        *(.got .got.*)
+    } : data
+
+    .data : ALIGN(8) {
         *(.data .data.*)
-    } :data
+    } : data
 
-    . = ALIGN(CONSTANT(MAXPAGESIZE));
-
-    /* NOTE: .bss needs to be the last thing mapped to :data, otherwise lots of */
-    /* unnecessary zeros will be written to the binary. */
-    /* If you need, for example, .init_array and .fini_array, those should be placed */
-    /* above this. */
-    .bss : {
+    .bss : ALIGN(8) {
         *(.bss .bss.*)
-        *(COMMON)
-    } :data
+    } : data
 
-    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    /* ===== ===== ===== ===== ===== */
 
-    .ksymtab ALIGN(0x1000) : ALIGN(0x1000) {
+    . = ALIGN(4096);
+
+    .ksymtab : {
         __ksymtab_start = .;
         KEEP(*(.ksymtab))
         __ksymtab_end = .;
-    } :ksymtab
+    } : ksymtab
 
-    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    /* ===== ===== ===== ===== ===== */
 
-    /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
-        *(.eh_frame*)
+        *(.interp)
         *(.note .note.*)
+        *(.gnu .gnu.*)
+        *(.eh_frame*)
     }
 }

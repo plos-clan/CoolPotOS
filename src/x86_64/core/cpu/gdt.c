@@ -10,6 +10,14 @@ tss_t               tss0;
 tss_stack_t         tss_stack;
 extern uint32_t     bsp_processor_id;
 
+static __attr(naked) void _setcs_helper() {
+    __asm__ volatile("pop %%rax\n\t"
+                     "push %%rbx\n\t"
+                     "push %%rax\n\t"
+                     "lretq\n\t" ::
+                         : "memory");
+}
+
 void gdt_setup() {
     gdt_entries[0] = 0x0000000000000000U;
     gdt_entries[1] = 0x00a09a0000000000U;
@@ -22,21 +30,17 @@ void gdt_setup() {
         .ptr  = &gdt_entries,
     });
 
-    __asm__ volatile(
-        "lgdt %[ptr];"
-        "push %[cseg];"
-        "lea 1f, %%rax;"
-        "push %%rax;"
-        "lretq ;"
-        "1:"
-        "mov %[dseg], %%ds;"
-        "mov %[dseg], %%fs;"
-        "mov %[dseg], %%gs;"
-        "mov %[dseg], %%es;"
-        "mov %[dseg], %%ss;"
-        :
-        : [ptr] "m"(gdt_pointer), [cseg] "rm"((uint16_t)0x8U), [dseg] "rm"((uint16_t)0x10U)
-        : "memory");
+    __asm__ volatile("lgdt %[ptr]\n\t"
+                     "call *%%rax\n\t"
+                     "mov %[dseg], %%ds\n\t"
+                     "mov %[dseg], %%fs\n\t"
+                     "mov %[dseg], %%gs\n\t"
+                     "mov %[dseg], %%es\n\t"
+                     "mov %[dseg], %%ss\n\t"
+                     :
+                     : [ptr] "m"(gdt_pointer), [dseg] "rm"((uint16_t)0x10U), "a"(&_setcs_helper),
+                       "b"((uint16_t)0x8U)
+                     : "memory");
 
     uint32_t   boot_id  = get_current_cpuid();
     smp_cpu_t *boot_cpu = &smp_cpus[boot_id];
