@@ -20,3 +20,5 @@ typedef __UINT8_TYPE__  u8;
 typedef __UINT16_TYPE__ u16;
 typedef __UINT32_TYPE__ u32;
 typedef __UINT64_TYPE__ u64;
+
+typedef int pid_t;
