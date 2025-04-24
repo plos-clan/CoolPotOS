@@ -333,8 +333,7 @@ static void sys_info() {
 
     printk("        -*&@@@&*-        \n");
     printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
-    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         Operating System Name:       "
-           "CoolPotOS\n");
+    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         Name:         CoolPotOS\n");
     printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
     printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
     printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",

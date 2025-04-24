@@ -12,3 +12,5 @@ void init_terminal();
 void update_terminal();
 void terminal_putc(char c);
 void terminal_puts(const char *msg);
+void terminal_open_flush();
+void terminal_close_flush();

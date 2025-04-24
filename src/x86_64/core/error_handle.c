@@ -33,6 +33,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     disable_scheduler();
     init_print_lock();
     ticket_lock(&error_lock);
+    terminal_close_flush();
     logkf("Kernel Error: %s:0x%x %d %p\n", msg, code, cpu->id, frame->rip); // 679a0
     if (get_current_task() == NULL) {
         logkf("Current process PID: NULL CPU%d\n", cpu->id);
@@ -44,6 +45,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     print_task_info(get_current_task());
     print_register(frame);
     update_terminal();
+    terminal_open_flush();
     ticket_unlock(&error_lock);
     for (;;)
         cpu_hlt;
