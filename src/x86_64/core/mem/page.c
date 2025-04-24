@@ -26,6 +26,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     close_interrupt;
     init_print_lock();
     disable_scheduler();
+    terminal_close_flush();
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
@@ -56,6 +57,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     print_register(frame);
     terminal_flush();
     update_terminal();
+    terminal_open_flush();
     cpu_hlt;
 }
 
