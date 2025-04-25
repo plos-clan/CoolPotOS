@@ -357,45 +357,22 @@ static void sys_info() {
                           "Memory Usage: %d%cB / %dMB",
                           "64-bit operating system, x86-based processor."};
 
-    printk(logo[0]);
-    printk(info[0]);
-    printk("\n");
-    printk(logo[1]);
-    printk(info[1]);
-    printk("\n");
-    printk(logo[2]);
-    printk(info[2], cpu_num());
-    printk("\n");
-    printk(logo[3]);
-    printk(info[3], cpu.model_name);
-    printk("\n");
-    printk(logo[4]);
-    printk(info[4], pci_type, get_pci_num());
-    printk("\n");
-    printk(logo[5]);
-    printk(info[5], framebuffer->width, framebuffer->height);
-    printk("\n");
-    printk(logo[6]);
-    printk(info[6], get_date_time());
-    printk("\n");
-    printk(logo[7]);
-    printk(info[7]);
-    printk("\n");
-    printk(logo[8]);
-    printk(info[8], KERNEL_NAME);
-    printk("\n");
-    printk(logo[9]);
-    printk(info[9], memory_used, unit, memory_total);
-    printk("\n");
-    printk(logo[10]);
-    printk(info[10]);
-    printk("\n");
-    printk(logo[11]);
-    printk("\n");
-    printk(logo[12]);
-    printk("\n");
-    printk(logo[13]);
-    printk("\n");
+    // clang-format off
+    printk(logo[0]); printk(info[0]); printk("\n");
+    printk(logo[1]); printk(info[1]); printk("\n");
+    printk(logo[2]); printk(info[2], cpu_num()); printk("\n");
+    printk(logo[3]); printk(info[3], cpu.model_name); printk("\n");
+    printk(logo[4]); printk(info[4], pci_type, get_pci_num()); printk("\n");
+    printk(logo[5]); printk(info[5], framebuffer->width, framebuffer->height); printk("\n");
+    printk(logo[6]); printk(info[6], get_date_time()); printk("\n");
+    printk(logo[7]); printk(info[7]); printk("\n");
+    printk(logo[8]); printk(info[8], KERNEL_NAME); printk("\n");
+    printk(logo[9]); printk(info[9], memory_used, unit, memory_total); printk("\n");
+    printk(logo[10]); printk(info[10]); printk("\n");
+    printk(logo[11]); printk("\n");
+    printk(logo[12]); printk("\n");
+    printk(logo[13]); printk("\n");
+    // clang-format on
 }
 
 static void print_help() {
