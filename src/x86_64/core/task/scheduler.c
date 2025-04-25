@@ -1,5 +1,6 @@
 #include "scheduler.h"
 #include "io.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -13,7 +14,7 @@ volatile bool is_scheduler     = false;
 extern uint64_t cpu_count;        // smp.c
 extern uint32_t bsp_processor_id; // smp.c
 
-ticketlock scheduler_lock;
+spin_t scheduler_lock;
 
 tcb_t get_current_task() {
     return cpu->ready ? cpu->current_pcb : NULL;
@@ -29,7 +30,7 @@ void disable_scheduler() {
 
 int add_task(tcb_t new_task) {
     if (new_task == NULL) return -1;
-    ticket_lock(&scheduler_lock);
+    spin_lock(scheduler_lock);
 
     smp_cpu_t *cpu0  = get_cpu_smp(bsp_processor_id);
     uint32_t   cpuid = bsp_processor_id;
@@ -44,27 +45,27 @@ int add_task(tcb_t new_task) {
     }
 
     if (cpu0 == NULL) {
-        ticket_unlock(&scheduler_lock);
+        spin_unlock(scheduler_lock);
         return -1;
     }
     new_task->cpu_id      = cpuid;
     new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
-    ticket_unlock(&cpu0->scheduler_queue->lock);
+    spin_unlock(cpu0->scheduler_queue->lock);
 
     if (new_task->queue_index == (size_t)-1) { return -1; }
 
-    ticket_unlock(&scheduler_lock);
+    spin_unlock(scheduler_lock);
     return new_task->queue_index;
 }
 
 void remove_task(tcb_t task) {
     if (task == NULL) return;
-    ticket_lock(&scheduler_lock);
+    spin_lock(scheduler_lock);
 
     smp_cpu_t *smp = get_cpu_smp(task->cpu_id);
     not_null_assets(smp, "remove task null");
     queue_remove_at(smp->scheduler_queue, task->queue_index);
-    ticket_unlock(&scheduler_lock);
+    spin_unlock(scheduler_lock);
 }
 
 int get_all_task() {
@@ -136,15 +137,15 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
  */
 void scheduler(registers_t *reg) {
     if (!is_scheduler) return;
-    ticket_lock(&scheduler_lock);
+    spin_lock(scheduler_lock);
     if (!cpu->ready) {
         logkf("Error: scheduler null %d\n", cpu->id);
-        ticket_unlock(&scheduler_lock);
+        spin_unlock(scheduler_lock);
         return;
     }
     if (cpu->current_pcb == NULL) {
         logkf("Error: scheduler null %d\n", cpu->id);
-        ticket_unlock(&scheduler_lock);
+        spin_unlock(scheduler_lock);
         return;
     }
     tcb->cpu_clock++;
@@ -157,7 +158,7 @@ void scheduler(registers_t *reg) {
     // 下一任务选取
     tcb_t next;
     if (cpu->scheduler_queue->size == 1) {
-        ticket_unlock(&scheduler_lock);
+        spin_unlock(scheduler_lock);
         return;
     }
     if (cpu->iter_node == NULL) {
@@ -189,5 +190,5 @@ void scheduler(registers_t *reg) {
         change_current_tcb(next);
         enable_scheduler();
     }
-    ticket_unlock(&scheduler_lock);
+    spin_unlock(scheduler_lock);
 }

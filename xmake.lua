@@ -100,6 +100,13 @@ target("kernel64")
     add_links("os_terminal")
     add_links("ubscan")
 
+    add_cflags("-fsanitize=undefined")
+    add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
+    add_cflags("-fsanitize=implicit-integer-sign-change")
+    add_cflags("-fsanitize=shift")
+    add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
+    add_links("fuckub")
+
 target("iso64")
     set_kind("phony")
     add_deps("kernel64")

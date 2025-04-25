@@ -5,6 +5,7 @@
 #include "hhdm.h"
 #include "io.h"
 #include "killer.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "limine.h"
@@ -16,7 +17,7 @@ extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c
 extern bool                x2apic_mode;      // apic.c
 extern pcb_t               kernel_group;     // pcb.c
-ticketlock                 apu_lock;
+spin_t                     apu_lock;
 
 smp_cpu_t smp_cpus[MAX_CPU];
 uint32_t  bsp_processor_id;
@@ -92,7 +93,7 @@ static void apu_gdt_setup() {
 }
 
 void apu_entry() {
-    ticket_lock(&apu_lock);
+    spin_lock(apu_lock);
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
     local_apic_init(false);
@@ -124,12 +125,12 @@ void apu_entry() {
         kerror("Unable to add task to scheduler queue for CPU%d", cpu->id);
         cpu->ready = false;
         cpu_done_count++;
-        ticket_unlock(&apu_lock);
+        spin_unlock(apu_lock);
         open_interrupt;
         cpu_hlt;
     }
     cpu_done_count++;
-    ticket_unlock(&apu_lock);
+    spin_unlock(apu_lock);
     open_interrupt;
     halt_service();
 }
@@ -140,7 +141,7 @@ smp_cpu_t *get_cpu_smp(uint32_t processor_id) {
 }
 
 void apu_startup(struct limine_smp_request smp_request) {
-    ticket_init(&apu_lock);
+    apu_lock                             = SPIN_INIT;
     struct limine_smp_response *response = smp_request.response;
     cpu_count                            = response->cpu_count > 8 ? 8 : response->cpu_count;
     for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++) {

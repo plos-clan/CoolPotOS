@@ -7,7 +7,7 @@
 
 atom_queue *output_buffer;
 bool        open_flush = false;
-ticketlock  terminal_lock;
+spin_t      terminal_lock;
 
 static void setup_cpos_default() {
     TerminalPalette palette = {
@@ -23,22 +23,22 @@ static void setup_cpos_default() {
 }
 
 void update_terminal() {
-    ticket_lock(&terminal_lock);
+    spin_lock(terminal_lock);
     while (true) {
-        if(!open_flush) continue;
-        char a = (char)atom_pop(output_buffer);
+        if (!open_flush) continue;
+        int a = atom_pop(output_buffer);
         if (a == -1) break;
         terminal_process_char(a);
     }
     terminal_flush();
-    ticket_unlock(&terminal_lock);
+    spin_unlock(terminal_lock);
 }
 
-void terminal_open_flush(){
+void terminal_open_flush() {
     open_flush = true;
 }
 
-void terminal_close_flush(){
+void terminal_close_flush() {
     open_flush = false;
 }
 

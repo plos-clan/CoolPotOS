@@ -11,9 +11,9 @@
 #include "sprintf.h"
 #include "timer.h"
 
-extern tcb_t      kernel_head_task;
-ticketlock        pcb_lock;
-extern ticketlock scheduler_lock;
+extern tcb_t  kernel_head_task;
+spin_t        pcb_lock;
+extern spin_t scheduler_lock;
 
 lock_queue *pgb_queue;
 
@@ -94,7 +94,7 @@ void kill_thread(tcb_t task) {
     task->status      = DEATH;
     smp_cpu_t *cpu    = get_cpu_smp(task->cpu_id);
     task->death_index = lock_queue_enqueue(cpu->death_queue, task);
-    ticket_unlock(&cpu->death_queue->lock);
+    spin_unlock(cpu->death_queue->lock);
 }
 
 void kill_thread0(tcb_t task) {
@@ -136,7 +136,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
-    ticket_unlock(&pgb_queue->lock);
+    spin_unlock(pgb_queue->lock);
     new_pgb->status = START;
     return new_pgb;
 }
@@ -152,12 +152,12 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
 
     if (pcb == NULL) {
         new_task->group_index = lock_queue_enqueue(kernel_group->pcb_queue, new_task);
-        ticket_unlock(&kernel_group->pcb_queue->lock);
+        spin_unlock(kernel_group->pcb_queue->lock);
         new_task->pid          = kernel_group->pid_index++;
         new_task->parent_group = kernel_group;
     } else {
         new_task->group_index = lock_queue_enqueue(pcb->pcb_queue, new_task);
-        ticket_unlock(&pcb->pcb_queue->lock);
+        spin_unlock(pcb->pcb_queue->lock);
         new_task->pid          = pcb->pid_index++;
         new_task->parent_group = pcb;
     }
@@ -219,7 +219,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)_start;
     new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+    new_task->kernel_stack = (new_task->context0.rsp &= ~(uint64_t)0xF);             // 栈16字节对齐
     new_task->user_stack =
         new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
     new_task->context0.cs = 0x8;
@@ -235,9 +235,9 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
 }
 
 void init_pcb() {
-    ticket_init(&pcb_lock);
-    ticket_init(&scheduler_lock);
-    pgb_queue = queue_init();
+    pcb_lock       = SPIN_INIT;
+    scheduler_lock = SPIN_INIT;
+    pgb_queue      = queue_init();
 
     kernel_group = malloc(sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");

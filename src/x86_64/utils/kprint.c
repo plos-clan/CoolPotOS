@@ -5,7 +5,7 @@
 #include "pcb.h"
 #include "sprintf.h"
 
-ticketlock print_lock;
+spin_t print_lock;
 
 static char *const color_codes[] = {[BLACK] = "0", [RED] = "1",     [GREEN] = "2", [YELLOW] = "3",
                                     [BLUE] = "4",  [MAGENTA] = "5", [CYAN] = "6",  [WHITE] = "7"};
@@ -18,11 +18,11 @@ void add_color(char *dest, uint32_t color, int is_background) {
 }
 
 void init_print_lock() {
-    ticket_init(&print_lock);
+    print_lock = SPIN_INIT;
 }
 
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
-    ticket_lock(&print_lock);
+    spin_lock(print_lock);
     char buf[4096] = {0};
     add_color(buf, fcolor, false);
     add_color(buf, bcolor, true);
@@ -39,11 +39,11 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
         get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
     else
         terminal_process(buf);
-    ticket_unlock(&print_lock);
+    spin_unlock(print_lock);
 }
 
 void cp_printf(const char *fmt, ...) {
-    ticket_lock(&print_lock);
+    spin_lock(print_lock);
     char buf[4096] = {0};
     add_color(buf, WHITE, false);
     add_color(buf, BLACK, true);
@@ -60,5 +60,5 @@ void cp_printf(const char *fmt, ...) {
         get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
     else
         terminal_process(buf);
-    ticket_unlock(&print_lock);
+    spin_unlock(print_lock);
 }

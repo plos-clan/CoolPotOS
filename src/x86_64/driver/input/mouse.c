@@ -8,11 +8,11 @@
 #include "lock.h"
 #include "terminal.h"
 
-MouseType  type;
-mouse_dec  mouse_decode;
-size_t     mouse_x;
-size_t     mouse_y;
-ticketlock mouse_lock;
+MouseType type;
+mouse_dec mouse_decode;
+size_t    mouse_x;
+size_t    mouse_y;
+spin_t    mouse_lock;
 
 bool mousedecode(uint8_t data) {
     if (mouse_decode.phase == 0) {
@@ -61,7 +61,7 @@ bool mousedecode(uint8_t data) {
 
 __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
     send_eoi();
-    ticket_lock(&mouse_lock);
+    spin_lock(mouse_lock);
     uint8_t data = io_in8(PS2_DATA_PORT);
     if (mousedecode(data)) {
         mouse_x += mouse_decode.x;
@@ -90,7 +90,7 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
         //              mouse_decode.scroll
         //        );
     }
-    ticket_unlock(&mouse_lock);
+    spin_unlock(mouse_lock);
 }
 
 static inline void wait_for_read() {

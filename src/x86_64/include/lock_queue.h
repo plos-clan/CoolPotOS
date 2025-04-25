@@ -1,5 +1,6 @@
 #pragma once
 
+#include "krlibc.h"
 #include "lock.h"
 
 typedef struct LockNode {
@@ -11,8 +12,8 @@ typedef struct LockNode {
 typedef struct {
     lock_node *head;
     lock_node *tail;
-    ticketlock lock;
-    ticketlock iter_lock;
+    spin_t     lock;
+    spin_t     iter_lock;
     int        size;
     int        next_index;
 } lock_queue;
