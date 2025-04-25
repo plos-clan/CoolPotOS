@@ -26,7 +26,7 @@ void update_terminal() {
     ticket_lock(&terminal_lock);
     while (true) {
         if(!open_flush) continue;
-        char a = atom_pop(output_buffer);
+        char a = (char)atom_pop(output_buffer);
         if (a == -1) break;
         terminal_process_char(a);
     }

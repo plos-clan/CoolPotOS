@@ -29,11 +29,11 @@ bool atom_push(atom_queue *queue, uint8_t data) {
 }
 
 uint8_t atom_pop(atom_queue *queue) {
-    if (queue == NULL) return -1;
-    if (queue->length <= 0) return -1;
+    if (queue == NULL) return (uint8_t)-1;
+    if (queue->length <= 0) return (uint8_t)-1;
     // ticket_lock(&queue->lock);
     uint64_t tail = load(&queue->tail);
-    if (tail == load(&queue->head)) return -1;
+    if (tail == load(&queue->head)) return (uint8_t)-1;
     uint8_t data = queue->buf[tail];
     store(&queue->tail, (tail + 1) & queue->mask);
     queue->length--;
