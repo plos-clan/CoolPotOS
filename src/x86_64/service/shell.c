@@ -21,11 +21,11 @@
 #include "scheduler.h"
 #include "smp.h"
 // #include "sprintk.h"
+#include "atom_queue.h"
+#include "pl_readline.h"
+#include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
-#include "pl_readline.h"
-#include "atom_queue.h"
-#include "sprintf.h"
 
 extern void cp_shutdown();
 
@@ -111,7 +111,7 @@ static void mkdir(int argc, char **argv) {
         return;
     }
     // char *buf_h = com_copy + 6;
-    char  bufx[100];
+    char bufx[100];
     // if (buf_h[0] != '/') {
     //     if (!strcmp(shell_work_path, "/"))
     //         sprintk(bufx, "/%s", buf_h);
@@ -195,7 +195,7 @@ static void ls(int argc, char **argv) {
         p = vfs_open(shell_work_path);
     } else {
         // char *buf_h = com_copy + 3;
-        char  bufx[100];
+        char bufx[100];
         // if (buf_h[0] != '/') {
         //     if (!strcmp(shell_work_path, "/"))
         //         sprintk(bufx, "/%s", buf_h);
@@ -324,57 +324,78 @@ static void luser(int argc, char **argv) {
 static void sys_info() {
     cpu_t        cpu = get_cpu_info();
     extern MCFG *mcfg;
-    char* pci_type = mcfg == NULL ? "PCI " : "PCIE";
-    uint32_t     bytes  = get_all_memusage();
-    int          memory_used = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-    char         unit = (bytes > 10485760) ? 'M' : 'K';
+    char        *pci_type     = mcfg == NULL ? "PCI " : "PCIE";
+    uint32_t     bytes        = get_all_memusage();
+    int          memory_used  = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    char         unit         = (bytes > 10485760) ? 'M' : 'K';
     int          memory_total = (int)(memory_size / 1048576);
 
-    const char *logo[] = {
-        "           -*&@@@@@@&*-                 ",
-        "       .&@@@@@@@@@@@@@.\033[36m*=&&&&&&#\033[39m        ",
-        "    =@@@@@@@@@@@@@@@:\033[36m+@@@@@@@@@=:\033[39m       ",
-        "  .@@@@@@@@@@@@@#.\033[36m:+@@@@@@@@@@@=:\033[39m       ",
-        " .@@@@@@@@@       \033[36m&@@@@@@@@@@@*\033[39m.@-      ",
-        " @@@@@@@@#        \033[36m&@@@@@@@@@*\033[39m.@@@&      ",
-        "@@@@@@@@:         \033[36m#&&&&&=*.\033[39m@@@@@@@      ",
-        "&@@@@@@@+                 +@@@@@@&      ",
-        "*@@@@@@@@               @@@@@@@@@*      ",
-        " .@@@@@@@@&:           @@@@@@@@@@       ",
-        "   &@@@@@@@@@--___--@@@@@@@@@&=:        ",
-        "     .#@@@@@@@@@@@@@@@@@@@@&:.          ",
-        "        =&@@@@@@@@@@@@@@@@*             ",
-        "           -@@@@@@@&+:                  "
-    };
+    const char *logo[] = {"           -*&@@@@@@&*-                 ",
+                          "       .&@@@@@@@@@@@@@.\033[36m*=&&&&&&#\033[39m        ",
+                          "    =@@@@@@@@@@@@@@@:\033[36m+@@@@@@@@@=:\033[39m       ",
+                          "  .@@@@@@@@@@@@@#.\033[36m:+@@@@@@@@@@@=:\033[39m       ",
+                          " .@@@@@@@@@       \033[36m&@@@@@@@@@@@*\033[39m.@-      ",
+                          " @@@@@@@@#        \033[36m&@@@@@@@@@*\033[39m.@@@&      ",
+                          "@@@@@@@@:         \033[36m#&&&&&=*.\033[39m@@@@@@@      ",
+                          "&@@@@@@@+                 +@@@@@@&      ",
+                          "*@@@@@@@@               @@@@@@@@@*      ",
+                          " .@@@@@@@@&:           @@@@@@@@@@       ",
+                          "   &@@@@@@@@@--___--@@@@@@@@@&=:        ",
+                          "     .#@@@@@@@@@@@@@@@@@@@@&:.          ",
+                          "        =&@@@@@@@@@@@@@@@@*             ",
+                          "           -@@@@@@@&+:                  "};
 
-    const char *info[] = {
-        "-----------------",
-        "Name: CoolPotOS",
-        "Processor: %d",
-        "CPU: %s",
-        "%s Device: %d",
-        "Resolution: %d x %d",
-        "Time: %s",
-        "Terminal: os_terminal",
-        "Kernel: %s",
-        "Memory Usage: %d%cB / %dMB",
-        "64-bit operating system, x86-based processor."
-    };
+    const char *info[] = {"-----------------",
+                          "Name: CoolPotOS",
+                          "Processor: %d",
+                          "CPU: %s",
+                          "%s Device: %d",
+                          "Resolution: %d x %d",
+                          "Time: %s",
+                          "Terminal: os_terminal",
+                          "Kernel: %s",
+                          "Memory Usage: %d%cB / %dMB",
+                          "64-bit operating system, x86-based processor."};
 
-    printk(logo[0]); printk(info[0]); printk("\n");
-    printk(logo[1]); printk(info[1]); printk("\n");
-    printk(logo[2]); printk(info[2], cpu_num()); printk("\n");
-    printk(logo[3]); printk(info[3], cpu.model_name); printk("\n");
-    printk(logo[4]); printk(info[4], pci_type, get_pci_num()); printk("\n");
-    printk(logo[5]); printk(info[5], framebuffer->width, framebuffer->height); printk("\n");
-    printk(logo[6]); printk(info[6], get_date_time()); printk("\n");
-    printk(logo[7]); printk(info[7]); printk("\n");
-    printk(logo[8]); printk(info[8], KERNEL_NAME); printk("\n");
-    printk(logo[9]); printk(info[9], memory_used, unit, memory_total); printk("\n");
-    printk(logo[10]); printk(info[10]); printk("\n");
-    printk(logo[11]); printk("\n");
-    printk(logo[12]); printk("\n");
-    printk(logo[13]); printk("\n");
+    printk(logo[0]);
+    printk(info[0]);
+    printk("\n");
+    printk(logo[1]);
+    printk(info[1]);
+    printk("\n");
+    printk(logo[2]);
+    printk(info[2], cpu_num());
+    printk("\n");
+    printk(logo[3]);
+    printk(info[3], cpu.model_name);
+    printk("\n");
+    printk(logo[4]);
+    printk(info[4], pci_type, get_pci_num());
+    printk("\n");
+    printk(logo[5]);
+    printk(info[5], framebuffer->width, framebuffer->height);
+    printk("\n");
+    printk(logo[6]);
+    printk(info[6], get_date_time());
+    printk("\n");
+    printk(logo[7]);
+    printk(info[7]);
+    printk("\n");
+    printk(logo[8]);
+    printk(info[8], KERNEL_NAME);
+    printk("\n");
+    printk(logo[9]);
+    printk(info[9], memory_used, unit, memory_total);
+    printk("\n");
+    printk(logo[10]);
+    printk(info[10]);
+    printk("\n");
+    printk(logo[11]);
+    printk("\n");
+    printk(logo[12]);
+    printk("\n");
+    printk(logo[13]);
+    printk("\n");
 }
 
 static void print_help() {
@@ -451,128 +472,106 @@ static void print_help() {
 // ====== pl_readline ======
 static int cmd_parse(const char *cmd_str, char **argv, char token) // 用uint8_t是因为" "使用8位整数
 {
-	int arg_idx = 0;
+    int arg_idx = 0;
 
-	while (arg_idx < MAX_ARG_NR) {
-		argv[arg_idx] = 0;
-		arg_idx++;
-	}
-	char *next = (char *)cmd_str;				// 下一个字符
-	int	argc = 0;								// 这就是要返回的argc了
+    while (arg_idx < MAX_ARG_NR) {
+        argv[arg_idx] = 0;
+        arg_idx++;
+    }
+    char *next = (char *)cmd_str; // 下一个字符
+    int   argc = 0;               // 这就是要返回的argc了
 
-	while (*next) {								// 循环到结束为止
-		while (*next == token) next++;			// 多个token就只保留第一个，windows cmd就是这么处理的
-		if (*next == 0) break;					// 如果跳过完token之后结束了，那就直接退出
-		argv[argc] = next;						// 将首指针赋值过去，从这里开始就是当前参数
-		while (*next && *next != token) next++;	// 跳到下一个token
-		if (*next) {							// 如果这里有token字符
-			*next++ = 0;						// 将当前token字符设为0（结束符），next后移一个
-		}
-		if (argc > MAX_ARG_NR) return -1;		// 参数太多，超过上限了
-		argc++; // argc增一，如果最后一个字符是空格时不提前退出，argc会错误地被多加1
-	}
-	return argc;
+    while (*next) { // 循环到结束为止
+        while (*next == token)
+            next++;            // 多个token就只保留第一个，windows cmd就是这么处理的
+        if (*next == 0) break; // 如果跳过完token之后结束了，那就直接退出
+        argv[argc] = next;     // 将首指针赋值过去，从这里开始就是当前参数
+        while (*next && *next != token)
+            next++;      // 跳到下一个token
+        if (*next) {     // 如果这里有token字符
+            *next++ = 0; // 将当前token字符设为0（结束符），next后移一个
+        }
+        if (argc > MAX_ARG_NR) return -1; // 参数太多，超过上限了
+        argc++; // argc增一，如果最后一个字符是空格时不提前退出，argc会错误地被多加1
+    }
+    return argc;
 }
 
-typedef struct builtin_cmd
-{
-	const char *name;
-	void (*func)(int, char **);
+typedef struct builtin_cmd {
+    const char *name;
+    void (*func)(int, char **);
 } builtin_cmd_t;
 
 builtin_cmd_t builtin_cmds[] = {
-    {"help", (void (*)(int, char **))print_help},
+    {"help",     (void (*)(int, char **))print_help },
     {"shutdown", (void (*)(int, char **))cp_shutdown},
-    {"exit", (void (*)(int, char **))cp_shutdown},
-    {"reboot", (void (*)(int, char **))cp_reset},
-    {"lspci", (void (*)(int, char **))lspci},
-    {"sysinfo", (void (*)(int, char **))sys_info},
-    {"ps", (void (*)(int, char **))ps},
-    {"pkill", (void (*)(int, char **))pkill},
-    {"cd", (void (*)(int, char **))cd},
-    {"mkdir", (void (*)(int, char **))mkdir},
-    {"ls", (void (*)(int, char **))ls},
-    {"echo", (void (*)(int, char **))echo},
-    {"mount", (void (*)(int, char **))mount},
-    {"lmod", (void (*)(int, char **))lmod},
-    {"luser", (void (*)(int, char **))luser}
+    {"exit",     (void (*)(int, char **))cp_shutdown},
+    {"reboot",   (void (*)(int, char **))cp_reset   },
+    {"lspci",    (void (*)(int, char **))lspci      },
+    {"sysinfo",  (void (*)(int, char **))sys_info   },
+    {"ps",       (void (*)(int, char **))ps         },
+    {"pkill",    (void (*)(int, char **))pkill      },
+    {"cd",       (void (*)(int, char **))cd         },
+    {"mkdir",    (void (*)(int, char **))mkdir      },
+    {"ls",       (void (*)(int, char **))ls         },
+    {"echo",     (void (*)(int, char **))echo       },
+    {"mount",    (void (*)(int, char **))mount      },
+    {"lmod",     (void (*)(int, char **))lmod       },
+    {"luser",    (void (*)(int, char **))luser      }
 };
 
 /* 内建命令数量 */
 static const int builtin_cmd_num = sizeof(builtin_cmds) / sizeof(builtin_cmd_t);
 
 /* 在预定义的命令数组中查找给定的命令字符串 */
-int find_cmd(uint8_t *cmd)
-{
-	for (int i = 0; i < builtin_cmd_num; ++i)
-	{
-		if (strcmp((const char *)cmd, builtin_cmds[i].name) == 0){
-			return i;
-		}
-	}
-	return -1;
+int find_cmd(uint8_t *cmd) {
+    for (int i = 0; i < builtin_cmd_num; ++i) {
+        if (strcmp((const char *)cmd, builtin_cmds[i].name) == 0) { return i; }
+    }
+    return -1;
 }
 
-static int plreadln_getch(void)
-{
-	char ch = getc();
-	if (ch == 0x0d) {
-		return PL_READLINE_KEY_ENTER;
-	}
-	if (ch == 0x7f) {
-		return PL_READLINE_KEY_BACKSPACE;
-	}
-	if (ch == 0x9) {
-		return PL_READLINE_KEY_TAB;
-	}
-	if (ch == 0x1b) {
-		ch = plreadln_getch();
-		if (ch == '[') {
-			ch = plreadln_getch();
-			switch (ch) {
-			case 'A':
-				return PL_READLINE_KEY_UP;
-			case 'B':
-				return PL_READLINE_KEY_DOWN;
-			case 'C':
-				return PL_READLINE_KEY_RIGHT;
-			case 'D':
-				return PL_READLINE_KEY_LEFT;
-			case 'H':
-				return PL_READLINE_KEY_HOME;
-			case 'F':
-				return PL_READLINE_KEY_END;
-			case '5':
-				if (plreadln_getch() == '~')
-					return PL_READLINE_KEY_PAGE_UP;
-				break;
-			case '6':
-				if (plreadln_getch() == '~')
-					return PL_READLINE_KEY_PAGE_DOWN;
-				break;
-			default:
-				return -1;
-			}
-		}
-	}
-	return ch;
+static int plreadln_getch(void) {
+    char ch = getc();
+    if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
+    if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
+    if (ch == 0x9) { return PL_READLINE_KEY_TAB; }
+    if (ch == 0x1b) {
+        ch = plreadln_getch();
+        if (ch == '[') {
+            ch = plreadln_getch();
+            switch (ch) {
+            case 'A': return PL_READLINE_KEY_UP;
+            case 'B': return PL_READLINE_KEY_DOWN;
+            case 'C': return PL_READLINE_KEY_RIGHT;
+            case 'D': return PL_READLINE_KEY_LEFT;
+            case 'H': return PL_READLINE_KEY_HOME;
+            case 'F': return PL_READLINE_KEY_END;
+            case '5':
+                if (plreadln_getch() == '~') return PL_READLINE_KEY_PAGE_UP;
+                break;
+            case '6':
+                if (plreadln_getch() == '~') return PL_READLINE_KEY_PAGE_DOWN;
+                break;
+            default: return -1;
+            }
+        }
+    }
+    return ch;
 }
 
-static void plreadln_putch(int ch)
-{
+static void plreadln_putch(int ch) {
     extern atom_queue *output_buffer;
     atom_push(output_buffer, ch);
 }
 
-static void handle_tab(char *buf, pl_readline_words_t words)
-{
+static void handle_tab(char *buf, pl_readline_words_t words) {
     for (int i = 0; i < builtin_cmd_num; ++i) {
         pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, ' ');
     }
 }
 
-static void plreadln_flush(void)
-{
+static void plreadln_flush(void) {
     /* Nothing */
 }
 
@@ -586,7 +585,7 @@ _Noreturn void shell_setup() {
            "MIT License 2024-2025 plos-clan\n",
            KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
 
-    char prompt[128];
+    char     prompt[128];
     uint8_t *argv[MAX_ARG_NR];
 
     shell_work_path = malloc(1024);
@@ -594,8 +593,7 @@ _Noreturn void shell_setup() {
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
 
-    pl_readline_t pl =
-        pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
+    pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
     while (1) {
         sprintf(prompt, "\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s>\033[0m ",
@@ -609,7 +607,7 @@ _Noreturn void shell_setup() {
             kerror("shell: number of arguments exceed MAX_ARG_NR(30)");
             continue;
         } else if (argc == 0) {
-        	continue;
+            continue;
         }
 
         int cmd_index = find_cmd(argv[0]);
