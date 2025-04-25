@@ -23,6 +23,9 @@
 // #include "sprintk.h"
 #include "timer.h"
 #include "vfs.h"
+#include "pl_readline.h"
+#include "atom_queue.h"
+#include "sprintf.h"
 
 extern void cp_shutdown();
 
@@ -68,14 +71,6 @@ static int gets(char *buf, int buf_size) {
     buf[index] = '\0';
     printk("%c", c);
     return index;
-}
-
-static void shutdown_os() {
-    cp_shutdown();
-}
-
-static void reboot_os() {
-    cp_reset();
 }
 
 static void cd(int argc, char **argv) {
@@ -211,7 +206,7 @@ static void ls(int argc, char **argv) {
         p = vfs_open(bufx);
     }
     if (p == NULL) {
-        printk("Cannot fount directory.\n");
+        printk("ls: %s: No such file or directory\n", argv[1]);
         return;
     }
     list_foreach(p->child, i) {
@@ -236,7 +231,7 @@ static void pkill(int argc, char **argv) {
     kinfo("Kill process (%d).", pid);
 }
 
-void print_all_pci() {
+void lspci() {
     printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
     for (size_t i = 0; i < get_pci_num(); i++) {
         pci_device_t *device = pci_devices[i];
@@ -401,56 +396,184 @@ static void print_help() {
     printk("luser     <module>       Load a user application.\n");
 }
 
-char **split_by_space(const char *input, int *count) {
-    char **tokens = (char **)malloc(MAX_ARG_NR * sizeof(char *));
-    if (!tokens) return NULL;
+// char **split_by_space(const char *input, int *count) {
+//     char **tokens = (char **)malloc(MAX_ARG_NR * sizeof(char *));
+//     if (!tokens) return NULL;
 
-    int token_index = 0;
-    int i           = 0;
-    int start       = -1;
-    int len         = strlen(input);
+//     int token_index = 0;
+//     int i           = 0;
+//     int start       = -1;
+//     int len         = strlen(input);
 
-    while (i <= len) {
-        if (input[i] != ' ' && input[i] != '\0') {
-            if (start == -1) start = i;
-        } else {
-            if (start != -1) {
-                int   token_len = i - start;
-                char *token     = (char *)malloc(token_len + 1);
-                if (!token) {
-                    for (int j = 0; j < token_index; j++)
-                        free(tokens[j]);
-                    free(tokens);
-                    return NULL;
-                }
+//     while (i <= len) {
+//         if (input[i] != ' ' && input[i] != '\0') {
+//             if (start == -1) start = i;
+//         } else {
+//             if (start != -1) {
+//                 int   token_len = i - start;
+//                 char *token     = (char *)malloc(token_len + 1);
+//                 if (!token) {
+//                     for (int j = 0; j < token_index; j++)
+//                         free(tokens[j]);
+//                     free(tokens);
+//                     return NULL;
+//                 }
 
-                memcpy(token, &input[start], token_len);
-                token[token_len]      = '\0';
-                tokens[token_index++] = token;
+//                 memcpy(token, &input[start], token_len);
+//                 token[token_len]      = '\0';
+//                 tokens[token_index++] = token;
 
-                if (token_index >= MAX_ARG_NR) break;
-                start = -1;
-            }
-        }
-        i++;
-    }
+//                 if (token_index >= MAX_ARG_NR) break;
+//                 start = -1;
+//             }
+//         }
+//         i++;
+//     }
 
-    tokens[token_index] = NULL; // 最后加个 NULL 结束
-    if (count) *count = token_index;
-    return tokens;
+//     tokens[token_index] = NULL; // 最后加个 NULL 结束
+//     if (count) *count = token_index;
+//     return tokens;
+// }
+
+// void trim(char *str) {
+//     while (*str && isspace((unsigned char)*str)) {
+//         str++;
+//     }
+
+//     char *end = str + strlen(str) - 1;
+//     while (end > str && isspace((unsigned char)*end)) {
+//         end--;
+//     }
+
+//     *(end + 1) = '\0';
+// }
+
+// ====== pl_readline ======
+static int cmd_parse(const char *cmd_str, char **argv, char token) // 用uint8_t是因为" "使用8位整数
+{
+	int arg_idx = 0;
+
+	while (arg_idx < MAX_ARG_NR) {
+		argv[arg_idx] = 0;
+		arg_idx++;
+	}
+	char *next = (char *)cmd_str;				// 下一个字符
+	int	argc = 0;								// 这就是要返回的argc了
+
+	while (*next) {								// 循环到结束为止
+		while (*next == token) next++;			// 多个token就只保留第一个，windows cmd就是这么处理的
+		if (*next == 0) break;					// 如果跳过完token之后结束了，那就直接退出
+		argv[argc] = next;						// 将首指针赋值过去，从这里开始就是当前参数
+		while (*next && *next != token) next++;	// 跳到下一个token
+		if (*next) {							// 如果这里有token字符
+			*next++ = 0;						// 将当前token字符设为0（结束符），next后移一个
+		}
+		if (argc > MAX_ARG_NR) return -1;		// 参数太多，超过上限了
+		argc++; // argc增一，如果最后一个字符是空格时不提前退出，argc会错误地被多加1
+	}
+	return argc;
 }
 
-void trim(char *str) {
-    while (*str && isspace((unsigned char)*str)) {
-        str++;
-    }
+typedef struct builtin_cmd
+{
+	const char *name;
+	void (*func)(int, char **);
+} builtin_cmd_t;
 
-    char *end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) {
-        end--;
-    }
+builtin_cmd_t builtin_cmds[] = {
+    {"help", (void (*)(int, char **))print_help},
+    {"shutdown", (void (*)(int, char **))cp_shutdown},
+    {"exit", (void (*)(int, char **))cp_shutdown},
+    {"reboot", (void (*)(int, char **))cp_reset},
+    {"lspci", (void (*)(int, char **))lspci},
+    {"sysinfo", (void (*)(int, char **))sys_info},
+    {"ps", (void (*)(int, char **))ps},
+    {"pkill", (void (*)(int, char **))pkill},
+    {"cd", (void (*)(int, char **))cd},
+    {"mkdir", (void (*)(int, char **))mkdir},
+    {"ls", (void (*)(int, char **))ls},
+    {"echo", (void (*)(int, char **))echo},
+    {"mount", (void (*)(int, char **))mount},
+    {"lmod", (void (*)(int, char **))lmod},
+    {"luser", (void (*)(int, char **))luser}
+};
 
-    *(end + 1) = '\0';
+/* 内建命令数量 */
+static const int builtin_cmd_num = sizeof(builtin_cmds) / sizeof(builtin_cmd_t);
+
+/* 在预定义的命令数组中查找给定的命令字符串 */
+int find_cmd(uint8_t *cmd)
+{
+	for (int i = 0; i < builtin_cmd_num; ++i)
+	{
+		if (strcmp((const char *)cmd, builtin_cmds[i].name) == 0){
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int plreadln_getch(void)
+{
+	char ch = getc();
+	if (ch == 0x0d) {
+		return PL_READLINE_KEY_ENTER;
+	}
+	if (ch == 0x7f) {
+		return PL_READLINE_KEY_BACKSPACE;
+	}
+	if (ch == 0x9) {
+		return PL_READLINE_KEY_TAB;
+	}
+	if (ch == 0x1b) {
+		ch = plreadln_getch();
+		if (ch == '[') {
+			ch = plreadln_getch();
+			switch (ch) {
+			case 'A':
+				return PL_READLINE_KEY_UP;
+			case 'B':
+				return PL_READLINE_KEY_DOWN;
+			case 'C':
+				return PL_READLINE_KEY_RIGHT;
+			case 'D':
+				return PL_READLINE_KEY_LEFT;
+			case 'H':
+				return PL_READLINE_KEY_HOME;
+			case 'F':
+				return PL_READLINE_KEY_END;
+			case '5':
+				if (plreadln_getch() == '~')
+					return PL_READLINE_KEY_PAGE_UP;
+				break;
+			case '6':
+				if (plreadln_getch() == '~')
+					return PL_READLINE_KEY_PAGE_DOWN;
+				break;
+			default:
+				return -1;
+			}
+		}
+	}
+	return ch;
+}
+
+static void plreadln_putch(int ch)
+{
+    extern atom_queue *output_buffer;
+    atom_push(output_buffer, ch);
+}
+
+static void handle_tab(char *buf, pl_readline_words_t words)
+{
+    for (int i = 0; i < builtin_cmd_num; ++i) {
+        pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, ' ');
+    }
+}
+
+static void plreadln_flush(void)
+{
+    /* Nothing */
 }
 
 _Noreturn void shell_setup() {
@@ -462,66 +585,103 @@ _Noreturn void shell_setup() {
            "  Logged:             %s\n"
            "MIT License 2024-2025 plos-clan\n",
            KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
-    char *line      = malloc(MAX_COMMAND_LEN);
+
+    char prompt[128];
+    uint8_t *argv[MAX_ARG_NR];
+
     shell_work_path = malloc(1024);
     not_null_assets(shell_work_path, "work path null");
     memset(shell_work_path, 0, 1024);
     shell_work_path[0] = '/';
 
-    infinite_loop {
-        printk("\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s> ", tcb->parent_group->user->name,
-               shell_work_path);
-        if (gets(line, MAX_COMMAND_LEN) <= 0) continue;
-        memset(com_copy, 0, 100);
-        strcpy(com_copy, line);
-        trim(line);
-        int    argc;
-        char **argv = split_by_space(line, &argc);
-        if (argc == 0) {
-            free(argv);
+    pl_readline_t pl =
+        pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
+
+    while (1) {
+        sprintf(prompt, "\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s>\033[0m ",
+                tcb->parent_group->user->name, shell_work_path);
+        const char *cmd = pl_readline(pl, prompt);
+
+        if (cmd[0] == 0) continue;
+        int argc = cmd_parse(cmd, (char **)argv, ' ');
+
+        if (argc == -1) {
+            kerror("shell: number of arguments exceed MAX_ARG_NR(30)");
             continue;
+        } else if (argc == 0) {
+        	continue;
         }
 
-        if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
-            print_help();
-        } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
-            shutdown_os();
-        else if (!strcmp("reboot", argv[0]))
-            reboot_os();
-        else if (!strcmp("clear", argv[0]))
-            printk("\033[H\033[2J\033[3J");
-        else if (!strcmp("lspci", argv[0]))
-            print_all_pci();
-        else if (!strcmp("sysinfo", argv[0]))
-            sys_info();
-        else if (!strcmp("ps", argv[0]))
-            ps(argc, argv);
-        else if (!strcmp("pkill", argv[0]))
-            pkill(argc, argv);
-        else if (!strcmp("cd", argv[0]))
-            cd(argc, argv);
-        else if (!strcmp("mkdir", argv[0]))
-            mkdir(argc, argv);
-        else if (!strcmp("ls", argv[0]))
-            ls(argc, argv);
-        else if (!strcmp("echo", argv[0]))
-            echo(argc, argv);
-        else if (!strcmp("mount", argv[0]))
-            mount(argc, argv);
-        else if (!strcmp("lmod", argv[0]))
-            lmod(argc, argv);
-        else if (!strcmp("luser", argv[0]))
-            luser(argc, argv);
-        else if (!strcmp("test", argv[0])) {
-            for (int i = 0; i < 100; ++i) {
-                printk("count: %d\n", i);
-            }
+        int cmd_index = find_cmd(argv[0]);
+        if (cmd_index < 0) {
+            printk("Command not found.\n\n");
         } else {
-            kerror("\033[31mshell: command `%s' not found\033[39m\n", com_copy);
+            builtin_cmds[cmd_index].func(argc, (char **)argv);
         }
-        for (int i = 0; i < argc; i++) {
-            free(argv[i]);
-        }
-        free(argv);
     }
+
+    pl_readline_uninit(pl);
+
+    // char *line      = malloc(MAX_COMMAND_LEN);
+    // shell_work_path = malloc(1024);
+    // not_null_assets(shell_work_path, "work path null");
+    // memset(shell_work_path, 0, 1024);
+    // shell_work_path[0] = '/';
+
+    // infinite_loop {
+    //     printk("\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s> ", tcb->parent_group->user->name,
+    //            shell_work_path);
+    //     if (gets(line, MAX_COMMAND_LEN) <= 0) continue;
+    //     memset(com_copy, 0, 100);
+    //     strcpy(com_copy, line);
+    //     trim(line);
+    //     int    argc;
+    //     char **argv = split_by_space(line, &argc);
+    //     if (argc == 0) {
+    //         free(argv);
+    //         continue;
+    //     }
+
+    //     if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
+    //         print_help();
+    //     } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
+    //         cp_shutdown();
+    //     else if (!strcmp("reboot", argv[0]))
+    //         cp_reset();
+    //     else if (!strcmp("clear", argv[0]))
+    //         printk("\033[H\033[2J\033[3J");
+    //     else if (!strcmp("lspci", argv[0]))
+    //         lspci();
+    //     else if (!strcmp("sysinfo", argv[0]))
+    //         sys_info();
+    //     else if (!strcmp("ps", argv[0]))
+    //         ps(argc, argv);
+    //     else if (!strcmp("pkill", argv[0]))
+    //         pkill(argc, argv);
+    //     else if (!strcmp("cd", argv[0]))
+    //         cd(argc, argv);
+    //     else if (!strcmp("mkdir", argv[0]))
+    //         mkdir(argc, argv);
+    //     else if (!strcmp("ls", argv[0]))
+    //         ls(argc, argv);
+    //     else if (!strcmp("echo", argv[0]))
+    //         echo(argc, argv);
+    //     else if (!strcmp("mount", argv[0]))
+    //         mount(argc, argv);
+    //     else if (!strcmp("lmod", argv[0]))
+    //         lmod(argc, argv);
+    //     else if (!strcmp("luser", argv[0]))
+    //         luser(argc, argv);
+    //     else if (!strcmp("test", argv[0])) {
+    //         for (int i = 0; i < 100; ++i) {
+    //             printk("count: %d\n", i);
+    //         }
+    //     } else {
+    //         kerror("\033[31mshell: command `%s' not found\033[39m\n", com_copy);
+    //     }
+    //     for (int i = 0; i < argc; i++) {
+    //         free(argv[i]);
+    //     }
+    //     free(argv);
+    // }
 }

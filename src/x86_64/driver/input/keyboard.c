@@ -7,6 +7,7 @@
 #include "lock.h"
 #include "pcb.h"
 #include "smp.h"
+#include "os_terminal.h"
 
 static int   caps_lock, shift, ctrl = 0;
 spin_t       keyboard_lock;
@@ -75,6 +76,10 @@ int input_char_inSM() {
     } while (i == -1);
     task->parent_group->tty->is_key_wait = false;
     task->status                         = RUNNING;
+
+    // terminal_handle_keyboard(i);
+    // return -1;
+
     return i;
 }
 
