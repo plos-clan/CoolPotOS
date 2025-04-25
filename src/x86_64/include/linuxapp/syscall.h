@@ -117,7 +117,7 @@
 #define __syscall(id, ...)                                                                         \
     __syscall_concat(__syscall, __syscall_argn(__VA_ARGS__))(id, ##__VA_ARGS__)
 
-#define SYS_fork    57
-#define SYS_execve  59
-#define SYS_wait4   61
+#define SYS_fork   57
+#define SYS_execve 59
+#define SYS_wait4  61
 #define SYS_getcwd 79

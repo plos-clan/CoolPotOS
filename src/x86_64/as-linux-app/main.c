@@ -1,7 +1,7 @@
+#include "krlibc.h"
 #include "linuxapp/basedefs.h"
 #include "linuxapp/syscall.h"
 #include "sprintf.h"
-#include "krlibc.h"
 
 #define STDIN  0
 #define STDOUT 1
@@ -64,7 +64,7 @@ static int uname(struct utsname *buf) {
 }
 
 void printf(const char *fmt, ...) {
-    char buf[1024];
+    char    buf[1024];
     va_list args;
     va_start(args, fmt);
     stbsp_vsprintf(buf, fmt, args);
@@ -78,19 +78,21 @@ void parse_args(char *input, char **argv) {
     int argc = 0;
     while (*input && argc < MAX_ARGS - 1) {
         // 跳过前导空格
-        while (*input == ' ') input++;
+        while (*input == ' ')
+            input++;
         if (*input == '\0') break;
 
         argv[argc++] = input;
 
         // 找下一个空格并替换成 \0
-        while (*input && *input != ' ') input++;
+        while (*input && *input != ' ')
+            input++;
         if (*input == ' ') *input++ = '\0';
     }
     argv[argc] = NULL;
 }
 
-static void help(){
+static void help() {
     printf("Usage <command|app_path> [argument...]\n");
     printf("help h ?                 Get shell help info.\n");
     printf("exit                     Exit coolpotos.\n");
@@ -99,56 +101,56 @@ static void help(){
 
 void _start() {
     usleep(500000);
-    printf("\033[33mWelcome to Linux subsystem for CoolPotOS! (%s)\n",KERNEL_NAME);
+    printf("\033[33mWelcome to Linux subsystem for CoolPotOS! (%s)\n", KERNEL_NAME);
 
     struct utsname info;
     __syscall(63, &info);
-    printf("\033[32m%s(%s) %s\n",info.sysname,info.machine,info.release);
+    printf("\033[32m%s(%s) %s\n", info.sysname, info.machine, info.release);
 
     char buffer[256];
     char cwd[256];
 
     while (1) {
         long ret = __syscall(SYS_getcwd, (long)cwd, (long)sizeof(cwd));
-        printf("\033[32m%s(%s)\033[0m@%s \033[34m%s\033[0m$ ",info.sysname,info.machine,info.nodename,ret >= 0 ? cwd : "?");
-        int len = read(STDIN, buffer, 256);
+        printf("\033[32m%s(%s)\033[0m@%s \033[34m%s\033[0m$ ", info.sysname, info.machine,
+               info.nodename, ret >= 0 ? cwd : "?");
+        int len         = read(STDIN, buffer, 256);
         buffer[len - 1] = 0;
-        if(strlen(buffer) <= 0) {
-            continue;
-        }
+        if (strlen(buffer) <= 0) { continue; }
 
         char *argv[MAX_ARGS];
         parse_args(buffer, argv);
 
         if (strcmp(argv[0], "exit") == 0) {
             exit(0);
-        } else if(strcmp(argv[0], "help") == 0||strcmp(argv[0], "?") == 0||strcmp(argv[0], "h") == 0){
+        } else if (strcmp(argv[0], "help") == 0 || strcmp(argv[0], "?") == 0 ||
+                   strcmp(argv[0], "h") == 0) {
             help();
             continue;
-        } else if(strcmp(argv[0], "clear") == 0) {
+        } else if (strcmp(argv[0], "clear") == 0) {
             printf("\033[H\033[J");
             continue;
         }
 
         char work_path[256];
-        if(argv[0][0] == '/') {
+        if (argv[0][0] == '/') {
             stbsp_snprintf(work_path, sizeof(work_path), "%s", argv[0]);
-        } else if(argv[0][0] == '.') {
+        } else if (argv[0][0] == '.') {
             stbsp_snprintf(work_path, sizeof(work_path), "%s/%s", cwd, argv[0]);
         } else {
             stbsp_snprintf(work_path, sizeof(work_path), "/usr/bin/%s", argv[0]);
         }
         argv[0] = work_path;
 
-        char *envp[] = { "PATH=/bin:/usr/bin", NULL };
+        char *envp[] = {"PATH=/bin:/usr/bin", NULL};
 
-        pid_t pid = (pid_t)(__syscall(SYS_fork,0));
+        pid_t pid = (pid_t)(__syscall(SYS_fork, 0));
         if (pid == 0) {
-            __syscall(SYS_execve,argv[0], argv, envp);
+            __syscall(SYS_execve, argv[0], argv, envp);
             printf("unknown command '%s'\n", buffer);
             exit(1);
         } else {
-            __syscall(SYS_wait4,pid, NULL, 0);
+            __syscall(SYS_wait4, pid, NULL, 0);
         }
     }
 

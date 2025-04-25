@@ -5,9 +5,9 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
+#include "os_terminal.h"
 #include "pcb.h"
 #include "smp.h"
-#include "os_terminal.h"
 
 static int   caps_lock, shift, ctrl = 0;
 spin_t       keyboard_lock;

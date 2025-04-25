@@ -24,7 +24,7 @@
 #define kinfo(...)                                                                                 \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(CYAN, BLACK, "INFO");                                                       \
+        color_printk(CYAN, BLACK, "INFO");                                                         \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \
@@ -42,7 +42,7 @@
 #define kwarn(...)                                                                                 \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(YELLOW, BLACK, "WARN");                                                     \
+        color_printk(YELLOW, BLACK, "WARN");                                                       \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \
@@ -51,7 +51,7 @@
 #define kerror(...)                                                                                \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(RED, BLACK, "ERROR");                                                        \
+        color_printk(RED, BLACK, "ERROR");                                                         \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \
