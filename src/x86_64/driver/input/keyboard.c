@@ -9,7 +9,7 @@
 #include "smp.h"
 
 static int   caps_lock, shift, ctrl = 0;
-ticketlock   keyboard_lock;
+spin_t       keyboard_lock;
 extern tcb_t kernel_head_task;
 
 char keytable[0x54] = { // 按下Shift
@@ -34,7 +34,7 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
-    ticket_lock(&keyboard_lock);
+    spin_lock(keyboard_lock);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     send_eoi();
@@ -60,7 +60,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
             if (cpu.ready == 1) { queue_iterate(cpu.scheduler_queue, key_callback, &scancode); }
         }
     }
-    ticket_unlock(&keyboard_lock);
+    spin_unlock(keyboard_lock);
 }
 
 int input_char_inSM() {

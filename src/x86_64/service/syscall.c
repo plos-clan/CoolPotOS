@@ -1,5 +1,7 @@
 #include "syscall.h"
 #include "io.h"
+#include "keyboard.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"

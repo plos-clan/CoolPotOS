@@ -11,7 +11,7 @@
 #include "smp.h"
 #include "terminal.h"
 
-ticketlock page_lock;
+spin_t page_lock;
 
 page_directory_t  kernel_page_dir;
 page_directory_t *current_directory = NULL;
@@ -109,13 +109,13 @@ static void copy_page_table_recursive(page_table_t *source_table, page_table_t *
 }
 
 page_directory_t *clone_directory(page_directory_t *src) {
-    ticket_lock(&page_lock);
+    spin_lock(page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     if (new_directory == NULL) return NULL;
     uint64_t phy_frame   = alloc_frames(1);
     new_directory->table = phys_to_virt(phy_frame);
     copy_page_table_recursive(src->table, new_directory->table, 4);
-    ticket_unlock(&page_lock);
+    spin_unlock(page_lock);
     return new_directory;
 }
 
@@ -144,11 +144,11 @@ static void free_page_table_recursive(page_table_t *table, int level) {
 }
 
 void free_page_directory(page_directory_t *dir) {
-    ticket_lock(&page_lock);
+    spin_lock(page_lock);
     free_page_table_recursive(dir->table, 4);
     free_frame((uint64_t)virt_to_phys((uint64_t)dir->table));
     free(dir);
-    ticket_unlock(&page_lock);
+    spin_unlock(page_lock);
 }
 
 void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags) {

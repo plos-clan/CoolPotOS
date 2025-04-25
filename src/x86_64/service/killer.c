@@ -10,13 +10,13 @@ _Noreturn void halt_service() {
         __asm__ volatile("hlt");
         if (!cpu->ready) continue;
         tcb_t task = NULL;
-        ticket_lock(&cpu->death_queue->lock);
+        spin_lock(cpu->death_queue->lock);
         queue_foreach(cpu->death_queue, node) {
             task = (tcb_t)node->data;
             if (task == NULL) continue;
             break;
         }
-        ticket_unlock(&cpu->death_queue->lock);
+        spin_unlock(cpu->death_queue->lock);
         if (task == NULL || task->status != DEATH) { continue; }
         queue_remove_at(cpu->death_queue, task->death_index);
         kill_thread0(task);
@@ -36,7 +36,7 @@ _Noreturn void killer_service() {
             task = (pcb_t)node->data;
             if (task == NULL) continue;
             bool is_out = true;
-            ticket_lock(&task->pcb_queue->lock);
+            spin_lock(task->pcb_queue->lock);
             queue_foreach(task->pcb_queue, node0) {
                 tcb_t thread = (tcb_t)node0->data;
                 if (thread == NULL) continue;
@@ -45,7 +45,7 @@ _Noreturn void killer_service() {
                     break;
                 }
             }
-            ticket_unlock(&task->pcb_queue->lock);
+            spin_unlock(task->pcb_queue->lock);
             if (is_out) break;
             task = NULL;
         }
@@ -58,7 +58,7 @@ _Noreturn void killer_service() {
 void add_death_proc(pcb_t task) {
     if (task == NULL) return;
     task->death_index = lock_queue_enqueue(death_proc_queue, task);
-    ticket_unlock(&death_proc_queue->lock);
+    spin_unlock(death_proc_queue->lock);
 }
 
 void killer_setup() {

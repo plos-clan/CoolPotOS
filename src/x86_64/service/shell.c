@@ -12,6 +12,7 @@
 #include "gop.h"
 #include "heap.h"
 #include "keyboard.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "module.h"

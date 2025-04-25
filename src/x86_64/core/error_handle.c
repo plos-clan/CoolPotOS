@@ -1,6 +1,7 @@
 #include "gop.h"
 #include "io.h"
 #include "isr.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -9,7 +10,7 @@
 #include "sprintf.h"
 #include "terminal.h"
 
-ticketlock error_lock;
+spin_t error_lock;
 
 void print_register(interrupt_frame_t *frame) {
     printk("ss: 0x%p ", frame->ss);
@@ -32,7 +33,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     close_interrupt;
     disable_scheduler();
     init_print_lock();
-    ticket_lock(&error_lock);
+    spin_lock(error_lock);
     terminal_close_flush();
     logkf("Kernel Error: %s:0x%x %d %p\n", msg, code, cpu->id, frame->rip); // 679a0
     if (get_current_task() == NULL) {
@@ -46,7 +47,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     print_register(frame);
     update_terminal();
     terminal_open_flush();
-    ticket_unlock(&error_lock);
+    spin_unlock(error_lock);
     for (;;)
         cpu_hlt;
 }

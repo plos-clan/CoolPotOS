@@ -53,9 +53,9 @@ static void _canaria_panic() {
     }
 }
 
-static void    *alloced_mem[8] = {};
-static size_t   nballocs       = 0;
-static spinlock malloc_lock;
+static void  *alloced_mem[8] = {};
+static size_t nballocs       = 0;
+static spin_t malloc_lock;
 
 #define alloced_mem_entry (alloced_mem[nballocs++ % (sizeof(alloced_mem) / sizeof(*alloced_mem))])
 
@@ -84,7 +84,7 @@ void *_fuck_malloc(size_t size) {
                           }) &
                           (1 << 9);
     __asm__ volatile("cli");
-    spin_lock(&malloc_lock);
+    spin_lock(malloc_lock);
 
     for (size_t i = 0; i < sizeof(alloced_mem) / sizeof(*alloced_mem); i++) {
         if (alloced_mem[i]) _fuck_check(alloced_mem[i]);
@@ -92,7 +92,7 @@ void *_fuck_malloc(size_t size) {
     size_t  len = (size + sizeof(size_t) - 1) / sizeof(size_t) + 8;
     size_t *ptr = _real_malloc(len * sizeof(size_t));
     if (ptr == NULL) {
-        spin_unlock(&malloc_lock);
+        spin_unlock(malloc_lock);
         if (_is_sti_) __asm__ volatile("sti");
         return NULL;
     }
@@ -106,7 +106,7 @@ void *_fuck_malloc(size_t size) {
     ptr[len - 1] = canaria[7];
     void *addr = alloced_mem_entry = _malloc_rng(ptr + 4, len - 8);
 
-    spin_unlock(&malloc_lock);
+    spin_unlock(malloc_lock);
     if (_is_sti_) __asm__ volatile("sti");
     return addr;
 }
@@ -122,7 +122,7 @@ void _fuck_free(void *ptr) {
                           }) &
                           (1 << 9);
     __asm__ volatile("cli");
-    spin_lock(&malloc_lock);
+    spin_lock(malloc_lock);
 
     size_t *data = (size_t *)ptr - 4;
     if (data[0] != canaria[0]) _canaria_panic();
@@ -143,7 +143,7 @@ void _fuck_free(void *ptr) {
         }
     }
 
-    spin_unlock(&malloc_lock);
+    spin_unlock(malloc_lock);
     if (_is_sti_) __asm__ volatile("sti");
 }
 
@@ -158,7 +158,7 @@ size_t _fuck_usable_size(void *ptr) {
                           }) &
                           (1 << 9);
     __asm__ volatile("cli");
-    spin_lock(&malloc_lock);
+    spin_lock(malloc_lock);
 
     size_t *data = (size_t *)ptr - 4;
     if (data[0] != canaria[0]) _canaria_panic();
@@ -172,7 +172,7 @@ size_t _fuck_usable_size(void *ptr) {
     if (data[len - 2] != canaria[6]) _canaria_panic();
     if (data[len - 1] != canaria[7]) _canaria_panic();
 
-    spin_unlock(&malloc_lock);
+    spin_unlock(malloc_lock);
     if (_is_sti_) __asm__ volatile("sti");
     return (len - 8) * sizeof(size_t);
 }
@@ -188,7 +188,7 @@ void *_fuck_realloc(void *ptr, size_t size) {
                           }) &
                           (1 << 9);
     __asm__ volatile("cli");
-    spin_lock(&malloc_lock);
+    spin_lock(malloc_lock);
 
     for (size_t i = 0; i < sizeof(alloced_mem) / sizeof(*alloced_mem); i++) {
         if (alloced_mem[i]) _fuck_check(alloced_mem[i]);
@@ -207,7 +207,7 @@ void *_fuck_realloc(void *ptr, size_t size) {
     size_t new_len = (size + sizeof(size_t) - 1) / sizeof(size_t) + 8;
     size_t *new    = _real_realloc(data, new_len);
     if (new == NULL) {
-        spin_unlock(&malloc_lock);
+        spin_unlock(malloc_lock);
         if (_is_sti_) __asm__ volatile("sti");
         return NULL;
     }
@@ -228,7 +228,7 @@ void *_fuck_realloc(void *ptr, size_t size) {
     if (new_len > len) _malloc_rng(new + len - 4, new_len - len);
     void *addr = alloced_mem_entry = new + 4;
 
-    spin_unlock(&malloc_lock);
+    spin_unlock(malloc_lock);
     if (_is_sti_) __asm__ volatile("sti");
     return addr;
 }

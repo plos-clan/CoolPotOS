@@ -1,5 +1,6 @@
 #include "tty.h"
 #include "gop.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -8,7 +9,7 @@
 
 tty_t         defualt_tty;
 mpmc_queue_t *queue;
-ticketlock    tty_lock;
+spin_t        tty_lock;
 
 extern bool open_flush; // terminal.c
 
@@ -16,10 +17,10 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
     if (open_flush) {
         terminal_puts(msg);
     } else {
-        ticket_lock(&tty_lock);
+        spin_lock(tty_lock);
         logkf("");
         terminal_process(msg);
-        ticket_unlock(&tty_lock);
+        spin_unlock(tty_lock);
     }
 }
 
@@ -27,10 +28,10 @@ static void tty_kernel_putc(tty_t *tty, int c) {
     if (open_flush)
         terminal_putc((char)c);
     else {
-        ticket_lock(&tty_lock);
+        spin_lock(tty_lock);
         logkf("");
         terminal_process_char((char)c);
-        ticket_unlock(&tty_lock);
+        spin_unlock(tty_lock);
     }
 }
 
