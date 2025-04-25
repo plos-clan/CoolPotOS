@@ -20,7 +20,7 @@
 #include "pci.h"
 #include "scheduler.h"
 #include "smp.h"
-#include "sprintf.h"
+// #include "sprintk.h"
 #include "timer.h"
 #include "vfs.h"
 
@@ -98,14 +98,14 @@ static void cd(int argc, char **argv) {
     if (s[0] == '/') {
         strcpy(shell_work_path, s);
     } else {
-        if (streq(shell_work_path, "/"))
-            sprintf(shell_work_path, "%s%s", shell_work_path, s);
-        else
-            sprintf(shell_work_path, "%s/%s", shell_work_path, s);
+        // if (streq(shell_work_path, "/"))
+        //     sprintk(shell_work_path, "%s%s", shell_work_path, s);
+        // else
+        //     sprintk(shell_work_path, "%s/%s", shell_work_path, s);
     }
     if (vfs_open(shell_work_path) == NULL) {
         printk("cd: %s: No such directory\n", s);
-        sprintf(shell_work_path, "%s", old);
+        // sprintk(shell_work_path, "%s", old);
         free(old);
     }
 }
@@ -115,15 +115,15 @@ static void mkdir(int argc, char **argv) {
         printk("[Shell-MKDIR]: If there are too few parameters.\n");
         return;
     }
-    char *buf_h = com_copy + 6;
+    // char *buf_h = com_copy + 6;
     char  bufx[100];
-    if (buf_h[0] != '/') {
-        if (!strcmp(shell_work_path, "/"))
-            sprintf(bufx, "/%s", buf_h);
-        else
-            sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-    } else
-        sprintf(bufx, "%s", buf_h);
+    // if (buf_h[0] != '/') {
+    //     if (!strcmp(shell_work_path, "/"))
+    //         sprintk(bufx, "/%s", buf_h);
+    //     else
+    //         sprintk(bufx, "%s/%s", shell_work_path, buf_h);
+    // } else
+    //     sprintk(bufx, "%s", buf_h);
     if (vfs_mkdir(bufx) == -1) { printk("Failed create directory [%s].\n", argv[1]); }
 }
 
@@ -199,15 +199,15 @@ static void ls(int argc, char **argv) {
     if (argc == 1) {
         p = vfs_open(shell_work_path);
     } else {
-        char *buf_h = com_copy + 3;
+        // char *buf_h = com_copy + 3;
         char  bufx[100];
-        if (buf_h[0] != '/') {
-            if (!strcmp(shell_work_path, "/"))
-                sprintf(bufx, "/%s", buf_h);
-            else
-                sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-        } else
-            sprintf(bufx, "%s", buf_h);
+        // if (buf_h[0] != '/') {
+        //     if (!strcmp(shell_work_path, "/"))
+        //         sprintk(bufx, "/%s", buf_h);
+        //     else
+        //         sprintk(bufx, "%s/%s", shell_work_path, buf_h);
+        // } else
+        //     sprintk(bufx, "%s", buf_h);
         p = vfs_open(bufx);
     }
     if (p == NULL) {
@@ -326,123 +326,60 @@ static void luser(int argc, char **argv) {
           user_task->queue_index);
 }
 
-static void sys_info1() {
-    cpu_t        cpu = get_cpu_info();
-    extern MCFG *mcfg;
-    uint32_t     bytes  = get_all_memusage();
-    int          memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-
-    printk("        -*&@@@&*-        \n");
-    printk("      =&@@@@@@@@@:\033[36m-----\033[39m          -----------------\n");
-    printk("    .&@@@@@@@@@@:\033[36m+@@@@@:\033[39m         Name:         CoolPotOS\n");
-    printk("  .@@@@@@@@*  \033[36m:+@@@@@@@:\033[39m         Processor:    %d\n", cpu_num());
-    printk("  &@@@@@@    \033[36m:+@@@@@@@@:\033[39m         CPU:          %s\n", cpu.model_name);
-    printk("-@@@@@@*     \033[36m&@@@@@@@=:\033[39m@-        %s Device:  %d\n",
-           mcfg == NULL ? "PCI " : "PCIE", get_pci_num());
-    printk("*@@@@@&      \033[36m&@@@@@@=:\033[39m@@*        Resolution:   %d x %d\n",
-           framebuffer->width, framebuffer->height);
-    printk("&@@@@@+      \033[36m&@@@@@=:\033[39m@@@&        Time:         %s\n", get_date_time());
-    printk("@@@@@@:      \033[36m#&&&&=:\033[39m@@@@@        Terminal:     os_terminal\n");
-    printk("&@@@@@+           +@@@@@&        Kernel:       %s\n", KERNEL_NAME);
-    printk("*@@@@@@           @@@@@@*        Memory Usage:  %d%s / %dMB\n", memory,
-           bytes > 10485760 ? "MB" : "KB", (int)(memory_size / 1024 / 1024));
-    printk("-@@@@@@*         #@@@@@@:        64-bit operating system, x86-based processor.\n");
-    printk(" &@@@@@@*.     .#@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    "
-           "\033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m\n");
-    printk("  =@@@@@@@*----*@@@@@@@-         \n");
-    printk("  .#@@@@@@@@@@@@@@@@@#.          \n");
-    printk("    .#@@@@@@@@@@@@@#.    \n");
-    printk("      =&@@@@@@@@@&-      \n");
-    printk("        -*&@@@&+:        \n");
-}
-
 static void sys_info() {
     cpu_t        cpu = get_cpu_info();
     extern MCFG *mcfg;
-    uint32_t     bytes = get_all_memusage();
-    int          memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    char* pci_type = mcfg == NULL ? "PCI " : "PCIE";
+    uint32_t     bytes  = get_all_memusage();
+    int          memory_used = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
     char         unit = (bytes > 10485760) ? 'M' : 'K';
+    int          memory_total = (int)(memory_size / 1048576);
 
     const char *logo[] = {
-            "          -*&@@@@@&*-",
-            "       =&@@@@@@@@@@@:\033[36m-----\033[39m           -----------------",
-            "     .&@@@@@@@@@@@@:\033[36m+@@@@@:\033[39m          Name:         CoolPotOS",
-            "   .@@@@@@@@@@*     \033[36m:+@@@@@@@:\033[39m       Processor:    %d",
-            "  &@@@@@@@@         \033[36m:+@@@@@@@@:\033[39m        CPU:          %s",
-            "-@@@@@@@@*          \033[36m&@@@@@@@=:\033[39m@-       %s Device:  %d",
-            "*@@@@@@@&           \033[36m&@@@@@@=:\033[39m@@*       Resolution:   %d x %d",
-            "&@@@@@@@+           \033[36m&@@@@@=:\033[39m@@@&       Time:         %s",
-            "@@@@@@@@:           \033[36m#&&&&=:\033[39m@@@@@       Terminal:     os_terminal",
-            "&@@@@@@@+            +@@@@@@@&        Kernel:       %s",
-            "*@@@@@@@@            @@@@@@@@*        Memory Usage:  %d%cB / %dMB",
-            "-@@@@@@@@*          #@@@@@@@@:        64-bit operating system, x86-based processor.",
-            " &@@@@@@@@*.      .#@@@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    \033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m",
-            "  =@@@@@@@@@*----*@@@@@@@@@-",
-            "   .#@@@@@@@@@@@@@@@@@@@#.",
-            "     .#@@@@@@@@@@@@@@@#. ",
-            "       =&@@@@@@@@@@@&-",
-            "          -*&@@@@@&+:"
+        "           -*&@@@@@@&*-                 ",
+        "       .&@@@@@@@@@@@@@.\033[36m*=&&&&&&#\033[39m        ",
+        "    =@@@@@@@@@@@@@@@:\033[36m+@@@@@@@@@=:\033[39m       ",
+        "  .@@@@@@@@@@@@@#.\033[36m:+@@@@@@@@@@@=:\033[39m       ",
+        " .@@@@@@@@@       \033[36m&@@@@@@@@@@@*\033[39m.@-      ",
+        " @@@@@@@@#        \033[36m&@@@@@@@@@*\033[39m.@@@&      ",
+        "@@@@@@@@:         \033[36m#&&&&&=*.\033[39m@@@@@@@      ",
+        "&@@@@@@@+                 +@@@@@@&      ",
+        "*@@@@@@@@               @@@@@@@@@*      ",
+        " .@@@@@@@@&:           @@@@@@@@@@       ",
+        "   &@@@@@@@@@--___--@@@@@@@@@&=:        ",
+        "     .#@@@@@@@@@@@@@@@@@@@@&:.          ",
+        "        =&@@@@@@@@@@@@@@@@*             ",
+        "           -@@@@@@@&+:                  "
     };
 
-    printk("%s\n", logo[0]);
-    printk("%s\n", logo[1]);
-    printk("%s\n", logo[2]);
-    printk(logo[3], cpu_num()); printk("\n");
-    printk(logo[4], cpu.model_name); printk("\n");
-    printk(logo[5], mcfg == NULL ? "PCI " : "PCIE", get_pci_num()); printk("\n");
-    printk(logo[6], framebuffer->width, framebuffer->height); printk("\n");
-    printk(logo[7], get_date_time()); printk("\n");
-    printk("%s\n", logo[8]);
-    printk(logo[9], KERNEL_NAME); printk("\n");
-    printk(logo[10], memory, unit, (int)(memory_size / 1024 / 1024)); printk("\n");
-
-    for (int i = 11; i < 18; i++) {
-        printk("%s\n", logo[i]);
-    }
-}
-
-static void sys_info3() {
-    cpu_t        cpu = get_cpu_info();
-    extern MCFG *mcfg;
-    uint32_t     bytes = get_all_memusage();
-    int          memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
-    char         unit = (bytes > 10485760) ? 'M' : 'K';
-
-    const char *logo[] = {
-            "          -*&@@@@@&*-          ",
-            "       =&@@@@@@@@@@@@@=\033[36m-----\033[39m    -----------------",
-            "     .&@@@@@@@@@@@@@@\033[36m+@@@@@:\033[39m    Name:         CoolPotOS",
-            "   .@@@@@@@@@*  \033[36m:+@@@@@@@@@.\033[39m    Processor:    %d",
-            "  &@@@@@@@@*    \033[36m:+@@@@@@@@@@&\033[39m   CPU:          %s",
-            " -@@@@@@@@       \033[36m&@@@@@@@@@-\033[39m    %s Device:  %d",
-            "*@@@@@@@&        \033[36m&@@@@@@@@@@*\033[39m   Resolution:   %d x %d",
-            "&@@@@@@@+        \033[36m&@@@@@@@@@&\033[39m    Time:         %s",
-            "@@@@@@@@@        \033[36m#&&&&@@@@@@\033[39m    Terminal:     os_terminal",
-            "&@@@@@@@+           +@@@@@@@&   Kernel:       %s",
-            "*@@@@@@@&           &@@@@@@@*   Memory Usage:  %d%cB / %dMB",
-            " -@@@@@@@@         @@@@@@@@-    64-bit operating system, x86-based processor.",
-            "  &@@@@@@@@*.     *@@@@@@@@&    \033[40m    \033[41m    \033[42m    \033[43m    \033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m",
-            "   .@@@@@@@@@**@@@@@@@@@@@.     ",
-            "     .&@@@@@@@@@@@@@@@@&.       ",
-            "       =&@@@@@@@@@@@@@=         ",
-            "          -*&@@@@@&*-           "
+    const char *info[] = {
+        "-----------------",
+        "Name: CoolPotOS",
+        "Processor: %d",
+        "CPU: %s",
+        "%s Device: %d",
+        "Resolution: %d x %d",
+        "Time: %s",
+        "Terminal: os_terminal",
+        "Kernel: %s",
+        "Memory Usage: %d%cB / %dMB",
+        "64-bit operating system, x86-based processor."
     };
 
-    printk("%s\n", logo[0]);
-    printk("%s\n", logo[1]);
-    printk("%s\n", logo[2]);
-    printk(logo[3], cpu_num()); printk("\n");
-    printk(logo[4], cpu.model_name); printk("\n");
-    printk(logo[5], mcfg == NULL ? "PCI " : "PCIE", get_pci_num()); printk("\n");
-    printk(logo[6], framebuffer->width, framebuffer->height); printk("\n");
-    printk(logo[7], get_date_time()); printk("\n");
-    printk("%s\n", logo[8]);
-    printk(logo[9], KERNEL_NAME); printk("\n");
-    printk(logo[10], memory, unit, (int)(memory_size / 1024 / 1024)); printk("\n");
-
-    for (int i = 11; i < 17; i++) {
-        printk("%s\n", logo[i]);
-    }
+    printk(logo[0]); printk(info[0]); printk("\n");
+    printk(logo[1]); printk(info[1]); printk("\n");
+    printk(logo[2]); printk(info[2], cpu_num()); printk("\n");
+    printk(logo[3]); printk(info[3], cpu.model_name); printk("\n");
+    printk(logo[4]); printk(info[4], pci_type, get_pci_num()); printk("\n");
+    printk(logo[5]); printk(info[5], framebuffer->width, framebuffer->height); printk("\n");
+    printk(logo[6]); printk(info[6], get_date_time()); printk("\n");
+    printk(logo[7]); printk(info[7]); printk("\n");
+    printk(logo[8]); printk(info[8], KERNEL_NAME); printk("\n");
+    printk(logo[9]); printk(info[9], memory_used, unit, memory_total); printk("\n");
+    printk(logo[10]); printk(info[10]); printk("\n");
+    printk(logo[11]); printk("\n");
+    printk(logo[12]); printk("\n");
+    printk(logo[13]); printk("\n");
 }
 
 static void print_help() {
