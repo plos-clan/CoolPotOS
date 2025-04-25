@@ -65,8 +65,6 @@ void terminal_puts(const char *msg) {
     }
 }
 
-#include "klog.h"
-
 void terminal_pty_writer(const uint8_t *data) {
     while (*data != '\0') {
         atom_push(temp_keyboard_buffer, *data);
