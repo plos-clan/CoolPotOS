@@ -65,8 +65,15 @@ target("kernel64")
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
     add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto", "-fpie")
     add_cflags("-Wno-unused-parameter","-Wno-unused-function")
-    add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-pie")
+    add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld")
+    --add_ldflags("-pie")
+    add_ldflags("-static")
 
+    add_cflags("-fsanitize=undefined")
+    add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
+    add_cflags("-fsanitize=implicit-integer-sign-change")
+    add_cflags("-fsanitize=shift")
+    add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
     add_cflags("-Dmalloc=_fuck_malloc", "-Dfree=_fuck_free", "-Drealloc=_fuck_realloc")
     add_ldflags("-Wl,--defsym=_real_malloc=malloc", "-Wl,--defsym=_real_free=free", "-Wl,--defsym=_real_realloc=realloc")
 
@@ -91,6 +98,7 @@ target("kernel64")
 
     add_links("alloc")
     add_links("os_terminal")
+    add_links("ubscan")
 
 target("iso64")
     set_kind("phony")
@@ -135,8 +143,9 @@ target("default_build")
             "-m","1024M",
             --"-no-reboot",
             --"-enable-kvm",
-            -- "-d", "in_asm,int",
-            -- "-d", "int",
+            --"-d", "in_asm,int",
+            --"-d", "int",
+            "-no-reboot",
             --"-S","-s",
             --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
             --"-device","nec-usb-xhci,id=xhci",

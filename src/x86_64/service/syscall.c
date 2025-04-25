@@ -1,6 +1,5 @@
 #include "syscall.h"
 #include "io.h"
-#include "keyboard.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
@@ -35,7 +34,6 @@ syscall_(abort) {
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]  = syscall_exit,
     [SYSCALL_ABORT] = syscall_abort,
-
 };
 
 registers_t *syscall_handle(registers_t *reg) {

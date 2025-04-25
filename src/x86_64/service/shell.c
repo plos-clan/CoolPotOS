@@ -325,7 +325,7 @@ static void luser(int argc, char **argv) {
           user_task->queue_index);
 }
 
-static void sys_info() {
+static void sys_info1() {
     cpu_t        cpu = get_cpu_info();
     extern MCFG *mcfg;
     uint32_t     bytes  = get_all_memusage();
@@ -353,6 +353,95 @@ static void sys_info() {
     printk("    .#@@@@@@@@@@@@@#.    \n");
     printk("      =&@@@@@@@@@&-      \n");
     printk("        -*&@@@&+:        \n");
+}
+
+static void sys_info() {
+    cpu_t        cpu = get_cpu_info();
+    extern MCFG *mcfg;
+    uint32_t     bytes = get_all_memusage();
+    int          memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    char         unit = (bytes > 10485760) ? 'M' : 'K';
+
+    const char *logo[] = {
+            "          -*&@@@@@&*-",
+            "       =&@@@@@@@@@@@:\033[36m-----\033[39m           -----------------",
+            "     .&@@@@@@@@@@@@:\033[36m+@@@@@:\033[39m          Name:         CoolPotOS",
+            "   .@@@@@@@@@@*     \033[36m:+@@@@@@@:\033[39m       Processor:    %d",
+            "  &@@@@@@@@         \033[36m:+@@@@@@@@:\033[39m        CPU:          %s",
+            "-@@@@@@@@*          \033[36m&@@@@@@@=:\033[39m@-       %s Device:  %d",
+            "*@@@@@@@&           \033[36m&@@@@@@=:\033[39m@@*       Resolution:   %d x %d",
+            "&@@@@@@@+           \033[36m&@@@@@=:\033[39m@@@&       Time:         %s",
+            "@@@@@@@@:           \033[36m#&&&&=:\033[39m@@@@@       Terminal:     os_terminal",
+            "&@@@@@@@+            +@@@@@@@&        Kernel:       %s",
+            "*@@@@@@@@            @@@@@@@@*        Memory Usage:  %d%cB / %dMB",
+            "-@@@@@@@@*          #@@@@@@@@:        64-bit operating system, x86-based processor.",
+            " &@@@@@@@@*.      .#@@@@@@@@&         \033[40m    \033[41m    \033[42m    \033[43m    \033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m",
+            "  =@@@@@@@@@*----*@@@@@@@@@-",
+            "   .#@@@@@@@@@@@@@@@@@@@#.",
+            "     .#@@@@@@@@@@@@@@@#. ",
+            "       =&@@@@@@@@@@@&-",
+            "          -*&@@@@@&+:"
+    };
+
+    printk("%s\n", logo[0]);
+    printk("%s\n", logo[1]);
+    printk("%s\n", logo[2]);
+    printk(logo[3], cpu_num()); printk("\n");
+    printk(logo[4], cpu.model_name); printk("\n");
+    printk(logo[5], mcfg == NULL ? "PCI " : "PCIE", get_pci_num()); printk("\n");
+    printk(logo[6], framebuffer->width, framebuffer->height); printk("\n");
+    printk(logo[7], get_date_time()); printk("\n");
+    printk("%s\n", logo[8]);
+    printk(logo[9], KERNEL_NAME); printk("\n");
+    printk(logo[10], memory, unit, (int)(memory_size / 1024 / 1024)); printk("\n");
+
+    for (int i = 11; i < 18; i++) {
+        printk("%s\n", logo[i]);
+    }
+}
+
+static void sys_info3() {
+    cpu_t        cpu = get_cpu_info();
+    extern MCFG *mcfg;
+    uint32_t     bytes = get_all_memusage();
+    int          memory = (bytes > 10485760) ? bytes / 1048576 : bytes / 1024;
+    char         unit = (bytes > 10485760) ? 'M' : 'K';
+
+    const char *logo[] = {
+            "          -*&@@@@@&*-          ",
+            "       =&@@@@@@@@@@@@@=\033[36m-----\033[39m    -----------------",
+            "     .&@@@@@@@@@@@@@@\033[36m+@@@@@:\033[39m    Name:         CoolPotOS",
+            "   .@@@@@@@@@*  \033[36m:+@@@@@@@@@.\033[39m    Processor:    %d",
+            "  &@@@@@@@@*    \033[36m:+@@@@@@@@@@&\033[39m   CPU:          %s",
+            " -@@@@@@@@       \033[36m&@@@@@@@@@-\033[39m    %s Device:  %d",
+            "*@@@@@@@&        \033[36m&@@@@@@@@@@*\033[39m   Resolution:   %d x %d",
+            "&@@@@@@@+        \033[36m&@@@@@@@@@&\033[39m    Time:         %s",
+            "@@@@@@@@@        \033[36m#&&&&@@@@@@\033[39m    Terminal:     os_terminal",
+            "&@@@@@@@+           +@@@@@@@&   Kernel:       %s",
+            "*@@@@@@@&           &@@@@@@@*   Memory Usage:  %d%cB / %dMB",
+            " -@@@@@@@@         @@@@@@@@-    64-bit operating system, x86-based processor.",
+            "  &@@@@@@@@*.     *@@@@@@@@&    \033[40m    \033[41m    \033[42m    \033[43m    \033[44m    \033[45m    \033[46m    \033[47m    \033[49m    \033[0m",
+            "   .@@@@@@@@@**@@@@@@@@@@@.     ",
+            "     .&@@@@@@@@@@@@@@@@&.       ",
+            "       =&@@@@@@@@@@@@@=         ",
+            "          -*&@@@@@&*-           "
+    };
+
+    printk("%s\n", logo[0]);
+    printk("%s\n", logo[1]);
+    printk("%s\n", logo[2]);
+    printk(logo[3], cpu_num()); printk("\n");
+    printk(logo[4], cpu.model_name); printk("\n");
+    printk(logo[5], mcfg == NULL ? "PCI " : "PCIE", get_pci_num()); printk("\n");
+    printk(logo[6], framebuffer->width, framebuffer->height); printk("\n");
+    printk(logo[7], get_date_time()); printk("\n");
+    printk("%s\n", logo[8]);
+    printk(logo[9], KERNEL_NAME); printk("\n");
+    printk(logo[10], memory, unit, (int)(memory_size / 1024 / 1024)); printk("\n");
+
+    for (int i = 11; i < 17; i++) {
+        printk("%s\n", logo[i]);
+    }
 }
 
 static void print_help() {
