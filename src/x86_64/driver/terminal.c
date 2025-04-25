@@ -9,6 +9,9 @@ atom_queue *output_buffer;
 bool        open_flush = false;
 spin_t      terminal_lock;
 
+// temporary alternative to handle unsupported keys
+atom_queue *temp_keyboard_buffer;
+
 static void setup_cpos_default() {
     TerminalPalette palette = {
         .background = 0x0d0d1a,
@@ -62,9 +65,11 @@ void terminal_puts(const char *msg) {
     }
 }
 
+#include "klog.h"
+
 void terminal_pty_writer(const uint8_t *data) {
     while (*data != '\0') {
-        atom_push(output_buffer, *data);
+        atom_push(temp_keyboard_buffer, *data);
         data++;
     }
 }
@@ -93,5 +98,6 @@ void init_terminal() {
     terminal_set_scroll_speed(3);
     terminal_set_pty_writer(terminal_pty_writer);
     setup_cpos_default();
-    output_buffer = create_atom_queue(2048);
+    output_buffer        = create_atom_queue(2048);
+    temp_keyboard_buffer = create_atom_queue(256);
 }
