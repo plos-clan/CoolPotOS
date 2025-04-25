@@ -39,6 +39,10 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     send_eoi();
+
+    // temporary alternative to handle unsupported keys
+    terminal_handle_keyboard(scancode);
+
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
     }
@@ -76,9 +80,6 @@ int input_char_inSM() {
     } while (i == -1);
     task->parent_group->tty->is_key_wait = false;
     task->status                         = RUNNING;
-
-    // terminal_handle_keyboard(i);
-    // return -1;
 
     return i;
 }

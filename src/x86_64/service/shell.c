@@ -532,7 +532,14 @@ int find_cmd(uint8_t *cmd) {
 }
 
 static int plreadln_getch(void) {
-    char ch = getc();
+    char ch;
+
+    // temporary alternative to handle unsupported keys
+    extern atom_queue *temp_keyboard_buffer;
+    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
+        __asm__ volatile("pause");
+    }
+
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
     if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
     if (ch == 0x9) { return PL_READLINE_KEY_TAB; }
