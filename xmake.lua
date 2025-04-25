@@ -1,6 +1,5 @@
 set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
---add_requires("zig","nasm") --编译 i386 时候需要解开这条语句的注释
 set_optimize("fastest")
 set_languages("c23")
 set_warnings("all", "extra")
@@ -9,7 +8,6 @@ set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
 
 target("kernel32")
-
     set_arch("i386")
     set_kind("binary")
     set_toolchains("@zig", "nasm")
@@ -65,17 +63,17 @@ target("kernel64")
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
     add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto", "-fpie")
     add_cflags("-Wno-unused-parameter","-Wno-unused-function")
-    add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld")
-    --add_ldflags("-pie")
-    add_ldflags("-static")
+    add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-static")
 
     add_cflags("-fsanitize=undefined")
-    add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
-    add_cflags("-fsanitize=implicit-integer-sign-change")
-    add_cflags("-fsanitize=shift")
-    add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
+    --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
+    --add_cflags("-fsanitize=implicit-integer-sign-change")
+    --add_cflags("-fsanitize=shift")
+    --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
+    add_ldflags("-Wl,--defsym=_real_malloc=malloc")
+    add_ldflags("-Wl,--defsym=_real_free=free")
+    add_ldflags("-Wl,--defsym=_real_realloc=realloc")
     add_cflags("-Dmalloc=_fuck_malloc", "-Dfree=_fuck_free", "-Drealloc=_fuck_realloc")
-    add_ldflags("-Wl,--defsym=_real_malloc=malloc", "-Wl,--defsym=_real_free=free", "-Wl,--defsym=_real_realloc=realloc")
 
     add_files("src/x86_64/**/*.c")
     add_files("src/x86_64/**/*.S")
@@ -90,15 +88,15 @@ target("kernel64")
     end)
 
     add_linkdirs("libs/x86_64")
+    add_links("alloc")
+    add_links("os_terminal")
+    add_links("ubscan")
+
     add_includedirs("libs/x86_64")
     add_includedirs("src/x86_64/include")
     add_includedirs("src/x86_64/include/types")
     add_includedirs("src/x86_64/include/iic")
     add_ldflags("-T src/x86_64/linker.ld")
-
-    add_links("alloc")
-    add_links("os_terminal")
-    add_links("ubscan")
 
 target("iso64")
     set_kind("phony")
@@ -126,26 +124,51 @@ target("iso64")
         print("ISO image created at: %s", iso_file)
     end)
 
-target("default_build")
+target("run32")
+    set_kind("phony")
+    add_deps("iso32")
+    set_default(false)
+
+    on_run(function (target)
+        import("core.project.config")
+        local flags = {
+            "-serial", "stdio",
+            "-m", "4096",
+            "-audiodev", "pa,id=speaker",
+            "-machine", "pcspk-audiodev=speaker",
+            "-vga", "std",
+            "-global", "VGA.vgamem_mb=32",
+            "-net", "nic,model=pcnet",
+            "-net", "user",
+            "-enable-kvm",
+            "-device", "sb16,audiodev=speaker",
+            "-device", "intel-hda",
+            "-device", "hda-micro,audiodev=speaker",
+            "-device", "ahci,id=ahci",
+            "-drive", "file=./disk.qcow2,if=none,id=disk0",
+            "-device", "ide-hd,bus=ahci.0,drive=disk0",
+            "-cdrom", config.buildir() .. "/CoolPotOS.iso"
+        }
+        os.execv("qemu-system-i386", flags)
+    end)
+
+target("run64")
     set_kind("phony")
     add_deps("iso64")
-    --add_deps("iso32")
     set_default(true)
 
     on_run(function (target)
         import("core.project.config")
-        -- x86_64 xmake run
         local flags = {
             "-M", "q35",
             "-cpu", "qemu64,+x2apic",
             "-smp", "4",
             "-serial", "stdio",
             "-m","1024M",
-            --"-no-reboot",
-            --"-enable-kvm",
-            --"-d", "in_asm,int",
-            --"-d", "int",
             "-no-reboot",
+            --"-enable-kvm",
+            --"-d", "int",
+            --"-d", "in_asm,int",
             --"-S","-s",
             --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
             --"-device","nec-usb-xhci,id=xhci",
@@ -159,17 +182,4 @@ target("default_build")
             "-audiodev", "sdl,id=audio0", "-device", "sb16,audiodev=audio0",
         }
         os.execv("qemu-system-x86_64 " , flags)
-       -- os.execv("echo " , flags)
-
-        -- i386 xmake run
-        -- local misc = "-serial stdio -m 4096"
-        -- local speaker = " -audiodev pa,id=speaker -machine pcspk-audiodev=speaker "
-        -- local ahci = "-device ahci,id=ahci -drive file=./disk.qcow2,if=none,id=disk0 -device ide-hd,bus=ahci.0,drive=disk0"
-        -- local kvm = " -enable-kvm"
-        -- local vga = " -vga std -global VGA.vgamem_mb=32 "
-        -- local net = " -net nic,model=pcnet -net user "
-        -- local audio = " -device sb16,audiodev=speaker -device intel-hda -device hda-micro,audiodev=speaker "
-        -- local flags = misc..speaker..vga..net..kvm..audio
-
-        -- os.exec("qemu-system-i386 -cdrom $(buildir)/CoolPotOS.iso %s", flags)
     end)
