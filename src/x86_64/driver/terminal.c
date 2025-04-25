@@ -62,6 +62,13 @@ void terminal_puts(const char *msg) {
     }
 }
 
+void terminal_pty_writer(const uint8_t *data) {
+    while (*data != '\0') {
+        atom_push(output_buffer, *data);
+        data++;
+    }
+}
+
 void init_terminal() {
     TerminalDisplay display = {.width            = framebuffer->width,
                                .height           = framebuffer->height,
@@ -80,9 +87,11 @@ void init_terminal() {
     //        logkf("Error: no default terminal font.\n");
     //        cpu_hlt;
     //    }
+
     terminal_init(&display, size, malloc, free);
     terminal_set_crnl_mapping(true);
     terminal_set_scroll_speed(3);
+    terminal_set_pty_writer(terminal_pty_writer);
     setup_cpos_default();
     output_buffer = create_atom_queue(2048);
 }
