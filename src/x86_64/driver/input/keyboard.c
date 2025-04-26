@@ -1,17 +1,19 @@
 #include "keyboard.h"
 #include "io.h"
 #include "isr.h"
-#include "klog.h"
+#include "ipc.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "os_terminal.h"
 #include "pcb.h"
 #include "smp.h"
+#include "heap.h"
 
 static int   caps_lock, shift, ctrl = 0;
 spin_t       keyboard_lock;
 extern tcb_t kernel_head_task;
+extern lock_queue *pgb_queue;
 
 char keytable[0x54] = { // 按下Shift
     0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
@@ -28,10 +30,14 @@ char keytable1[0x54] = { // 未按下Shift
     0,   0,    0,   '7', '8', '9', '-',  '4', '5', '6',  '+', '1', '2', '3', '0',  '.'};
 
 static void key_callback(void *pcb_handle, void *scan_handle) {
-    tcb_t   cur      = (tcb_t)pcb_handle;
+    pcb_t pcb = (pcb_t)pcb_handle;
+    if(pcb->status == DEATH) return;
     uint8_t scancode = *((uint8_t *)scan_handle);
-    if (cur->status == DEATH) return;
-    queue_enqueue(cur->parent_group->tty->keyboard_buffer, (void *)scancode);
+    ipc_message_t message = (ipc_message_t) malloc(sizeof(struct ipc_message));
+    message->type = IPC_MSG_TYPE_KEYBOARD;
+    message->pid  = pcb->pgb_id;
+    message->data[0] = scancode;
+    ipc_send(pcb, message);
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
@@ -60,10 +66,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     }
 
     if (scancode < 0x80 || scancode == 0xe0) {
-        for (size_t i = 0; i < MAX_CPU; i++) {
-            smp_cpu_t cpu = smp_cpus[i];
-            if (cpu.ready == 1) { queue_iterate(cpu.scheduler_queue, key_callback, &scancode); }
-        }
+        queue_iterate(pgb_queue, key_callback, &scancode);
     }
     spin_unlock(keyboard_lock);
 }
@@ -74,13 +77,11 @@ int input_char_inSM() {
     if (task == NULL) return 0;
     task->status                         = WAIT;
     task->parent_group->tty->is_key_wait = true;
-    do {
-        i = (int)queue_dequeue(task->parent_group->tty->keyboard_buffer);
-        __asm__ volatile("pause");
-    } while (i == -1);
+    ipc_message_t message = ipc_recv_wait(IPC_MSG_TYPE_KEYBOARD);
+    i = message->data[0];
+    free(message);
     task->parent_group->tty->is_key_wait = false;
     task->status                         = RUNNING;
-
     return i;
 }
 
