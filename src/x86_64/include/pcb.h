@@ -34,6 +34,7 @@ struct process_control_block {
     lock_queue       *pcb_queue;   // 线程队列
     size_t            queue_index; // 进程队列索引
     size_t            death_index; // 死亡队列索引
+    lock_queue       *ipc_queue;   // 进程消息队列
     page_directory_t *page_dir;    // 进程页表
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备

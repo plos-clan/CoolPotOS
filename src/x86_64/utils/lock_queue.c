@@ -97,7 +97,7 @@ void *queue_remove_at(lock_queue *q, size_t index) {
 }
 
 void *queue_dequeue(lock_queue *q) {
-    spin_trylock(q->lock);
+    spin_lock(q->lock);
     if (!q->head) {
         spin_unlock(q->lock);
         return NULL;

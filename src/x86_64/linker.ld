@@ -13,7 +13,6 @@ PHDRS {
 }
 
 SECTIONS {
-    /*. = ALIGN(4096);*/
     . = 0xffffffff80000000;
 
     .limine_requests : ALIGN(8) {
