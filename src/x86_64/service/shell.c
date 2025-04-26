@@ -1,10 +1,5 @@
-/**
- * Feature Shell version 1.0.0beta
- * By linzhichen114
- * GOD BLESS - NOT CRASH
- */
-
 #include "shell.h"
+#include "atom_queue.h"
 #include "cpuid.h"
 #include "cpusp.h"
 #include "dlinker.h"
@@ -18,11 +13,9 @@
 #include "module.h"
 #include "pcb.h"
 #include "pci.h"
+#include "pl_readline.h"
 #include "scheduler.h"
 #include "smp.h"
-#include "sprintf.h"
-#include "atom_queue.h"
-#include "pl_readline.h"
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
@@ -111,7 +104,7 @@ static void mkdir(int argc, char **argv) {
         return;
     }
     char *buf_h = com_copy + 6;
-    char bufx[100];
+    char  bufx[100];
     if (buf_h[0] != '/') {
         if (!strcmp(shell_work_path, "/"))
             sprintf(bufx, "/%s", buf_h);
@@ -195,7 +188,7 @@ static void ls(int argc, char **argv) {
         p = vfs_open(shell_work_path);
     } else {
         char *buf_h = com_copy + 3;
-        char bufx[100];
+        char  bufx[100];
         if (buf_h[0] != '/') {
             if (!strcmp(shell_work_path, "/"))
                 sprintf(bufx, "/%s", buf_h);
@@ -562,7 +555,7 @@ static void plreadln_flush(void) {
 _Noreturn void shell_setup() {
     printk("Welcome to CoolPotOS (%s)!\n"
            " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
-           " * Website:           https://github.com/plos-clan\n"
+           " * Website:           https://cpos.plos-clan.org\n"
            " System information as of %s \n"
            "  Tasks:              %d\n"
            "  Logged:             %s\n"
@@ -590,7 +583,8 @@ _Noreturn void shell_setup() {
         if (argc == -1) {
             kerror("shell: number of arguments exceed MAX_ARG_NR(30)");
             continue;
-        } else if (argc == 0) {
+        }
+        if (argc == 0) {
             continue;
         }
 
@@ -603,67 +597,4 @@ _Noreturn void shell_setup() {
     }
 
     pl_readline_uninit(pl);
-
-    // char *line      = malloc(MAX_COMMAND_LEN);
-    // shell_work_path = malloc(1024);
-    // not_null_assets(shell_work_path, "work path null");
-    // memset(shell_work_path, 0, 1024);
-    // shell_work_path[0] = '/';
-
-    // infinite_loop {
-    //     printk("\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s> ", tcb->parent_group->user->name,
-    //            shell_work_path);
-    //     if (gets(line, MAX_COMMAND_LEN) <= 0) continue;
-    //     memset(com_copy, 0, 100);
-    //     strcpy(com_copy, line);
-    //     trim(line);
-    //     int    argc;
-    //     char **argv = split_by_space(line, &argc);
-    //     if (argc == 0) {
-    //         free(argv);
-    //         continue;
-    //     }
-
-    //     if (!strcmp("help", argv[0]) || !strcmp("?", argv[0]) || !strcmp("h", argv[0])) {
-    //         print_help();
-    //     } else if (!strcmp("shutdown", argv[0]) || !strcmp("exit", argv[0]))
-    //         cp_shutdown();
-    //     else if (!strcmp("reboot", argv[0]))
-    //         cp_reset();
-    //     else if (!strcmp("clear", argv[0]))
-    //         printk("\033[H\033[2J\033[3J");
-    //     else if (!strcmp("lspci", argv[0]))
-    //         lspci();
-    //     else if (!strcmp("sysinfo", argv[0]))
-    //         sys_info();
-    //     else if (!strcmp("ps", argv[0]))
-    //         ps(argc, argv);
-    //     else if (!strcmp("pkill", argv[0]))
-    //         pkill(argc, argv);
-    //     else if (!strcmp("cd", argv[0]))
-    //         cd(argc, argv);
-    //     else if (!strcmp("mkdir", argv[0]))
-    //         mkdir(argc, argv);
-    //     else if (!strcmp("ls", argv[0]))
-    //         ls(argc, argv);
-    //     else if (!strcmp("echo", argv[0]))
-    //         echo(argc, argv);
-    //     else if (!strcmp("mount", argv[0]))
-    //         mount(argc, argv);
-    //     else if (!strcmp("lmod", argv[0]))
-    //         lmod(argc, argv);
-    //     else if (!strcmp("luser", argv[0]))
-    //         luser(argc, argv);
-    //     else if (!strcmp("test", argv[0])) {
-    //         for (int i = 0; i < 100; ++i) {
-    //             printk("count: %d\n", i);
-    //         }
-    //     } else {
-    //         kerror("\033[31mshell: command `%s' not found\033[39m\n", com_copy);
-    //     }
-    //     for (int i = 0; i < argc; i++) {
-    //         free(argv[i]);
-    //     }
-    //     free(argv);
-    // }
 }
