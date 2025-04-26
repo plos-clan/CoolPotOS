@@ -20,7 +20,7 @@
 #include "pci.h"
 #include "scheduler.h"
 #include "smp.h"
-// #include "sprintk.h"
+#include "sprintf.h"
 #include "atom_queue.h"
 #include "pl_readline.h"
 #include "sprintf.h"
@@ -93,14 +93,14 @@ static void cd(int argc, char **argv) {
     if (s[0] == '/') {
         strcpy(shell_work_path, s);
     } else {
-        // if (streq(shell_work_path, "/"))
-        //     sprintk(shell_work_path, "%s%s", shell_work_path, s);
-        // else
-        //     sprintk(shell_work_path, "%s/%s", shell_work_path, s);
+        if (streq(shell_work_path, "/"))
+            sprintf(shell_work_path, "%s%s", shell_work_path, s);
+        else
+            sprintf(shell_work_path, "%s/%s", shell_work_path, s);
     }
     if (vfs_open(shell_work_path) == NULL) {
         printk("cd: %s: No such directory\n", s);
-        // sprintk(shell_work_path, "%s", old);
+        sprintf(shell_work_path, "%s", old);
         free(old);
     }
 }
@@ -110,15 +110,15 @@ static void mkdir(int argc, char **argv) {
         printk("[Shell-MKDIR]: If there are too few parameters.\n");
         return;
     }
-    // char *buf_h = com_copy + 6;
+    char *buf_h = com_copy + 6;
     char bufx[100];
-    // if (buf_h[0] != '/') {
-    //     if (!strcmp(shell_work_path, "/"))
-    //         sprintk(bufx, "/%s", buf_h);
-    //     else
-    //         sprintk(bufx, "%s/%s", shell_work_path, buf_h);
-    // } else
-    //     sprintk(bufx, "%s", buf_h);
+    if (buf_h[0] != '/') {
+        if (!strcmp(shell_work_path, "/"))
+            sprintf(bufx, "/%s", buf_h);
+        else
+            sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+    } else
+        sprintf(bufx, "%s", buf_h);
     if (vfs_mkdir(bufx) == -1) { printk("Failed create directory [%s].\n", argv[1]); }
 }
 
@@ -194,15 +194,15 @@ static void ls(int argc, char **argv) {
     if (argc == 1) {
         p = vfs_open(shell_work_path);
     } else {
-        // char *buf_h = com_copy + 3;
+        char *buf_h = com_copy + 3;
         char bufx[100];
-        // if (buf_h[0] != '/') {
-        //     if (!strcmp(shell_work_path, "/"))
-        //         sprintk(bufx, "/%s", buf_h);
-        //     else
-        //         sprintk(bufx, "%s/%s", shell_work_path, buf_h);
-        // } else
-        //     sprintk(bufx, "%s", buf_h);
+        if (buf_h[0] != '/') {
+            if (!strcmp(shell_work_path, "/"))
+                sprintf(bufx, "/%s", buf_h);
+            else
+                sprintf(bufx, "%s/%s", shell_work_path, buf_h);
+        } else
+            sprintf(bufx, "%s", buf_h);
         p = vfs_open(bufx);
     }
     if (p == NULL) {
