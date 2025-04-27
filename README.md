@@ -1,13 +1,9 @@
 <div align="center">
-  
-  <img height="200px"
-    src="https://github.com/user-attachments/assets/9542ad95-0f48-43ad-9617-a750db84e907"
-   alt=""/>     
-  <h1 align="center">CoolPotOS</h1>
+<img height="200px" src="https://github.com/user-attachments/assets/9542ad95-0f48-43ad-9617-a750db84e907" />
 
-### A simple toy operating system.
+<h1 align="center">CoolPotOS</h1>
+<h3>A simple toy operating system.</h3>
 
-<div align="center">
 <img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
 <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
@@ -15,9 +11,7 @@
 <img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
 </div>
 
-</div>
-
-<hr>
+---
 
 Languages
 : *English*
@@ -37,29 +31,24 @@ This is a simple operating system for [ia32](https://en.wikipedia.org/wiki/IA-32
 
 ## Build & Run
 
-### Environment
-
 You need to install them on your computer:
 
-- Xmake
-- NASM (only i386)
-- Zig (you need clang for x86_64)
-- Windows subsystem for Linux (Ubuntu 22.04)
-  - xorriso
-  - qemu-system-i386 / qemu-system-x86_64
+- xmake
+- xorriso
+- QEMU
+- NASM (i386 only)
+- Zig (i386 only, auto installed by xmake)
+- git (x86_64 only, for `GIT_VERSION` macro)
+- clang (x86_64 only)
+- lld (x86_64 only, for linking LTO objects)
 
-### Steps
+### i386
 
-#### i386
+Run `xmake run iso32` then it will build and run automatically.
 
-In the build target default_build of xmake.lua, comment out add_deps("iso64") and uncomment add_deps("iso32").
-Also, comment out the run arguments for `xmake run x86_64` and uncomment the run arguments for `xmake run i386`.
+### x86_64
 
-Run `xmake run` on your terminal then it will build and run automatically
-
-#### x86_64
-
-Run `xmake run` on your terminal then it will build and run automatically
+Run `xmake run iso64` then it will build and run automatically.
 
 ## License
 
