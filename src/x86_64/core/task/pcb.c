@@ -10,6 +10,7 @@
 #include "smp.h"
 #include "sprintf.h"
 #include "timer.h"
+#include "vfs.h"
 
 extern tcb_t  kernel_head_task;
 spin_t        pcb_lock;
@@ -75,6 +76,14 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue, pcb->queue_index);
 
+    do{
+        vfs_node_t node = (vfs_node_t) queue_dequeue(pcb->file_open);
+        if (node == NULL) break;
+        vfs_free(node);
+    } while (true);
+    queue_destroy(pcb->file_open);
+    queue_destroy(pcb->ipc_queue);
+
     free_tty(pcb->tty);
     free_page_directory(pcb->page_dir);
     free(pcb);
@@ -130,6 +139,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->pcb_queue   = queue_init();
     new_pgb->pid_index   = 0;
     new_pgb->ipc_queue   = queue_init();
+    new_pgb->file_open   = queue_init();
     new_pgb->tty         = alloc_default_tty();
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
