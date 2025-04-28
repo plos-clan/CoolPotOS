@@ -35,16 +35,13 @@ void switch_to_user_mode(uint64_t func) {
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
 
-    __asm__ volatile("pushq %5\n" // SS
+    __asm__ volatile("mov %0, %%es\n"
+                     "mov %0, %%ds\n"
+                     "pushq %5\n" // SS
                      "pushq %1\n" // RSP
                      "pushq %2\n" // RFLAGS
                      "pushq %3\n" // CS
                      "pushq %4\n" // RIP
-
-                     "mov %0, %%gs\n"
-                     "mov %0, %%fs\n"
-                     "mov %0, %%es\n"
-                     "mov %0, %%ds\n"
                      "iretq\n"
                      :
                      : "r"((uint64_t)GET_SEL(4 * 8, SA_RPL3)), "r"(rsp),
