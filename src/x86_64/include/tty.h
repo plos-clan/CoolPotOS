@@ -9,7 +9,6 @@ typedef struct tty_virtual_device {
 
     uint64_t volatile *video_ram; // 显存基址
     uint64_t           width, height;
-    lock_queue        *keyboard_buffer;
     bool               is_key_wait; // 是否等待键盘输入
 } tty_t;
 

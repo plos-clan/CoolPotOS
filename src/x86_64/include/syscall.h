@@ -6,6 +6,8 @@
 #define MSR_SYSCALL_MASK 0xC0000084
 
 #define MAX_SYSCALLS 256
+#define SYSCALL_SUCCESS 0
+#define SYSCALL_FAULT (-1)
 
 #define syscall_(name)                                                                             \
     uint64_t syscall_##name(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,            \
@@ -14,6 +16,10 @@
 // plos-clan 通用系统调用编号定义
 #define SYSCALL_EXIT  0
 #define SYSCALL_ABORT 1
+#define SYSCALL_OPEN 8
+#define SYSCALL_CLOSE 9
+#define SYSCALL_READ 10
+#define SYSCALL_WRITE 12
 
 #include "ctype.h"
 

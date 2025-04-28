@@ -44,14 +44,14 @@ size_t lock_queue_enqueue(lock_queue *q, void *data);
  * 删除指定索引的节点
  * @param q 队列
  * @param index 索引
- * @return 被删除节点的句柄
+ * @return == NULL ? 找不到节点 : 被删除节点的句柄
  */
 void *queue_remove_at(lock_queue *q, size_t index);
 
 /**
  * 出队操作
  * @param q 队列
- * @return 该节点存储的句柄
+ * @return == NULL ? 未找到 : 该节点存储的句柄
  */
 void *queue_dequeue(lock_queue *q);
 
@@ -68,6 +68,14 @@ void queue_destroy(lock_queue *q);
  * @param argument 回调函数传入的参数
  */
 void queue_iterate(lock_queue *q, void (*callback)(void *, void *), void *argument);
+
+/**
+ * 获取指定索引的节点
+ * @param q
+ * @param index
+ * @return == NULL ? 未找到 : 该节点存储的句柄
+ */
+void *queue_get(lock_queue *q,size_t index);
 
 /**
  * 迭代宏
