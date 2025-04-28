@@ -70,6 +70,22 @@ size_t queue_enqueue(lock_queue *q, void *data) {
     return new_node->index;
 }
 
+void *queue_get(lock_queue *q,size_t index){
+    if (q == NULL) return NULL;
+    spin_lock(q->lock);
+    lock_node *current = q->head;
+
+    while (current != NULL) {
+        if (current->index == index) {
+            spin_unlock(q->lock);
+            return current->data;
+        }
+        current = current->next;
+    }
+    spin_unlock(q->lock);
+    return NULL;
+}
+
 void *queue_remove_at(lock_queue *q, size_t index) {
     if (q == NULL) return NULL;
     spin_lock(q->lock);
@@ -84,10 +100,11 @@ void *queue_remove_at(lock_queue *q, size_t index) {
             } else {
                 previous->next = current->next;
             }
+            void *handle = current->data;
             free(current);
             q->size--;
             spin_unlock(q->lock);
-            return NULL;
+            return handle;
         }
         previous = current;
         current  = current->next;
