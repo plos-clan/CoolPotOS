@@ -23,7 +23,7 @@ extern void save_registers(); // switch.S
 void nsleep(uint64_t nano) {
     uint64_t targetTime = nanoTime();
     uint64_t after      = 0;
-    infinite_loop {
+    loop {
         uint64_t n = nanoTime();
         if (n < targetTime) {
             after      += 0xffffffff - targetTime + n;

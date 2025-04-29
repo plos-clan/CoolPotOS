@@ -5,10 +5,6 @@
 #define close_interrupt __asm__ volatile("cli" ::: "memory")
 #define open_interrupt  __asm__ volatile("sti" ::: "memory")
 
-static inline void io_out8(uint16_t port, uint8_t data) {
-    __asm__ volatile("outb %b0, %w1" : : "a"(data), "Nd"(port));
-}
-
 static inline uint8_t io_in8(uint16_t port) {
     uint8_t data;
     __asm__ volatile("inb %w1, %b0" : "=a"(data) : "Nd"(port));
@@ -21,32 +17,45 @@ static inline uint16_t io_in16(uint16_t port) {
     return data;
 }
 
-static inline void io_out16(uint16_t port, uint16_t data) {
-    __asm__ volatile("outw %w0, %w1" : : "a"(data), "Nd"(port));
-}
-
 static inline uint32_t io_in32(uint16_t port) {
     uint32_t data;
     __asm__ volatile("inl %1, %0" : "=a"(data) : "Nd"(port));
     return data;
 }
 
+static inline void insl(uint32_t port, uint32_t *addr, int cnt) {
+    __asm__ volatile("cld\n\t"
+                     "repne\n\t"
+                     "insl\n\t"
+                     : "=D"(addr), "=c"(cnt)
+                     : "d"(port), "0"(addr), "1"(cnt)
+                     : "memory", "cc");
+}
+
+static inline void io_out8(uint16_t port, uint8_t data) {
+    __asm__ volatile("outb %b0, %w1" : : "a"(data), "Nd"(port));
+}
+
+static inline void io_out16(uint16_t port, uint16_t data) {
+    __asm__ volatile("outw %w0, %w1" : : "a"(data), "Nd"(port));
+}
+
 static inline void io_out32(uint16_t port, uint32_t data) {
     __asm__ volatile("outl %0, %1" : : "a"(data), "Nd"(port));
 }
 
-static inline void flush_tlb(uint64_t addr) {
-    __asm__ volatile("invlpg (%0)" ::"r"(addr) : "memory");
+static inline uint32_t mmio_read32(void *addr) {
+    return *(volatile uint32_t *)addr;
+}
+
+static inline void mmio_write32(uint32_t *addr, uint32_t data) {
+    *(volatile uint32_t *)addr = data;
 }
 
 static inline uint64_t get_cr0(void) {
     uint64_t cr0;
     __asm__ volatile("mov %%cr0, %0" : "=r"(cr0));
     return cr0;
-}
-
-static inline void set_cr0(uint64_t cr0) {
-    __asm__ volatile("mov %0, %%cr0" : : "r"(cr0));
 }
 
 static inline uint64_t get_cr3(void) {
@@ -71,30 +80,13 @@ static inline uint64_t get_rflags() {
     return rflags;
 }
 
-static inline void insl(uint32_t port, uint32_t *addr, int cnt) {
-    __asm__ volatile("cld\n\t"
-                     "repne\n\t"
-                     "insl\n\t"
-                     : "=D"(addr), "=c"(cnt)
-                     : "d"(port), "0"(addr), "1"(cnt)
-                     : "memory", "cc");
+static inline void set_cr0(uint64_t cr0) {
+    __asm__ volatile("mov %0, %%cr0" : : "r"(cr0));
 }
 
-static inline void mmio_write32(uint32_t *addr, uint32_t data) {
-    *(volatile uint32_t *)addr = data;
+static inline void flush_tlb(uint64_t addr) {
+    __asm__ volatile("invlpg (%0)" ::"r"(addr) : "memory");
 }
-
-static inline uint32_t mmio_read32(void *addr) {
-    return *(volatile uint32_t *)addr;
-}
-
-//static inline uint64_t mmio_read64(void *addr) {
-//    return *(volatile uint64_t *)addr;
-//}
-//
-//static inline void mmio_write64(void *addr, uint64_t data) {
-//    *(volatile uint64_t *)addr = data;
-//}
 
 static inline uint64_t rdmsr(uint32_t msr) {
     uint32_t eax, edx;
@@ -124,21 +116,11 @@ static void store(uint64_t *addr, uint32_t value) {
                      : "memory");
 }
 
-//static bool load_bool(bool *addr) {
-//    uint8_t ret = 0;
-//    uint8_t *addr_byte = (uint8_t*)addr;
-//    __asm__ volatile("lock xaddb %[ret], %[addr];"
-//            : [addr] "+m"(*addr_byte), [ret] "+r"(ret)
-//    :
-//    : "memory");
-//    return (bool)ret;
-//}
-//
-//static void store_bool(bool* addr, bool value) {
-//    uint8_t val_byte = value ? 1 : 0;
-//    uint8_t* addr_byte = (uint8_t*)addr;
-//    __asm__ volatile("lock xchgb %[value], %[addr];"
-//            : [addr] "+m"(*addr_byte), [value] "+q"(val_byte)
-//    :
-//    : "memory");
-//}
+static bool cas(uint64_t *addr, uint64_t exp, uint64_t upd) {
+    uint8_t ret = 0;
+    __asm__ volatile("lock cmpxchg %[upd], %[addr];"
+                     : [addr] "+m"(*addr), [upd] "+r"(upd), [ret] "+r"(ret)
+                     : "a"(exp)
+                     : "memory");
+    return (bool)ret;
+}

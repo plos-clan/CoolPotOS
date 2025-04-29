@@ -11,7 +11,7 @@ typedef ssize_t         isize;
 
 typedef void (*free_t)(void *ptr);
 
-#define infinite_loop while (true)
+#define loop while (true)
 
 #define __attr(...) __attribute__((__VA_ARGS__))
 #define __wur       __attribute__((warn_unused_result))

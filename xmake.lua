@@ -44,7 +44,7 @@ target("iso32")
         os.cp("assets", iso_dir)
 
         local kernel = project.target("kernel32")
-        os.cp(kernel:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
+        os.cp(kernel:targetfile(), iso_dir .. "/cposkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         local xorriso_flags = "-b limine-bios-cd.bin -no-emul-boot -boot-info-table"
@@ -65,7 +65,7 @@ target("kernel64")
     add_cflags("-Wno-unused-parameter","-Wno-unused-function")
     add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-static")
 
-    --add_cflags("-fsanitize=undefined")
+    add_cflags("-fsanitize=undefined")
     --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
     --add_cflags("-fsanitize=implicit-integer-sign-change")
     --add_cflags("-fsanitize=shift")
@@ -90,7 +90,7 @@ target("kernel64")
     add_linkdirs("libs/x86_64")
     add_links("alloc")
     add_links("os_terminal")
-    --add_links("ubscan")
+    add_links("ubscan")
     add_links("plreadln")
 
     add_includedirs("libs/x86_64")
@@ -108,12 +108,12 @@ target("iso64")
         import("core.project.project")
 
         local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/sys", iso_dir .. "/sys")
+        os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
         os.cp("assets/limine.conf", iso_dir .. "/limine.conf")
         os.cp("assets/limine-uefi-cd.bin", iso_dir .. "/limine-uefi-cd.bin")
 
         local target = project.target("kernel64")
-        os.cp(target:targetfile(), iso_dir .. "/sys/cpkrnl.elf")
+        os.cp(target:targetfile(), iso_dir .. "/cposkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         os.run("xorriso -as mkisofs -efi-boot-part --efi-boot-image --protective-msdos-label " ..

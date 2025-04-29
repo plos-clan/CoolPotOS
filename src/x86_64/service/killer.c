@@ -6,7 +6,7 @@
 lock_queue *death_proc_queue; // 死亡进程队列
 
 _Noreturn void halt_service() {
-    infinite_loop {
+    loop {
         __asm__ volatile("hlt");
         if (!cpu->ready) continue;
         tcb_t task = NULL;
