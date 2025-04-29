@@ -11,6 +11,7 @@
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
+#include "ipc.h"
 
 extern tcb_t  kernel_head_task;
 spin_t        pcb_lock;
@@ -51,7 +52,7 @@ void switch_to_user_mode(uint64_t func) {
                      : "memory");
 }
 
-void kill_proc(pcb_t pcb) {
+void kill_proc(pcb_t pcb,int exit_code) {
     if (pcb == NULL) return;
     if (pcb->pgb_id == kernel_group->pgb_id) {
         kerror("Cannot kill System process.");
@@ -60,6 +61,14 @@ void kill_proc(pcb_t pcb) {
     close_interrupt;
     disable_scheduler();
     pcb->status = DEATH;
+    ipc_message_t msg = malloc(sizeof(struct ipc_message));
+    msg->pid          = pcb->pgb_id;
+    msg->type         = IPC_MSG_TYPE_EPID;
+    msg->data[0]      = exit_code & 0xFF;
+    msg->data[1]      = (exit_code >> 8) & 0xFF;
+    msg->data[2]      = (exit_code >> 16) & 0xFF;
+    msg->data[3]      = (exit_code >> 24) & 0xFF;
+    ipc_send(pcb->parent_task,msg);
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
@@ -113,7 +122,6 @@ pcb_t found_pcb(int pid) {
     queue_foreach(pgb_queue, node) {
         pcb_t pcb = (pcb_t)node->data;
         if (pcb->pgb_id == pid) {
-            if (pcb->status == DEATH || pcb->status == OUT) { return NULL; }
             return pcb;
         }
     }
@@ -127,6 +135,23 @@ tcb_t found_thread(pcb_t pcb, int tid) {
         if (thread->pid == tid) { return thread; }
     }
     return NULL;
+}
+
+int waitpid(int pid){
+    if(found_pcb(pid) == NULL) return -25565;
+    ipc_message_t mesg;
+    do{
+        mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
+        if(pid == mesg->pid){
+            int exit_code = (mesg->data[3] << 24) |
+                    (mesg->data[2] << 16) |
+                    (mesg->data[1] << 8) |
+                    mesg->data[0];
+            free(mesg);
+            return exit_code;
+        }
+        ipc_send(get_current_task()->parent_group,mesg);
+    } while (true);
 }
 
 void kill_all_proc() {
@@ -146,6 +171,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->tty         = alloc_default_tty();
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
+    new_pgb->parent_task = get_current_task()->parent_group;
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
     spin_unlock(pgb_queue->lock);
     new_pgb->status = START;
@@ -260,6 +286,7 @@ void init_pcb() {
     kernel_group->tty                              = get_default_tty();
     kernel_group->status                           = RUNNING;
     kernel_group->ipc_queue                        = queue_init();
+    kernel_group->parent_task                      = kernel_group;
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;

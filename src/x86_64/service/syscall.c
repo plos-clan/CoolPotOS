@@ -21,14 +21,14 @@ static inline void enable_syscall() {
 syscall_(exit) {
     int exit_code = arg0;
     logkf("Process %s exit with code %d.\n", get_current_task()->parent_group->name, exit_code);
-    kill_proc(get_current_task()->parent_group);
+    kill_proc(get_current_task()->parent_group,exit_code);
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
 
 syscall_(abort) {
     logkf("Process %s abort.\n", get_current_task()->parent_group->name);
-    kill_proc(get_current_task()->parent_group);
+    kill_proc(get_current_task()->parent_group, -1);
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
@@ -69,10 +69,24 @@ syscall_(read) {
     return ret;
 }
 
+syscall_(waitpid){
+    int pid = arg0;
+    if (pid < 0 || arg1 == 0) return SYSCALL_FAULT;
+    if (found_pcb(pid) == NULL) return SYSCALL_FAULT;
+    int *status = (int*)arg1;
+    *status = waitpid(pid);
+    return SYSCALL_SUCCESS;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT] = syscall_exit,   [SYSCALL_ABORT] = syscall_abort,
-    [SYSCALL_OPEN] = syscall_open,   [SYSCALL_CLOSE] = syscall_close,
-    [SYSCALL_WRITE] = syscall_write, [SYSCALL_READ] = syscall_read};
+    [SYSCALL_EXIT] = syscall_exit,
+    [SYSCALL_ABORT] = syscall_abort,
+    [SYSCALL_OPEN] = syscall_open,
+    [SYSCALL_CLOSE] = syscall_close,
+    [SYSCALL_WRITE] = syscall_write,
+    [SYSCALL_READ] = syscall_read,
+    [SYSCALL_WAITPID] = syscall_waitpid,
+};
 
 registers_t *syscall_handle(registers_t *reg) {
     open_interrupt;

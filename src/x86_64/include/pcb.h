@@ -40,6 +40,7 @@ struct process_control_block {
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备
     TaskStatus        status;      // 进程状态
+    pcb_t             parent_task; // 父进程
 };
 
 struct thread_control_block {
@@ -111,7 +112,13 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
  */
 tcb_t get_current_task();
 void  kill_all_proc();
-void  kill_proc(pcb_t task);
+
+/**
+ * 结束指定线程
+ * @param task 进程控制块
+ * @param exit_code 退出代码
+ */
+void  kill_proc(pcb_t task,int exit_code);
 void  kill_thread(tcb_t tcb);
 
 /**
@@ -120,6 +127,7 @@ void  kill_thread(tcb_t tcb);
  * @return == NULL ? 未找到进程 : 进程指针
  */
 pcb_t found_pcb(int pid);
+
 /**
  * 从指定进程内查找线程
  * @param pcb 进程
@@ -127,6 +135,14 @@ pcb_t found_pcb(int pid);
  * @return == NULL ? 未找到线程 : 线程指针
  */
 tcb_t found_thread(pcb_t pcb, int tid);
+
+/**
+ * 等待指定PID进程执行完毕
+ * @param pid 线程ID
+ * @return == -25565 ? 未找到线程 : 退出代码
+ */
+int waitpid(int pid);
+
 void  init_pcb();
 
 void kill_proc0(pcb_t pcb);

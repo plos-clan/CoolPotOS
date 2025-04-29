@@ -221,7 +221,7 @@ static void pkill(int argc, char **argv) {
         printk("Cannot find procces [%d]\n", pid);
         return;
     }
-    kill_proc(pcb);
+    kill_proc(pcb, 135);
     kinfo("Kill process (%d).", pid);
 }
 
@@ -314,10 +314,7 @@ static void luser(int argc, char **argv) {
     logkf("User application %s : %d : index: %d loaded.\n", module->module_name, user_task->pgb_id,
           user_task->queue_index);
     get_current_task()->status = WAIT;
-    infinite_loop {
-        if (found_pcb(user_task->pgb_id) == NULL) break;
-        __asm__("pause");
-    }
+    waitpid(user_task->pgb_id);
     get_current_task()->status = RUNNING;
 }
 

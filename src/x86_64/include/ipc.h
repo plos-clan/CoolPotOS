@@ -1,10 +1,11 @@
 #pragma once
 
 #define IPC_MSG_TYPE_NONE     0
-#define IPC_MSG_TYPE_EXIT     1
-#define IPC_MSG_TYPE_KEYBOARD 2
-#define IPC_MSG_TYPE_MOUSE    3
-#define IPC_MSG_TYPE_TIMER    4
+#define IPC_MSG_TYPE_EXIT     1 // 进程终止
+#define IPC_MSG_TYPE_KEYBOARD 2 // 键盘输入
+#define IPC_MSG_TYPE_MOUSE    3 // 鼠标输入
+#define IPC_MSG_TYPE_TIMER    4 // 时钟计数
+#define IPC_MSG_TYPE_EPID     5 // 子进程退出信号
 
 #include "ctype.h"
 #include "lock_queue.h"
@@ -13,10 +14,10 @@
 typedef struct ipc_message *ipc_message_t;
 
 struct ipc_message {
-    size_t  pid;
-    uint8_t type;
-    uint8_t data[64];
-    size_t  index;
+    size_t  pid;      // 发送方PID
+    uint8_t type;     // 消息类型
+    uint8_t data[64]; // 数据
+    size_t  index;    // 消息队列索引
 };
 
 /**
