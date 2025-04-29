@@ -461,6 +461,7 @@ static int plreadln_getch(void) {
         int temp = atom_pop(temp_keyboard_buffer);
         if (temp == -1) break;
         ch = (char)temp;
+        // logkf("%c", temp);
     }
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }

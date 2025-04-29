@@ -18,25 +18,22 @@ atom_queue *create_atom_queue(uint64_t size) {
 }
 
 bool atom_push(atom_queue *queue, uint8_t data) {
-    if (queue == NULL) return false;
+    if (queue == NULL || queue->buf == NULL) return false;
     uint64_t head = load(&queue->head);
-    uint64_t next = (head + 1) & queue->mask;
+    uint64_t next = (((uint64_t)(head + 1U)) & queue->mask);
     if (next == load(&queue->tail)) return false;
     *(&queue->buf[head]) = data;
     store(&queue->head, next);
-    queue->size++;
     return true;
 }
 
 int atom_pop(atom_queue *queue) {
-    if (queue == NULL) return -1;
-    if (queue->size <= 0) return -1;
+    if (queue == NULL || queue->buf == NULL) return -1;
     uint64_t tail = load(&queue->tail);
-    if (tail == load(&queue->head)) return (uint8_t)-1;
+    if (tail == load(&queue->head)) return -1;
     uint8_t data = queue->buf[tail];
-    store(&queue->tail, (tail + 1) & queue->mask);
-    queue->size--;
-    return data;
+    store(&queue->tail, (((uint64_t)(tail + 1U)) & queue->mask));
+    return (int)data;
 }
 
 void free_queue(atom_queue *queue) {
