@@ -65,7 +65,7 @@ target("kernel64")
     add_cflags("-Wno-unused-parameter","-Wno-unused-function")
     add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-static")
 
-    add_cflags("-fsanitize=undefined")
+    --add_cflags("-fsanitize=undefined")
     --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
     --add_cflags("-fsanitize=implicit-integer-sign-change")
     --add_cflags("-fsanitize=shift")
@@ -90,7 +90,7 @@ target("kernel64")
     add_linkdirs("libs/x86_64")
     add_links("alloc")
     add_links("os_terminal")
-    add_links("ubscan")
+    --add_links("ubscan")
     add_links("plreadln")
 
     add_includedirs("libs/x86_64")
@@ -168,7 +168,7 @@ target("run64")
             "-m","1024M",
             "-no-reboot",
             --"-enable-kvm",
-            --"-d", "int",
+            --"-d", "in_asm",
             --"-d", "in_asm,int",
             --"-S","-s",
             --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",

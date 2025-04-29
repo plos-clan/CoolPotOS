@@ -20,7 +20,7 @@ void update_terminal() {
         int ch = atom_pop(output_buffer);
         if (ch == -1) break;
         need_flush = true;
-        logkf("%c", (char)ch);
+        // logkf("%c", (char)ch);
         terminal_process_char((char)ch);
     }
     if (open_flush && need_flush) {
@@ -40,10 +40,7 @@ void terminal_close_flush() {
 int terminal_flush_service(void *pVoid) {
     terminal_set_auto_flush(false);
     open_flush = true;
-    loop {
-        update_terminal();
-        nsleep(100);
-    }
+    loop update_terminal();
     return 0;
 }
 
