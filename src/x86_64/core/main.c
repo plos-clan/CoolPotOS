@@ -82,13 +82,13 @@ extern tcb_t kernel_head_task; // scheduler.c
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
     power_off();
-    infinite_loop;
+    loop;
 }
 
 _Noreturn void cp_reset() {
     printk("Rebooting %s...\n", KERNEL_NAME);
     power_reset();
-    infinite_loop;
+    loop;
 }
 
 /*

@@ -457,8 +457,10 @@ static int plreadln_getch(void) {
     char ch;
 
     // temporary alternative to handle unsupported keys
-    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
-        __asm__ volatile("pause");
+    loop {
+        int temp = atom_pop(temp_keyboard_buffer);
+        if (temp == -1) break;
+        ch = (char)temp;
     }
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }

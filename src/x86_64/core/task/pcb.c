@@ -28,7 +28,7 @@ _Noreturn void process_exit() {
     __asm__("movq %%rax,%0" ::"r"(rax) :);
     printk("Kernel thread exit, Code: %d\n", rax);
     kill_thread(get_current_task());
-    infinite_loop;
+    loop;
 }
 
 void switch_to_user_mode(uint64_t func) {

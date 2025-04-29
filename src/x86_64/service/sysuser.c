@@ -25,7 +25,7 @@ void user_setup() {
     kernel_user = (ucb_t)malloc(sizeof(struct user_control_block));
     if (kernel_user == NULL) {
         kerror("Kernel user malloc failed.");
-        infinite_loop __asm__ volatile("hlt");
+        loop __asm__ volatile("hlt");
     }
     strcpy(kernel_user->name, "Kernel");
     kernel_user->uid              = user_id_index++;

@@ -482,7 +482,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
             // for 1 ms. it is based on System Timer Device Driver.
             // (III) Polling:
             if (ide_read(i, ATA_REG_STATUS) == 0) continue; // If Status = 0, No Device.
-            infinite_loop {
+            loop {
                 status = ide_read(i, ATA_REG_STATUS);
                 if ((status & ATA_SR_ERR)) {
                     err = 1;

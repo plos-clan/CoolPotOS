@@ -27,7 +27,7 @@ size_t lock_queue_enqueue(lock_queue *q, void *data) {
         q->head = new_node;
     } else {
         lock_node *current = q->head;
-        infinite_loop {
+        loop {
             if (current->next == NULL) {
                 current->next = new_node;
                 break;
@@ -55,7 +55,7 @@ size_t queue_enqueue(lock_queue *q, void *data) {
         q->head = new_node;
     } else {
         lock_node *current = q->head;
-        infinite_loop {
+        loop {
             if (current->next == NULL) {
                 current->next = new_node;
                 break;

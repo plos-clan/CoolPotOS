@@ -9,7 +9,7 @@ uint64_t get_cpu_speed() {
 }
 
 _Noreturn void cpu_speed_test() {
-    infinite_loop {
+    loop {
         size_t _start_t = nanoTime();
         for (volatile uint64_t i = 0; i < 1000; i++)
             ;
