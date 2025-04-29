@@ -1,6 +1,7 @@
 #include "vdisk.h"
 #include "devfs.h"
 #include "keyboard.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
@@ -10,7 +11,12 @@ vdisk vdisk_ctl[26];
 
 static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     for (size_t i = 0; i < number; i++) {
-        char c    = (char)kernel_getch();
+        char c = (char)kernel_getch();
+        printk("%c", c);
+        if (c == '\n') {
+            buffer[i] = '\0';
+            break;
+        }
         buffer[i] = c;
     }
 }
@@ -96,6 +102,10 @@ int rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read
 
 void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
     if (have_vdisk(drive)) {
+        if (vdisk_ctl[drive].type == VDISK_STREAM) {
+            vdisk_ctl[drive].read(drive, buffer, number, lba);
+            return;
+        }
         for (size_t i = 0; i < number; i += SECTORS_ONCE) {
             int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
             rw_vdisk(drive, lba + i,

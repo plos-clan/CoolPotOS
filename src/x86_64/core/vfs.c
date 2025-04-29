@@ -244,14 +244,14 @@ int vfs_mount(const char *src, vfs_node_t node) {
 }
 
 int vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size) {
-    if(file == NULL || addr == NULL) return VFS_STATUS_FAILED;
+    if (file == NULL || addr == NULL) return VFS_STATUS_FAILED;
     do_update(file);
     if (file->type == file_dir) return VFS_STATUS_FAILED;
     return callbackof(file, read)(file->handle, addr, offset, size);
 }
 
 int vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
-    if(file == NULL || addr == NULL) return VFS_STATUS_FAILED;
+    if (file == NULL || addr == NULL) return VFS_STATUS_FAILED;
     do_update(file);
     if (file->type == file_dir) return VFS_STATUS_FAILED;
     return callbackof(file, write)(file->handle, addr, offset, size);

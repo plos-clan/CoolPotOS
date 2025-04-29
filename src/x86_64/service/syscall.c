@@ -34,50 +34,48 @@ syscall_(abort) {
 }
 
 syscall_(open) {
-    char* path = (char*)arg0;
-    if(path == NULL) return -1;
-    vfs_node_t node = vfs_open(path);
-    int index = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, node);
+    char *path = (char *)arg0;
+    if (path == NULL) return -1;
+    vfs_node_t node  = vfs_open(path);
+    int        index = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, node);
     spin_unlock(get_current_task()->parent_group->file_open->lock);
     return index;
 }
 
 syscall_(close) {
     int fd = (int)arg0;
-    if(fd < 0 ) return SYSCALL_FAULT;
-    vfs_node_t node = (vfs_node_t)queue_remove_at(get_current_task()->parent_group->file_open,fd);
+    if (fd < 0) return SYSCALL_FAULT;
+    vfs_node_t node = (vfs_node_t)queue_remove_at(get_current_task()->parent_group->file_open, fd);
     vfs_free(node);
     return SYSCALL_SUCCESS;
 }
 
 syscall_(write) {
     int fd = (int)arg0;
-    if(fd < 0 || arg1 == 0) return SYSCALL_FAULT;
-    if(arg2 == 0 ) return SYSCALL_SUCCESS;
-    uint8_t *buffer = (uint8_t*)arg1;
-    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open,fd);
-    return vfs_write(node,buffer,0,arg2);
+    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT;
+    if (arg2 == 0) return SYSCALL_SUCCESS;
+    uint8_t   *buffer = (uint8_t *)arg1;
+    vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
+    return vfs_write(node, buffer, 0, arg2);
 }
 
 syscall_(read) {
     int fd = (int)arg0;
-    if(fd < 0 || arg1 == 0) return SYSCALL_FAULT;
-    if(arg2 == 0 ) return SYSCALL_SUCCESS;
-    uint8_t *buffer = (uint8_t*)arg1;
-    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open,fd);
-    return vfs_read(node,buffer,0,arg2);
+    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT;
+    if (arg2 == 0) return SYSCALL_SUCCESS;
+    uint8_t   *buffer = (uint8_t *)arg1;
+    vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
+    int        ret    = vfs_read(node, buffer, 0, arg2);
+    return ret;
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT]  = syscall_exit,
-    [SYSCALL_ABORT] = syscall_abort,
-    [SYSCALL_OPEN]  = syscall_open,
-    [SYSCALL_CLOSE] = syscall_close,
-    [SYSCALL_WRITE] = syscall_write,
-    [SYSCALL_READ]  = syscall_read
-};
+    [SYSCALL_EXIT] = syscall_exit,   [SYSCALL_ABORT] = syscall_abort,
+    [SYSCALL_OPEN] = syscall_open,   [SYSCALL_CLOSE] = syscall_close,
+    [SYSCALL_WRITE] = syscall_write, [SYSCALL_READ] = syscall_read};
 
 registers_t *syscall_handle(registers_t *reg) {
+    open_interrupt;
     size_t syscall_id = reg->rax;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rbx, reg->rcx, reg->rdx, reg->rsi,

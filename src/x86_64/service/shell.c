@@ -25,6 +25,7 @@ extern void cp_shutdown();
 extern void cp_reset();
 
 extern lock_queue *pgb_queue;
+extern atom_queue *temp_keyboard_buffer;
 
 char           *shell_work_path;
 extern uint64_t memory_size; // hhdm.c
@@ -312,6 +313,12 @@ static void luser(int argc, char **argv) {
     create_user_thread(main, "main", user_task);
     logkf("User application %s : %d : index: %d loaded.\n", module->module_name, user_task->pgb_id,
           user_task->queue_index);
+    get_current_task()->status = WAIT;
+    infinite_loop {
+        if (found_pcb(user_task->pgb_id) == NULL) break;
+        __asm__("pause");
+    }
+    get_current_task()->status = RUNNING;
 }
 
 static void sys_info() {
@@ -387,58 +394,6 @@ static void print_help() {
     printk("luser     <module>       Load a user application.\n");
 }
 
-// char **split_by_space(const char *input, int *count) {
-//     char **tokens = (char **)malloc(MAX_ARG_NR * sizeof(char *));
-//     if (!tokens) return NULL;
-
-//     int token_index = 0;
-//     int i           = 0;
-//     int start       = -1;
-//     int len         = strlen(input);
-
-//     while (i <= len) {
-//         if (input[i] != ' ' && input[i] != '\0') {
-//             if (start == -1) start = i;
-//         } else {
-//             if (start != -1) {
-//                 int   token_len = i - start;
-//                 char *token     = (char *)malloc(token_len + 1);
-//                 if (!token) {
-//                     for (int j = 0; j < token_index; j++)
-//                         free(tokens[j]);
-//                     free(tokens);
-//                     return NULL;
-//                 }
-
-//                 memcpy(token, &input[start], token_len);
-//                 token[token_len]      = '\0';
-//                 tokens[token_index++] = token;
-
-//                 if (token_index >= MAX_ARG_NR) break;
-//                 start = -1;
-//             }
-//         }
-//         i++;
-//     }
-
-//     tokens[token_index] = NULL; // 最后加个 NULL 结束
-//     if (count) *count = token_index;
-//     return tokens;
-// }
-
-// void trim(char *str) {
-//     while (*str && isspace((unsigned char)*str)) {
-//         str++;
-//     }
-
-//     char *end = str + strlen(str) - 1;
-//     while (end > str && isspace((unsigned char)*end)) {
-//         end--;
-//     }
-
-//     *(end + 1) = '\0';
-// }
-
 // ====== pl_readline ======
 static int cmd_parse(const char *cmd_str, char **argv, char token) // 用uint8_t是因为" "使用8位整数
 {
@@ -505,7 +460,6 @@ static int plreadln_getch(void) {
     char ch;
 
     // temporary alternative to handle unsupported keys
-    extern atom_queue *temp_keyboard_buffer;
     while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
         __asm__ volatile("pause");
     }
@@ -584,9 +538,7 @@ _Noreturn void shell_setup() {
             kerror("shell: number of arguments exceed MAX_ARG_NR(30)");
             continue;
         }
-        if (argc == 0) {
-            continue;
-        }
+        if (argc == 0) { continue; }
 
         int cmd_index = find_cmd(argv[0]);
         if (cmd_index < 0) {

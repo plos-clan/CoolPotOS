@@ -76,8 +76,8 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue, pcb->queue_index);
 
-    do{
-        vfs_node_t node = (vfs_node_t) queue_dequeue(pcb->file_open);
+    do {
+        vfs_node_t node = (vfs_node_t)queue_dequeue(pcb->file_open);
         if (node == NULL) break;
         vfs_free(node);
     } while (true);
@@ -112,7 +112,10 @@ void kill_thread0(tcb_t task) {
 pcb_t found_pcb(int pid) {
     queue_foreach(pgb_queue, node) {
         pcb_t pcb = (pcb_t)node->data;
-        if (pcb->pgb_id == pid) return pcb;
+        if (pcb->pgb_id == pid) {
+            if (pcb->status == DEATH || pcb->status == OUT) { return NULL; }
+            return pcb;
+        }
     }
     return NULL;
 }
