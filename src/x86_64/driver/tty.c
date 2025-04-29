@@ -36,13 +36,13 @@ static void tty_kernel_putc(tty_t *tty, int c) {
 }
 
 tty_t *alloc_default_tty() {
-    tty_t *tty           = malloc(sizeof(tty_t));
-    tty->video_ram       = framebuffer->address;
-    tty->height          = framebuffer->height;
-    tty->width           = framebuffer->width;
-    tty->print           = tty_kernel_print;
-    tty->putchar         = tty_kernel_putc;
-    tty->is_key_wait     = false;
+    tty_t *tty       = malloc(sizeof(tty_t));
+    tty->video_ram   = framebuffer->address;
+    tty->height      = framebuffer->height;
+    tty->width       = framebuffer->width;
+    tty->print       = tty_kernel_print;
+    tty->putchar     = tty_kernel_putc;
+    tty->is_key_wait = false;
     return tty;
 }
 
@@ -56,12 +56,12 @@ tty_t *get_default_tty() {
 }
 
 void init_tty() {
-    defualt_tty.video_ram       = framebuffer->address;
-    defualt_tty.width           = framebuffer->width;
-    defualt_tty.height          = framebuffer->height;
-    defualt_tty.print           = tty_kernel_print;
-    defualt_tty.putchar         = tty_kernel_putc;
-    queue                       = malloc(sizeof(mpmc_queue_t));
+    defualt_tty.video_ram = framebuffer->address;
+    defualt_tty.width     = framebuffer->width;
+    defualt_tty.height    = framebuffer->height;
+    defualt_tty.print     = tty_kernel_print;
+    defualt_tty.putchar   = tty_kernel_putc;
+    queue                 = malloc(sizeof(mpmc_queue_t));
     if (init(queue, 1024, sizeof(uint32_t), FAIL) != SUCCESS) {
         kerror("Cannot enable mppmc buffer\n");
         free(queue);

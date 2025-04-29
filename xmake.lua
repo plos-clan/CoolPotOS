@@ -65,7 +65,7 @@ target("kernel64")
     add_cflags("-Wno-unused-parameter","-Wno-unused-function")
     add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-static")
 
-   -- add_cflags("-fsanitize=undefined")
+    --add_cflags("-fsanitize=undefined")
     --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
     --add_cflags("-fsanitize=implicit-integer-sign-change")
     --add_cflags("-fsanitize=shift")

@@ -75,7 +75,7 @@ void queue_iterate(lock_queue *q, void (*callback)(void *, void *), void *argume
  * @param index
  * @return == NULL ? 未找到 : 该节点存储的句柄
  */
-void *queue_get(lock_queue *q,size_t index);
+void *queue_get(lock_queue *q, size_t index);
 
 /**
  * 迭代宏
