@@ -458,10 +458,10 @@ static int plreadln_getch(void) {
 
     // temporary alternative to handle unsupported keys
     loop {
-        int temp = atom_pop(temp_keyboard_buffer);
+        int temp = kernel_getch(); //atom_pop(temp_keyboard_buffer);
         if (temp == -1) break;
         ch = (char)temp;
-        // logkf("%c", temp);
+        logkf("%c\n", temp);
     }
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
@@ -492,8 +492,7 @@ static int plreadln_getch(void) {
 }
 
 static void plreadln_putch(int ch) {
-    extern atom_queue *output_buffer;
-    atom_push(output_buffer, ch);
+    get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty,ch);
 }
 
 static void handle_tab(char *buf, pl_readline_words_t words) {

@@ -35,7 +35,7 @@ void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool
     uint64_t p_vaddr  = (uint64_t)phdr->p_vaddr;
     uint64_t p_filesz = (uint64_t)phdr->p_filesz;
     uint64_t p_memsz  = (uint64_t)phdr->p_memsz;
-    memcpy((void *)phdr->p_vaddr, elf + phdr->p_offset, phdr->p_memsz);
+    memcpy((void *)p_vaddr, elf + phdr->p_offset, p_memsz);
 
     if (p_memsz > p_filesz) { // 这个是bss段
         memset((void *)(p_vaddr + p_filesz), 0, p_memsz - p_filesz);

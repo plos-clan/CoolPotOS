@@ -39,6 +39,7 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
     message->pid           = pcb->pgb_id;
     message->data[0]       = scancode;
     ipc_send(pcb, message);
+    logkf("IPC send key %x to %s\n", scancode, pcb->name);
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
@@ -48,7 +49,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     send_eoi();
 
     // temporary alternative to handle unsupported keys
-    terminal_handle_keyboard(scancode);
+    //terminal_handle_keyboard(scancode);
 
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
@@ -77,6 +78,7 @@ int input_char_inSM() {
     task->status                         = WAIT;
     task->parent_group->tty->is_key_wait = true;
     ipc_message_t message                = ipc_recv_wait(IPC_MSG_TYPE_KEYBOARD);
+    logkf("IPC recv key %x from %s\n", message->data[0], task->name);
     i                                    = message->data[0];
     free(message);
     task->parent_group->tty->is_key_wait = false;

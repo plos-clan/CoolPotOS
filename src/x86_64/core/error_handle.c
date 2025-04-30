@@ -35,7 +35,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     init_print_lock();
     spin_lock(error_lock);
     terminal_close_flush();
-    logkf("Kernel Error: %s:0x%x %d %p\n", msg, code, cpu->id, frame->rip); // 679a0
+    logkf("Kernel Error: %s:0x%x CPU%d %p\n", msg, code, cpu->id, frame->rip); // 679a0
     if (get_current_task() == NULL) {
         logkf("Current process PID: NULL CPU%d\n", cpu->id);
     } else
@@ -43,10 +43,11 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
               get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n", msg,
            code);
+    logkf("?");
     print_task_info(get_current_task());
     print_register(frame);
     update_terminal();
-    terminal_open_flush();
+    //terminal_open_flush();
     spin_unlock(error_lock);
     for (;;)
         cpu_hlt;
