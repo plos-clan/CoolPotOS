@@ -67,7 +67,9 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         ctrl = 0;
     }
 
-    if (scancode < 0x80 || scancode == 0xe0) { queue_iterate(pgb_queue, key_callback, &scancode); }
+    if (scancode < 0x80 || scancode == 0xe0) {
+        if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
+    }
     spin_unlock(keyboard_lock);
 }
 
@@ -79,7 +81,7 @@ int input_char_inSM() {
     task->parent_group->tty->is_key_wait = true;
     ipc_message_t message                = ipc_recv_wait(IPC_MSG_TYPE_KEYBOARD);
     logkf("IPC recv key %x from %s\n", message->data[0], task->name);
-    i                                    = message->data[0];
+    i = message->data[0];
     free(message);
     task->parent_group->tty->is_key_wait = false;
     task->status                         = RUNNING;
