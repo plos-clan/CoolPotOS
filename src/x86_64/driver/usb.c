@@ -1,5 +1,5 @@
 #include "usb.h"
-#include "alloc.h"
+#include "heap.h"
 #include "kprint.h"
 #include "xhci.h"
 

@@ -492,6 +492,7 @@ static int plreadln_getch(void) {
 }
 
 static void plreadln_putch(int ch) {
+    //logkf("PUTC %c\n", ch);
     get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty,ch);
 }
 

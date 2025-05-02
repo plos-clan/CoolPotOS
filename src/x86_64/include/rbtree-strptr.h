@@ -1,5 +1,5 @@
 #pragma once
-#include "alloc.h"
+#include "heap.h"
 #include "ctype.h"
 #include "kprint.h"
 
