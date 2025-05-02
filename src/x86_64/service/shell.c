@@ -454,15 +454,9 @@ int find_cmd(uint8_t *cmd) {
 }
 
 static int plreadln_getch(void) {
-    char ch;
-
-    // temporary alternative to handle unsupported keys
-    loop {
-        int temp = kernel_getch(); //atom_pop(temp_keyboard_buffer);
-        if (temp == -1) break;
-        ch = (char)temp;
-        logkf("%c\n", temp);
-    }
+    int temp = kernel_getch();
+    logkf("INPUT: %c\n", (char)temp);
+    char ch = (char)temp;
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
     if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
@@ -492,7 +486,6 @@ static int plreadln_getch(void) {
 }
 
 static void plreadln_putch(int ch) {
-    //logkf("PUTC %c\n", ch);
     get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty,ch);
 }
 

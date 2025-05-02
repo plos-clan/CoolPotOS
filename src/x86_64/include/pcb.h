@@ -49,6 +49,7 @@ struct thread_control_block {
     int           pid;          // 线程 TID
     TaskStatus    status;       // 线程状态
     char          name[50];     // 线程名
+
     uint64_t      cpu_clock;    // CPU 调度时间片
     uint64_t      cpu_timer;    // CPU 占用时间
     uint64_t      cpu_id;       // 由哪个CPU负责该线程运行
@@ -60,9 +61,13 @@ struct thread_control_block {
     uint64_t      kernel_stack; // 内核栈
     uint64_t      user_stack;   // 用户栈
     uint64_t      mem_usage;    // 内存利用率
+
     size_t        queue_index;  // 调度队列索引
     size_t        group_index;  // 进程队列索引
     size_t        death_index;  // 死亡队列索引
+
+    int           seq_state;    // 键盘状态标志
+    int           last_key;     // 标志按键
 };
 
 static __attr(address_space(257)) struct thread_control_block *const tcb =

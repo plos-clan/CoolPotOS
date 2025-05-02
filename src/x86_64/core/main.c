@@ -121,7 +121,7 @@ void kmain() {
     smbios_setup();
     acpi_setup();
     keyboard_setup();
-    mouse_setup();
+    //mouse_setup();
     char *date = get_date_time();
     kinfo("RTC time %s", date);
     free(date);
