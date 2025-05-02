@@ -2,7 +2,7 @@
 
 #define ALIGNED_BASE 0x1000
 
-#include "alloc.h"
+#include "alloc/alloc.h"
 #include "limine.h"
 #include "serial.h"
 

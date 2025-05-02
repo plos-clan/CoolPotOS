@@ -1,7 +1,7 @@
 #pragma once
 
-#include "alloc.h"
 #include "ctype.h"
+#include "heap.h"
 #include "limine.h"
 
 #define TERMINAL_EMBEDDED_FONT

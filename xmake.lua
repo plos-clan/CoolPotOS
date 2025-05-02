@@ -88,7 +88,6 @@ target("kernel64")
     end)
 
     add_linkdirs("libs/x86_64")
-    add_links("alloc")
     add_links("os_terminal")
     --add_links("ubscan")
     add_links("plreadln")

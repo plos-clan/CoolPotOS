@@ -1,5 +1,5 @@
 #include "xhci.h"
-#include "alloc.h"
+#include "heap.h"
 #include "io.h"
 #include "kprint.h"
 #include "pci.h"
