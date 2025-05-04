@@ -73,7 +73,6 @@ target("kernel64")
 
     add_files("src/x86_64/**/*.c")
     add_files("src/x86_64/**/*.S")
-    add_files("src/x86_64/fuck-alloc.c")
 
     before_build(function (target)
       local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
@@ -85,8 +84,8 @@ target("kernel64")
 
     add_linkdirs("libs/x86_64")
     add_links("os_terminal")
-    --add_links("ubscan")
     add_links("plreadln")
+    --add_links("ubscan")
 
     add_includedirs("libs/x86_64")
     add_includedirs("src/x86_64/include")
