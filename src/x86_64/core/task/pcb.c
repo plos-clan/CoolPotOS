@@ -17,7 +17,7 @@ extern tcb_t  kernel_head_task;
 spin_t        pcb_lock;
 extern spin_t scheduler_lock;
 
-lock_queue *pgb_queue;
+lock_queue *pgb_queue = NULL;
 
 pcb_t kernel_group;
 
