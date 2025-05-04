@@ -108,7 +108,6 @@ uint32_t NVMETransfer(NVME_NAMESPACE *ns, void *buf, uint64_t lba, uint32_t coun
     uint32_t maxCount = (PAGE_SIZE / ns->BSZ) - ((bufAddr & 0xFFF) / ns->BSZ);
     if (count > maxCount) count = maxCount;
     if (count > ns->MXRS) count = ns->MXRS;
-    uint64_t size = count * ns->BSZ;
 
     NVME_SUBMISSION_QUEUE_ENTRY sqe;
     memset(&sqe, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));

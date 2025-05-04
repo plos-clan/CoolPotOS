@@ -524,7 +524,7 @@ void ahci_setup() {
         vd.flag = type == AHCI_DEV_SATA ? 1 : (type == AHCI_DEV_SATAPI ? 2 : (AHCI_DEV_PM ? 3 : 0));
         vd.sector_size = type == AHCI_DEV_SATA ? 512 : (type == AHCI_DEV_SATAPI ? 2048 : 0);
         char name[10];
-        sprintf(name, "sata%d", i);
+        sprintf(name, "sata%zu", i);
         strcpy(vd.drive_name, name);
 
         int id            = regist_vdisk(vd);

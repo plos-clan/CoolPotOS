@@ -263,8 +263,7 @@ uint32_t pci_enumerate_capability_list(pci_device_t *pci_dev, uint32_t cap_type)
         // 不支持
         return 0;
     }
-    uint32_t pci_address = segment_bus_device_functon_to_pci_address(pci_dev->segment, pci_dev->bus,
-                                                                     pci_dev->slot, pci_dev->func);
+
     uint32_t tmp;
     while (1) {
         tmp = pci_dev->op->read(pci_dev->bus, pci_dev->slot, pci_dev->func, pci_dev->segment,
@@ -296,7 +295,6 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
     uint16_t device_id = *(uint16_t *)(id_mmio_addr + 2);
 
     uint64_t field_mmio_addr  = get_mmio_address(pci_address, 0x08);
-    uint8_t  device_revision  = *(uint8_t *)field_mmio_addr;
     uint8_t  device_class     = *((uint8_t *)field_mmio_addr + 3);
     uint8_t  device_subclass  = *((uint8_t *)field_mmio_addr + 2);
     uint8_t  device_interface = *((uint8_t *)field_mmio_addr + 1);
@@ -342,7 +340,6 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
                 pci_device->bars[i].size    = 0;
                 pci_device->bars[i].mmio    = false;
             } else {
-                bool     prefetchable = bar & (1 << 3);
                 uint64_t bar_address  = bar & 0xFFFFFFF0;
 
                 switch ((bar & ((1 << 3) | (1 << 2) | (1 << 1))) >> 1) {

@@ -6,8 +6,8 @@
 typedef struct {
     uint8_t          *buf;
     uint64_t          mask;
-    volatile uint64_t head;
-    volatile uint64_t tail;
+    uint64_t head;
+    uint64_t tail;
     uint64_t          size;
 } atom_queue;
 
@@ -19,8 +19,8 @@ void        free_queue(atom_queue *queue);
 typedef struct {
     uint8_t          *buf;
     uint64_t          mask;
-    volatile uint64_t head;
-    volatile uint64_t tail;
+    uint64_t head;
+    uint64_t tail;
     uint64_t          size;
 } atom_queue_mpmc;
 
