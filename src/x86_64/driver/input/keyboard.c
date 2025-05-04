@@ -42,7 +42,6 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
-    spin_lock(keyboard_lock);
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
     send_eoi();
@@ -70,7 +69,6 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
     }
     logkf("keyI: %x\n", scancode);
-    spin_unlock(keyboard_lock);
 }
 
 int input_char_inSM() {
@@ -80,7 +78,7 @@ int input_char_inSM() {
     task->status                         = WAIT;
     task->parent_group->tty->is_key_wait = true;
     ipc_message_t message                = ipc_recv_wait(IPC_MSG_TYPE_KEYBOARD);
-    i = message->data[0];
+    i                                    = message->data[0];
     free(message);
     logkf("IPC RECV: %d\n", i);
     task->parent_group->tty->is_key_wait = false;
@@ -92,15 +90,18 @@ int kernel_getch() {
     tcb_t task = get_current_task();
     logkf("getch task: %d %d\n", task->seq_state, task->last_key);
 
-    if (task->seq_state == 1) { task->seq_state = 2; return '['; }
+    if (task->seq_state == 1) {
+        task->seq_state = 2;
+        return '[';
+    }
     if (task->seq_state == 2) {
         task->seq_state = 0;
         switch (task->last_key) {
-            case 1: return 'A';
-            case 2: return 'B';
-            case 3: return 'D';
-            case 4: return 'C';
-            default: return '?';
+        case 1: return 'A';
+        case 2: return 'B';
+        case 3: return 'D';
+        case 4: return 'C';
+        default: return '?';
         }
     }
 
@@ -109,14 +110,14 @@ int kernel_getch() {
         ch = input_char_inSM(); // 扫描码
     } while (ch == 0xff);
     if (ch == 0xe0) { // keytable之外的键（↑,↓,←,→）
-        ch = input_char_inSM();
+        ch              = input_char_inSM();
         task->seq_state = 1;
         switch (ch) {
-            case 0x48: task->last_key = 1; return 0x1B; // ↑
-            case 0x50: task->last_key = 2; return 0x1B; // ↓
-            case 0x4b: task->last_key = 3; return 0x1B; // ←
-            case 0x4d: task->last_key = 4; return 0x1B; // →
-            default: return 0;
+        case 0x48: task->last_key = 1; return 0x1B; // ↑
+        case 0x50: task->last_key = 2; return 0x1B; // ↓
+        case 0x4b: task->last_key = 3; return 0x1B; // ←
+        case 0x4d: task->last_key = 4; return 0x1B; // →
+        default: return 0;
         }
     }
     // 返回扫描码(keytable之内)对应的ASCII码

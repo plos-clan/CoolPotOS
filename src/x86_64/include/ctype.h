@@ -26,13 +26,13 @@ typedef void (*free_t)(void *ptr);
 #define ownership_holds(type, nparam) __attr(ownership_holds(type, nparam))
 
 #ifdef __clang__
-#  define __attr_dealloc(func, nparam) __attr_malloc
+#    define __attr_dealloc(func, nparam) __attr_malloc
 #else
-#  define __attr_dealloc(func, nparam) __attr(warn_unused_result, malloc(func, nparam))
+#    define __attr_dealloc(func, nparam) __attr(warn_unused_result, malloc(func, nparam))
 #endif
-#define __attr_malloc  __attr(warn_unused_result, malloc)
+#define __attr_malloc         __attr(warn_unused_result, malloc)
 #define __attr_allocsize(...) __attr(alloc_size(__VA_ARGS__))
-#define __nnull(...) __attr(nonnull(__VA_ARGS__))
+#define __nnull(...)          __attr(nonnull(__VA_ARGS__))
 
 #define USED           __attr(used)
 #define SECTION(name)  __attr(section(name))

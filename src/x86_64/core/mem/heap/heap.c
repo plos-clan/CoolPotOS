@@ -116,5 +116,5 @@ void *pvalloc(size_t size) {
 void init_heap() {
     page_map_range_to_random(get_kernel_pagedir(), (uint64_t)phys_to_virt(KERNEL_HEAP_START),
                              KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
-    mpool_init(&pool, (void *)phys_to_virt(KERNEL_HEAP_START), KERNEL_HEAP_SIZE);
+    mpool_init(&pool, phys_to_virt(KERNEL_HEAP_START), KERNEL_HEAP_SIZE);
 }

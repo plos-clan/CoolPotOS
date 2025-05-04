@@ -454,17 +454,16 @@ int find_cmd(uint8_t *cmd) {
 }
 
 static int plreadln_getch(void) {
-    int temp = kernel_getch();
-    logkf("INPUT: %c\n", (char)temp);
-    char ch = (char)temp;
+    int  temp = kernel_getch();
+    char ch   = (char)temp;
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
     if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
     if (ch == 0x9) { return PL_READLINE_KEY_TAB; }
     if (ch == 0x1b) {
-        ch = plreadln_getch();
+        ch = kernel_getch();
         if (ch == '[') {
-            ch = plreadln_getch();
+            ch = kernel_getch();
             switch (ch) {
             case 'A': return PL_READLINE_KEY_UP;
             case 'B': return PL_READLINE_KEY_DOWN;
@@ -473,10 +472,10 @@ static int plreadln_getch(void) {
             case 'H': return PL_READLINE_KEY_HOME;
             case 'F': return PL_READLINE_KEY_END;
             case '5':
-                if (plreadln_getch() == '~') return PL_READLINE_KEY_PAGE_UP;
+                if (kernel_getch() == '~') return PL_READLINE_KEY_PAGE_UP;
                 break;
             case '6':
-                if (plreadln_getch() == '~') return PL_READLINE_KEY_PAGE_DOWN;
+                if (kernel_getch() == '~') return PL_READLINE_KEY_PAGE_DOWN;
                 break;
             default: return -1;
             }
@@ -486,7 +485,7 @@ static int plreadln_getch(void) {
 }
 
 static void plreadln_putch(int ch) {
-    get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty,ch);
+    get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty, ch);
 }
 
 static void handle_tab(char *buf, pl_readline_words_t words) {

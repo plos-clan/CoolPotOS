@@ -1,10 +1,10 @@
 #include "terminal.h"
 #include "atom_queue.h"
 #include "gop.h"
+#include "klog.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "timer.h"
-#include "klog.h"
 
 atom_queue *output_buffer;
 bool        open_flush = false;
@@ -23,9 +23,7 @@ void update_terminal() {
         // logkf("%c", (char)ch);
         terminal_process_char((char)ch);
     }
-    if (open_flush && need_flush) {
-        terminal_flush();
-    }
+    if (open_flush && need_flush) { terminal_flush(); }
     spin_unlock(terminal_lock);
 }
 
@@ -85,7 +83,7 @@ void init_terminal() {
     terminal_set_crnl_mapping(true);
     terminal_set_scroll_speed(3);
     //terminal_set_pty_writer(terminal_pty_writer);
-    
+
     TerminalPalette palette = {
         .background = 0x0d0d1a,
         .foreground = 0xeaeaea,
