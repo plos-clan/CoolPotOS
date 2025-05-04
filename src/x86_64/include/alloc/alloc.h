@@ -12,11 +12,11 @@
 #define SIZE_1G  ((size_t)(1024 * 1024 * 1024))
 
 #ifndef ALLOC_LARGE_BLK_SIZE
-#  define ALLOC_LARGE_BLK_SIZE ((size_t)16384)
+#    define ALLOC_LARGE_BLK_SIZE ((size_t)16384)
 #endif
 
 #ifndef PAGE_SIZE
-#  define PAGE_SIZE ((size_t)4096)
+#    define PAGE_SIZE ((size_t)4096)
 #endif
 
 //* ----------------------------------------------------------------------------------------------------
@@ -30,76 +30,68 @@
 
 void *malloc(size_t size)
 
-ALLOC
+    ALLOC
 
-__attr_malloc __attr_allocsize(1)
-ownership_returns(malloc);
+    __attr_malloc __attr_allocsize(1) ownership_returns(malloc);
 
 void *xmalloc(size_t size)
 
-ALLOC
+    ALLOC
 
-__attr_malloc __attr_allocsize(
+    __attr_malloc __attr_allocsize(
 
-1)
-ownership_returns(malloc) __attr(returns_nonnull);
+        1) ownership_returns(malloc) __attr(returns_nonnull);
 
 void free(void *ptr)
 
-__THROW ownership_takes(malloc,
+    __THROW ownership_takes(malloc,
 
-1);
+                            1);
 
 void *calloc(size_t n, size_t size)
 
-ALLOC
+    ALLOC
 
-__attr_malloc __attr_allocsize(
+    __attr_malloc __attr_allocsize(
 
-1, 2)
-ownership_returns(malloc);
+        1, 2) ownership_returns(malloc);
 
 void *realloc(void *ptr, size_t newsize)
 
-ALLOC __attr_allocsize(2)
+    ALLOC __attr_allocsize(2)
 
-ownership_takes(malloc,
+        ownership_takes(malloc,
 
-1)
-ownership_returns(malloc);
+                        1) ownership_returns(malloc);
 
 void *reallocarray(void *ptr, size_t n, size_t size)
 
-__THROW __wur __attr_allocsize(
+    __THROW __wur __attr_allocsize(
 
-2, 3);
+        2, 3);
 
 void *aligned_alloc(size_t align, size_t size)
 
-__THROW __attr_malloc
-__attr_allocsize(2);
+    __THROW __attr_malloc __attr_allocsize(2);
 
-size_t malloc_usable_size(void *ptr)__THROW;
-        void *memalign(size_t align, size_t size)
+size_t malloc_usable_size(void *ptr) __THROW;
+void  *memalign(size_t align, size_t size)
 
-__THROW __attr_malloc
-__attr_allocsize(2);
+    __THROW __attr_malloc __attr_allocsize(2);
 
 int posix_memalign(void **mem_p, size_t align, size_t sie)
 
-__THROW __nnull(
+    __THROW __nnull(
 
-1) __wur;
+        1) __wur;
 
 void *pvalloc(size_t size)
 
-__THROW __attr_malloc
-__attr_allocsize(1);
+    __THROW __attr_malloc __attr_allocsize(1);
 
 void *valloc(size_t size)
 
-__THROW __attr_malloc
-__attr_allocsize(1);
+    __THROW __attr_malloc __attr_allocsize(1);
 
 #undef ALLOC
 
@@ -146,12 +138,12 @@ typedef freelist_t freelists_t[FREELIST_NUM];
  *
  */
 typedef struct sized_mpool {
-    void *ptr;      // 指向内存区的指针
+    void  *ptr;      // 指向内存区的指针
     size_t size;     // 内存区总大小
     size_t bsize;    // 每个元素的大小
     size_t len;      // 总共能容纳的元素个数
     size_t nalloced; // 已分配计数
-    void *freelist; // 空闲列表
+    void  *freelist; // 空闲列表
 } *sized_mpool_t;
 
 /**
@@ -162,7 +154,7 @@ typedef struct sized_mpool {
  *\param bsize    池中元素的大小，必须大于等于 sizeof(size_t)
  *\param len      池中元素的个数
  */
- void sized_mpool_init(sized_mpool_t pool, void *ptr, size_t bsize, size_t len);
+void sized_mpool_init(sized_mpool_t pool, void *ptr, size_t bsize, size_t len);
 
 /**
  *\brief 从内存池中分配
@@ -170,7 +162,7 @@ typedef struct sized_mpool {
  *\param pool     内存池
  *\return value
  */
- void *sized_mpool_alloc(sized_mpool_t pool);
+void *sized_mpool_alloc(sized_mpool_t pool);
 
 /**
  *\brief 释放内存池中的内存
@@ -178,7 +170,7 @@ typedef struct sized_mpool {
  *\param pool     内存池
  *\param ptr      param
  */
- void sized_mpool_free(sized_mpool_t pool, void *ptr);
+void sized_mpool_free(sized_mpool_t pool, void *ptr);
 
 /**
  *\brief 判断指定的内存地址是否在内存池中
@@ -187,11 +179,7 @@ typedef struct sized_mpool {
  *\param ptr      要判断的地址
  *\return 指定的内存地址是否在内存池中
  */
- bool
-sized_mpool_inpool(sized_mpool_t
-pool,
-void *ptr
-);
+bool sized_mpool_inpool(sized_mpool_t pool, void *ptr);
 
 //* ----------------------------------------------------------------------------------------------------
 //& 大块内存管理
@@ -210,12 +198,12 @@ typedef large_blk_t large_blks_t[LARGEBLKLIST_NUM];
  *
  */
 typedef struct mpool {
-    void *ptr;          // 指向内存区的指针
-    size_t size;         // 内存区总大小
-    size_t alloced_size; // 已分配的内存大小
+    void       *ptr;          // 指向内存区的指针
+    size_t      size;         // 内存区总大小
+    size_t      alloced_size; // 已分配的内存大小
     cb_reqmem_t cb_reqmem;    // 请求内存的回调函数
     cb_delmem_t cb_delmem;    // 释放内存的回调函数
-    freelist_t large_blk;    // 大块内存的空闲链表
+    freelist_t  large_blk;    // 大块内存的空闲链表
     freelists_t freed;        // 小块内存的空闲链表 (组)
 } *mpool_t;
 
@@ -266,7 +254,7 @@ void *mpool_alloc(mpool_t pool, size_t size);
  *\param align    对齐大小
  *\return 分配的内存地址
  */
- void *mpool_aligned_alloc(mpool_t pool, size_t size, size_t align);
+void *mpool_aligned_alloc(mpool_t pool, size_t size, size_t align);
 
 /**
  *\brief 释放内存池中的内存
@@ -305,7 +293,7 @@ void *mpool_realloc(mpool_t pool, void *ptr, size_t newsize);
  *\param align    对齐大小
  *\return 重新分配的内存地址
  */
- void *mpool_aligned_realloc(mpool_t pool, void *ptr, size_t newsize, size_t align);
+void *mpool_aligned_realloc(mpool_t pool, void *ptr, size_t newsize, size_t align);
 
 //* ----------------------------------------------------------------------------------------------------
 //& 内存管理器
@@ -316,8 +304,8 @@ void *mpool_realloc(mpool_t pool, void *ptr, size_t newsize);
  */
 typedef struct mman_pool *mman_pool_t;
 struct mman_pool {
-    void *ptr;          // 指向内存区的指针
-    size_t alloced_size; // 已分配的内存大小
+    void       *ptr;          // 指向内存区的指针
+    size_t      alloced_size; // 已分配的内存大小
     mman_pool_t next;         // 下一个内存池
 };
 
@@ -327,13 +315,13 @@ struct mman_pool {
  */
 typedef struct mman {
     struct mman_pool main;         // 主分配区 (后接子分配区)
-    size_t size;         // 内存区总大小
-    size_t alloced_size; // 已分配的内存大小
-    cb_reqmem_t cb_reqmem;    // 请求内存的回调函数
-    cb_delmem_t cb_delmem;    // 释放内存的回调函数
-    freelist_t large_blk;    // 大块内存的空闲链表
-    freelists_t freed;        // 小块内存的空闲链表 (组)
-    large_blks_t large;        //
+    size_t           size;         // 内存区总大小
+    size_t           alloced_size; // 已分配的内存大小
+    cb_reqmem_t      cb_reqmem;    // 请求内存的回调函数
+    cb_delmem_t      cb_delmem;    // 释放内存的回调函数
+    freelist_t       large_blk;    // 大块内存的空闲链表
+    freelists_t      freed;        // 小块内存的空闲链表 (组)
+    large_blks_t     large;        //
 } *mman_t;
 
 bool mman_init(mman_t man, void *ptr, size_t size);
@@ -346,7 +334,7 @@ void mman_setcb(mman_t man, cb_reqmem_t reqmem, cb_delmem_t delmem);
 
 void *mman_alloc(mman_t man, size_t size);
 
- void *mman_aligned_alloc(mman_t man, size_t size, size_t align);
+void *mman_aligned_alloc(mman_t man, size_t size, size_t align);
 
 void mman_free(mman_t man, void *ptr);
 
@@ -354,4 +342,4 @@ size_t mman_msize(mman_t man, void *ptr);
 
 void *mman_realloc(mman_t man, void *ptr, size_t newsize);
 
- void *mman_aligned_realloc(mman_t man, void *ptr, size_t newsize, size_t align);
+void *mman_aligned_realloc(mman_t man, void *ptr, size_t newsize, size_t align);

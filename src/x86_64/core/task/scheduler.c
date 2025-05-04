@@ -179,9 +179,9 @@ void scheduler(registers_t *reg) {
 
     // 任务寻父处理
     extern pcb_t kernel_group;
-    if(next->parent_group->parent_task == NULL ||
-       next->parent_group->parent_task->status == DEATH ||
-       next->parent_group->parent_task->status == OUT) {
+    if (next->parent_group->parent_task == NULL ||
+        next->parent_group->parent_task->status == DEATH ||
+        next->parent_group->parent_task->status == OUT) {
         next->parent_group->parent_task = kernel_group;
     }
 

@@ -25,7 +25,7 @@ struct ipc_message {
  * @param process 进程控制块
  * @param message 消息
  */
-void          ipc_send(pcb_t process, ipc_message_t message);
+void ipc_send(pcb_t process, ipc_message_t message);
 
 /**
  * 接受指定类型的消息
@@ -45,4 +45,4 @@ ipc_message_t ipc_recv_wait(uint8_t type);
  * 释放所有指定类型的消息
  * @param type 类型
  */
-void          ipc_free_type(uint8_t type);
+void ipc_free_type(uint8_t type);

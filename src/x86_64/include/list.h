@@ -1,7 +1,7 @@
 #pragma once
 
-#include "heap.h"
 #include "ctype.h"
+#include "heap.h"
 
 #pragma GCC system_header
 

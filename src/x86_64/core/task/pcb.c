@@ -2,6 +2,7 @@
 #include "description_table.h"
 #include "heap.h"
 #include "io.h"
+#include "ipc.h"
 #include "killer.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -11,7 +12,6 @@
 #include "sprintf.h"
 #include "timer.h"
 #include "vfs.h"
-#include "ipc.h"
 
 extern tcb_t  kernel_head_task;
 spin_t        pcb_lock;
@@ -52,7 +52,7 @@ void switch_to_user_mode(uint64_t func) {
                      : "memory");
 }
 
-void kill_proc(pcb_t pcb,int exit_code) {
+void kill_proc(pcb_t pcb, int exit_code) {
     if (pcb == NULL) return;
     if (pcb->pgb_id == kernel_group->pgb_id) {
         kerror("Cannot kill System process.");
@@ -60,7 +60,7 @@ void kill_proc(pcb_t pcb,int exit_code) {
     }
     close_interrupt;
     disable_scheduler();
-    pcb->status = DEATH;
+    pcb->status       = DEATH;
     ipc_message_t msg = malloc(sizeof(struct ipc_message));
     msg->pid          = pcb->pgb_id;
     msg->type         = IPC_MSG_TYPE_EPID;
@@ -68,7 +68,7 @@ void kill_proc(pcb_t pcb,int exit_code) {
     msg->data[1]      = (exit_code >> 8) & 0xFF;
     msg->data[2]      = (exit_code >> 16) & 0xFF;
     msg->data[3]      = (exit_code >> 24) & 0xFF;
-    ipc_send(pcb->parent_task,msg);
+    ipc_send(pcb->parent_task, msg);
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t tcb = (tcb_t)node->data;
         kill_thread(tcb);
@@ -121,9 +121,7 @@ void kill_thread0(tcb_t task) {
 pcb_t found_pcb(int pid) {
     queue_foreach(pgb_queue, node) {
         pcb_t pcb = (pcb_t)node->data;
-        if (pcb->pgb_id == pid) {
-            return pcb;
-        }
+        if (pcb->pgb_id == pid) { return pcb; }
     }
     return NULL;
 }
@@ -137,20 +135,18 @@ tcb_t found_thread(pcb_t pcb, int tid) {
     return NULL;
 }
 
-int waitpid(int pid){
-    if(found_pcb(pid) == NULL) return -25565;
+int waitpid(int pid) {
+    if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
-    do{
+    do {
         mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
-        if(pid == mesg->pid){
-            int exit_code = (mesg->data[3] << 24) |
-                    (mesg->data[2] << 16) |
-                    (mesg->data[1] << 8) |
-                    mesg->data[0];
+        if (pid == mesg->pid) {
+            int exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |
+                            mesg->data[0];
             free(mesg);
             return exit_code;
         }
-        ipc_send(get_current_task()->parent_group,mesg);
+        ipc_send(get_current_task()->parent_group, mesg);
     } while (true);
 }
 

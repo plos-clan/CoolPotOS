@@ -44,11 +44,11 @@ struct process_control_block {
 };
 
 struct thread_control_block {
-    pcb_t         parent_group; // 父进程
-    uint8_t       task_level;   // 线程权限等级
-    int           pid;          // 线程 TID
-    TaskStatus    status;       // 线程状态
-    char          name[50];     // 线程名
+    pcb_t      parent_group; // 父进程
+    uint8_t    task_level;   // 线程权限等级
+    int        pid;          // 线程 TID
+    TaskStatus status;       // 线程状态
+    char       name[50];     // 线程名
 
     uint64_t      cpu_clock;    // CPU 调度时间片
     uint64_t      cpu_timer;    // CPU 占用时间
@@ -62,12 +62,12 @@ struct thread_control_block {
     uint64_t      user_stack;   // 用户栈
     uint64_t      mem_usage;    // 内存利用率
 
-    size_t        queue_index;  // 调度队列索引
-    size_t        group_index;  // 进程队列索引
-    size_t        death_index;  // 死亡队列索引
+    size_t queue_index; // 调度队列索引
+    size_t group_index; // 进程队列索引
+    size_t death_index; // 死亡队列索引
 
-    int           seq_state;    // 键盘状态标志
-    int           last_key;     // 标志按键
+    int seq_state; // 键盘状态标志
+    int last_key;  // 标志按键
 };
 
 static __attr(address_space(257)) struct thread_control_block *const tcb =
@@ -123,8 +123,8 @@ void  kill_all_proc();
  * @param task 进程控制块
  * @param exit_code 退出代码
  */
-void  kill_proc(pcb_t task,int exit_code);
-void  kill_thread(tcb_t tcb);
+void kill_proc(pcb_t task, int exit_code);
+void kill_thread(tcb_t tcb);
 
 /**
  * 以指定PID查找进程
@@ -148,7 +148,7 @@ tcb_t found_thread(pcb_t pcb, int tid);
  */
 int waitpid(int pid);
 
-void  init_pcb();
+void init_pcb();
 
 void kill_proc0(pcb_t pcb);
 void kill_thread0(tcb_t task);

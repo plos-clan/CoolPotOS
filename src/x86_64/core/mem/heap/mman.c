@@ -19,14 +19,14 @@ static void _detach(mman_t man, freelist_t ptr) {
 bool mman_init(mman_t man, void *ptr, size_t size) {
     if (man == NULL || ptr == NULL || size == 0) return false;
     if (size != SIZE_2M && size != SIZE_4k) return false;
-    man->main.ptr = ptr;
+    man->main.ptr          = ptr;
     man->main.alloced_size = 0;
-    man->main.next = NULL;
-    man->size = size;
-    man->alloced_size = 0;
-    man->cb_reqmem = NULL;
-    man->cb_delmem = NULL;
-    man->large_blk = NULL;
+    man->main.next         = NULL;
+    man->size              = size;
+    man->alloced_size      = 0;
+    man->cb_reqmem         = NULL;
+    man->cb_delmem         = NULL;
+    man->large_blk         = NULL;
 #pragma unroll
     for (size_t i = 0; i < FREELIST_NUM; i++) {
         man->freed[i] = NULL;
@@ -48,7 +48,7 @@ void mman_deinit(mman_t man) {
         }
         man->cb_delmem(man->main.ptr, allocarea_size(man->main.ptr));
     }
-    *man = (struct mman) {};
+    *man = (struct mman){};
 }
 
 size_t mman_alloced_size(mman_t man) {
@@ -88,10 +88,10 @@ static bool mman_reqmem(mman_t man, size_t size) {
     blk_setalloced(pool, blk_size(pool));
     blk_setfreed(ptr, blk_size(ptr));
 
-    pool->ptr = mem;
+    pool->ptr          = mem;
     pool->alloced_size = 0;
-    pool->next = man->main.next;
-    man->main.next = pool;
+    pool->next         = man->main.next;
+    man->main.next     = pool;
 
     freelist_put(&man->large_blk, ptr);
     return true;
@@ -106,7 +106,7 @@ static bool mman_delmem(mman_t man, mman_pool_t pool) {
     }
     if (prev == NULL) return false; // error
 
-    prev->next = pool->next;
+    prev->next  = pool->next;
     size_t size = allocarea_size(pool->ptr);
     man->cb_delmem(pool->ptr, size);
     man->size -= size;
@@ -149,9 +149,9 @@ void *mman_alloc(mman_t man, size_t size) {
 
     size = blk_size(ptr);
     blk_setalloced(ptr, size);
-    mman_pool_t pool = blk_poolptr(ptr);
+    mman_pool_t pool    = blk_poolptr(ptr);
     pool->alloced_size += size;
-    man->alloced_size += size;
+    man->alloced_size  += size;
     return ptr;
 }
 
@@ -162,7 +162,7 @@ void *mman_aligned_alloc(mman_t man, size_t size, size_t align) {
 
     if (size >= ALLOC_LARGE_BLK_SIZE || align >= ALLOC_LARGE_BLK_SIZE) {
         void *ptr = large_blk_alloc(size, man->large, man->cb_reqmem, man->cb_delmem);
-        if ((size_t) ptr % align != 0) { // TODO 让这种情况永远不会出现
+        if ((size_t)ptr % align != 0) { // TODO 让这种情况永远不会出现
             large_blk_free(man->large, ptr, man->cb_delmem);
             ptr = NULL;
         }
@@ -171,14 +171,14 @@ void *mman_aligned_alloc(mman_t man, size_t size, size_t align) {
 
     // 优先从空闲链表中分配
     void *ptr = freelists_aligned_match(man->freed, size, align)
-                ?: freelist_aligned_match(&man->large_blk, size, align);
+                    ?: freelist_aligned_match(&man->large_blk, size, align);
 
     if (ptr == NULL) { // 不足就分配
         if (!mman_reqmem(man, size + align)) return NULL;
         ptr = freelist_aligned_match(&man->large_blk, size, align);
     }
 
-    size_t offset = PADDING_UP(ptr, align) - (uint64_t) ptr;
+    size_t offset = PADDING_UP(ptr, align) - (uint64_t)ptr;
     if (offset > 0) {
         void *new_ptr = blk_split(ptr, offset - 2 * sizeof(size_t));
         do_free(man, ptr);
@@ -189,25 +189,25 @@ void *mman_aligned_alloc(mman_t man, size_t size, size_t align) {
 
     size = blk_size(ptr);
     blk_setalloced(ptr, size);
-    mman_pool_t pool = blk_poolptr(ptr);
+    mman_pool_t pool    = blk_poolptr(ptr);
     pool->alloced_size += size;
-    man->alloced_size += size;
+    man->alloced_size  += size;
     return ptr;
 }
 
 void mman_free(mman_t man, void *ptr) {
     if (ptr == NULL) return;
 
-    if ((size_t) ptr % SIZE_4k == 0) {
+    if ((size_t)ptr % SIZE_4k == 0) {
         if (large_blk_free(man->large, ptr, man->cb_delmem)) return;
     }
 
-    size_t size = blk_size(ptr);
-    mman_pool_t pool = blk_poolptr(ptr);
+    size_t      size    = blk_size(ptr);
+    mman_pool_t pool    = blk_poolptr(ptr);
     pool->alloced_size -= size;
-    man->alloced_size -= size;
+    man->alloced_size  -= size;
 
-    ptr = blk_trymerge(ptr, (blk_detach_t) _detach, man);
+    ptr = blk_trymerge(ptr, (blk_detach_t)_detach, man);
     if (pool != &man->main && pool->alloced_size == 0) {
         if (mman_delmem(man, pool)) return;
     }
@@ -226,21 +226,21 @@ void *mman_realloc(mman_t man, void *ptr, size_t newsize) {
 
     size_t size = blk_size(ptr);
     if (size >= newsize) {
-        if ((size_t) ptr % SIZE_4k == 0) {
+        if ((size_t)ptr % SIZE_4k == 0) {
             if (size - newsize >= 2 * SIZE_4k) goto L1;
         } else {
             try_split_and_free(man, ptr, newsize);
         }
         return ptr;
     }
-    L1:
+L1:
 
-    if ((size_t) ptr % SIZE_4k != 0) {
+    if ((size_t)ptr % SIZE_4k != 0) {
         void *next = blk_next(ptr);
         if (next != NULL && blk_freed(next)) {
             size_t total_size = size + 2 * sizeof(size_t) + blk_size(next);
             if (total_size >= newsize) {
-                ptr = blk_mergenext(ptr, (blk_detach_t) _detach, man);
+                ptr = blk_mergenext(ptr, (blk_detach_t)_detach, man);
                 try_split_and_free(man, ptr, newsize);
                 return ptr;
             }
@@ -262,21 +262,21 @@ void *mman_aligned_realloc(mman_t man, void *ptr, size_t newsize, size_t align) 
 
     size_t size = blk_size(ptr);
     if (size >= newsize) {
-        if ((size_t) ptr % SIZE_4k == 0) {
+        if ((size_t)ptr % SIZE_4k == 0) {
             if (size - newsize >= 2 * SIZE_4k) goto L1;
         } else {
             try_split_and_free(man, ptr, newsize);
         }
         return ptr;
     }
-    L1:
+L1:
 
-    if ((size_t) ptr % SIZE_4k != 0) {
+    if ((size_t)ptr % SIZE_4k != 0) {
         void *next = blk_next(ptr);
         if (next != NULL && blk_freed(next)) {
             size_t total_size = size + 2 * sizeof(size_t) + blk_size(next);
             if (total_size >= newsize) {
-                ptr = blk_mergenext(ptr, (blk_detach_t) _detach, man);
+                ptr = blk_mergenext(ptr, (blk_detach_t)_detach, man);
                 try_split_and_free(man, ptr, newsize);
                 return ptr;
             }
