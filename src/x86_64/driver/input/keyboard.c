@@ -13,27 +13,27 @@ extern tcb_t       kernel_head_task;
 extern lock_queue *pgb_queue;
 
 char keytable[0x54] = { // 按下Shift
-    0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
-    'W', 'E',  'R', 'T', 'Y', 'U', 'I',  'O', 'P', '{', '}', 10,  0,   'A', 'S',  'D',  'F',
-    'G', 'H',  'J', 'K', 'L', ':', '\"', '~', 0,   '|', 'Z', 'X', 'C', 'V', 'B',  'N',  'M',
-    '<', '>',  '?', 0,   '*', 0,   ' ',  0,   0,   0,   0,   0,   0,   0,   0,    0,    0,
-    0,   0,    0,   '7', 'D', '8', '-',  '4', '5', '6', '+', '1', '2', '3', '0',  '.'};
+        0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
+        'W', 'E',  'R', 'T', 'Y', 'U', 'I',  'O', 'P', '{', '}', 10,  0,   'A', 'S',  'D',  'F',
+        'G', 'H',  'J', 'K', 'L', ':', '\"', '~', 0,   '|', 'Z', 'X', 'C', 'V', 'B',  'N',  'M',
+        '<', '>',  '?', 0,   '*', 0,   ' ',  0,   0,   0,   0,   0,   0,   0,   0,    0,    0,
+        0,   0,    0,   '7', 'D', '8', '-',  '4', '5', '6', '+', '1', '2', '3', '0',  '.'};
 
 char keytable1[0x54] = { // 未按下Shift
-    0,   0x01, '1', '2', '3', '4', '5',  '6', '7', '8',  '9', '0', '-', '=', '\b', '\t', 'q',
-    'w', 'e',  'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', 10,  0,   'a', 's',  'd',  'f',
-    'g', 'h',  'j', 'k', 'l', ';', '\'', '`', 0,   '\\', 'z', 'x', 'c', 'v', 'b',  'n',  'm',
-    ',', '.',  '/', 0,   '*', 0,   ' ',  0,   0,   0,    0,   0,   0,   0,   0,    0,    0,
-    0,   0,    0,   '7', '8', '9', '-',  '4', '5', '6',  '+', '1', '2', '3', '0',  '.'};
+        0,   0x01, '1', '2', '3', '4', '5',  '6', '7', '8',  '9', '0', '-', '=', '\b', '\t', 'q',
+        'w', 'e',  'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', 10,  0,   'a', 's',  'd',  'f',
+        'g', 'h',  'j', 'k', 'l', ';', '\'', '`', 0,   '\\', 'z', 'x', 'c', 'v', 'b',  'n',  'm',
+        ',', '.',  '/', 0,   '*', 0,   ' ',  0,   0,   0,    0,   0,   0,   0,   0,    0,    0,
+        0,   0,    0,   '7', '8', '9', '-',  '4', '5', '6',  '+', '1', '2', '3', '0',  '.'};
 
 struct keyboard_cmd_state {
     bool waiting_ack;
     bool got_ack;
     bool got_resend;
 }key_cmd_state = {
-    .waiting_ack  = false,
-    .got_ack      = false,
-    .got_resend   = false,
+        .waiting_ack  = false,
+        .got_ack      = false,
+        .got_resend   = false,
 };
 
 static void key_callback(void *pcb_handle, void *scan_handle) {
@@ -50,17 +50,18 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     io_out8(0x61, 0x20);
     uint8_t scancode = io_in8(0x60);
-    send_eoi();
 
     logkf("key: %x\n", scancode);
 
     if(scancode == 0xfa) {
         key_cmd_state.got_ack = true;
+        send_eoi();
         return;
     }
 
     if(scancode == 0xaa && key_cmd_state.got_ack && !key_cmd_state.got_resend) {
         key_cmd_state.got_resend = true;
+        send_eoi();
         return;
     }
 
@@ -85,6 +86,7 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
     }
     logkf("keyI: %x\n", scancode);
+    send_eoi();
 }
 
 int input_char_inSM() {
@@ -113,11 +115,11 @@ int kernel_getch() {
     if (task->seq_state == 2) {
         task->seq_state = 0;
         switch (task->last_key) {
-        case 1: return 'A';
-        case 2: return 'B';
-        case 3: return 'D';
-        case 4: return 'C';
-        default: return '?';
+            case 1: return 'A';
+            case 2: return 'B';
+            case 3: return 'D';
+            case 4: return 'C';
+            default: return '?';
         }
     }
 
@@ -129,11 +131,11 @@ int kernel_getch() {
         ch              = input_char_inSM();
         task->seq_state = 1;
         switch (ch) {
-        case 0x48: task->last_key = 1; return 0x1B; // ↑
-        case 0x50: task->last_key = 2; return 0x1B; // ↓
-        case 0x4b: task->last_key = 3; return 0x1B; // ←
-        case 0x4d: task->last_key = 4; return 0x1B; // →
-        default: return 0;
+            case 0x48: task->last_key = 1; return 0x1B; // ↑
+            case 0x50: task->last_key = 2; return 0x1B; // ↓
+            case 0x4b: task->last_key = 3; return 0x1B; // ←
+            case 0x4d: task->last_key = 4; return 0x1B; // →
+            default: return 0;
         }
     }
     // 返回扫描码(keytable之内)对应的ASCII码
