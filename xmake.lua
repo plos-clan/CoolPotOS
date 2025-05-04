@@ -72,7 +72,6 @@ target("kernel64")
     --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
 
     add_files("src/x86_64/**/*.c")
-    add_files("src/x86_64/**/*.S")
 
     before_build(function (target)
       local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }

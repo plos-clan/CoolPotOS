@@ -85,7 +85,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_WAITPID] = syscall_waitpid,
 };
 
-registers_t *syscall_handle(registers_t *reg) {
+USED registers_t *syscall_handle(registers_t *reg) {
     open_interrupt;
     size_t syscall_id = reg->rax;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
