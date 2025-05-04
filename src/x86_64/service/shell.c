@@ -484,13 +484,14 @@ static int plreadln_getch(void) {
     return ch;
 }
 
-static void plreadln_putch(int ch) {
+static int plreadln_putch(int ch) {
     get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty, ch);
+    return 0;
 }
 
 static void handle_tab(char *buf, pl_readline_words_t words) {
     for (int i = 0; i < builtin_cmd_num; ++i) {
-        pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, ' ');
+        pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, PL_COLOR_BLUE, ' ');
     }
 }
 
