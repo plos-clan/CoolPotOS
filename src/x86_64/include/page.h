@@ -8,7 +8,9 @@
 
 #define KERNEL_PTE_FLAGS (PTE_PRESENT | PTE_WRITEABLE | PTE_NO_EXECUTE)
 
-#define PAGE_SIZE 0x1000
+#ifndef PAGE_SIZE
+#    define PAGE_SIZE ((size_t)4096)
+#endif
 
 #include "ctype.h"
 

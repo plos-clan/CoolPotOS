@@ -52,17 +52,17 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     uint8_t scancode = io_in8(0x60);
     send_eoi();
 
+    logkf("key: %x\n", scancode);
+
     if(scancode == 0xfa) {
         key_cmd_state.got_ack = true;
         return;
     }
+
     if(scancode == 0xaa && key_cmd_state.got_ack && !key_cmd_state.got_resend) {
         key_cmd_state.got_resend = true;
         return;
     }
-
-
-    //terminal_handle_keyboard(scancode);
 
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
