@@ -340,7 +340,7 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
                 pci_device->bars[i].size    = 0;
                 pci_device->bars[i].mmio    = false;
             } else {
-                uint64_t bar_address  = bar & 0xFFFFFFF0;
+                uint64_t bar_address = bar & 0xFFFFFFF0;
 
                 switch ((bar & ((1 << 3) | (1 << 2) | (1 << 1))) >> 1) {
                 // 32 bit

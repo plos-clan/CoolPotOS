@@ -3,15 +3,62 @@
 #include "io.h"
 #include "isr.h"
 #include "kprint.h"
-#include "krlibc.h"
-#include "pcb.h"
 #include "scheduler.h"
 #include "timer.h"
 
 HpetInfo       *hpet_addr;
 static uint32_t hpetPeriod = 0;
 
-extern void save_registers(); // switch.S
+__attribute__((naked)) void save_registers() {
+    __asm__ volatile(".intel_syntax noprefix\n\t"
+                     "cli\n\t"
+                     "push 0\n\t" // 对齐
+                     "push 0\n\t" // 对齐
+                     "push r15\n\t"
+                     "push r14\n\t"
+                     "push r13\n\t"
+                     "push r12\n\t"
+                     "push r11\n\t"
+                     "push r10\n\t"
+                     "push r9\n\t"
+                     "push r8\n\t"
+                     "push rdi\n\t"
+                     "push rsi\n\t"
+                     "push rbp\n\t"
+                     "push rdx\n\t"
+                     "push rcx\n\t"
+                     "push rbx\n\t"
+                     "push rax\n\t"
+                     "mov rax, es\n\t"
+                     "push rax\n\t"
+                     "mov rax, ds\n\t"
+                     "push rax\n\t"
+                     "mov rdi, rsp\n\t"
+                     "call timer_handle\n\t"
+                     "mov rsp, rax\n\t"
+                     "pop rax\n\t"
+                     "mov ds, rax\n\t"
+                     "pop rax\n\t"
+                     "mov es, rax\n\t"
+                     "pop rax\n\t"
+                     "pop rbx\n\t"
+                     "pop rcx\n\t"
+                     "pop rdx\n\t"
+                     "pop rbp\n\t"
+                     "pop rsi\n\t"
+                     "pop rdi\n\t"
+                     "pop r8\n\t"
+                     "pop r9\n\t"
+                     "pop r10\n\t"
+                     "pop r11\n\t"
+                     "pop r12\n\t"
+                     "pop r13\n\t"
+                     "pop r14\n\t"
+                     "pop r15\n\t"
+                     "add rsp, 16\n\t" // 越过对齐
+                     "sti\n\t"
+                     "iretq\n\t");
+}
 
 USED registers_t *timer_handle(registers_t *reg) {
     close_interrupt;
