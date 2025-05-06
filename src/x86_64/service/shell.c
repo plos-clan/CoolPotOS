@@ -460,6 +460,7 @@ static int plreadln_getch(void) {
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
     if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
     if (ch == 0x9) { return PL_READLINE_KEY_TAB; }
+
     if (ch == 0x1b) {
         ch = kernel_getch();
         if (ch == '[') {

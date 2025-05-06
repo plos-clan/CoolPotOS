@@ -91,13 +91,6 @@ _Noreturn void cp_reset() {
     loop;
 }
 
-/*
-void sb16_test_sound() {
-    sb16_set_sample_rate(115200);
-    sb16_set_volume(15, 15);
-    sb16_play(音频数据, 数据大小);
-}*/
-
 void kmain() {
     gdt_setup();
     idt_setup();

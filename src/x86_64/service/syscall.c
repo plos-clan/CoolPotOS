@@ -18,6 +18,64 @@ static inline void enable_syscall() {
     wrmsr(MSR_EFER, efer);
 }
 
+__attribute__((naked)) void asm_syscall_handle() {
+    __asm__ volatile(".intel_syntax noprefix\n\t"
+                     "swapgs\n\t"
+                     "call syscall_handle\n\t"
+                     "swapgs\n\t"
+                     "sysretq\n\t");
+}
+
+__attribute__((naked)) void asm_syscall_entry() {
+    __asm__ volatile(".intel_syntax noprefix\n\t"
+                     "push 0\n\t" // 对齐
+                     "push 0\n\t" // 对齐
+                     "push r15\n\t"
+                     "push r14\n\t"
+                     "push r13\n\t"
+                     "push r12\n\t"
+                     "push r11\n\t"
+                     "push r10\n\t"
+                     "push r9\n\t"
+                     "push r8\n\t"
+                     "push rdi\n\t"
+                     "push rsi\n\t"
+                     "push rbp\n\t"
+                     "push rdx\n\t"
+                     "push rcx\n\t"
+                     "push rbx\n\t"
+                     "push rax\n\t"
+                     "mov rax, es\n\t"
+                     "push rax\n\t"
+                     "mov rax, ds\n\t"
+                     "push rax\n\t"
+                     "mov rdi, rsp\n\t"
+                     "call syscall_handle\n\t"
+                     "mov rsp, rax\n\t"
+                     "pop rax\n\t"
+                     "mov ds, rax\n\t"
+                     "pop rax\n\t"
+                     "mov es, rax\n\t"
+                     "pop rax\n\t"
+                     "pop rbx\n\t"
+                     "pop rcx\n\t"
+                     "pop rdx\n\t"
+                     "pop rbp\n\t"
+                     "pop rsi\n\t"
+                     "pop rdi\n\t"
+                     "pop r8\n\t"
+                     "pop r9\n\t"
+                     "pop r10\n\t"
+                     "pop r11\n\t"
+                     "pop r12\n\t"
+                     "pop r13\n\t"
+                     "pop r14\n\t"
+                     "pop r15\n\t"
+                     "add rsp, 16\n\t" // 越过对齐
+                     "sti\n\t"
+                     "iretq\n\t");
+}
+
 syscall_(exit) {
     int exit_code = arg0;
     logkf("Process %s exit with code %d.\n", get_current_task()->parent_group->name, exit_code);
@@ -79,9 +137,12 @@ syscall_(waitpid) {
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,
-    [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
-    [SYSCALL_WRITE] = syscall_write,     [SYSCALL_READ] = syscall_read,
+    [SYSCALL_EXIT] = syscall_exit,
+    [SYSCALL_ABORT] = syscall_abort,
+    [SYSCALL_OPEN] = syscall_open,
+    [SYSCALL_CLOSE] = syscall_close,
+    [SYSCALL_WRITE] = syscall_write,
+    [SYSCALL_READ] = syscall_read,
     [SYSCALL_WAITPID] = syscall_waitpid,
 };
 

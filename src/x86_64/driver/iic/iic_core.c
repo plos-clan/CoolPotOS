@@ -15,7 +15,7 @@ void init_iic(void) {
         return;
     } else {
         logkf((char *)("Find IIC Master Controller.\n"));
-        IIC_Master *iic_master = 0;
+        IIC_Master *iic_master      = 0;
         uint32_t    address         = Get_iic_masterAddress(IIC_masterController);
         iic_master->Control         = address;
         IIC_slaveNode iic_slaveList = iic_slaveAlloc(NULL);
