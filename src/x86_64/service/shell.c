@@ -387,7 +387,7 @@ static void print_help() {
     printk("ls        [path]         List all file or directory.\n");
     printk("echo      <message>      Print a message.\n");
     printk("mount     <path> <dev>   Mount a device to path.\n");
-    printk("lmod      <module|list>  Load or list model.\n");
+    printk("lmod      <module|list>  Load or list module.\n");
     printk("luser     <module>       Load a user application.\n");
 }
 
