@@ -8,7 +8,8 @@ void *resolve_symbol(Elf64_Sym *symtab, uint32_t sym_idx) {
     return (void *)symtab[sym_idx].st_value;
 }
 
-bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab, size_t jmprel_sz) {
+bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab, size_t jmprel_sz,
+                        uint64_t offset) {
     Elf64_Rela *rela_plt   = rela_start;
     size_t      rela_count = jmprel_sz / sizeof(Elf64_Rela);
 
@@ -17,11 +18,11 @@ bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab,
         Elf64_Sym  *sym         = &symtab[ELF64_R_SYM(rela->r_info)];
         char       *sym_name    = &strtab[sym->st_name];
         dlfunc_t   *func        = find_func(sym_name);
-        uint64_t   *target_addr = (uint64_t *)rela->r_offset;
+        uint64_t   *target_addr = (uint64_t *)(rela->r_offset + offset);
         if (func != NULL) {
             *target_addr = (uint64_t)func->addr;
         } else {
-            kwarn("Failed relocating %s at %p", sym_name, rela->r_offset);
+            kwarn("Failed relocating %s at %p", sym_name, rela->r_offset + offset);
             return false;
         }
     }
@@ -29,7 +30,7 @@ bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab,
 }
 
 void *find_symbol_address(const char *symbol_name, Elf64_Sym *symtab, char *strtab, size_t symtabsz,
-                          Elf64_Ehdr *ehdr) {
+                          Elf64_Ehdr *ehdr, uint64_t offset) {
     if (symbol_name == NULL || symtab == NULL || strtab == NULL) return NULL;
 
     for (size_t i = 0; i < symtabsz; i++) {
@@ -40,14 +41,14 @@ void *find_symbol_address(const char *symbol_name, Elf64_Sym *symtab, char *strt
                 kwarn("Symbol %s is undefined.\n", sym_name);
                 return NULL;
             }
-            void *addr = (void *)sym->st_value;
+            void *addr = (void *)sym->st_value + offset;
             return addr;
         }
     }
     return NULL;
 }
 
-dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
+dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
     Elf64_Dyn *dyn_entry = NULL;
     for (size_t i = 0; i < ehdr->e_phnum; i++) {
         if (phdrs[i].p_type == PT_DYNAMIC) {
@@ -55,11 +56,12 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
             break;
         }
     }
-
     if (dyn_entry == NULL) {
         logkf("Dynamic section not found.\n");
         return NULL;
     }
+    uint64_t addr_dyn = ((uint64_t)dyn_entry) + offset;
+    dyn_entry         = (Elf64_Dyn *)addr_dyn;
 
     Elf64_Sym  *symtab = NULL;
     char       *strtab = NULL;
@@ -69,11 +71,20 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
 
     while (dyn_entry->d_tag != DT_NULL) {
         switch (dyn_entry->d_tag) {
-        case DT_SYMTAB: symtab = (Elf64_Sym *)dyn_entry->d_un.d_ptr; break;
-        case DT_STRTAB: strtab = (char *)dyn_entry->d_un.d_ptr; break;
-        case DT_RELA: rel = (Elf64_Rela *)dyn_entry->d_un.d_ptr; break;
+        case DT_SYMTAB:;
+            uint64_t symtab_addr = dyn_entry->d_un.d_ptr + offset;
+            symtab               = (Elf64_Sym *)symtab_addr;
+            break;
+        case DT_STRTAB: strtab = (char *)dyn_entry->d_un.d_ptr + offset; break;
+        case DT_RELA:;
+            uint64_t rel_addr = dyn_entry->d_un.d_ptr + offset;
+            rel               = (Elf64_Rela *)rel_addr;
+            break;
         case DT_RELASZ: relsz = dyn_entry->d_un.d_val; break;
-        case DT_JMPREL: jmprel = (Elf64_Rela *)dyn_entry->d_un.d_ptr; break;
+        case DT_JMPREL:;
+            uint64_t jmprel_addr = dyn_entry->d_un.d_ptr + offset;
+            jmprel               = (Elf64_Rela *)jmprel_addr;
+            break;
         case DT_SYMENT: symtabsz = dyn_entry->d_un.d_val; break;
         case DT_PLTRELSZ: jmprel_sz = dyn_entry->d_un.d_val; break;
         case DT_PLTGOT: /* 需要解析 PLT 表 */ break;
@@ -83,7 +94,7 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
 
     for (size_t i = 0; i < relsz / sizeof(Elf64_Rela); i++) {
         Elf64_Rela *r          = &rel[i];
-        uint64_t   *reloc_addr = (uint64_t *)r->r_offset;
+        uint64_t   *reloc_addr = (uint64_t *)(r->r_offset + offset);
         uint32_t    sym_idx    = ELF64_R_SYM(r->r_info);
         uint32_t    type       = ELF64_R_TYPE(r->r_info);
 
@@ -93,9 +104,9 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr) {
             *reloc_addr = (uint64_t)((char *)ehdr + r->r_addend);
         }
     }
-    if (!handle_relocations(jmprel, symtab, strtab, jmprel_sz)) { return NULL; }
+    if (!handle_relocations(jmprel, symtab, strtab, jmprel_sz, offset)) { return NULL; }
 
-    void *entry = find_symbol_address("dlmain", symtab, strtab, symtabsz, ehdr);
+    void *entry = find_symbol_address("dlmain", symtab, strtab, symtabsz, ehdr, offset);
     if (entry == NULL) {
         kwarn("Cannot find dynamic library main function.");
         return NULL;
@@ -126,12 +137,12 @@ void dlinker_load(cp_module_t *module) {
     }
 
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
-    if (!mmap_phdr_segment(ehdr, phdrs, get_kernel_pagedir(), false)) {
+    if (!mmap_phdr_segment(ehdr, phdrs, get_kernel_pagedir(), false, 0)) {
         kwarn("Cannot mmap elf segment.");
         return;
     }
 
-    dlmain_t dlmain = load_dynamic(phdrs, ehdr);
+    dlmain_t dlmain = load_dynamic(phdrs, ehdr, 0);
     if (dlmain == NULL) {
         kwarn("Cannot load dynamic section.");
         return;

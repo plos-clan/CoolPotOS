@@ -101,12 +101,12 @@ target("iso64")
         import("core.project.project")
 
         local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
+        os.cp("assets/readme.txt", iso_dir .. "/sys/readme.txt")
         os.cp("assets/limine.conf", iso_dir .. "/limine.conf")
         os.cp("assets/limine-uefi-cd.bin", iso_dir .. "/limine-uefi-cd.bin")
 
         local target = project.target("kernel64")
-        os.cp(target:targetfile(), iso_dir .. "/cposkrnl.elf")
+        os.cp(target:targetfile(), iso_dir .. "/sys/cposkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         os.run("xorriso -as mkisofs -efi-boot-part --efi-boot-image --protective-msdos-label " ..
