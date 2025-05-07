@@ -44,11 +44,17 @@ You need to install them on your computer:
 
 ### i386
 
-Run `xmake run iso32` then it will build and run automatically.
+Run `xmake run iso32` and it will build and run automatically.
 
 ### x86_64
 
-Run `xmake run iso64` then it will build and run automatically.
+Checkout submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+Then run `xmake run iso64` and it will build and run automatically.
 
 ## License
 

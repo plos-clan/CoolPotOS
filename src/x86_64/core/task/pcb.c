@@ -85,11 +85,11 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue, pcb->queue_index);
 
-    do {
+    loop {
         vfs_node_t node = (vfs_node_t)queue_dequeue(pcb->file_open);
         if (node == NULL) break;
         vfs_free(node);
-    } while (true);
+    }
     queue_destroy(pcb->file_open);
     queue_destroy(pcb->ipc_queue);
 
@@ -138,7 +138,7 @@ tcb_t found_thread(pcb_t pcb, int tid) {
 int waitpid(int pid) {
     if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
-    do {
+    loop {
         mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         if (pid == mesg->pid) {
             int exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |
@@ -147,7 +147,7 @@ int waitpid(int pid) {
             return exit_code;
         }
         ipc_send(get_current_task()->parent_group, mesg);
-    } while (true);
+    }
 }
 
 void kill_all_proc() {

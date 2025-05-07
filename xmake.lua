@@ -7,6 +7,13 @@ set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
 
+target("limine")
+    set_kind("binary")
+    set_default(false)
+    
+    add_files("assets/limine/*.c")
+    add_includedirs("assets/limine")
+
 target("kernel32")
     set_arch("i386")
     set_kind("binary")
@@ -31,6 +38,45 @@ target("kernel32")
     add_asflags("-f", "elf32")
     add_ldflags("-T", "src/i386/linker.ld")
 
+target("kernel64")
+    set_kind("binary")
+    set_toolchains("clang")
+    set_default(false)
+
+    add_cflags("-target x86_64-freestanding")
+    add_ldflags("-target x86_64-freestanding")
+
+    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
+    add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto")
+    add_cflags("-Wno-unused-parameter","-Wno-unused-function")
+    add_ldflags("-T src/x86_64/linker.ld")
+    add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-static", "-g")
+
+    --add_cflags("-fsanitize=undefined")
+    --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
+    --add_cflags("-fsanitize=implicit-integer-sign-change")
+    --add_cflags("-fsanitize=shift")
+    --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
+
+    before_build(function (target)
+      local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
+        if hash then
+          hash = hash:trim()
+          target:add("defines", "GIT_VERSION=\"" .. hash .. "\"")
+        end
+    end)
+
+    --add_links("ubscan")
+    add_links("os_terminal")
+    add_links("plreadln")
+
+    add_linkdirs("libs/x86_64")
+    add_files("src/x86_64/**/*.c")
+    add_includedirs("libs/x86_64")
+    add_includedirs("src/x86_64/include")
+    add_includedirs("src/x86_64/include/types")
+    add_includedirs("src/x86_64/include/iic")
+
 target("iso32")
     set_kind("phony")
     add_deps("kernel32")
@@ -52,69 +98,37 @@ target("iso32")
         print("ISO image created at: " .. iso_file)
     end)
 
-target("kernel64")
-    set_kind("binary")
-    set_toolchains("clang")
-    set_default(false)
-
-    add_cflags("-target x86_64-freestanding")
-    add_ldflags("-target x86_64-freestanding")
-
-    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
-    add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto")
-    add_cflags("-Wno-unused-parameter","-Wno-unused-function")
-    add_ldflags("-nostdlib", "-flto", "-fuse-ld=lld", "-static", "-g")
-
-    --add_cflags("-fsanitize=undefined")
-    --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
-    --add_cflags("-fsanitize=implicit-integer-sign-change")
-    --add_cflags("-fsanitize=shift")
-    --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
-
-    add_files("src/x86_64/**/*.c")
-
-    before_build(function (target)
-      local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
-        if hash then
-          hash = hash:trim()
-          target:add("defines", "GIT_VERSION=\"" .. hash .. "\"")
-        end
-    end)
-
-    add_linkdirs("libs/x86_64")
-    add_links("os_terminal")
-    add_links("plreadln")
-    --add_links("ubscan")
-
-    add_includedirs("libs/x86_64")
-    add_includedirs("src/x86_64/include")
-    add_includedirs("src/x86_64/include/types")
-    add_includedirs("src/x86_64/include/iic")
-    add_ldflags("-T src/x86_64/linker.ld")
-
 target("iso64")
     set_kind("phony")
     add_deps("kernel64")
+    add_deps("limine")
     set_default(false)
 
     on_build(function (target)
         import("core.project.project")
 
         local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/readme.txt", iso_dir .. "/sys/readme.txt")
-        os.cp("assets/limine.conf", iso_dir .. "/limine.conf")
-        os.cp("assets/limine-uefi-cd.bin", iso_dir .. "/limine-uefi-cd.bin")
+        os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
+        local kernel = project.target("kernel64")
+        os.cp(kernel:targetfile(), iso_dir .. "/cposkrnl.elf")
 
-        local target = project.target("kernel64")
-        os.cp(target:targetfile(), iso_dir .. "/sys/cposkrnl.elf")
+        local limine_dir = iso_dir .. "/limine"
+        os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
+        os.cp("assets/limine/limine-bios.sys", limine_dir .. "/limine-bios.sys")
+        os.cp("assets/limine/limine-bios-cd.bin", limine_dir .. "/limine-bios-cd.bin")
+        os.cp("assets/limine/limine-uefi-cd.bin", limine_dir .. "/limine-uefi-cd.bin")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
-        os.run("xorriso -as mkisofs -efi-boot-part --efi-boot-image --protective-msdos-label " ..
-        "-no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus "..
-        "-R -r -J -apm-block-size 2048 "..
-        "-exclude ovmf-code.fd "..
-        "--efi-boot limine-uefi-cd.bin "..
-        "%s -o %s", iso_dir, iso_file)
+        os.run("xorriso -as mkisofs "..
+            "-R -r -J -b limine/limine-bios-cd.bin "..
+            "-no-emul-boot -boot-load-size 4 -boot-info-table "..
+            "-hfsplus -apm-block-size 2048 "..
+            "--efi-boot limine/limine-uefi-cd.bin "..
+            "-efi-boot-part --efi-boot-image --protective-msdos-label "..
+            iso_dir .. " -o " .. iso_file)
+
+        local limine = project.target("limine")
+        os.run(limine:targetfile().." bios-install "..iso_file)
         print("ISO image created at: %s", iso_file)
     end)
 
@@ -158,22 +172,24 @@ target("run64")
             "-cpu", "qemu64,+x2apic",
             "-smp", "4",
             "-serial", "stdio",
+            "-device","ahci,id=ahci",
             "-m","1024M",
             "-no-reboot",
             --"-enable-kvm",
             --"-d", "in_asm",
             --"-d", "in_asm,int",
             --"-S","-s",
-            --"-drive","file=./disk.qcow2,format=raw,id=usbdisk,if=none",
             --"-device","nec-usb-xhci,id=xhci",
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
-            --"-device","ahci,id=ahci","-drive","file=./hda.img,if=none,id=disk0","-device","ide-hd,bus=ahci.0,drive=disk0",
-            --"-drive","file=nvme.raw,if=none,id=D22","-device","nvme,drive=D22,serial=1234",
-            --"-audiodev","pa,id=snd","-machine","pcspk-audiodev=snd",
+            --"-device","ide-hd,bus=ahci.0,drive=disk0",
+            --"-drive","file=./hda.img,if=none,id=disk0",
+            --"-device","nvme,drive=D22,serial=1234",
+            --"-drive","file=nvme.raw,if=none,id=D22",
+            "-audiodev", "sdl,id=audio0",
+            "-device", "sb16,audiodev=audio0",
             "-net","nic,model=pcnet","-net","user",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso",
-            "-audiodev", "sdl,id=audio0", "-device", "sb16,audiodev=audio0",
         }
         os.execv("qemu-system-x86_64 " , flags)
     end)

@@ -1,0 +1,5 @@
+[submodule "assets/limine"]
+	path = assets/limine
+	url = https://github.com/limine-bootloader/limine
+	branch = v9.x-binary
+	shallow = true

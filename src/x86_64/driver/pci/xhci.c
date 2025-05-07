@@ -166,7 +166,7 @@ int usb_kernel_thread(void *arg) {
 
     XHCI_CONTROLLER *controller = (XHCI_CONTROLLER *)USB_CTRL;
 
-    while (true) {
+    loop {
         __asm__ __volatile__("pause");
 
         while (XHCIProcessEvent(controller))
@@ -325,7 +325,7 @@ uint32_t XHCIHUBReset(USB_HUB *hub, uint32_t port) {
     }
 
     // Wait for device to complete reset and be enabled
-    while (1) {
+    loop {
         uint32_t psc = controller->PR[port].PSC;
         if (!(psc & XHCI_PORTSC_CCS)) {
             // Device disconnected during reset
@@ -626,7 +626,6 @@ uint32_t XHCITransfer(USB_PIPE *pipe, USB_DEVICE_REQUEST *req, void *data, uint3
         controller->DR[slotid] = xpipe->EPID;
     } else {
         // XHCI Transfer Normal
-        // while (1) __asm__ __volatile__("pause");
         XHCI_TRB_NORMAL trb;
         memset(&trb, 0, sizeof(XHCI_TRB_NORMAL));
         trb.DATA = (uint64_t)virt_to_phys((uint64_t)data);

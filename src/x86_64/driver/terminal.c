@@ -21,7 +21,6 @@ void update_terminal() {
         int ch = atom_pop(output_buffer);
         if (ch == -1) break;
         need_flush = true;
-        // logkf("%c", (char)ch);
         terminal_process_char((char)ch);
     }
     if (open_flush && need_flush) { terminal_flush(); }

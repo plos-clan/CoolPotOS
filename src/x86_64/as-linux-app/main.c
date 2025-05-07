@@ -110,7 +110,7 @@ void _start() {
     char buffer[256];
     char cwd[256];
 
-    while (1) {
+    loop {
         long ret = __syscall(SYS_getcwd, (long)cwd, (long)sizeof(cwd));
         printf("\033[32m%s(%s)\033[0m@%s \033[34m%s\033[0m$ ", info.sysname, info.machine,
                info.nodename, ret >= 0 ? cwd : "?");
@@ -154,7 +154,7 @@ void _start() {
         }
     }
 
-    while (true) {
+    loop {
         asm volatile("hlt");
     }
 }
