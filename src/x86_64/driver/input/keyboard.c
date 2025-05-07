@@ -7,7 +7,6 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
-#include "terminal.h"
 
 static int         caps_lock, shift, ctrl = 0;
 extern tcb_t       kernel_head_task;
@@ -49,11 +48,10 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
-    send_eoi();
     uint8_t scancode = io_in8(0x60);
 
     /* temp solution until can pass all scancode to threads */
-    terminal_handle_keyboard(scancode);
+    //terminal_handle_keyboard(scancode);
 
     if (scancode == 0xfa) {
         key_cmd_state.got_ack = true;
@@ -66,6 +64,10 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         send_eoi();
         return;
     }
+
+    if (get_current_task() == NULL) return;
+    if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
+    send_eoi();
 
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
@@ -89,8 +91,8 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     }
     if (scancode < 0x80 || scancode == 0xe0 || scancode == 0xc8 || scancode == 0xd0 ||
         scancode == 0xcb || scancode == 0xcd) { // 其他按键
-        if (get_current_task() == NULL) return;
-        if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
+                                                //        if (get_current_task() == NULL) return;
+        //        if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
     }
 }
 
@@ -103,7 +105,6 @@ int input_char_inSM() {
     ipc_message_t message                = ipc_recv_wait(IPC_MSG_TYPE_KEYBOARD);
     i                                    = message->data[0];
     free(message);
-    //logkf("IPC RECV: %d\n", i);
     task->parent_group->tty->is_key_wait = false;
     task->status                         = RUNNING;
     return i;

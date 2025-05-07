@@ -11,6 +11,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "module.h"
+#include "os_terminal.h"
 #include "pcb.h"
 #include "pci.h"
 #include "pl_readline.h"
@@ -509,6 +510,13 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
 }
 
 static void plreadln_flush(void) {}
+
+_Noreturn void shell_key_service() {
+    loop {
+        int scan_code = input_char_inSM();
+        terminal_handle_keyboard(scan_code);
+    }
+}
 
 _Noreturn void shell_setup() {
     printk("Welcome to CoolPotOS (%s)!\n"
