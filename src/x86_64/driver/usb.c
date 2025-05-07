@@ -173,7 +173,7 @@ LABEL001:;
     uint64_t iface = ((uint64_t)config) + 9;
     uint64_t cfend = ((uint64_t)config) + config->TL;
 
-    while (1) {
+    loop {
         USB_INTERFACE *interface = (USB_INTERFACE *)iface;
         if ((!ic) || ((iface + interface->L) > cfend)) goto CONFIG_FAIL; // goto FAILED;
 
@@ -237,7 +237,7 @@ USB_ENDPOINT *USBSearchEndpoint(USB_COMMON *usbdev, int type, int dir) {
     USB_INTERFACE *iface  = usbdev->IFC;
     uint64_t       imax   = ((uint64_t)config) + config->TL - ((uint64_t)iface);
     USB_ENDPOINT  *epdesc = (USB_ENDPOINT *)(((uint64_t)iface) + 9);
-    while (1) {
+    loop {
         if ((((uint64_t)epdesc) >= ((uint64_t)iface) + imax) || (epdesc->DT == USB_DT_INTERFACE))
             return 0;
         uint32_t edir = epdesc->EA & USB_ENDPOINT_DIR;

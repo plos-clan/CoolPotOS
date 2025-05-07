@@ -265,7 +265,7 @@ uint32_t pci_enumerate_capability_list(pci_device_t *pci_dev, uint32_t cap_type)
     }
 
     uint32_t tmp;
-    while (1) {
+    loop {
         tmp = pci_dev->op->read(pci_dev->bus, pci_dev->slot, pci_dev->func, pci_dev->segment,
                                 cap_offset);
         if ((tmp & 0xff) != cap_type) {

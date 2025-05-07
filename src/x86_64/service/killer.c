@@ -26,7 +26,7 @@ _Noreturn void halt_service() {
 }
 
 _Noreturn void killer_service() {
-    while (1) {
+    loop {
         if (death_proc_queue->size == 0) {
             __asm__ volatile("pause" ::: "memory");
             continue;

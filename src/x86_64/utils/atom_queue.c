@@ -60,7 +60,7 @@ atom_queue_mpmc *create_atom_queue_mpmc(uint64_t size) {
 
 bool atom_push_mpmc(atom_queue_mpmc *queue, uint8_t data) {
     if (queue == NULL) return false;
-    while (true) {
+    loop {
         uint64_t head = load(&queue->head);
         uint64_t tail = load(&queue->tail);
         uint64_t next = (head + 1) & queue->mask;
@@ -74,7 +74,7 @@ bool atom_push_mpmc(atom_queue_mpmc *queue, uint8_t data) {
 
 int atom_pop_mpmc(atom_queue_mpmc *queue) {
     if (queue == NULL) return -1;
-    while (true) {
+    loop {
         uint64_t tail = load(&queue->tail);
         uint64_t head = load(&queue->head);
         if (tail == head) { return -1; }

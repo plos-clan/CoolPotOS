@@ -538,7 +538,7 @@ _Noreturn void shell_setup() {
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
-    while (1) {
+    loop {
         sprintf(prompt, "\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s>\033[0m ",
                 tcb->parent_group->user->name, shell_work_path);
         const char *cmd = pl_readline(pl, prompt);
