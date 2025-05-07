@@ -29,12 +29,12 @@ typedef int (*vfs_mk_t)(void *parent, const char *name, vfs_node_t node);
 // 映射文件从 offset 开始的 size 大小
 typedef void *(*vfs_mapfile_t)(void *file, size_t offset, size_t size);
 
-enum {
+typedef enum {
     file_none,   // 未获取信息
     file_dir,    // 文件夹
     file_block,  // 块设备，如硬盘
     file_stream, // 流式设备，如终端
-};
+} vfs_type_t;
 
 typedef struct vfs_callback { // VFS回调函数
     vfs_mount_t   mount;

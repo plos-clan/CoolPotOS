@@ -27,7 +27,7 @@ extern void cp_reset();
 extern lock_queue *pgb_queue;
 extern atom_queue *temp_keyboard_buffer;
 
-char           *shell_work_path;
+static char    *current_path;
 extern uint64_t memory_size; // hhdm.c
 
 static inline int isprint_syshell(int c) {
@@ -44,17 +44,17 @@ static void cd(int argc, char **argv) {
     if (streq(s, ".")) return;
     if (streq(s, "..")) {
         if (streq(s, "/")) return;
-        char *n = shell_work_path + strlen(shell_work_path);
-        while (*--n != '/' && n != shell_work_path) {}
+        char *n = current_path + strlen(current_path);
+        while (*--n != '/' && n != current_path) {}
         *n = '\0';
-        if (strlen(shell_work_path) == 0) strcpy(shell_work_path, "/");
+        if (strlen(current_path) == 0) strcpy(current_path, "/");
         return;
     }
     char *path;
     if (s[0] == '/') {
         path = strdup(s);
     } else {
-        path = pathacat(shell_work_path, s);
+        path = pathacat(current_path, s);
     }
     vfs_node_t node;
     if ((node = vfs_open(path)) == NULL) {
@@ -63,7 +63,7 @@ static void cd(int argc, char **argv) {
         return;
     }
     if (node->type == file_dir) {
-        sprintf(shell_work_path, "%s", path);
+        sprintf(current_path, "%s", path);
     } else {
         printk("cd: %s: Not a directory\n", s);
     }
@@ -79,7 +79,7 @@ static void mkdir(int argc, char **argv) {
     if (argv[1][0] == '/') {
         path = strdup(argv[1]);
     } else {
-        path = pathacat(shell_work_path, argv[1]);
+        path = pathacat(current_path, argv[1]);
     }
     if (vfs_mkdir(path) == -1) { printk("mkdir: Failed create directory [%s].\n", path); }
     free(path);
@@ -124,7 +124,8 @@ void ps(int argc, char **argv) {
                 }
             }
         }
-        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  ProcessorID\n",
+        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  "
+               "ProcessorID\n",
                longest_name_len, "NAME", longest_pgb_len, "GROUP");
         for (size_t i = 0; i < MAX_CPU; i++) {
             smp_cpu_t cpu = smp_cpus[i];
@@ -155,12 +156,12 @@ void ps(int argc, char **argv) {
 static void ls(int argc, char **argv) {
     vfs_node_t p;
     if (argc == 1) {
-        p = vfs_open(shell_work_path);
+        p = vfs_open(current_path);
     } else {
         if (argv[1][0] == '/') {
             p = vfs_open(argv[1]);
         } else {
-            char *path = pathacat(shell_work_path, argv[1]);
+            char *path = pathacat(current_path, argv[1]);
             p          = vfs_open(path);
             free(path);
         }
@@ -224,12 +225,12 @@ static void mount(int argc, char **argv) {
         printk("mount: Too few parameters.\n");
         return;
     }
-    vfs_node_t p = vfs_open(argv[1]);
+    vfs_node_t p = vfs_open(argv[2]);
     if (p == NULL) {
         printk("Cannot found mount directory.\n");
         return;
     }
-    if (vfs_mount(argv[2], p) == -1) { printk("Failed mount device [%s]\n", argv[2]); }
+    if (vfs_mount(argv[1], p) == -1) { printk("Failed mount device [%s]\n", argv[1]); }
 }
 
 static void lmod(int argc, char **argv) {
@@ -257,9 +258,9 @@ static void lmod(int argc, char **argv) {
     }
 }
 
-static void luser(int argc, char **argv) {
+static void exec(int argc, char **argv) {
     if (argc == 1) {
-        printk("luser: Too few parameters.\n");
+        printk("exec: Too few parameters.\n");
         return;
     }
 
@@ -275,11 +276,16 @@ static void luser(int argc, char **argv) {
         kwarn("Cannot load elf file.");
         return;
     }
-    pcb_t user_task =
-        create_process_group(module->module_name, up, get_current_task()->parent_group->user);
+
+    char *name        = module->module_name;
+    ucb_t user_handle = get_current_task()->parent_group->user;
+    pcb_t user_task   = create_process_group(name, up, user_handle);
     create_user_thread(main, "main", user_task);
-    logkf("User application %s : %d : index: %d loaded.\n", module->module_name, user_task->pgb_id,
-          user_task->queue_index);
+
+    int    pgb_id      = user_task->pgb_id;
+    size_t queue_index = user_task->queue_index;
+    logkf("User application %s : %d : index: %d loaded.\n", name, pgb_id, queue_index);
+
     get_current_task()->status = WAIT;
     waitpid(user_task->pgb_id);
     get_current_task()->status = RUNNING;
@@ -345,10 +351,10 @@ static void clear() {
 
 static void print_help() {
     printk("Usage <command|app_path> [argument...]\n");
-    printk("help h ?                 Get shell help info.\n");
+    printk("help                     Get shell help info.\n");
     printk("shutdown exit            Shutdown kernel.\n");
     printk("reboot                   Restart kernel.\n");
-    printk("lspci/lspcie             List all PCI/PCIE devices.\n");
+    printk("lspci                    List all PCI/PCIE devices.\n");
     printk("sysinfo                  Get system info.\n");
     printk("clear                    Clear screen.\n");
     printk("ps        [pcb]          List task group or all running tasks.\n");
@@ -357,13 +363,14 @@ static void print_help() {
     printk("mkdir     <name>         Create a directory.\n");
     printk("ls        [path]         List all file or directory.\n");
     printk("echo      <message>      Print a message.\n");
-    printk("mount     <path> <dev>   Mount a device to path.\n");
+    printk("mount     <dev> <path>   Mount a device to path.\n");
     printk("lmod      <module|list>  Load or list module.\n");
-    printk("luser     <module>       Load a user application.\n");
+    printk("exec      <module>       Load a user application.\n");
 }
 
 // ====== pl_readline ======
-static int cmd_parse(const char *cmd_str, char **argv, char token) // 用uint8_t是因为" "使用8位整数
+static int cmd_parse(const char *cmd_str, char **argv,
+                     char token) // 用uint8_t是因为" "使用8位整数
 {
     int arg_idx = 0;
 
@@ -411,7 +418,7 @@ builtin_cmd_t builtin_cmds[] = {
     {"echo",     (void (*)(int, char **))echo       },
     {"mount",    (void (*)(int, char **))mount      },
     {"lmod",     (void (*)(int, char **))lmod       },
-    {"luser",    (void (*)(int, char **))luser      }
+    {"exec",     (void (*)(int, char **))exec       }
 };
 
 /* 内建命令数量 */
@@ -468,45 +475,83 @@ static int plreadln_putch(int ch) {
     return 0;
 }
 
+static char *truncate_path(char *buf, bool clear) {
+    char *path = malloc(strlen(buf) + 1);
+    memcpy(path, buf, strlen(buf) + 1);
+    bool find_slash = false;
+    for (isize i = strlen(path); i >= 0; i--) {
+        if (path[i] == '/') {
+            path[i + 1] = '\0';
+            find_slash  = true;
+            break;
+        }
+    }
+    if (!find_slash && clear) { path[0] = '\0'; }
+    return path;
+}
+
+static void add_to_maker(vfs_node_t node, char *word,
+                         pl_readline_words_t words) { // 把一个目录或文件添加到自动补全器中
+    if (node->type == file_dir) {
+        pl_readline_word_maker_add(word, words, false, PL_COLOR_YELLOW, '/');
+    } else {
+        pl_readline_word_maker_add(word, words, false, PL_COLOR_CYAN, ' ');
+    }
+}
+
 static void handle_tab(char *buf, pl_readline_words_t words) {
     for (int i = 0; i < builtin_cmd_num; ++i) {
         char *cmd = (char *)builtin_cmds[i].name;
         pl_readline_word_maker_add(cmd, words, true, PL_COLOR_BLUE, ' ');
     }
 
-    if (buf[0] != '/' && strlen(buf)) { return; }
-    char *s = malloc(strlen(buf) + 2);
-    memcpy(s, buf, strlen(buf) + 1);
-    if (strlen(s)) {
-        for (isize i = strlen(s); i >= 0; i--) {
-            if (s[i] == '/') {
-                s[i + 1] = '\0';
-                break;
-            }
+    if (buf[0] == '\0') {
+        vfs_node_t p = vfs_open(current_path);
+        if (!p) return;
+        list_foreach(p->child, i) {
+            vfs_node_t c = (vfs_node_t)i->data;
+            vfs_update(c);
+            add_to_maker(c, c->name, words);
         }
+    } else if (buf[0] == '/') {
+        char      *path = truncate_path(buf, false);
+        vfs_node_t p    = vfs_open(path);
+        if (!p) {
+            free(path);
+            return;
+        }
+        list_foreach(p->child, i) {
+            vfs_node_t c        = (vfs_node_t)i->data;
+            char      *new_path = pathacat(path, c->name);
+            vfs_update(c);
+            add_to_maker(c, new_path, words);
+            free(new_path);
+        }
+        free(path);
     } else {
-        s[0] = '/';
-        s[1] = '\0';
-    }
+        char *path      = truncate_path(buf, true);
+        char *full_path = pathacat(current_path, path);
 
-    vfs_node_t p = vfs_open(s);
-    if (!p) {
-        free(s);
-        return;
-    }
-
-    list_foreach(p->child, i) {
-        vfs_node_t c        = (vfs_node_t)i->data;
-        char      *new_path = pathacat(s, c->name);
-        vfs_update(c);
-        if (c->type == file_dir) {
-            pl_readline_word_maker_add(new_path, words, false, PL_COLOR_YELLOW, '/');
-        } else {
-            pl_readline_word_maker_add(new_path, words, false, PL_COLOR_CYAN, ' ');
+        /* Notice: may panic here
+         * Reason: vfs_open() cannot handle path like ".." or "/dev/../"
+         * Test: input `cd dev`, enter, input `../` and will panic
+         * Should fix: rewrite vfs_open() please :(
+         */
+        vfs_node_t p = vfs_open(full_path);
+        if (!p) {
+            free(path);
+            return;
         }
-        free(new_path);
+        list_foreach(p->child, i) {
+            vfs_node_t c = (vfs_node_t)i->data;
+            vfs_update(c);
+            char *new_path = (char *)malloc(strlen(path) + strlen(c->name) + 1);
+            sprintf(new_path, "%s%s", path, c->name);
+            add_to_maker(c, new_path, words);
+            free(new_path);
+        }
+        free(path);
     }
-    free(s);
 }
 
 static void plreadln_flush(void) {}
@@ -519,6 +564,8 @@ _Noreturn void shell_key_service() {
 }
 
 _Noreturn void shell_setup() {
+    char *user_name = tcb->parent_group->user->name;
+
     printk("Welcome to CoolPotOS (%s)!\n"
            " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
            " * Website:           https://cpos.plos-clan.org\n"
@@ -526,23 +573,23 @@ _Noreturn void shell_setup() {
            "  Tasks:              %d\n"
            "  Logged:             %s\n"
            "MIT License 2024-2025 plos-clan\n",
-           KERNEL_NAME, get_date_time(), get_all_task(), tcb->parent_group->user->name);
+           KERNEL_NAME, get_date_time(), get_all_task(), user_name);
 
     char     prompt[128];
     uint8_t *argv[MAX_ARG_NR];
 
-    shell_work_path = malloc(1024);
-    not_null_assets(shell_work_path, "work path null");
-    memset(shell_work_path, 0, 1024);
-    shell_work_path[0] = '/';
+    current_path = malloc(1024);
+    not_null_assets(current_path, "work path null");
+    memset(current_path, 0, 1024);
+    current_path[0] = '/';
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
     loop {
-        sprintf(prompt, "\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s>\033[0m ",
-                tcb->parent_group->user->name, shell_work_path);
-        const char *cmd = pl_readline(pl, prompt);
+        char *template = "\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s>\033[0m ";
+        sprintf(prompt, template, user_name, current_path);
 
+        const char *cmd = pl_readline(pl, prompt);
         if (cmd[0] == 0) continue;
         int argc = cmd_parse(cmd, (char **)argv, ' ');
 
@@ -550,7 +597,7 @@ _Noreturn void shell_setup() {
             kerror("shell: number of arguments exceed MAX_ARG_NR(30)");
             continue;
         }
-        if (argc == 0) { continue; }
+        if (argc == 0) continue;
 
         int cmd_index = find_cmd(argv[0]);
         if (cmd_index < 0) {
