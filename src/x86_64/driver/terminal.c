@@ -5,6 +5,7 @@
 #include "krlibc.h"
 #include "lock.h"
 #include "timer.h"
+#include "keyboard.h"
 
 atom_queue *output_buffer;
 bool        open_flush = false;
@@ -82,7 +83,7 @@ void init_terminal() {
     terminal_init(&display, size, malloc, free);
     terminal_set_crnl_mapping(true);
     terminal_set_scroll_speed(3);
-    //terminal_set_pty_writer(terminal_pty_writer);
+    terminal_set_pty_writer(terminal_pty_writer);
 
     TerminalPalette palette = {
         .background = 0x0d0d1a,

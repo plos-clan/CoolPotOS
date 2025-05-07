@@ -7,6 +7,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
+#include "terminal.h"
 
 static int         caps_lock, shift, ctrl = 0;
 extern tcb_t       kernel_head_task;
@@ -48,9 +49,12 @@ static void key_callback(void *pcb_handle, void *scan_handle) {
 }
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
-    close_interrupt;
-    io_out8(0x61, 0x20);
+    send_eoi();
     uint8_t scancode = io_in8(0x60);
+
+    /* temp solution until can pass all scancode to threads */
+    terminal_handle_keyboard(scancode);
+
     if (scancode == 0xfa) {
         key_cmd_state.got_ack = true;
         send_eoi();
@@ -65,33 +69,29 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
 
     if (scancode == 0x2a || scancode == 0x36) { // Shift按下
         shift = 1;
-        goto ret;
+        return;
     }
     if (scancode == 0x1d) { // Ctrl按下
         ctrl = 1;
-        goto ret;
+        return;
     }
     if (scancode == 0x3a) { // Caps Lock按下
         caps_lock = caps_lock ^ 1;
-        goto ret;
+        return;
     }
     if (scancode == 0xaa || scancode == 0xb6) { // Shift松开
         shift = 0;
-        goto ret;
+        return;
     }
     if (scancode == 0x9d) { // Ctrl松开
         ctrl = 0;
-        goto ret;
+        return;
     }
     if (scancode < 0x80 || scancode == 0xe0 || scancode == 0xc8 || scancode == 0xd0 ||
         scancode == 0xcb || scancode == 0xcd) { // 其他按键
         if (get_current_task() == NULL) return;
         if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
     }
-
-ret:
-    open_interrupt;
-    send_eoi();
 }
 
 int input_char_inSM() {
