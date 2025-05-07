@@ -340,6 +340,10 @@ static void sys_info() {
     // clang-format on
 }
 
+static void clear() {
+    printk("\033[2J\033[1;1H");
+}
+
 static void print_help() {
     printk("Usage <command|app_path> [argument...]\n");
     printk("help h ?                 Get shell help info.\n");
@@ -399,6 +403,7 @@ builtin_cmd_t builtin_cmds[] = {
     {"reboot",   (void (*)(int, char **))cp_reset   },
     {"lspci",    (void (*)(int, char **))lspci      },
     {"sysinfo",  (void (*)(int, char **))sys_info   },
+    {"clear",    (void (*)(int, char **))clear      },
     {"ps",       (void (*)(int, char **))ps         },
     {"pkill",    (void (*)(int, char **))pkill      },
     {"cd",       (void (*)(int, char **))cd         },
