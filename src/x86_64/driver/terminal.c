@@ -1,11 +1,11 @@
 #include "terminal.h"
 #include "atom_queue.h"
 #include "gop.h"
+#include "keyboard.h"
 #include "klog.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "timer.h"
-#include "keyboard.h"
 
 atom_queue *output_buffer;
 bool        open_flush = false;

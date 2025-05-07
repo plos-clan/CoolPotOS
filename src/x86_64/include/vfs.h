@@ -81,6 +81,7 @@ vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
 int        vfs_close(vfs_node_t node); // 关闭已打开的节点
 void       vfs_free(vfs_node_t vfs);
+void       vfs_update(vfs_node_t node);
 vfs_node_t vfs_open(const char *str); // 打开一个节点
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);

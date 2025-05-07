@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iic/iic_basic_implementation.h"
+#include "iic/iic_impl.h"
 #include "krlibc.h"
 #include "timer.h"
 

@@ -137,12 +137,9 @@ syscall_(waitpid) {
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT] = syscall_exit,
-    [SYSCALL_ABORT] = syscall_abort,
-    [SYSCALL_OPEN] = syscall_open,
-    [SYSCALL_CLOSE] = syscall_close,
-    [SYSCALL_WRITE] = syscall_write,
-    [SYSCALL_READ] = syscall_read,
+    [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,
+    [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
+    [SYSCALL_WRITE] = syscall_write,     [SYSCALL_READ] = syscall_read,
     [SYSCALL_WAITPID] = syscall_waitpid,
 };
 
