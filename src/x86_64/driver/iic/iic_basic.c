@@ -1,7 +1,6 @@
-//enable all implementation
 #define ALL_IMPLEMENTATION
 
-#include "iic/iic_basic_implementation.h"
+#include "iic/iic_impl.h"
 #include "krlibc.h"
 
 bool crc_check(IIC_Data *frame) {

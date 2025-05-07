@@ -72,6 +72,8 @@ char *strrchr(const char *s, int c);
 
 char *strtok(char *str, const char *delim);
 
+char *pathacat(char *p1, char *p2);
+
 static inline char *LeadingWhitespace(char *beg, char *end) {
     while (end > beg && *--end <= 0x20) {
         *end = 0;

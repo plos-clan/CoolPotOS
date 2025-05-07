@@ -468,28 +468,39 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
         pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, PL_COLOR_BLUE, ' ');
     }
 
-    vfs_node_t p = vfs_open(shell_work_path);
-    if (p == NULL) return;
-
-    int  current     = words->len;
-    list_foreach(p->child, i) {
-        vfs_node_t c = (vfs_node_t)i->data;
-        if (strncmp(buf, c->name, strlen(buf)) == 0 && strlen(buf) != strlen(c->name)) {
-            pl_readline_word_maker_add(c->name, words, false, PL_COLOR_YELLOW, '/');
-        }
-    }
-    if (strcmp(buf, "/") == 0) {
-        pl_readline_word_maker_add("/", words, false, PL_COLOR_YELLOW, ' ');
-    }
-    if (words->len - current == 0) {
-        list_foreach(p->child, i) {
-            vfs_node_t c = (vfs_node_t)i->data;
-            if (strcmp(buf, c->name) == 0) {
-                pl_readline_word_maker_add(c->name, words, false, PL_COLOR_YELLOW, '/');
+    if (buf[0] != '/' && strlen(buf)) { return; }
+    char *s = malloc(strlen(buf) + 2);
+    memcpy(s, buf, strlen(buf) + 1);
+    if (strlen(s)) {
+        for (isize i = strlen(s); i >= 0; i--) {
+            if (s[i] == '/') {
+                s[i + 1] = '\0';
                 break;
             }
         }
+    } else {
+        s[0] = '/';
+        s[1] = '\0';
     }
+
+    vfs_node_t p = vfs_open(s);
+    if (!p) {
+        free(s);
+        return;
+    }
+
+    list_foreach(p->child, i) {
+        vfs_node_t c        = (vfs_node_t)i->data;
+        char      *new_path = pathacat(s, c->name);
+        vfs_update(c);
+        if (c->type == file_dir) {
+            pl_readline_word_maker_add(new_path, words, false, PL_COLOR_YELLOW, '/');
+        } else {
+            pl_readline_word_maker_add(new_path, words, false, PL_COLOR_YELLOW, ' ');
+        }
+        free(new_path);
+    }
+    free(s);
 }
 
 static void plreadln_flush(void) {}

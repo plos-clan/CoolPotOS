@@ -1,5 +1,6 @@
 #include "krlibc.h"
 #include "heap.h"
+#include "sprintf.h"
 
 int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;
@@ -272,4 +273,14 @@ char *strrchr(const char *s, int c) {
         s++;
     }
     return (c == '\0') ? (char *)s : last;
+}
+
+char *pathacat(char *p1, char *p2) {
+    char *p = (char *)malloc(strlen(p1) + strlen(p2) + 2);
+    if (p1[strlen(p1) - 1] == '/') {
+        sprintf(p, "%s%s", p1, p2);
+    } else {
+        sprintf(p, "%s/%s", p1, p2);
+    }
+    return p;
 }
