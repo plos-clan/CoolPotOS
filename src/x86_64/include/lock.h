@@ -14,7 +14,7 @@ typedef _Atomic volatile bool spin_t;
 #define spin_lockall(...)                                                                          \
     ({                                                                                             \
         const spin_t _spins_[] = {__VA_ARGS__};                                                    \
-        loop {                                                                             \
+        loop {                                                                                     \
             usize _i_ = 0;                                                                         \
             for (; _i_ < COUNT(_spins_); _i_++) {                                                  \
                 if (!spin_trylock(_spins_[_i_])) break;                                            \
