@@ -467,11 +467,32 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
     for (int i = 0; i < builtin_cmd_num; ++i) {
         pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, PL_COLOR_BLUE, ' ');
     }
+
+    vfs_node_t p = vfs_open(shell_work_path);
+    if (p == NULL) return;
+
+    int  current     = words->len;
+    list_foreach(p->child, i) {
+        vfs_node_t c = (vfs_node_t)i->data;
+        if (strncmp(buf, c->name, strlen(buf)) == 0 && strlen(buf) != strlen(c->name)) {
+            pl_readline_word_maker_add(c->name, words, false, PL_COLOR_YELLOW, '/');
+        }
+    }
+    if (strcmp(buf, "/") == 0) {
+        pl_readline_word_maker_add("/", words, false, PL_COLOR_YELLOW, ' ');
+    }
+    if (words->len - current == 0) {
+        list_foreach(p->child, i) {
+            vfs_node_t c = (vfs_node_t)i->data;
+            if (strcmp(buf, c->name) == 0) {
+                pl_readline_word_maker_add(c->name, words, false, PL_COLOR_YELLOW, '/');
+                break;
+            }
+        }
+    }
 }
 
-static void plreadln_flush(void) {
-    /* Nothing */
-}
+static void plreadln_flush(void) {}
 
 _Noreturn void shell_setup() {
     printk("Welcome to CoolPotOS (%s)!\n"
