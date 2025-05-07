@@ -89,11 +89,6 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         ctrl = 0;
         return;
     }
-    if (scancode < 0x80 || scancode == 0xe0 || scancode == 0xc8 || scancode == 0xd0 ||
-        scancode == 0xcb || scancode == 0xcd) { // 其他按键
-                                                //        if (get_current_task() == NULL) return;
-        //        if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
-    }
 }
 
 int input_char_inSM() {

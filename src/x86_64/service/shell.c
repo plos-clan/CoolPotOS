@@ -22,7 +22,6 @@
 #include "vfs.h"
 
 extern void cp_shutdown();
-
 extern void cp_reset();
 
 extern lock_queue *pgb_queue;
@@ -30,7 +29,6 @@ extern atom_queue *temp_keyboard_buffer;
 
 char           *shell_work_path;
 extern uint64_t memory_size; // hhdm.c
-char            com_copy[100];
 
 static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);
@@ -38,10 +36,10 @@ static inline int isprint_syshell(int c) {
 
 static void cd(int argc, char **argv) {
     if (argc == 1) {
-        printk("If there are too few parameters.\n");
+        printk("cd: Too few parameters.\n");
         return;
     }
-    char *s = com_copy + 3;
+    char *s = argv[1];
     if (s[strlen(s) - 1] == '/' && strlen(s) > 1) { s[strlen(s) - 1] = '\0'; }
     if (streq(s, ".")) return;
     if (streq(s, "..")) {
@@ -52,37 +50,39 @@ static void cd(int argc, char **argv) {
         if (strlen(shell_work_path) == 0) strcpy(shell_work_path, "/");
         return;
     }
-    char *old = strdup(shell_work_path);
+    char *path;
     if (s[0] == '/') {
-        strcpy(shell_work_path, s);
+        path = strdup(s);
     } else {
-        if (streq(shell_work_path, "/"))
-            sprintf(shell_work_path, "%s%s", shell_work_path, s);
-        else
-            sprintf(shell_work_path, "%s/%s", shell_work_path, s);
+        path = pathacat(shell_work_path, s);
     }
-    if (vfs_open(shell_work_path) == NULL) {
-        printk("cd: %s: No such directory\n", s);
-        sprintf(shell_work_path, "%s", old);
-        free(old);
+    vfs_node_t node;
+    if ((node = vfs_open(path)) == NULL) {
+        printk("cd: %s: No such file or directory\n", s);
+        free(path);
+        return;
     }
+    if (node->type == file_dir) {
+        sprintf(shell_work_path, "%s", path);
+    } else {
+        printk("cd: %s: Not a directory\n", s);
+    }
+    free(path);
 }
 
 static void mkdir(int argc, char **argv) {
     if (argc == 1) {
-        printk("[Shell-MKDIR]: If there are too few parameters.\n");
+        printk("mkdir: Too few parameters.\n");
         return;
     }
-    char *buf_h = com_copy + 6;
-    char  bufx[100];
-    if (buf_h[0] != '/') {
-        if (!strcmp(shell_work_path, "/"))
-            sprintf(bufx, "/%s", buf_h);
-        else
-            sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-    } else
-        sprintf(bufx, "%s", buf_h);
-    if (vfs_mkdir(bufx) == -1) { printk("Failed create directory [%s].\n", argv[1]); }
+    char *path;
+    if (argv[1][0] == '/') {
+        path = strdup(argv[1]);
+    } else {
+        path = pathacat(shell_work_path, argv[1]);
+    }
+    if (vfs_mkdir(path) == -1) { printk("mkdir: Failed create directory [%s].\n", path); }
+    free(path);
 }
 
 void ps(int argc, char **argv) {
@@ -157,37 +157,38 @@ static void ls(int argc, char **argv) {
     if (argc == 1) {
         p = vfs_open(shell_work_path);
     } else {
-        char *buf_h = com_copy + 3;
-        char  bufx[100];
-        if (buf_h[0] != '/') {
-            if (!strcmp(shell_work_path, "/"))
-                sprintf(bufx, "/%s", buf_h);
-            else
-                sprintf(bufx, "%s/%s", shell_work_path, buf_h);
-        } else
-            sprintf(bufx, "%s", buf_h);
-        p = vfs_open(bufx);
+        if (argv[1][0] == '/') {
+            p = vfs_open(argv[1]);
+        } else {
+            char *path = pathacat(shell_work_path, argv[1]);
+            p          = vfs_open(path);
+            free(path);
+        }
     }
     if (p == NULL) {
         printk("ls: %s: No such file or directory\n", argv[1]);
         return;
     }
-    list_foreach(p->child, i) {
-        vfs_node_t c = (vfs_node_t)i->data;
-        printk("%s ", c->name);
+    if (p->type == file_dir) {
+        list_foreach(p->child, i) {
+            vfs_node_t c = (vfs_node_t)i->data;
+            printk("%s ", c->name);
+        }
+        printk("\n");
+    } else {
+        printk("%s\n", argv[1]);
     }
-    printk("\n");
 }
 
 static void pkill(int argc, char **argv) {
     if (argc == 1) {
-        printk("[Shell-PKILL]: If there are too few parameters.\n");
+        printk("pkill: Too few parameters.\n");
         return;
     }
     int   pid = strtol(argv[1], NULL, 10);
     pcb_t pcb = found_pcb(pid);
     if (pcb == NULL) {
-        printk("Cannot find procces [%d]\n", pid);
+        printk("pkill: Cannot find procces [%d]\n", pid);
         return;
     }
     kill_proc(pcb, 135);
@@ -205,15 +206,12 @@ void lspci() {
 }
 
 static void echo(int argc, char **argv) {
-    if (argc == 1) {
-        printk("[Shell-ECHO]: If there are too few parameters.\n");
-        return;
-    }
+    if (argc == 1) { return; }
     vfs_node_t stdout = vfs_open("/dev/stdout");
     if (stdout == NULL)
         printk("ERROR: stream device is null.\n");
     else {
-        char *buf = com_copy + 5;
+        char *buf = argv[1];
         if (vfs_write(stdout, buf, 0, strlen(buf)) == VFS_STATUS_FAILED)
             printk("stdout stream has error.\n");
         vfs_close(stdout);
@@ -223,7 +221,7 @@ static void echo(int argc, char **argv) {
 
 static void mount(int argc, char **argv) {
     if (argc < 3) {
-        printk("[Shell-MOUNT]: If there are too few parameters.\n");
+        printk("mount: Too few parameters.\n");
         return;
     }
     vfs_node_t p = vfs_open(argv[1]);
@@ -236,7 +234,7 @@ static void mount(int argc, char **argv) {
 
 static void lmod(int argc, char **argv) {
     if (argc == 1) {
-        printk("[Shell-LMOD]: If there are too few parameters.\n");
+        printk("lmod: Too few parameters.\n");
         return;
     }
 
@@ -261,7 +259,7 @@ static void lmod(int argc, char **argv) {
 
 static void luser(int argc, char **argv) {
     if (argc == 1) {
-        printk("[Shell-LMOD]: If there are too few parameters.\n");
+        printk("luser: Too few parameters.\n");
         return;
     }
 
@@ -465,13 +463,15 @@ static int plreadln_getch(void) {
 }
 
 static int plreadln_putch(int ch) {
-    get_current_task()->parent_group->tty->putchar(get_current_task()->parent_group->tty, ch);
+    tty_t *tty = get_current_task()->parent_group->tty;
+    tty->putchar(tty, ch);
     return 0;
 }
 
 static void handle_tab(char *buf, pl_readline_words_t words) {
     for (int i = 0; i < builtin_cmd_num; ++i) {
-        pl_readline_word_maker_add((char *)builtin_cmds[i].name, words, 1, PL_COLOR_BLUE, ' ');
+        char *cmd = (char *)builtin_cmds[i].name;
+        pl_readline_word_maker_add(cmd, words, true, PL_COLOR_BLUE, ' ');
     }
 
     if (buf[0] != '/' && strlen(buf)) { return; }
@@ -502,7 +502,7 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
         if (c->type == file_dir) {
             pl_readline_word_maker_add(new_path, words, false, PL_COLOR_YELLOW, '/');
         } else {
-            pl_readline_word_maker_add(new_path, words, false, PL_COLOR_YELLOW, ' ');
+            pl_readline_word_maker_add(new_path, words, false, PL_COLOR_CYAN, ' ');
         }
         free(new_path);
     }
