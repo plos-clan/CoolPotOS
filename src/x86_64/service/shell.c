@@ -35,38 +35,6 @@ static inline int isprint_syshell(int c) {
     return (c > 0x1F && c < 0x7F);
 }
 
-static char getc() {
-    char c;
-    do {
-        c = kernel_getch();
-        if (c == '\b' || c == '\n') break;
-    } while (!isprint_syshell(c));
-    return c;
-}
-
-static int gets(char *buf, int buf_size) {
-    int  index = 0;
-    char c;
-    while ((c = getc()) != '\n') {
-        if (c == '\b') {
-            if (index > 0) {
-                index--;
-                printk("\b \b");
-            }
-        } else {
-            buf[index++] = c;
-            printk("%c", c);
-        }
-        if (index >= buf_size) {
-            kernel_error("\nFATAL: OUT OF INPUT BOUNDS\n", (uint64_t)"FATAL ERROR", NULL);
-            break;
-        }
-    }
-    buf[index] = '\0';
-    printk("%c", c);
-    return index;
-}
-
 static void cd(int argc, char **argv) {
     if (argc == 1) {
         printk("If there are too few parameters.\n");
@@ -454,17 +422,22 @@ int find_cmd(uint8_t *cmd) {
 }
 
 static int plreadln_getch(void) {
-    int  temp = kernel_getch();
-    char ch   = (char)temp;
+    char ch = 0;
+
+    /* temporary alternative to handle unsupported keys */
+    extern atom_queue *temp_keyboard_buffer;
+    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
+        __asm__ volatile("pause");
+    }
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
     if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
     if (ch == 0x9) { return PL_READLINE_KEY_TAB; }
 
     if (ch == 0x1b) {
-        ch = kernel_getch();
+        ch = plreadln_getch();
         if (ch == '[') {
-            ch = kernel_getch();
+            ch = plreadln_getch();
             switch (ch) {
             case 'A': return PL_READLINE_KEY_UP;
             case 'B': return PL_READLINE_KEY_DOWN;
@@ -473,10 +446,10 @@ static int plreadln_getch(void) {
             case 'H': return PL_READLINE_KEY_HOME;
             case 'F': return PL_READLINE_KEY_END;
             case '5':
-                if (kernel_getch() == '~') return PL_READLINE_KEY_PAGE_UP;
+                if (plreadln_getch() == '~') return PL_READLINE_KEY_PAGE_UP;
                 break;
             case '6':
-                if (kernel_getch() == '~') return PL_READLINE_KEY_PAGE_DOWN;
+                if (plreadln_getch() == '~') return PL_READLINE_KEY_PAGE_DOWN;
                 break;
             default: return -1;
             }
