@@ -66,12 +66,12 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 
 ### Contributors
 
-- XIAOYI12 - OS Development
-- min0911Y - OS FileSystem Development
-- copi143 - UserHeap Development
+- XIAOYI12 - OS Developer
+- min0911Y - OS FileSystem Developer
+- copi143 - UserHeap Developer
 - QtLittleXu - XuYuxuan OS Document
 - ViudiraTech - PCI Driver Optimization
-- Vinbe Wan - IIC Development
+- Vinbe Wan - IIC Developer
 - A4-Tacks - Write Some Build Scripts
 - wenxuanjun - OS Developer
 - Minsecrus - Memory Usage Optimization
@@ -80,4 +80,5 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 - 27Onion - Translated French README
 - LY-Xiang - Optimized actions process
 - suhuajun-github - Fix several bugs in the AHCI driver
-- FengHeting - SMBIOS driver Development
+- FengHeting - SMBIOS driver Developer
+- blurryrect - OS Developer
