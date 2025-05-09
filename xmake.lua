@@ -18,8 +18,9 @@ target("pl_readline")
     add_includedirs(base_dir.."/include", {public = true})
 
     add_defines("PL_ENABLE_HISTORY_FILE=0")
+    add_cflags("-nostdlib", "-fno-builtin", "-Wno-unused-function")
+    add_cflags("-fno-mudflap", "-fno-stack-protector")
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-red-zone")
-    add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector", "-Wno-unused-function")
 
 target("kernel32")
     set_arch("i386")
