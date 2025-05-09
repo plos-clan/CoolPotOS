@@ -7,14 +7,24 @@ set_policy("run.autobuild", true)
 
 target("limine")
     set_kind("binary")
-    set_default(false)
-    
     add_files("assets/limine/*.c")
     add_includedirs("assets/limine")
+
+target("pl_readline")
+    set_kind("static")
+
+    local base_dir = "thirdparty/pl_readline"
+    add_files(base_dir.."/src/*.c")
+    add_includedirs(base_dir.."/include", {public = true})
+
+    add_defines("PL_ENABLE_HISTORY_FILE=0")
+    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-red-zone")
+    add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector", "-Wno-unused-function")
 
 target("kernel32")
     set_arch("i386")
     set_kind("binary")
+    set_default(false)
     set_toolchains("@zig", "nasm")
     set_toolset("as", "nasm")
 
@@ -22,8 +32,6 @@ target("kernel32")
     add_arflags("-target x86-freestanding")
     add_ldflags("-target x86-freestanding")
     add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
-
-    set_default(false)
 
     add_linkdirs("libs/i386")
     add_includedirs("src/i386/include")
@@ -37,16 +45,17 @@ target("kernel32")
     add_ldflags("-T", "src/i386/linker.ld")
 
 target("kernel64")
+    set_arch("x86_64")
     set_kind("binary")
-    set_toolchains("clang")
     set_default(false)
+    add_deps("pl_readline")
+    set_toolchains("clang")
 
     add_cflags("-target x86_64-freestanding")
     add_ldflags("-target x86_64-freestanding")
 
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
     add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto")
-    add_cflags("-Wno-unused-parameter","-Wno-unused-function")
     add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-flto", "-fuse-ld=lld")
 
     --add_cflags("-fsanitize=undefined")
@@ -65,7 +74,6 @@ target("kernel64")
 
     --add_links("ubscan")
     add_links("os_terminal")
-    add_links("plreadln")
 
     add_linkdirs("libs/x86_64")
     add_files("src/x86_64/**/*.c")
@@ -97,8 +105,7 @@ target("iso32")
 
 target("iso64")
     set_kind("phony")
-    add_deps("kernel64")
-    add_deps("limine")
+    add_deps("kernel64", "limine")
     set_default(false)
 
     on_build(function (target)

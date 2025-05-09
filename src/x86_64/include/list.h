@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PL_LIST_H
+#define PL_LIST_H
 
 #include "ctype.h"
 #include "heap.h"
@@ -434,3 +435,5 @@ static void list_print(list_t list) {
         }                                                                                          \
         _match_;                                                                                   \
     })
+
+#endif /* PL_LIST_H */
