@@ -12,14 +12,14 @@ target("limine")
 
 target("pl_readline")
     set_kind("static")
+    set_toolchains("clang")
 
     local base_dir = "thirdparty/pl_readline"
     add_files(base_dir.."/src/*.c")
     add_includedirs(base_dir.."/include", {public = true})
 
     add_defines("PL_ENABLE_HISTORY_FILE=0")
-    add_cflags("-nostdlib", "-fno-builtin", "-Wno-unused-function")
-    add_cflags("-fno-mudflap", "-fno-stack-protector")
+    add_cflags("-nostdlib", "-fPIC", "-fno-builtin", "-fno-stack-protector")
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-red-zone")
 
 target("kernel32")
