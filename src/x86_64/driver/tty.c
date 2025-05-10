@@ -30,7 +30,7 @@ static void tty_kernel_putc(tty_t *tty, int c) {
     else {
         spin_lock(tty_lock);
         logkf("");
-        terminal_process_char((char)c);
+        terminal_process_byte(c);
         spin_unlock(tty_lock);
     }
 }

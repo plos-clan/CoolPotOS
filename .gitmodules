@@ -1,5 +1,5 @@
-[submodule "assets/limine"]
-	path = assets/limine
+[submodule "thirdparty/limine"]
+	path = thirdparty/limine
 	url = https://github.com/limine-bootloader/limine
 	branch = v9.x-binary
 	shallow = true

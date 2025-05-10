@@ -21,7 +21,7 @@ void update_terminal() {
         int ch = atom_pop(output_buffer);
         if (ch == -1) break;
         need_flush = true;
-        terminal_process_char((char)ch);
+        terminal_process_byte(ch);
     }
     if (open_flush && need_flush) { terminal_flush(); }
     spin_unlock(terminal_lock);
