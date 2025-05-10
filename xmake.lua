@@ -21,7 +21,7 @@ target("os-terminal")
     on_build(function (target)
         import("core.project.project")
         local src_dir = "thirdparty/libos-terminal"
-        local build_dir = "$(buildir)/os-terminal"
+        local build_dir = "$(buildir)/.build_cache/os-terminal"
 
         os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
         os.cd("thirdparty/libos-terminal")
@@ -97,8 +97,9 @@ target("kernel64")
     -- add_linkdirs("libs/x86_64")
 
     add_links("os_terminal")
-    add_linkdirs("$(buildir)/os-terminal/x86_64-unknown-none/release/")
-    add_includedirs("$(buildir)/os-terminal")
+    local build_dir = "$(buildir)/.build_cache/os-terminal"
+    add_includedirs(build_dir)
+    add_linkdirs(build_dir.."/x86_64-unknown-none/release/")
 
     add_files("src/x86_64/**.c")
     add_includedirs("libs/x86_64")
