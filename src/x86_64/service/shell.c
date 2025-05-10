@@ -40,16 +40,6 @@ static void cd(int argc, char **argv) {
         return;
     }
     char *s = argv[1];
-    if (s[strlen(s) - 1] == '/' && strlen(s) > 1) { s[strlen(s) - 1] = '\0'; }
-    if (streq(s, ".")) return;
-    if (streq(s, "..")) {
-        if (streq(s, "/")) return;
-        char *n = current_path + strlen(current_path);
-        while (*--n != '/' && n != current_path) {}
-        *n = '\0';
-        if (strlen(current_path) == 0) strcpy(current_path, "/");
-        return;
-    }
     char *path;
     if (s[0] == '/') {
         path = strdup(s);
@@ -532,11 +522,6 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
         char *path      = truncate_path(buf, true);
         char *full_path = pathacat(current_path, path);
 
-        /* Notice: may panic here
-         * Reason: vfs_open() cannot handle path like ".." or "/dev/../"
-         * Test: input `cd dev`, enter, input `../` and will panic
-         * Should fix: rewrite vfs_open() please :(
-         */
         vfs_node_t p = vfs_open(full_path);
         if (!p) {
             free(path);
