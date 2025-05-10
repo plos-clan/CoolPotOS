@@ -15,6 +15,7 @@ target("limine")
 target("os-terminal")
     set_kind("phony")
     set_default(false)
+    set_policy("build.fence", true)
 
     on_build(function (target)
         import("core.project.project")
