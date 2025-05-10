@@ -43,7 +43,7 @@ jobs:
           version: 1.0
 
       - name: Setup xmake
-        uses: xmake-io/github-action-setup-xmake@master
+        uses: wenxuanjun/github-action-setup-xmake@master
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
