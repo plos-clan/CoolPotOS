@@ -41,6 +41,8 @@ You need to install them on your computer:
 - git (x86_64 only, for `GIT_VERSION` macro)
 - clang (x86_64 only)
 - lld (x86_64 only, for linking LTO objects)
+- Rust nightly toolchain (x86_64 only)
+- cbindgen (x86_64 only, use `cargo install cbindgen`)
 
 ### i386
 
