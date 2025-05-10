@@ -44,27 +44,29 @@ You need to install them on your computer:
 - Rust nightly toolchain (x86_64 only)
 - cbindgen (x86_64 only, use `cargo install cbindgen`)
 
+Should fetch submodules first:
+
+```bash
+git submodule update --init --recursive
+```
+
 ### i386
 
 Run `xmake run iso32` and it will build and run automatically.
 
 ### x86_64
 
-Checkout submodules:
-
-```bash
-git submodule update --init --recursive
-```
-
-Then run `xmake run iso64` and it will build and run automatically.
+Run `xmake run iso64` and it will build and run automatically.
 
 ## Development
 
-To get syntax highlighting for your editor, you can generate a `compile_commands.json` file so that your editor knows how to find the source files:
+You can generate a `compile_commands.json` file by:
 
 ```bash
 xmake project -k compile_commands
 ```
+
+Then your editor knows how to find the source files and derives syntax highlighting.
 
 ## License
 
