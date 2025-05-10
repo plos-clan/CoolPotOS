@@ -47,11 +47,9 @@ jobs:
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
-          actions-cache-key: ${{ matrix.os }}
+          project-path: .
           build-cache: true
-          build-cache-key: ${{ matrix.os }}
           package-cache: true
-          package-cache-key: ${{ matrix.os }}
 
       - name: Build kernel
         run: xmake build -y
