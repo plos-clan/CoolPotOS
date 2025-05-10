@@ -1,14 +1,18 @@
 name: CI Workflow
 
 on:
-  push: &trigger
+  push:
     branches: ["main"]
     paths-ignore:
       - 'readme'
       - '.gitignore'
-      - 'LICENSE'
       - 'README.md'
-  pull_request: *trigger
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - 'readme'
+      - '.gitignore'
+      - 'README.md'
 
 jobs:
   build:
