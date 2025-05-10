@@ -58,6 +58,14 @@ git submodule update --init --recursive
 
 Then run `xmake run iso64` and it will build and run automatically.
 
+## Development
+
+To get syntax highlighting for your editor, you can generate a `compile_commands.json` file so that your editor knows how to find the source files:
+
+```bash
+xmake project -k compile_commands
+```
+
 ## License
 
 This project is licensed under [MIT License](LICENSE).

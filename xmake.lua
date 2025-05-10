@@ -63,7 +63,7 @@ target("kernel32")
     add_links("elf_parse")
     add_links("alloc")
 
-    add_asflags("-f", "elf32")
+    add_asflags("-f", "elf32", {force = true})
     add_ldflags("-T", "src/i386/linker.ld")
 
 target("kernel64")
