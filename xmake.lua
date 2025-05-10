@@ -39,7 +39,7 @@ target("pl_readline")
     add_includedirs(base_dir.."/include", {public = true})
 
     add_defines("PL_ENABLE_HISTORY_FILE=0")
-    add_cflags("-mno-80387", "-mno-mmx")
+    add_cflags("-mno-80387", "-mno-mmx", "-DNDEBUG")
     add_cflags("-mno-sse", "-mno-sse2", "-mno-red-zone")
     add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector")
 
