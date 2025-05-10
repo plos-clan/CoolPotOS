@@ -16,10 +16,17 @@ jobs:
         with:
           submodules: true
 
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+          target: x86_64-unknown-none
+          components: rust-src
+
       - name: Install packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: xorriso nasm clang mtools lld
+          packages: xorriso nasm clang mtools lld cbindgen
           version: 1.0
 
       - name: Setup BuildTools

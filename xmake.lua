@@ -7,8 +7,27 @@ set_policy("run.autobuild", true)
 
 target("limine")
     set_kind("binary")
-    add_files("assets/limine/*.c")
-    add_includedirs("assets/limine")
+    set_default(false)
+
+    add_files("thirdparty/limine/*.c")
+    add_includedirs("thirdparty/limine")
+
+target("os-terminal")
+    set_kind("phony")
+    set_default(false)
+
+    on_build(function (target)
+        import("core.project.project")
+        local src_dir = "thirdparty/libos-terminal"
+        local build_dir = "$(buildir)/os-terminal"
+
+        os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
+        os.cd("thirdparty/libos-terminal")
+        os.exec("cargo build --release "..
+            "--features embedded-font "..
+            "--target-dir %s", build_dir)
+        os.exec("cbindgen --output %s/os_terminal.h", build_dir)
+    end)
 
 target("pl_readline")
     set_kind("static")
@@ -19,8 +38,9 @@ target("pl_readline")
     add_includedirs(base_dir.."/include", {public = true})
 
     add_defines("PL_ENABLE_HISTORY_FILE=0")
-    add_cflags("-nostdlib", "-fPIC", "-fno-builtin", "-fno-stack-protector")
-    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-red-zone")
+    add_cflags("-mno-80387", "-mno-mmx")
+    add_cflags("-mno-sse", "-mno-sse2", "-mno-red-zone")
+    add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector")
 
 target("kernel32")
     set_arch("i386")
@@ -46,10 +66,9 @@ target("kernel32")
     add_ldflags("-T", "src/i386/linker.ld")
 
 target("kernel64")
-    set_arch("x86_64")
     set_kind("binary")
     set_default(false)
-    add_deps("pl_readline")
+    add_deps("pl_readline", "os-terminal")
     set_toolchains("clang")
 
     add_cflags("-target x86_64-freestanding")
@@ -74,9 +93,12 @@ target("kernel64")
     end)
 
     --add_links("ubscan")
-    add_links("os_terminal")
+    -- add_linkdirs("libs/x86_64")
 
-    add_linkdirs("libs/x86_64")
+    add_links("os_terminal")
+    add_linkdirs("$(buildir)/os-terminal/x86_64-unknown-none/release/")
+    add_includedirs("$(buildir)/os-terminal")
+
     add_files("src/x86_64/**/*.c")
     add_includedirs("libs/x86_64")
     add_includedirs("src/x86_64/include")
@@ -119,9 +141,9 @@ target("iso64")
 
         local limine_dir = iso_dir .. "/limine"
         os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
-        os.cp("assets/limine/limine-bios.sys", limine_dir .. "/limine-bios.sys")
-        os.cp("assets/limine/limine-bios-cd.bin", limine_dir .. "/limine-bios-cd.bin")
-        os.cp("assets/limine/limine-uefi-cd.bin", limine_dir .. "/limine-uefi-cd.bin")
+        os.cp("thirdparty/limine/limine-bios.sys", limine_dir .. "/limine-bios.sys")
+        os.cp("thirdparty/limine/limine-bios-cd.bin", limine_dir .. "/limine-bios-cd.bin")
+        os.cp("thirdparty/limine/limine-uefi-cd.bin", limine_dir .. "/limine-uefi-cd.bin")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         os.run("xorriso -as mkisofs "..
@@ -130,7 +152,7 @@ target("iso64")
             "-hfsplus -apm-block-size 2048 "..
             "--efi-boot limine/limine-uefi-cd.bin "..
             "-efi-boot-part --efi-boot-image --protective-msdos-label "..
-            iso_dir .. " -o " .. iso_file)
+            "%s -o %s", iso_dir, iso_file)
 
         local limine = project.target("limine")
         os.run(limine:targetfile().." bios-install "..iso_file)
@@ -196,5 +218,5 @@ target("run64")
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso",
         }
-        os.execv("qemu-system-x86_64 " , flags)
+        os.execv("qemu-system-x86_64", flags)
     end)
