@@ -28,7 +28,7 @@ static inline char *pathtok(char **sp) {
     if (*s == '\0') return NULL;
     for (; *e != '\0' && *e != '/'; e++) {}
     if (*e == '/') {
-        *e = '\0';
+        *e  = '\0';
         *sp = e + 1;
     } else {
         *sp = e;
@@ -66,21 +66,19 @@ int vfs_mkdir(const char *name) {
     char      *path     = strdup(name + 1);
     char      *save_ptr = path;
     vfs_node_t current  = rootdir;
-    
+
     for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
         if (streq(buf, ".")) {
             continue; // 当前目录，不需要操作
         } else if (streq(buf, "..")) {
-            if (current->parent) {
-                current = current->parent;
-            }
+            if (current->parent) { current = current->parent; }
             continue;
         }
-        
+
         vfs_node_t child = vfs_child_find(current, buf);
         if (child == NULL) {
             // 创建新目录
-            child = vfs_node_alloc(current, buf);
+            child       = vfs_node_alloc(current, buf);
             child->type = file_dir;
             callbackof(current, mkdir)(current->handle, buf, child);
         } else {
@@ -99,21 +97,21 @@ int vfs_mkdir(const char *name) {
 
 int vfs_mkfile(const char *name) {
     if (name[0] != '/') return VFS_STATUS_FAILED;
-    
+
     // 分离路径和文件名
-    char *fullpath = strdup(name);
-    char *filename = fullpath;
+    char *fullpath  = strdup(name);
+    char *filename  = fullpath;
     char *lastslash = strrchr(fullpath, '/');
-    
+
     if (lastslash == fullpath) {
         // 根目录下的文件
-        filename = fullpath + 1;
+        filename   = fullpath + 1;
         *lastslash = '\0';
     } else if (lastslash) {
         *lastslash = '\0';
-        filename = lastslash + 1;
+        filename   = lastslash + 1;
     }
-    
+
     // 打开父目录
     vfs_node_t parent;
     if (lastslash == fullpath) {
@@ -121,18 +119,16 @@ int vfs_mkfile(const char *name) {
     } else {
         parent = vfs_open(fullpath);
     }
-    
+
     free(fullpath);
-    
-    if (parent == NULL || parent->type != file_dir) {
-        return VFS_STATUS_FAILED;
-    }
-    
+
+    if (parent == NULL || parent->type != file_dir) { return VFS_STATUS_FAILED; }
+
     // 创建文件
     vfs_node_t node = vfs_child_append(parent, filename, NULL);
-    node->type = file_block;
+    node->type      = file_block;
     callbackof(parent, mkfile)(parent->handle, filename, node);
-    
+
     return VFS_STATUS_SUCCESS;
 }
 
@@ -154,13 +150,13 @@ vfs_node_t vfs_do_search(vfs_node_t dir, const char *name) {
 vfs_node_t vfs_open(const char *str) {
     if (str == NULL) return NULL;
     if (str[0] != '/') return NULL;
-    if (str[1] == '\0') return rootdir;  // 根目录
-    
+    if (str[1] == '\0') return rootdir; // 根目录
+
     char *path = strdup(str + 1);
     if (path == NULL) return NULL;
-    
-    char *save_ptr = path;
-    vfs_node_t current = rootdir;
+
+    char      *save_ptr = path;
+    vfs_node_t current  = rootdir;
 
     for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
         if (streq(buf, ".")) {
@@ -168,18 +164,16 @@ vfs_node_t vfs_open(const char *str) {
             continue;
         } else if (streq(buf, "..")) {
             // 父目录
-            if (current->parent) {
-                current = current->parent;
-            }
+            if (current->parent) { current = current->parent; }
             continue;
         }
-        
+
         vfs_node_t next = vfs_child_find(current, buf);
         if (next == NULL) {
             free(path);
             return NULL;
         }
-        
+
         do_update(next);
         current = next;
     }
