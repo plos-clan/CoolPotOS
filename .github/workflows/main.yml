@@ -47,9 +47,7 @@ jobs:
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
-          project-path: .
           build-cache: true
-          package-cache: true
 
       - name: Build kernel
         run: xmake build -y
