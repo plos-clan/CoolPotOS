@@ -57,7 +57,7 @@ target("kernel32")
 
     add_linkdirs("libs/i386")
     add_includedirs("src/i386/include")
-    add_files("src/i386/**/*.asm", "src/i386/**/*.c")
+    add_files("src/i386/**.asm", "src/i386/**.c")
 
     add_links("os_terminal")
     add_links("elf_parse")
@@ -100,7 +100,7 @@ target("kernel64")
     add_linkdirs("$(buildir)/os-terminal/x86_64-unknown-none/release/")
     add_includedirs("$(buildir)/os-terminal")
 
-    add_files("src/x86_64/**/*.c")
+    add_files("src/x86_64/**.c")
     add_includedirs("libs/x86_64")
     add_includedirs("src/x86_64/include")
     add_includedirs("src/x86_64/include/types")
