@@ -43,15 +43,15 @@ jobs:
           version: 1.0
 
       - name: Setup xmake
-        uses: xmake-io/github-action-setup-xmake@v1
+        uses: xmake-io/github-action-setup-xmake@master
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
           actions-cache-key: ${{ matrix.os }}
+          build-cache: true
+          build-cache-key: ${{ matrix.os }}
           package-cache: true
           package-cache-key: ${{ matrix.os }}
-          build-cache: true
-          build-cache-key: ${{ matrix.os }}-${{ matrix.build_type }}
 
       - name: Build kernel
         run: xmake build -y
