@@ -1,14 +1,14 @@
 name: CI Workflow
 
 on:
-  push:
-    branches: [ "main" ]
+  push: &trigger
+    branches: ["main"]
     paths-ignore:
+      - 'readme'
+      - '.gitignore'
+      - 'LICENSE'
       - 'README.md'
-  pull_request:
-    branches: [ "main" ]
-      paths-ignore:
-      - 'README.md'
+  pull_request: *trigger
 
 jobs:
   build:
@@ -43,6 +43,11 @@ jobs:
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
+          actions-cache-key: ${{ matrix.os }}
+          package-cache: true
+          package-cache-key: ${{ matrix.os }}
+          build-cache: true
+          build-cache-key: ${{ matrix.os }}-${{ matrix.build_type }}
 
       - name: Build kernel
         run: xmake build -y
