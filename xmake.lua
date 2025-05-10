@@ -22,7 +22,7 @@ target("os-terminal")
         local src_dir = "thirdparty/libos-terminal"
         local build_dir = "$(buildir)/os-terminal"
 
-        os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
+        os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
         os.cd("thirdparty/libos-terminal")
         os.exec("cargo build --release "..
             "--features embedded-font "..
