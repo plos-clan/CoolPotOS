@@ -23,10 +23,13 @@ jobs:
           target: x86_64-unknown-none
           components: rust-src
 
+      - name: Install cbindgen
+        run: cargo install cbindgen
+
       - name: Install packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: xorriso nasm clang mtools lld cbindgen
+          packages: xorriso nasm clang mtools lld
           version: 1.0
 
       - name: Setup BuildTools
