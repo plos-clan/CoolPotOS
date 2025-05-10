@@ -40,6 +40,7 @@ struct process_control_block {
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备
     TaskStatus        status;      // 进程状态
+    uint64_t          mmap_start;  // 映射起始地址
     pcb_t             parent_task; // 父进程
 };
 

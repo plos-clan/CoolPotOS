@@ -10,6 +10,8 @@
 #define STACK_SIZE        32768                    // 栈大小(byte)
 #define KERNEL_ST_SZ      131072                   // 增强栈大小 128k
 #define MAX_WAIT_INDEX    1000000                  // 阻塞最大循环数
+#define KERNEL_AREA_MEM   0xf000000000000000       // 内核地址空间起始
+#define USER_MMAP_START   0x0000700000000000       // 用户态映射起始地址
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")

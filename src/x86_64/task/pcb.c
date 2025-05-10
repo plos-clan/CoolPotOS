@@ -88,7 +88,7 @@ void kill_proc0(pcb_t pcb) {
     loop {
         vfs_node_t node = (vfs_node_t)queue_dequeue(pcb->file_open);
         if (node == NULL) break;
-        vfs_free(node);
+        vfs_close(node);
     }
     queue_destroy(pcb->file_open);
     queue_destroy(pcb->ipc_queue);
@@ -169,6 +169,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
+    new_pgb->mmap_start  = USER_MMAP_START;
     spin_unlock(pgb_queue->lock);
     new_pgb->status = START;
     return new_pgb;
