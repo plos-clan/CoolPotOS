@@ -6,6 +6,8 @@
 #include "pcb.h"
 #include "scheduler.h"
 #include "vfs.h"
+#include "page.h"
+#include "frame.h"
 
 extern void asm_syscall_entry();
 
@@ -136,11 +138,48 @@ syscall_(waitpid) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(mmap){
+    uint64_t addr   = arg0;
+    size_t   length = arg1;
+    uint64_t prot   = arg2;
+    uint64_t flags  = arg3;
+    if(addr == 0) return SYSCALL_FAULT;
+    uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
+    if(count == 0) return SYSCALL_SUCCESS;
+
+    get_current_task()->parent_group->mmap_start += (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+
+    if(addr > KERNEL_AREA_MEM) return SYSCALL_FAULT; // 不允许映射到内核地址空间
+    if(!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT;
+    uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
+
+    for (size_t i = 0; i < count; i++) {
+        uint64_t page_flags = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
+        uint64_t page_addr  = vaddr + i * PAGE_SIZE;
+        if (prot & PROT_READ){
+            page_flags |= PTE_PRESENT;
+        }
+        if (prot & PROT_WRITE){
+            page_flags |= PTE_WRITEABLE;
+        }
+        if (prot & PROT_EXEC){
+            page_flags |= PTE_USER;
+        }
+
+        if(flags & MAP_FIXED){
+            page_map_to(get_current_directory(),page_addr,page_addr,page_flags);
+        } else{
+            uint64_t phys = alloc_frames(1);
+            page_map_to(get_current_directory(),page_addr,phys,page_flags);
+        }
+    }
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,
     [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
     [SYSCALL_WRITE] = syscall_write,     [SYSCALL_READ] = syscall_read,
-    [SYSCALL_WAITPID] = syscall_waitpid,
+    [SYSCALL_WAITPID] = syscall_waitpid, [SYSCALL_MMAP] = syscall_mmap,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {
