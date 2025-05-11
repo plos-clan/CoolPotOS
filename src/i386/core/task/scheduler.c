@@ -22,7 +22,7 @@ int get_all_task() {
         if (pcb == NULL) break;
         num++;
     }
-    infinite_loop; // 遍历进程控制器列表获取进程总数
+    loop; // 遍历进程控制器列表获取进程总数
     return num;
 }
 

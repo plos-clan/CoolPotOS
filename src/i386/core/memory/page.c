@@ -218,19 +218,19 @@ void page_fault(registers_t *regs) {
     }
     if (get_current_proc() == NULL) {
         klogf(false, "Kernel Error Panic.\n");
-        infinite_loop io_hlt();
+        loop io_hlt();
     }
 
     // 多进程相关, 未实现多进程的OS可将以下代码全部替换为 while(1)
     if (get_current_proc()->task_level == TASK_KERNEL_LEVEL) {
         klogf(false, "Kernel Error Panic.\n");
-        infinite_loop io_hlt();
+        loop io_hlt();
     } else if (get_current_proc()->task_level == TASK_APPLICATION_LEVEL) {
         kill_proc(get_current_proc());
     } else if (get_current_proc()->task_level == TASK_SYSTEM_SERVICE_LEVEL) {
         // TODO 蓝屏处理程序待实现
         klogf(false, "System service error. ==Kernel Panic==\n");
-        infinite_loop io_hlt();
+        loop io_hlt();
     }
 
     enable_scheduler();

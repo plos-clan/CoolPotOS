@@ -309,7 +309,7 @@ void setup_shell() {
     shell_work_path    = kmalloc(1024);
     shell_work_path[0] = '/';
     int argc           = -1;
-    infinite_loop {
+    loop {
         printk("\033[32mKernel@localhost: \033[34m%s \033[39m$ ", shell_work_path);
         if (gets(com, MAX_COMMAND_LEN) <= 0) continue;
         memset(com_copy, 0, 100);
@@ -367,7 +367,7 @@ void setup_shell() {
             if ((pid = create_user_process(bufx, com_copy, "User", TASK_APPLICATION_LEVEL)) == -1)
                 printk("\033[31m[Shell]: Unknown command '%s'.\033[39m\n", argv[0]);
             pcb_t *pcb;
-            infinite_loop {
+            loop {
                 pcb = found_pcb(pid);
                 if (pcb == NULL) break;
             }
