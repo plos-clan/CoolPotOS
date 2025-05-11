@@ -321,9 +321,10 @@ static void exec(int argc, char **argv) {
         return;
     }
 
-    char *name        = module->module_name;
-    ucb_t user_handle = get_current_task()->parent_group->user;
-    pcb_t user_task   = create_process_group(name, up, user_handle);
+    char *name            = module->module_name;
+    ucb_t user_handle     = get_current_task()->parent_group->user;
+    pcb_t user_task       = create_process_group(name, up, user_handle);
+    user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);
 
     int    pgb_id      = user_task->pgb_id;
@@ -480,10 +481,7 @@ static int plreadln_getch(void) {
     char ch = 0;
 
     /* temporary alternative to handle unsupported keys */
-    extern atom_queue *temp_keyboard_buffer;
-    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
-        __asm__ volatile("pause");
-    }
+    ch = kernel_getch();
 
     if (ch == 0x0d) { return PL_READLINE_KEY_ENTER; }
     if (ch == 0x7f) { return PL_READLINE_KEY_BACKSPACE; }
@@ -594,13 +592,6 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
 }
 
 static void plreadln_flush(void) {}
-
-_Noreturn void shell_key_service() {
-    loop {
-        int scan_code = input_char_inSM();
-        terminal_handle_keyboard(scan_code);
-    }
-}
 
 _Noreturn void shell_setup() {
     char *user_name = tcb->parent_group->user->name;

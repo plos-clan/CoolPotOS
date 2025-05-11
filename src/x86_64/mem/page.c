@@ -39,7 +39,13 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     if (get_current_task() != NULL) {
         logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
               get_current_task()->name, get_current_task()->parent_group->name);
+        if (get_current_task()->parent_group->task_level == TASK_APPLICATION_LEVEL)
+            kill_proc(get_current_task()->parent_group, -1);
+        terminal_open_flush();
+        enable_scheduler();
+        cpu_hlt;
     }
+
     printk("\n");
     printk(
         "\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",

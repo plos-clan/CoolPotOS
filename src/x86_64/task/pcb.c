@@ -165,6 +165,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->ipc_queue   = queue_init();
     new_pgb->file_open   = queue_init();
     new_pgb->tty         = alloc_default_tty();
+    new_pgb->task_level  = TASK_KERNEL_LEVEL;
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;
@@ -284,6 +285,7 @@ void init_pcb() {
     kernel_group->status                           = RUNNING;
     kernel_group->ipc_queue                        = queue_init();
     kernel_group->parent_task                      = kernel_group;
+    kernel_group->task_level                       = TASK_KERNEL_LEVEL;
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;

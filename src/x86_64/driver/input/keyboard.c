@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "atom_queue.h"
 #include "heap.h"
 #include "io.h"
 #include "ipc.h"
@@ -7,6 +8,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
+#include "terminal.h"
 
 static int         caps_lock, shift, ctrl = 0;
 extern tcb_t       kernel_head_task;
@@ -36,22 +38,8 @@ struct keyboard_cmd_state {
     .got_resend  = false,
 };
 
-static void key_callback(void *pcb_handle, void *scan_handle) {
-    pcb_t pcb = (pcb_t)pcb_handle;
-    if (pcb->status == DEATH) return;
-    uint8_t       scancode = *((uint8_t *)scan_handle);
-    ipc_message_t message  = (ipc_message_t)malloc(sizeof(struct ipc_message));
-    message->type          = IPC_MSG_TYPE_KEYBOARD;
-    message->pid           = pcb->pgb_id;
-    message->data[0]       = scancode;
-    ipc_send(pcb, message);
-}
-
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     uint8_t scancode = io_in8(0x60);
-
-    /* temp solution until can pass all scancode to threads */
-    //terminal_handle_keyboard(scancode);
 
     if (scancode == 0xfa) {
         key_cmd_state.got_ack = true;
@@ -65,94 +53,18 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         return;
     }
 
-    if (get_current_task() == NULL) return;
-    if (pgb_queue) queue_iterate(pgb_queue, key_callback, &scancode);
+    /* temp solution until can pass all scancode to threads */
+    terminal_handle_keyboard(scancode);
     send_eoi();
-
-    if (scancode == 0x2a || scancode == 0x36) { // Shift按下
-        shift = 1;
-        return;
-    }
-    if (scancode == 0x1d) { // Ctrl按下
-        ctrl = 1;
-        return;
-    }
-    if (scancode == 0x3a) { // Caps Lock按下
-        caps_lock = caps_lock ^ 1;
-        return;
-    }
-    if (scancode == 0xaa || scancode == 0xb6) { // Shift松开
-        shift = 0;
-        return;
-    }
-    if (scancode == 0x9d) { // Ctrl松开
-        ctrl = 0;
-        return;
-    }
-}
-
-int input_char_inSM() {
-    int   i    = -1;
-    tcb_t task = get_current_task();
-    if (task == NULL) return 0;
-    task->status                         = WAIT;
-    task->parent_group->tty->is_key_wait = true;
-    ipc_message_t message                = ipc_recv_wait(IPC_MSG_TYPE_KEYBOARD);
-    i                                    = message->data[0];
-    free(message);
-    task->parent_group->tty->is_key_wait = false;
-    task->status                         = RUNNING;
-    return i;
 }
 
 int kernel_getch() {
-    tcb_t task = get_current_task();
-    //logkf("getch task: %d %d\n", task->seq_state, task->last_key);
-
-    if (task->seq_state == 1) {
-        task->seq_state = 2;
-        return '[';
+    char               ch;
+    extern atom_queue *temp_keyboard_buffer;
+    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
+        __asm__ volatile("pause");
     }
-    if (task->seq_state == 2) {
-        task->seq_state = 0;
-        switch (task->last_key) {
-        case 1: task->last_key = 0; return 'A';
-        case 2: task->last_key = 0; return 'B';
-        case 3: task->last_key = 0; return 'C';
-        case 4: task->last_key = 0; return 'D';
-        default: task->last_key = 0; return '?';
-        }
-    }
-
-reget:;
-    uint8_t ch = input_char_inSM(); // 扫描码
-    if (ch == 0xe0) {               // keytable之外的键（↑,↓,←,→）
-        ch = input_char_inSM();
-        switch (ch) {
-        case 0xc8:
-        case 0xd0:
-        case 0xcb:
-        case 0xcd: goto reget;
-        default: break;
-        }
-        task->seq_state = 1;
-        switch (ch) {
-        case 0x48: task->last_key = 1; return 0x1B; // ↑
-        case 0x50: task->last_key = 2; return 0x1B; // ↓
-        case 0x4b: task->last_key = 3; return 0x1B; // ←
-        case 0x4d: task->last_key = 4; return 0x1B; // →
-        default: return 0;
-        }
-    }
-    // 返回扫描码(keytable之内)对应的ASCII码
-    if (keytable[ch] == 0x00) {
-        return 0;
-    } else if (shift == 0 && caps_lock == 0) {
-        return keytable1[ch];
-    } else if (shift == 1 || caps_lock == 1) {
-        return keytable[ch];
-    }
-    return -1;
+    return ch;
 }
 
 static inline uint8_t ps2_status() {
