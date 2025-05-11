@@ -18,7 +18,7 @@ static void DE_0(registers_t *reg) {
         io_cli();
 
         // 进入死循环，停止处理器执行
-        infinite_loop io_hlt(); // 执行HALT指令，暂停 CPU
+        loop io_hlt(); // 执行HALT指令，暂停 CPU
     } else {
         // 记录用户进程中的除法错误日志
         klogf(false, "[%s:%d] has divide error.\n", pcb->name, pcb->pid);
@@ -42,7 +42,7 @@ static void SS_12(registers_t *reg) {
         io_cli();
 
         // 进入死循环，停止处理器执行
-        infinite_loop io_hlt(); // 执行HALT指令，暂停 CPU
+        loop io_hlt(); // 执行HALT指令，暂停 CPU
     } else {
         // 记录用户进程中的栈段故障日志
         klogf(false, "[%s:%d] has stack segment fault.\n", pcb->name, pcb->pid);
@@ -66,7 +66,7 @@ static void GP_13(registers_t *reg) {
         io_cli();
 
         // 进入死循环，停止处理器执行
-        infinite_loop io_hlt(); // 执行HALT指令，暂停 CPU
+        loop io_hlt(); // 执行HALT指令，暂停 CPU
     } else {
         // 记录用户进程中的一般保护异常日志
         klogf(false, "[%s:%d] has General Protection.\n", pcb->name, pcb->pid);

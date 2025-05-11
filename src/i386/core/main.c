@@ -43,7 +43,7 @@ _Noreturn void shutdown() {
     kill_all_proc();
     sleep(10);
     power_off();
-    infinite_loop;
+    loop;
 }
 
 _Noreturn void reboot() {
@@ -51,12 +51,12 @@ _Noreturn void reboot() {
     kill_all_proc();
     sleep(10);
     power_reset();
-    infinite_loop;
+    loop;
 }
 
 int terminal_manual_flush(void *arg) {
     terminal_set_auto_flush(0);
-    infinite_loop {
+    loop {
         terminal_flush();
         io_hlt();
     }
@@ -150,7 +150,7 @@ _Noreturn void kernel_main(multiboot_t *multiboot, uint32_t kernel_stack) {
     enable_scheduler();
     io_sti(); // 内核加载完毕, 打开中断以启动进程调度器, 开始运行
 
-    infinite_loop {
+    loop {
         free_pages();
         // io_hlt();
     }

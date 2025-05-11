@@ -70,7 +70,7 @@ _Noreturn void process_exit() {
     register uint32_t eax __asm__("eax");           // 获取退出代码
     printk("Kernel Process exit, Code: %d\n", eax); // 打印退出信息
     kill_proc(current_pcb);                         // 终止进程
-    infinite_loop;                                  // 确保进程不被继续执行
+    loop;                                           // 确保进程不被继续执行
 }
 
 int create_user_process(const char *path, const char *cmdline, char *name, uint8_t level) {
@@ -192,7 +192,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args,
 
 void kill_all_proc() {
     pcb_t *head = running_proc_head; // 获取头指针
-    infinite_loop {                  // 遍历调度链表
+    loop {                           // 遍历调度链表
         head = head->next;
         if (head == NULL || head->pid == running_proc_head->pid) { return; }
         if (head->pid == get_current_proc()->pid) continue;
@@ -230,7 +230,7 @@ void kill_proc(pcb_t *pcb) {
 
     pcb_t *head = running_proc_head;
     pcb_t *last = NULL;
-    infinite_loop { // 从调度链表中移除进程
+    loop { // 从调度链表中移除进程
         if (head->pid == pcb->pid) {
             last->next = pcb->next;
             kfree(pcb);

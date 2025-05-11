@@ -3,6 +3,7 @@
 #pragma GCC system_header
 
 #define NULL 0
+#define loop while (true)
 
 #ifndef __cplusplus
 #    if __STDC_VERSION__ < 202311L

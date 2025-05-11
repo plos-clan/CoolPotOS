@@ -101,7 +101,7 @@ void pipfs_update() {
     if (pip_fs_node != NULL) rbtree_sp_free(pip_rbtree);
     pip_fs_node = NULL;
     pcb_t *l    = running_proc_head;
-    infinite_loop {
+    loop {
         rbtree_sp_insert(pip_rbtree, l->name, l);
         l = l->next;
         if (l == NULL || l == running_proc_head) break;

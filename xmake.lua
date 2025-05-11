@@ -114,16 +114,21 @@ target("iso32")
 
     on_build(function (target)
         import("core.project.project")
+
         local iso_dir = "$(buildir)/iso_dir"
-
-        if os.exists(iso_dir) then os.rmdir(iso_dir) end
-        os.cp("assets", iso_dir)
-
+        os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
         local kernel = project.target("kernel32")
-        os.cp(kernel:targetfile(), iso_dir .. "/cposkrnl.elf")
+        os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl32.elf")
+
+        local limine_dir = iso_dir .. "/limine"
+        os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
+
+        local limine_src = "thirdparty/limine"
+        os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
+        os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
-        local iso_flags = "-b limine-bios-cd.bin -no-emul-boot -boot-info-table"
+        local iso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
         os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
         print("ISO image created at: " .. iso_file)
     end)
@@ -139,7 +144,7 @@ target("iso64")
         local iso_dir = "$(buildir)/iso_dir"
         os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
         local kernel = project.target("kernel64")
-        os.cp(kernel:targetfile(), iso_dir .. "/cposkrnl.elf")
+        os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl64.elf")
 
         local limine_dir = iso_dir .. "/limine"
         os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
@@ -179,13 +184,13 @@ target("run32")
             "-global", "VGA.vgamem_mb=32",
             "-net", "nic,model=pcnet",
             "-net", "user",
-            "-enable-kvm",
+            -- "-enable-kvm",
             "-device", "sb16,audiodev=speaker",
             "-device", "intel-hda",
             "-device", "hda-micro,audiodev=speaker",
-            "-device", "ahci,id=ahci",
-            "-drive", "file=./disk.qcow2,if=none,id=disk0",
-            "-device", "ide-hd,bus=ahci.0,drive=disk0",
+            -- "-device", "ahci,id=ahci",
+            -- "-drive", "file=./disk.qcow2,if=none,id=disk0",
+            -- "-device", "ide-hd,bus=ahci.0,drive=disk0",
             "-cdrom", config.buildir() .. "/CoolPotOS.iso"
         }
         os.execv("qemu-system-i386", flags)

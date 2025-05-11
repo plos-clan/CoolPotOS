@@ -39,7 +39,7 @@ static uint32_t syscall_exit(uint32_t ebx, uint32_t ecx, uint32_t edx, uint32_t 
     int    exit_code = ebx;
     pcb_t *pcb       = get_current_proc();
     kill_proc(pcb);
-    infinite_loop;
+    loop;
     /*
      * 将该进程流程阻塞, 等待调度器下一次调度
      * (因为这时有关该进程的所有上下文信息以及内存都已经被释放, 如果iret返回后则会直接发生#PF错误, 故插入死循环阻塞)

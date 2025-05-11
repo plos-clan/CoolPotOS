@@ -71,7 +71,7 @@ void init_terminal() {
                                .red_mask_shift   = framebuffer->red_mask_shift,
                                .red_mask_size    = framebuffer->red_mask_size,
                                .pitch            = framebuffer->pitch};
-    float           size    = 10.0f * ((float)framebuffer->width / 1024);
+    float           size    = 16.0f * ((float)framebuffer->width / 1920);
 
     //    cp_module_t *mod = get_module("sysfont");
     //    if(mod == NULL){

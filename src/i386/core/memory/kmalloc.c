@@ -34,7 +34,7 @@ static void *sbrk(int incr) { // 内核堆扩容措施
         alloc_error:
             klogf(false, "OUT_OF_MEMORY_ERROR: Cannot alloc kernel heap.\n");
             printk("KernelHeapEnd: %08x\n", program_break_end);
-            infinite_loop __asm__("hlt");
+            loop __asm__("hlt");
             return (void *)-1;
         }
     }

@@ -348,7 +348,7 @@ uint32_t nanoTime() {
 void usleep(uint32_t nano) {
     uint32_t targetTime = nanoTime();
     uint32_t after      = 0;
-    infinite_loop {
+    loop {
         uint64_t n = nanoTime();
         if (n < targetTime) {
             after      += 0xffffffff - targetTime + n;
@@ -364,7 +364,7 @@ void usleep(uint32_t nano) {
 void power_reset() {
     uint8_t val;
     if (!SCI_EN) return;
-    infinite_loop {
+    loop {
         // write ICH port
         io_out8(0x92, 0x01);
         // send RESET_VAL
@@ -374,7 +374,7 @@ void power_reset() {
 
 void power_off() {
     if (!SCI_EN) return;
-    infinite_loop {
+    loop {
         io_out16((uint32_t)PM1a_CNT, SLP_TYPa | SLP_EN);
         if (!PM1b_CNT) { io_out16((uint32_t)PM1b_CNT, SLP_TYPb | SLP_EN); }
     }

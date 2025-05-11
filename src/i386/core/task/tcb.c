@@ -28,7 +28,7 @@ void kill_user_thread(pcb_t *pcb, tcb_t thread) {
     tcb_t head = pcb->main_thread_head;
     tcb_t last = NULL;
 
-    infinite_loop {
+    loop {
         if (head->tid == thread->tid) {
             // 如果是第一个节点，直接连接前驱和后继
             if (last == NULL) {

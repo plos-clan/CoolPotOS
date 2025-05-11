@@ -12,7 +12,7 @@ void check_memory(multiboot_t *multiboot) {
                "MB.\033c6c6c6;\n",
                (multiboot->mem_upper + multiboot->mem_lower) / 1024 + 1); // 内存不足，输出错误信息
         printk("Please check your memory size, and restart CP_Kernel.\n");
-        infinite_loop io_hlt(); // 死循环阻塞线程，防止系统启动
+        loop io_hlt(); // 死循环阻塞线程，防止系统启动
     }
     phy_mem_size = (multiboot->mem_upper + multiboot->mem_lower) / 1024; // 记录总内存大小
 }
