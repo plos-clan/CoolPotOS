@@ -131,24 +131,37 @@ static void mkdir(int argc, char **argv) {
 
 void ps(int argc, char **argv) {
     size_t longest_name_len = 0;
+    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+        printk("\033[1;34mUsage: ps [OPTION]\033[0m\n");
+        printk("\033[1;33mDisplay information about active processes.\033[0m\n\n");
+        printk("\033[1mOptions:\033[0m\n");
+        printk("  \033[32m-v\033[0m         \033[36mShow detailed process information\033[0m\n");
+        printk("  \033[32m-h, --help\033[0m \033[36mDisplay this help message\033[0m\n");
+        return;
+    }
     if (argc == 1) {
         queue_foreach(pgb_queue, thread) {
             pcb_t longest_name = (pcb_t)thread->data;
             if (strlen(longest_name->name) > longest_name_len)
                 longest_name_len = strlen(longest_name->name);
         }
-        printk("GID  %-*s  TaskNum Status  User\n", longest_name_len, "NAME");
+        printk("\033[1;34mGID  %-*s  TaskNum Status  User\033[0m\n", longest_name_len, "NAME");
         queue_foreach(pgb_queue, thread) {
             pcb_t pgb = (pcb_t)thread->data;
-            printk("%-5d%-*s  %-7d %s%s\n", pgb->pgb_id, longest_name_len, pgb->name,
-                   pgb->pcb_queue->size,
-                   pgb->status == RUNNING ? "Running "
-                   : pgb->status == START ? "Start   "
-                   : pgb->status == WAIT  ? "Wait    "
-                                          : "Death   ",
-                   pgb->user->name);
+            printk("\033[35m%-5d\033[0m", pgb->pgb_id);
+            printk("\033[1;36m%-*s\033[0m  ", longest_name_len, pgb->name);
+            printk("\033[32m%-7d\033[0m ", pgb->pcb_queue->size);
+            if (pgb->status == RUNNING)
+                printk("\033[32mRunning \033[0m");
+            else if (pgb->status == START)
+                printk("\033[33mStart   \033[0m");
+            else if (pgb->status == WAIT)
+                printk("\033[36mWait    \033[0m");
+            else
+                printk("\033[31mDeath   \033[0m");
+            printk("\033[33m%s\033[0m\n", pgb->user->name);
         }
-    } else if (strcmp(argv[1], "pcb") == 0) {
+    } else if (strcmp(argv[1], "-v") == 0) {
         uint32_t     bytes           = get_all_memusage();
         size_t       longest_pgb_len = 0;
         uint64_t     all_time        = 0;
@@ -168,8 +181,8 @@ void ps(int argc, char **argv) {
                 }
             }
         }
-        printk("PID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  "
-               "ProcessorID\n",
+        printk("\033[1;34mPID  %-*s %-*s  RAM(byte)  Priority  Timer     Status  "
+               "ProcessorID\033[0m\n",
                longest_name_len, "NAME", longest_pgb_len, "GROUP");
         for (size_t i = 0; i < MAX_CPU; i++) {
             smp_cpu_t cpu = smp_cpus[i];
@@ -178,23 +191,33 @@ void ps(int argc, char **argv) {
                     tcb_t pcb  = (tcb_t)queue->data;
                     all_time  += pcb->cpu_timer;
                     if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
-                    printk("%-5d%-*s %-*s  %-10d %-10d%-10d%sCPU%-d\n", pcb->pid, longest_name_len,
-                           pcb->name, longest_pgb_len, pcb->parent_group->name, pcb->mem_usage,
-                           pcb->task_level, pcb->cpu_clock,
-                           pcb->status == RUNNING ? "Running "
-                           : pcb->status == START ? "Start   "
-                           : pcb->status == WAIT  ? "Wait    "
-                           : pcb->status == DEATH ? "Death   "
-                                                  : "Out     ",
-                           pcb->cpu_id);
+
+                    printk("\033[35m%-5d\033[0m", pcb->pid);
+                    printk("\033[1;36m%-*s\033[0m ", longest_name_len, pcb->name);
+                    printk("\033[33m%-*s\033[0m  ", longest_pgb_len, pcb->parent_group->name);
+                    printk("\033[32m%-10d\033[0m ", pcb->mem_usage);
+                    printk("\033[35m%-10d\033[0m", pcb->task_level);
+                    printk("\033[36m%-10d\033[0m", pcb->cpu_clock);
+                    if (pcb->status == RUNNING)
+                        printk("\033[32mRunning \033[0m");
+                    else if (pcb->status == START)
+                        printk("\033[33mStart   \033[0m");
+                    else if (pcb->status == WAIT)
+                        printk("\033[36mWait    \033[0m");
+                    else if (pcb->status == DEATH)
+                        printk("\033[31mDeath   \033[0m");
+                    else
+                        printk("\033[37mOut     \033[0m");
+                    printk("\033[1;34mCPU%-d\033[0m\n", pcb->cpu_id);
                 }
             }
         }
-        printk("   --- CPU Usage: %d%% IPS: %d | Memory Usage: %d%s/%dMB ---\n",
+        printk("\033[1;32m   --- CPU Usage: %d%% IPS: %d | Memory Usage: %d%s/%dMB ---\033[0m\n",
                idle_time * 100 / all_time, get_cpu_speed(), mem_use + memory,
                bytes > 10485760 ? "MB" : "KB", memory_size / 1024 / 1024);
-    } else
-        printk("Unknown argument, please entry 'help'.\n");
+    } else {
+        printk("\033[31mUnknown argument, please entry 'help'.\033[0m\n");
+    }
 }
 
 static void ls(int argc, char **argv) {
@@ -211,54 +234,60 @@ static void ls(int argc, char **argv) {
         }
     }
     if (p == NULL) {
-        printk("ls: %s: No such file or directory\n", argv[1]);
+        printk("\033[31mls: %s: No such file or directory\033[0m\n", argv[1]);
         return;
     }
     if (p->type == file_dir) {
         list_foreach(p->child, i) {
             vfs_node_t c = (vfs_node_t)i->data;
-            printk("%s ", c->name);
+            if (c->type == file_dir) {
+                printk("\033[1;34m%s\033[0m ", c->name);
+            } else {
+                printk("%s ", c->name);
+            }
         }
         printk("\n");
     } else {
-        printk("%s\n", argv[1]);
+        printk("%s ", p->name);
     }
 }
 
 static void pkill(int argc, char **argv) {
     if (argc == 1) {
-        printk("pkill: Too few parameters.\n");
+        printk("\033[31mpkill: Too few parameters.\033[0m\n");
         return;
     }
     int   pid = strtol(argv[1], NULL, 10);
     pcb_t pcb = found_pcb(pid);
     if (pcb == NULL) {
-        printk("pkill: Cannot find procces [%d]\n", pid);
+        printk("\033[31mpkill: Cannot find process [%d]\033[0m\n", pid);
         return;
     }
     kill_proc(pcb, 135);
-    kinfo("Kill process (%d).", pid);
+    printk("\033[32mProcess %d killed.\033[0m\n", pid);
 }
 
 void lspci() {
-    printk("Bus:Slot:Func\t[Vendor:Device]\tClass Code\tName\n");
+    printk("\033[1;34mBus:Slot:Func\t[Vendor:Device]\tClass Code\tName\033[0m\n");
     for (size_t i = 0; i < get_pci_num(); i++) {
         pci_device_t *device = pci_devices[i];
-        printk("%03d:%02d:%02d\t[0x%04X:0x%04X]\t<0x%08x>\t%s\n", device->bus, device->slot,
-               device->func, device->vendor_id, device->device_id, device->class_code,
-               device->name);
+        printk("\033[35m%03d:%02d:%02d\033[0m\t", device->bus, device->slot, device->func);
+        printk("[\033[32m0x%04X:0x%04X\033[0m]\t", device->vendor_id, device->device_id);
+        printk("<\033[33m0x%08x\033[0m>\t", device->class_code);
+        printk("\033[1;36m%s\033[0m\n", device->name);
     }
 }
 
 static void echo(int argc, char **argv) {
     if (argc == 1) { return; }
     vfs_node_t stdout = vfs_open("/dev/stdout");
-    if (stdout == NULL)
-        printk("ERROR: stream device is null.\n");
-    else {
+    if (stdout == NULL) {
+        printk("\033[31mstdout stream device is null.\033[0m\n");
+    } else {
         char *buf = argv[1];
-        if (vfs_write(stdout, buf, 0, strlen(buf)) == VFS_STATUS_FAILED)
-            printk("stdout stream has error.\n");
+        if (vfs_write(stdout, buf, 0, strlen(buf)) == VFS_STATUS_FAILED) {
+            printk("\033[31mstdout stream device has error.\033[0m\n");
+        }
         vfs_close(stdout);
         printk("\n");
     }
@@ -279,7 +308,7 @@ static void mount(int argc, char **argv) {
 
 static void lmod(int argc, char **argv) {
     if (argc == 1) {
-        printk("lmod: Too few parameters.\n");
+        printk("\033[31mlmod: no module name.\033[0m\n");
         return;
     }
 
@@ -287,15 +316,16 @@ static void lmod(int argc, char **argv) {
     extern int         module_count;
 
     if (!strcmp(argv[1], "list")) {
-        printk("Model(Kernel) load in /sys/cpkrnl.elf\n");
+        printk("\033[1;36mModel(Kernel)\033[0m load in \033[1;34m/sys/cpkrnl.elf\033[0m\n");
         for (int i = 0; i < module_count; i++) {
-            printk("Model(%s) load in %s\n", module_ls[i].module_name, module_ls[i].path);
+            printk("\033[1;36mModel(%s)\033[0m load in \033[1;34m%s\033[0m\n",
+                   module_ls[i].module_name, module_ls[i].path);
         }
     } else {
         if (!strcmp(argv[1], "Kernel")) return;
         cp_module_t *module = get_module(argv[1]);
         if (module == NULL) {
-            printk("Cannot find module [%s]\n", argv[1]);
+            printk("\033[31mCannot find module [%s]\033[0m\n", argv[1]);
             return;
         }
         dlinker_load(module);
@@ -304,20 +334,20 @@ static void lmod(int argc, char **argv) {
 
 static void exec(int argc, char **argv) {
     if (argc == 1) {
-        printk("exec: Too few parameters.\n");
+        printk("\033[31mexec: no module name.\033[0m\n");
         return;
     }
 
     cp_module_t *module = get_module(argv[1]);
     if (module == NULL) {
-        printk("Cannot find module [%s]\n", argv[1]);
+        printk("\033[31mCannot find module [%s]\033[0m\n", argv[1]);
         return;
     }
 
     page_directory_t *up   = clone_directory(get_kernel_pagedir());
     void             *main = load_executor_elf(module, up);
     if (main == NULL) {
-        kwarn("Cannot load elf file.");
+        printk("\033[31mCannot load elf file.\033[0m\n");
         return;
     }
 
@@ -395,22 +425,22 @@ static void clear() {
 }
 
 static void print_help() {
-    printk("Usage <command|app_path> [argument...]\n");
-    printk("help                     Get shell help info.\n");
-    printk("shutdown exit            Shutdown kernel.\n");
-    printk("reboot                   Restart kernel.\n");
-    printk("lspci                    List all PCI/PCIE devices.\n");
-    printk("sysinfo                  Get system info.\n");
-    printk("clear                    Clear screen.\n");
-    printk("ps        [pcb]          List task group or all running tasks.\n");
-    printk("pkill     <pid>          Kill a tasks.\n");
-    printk("cd        <path>         Change shell work path.\n");
-    printk("mkdir     <name>         Create a directory.\n");
-    printk("ls        [path]         List all file or directory.\n");
-    printk("echo      <message>      Print a message.\n");
-    printk("mount     <dev> <path>   Mount a device to path.\n");
-    printk("lmod      <module|list>  Load or list module.\n");
-    printk("exec      <module>       Load a user application.\n");
+    printk("Usage \033[1m<command|app_path>\033[0m [argument...]\n");
+    printk("\033[1mhelp\033[0m                     Get shell help info.\n");
+    printk("\033[1mshutdown exit\033[0m            Shutdown kernel.\n");
+    printk("\033[1mreboot\033[0m                   Restart kernel.\n");
+    printk("\033[1mlspci\033[0m                    List all PCI/PCIE devices.\n");
+    printk("\033[1msysinfo\033[0m                  Get system info.\n");
+    printk("\033[1mclear\033[0m                    Clear screen.\n");
+    printk("\033[1mps\033[0m        [pcb]          List task group or all running tasks.\n");
+    printk("\033[1mpkill\033[0m     <pid>          Kill a tasks.\n");
+    printk("\033[1mcd\033[0m        <path>         Change shell work path.\n");
+    printk("\033[1mmkdir\033[0m     <name>         Create a directory.\n");
+    printk("\033[1mls\033[0m        [path]         List all file or directory.\n");
+    printk("\033[1mecho\033[0m      <message>      Print a message.\n");
+    printk("\033[1mmount\033[0m     <dev> <path>   Mount a device to path.\n");
+    printk("\033[1mlmod\033[0m      <module|list>  Load or list module.\n");
+    printk("\033[1mexec\033[0m      <module>       Load a user application.\n");
 }
 
 // ====== pl_readline ======
@@ -596,13 +626,13 @@ static void plreadln_flush(void) {}
 _Noreturn void shell_setup() {
     char *user_name = tcb->parent_group->user->name;
 
-    printk("Welcome to CoolPotOS (%s)!\n"
-           " * SourceCode:        https://github.com/plos-clan/CoolPotOS\n"
-           " * Website:           https://cpos.plos-clan.org\n"
-           " System information as of %s \n"
-           "  Tasks:              %d\n"
-           "  Logged:             %s\n"
-           "MIT License 2024-2025 plos-clan\n",
+    printk("\033[1mWelcome to CoolPotOS (\033[1;32m%s\033[0m\033[1m)!\033[0m\n"
+           " * \033[1mSourceCode:\033[0m        https://github.com/plos-clan/CoolPotOS\n"
+           " * \033[1mWebsite:\033[0m           https://cpos.plos-clan.org\n"
+           "\033[1mSystem information as of \033[1;36m%s\033[0m \n"
+           "  \033[1mTasks:\033[0m              \033[1;33m%d\033[0m\n"
+           "  \033[1mLogged:\033[0m             \033[1;35m%s\033[0m\n"
+           "\033[1mMIT License 2024-2025 plos-clan\033[0m\n",
            KERNEL_NAME, get_date_time(), get_all_task(), user_name);
 
     char     prompt[128];
@@ -616,7 +646,7 @@ _Noreturn void shell_setup() {
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
     loop {
-        char *template = "\033[32m%s\033[0m@\033[32mlocalhost: \033[34m%s>\033[0m ";
+        char *template = "\033[01;32m%s\033[0m@\033[01;32mlocalhost: \033[34m%s>\033[0m ";
         sprintf(prompt, template, user_name, current_path);
 
         const char *cmd = pl_readline(pl, prompt);
