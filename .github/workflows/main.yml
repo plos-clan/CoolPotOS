@@ -17,7 +17,7 @@ on:
 jobs:
   i386:
     runs-on: ubuntu-latest
-    name: Build
+    name: i386 Build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,7 +51,7 @@ jobs:
 
   x86_64:
     runs-on: ubuntu-latest
-    name: Build
+    name: x86_64 Build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
