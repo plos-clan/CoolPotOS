@@ -54,7 +54,6 @@ target("kernel32")
     add_cflags("-target x86-freestanding")
     add_arflags("-target x86-freestanding")
     add_ldflags("-target x86-freestanding")
-    add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
 
     add_linkdirs("libs/i386")
     add_includedirs("src/i386/include")
@@ -66,6 +65,7 @@ target("kernel32")
 
     add_asflags("-f", "elf32")
     add_ldflags("-T", "src/i386/linker.ld")
+    add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
 
 target("kernel64")
     set_arch("x86_64")
