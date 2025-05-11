@@ -4,6 +4,7 @@ set_optimize("fastest")
 set_languages("c23")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
+set_policy("check.auto_ignore_flags", false)
 
 target("limine")
     set_kind("binary")
@@ -63,7 +64,7 @@ target("kernel32")
     add_links("elf_parse")
     add_links("alloc")
 
-    add_asflags("-f", "elf32", {force = true})
+    add_asflags("-f", "elf32")
     add_ldflags("-T", "src/i386/linker.ld")
 
 target("kernel64")
