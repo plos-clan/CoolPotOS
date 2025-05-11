@@ -15,7 +15,41 @@ on:
       - 'README.md'
 
 jobs:
-  build:
+  i386:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+
+      - name: Install packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: xorriso nasm mtools
+          version: 1.0
+
+      - name: Setup xmake
+        uses: wenxuanjun/github-action-setup-xmake@master
+        with:
+          xmake-version: latest
+          actions-cache-folder: '.xmake-cache'
+          build-cache: true
+
+      - name: Build CoolPotOS-i386
+        run: xmake build iso32
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoolPotOS-i386
+          path: build/CoolPotOS.iso
+          compression-level: 9
+
+  x86_64:
     runs-on: ubuntu-latest
     name: Build
     steps:
@@ -39,7 +73,7 @@ jobs:
       - name: Install packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: xorriso nasm clang mtools lld
+          packages: xorriso clang mtools lld
           version: 1.0
 
       - name: Setup xmake
@@ -49,11 +83,11 @@ jobs:
           actions-cache-folder: '.xmake-cache'
           build-cache: true
 
-      - name: Build kernel
-        run: xmake build -y
+      - name: Build CoolPotOS-x86_64
+        run: xmake build iso64
 
       - uses: actions/upload-artifact@v4
         with:
-          name: CoolPotOS
+          name: CoolPotOS-x86_64
           path: build/CoolPotOS.iso
           compression-level: 9
