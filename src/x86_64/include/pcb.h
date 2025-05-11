@@ -29,6 +29,7 @@ typedef enum {
 
 struct process_control_block {
     char              name[50];    // 进程名
+    uint8_t           task_level;  // 进程权限等级
     int               pid_index;   // 线程PID累加索引
     int               pgb_id;      // 进程ID
     lock_queue       *pcb_queue;   // 线程队列
