@@ -1,7 +1,7 @@
 set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
 set_optimize("fastest")
-set_languages("c23")
+set_languages("clatest")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
@@ -21,7 +21,7 @@ target("os-terminal")
     on_build(function (target)
         import("core.project.project")
         local src_dir = "thirdparty/libos-terminal"
-        local build_dir = "$(buildir)/os-terminal"
+        local build_dir = "$(buildir)/.build_cache/os-terminal"
 
         os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
         os.cd("thirdparty/libos-terminal")
@@ -68,17 +68,16 @@ target("kernel32")
     add_ldflags("-T", "src/i386/linker.ld")
 
 target("kernel64")
+    set_arch("x86_64")
     set_kind("binary")
     set_default(false)
-    add_deps("pl_readline", "os-terminal")
     set_toolchains("clang")
+    add_deps("pl_readline", "os-terminal")
 
-    add_cflags("-target x86_64-freestanding")
-    add_ldflags("-target x86_64-freestanding")
-
-    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2", "-msoft-float")
-    add_cflags("-mcmodel=kernel", "-mno-red-zone", "-nostdinc", "-flto")
-    add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-flto", "-fuse-ld=lld")
+    add_cflags("-fno-stack-protector", "-flto", "-fPIC")
+    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
+    add_cflags("-mno-red-zone", "-nostdinc", "-msoft-float")
+    add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
 
     --add_cflags("-fsanitize=undefined")
     --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
@@ -87,19 +86,20 @@ target("kernel64")
     --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
 
     before_build(function (target)
-      local hash = try { function() return os.iorun("git rev-parse --short HEAD") end }
-        if hash then
-          hash = hash:trim()
-          target:add("defines", "GIT_VERSION=\"" .. hash .. "\"")
-        end
+        local hash = try { function() 
+            local result = os.iorun("git rev-parse --short HEAD")
+            return result and result:trim()
+        end }
+        if hash then target:add("defines", "GIT_VERSION=\""..hash.."\"") end
     end)
 
     --add_links("ubscan")
     -- add_linkdirs("libs/x86_64")
 
     add_links("os_terminal")
-    add_linkdirs("$(buildir)/os-terminal/x86_64-unknown-none/release/")
-    add_includedirs("$(buildir)/os-terminal")
+    local build_dir = "$(buildir)/.build_cache/os-terminal"
+    add_includedirs(build_dir)
+    add_linkdirs(build_dir.."/x86_64-unknown-none/release/")
 
     add_files("src/x86_64/**.c")
     add_includedirs("libs/x86_64")
@@ -123,8 +123,8 @@ target("iso32")
         os.cp(kernel:targetfile(), iso_dir .. "/cposkrnl.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
-        local xorriso_flags = "-b limine-bios-cd.bin -no-emul-boot -boot-info-table"
-        os.run("xorriso -as mkisofs %s %s -o %s", xorriso_flags, iso_dir, iso_file)
+        local iso_flags = "-b limine-bios-cd.bin -no-emul-boot -boot-info-table"
+        os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
         print("ISO image created at: " .. iso_file)
     end)
 
@@ -143,9 +143,11 @@ target("iso64")
 
         local limine_dir = iso_dir .. "/limine"
         os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
-        os.cp("thirdparty/limine/limine-bios.sys", limine_dir .. "/limine-bios.sys")
-        os.cp("thirdparty/limine/limine-bios-cd.bin", limine_dir .. "/limine-bios-cd.bin")
-        os.cp("thirdparty/limine/limine-uefi-cd.bin", limine_dir .. "/limine-uefi-cd.bin")
+
+        local limine_src = "thirdparty/limine"
+        os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
+        os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
+        os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         os.run("xorriso -as mkisofs "..
