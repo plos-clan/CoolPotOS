@@ -52,11 +52,11 @@ git submodule update --init --recursive
 
 ### i386
 
-Run `xmake run iso32` and it will build and run automatically.
+Run `xmake run run32` and it will build and run automatically.
 
 ### x86_64
 
-Run `xmake run iso64` and it will build and run automatically.
+Run `xmake run run64` and it will build and run automatically.
 
 ## Development
 
