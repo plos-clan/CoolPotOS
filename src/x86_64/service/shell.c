@@ -248,7 +248,11 @@ static void ls(int argc, char **argv) {
         }
         printk("\n");
     } else {
-        printk("%s ", p->name);
+        if (p->type == file_dir) {
+            printk("\033[1;34m%s\033[0m\n", p->name);
+        } else {
+            printk("%s\n", p->name);
+        }
     }
 }
 
