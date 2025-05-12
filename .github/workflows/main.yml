@@ -43,9 +43,10 @@ jobs:
       - name: Build CoolPotOS-i386
         run: xmake build iso32
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload CoolPotOS-i386 ISO
+        uses: actions/upload-artifact@v4
         with:
-          name: CoolPotOS-i386
+          name: CoolPotOS-i386 (ISO)
           path: build/CoolPotOS.iso
           compression-level: 9
 
@@ -93,13 +94,15 @@ jobs:
           xmake build iso64
           xmake build img64
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload CoolPotOS-x86_64 ISO
+        uses: actions/upload-artifact@v4
         with:
           name: CoolPotOS-x86_64 (ISO)
           path: build/CoolPotOS.iso
           compression-level: 9
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload CoolPotOS-x86_64 IMG
+        uses: actions/upload-artifact@v4
         with:
           name: CoolPotOS-x86_64 (IMG)
           path: build/CoolPotOS.img

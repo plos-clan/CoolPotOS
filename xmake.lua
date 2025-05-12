@@ -218,6 +218,7 @@ target("run64")
 
     on_run(function (target)
         import("core.project.config")
+        local disk_template = "if=none,format=raw,id=disk,file="
         local flags = {
             "-M", "q35", "-cpu", "qemu64,+x2apic", "-smp", "4",
             "-serial", "stdio", "-m","1024M", "-no-reboot",
@@ -231,12 +232,12 @@ target("run64")
             "-device", "sb16,audiodev=audio0",
             "-net","nic,model=pcnet","-net","user",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-            -- "-cdrom", config.buildir().."/CoolPotOS.iso",
-            -- "-device", "ahci,id=ahci",
-            -- "-device", "ide-hd,drive=disk,bus=ahci.0",
-            -- "-drive", "if=none,format=raw,id=disk,file="..config.buildir().."/CoolPotOS.img",
-            "-device", "nvme,drive=disk,serial=deadbeef",
-            "-drive", "if=none,format=raw,id=disk,file="..config.buildir().."/CoolPotOS.img",
+            "-cdrom", config.buildir().."/CoolPotOS.iso",
+            --"-device", "ahci,id=ahci",
+            --"-device", "ide-hd,drive=disk,bus=ahci.0",
+            --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
+            --"-device", "nvme,drive=disk,serial=deadbeef",
+            --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
         }
         os.execv("qemu-system-x86_64", flags)
     end)

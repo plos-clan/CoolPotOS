@@ -43,6 +43,7 @@ You need to install them on your computer:
 - lld (x86_64 only, for linking LTO objects)
 - Rust nightly toolchain (x86_64 only)
 - cbindgen (x86_64 only, use `cargo install cbindgen`)
+- oib (x86_64 & build img only, use `cargo install oib`)
 
 Should fetch submodules first:
 
@@ -50,13 +51,13 @@ Should fetch submodules first:
 git submodule update --init --recursive
 ```
 
-### i386
+### Available Commands
 
-Run `xmake run run32` and it will build and run automatically.
-
-### x86_64
-
-Run `xmake run run64` and it will build and run automatically.
+- `xmake run run32` - Build and run the i386 version.
+- `xmake run run64` - Build and run the x86_64 version (ISO).
+- `xmake build iso32` - Build a ISO image for CoolPotOS i386.
+- `xmake build iso64` - Build a ISO image for CoolPotOS x86_64.
+- `xmake build img64` - Build a bootable disk image for CoolPotOS x86_64.
 
 ## Development
 
