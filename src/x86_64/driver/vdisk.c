@@ -14,7 +14,7 @@ static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba
         char c = (char)kernel_getch();
         printk("%c", c);
         if (c == '\n') {
-            buffer[i] = '\0';
+            buffer[i] = 0x0a;
             break;
         }
         buffer[i] = c;
