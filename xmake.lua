@@ -168,6 +168,26 @@ target("iso64")
         print("ISO image created at: %s", iso_file)
     end)
 
+target("img64")
+    set_kind("phony")
+    add_deps("kernel64", "limine")
+    set_default(false)
+
+    on_build(function (target)
+        import("core.project.project")
+        local kernel = project.target("kernel64")
+        local img_file = "$(buildir)/CoolPotOS.img"
+
+        os.run("oib -f %s:kernel64 "..
+            "-f %s:limine.conf -f %s:readme.txt "..
+            "-f %s:efi/boot/bootx64.efi -o %s",
+            kernel:targetfile(),
+            "assets/limine.conf", "assets/readme.txt",
+            "thirdparty/limine/BOOTX64.EFI", img_file)
+
+        print("Disk image created at: %s", img_file)
+    end)
+
 target("run32")
     set_kind("phony")
     add_deps("iso32")

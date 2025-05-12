@@ -17,7 +17,7 @@ on:
 jobs:
   i386:
     runs-on: ubuntu-latest
-    name: i386 Build
+    name: i386
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,7 +51,7 @@ jobs:
 
   x86_64:
     runs-on: ubuntu-latest
-    name: x86_64 Build
+    name: x86_64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,6 +64,11 @@ jobs:
           toolchain: nightly
           target: x86_64-unknown-none
           components: rust-src
+
+      - name: Install oib
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: oib
 
       - name: Install cbindgen
         uses: baptiste0928/cargo-install@v3
@@ -84,10 +89,18 @@ jobs:
           build-cache: true
 
       - name: Build CoolPotOS-x86_64
-        run: xmake build iso64
+        run: |
+          xmake build iso64
+          xmake build img64
 
       - uses: actions/upload-artifact@v4
         with:
-          name: CoolPotOS-x86_64
+          name: CoolPotOS-x86_64 (ISO)
           path: build/CoolPotOS.iso
+          compression-level: 9
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoolPotOS-x86_64 (IMG)
+          path: build/CoolPotOS.img
           compression-level: 9
