@@ -7,6 +7,9 @@
 #define KB_STATUS_OBF 0x01
 #define KB_INIT_MODE  0x47
 
+#define KBCMD_WRITE_CMD 0x60
+#define KBCMD_READ_CMD  0x20
+
 #define KB_EN_MOUSE_INTFACE 0xa8
 #define KB_SEND2MOUSE       0xd4
 #define MOUSE_EN            0xf4
@@ -28,6 +31,17 @@ typedef struct {
     bool    right;
     int     scroll;
 } mouse_dec;
+
+struct keyboard_buf {
+    uint8_t *p_head;
+    uint8_t *p_tail;
+    int32_t  count;
+    bool     ctrl;
+    bool     shift;
+    bool     alt;
+    bool     caps;
+    uint8_t  buf[64];
+};
 
 void keyboard_setup();
 void mouse_setup();

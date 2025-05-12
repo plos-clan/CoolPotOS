@@ -628,7 +628,7 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
 static void plreadln_flush(void) {}
 
 _Noreturn void shell_setup() {
-    char *user_name = tcb->parent_group->user->name;
+    char *user_name = get_current_task()->parent_group->user->name;
 
     printk("\033[1mWelcome to CoolPotOS (\033[1;32m%s\033[0m\033[1m)!\033[0m\n"
            " * \033[1mSourceCode:\033[0m        https://github.com/plos-clan/CoolPotOS\n"
