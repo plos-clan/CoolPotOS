@@ -178,12 +178,10 @@ target("img64")
         local kernel = project.target("kernel64")
         local img_file = "$(buildir)/CoolPotOS.img"
 
-        os.run("oib -f %s:kernel64 "..
-            "-f %s:limine.conf -f %s:readme.txt "..
-            "-f %s:efi/boot/bootx64.efi -o %s",
-            kernel:targetfile(),
-            "assets/limine.conf", "assets/readme.txt",
-            "thirdparty/limine/BOOTX64.EFI", img_file)
+        os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf "..
+            "-f %s:readme.txt -f %s:efi/boot/bootx64.efi -o %s",
+            kernel:targetfile(), "assets/limine.conf",
+            "assets/readme.txt", "thirdparty/limine/BOOTX64.EFI", img_file)
 
         print("Disk image created at: %s", img_file)
     end)
@@ -196,14 +194,11 @@ target("run32")
     on_run(function (target)
         import("core.project.config")
         local flags = {
-            "-serial", "stdio",
-            "-m", "4096",
-            "-audiodev", "pa,id=speaker",
+            "-serial", "stdio", "-m", "4096",
+            "-audiodev", "pa,id=speaker", "-vga", "std",
             "-machine", "pcspk-audiodev=speaker",
-            "-vga", "std",
             "-global", "VGA.vgamem_mb=32",
-            "-net", "nic,model=pcnet",
-            "-net", "user",
+            "-net", "nic,model=pcnet", "-net", "user",
             -- "-enable-kvm",
             "-device", "sb16,audiodev=speaker",
             "-device", "intel-hda",
@@ -224,28 +219,24 @@ target("run64")
     on_run(function (target)
         import("core.project.config")
         local flags = {
-            "-M", "q35",
-            "-cpu", "qemu64,+x2apic",
-            "-smp", "4",
-            "-serial", "stdio",
-            "-device","ahci,id=ahci",
-            "-m","1024M",
-            "-no-reboot",
+            "-M", "q35", "-cpu", "qemu64,+x2apic", "-smp", "4",
+            "-serial", "stdio", "-m","1024M", "-no-reboot",
             --"-enable-kvm",
             --"-d", "in_asm",
             --"-d", "in_asm,int",
             --"-S","-s",
             --"-device","nec-usb-xhci,id=xhci",
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
-            --"-device","ide-hd,bus=ahci.0,drive=disk0",
-            --"-drive","file=./hda.img,if=none,id=disk0",
-            --"-device","nvme,drive=D22,serial=1234",
-            --"-drive","file=nvme.raw,if=none,id=D22",
             "-audiodev", "sdl,id=audio0",
             "-device", "sb16,audiodev=audio0",
             "-net","nic,model=pcnet","-net","user",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-            "-cdrom", config.buildir() .. "/CoolPotOS.iso",
+            -- "-cdrom", config.buildir().."/CoolPotOS.iso",
+            -- "-device", "ahci,id=ahci",
+            -- "-device", "ide-hd,drive=disk,bus=ahci.0",
+            -- "-drive", "if=none,format=raw,id=disk,file="..config.buildir().."/CoolPotOS.img",
+            "-device", "nvme,drive=disk,serial=deadbeef",
+            "-drive", "if=none,format=raw,id=disk,file="..config.buildir().."/CoolPotOS.img",
         }
         os.execv("qemu-system-x86_64", flags)
     end)
