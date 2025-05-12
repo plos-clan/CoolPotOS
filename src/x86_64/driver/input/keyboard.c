@@ -14,6 +14,8 @@ static int         caps_lock, shift, ctrl = 0;
 extern tcb_t       kernel_head_task;
 extern lock_queue *pgb_queue;
 
+struct keyboard_buf kb_fifo;
+
 char keytable[0x54] = { // 按下Shift
     0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
     'W', 'E',  'R', 'T', 'Y', 'U', 'I',  'O', 'P', '{', '}', 10,  0,   'A', 'S',  'D',  'F',
@@ -67,29 +69,45 @@ int kernel_getch() {
     return ch;
 }
 
-static inline uint8_t ps2_status() {
-    return io_in8(PS2_CMD_PORT);
-}
-
-static bool ps2_wait_input_clear() {
-    for (size_t i = 0; i < MAX_WAIT_INDEX; i++) {
-        if (!(ps2_status() & 0x02)) { return true; }
+void wait_ps2_write() {
+    for (size_t i = 0; i < MAX_WAIT_INDEX; ++i) {
+        if (!(io_in8(PS2_CMD_PORT) & KB_STATUS_IBF)) return;
     }
-    return false;
 }
 
-bool ps2_send_cmd(uint8_t cmd) {
-    if (!ps2_wait_input_clear()) return false;
-    io_out8(PS2_DATA_PORT, cmd);
-    return true;
-}
-
-bool ps2_keyboard_exists() {
-    if (!ps2_send_cmd(0xFF)) return false;
-    return true;
+void wait_ps2_read() {
+    for (size_t i = 0; i < MAX_WAIT_INDEX; ++i) {
+        if (!(io_in8(PS2_CMD_PORT) & KB_STATUS_OBF)) return;
+    }
 }
 
 void keyboard_setup() {
+    kb_fifo.p_head = kb_fifo.buf;
+    kb_fifo.p_tail = kb_fifo.buf;
+    kb_fifo.count  = 0;
     register_interrupt_handler(keyboard, (void *)keyboard_handler, 0, 0x8E);
-    if (ps2_keyboard_exists()) { kinfo("Setup PS/2 keyboard."); }
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, 0xAD);
+    while (io_in8(PS2_CMD_PORT) & KB_STATUS_OBF) {
+        io_in8(PS2_DATA_PORT);
+    }
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, KBCMD_WRITE_CMD); // 0x60
+    wait_ps2_write();
+    io_out8(PS2_DATA_PORT, KB_INIT_MODE); // 0x03
+
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, 0xAE);
+
+    wait_ps2_write();
+    io_out8(PS2_DATA_PORT, 0xFF); // 重置命令
+    wait_ps2_read();
+    uint8_t response = io_in8(PS2_DATA_PORT);
+    if (response != 0xAA) { kerror("Keyboard reset failed: 0x%x", response); }
+
+    wait_ps2_write();
+    io_out8(PS2_DATA_PORT, 0xF4); // 启用数据报告
+    wait_ps2_read();
+    if (io_in8(PS2_DATA_PORT) != 0xFA) { kerror("Keyboard enable failed"); }
+    kinfo("Setup PS/2 keyboard.");
 }
