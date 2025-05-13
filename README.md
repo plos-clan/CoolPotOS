@@ -21,7 +21,8 @@ Languages
 
 ## Introduction
 
-This is a simple operating system for [ia32](https://en.wikipedia.org/wiki/IA-32) and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
+This is a simple operating system for [ia32](https://en.wikipedia.org/wiki/IA-32)
+and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
 
 ## Modules
 
@@ -73,6 +74,34 @@ Then your editor knows how to find the source files and derives syntax highlight
 
 This project is licensed under [MIT License](LICENSE).
 
+## Feature
+
+### AMD64
+
+Based on UEFI BIOS boot. \
+Use Limine bootloader.
+
+- [x] 4 Level Page Table Memory Management
+- [x] xAPIC and x2APIC
+- [x] Kernel Module
+- [x] AHCI Disk Driver
+- [x] Multi-Task (Process and Thread)
+- [x] PS/2 keyboard and Mouse
+- [x] PCIE Device Enum
+- [x] ACPI Power Management
+- [x] VFS VDisk interface
+- [x] IPC Message Queue
+- [ ] Process Signal
+- [x] Multiprocessor Scheduler
+- [x] User program
+- [x] Device File System
+- [x] Floating Point Unit
+- [ ] IIC Driver
+- [ ] Nvme and USB Driver
+- [ ] PCNET and Rtl8169 Driver
+- [x] SB16 and PCSpeaker Driver
+- [ ] TTY Driver
+
 ## Contributing
 
 Welcome to create pull requests or issues to this project. Then sit back and relax.
@@ -86,7 +115,7 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 - ViudiraTech - PCI Driver Optimization
 - Vinbe Wan - IIC Developer
 - A4-Tacks - Write Some Build Scripts
-- wenxuanjun - OS Developer
+- wenxuanjun(blurryrect) - OS Developer
 - Minsecrus - Memory Usage Optimization
 - CLimber-Rong - Software Developer
 - shiyu - Debugger and Comments Writer
@@ -94,4 +123,3 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 - LY-Xiang - Optimized actions process
 - suhuajun-github - Fix several bugs in the AHCI driver
 - FengHeting - SMBIOS driver Developer
-- blurryrect - OS Developer

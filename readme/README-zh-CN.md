@@ -26,8 +26,8 @@
 - NASM (x86_64架构无需此汇编器)
 - Zig (x86_64架构需要clang编译器)
 - Windows subsystem for Linux (Ubuntu 22.04)
-  - xorriso
-  - qemu-system-i386 / qemu-system-x86_64
+    - xorriso
+    - qemu-system-i386 / qemu-system-x86_64
 
 ### 步骤
 
@@ -46,6 +46,34 @@
 
 该项目完全遵循 MIT 协议，任何人都可以免费使用它，另见 [LICENSE](/LICENSE)。
 
+## 支持功能
+
+### AMD64
+
+基于 UEFI BIOS 引导. \
+使用 Limine 引导器.
+
+- [x] 4级页表内存管理
+- [x] xapic 与 x2apic 高级可编程中断控制器支持
+- [x] 内核模块支持
+- [x] AHCI 硬盘设备驱动
+- [x] 多任务支持 (进程与线程)
+- [x] PS/2 键盘和鼠标驱动支持
+- [x] PCIE 设备枚举
+- [x] ACPI 电源管理
+- [x] VFS VDisk 抽象层接口
+- [x] 进程消息队列
+- [ ] 进程信号机制
+- [x] 适用于多核CPU的调度器
+- [x] 用户态应用程序
+- [x] 设备文件系统
+- [x] 浮点协处理器
+- [ ] IIC 总线驱动
+- [ ] Nvme 和 USB 驱动
+- [ ] PCNET 和 Rtl8169 驱动
+- [x] SB16 和 PCSpeaker 驱动
+- [ ] TTY 驱动
+
 ## 贡献
 
 欢迎为这个项目提交 PR 或 issue，`然后坐和放宽`
@@ -59,7 +87,7 @@
 - ViudiraTech - PCI驱动优化
 - VinbeWan - IIC驱动程序开发
 - A4-Tacks - 编写一些构建脚本
-- wenxuanjun - OS 重构开发
+- wenxuanjun(blurryrect) - OS 重构开发
 - Minsecrus - OS 内存统计算法优化
 - CLimber-Rong - 软件开发
 - shiyu - 负责到处捉虫和帮助代码添加注释
