@@ -10,6 +10,7 @@
 #include "lock_queue.h"
 #include "page.h"
 #include "scheduler.h"
+#include "signal.h"
 #include "syscall.h"
 #include "sysuser.h"
 #include "timer.h"
@@ -38,6 +39,7 @@ struct process_control_block {
     lock_queue       *ipc_queue;   // 进程消息队列
     lock_queue       *file_open;   // 文件句柄占用队列
     page_directory_t *page_dir;    // 进程页表
+    signal_block_t    task_signal; // 信号处理
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备
     TaskStatus        status;      // 进程状态

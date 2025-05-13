@@ -6,6 +6,7 @@
 #include "lock.h"
 #include "lock_queue.h"
 #include "pcb.h"
+#include "signal.h"
 #include "smp.h"
 
 tcb_t         kernel_head_task = NULL;
@@ -184,6 +185,9 @@ void scheduler(registers_t *reg) {
         next->parent_group->parent_task->status == OUT) {
         next->parent_group->parent_task = kernel_group;
     }
+
+    // 信号检查
+    check_pending_signals(next->parent_group, next);
 
     // 正式切换
     if (cpu->current_pcb != next) {

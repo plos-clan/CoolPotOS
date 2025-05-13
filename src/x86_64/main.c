@@ -102,7 +102,7 @@ void kmain() {
     init_heap();
     module_setup();
     init_terminal();
-    init_tty();
+
     printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
            COMPILER_NAME, COMPILER_VERSION);
     init_cpuid();
@@ -114,7 +114,7 @@ void kmain() {
     smbios_setup();
     acpi_setup();
     keyboard_setup();
-    //mouse_setup();
+    mouse_setup();
     char *date = get_date_time();
     kinfo("RTC time %s", date);
     free(date);
@@ -123,6 +123,7 @@ void kmain() {
 
     vdisk_init();
     devfs_setup();
+    init_tty();
     modfs_setup();
     pci_init();
     ide_setup();
@@ -136,8 +137,6 @@ void kmain() {
     disable_scheduler();
     init_pcb();
     smp_setup();
-
-    build_stream_device();
 
     killer_setup();
     setup_syscall();

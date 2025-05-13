@@ -12,6 +12,7 @@
 #define MAX_WAIT_INDEX    1000000                  // 阻塞最大循环数
 #define KERNEL_AREA_MEM   0xf000000000000000       // 内核地址空间起始
 #define USER_MMAP_START   0x0000700000000000       // 用户态映射起始地址
+#define MAX_SIGNALS       64                       // 最大支持信号个数
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")

@@ -9,51 +9,6 @@
 
 vdisk vdisk_ctl[26];
 
-static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    for (size_t i = 0; i < number; i++) {
-        char c = (char)kernel_getch();
-        printk("%c", c);
-        if (c == '\n') {
-            buffer[i] = 0x0a;
-            break;
-        }
-        buffer[i] = c;
-    }
-}
-
-static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    tty_t *tty;
-    if (get_current_task() == NULL) {
-        tty = get_default_tty();
-    } else
-        tty = get_current_task()->parent_group->tty;
-    for (size_t i = 0; i < number; i++) {
-        tty->putchar(tty, buffer[i]);
-    }
-}
-
-void build_stream_device() {
-    vdisk stdout;
-    stdout.type = VDISK_STREAM;
-    strcpy(stdout.drive_name, "stdout");
-    stdout.flag        = 1;
-    stdout.sector_size = 1;
-    stdout.size        = 1;
-    stdout.read        = (void *)empty;
-    stdout.write       = stdout_write;
-    regist_vdisk(stdout);
-
-    vdisk stdin;
-    stdin.type = VDISK_STREAM;
-    strcpy(stdin.drive_name, "stdin");
-    stdin.flag        = 1;
-    stdin.sector_size = 1;
-    stdin.size        = 1;
-    stdin.write       = (void *)empty;
-    stdin.read        = stdin_read;
-    regist_vdisk(stdin);
-}
-
 int regist_vdisk(vdisk vd) {
     for (int i = 0; i < 26; i++) {
         if (!vdisk_ctl[i].flag) {
