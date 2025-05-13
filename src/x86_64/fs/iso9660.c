@@ -406,6 +406,7 @@ static struct vfs_callback iso_callbacks = {
     .mkdir   = iso9660_mkdir,
     .mkfile  = iso9660_mkfile,
     .stat    = iso9660_stat,
+    .ioctl   = (void *)empty,
 };
 
 void iso9660_regist() {

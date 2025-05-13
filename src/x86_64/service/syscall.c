@@ -177,13 +177,12 @@ syscall_(signal) {
     if (sig < 0 || sig >= MAX_SIGNALS) return SYSCALL_FAULT;
     void *handler = (void *)arg1;
     if (handler == NULL) return SYSCALL_FAULT;
+    logkf("Signal syscall: %p\n", handler);
     register_signal(get_current_task()->parent_group, sig, handler);
     return SYSCALL_SUCCESS;
 }
 
-syscall_(sigret) {
-    // TODO
-}
+syscall_(sigret) {}
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,

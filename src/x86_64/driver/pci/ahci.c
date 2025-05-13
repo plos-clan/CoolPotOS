@@ -521,6 +521,7 @@ void ahci_setup() {
         vd.type  = VDISK_BLOCK;
         vd.read  = ahci_vdisk_read;
         vd.write = ahci_vdisk_write;
+        vd.ioctl = (void *)empty;
         vd.flag = type == AHCI_DEV_SATA ? 1 : (type == AHCI_DEV_SATAPI ? 2 : (AHCI_DEV_PM ? 3 : 0));
         vd.sector_size = type == AHCI_DEV_SATA ? 512 : (type == AHCI_DEV_SATAPI ? 2048 : 0);
         char name[10];

@@ -21,4 +21,5 @@ typedef struct tty_virtual_device {
 void   init_tty();
 tty_t *alloc_default_tty();
 void   free_tty(tty_t *tty);
+void   build_tty_device();
 tty_t *get_default_tty();

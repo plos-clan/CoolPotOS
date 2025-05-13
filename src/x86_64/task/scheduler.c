@@ -172,8 +172,12 @@ void scheduler(registers_t *reg) {
         if (cpu->iter_node == NULL) goto iter_head;
         next = (tcb_t)cpu->iter_node->data;
         not_null_assets(next, "scheduler next null");
-        if (next->status == DEATH || next->status == OUT || next->parent_group->status == DEATH)
-            goto resche;
+        switch (next->status) {
+        case DEATH:
+        case OUT: goto resche;
+        default:
+            if (next->parent_group->status == DEATH) { goto resche; }
+        }
     }
 
     //logkf("Scheduler: %d:%s -> %d:%s\n", tcb->status,tcb->name,next->status,next->name);

@@ -334,6 +334,7 @@ void nvme_setup() {
         strcpy(disk.drive_name, name);
         disk.read  = NvmeRead;
         disk.write = NvmeWrite;
+        disk.ioctl = (void *)empty;
 
         int c          = regist_vdisk(disk);
         nvme_device[c] = ns;

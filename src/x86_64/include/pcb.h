@@ -25,7 +25,8 @@ typedef enum {
     WAIT    = 2, // 线程阻塞
     DEATH   = 3, // 死亡(无法被调度, 线程状态为等待处死)
     START   = 4, // 准备调度
-    OUT     = 5, // 已被处死(线程状态)
+    WAIT_IO = 5, // 外部原因主动性阻塞 (无法被调度)
+    OUT     = 6, // 已被处死(线程状态)
 } TaskStatus;
 
 struct process_control_block {

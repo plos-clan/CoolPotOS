@@ -68,6 +68,7 @@ static struct vfs_callback modfs_callbacks = {
     .read    = modfs_read,
     .write   = (void *)empty,
     .mkfile  = (void *)empty,
+    .ioctl   = (void *)empty,
 };
 
 void modfs_setup() {
