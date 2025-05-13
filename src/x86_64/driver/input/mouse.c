@@ -93,20 +93,10 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
     spin_unlock(mouse_lock);
 }
 
-static inline void wait_for_read() {
-    while (!(io_in8(PS2_CMD_PORT) & KB_STATUS_OBF))
-        ;
-}
-
-static inline void wait_for_write() {
-    while (io_in8(PS2_CMD_PORT) & KB_STATUS_IBF)
-        ;
-}
-
 static bool send_command(uint8_t value) {
-    wait_for_write();
+    wait_ps2_write();
     io_out8(PS2_CMD_PORT, KB_SEND2MOUSE);
-    wait_for_write();
+    wait_ps2_write();
     io_out8(PS2_DATA_PORT, value);
     return io_in8(PS2_DATA_PORT) != 0xfa;
 }
@@ -122,14 +112,38 @@ static MouseType get_mouse_type() {
     send_command(80);
 
     send_command(0xf2);
-    wait_for_read();
+    wait_ps2_read();
     uint8_t type0 = io_in8(PS2_DATA_PORT);
     return type0 == 0x3 ? OnlyScroll : (type0 == 0x4 ? FiveButton : Standard);
 }
 
 void mouse_setup() {
     register_interrupt_handler(mouse, (void *)mouse_handle, 0, 0x8E);
-    send_command(MOUSE_EN);
+
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, KB_EN_MOUSE_INTFACE);
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, KB_SEND2MOUSE);
+    wait_ps2_write();
+    io_out8(PS2_DATA_PORT, MOUSE_EN);
+
+    wait_ps2_read();
+    if (io_in8(PS2_DATA_PORT) != 0xFA) { kwarn("PS/2 mouse enable failed."); }
+
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, KB_SEND2MOUSE);
+    wait_ps2_write();
+    io_out8(PS2_DATA_PORT, 0xF3);
+    wait_ps2_read();
+    if (io_in8(PS2_DATA_PORT) != 0xFA) { kwarn("PS/2 mouse enable failed."); }
+
+    wait_ps2_write();
+    io_out8(PS2_CMD_PORT, KB_SEND2MOUSE);
+    wait_ps2_write();
+    io_out8(PS2_DATA_PORT, 100); // 100 samples/s
+    wait_ps2_read();
+    if (io_in8(PS2_DATA_PORT) != 0xFA) { kwarn("PS/2 mouse set samples failed."); }
+
     type = get_mouse_type();
     kinfo("Setup PS/2 %s mouse.",
           type == OnlyScroll ? "OnlyScroll" : (type == FiveButton ? "FiveButton" : "Standard"));

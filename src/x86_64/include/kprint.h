@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ctype.h"
-#include <stdarg.h>
+#include "stdarg.h"
 
 #define BLACK   0 // 黑
 #define RED     1 // 红
@@ -15,7 +15,7 @@
 #define ksuccess(...)                                                                              \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(GREEN, BLACK, "SUCCESS");                                                     \
+        color_printk(GREEN, BLACK, " SUCCESS");                                                    \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \
@@ -24,7 +24,7 @@
 #define kinfo(...)                                                                                 \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(CYAN, BLACK, "INFO");                                                         \
+        color_printk(CYAN, BLACK, "  INFO  ");                                                     \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \
@@ -42,7 +42,7 @@
 #define kwarn(...)                                                                                 \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(YELLOW, BLACK, "WARN");                                                       \
+        color_printk(YELLOW, BLACK, "  WARN  ");                                                   \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \
@@ -51,7 +51,7 @@
 #define kerror(...)                                                                                \
     do {                                                                                           \
         printk("[");                                                                               \
-        color_printk(RED, BLACK, "ERROR");                                                         \
+        color_printk(RED, BLACK, " FAILED ");                                                      \
         printk("]: ");                                                                             \
         printk(__VA_ARGS__);                                                                       \
         printk("\n");                                                                              \

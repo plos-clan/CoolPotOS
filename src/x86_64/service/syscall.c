@@ -7,6 +7,7 @@
 #include "page.h"
 #include "pcb.h"
 #include "scheduler.h"
+#include "signal.h"
 #include "vfs.h"
 
 extern void asm_syscall_entry();
@@ -167,6 +168,21 @@ syscall_(mmap) {
             page_map_to(get_current_directory(), page_addr, phys, page_flags);
         }
     }
+
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(signal) {
+    int sig = arg0;
+    if (sig < 0 || sig >= MAX_SIGNALS) return SYSCALL_FAULT;
+    void *handler = (void *)arg1;
+    if (handler == NULL) return SYSCALL_FAULT;
+    register_signal(get_current_task()->parent_group, sig, handler);
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(sigret) {
+    // TODO
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
@@ -174,6 +190,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
     [SYSCALL_WRITE] = syscall_write,     [SYSCALL_READ] = syscall_read,
     [SYSCALL_WAITPID] = syscall_waitpid, [SYSCALL_MMAP] = syscall_mmap,
+    [SYSCALL_SIGNAL] = syscall_signal,   [SYSCALL_SIGRET] = syscall_sigret,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {
