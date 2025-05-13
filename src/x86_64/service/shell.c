@@ -284,14 +284,19 @@ void lspci() {
 
 static void echo(int argc, char **argv) {
     if (argc == 1) { return; }
-    vfs_node_t stdout = vfs_open("/dev/stdout");
+    vfs_node_t stdout = vfs_open("/dev/stdio");
     if (stdout == NULL) {
-        printk("\033[31mstdout stream device is null.\033[0m\n");
+        printk("\033[31mstdio stream device is null.\033[0m\n");
     } else {
-        char *buf = argv[1];
-        if (vfs_write(stdout, buf, 0, strlen(buf)) == VFS_STATUS_FAILED) {
-            printk("\033[31mstdout stream device has error.\033[0m\n");
+        for (int i = 1; i < argc; ++i) {
+            char *buf = argv[i];
+            if (vfs_write(stdout, buf, 0, strlen(buf)) == VFS_STATUS_FAILED) {
+                printk("\033[31mstdio stream device has error.\033[0m\n");
+            }
+            char c = ' ';
+            vfs_write(stdout, &c, 0, 1);
         }
+
         vfs_close(stdout);
         printk("\n");
     }

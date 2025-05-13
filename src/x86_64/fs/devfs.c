@@ -111,6 +111,13 @@ write:
     return VFS_STATUS_SUCCESS;
 }
 
+static int devfs_ioctl(void *file, size_t req, void *arg) {
+    int dev_id = (int)(uint64_t)file;
+    if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
+
+    return VFS_STATUS_FAILED;
+}
+
 static struct vfs_callback devfs_callbacks = {
     .mount   = devfs_mount,
     .unmount = (void *)empty,
@@ -121,6 +128,7 @@ static struct vfs_callback devfs_callbacks = {
     .read    = devfs_read,
     .write   = devfs_write,
     .mkfile  = (void *)empty,
+    .ioctl   = devfs_ioctl,
 };
 
 void devfs_setup() {

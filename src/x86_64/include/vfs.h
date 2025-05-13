@@ -18,7 +18,7 @@ typedef void (*vfs_resize_t)(void *current, uint64_t size);
 // 读写一个文件
 typedef int (*vfs_write_t)(void *file, const void *addr, size_t offset, size_t size);
 typedef int (*vfs_read_t)(void *file, void *addr, size_t offset, size_t size);
-
+typedef int (*vfs_ioctl_t)(void *file, size_t req, void *arg);
 typedef int (*vfs_stat_t)(void *file, vfs_node_t node);
 
 // 创建一个文件或文件夹
@@ -44,6 +44,7 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_mk_t      mkdir;      // 创建文件夹
     vfs_mk_t      mkfile;     // 创建文件
     vfs_stat_t    stat;       // 检查文件状态信息
+    vfs_ioctl_t   ioctl;      // I/O 控制接口 (仅 devfs 等特殊文件系统实现)
 } *vfs_callback_t;
 
 struct vfs_node {           // vfs节点

@@ -81,26 +81,30 @@ static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t l
     }
 }
 
-void build_stream_device() {
-    vdisk stdout;
-    stdout.type = VDISK_STREAM;
-    strcpy(stdout.drive_name, "stdout");
-    stdout.flag        = 1;
-    stdout.sector_size = 1;
-    stdout.size        = 1;
-    stdout.read        = (void *)empty;
-    stdout.write       = stdout_write;
-    regist_vdisk(stdout);
+static void tty_ioctl(size_t req, void *arg) {}
 
-    vdisk stdin;
-    stdin.type = VDISK_STREAM;
-    strcpy(stdin.drive_name, "stdin");
-    stdin.flag        = 1;
-    stdin.sector_size = 1;
-    stdin.size        = 1;
-    stdin.write       = (void *)empty;
-    stdin.read        = stdin_read;
-    regist_vdisk(stdin);
+void build_tty_device() {
+    vdisk stdio;
+    stdio.type = VDISK_STREAM;
+    strcpy(stdio.drive_name, "stdio");
+    stdio.flag        = 1;
+    stdio.sector_size = 1;
+    stdio.size        = 1;
+    stdio.read        = stdin_read;
+    stdio.write       = stdout_write;
+    stdio.ioctl       = (void *)empty;
+    regist_vdisk(stdio);
+
+    vdisk tty0;
+    tty0.type = VDISK_STREAM;
+    strcpy(tty0.drive_name, "tty0");
+    tty0.flag        = 1;
+    tty0.sector_size = 1;
+    tty0.size        = 1;
+    tty0.read        = (void *)empty;
+    tty0.write       = (void *)empty;
+    tty0.ioctl       = tty_ioctl;
+    regist_vdisk(tty0);
 }
 
 void init_tty() {
@@ -117,6 +121,6 @@ void init_tty() {
         free(queue);
         queue = NULL;
     }
-    build_stream_device();
+    build_tty_device();
     kinfo("Default tty device init done.");
 }

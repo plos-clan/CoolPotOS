@@ -12,6 +12,7 @@ typedef enum {
 typedef struct {
     void (*read)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
     void (*write)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
+    void (*ioctl)(size_t req, void *handle);
     int          flag;
     uint32_t     size;        // 大小
     uint32_t     sector_size; // 扇区大小
@@ -19,7 +20,6 @@ typedef struct {
     char         drive_name[50];
 } vdisk; // 块设备
 
-void     build_stream_device();
 uint32_t disk_size(int drive);
 int      vdisk_init();
 

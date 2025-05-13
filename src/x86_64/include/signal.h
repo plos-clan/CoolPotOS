@@ -65,16 +65,10 @@ struct signal_block {
     bool signal_mask[64];             // 屏蔽的信号
 } __attribute__((packed));
 
-struct sigframe {
-    uint64_t    ret_addr;
-    int         sig;
-    TaskContext context0; // 信号上下文
-};
-
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
 
 int  send_signal(int pid, int sig);
-void setup_signal_stack(tcb_t thread, int signum, void *handler);
+void setup_signal_thread(tcb_t thread, int signum, void *handler);
 void register_signal(pcb_t task, int sig, void (*handler)(int));
 void check_pending_signals(pcb_t proc, tcb_t thread);
