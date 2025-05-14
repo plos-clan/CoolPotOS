@@ -65,6 +65,10 @@ struct signal_block {
     bool signal_mask[64];             // 屏蔽的信号
 } __attribute__((packed));
 
+struct signal_frame {
+
+} __attribute__((packed));
+
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
 

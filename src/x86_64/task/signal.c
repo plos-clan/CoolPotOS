@@ -1,4 +1,5 @@
 #include "signal.h"
+#include "klog.h"
 #include "pcb.h"
 
 void check_pending_signals(pcb_t proc, tcb_t thread) {
@@ -6,6 +7,8 @@ void check_pending_signals(pcb_t proc, tcb_t thread) {
         if ((proc->task_signal.pending_signals & (1 << sig)) &&
             !proc->task_signal.signal_mask[sig]) {
             proc->task_signal.pending_signals &= ~(1 << sig); // 清除信号
+
+            logkf("Signal %d pending for %s\n", sig, proc->name);
 
             if (proc->task_signal.signal_handlers[sig]) {
                 setup_signal_thread(thread, sig, proc->task_signal.signal_handlers[sig]);
@@ -17,8 +20,7 @@ void check_pending_signals(pcb_t proc, tcb_t thread) {
 }
 
 void register_signal(pcb_t task, int sig, void (*handler)(int)) {
-    signal_block_t block       = task->task_signal;
-    block.signal_handlers[sig] = handler;
+    task->task_signal.signal_handlers[sig] = handler;
 }
 
 void setup_signal_thread(tcb_t thread, int signum, void *handler) {
@@ -45,7 +47,12 @@ int send_signal(int pid, int sig) {
         return 0;
     }
 
-    if (target->task_signal.signal_mask[sig]) { target->task_signal.pending_signals |= (1 << sig); }
+    logkf("Send interrupt signal: %d\n", sig);
+
+    if (!target->task_signal.signal_mask[sig]) {
+        target->task_signal.pending_signals |= (1 << sig);
+        logkf("Signal %d pending for %s\n", sig, target->name);
+    }
 
     return 0;
 }
