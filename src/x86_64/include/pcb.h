@@ -4,6 +4,41 @@
 #define TASK_SYSTEM_SERVICE_LEVEL 1 // 系统服务 (崩溃后会在终端提示)
 #define TASK_APPLICATION_LEVEL    2 // 应用程序
 
+#define PR_SET_PDEATHSIG            1
+#define PR_GET_PDEATHSIG            2
+#define PR_GET_DUMPABLE             3
+#define PR_SET_DUMPABLE             4
+#define PR_GET_UNALIGN              5
+#define PR_SET_UNALIGN              6
+#define PR_GET_KEEPCAPS             7
+#define PR_SET_KEEPCAPS             8
+#define PR_GET_FPEMU                9
+#define PR_SET_FPEMU                10
+#define PR_GET_FPEXC                11
+#define PR_SET_FPEXC                12
+#define PR_GET_TIMING               13
+#define PR_SET_TIMING               14
+#define PR_SET_NAME                 15
+#define PR_GET_NAME                 16
+#define PR_GET_ENDIAN               19
+#define PR_SET_ENDIAN               20
+#define PR_GET_SECCOMP              21
+#define PR_SET_SECCOMP              22
+#define PR_CAPBSET_READ             23
+#define PR_CAPBSET_DROP             24
+#define PR_SET_NO_NEW_PRIVS         38
+#define PR_GET_NO_NEW_PRIVS         39
+#define PR_MCE_KILL                 33
+#define PR_MCE_KILL_GET             34
+#define PR_SET_MM                   35
+#define PR_SET_PTRACER              0x59616d61 // 'Yama' magic value
+#define PR_SET_THP_DISABLE          41
+#define PR_GET_THP_DISABLE          42
+#define PR_TASK_PERF_EVENTS_DISABLE 31
+#define PR_TASK_PERF_EVENTS_ENABLE  32
+#define PR_GET_SPECULATION_CTRL     52
+#define PR_SET_SPECULATION_CTRL     53
+
 #include "ctype.h"
 #include "fpu.h"
 #include "isr.h"
@@ -152,6 +187,17 @@ tcb_t found_thread(pcb_t pcb, int tid);
  * @return == -25565 ? 未找到线程 : 退出代码
  */
 int waitpid(int pid);
+
+/**
+ * syscall_prctl 系统调用实现
+ * @param option 控制选项
+ * @param arg2
+ * @param arg3
+ * @param arg4
+ * @param arg5
+ * @return 成功返回 0 (失败返回 -1)
+ */
+int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5);
 
 void init_pcb();
 

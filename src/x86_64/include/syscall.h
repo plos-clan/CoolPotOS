@@ -10,8 +10,10 @@
 #define SYSCALL_FAULT   (-1)
 
 #define syscall_(name)                                                                             \
-    uint64_t syscall_##name(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,            \
-                            uint64_t arg4)
+    uint64_t syscall_##name(                                                                       \
+        uint64_t arg0 __attribute__((unused)), uint64_t arg1 __attribute__((unused)),              \
+        uint64_t arg2 __attribute__((unused)), uint64_t arg3 __attribute__((unused)),              \
+        uint64_t arg4 __attribute__((unused)))
 
 // plos-clan 通用系统调用编号定义
 #define SYSCALL_EXIT    0
@@ -24,6 +26,8 @@
 #define SYSCALL_CLOSE   9
 #define SYSCALL_READ    10
 #define SYSCALL_WRITE   12
+#define SYSCALL_GETPID  13
+#define SYSCALL_PRCTL   14
 
 #include "ctype.h"
 

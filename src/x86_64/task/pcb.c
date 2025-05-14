@@ -157,7 +157,8 @@ void kill_all_proc() {
 }
 
 pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle) {
-    pcb_t new_pgb   = malloc(sizeof(struct process_control_block));
+    pcb_t new_pgb = malloc(sizeof(struct process_control_block));
+    memset(new_pgb, 0, sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
     strcpy(new_pgb->name, name);
     new_pgb->pcb_queue   = queue_init();
@@ -269,12 +270,34 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     return new_task->pid;
 }
 
+int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
+    switch (option) {
+    case PR_SET_NAME:
+        if (arg2 == 0) return SYSCALL_FAULT;
+        char *new_name = (char *)arg2;
+        int   length   = strlen(new_name);
+        if (length > 16) return SYSCALL_FAULT;
+        memcpy(get_current_task()->name, new_name, length);
+        break;
+    case PR_GET_NAME:
+        if (arg2 == 0) return SYSCALL_FAULT;
+        char *proc_name = (char *)arg2;
+        memcpy(proc_name, get_current_task()->name, 16);
+        break;
+    case PR_GET_DUMPABLE: return 0; //TODO CP_Kernel 不支持核心转储
+    case PR_SET_DUMPABLE: return SYSCALL_FAULT;
+    default: return SYSCALL_FAULT;
+    }
+    return SYSCALL_SUCCESS;
+}
+
 void init_pcb() {
     pcb_lock       = SPIN_INIT;
     scheduler_lock = SPIN_INIT;
     pgb_queue      = queue_init();
 
     kernel_group = malloc(sizeof(struct process_control_block));
+    memset(kernel_group, 0, sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
     kernel_group->pid_index = kernel_group->pgb_id = now_pid++;
     kernel_group->pcb_queue                        = queue_init();

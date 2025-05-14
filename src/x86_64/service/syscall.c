@@ -97,9 +97,17 @@ syscall_(abort) {
 syscall_(open) {
     char *path = (char *)arg0;
     if (path == NULL) return -1;
+
+    logkf("syscall open: %s\n", path);
+
     vfs_node_t node  = vfs_open(path);
     int        index = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, node);
     spin_unlock(get_current_task()->parent_group->file_open->lock);
+    if (index == -1) {
+        logkf("syscall open: %s failed.\n", path);
+        vfs_free(node);
+        return SYSCALL_FAULT;
+    }
     return index;
 }
 
@@ -184,12 +192,24 @@ syscall_(signal) {
 
 syscall_(sigret) {}
 
+syscall_(getpid) {
+    if (arg0 == UINT64_MAX || arg1 == UINT64_MAX || arg2 == UINT64_MAX || arg3 == UINT64_MAX ||
+        arg4 == UINT64_MAX)
+        return 1;
+    return get_current_task()->parent_group->pgb_id;
+}
+
+syscall_(prctl) {
+    return process_control(arg0, arg1, arg2, arg3, arg4);
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,
     [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
     [SYSCALL_WRITE] = syscall_write,     [SYSCALL_READ] = syscall_read,
     [SYSCALL_WAITPID] = syscall_waitpid, [SYSCALL_MMAP] = syscall_mmap,
     [SYSCALL_SIGNAL] = syscall_signal,   [SYSCALL_SIGRET] = syscall_sigret,
+    [SYSCALL_GETPID] = syscall_getpid,   [SYSCALL_PRCTL] = syscall_prctl,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {
