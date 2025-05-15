@@ -325,7 +325,6 @@ static void lmod(int argc, char **argv) {
     extern int         module_count;
 
     if (!strcmp(argv[1], "list")) {
-        printk("\033[1;36mModel(Kernel)\033[0m load in \033[1;34m/sys/cpkrnl.elf\033[0m\n");
         for (int i = 0; i < module_count; i++) {
             printk("\033[1;36mModel(%s)\033[0m load in \033[1;34m%s\033[0m\n",
                    module_ls[i].module_name, module_ls[i].path);

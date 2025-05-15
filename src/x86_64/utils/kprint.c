@@ -37,8 +37,14 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
 
     if (get_current_task() != NULL)
         get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
-    else
-        terminal_process(buf);
+    else {
+        for (size_t i = 0; buf[i] != '\0'; i++) {
+            if (buf[i] == '\n') terminal_process_byte('\r');
+            terminal_process_byte(buf[i]);
+        }
+    }
+    extern bool open_flush;
+    if (!open_flush) terminal_flush();
     spin_unlock(print_lock);
 }
 

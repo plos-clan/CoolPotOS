@@ -203,6 +203,13 @@ syscall_(prctl) {
     return process_control(arg0, arg1, arg2, arg3, arg4);
 }
 
+syscall_(size) {
+    int fd = (int)arg0;
+    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT;
+    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
+    return node->size;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,
     [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
@@ -210,6 +217,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_WAITPID] = syscall_waitpid, [SYSCALL_MMAP] = syscall_mmap,
     [SYSCALL_SIGNAL] = syscall_signal,   [SYSCALL_SIGRET] = syscall_sigret,
     [SYSCALL_GETPID] = syscall_getpid,   [SYSCALL_PRCTL] = syscall_prctl,
+    [SYSCALL_SIZE] = syscall_size,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {

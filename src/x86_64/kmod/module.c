@@ -6,6 +6,8 @@ cp_module_t module_ls[256];
 int         module_count = 0;
 
 LIMINE_REQUEST struct limine_module_request module = {.id = LIMINE_MODULE_REQUEST, .revision = 0};
+LIMINE_REQUEST struct limine_kernel_file_request kfile = {.id       = LIMINE_KERNEL_FILE_REQUEST,
+                                                          .response = 0};
 
 void extract_name(const char *input, char *output, size_t output_size) {
     const char *name = strrchr(input, '/');
@@ -34,6 +36,14 @@ cp_module_t *get_module(const char *module_name) {
 
 void module_setup() {
     if (module.response == NULL || module.response->module_count == 0) { return; }
+
+    struct limine_file *kernel = kfile.response->kernel_file;
+    strcpy(module_ls[module_count].module_name, "Kernel");
+    module_ls[module_count].path   = kernel->path;
+    module_ls[module_count].data   = kernel->address;
+    module_ls[module_count].size   = kernel->size;
+    module_ls[module_count].is_use = true;
+    module_count++;
 
     for (size_t i = 0; i < module.response->module_count; i++) {
         struct limine_file *file = module.response->modules[i];
