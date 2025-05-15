@@ -23,7 +23,10 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
         spin_lock(tty_lock);
         for (size_t i = 0; msg[i] != '\0'; i++) {
             char c = msg[i];
-            if (c == '\n') { terminal_process_byte('\r'); }
+            if (c == '\n') {
+                terminal_process_byte('\r');
+                terminal_flush();
+            }
             terminal_process_byte(c);
         }
         spin_unlock(tty_lock);
@@ -35,7 +38,10 @@ static void tty_kernel_putc(tty_t *tty, int c) {
         terminal_putc((char)c);
     else {
         spin_lock(tty_lock);
-        if (c == '\n') { terminal_process_byte('\r'); }
+        if (c == '\n') {
+            terminal_process_byte('\r');
+            terminal_flush();
+        }
         terminal_process_byte(c);
         spin_unlock(tty_lock);
     }
