@@ -43,6 +43,8 @@ target("pl_readline")
     add_cflags("-mno-80387", "-mno-mmx", "-DNDEBUG")
     add_cflags("-mno-sse", "-mno-sse2", "-mno-red-zone")
     add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector")
+    add_cflags("-fPIC")
+    add_cxflags("-fPIC")
 
 target("kernel32")
     set_arch("i386")
@@ -77,6 +79,8 @@ target("kernel64")
     add_cflags("-fno-stack-protector", "-flto", "-fPIC")
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
     add_cflags("-mno-red-zone", "-nostdinc", "-msoft-float")
+    add_cflags("-mcmodel=kernel")  -- 添加内存模型设置
+    add_ldflags("-no-pie")         -- 显式禁用位置无关可执行文件
     add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
 
     --add_cflags("-fsanitize=undefined")
