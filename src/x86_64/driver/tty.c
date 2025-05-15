@@ -21,8 +21,11 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
         terminal_puts(msg);
     } else {
         spin_lock(tty_lock);
-        logkf("");
-        terminal_process(msg);
+        for (size_t i = 0; msg[i] != '\0'; i++) {
+            char c = msg[i];
+            if (c == '\n') { terminal_process_byte('\r'); }
+            terminal_process_byte(c);
+        }
         spin_unlock(tty_lock);
     }
 }
@@ -32,7 +35,7 @@ static void tty_kernel_putc(tty_t *tty, int c) {
         terminal_putc((char)c);
     else {
         spin_lock(tty_lock);
-        logkf("");
+        if (c == '\n') { terminal_process_byte('\r'); }
         terminal_process_byte(c);
         spin_unlock(tty_lock);
     }
@@ -62,7 +65,7 @@ static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba
     for (size_t i = 0; i < number; i++) {
         char c = (char)kernel_getch();
         if (get_current_task()->parent_group->tty->mode == ECHO) printk("%c", c);
-        if (c == '\n') {
+        if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;
             break;
         }
@@ -76,6 +79,7 @@ static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t l
         tty = get_default_tty();
     } else
         tty = get_current_task()->parent_group->tty;
+
     for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }

@@ -21,6 +21,7 @@ void update_terminal() {
         int ch = atom_pop(output_buffer);
         if (ch == -1) break;
         need_flush = true;
+        if (ch == '\n') { terminal_process_byte('\r'); }
         terminal_process_byte(ch);
     }
     if (open_flush && need_flush) { terminal_flush(); }
@@ -36,7 +37,7 @@ void terminal_close_flush() {
 }
 
 int terminal_flush_service(void *pVoid) {
-    terminal_set_auto_flush(false);
+    //    terminal_set_auto_flush(false);
     open_flush = true;
     loop update_terminal();
     return 0;
@@ -80,9 +81,10 @@ void init_terminal() {
     //    }
 
     terminal_init(&display, size, malloc, free);
-    terminal_set_crnl_mapping(true);
+    // terminal_set_crnl_mapping(true);
     terminal_set_scroll_speed(3);
     terminal_set_pty_writer(terminal_pty_writer);
+    terminal_set_auto_flush(false);
 
     TerminalPalette palette = {
         .background = 0x0d0d1a,

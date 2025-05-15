@@ -25,6 +25,7 @@
 #define SYSCALL_OPEN    8
 #define SYSCALL_CLOSE   9
 #define SYSCALL_READ    10
+#define SYSCALL_SIZE    11
 #define SYSCALL_WRITE   12
 #define SYSCALL_GETPID  13
 #define SYSCALL_PRCTL   14
