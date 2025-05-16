@@ -6,6 +6,7 @@
 #include "devfs.h"
 #include "dlinker.h"
 #include "frame.h"
+#include "fsgsbase.h"
 #include "gop.h"
 #include "heap.h"
 #include "hhdm.h"
@@ -109,6 +110,7 @@ void kmain() {
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     error_setup();
     float_processor_setup();
+    fsgsbase_init();
     dlinker_init();
     user_setup();
     smbios_setup();

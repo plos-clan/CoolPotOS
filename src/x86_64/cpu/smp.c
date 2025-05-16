@@ -1,8 +1,8 @@
 #include "smp.h"
 #include "description_table.h"
 #include "fpu.h"
+#include "fsgsbase.h"
 #include "heap.h"
-#include "hhdm.h"
 #include "io.h"
 #include "killer.h"
 #include "klog.h"
@@ -70,9 +70,9 @@ static void apu_gdt_setup() {
                        "a"(&_setcs_helper), "b"((uint16_t)0x8U)
                      : "memory");
 
-    wrmsr(0xC0000100, 0);
-    wrmsr(0xC0000101, (uint64_t)this_cpu);
-    wrmsr(0xC0000102, (uint64_t)this_cpu);
+    write_fsbase(0);
+    write_gsbase((uint64_t)this_cpu);
+    write_kgsbase((uint64_t)this_cpu);
     cpu->id = this_id;
 
     uint64_t address     = (uint64_t)&(this_cpu->tss0);
@@ -114,16 +114,17 @@ void apu_entry() {
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", cpu->id);
     memcpy(apu_idle->name, name, strlen(name));
-    apu_idle->name[strlen(name)] = '\0';
-    cpu->idle_pcb                = apu_idle;
-    cpu->ready                   = true;
+    apu_idle->name[strlen(name)]            = '\0';
+    ((smp_cpu_t *)read_kgsbase())->idle_pcb = apu_idle;
+    ((smp_cpu_t *)read_kgsbase())->ready    = true;
     change_current_tcb(apu_idle);
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
-    apu_idle->queue_index  = queue_enqueue(cpu->scheduler_queue, apu_idle);
+    apu_idle->queue_index = queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, apu_idle);
     if (apu_idle->queue_index == (size_t)-1) {
-        kerror("Unable to add task to scheduler queue for CPU%d", cpu->id);
-        cpu->ready = false;
+        kerror("Unable to add task to scheduler queue for CPU%d",
+               ((smp_cpu_t *)read_kgsbase())->id);
+        ((smp_cpu_t *)read_kgsbase())->ready = false;
         cpu_done_count++;
         spin_unlock(apu_lock);
         open_interrupt;
@@ -165,10 +166,11 @@ void apu_startup(struct limine_smp_request smp_request) {
         __asm__ volatile("pause" ::: "memory");
     }
 
-    cpu->idle_pcb                 = kernel_head_task;
-    kernel_head_task->queue_index = queue_enqueue(cpu->scheduler_queue, kernel_head_task);
+    ((smp_cpu_t *)read_kgsbase())->idle_pcb = kernel_head_task;
+    kernel_head_task->queue_index =
+        queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, kernel_head_task);
     if (kernel_head_task->queue_index == (size_t)-1) {
-        logkf("Error: scheduler null %d\n", cpu->id);
+        logkf("Error: scheduler null %d\n", ((smp_cpu_t *)read_kgsbase())->id);
     }
 
     kinfo("%d processors have been enabled.", cpu_count);

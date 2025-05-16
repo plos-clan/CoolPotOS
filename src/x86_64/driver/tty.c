@@ -34,9 +34,10 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
 }
 
 static void tty_kernel_putc(tty_t *tty, int c) {
-    if (open_flush)
+    if (open_flush) {
+        if (c == '\n') { terminal_putc('\r'); }
         terminal_putc((char)c);
-    else {
+    } else {
         spin_lock(tty_lock);
         if (c == '\n') {
             terminal_process_byte('\r');

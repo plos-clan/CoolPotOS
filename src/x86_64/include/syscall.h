@@ -7,7 +7,7 @@
 
 #define MAX_SYSCALLS    256
 #define SYSCALL_SUCCESS 0
-#define SYSCALL_FAULT   (-1)
+#define SYSCALL_FAULT   ((uint64_t)-(ENOSYS))
 
 #define syscall_(name)                                                                             \
     uint64_t syscall_##name(                                                                       \
@@ -15,20 +15,29 @@
         uint64_t arg2 __attribute__((unused)), uint64_t arg3 __attribute__((unused)),              \
         uint64_t arg4 __attribute__((unused)))
 
+// arch_prctl 系统调用 code
+#define ARCH_SET_FS 0x1002
+#define ARCH_GET_FS 0x1003
+#define ARCH_SET_GS 0x1004
+#define ARCH_GET_GS 0x1005
+
 // plos-clan 通用系统调用编号定义
-#define SYSCALL_EXIT    0
-#define SYSCALL_ABORT   1
-#define SYSCALL_MMAP    2
-#define SYSCALL_SIGRET  5
-#define SYSCALL_SIGNAL  6
-#define SYSCALL_WAITPID 7
-#define SYSCALL_OPEN    8
-#define SYSCALL_CLOSE   9
-#define SYSCALL_READ    10
-#define SYSCALL_SIZE    11
-#define SYSCALL_WRITE   12
-#define SYSCALL_GETPID  13
-#define SYSCALL_PRCTL   14
+#define SYSCALL_EXIT       0
+#define SYSCALL_ABORT      1
+#define SYSCALL_MMAP       2
+#define SYSCALL_SIGRET     5
+#define SYSCALL_SIGNAL     6
+#define SYSCALL_WAITPID    7
+#define SYSCALL_OPEN       8
+#define SYSCALL_CLOSE      9
+#define SYSCALL_READ       10
+#define SYSCALL_SIZE       11
+#define SYSCALL_WRITE      12
+#define SYSCALL_GETPID     13
+#define SYSCALL_PRCTL      14
+#define SYSCALL_CLONE      15
+#define SYSCALL_ARCH_PRCTL 16
+#define SYSCALL_YIELD      17
 
 #include "ctype.h"
 
