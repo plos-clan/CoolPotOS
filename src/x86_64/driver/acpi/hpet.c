@@ -68,10 +68,10 @@ USED registers_t *timer_handle(registers_t *reg) {
 }
 
 void nsleep(uint64_t nano) {
-    uint64_t targetTime = nanoTime();
+    uint64_t targetTime = nano_time();
     uint64_t after      = 0;
     loop {
-        uint64_t n = nanoTime();
+        uint64_t n = nano_time();
         if (n < targetTime) {
             after      += 0xffffffff - targetTime + n;
             targetTime  = n;
@@ -83,7 +83,7 @@ void nsleep(uint64_t nano) {
     }
 }
 
-uint64_t nanoTime() {
+uint64_t nano_time() {
     if (hpet_addr == NULL) return 0;
     uint64_t mcv = hpet_addr->mainCounterValue;
     return mcv * hpetPeriod;
@@ -96,5 +96,5 @@ void hpet_init(Hpet *hpet) {
     hpet_addr->generalConfiguration              |= 1;
     *(__volatile__ uint64_t *)(hpet_addr + 0xf0)  = 0;
     register_interrupt_handler(timer, (void *)save_registers, 0, 0x8E);
-    kinfo("Setup acpi hpet table (nano_time: %p).", (uint64_t)nanoTime());
+    kinfo("Setup acpi hpet table (nano_time: %p).", (uint64_t)nano_time());
 }
