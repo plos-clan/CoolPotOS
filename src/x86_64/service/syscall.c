@@ -12,6 +12,7 @@
 #include "scheduler.h"
 #include "signal.h"
 #include "vfs.h"
+#include "time.h"
 
 extern void asm_syscall_entry();
 
@@ -255,16 +256,28 @@ syscall_(yield) {
 }
 
 syscall_(uname) {
+    if (arg0 == 0) return SYSCALL_FAULT;
+    struct utsname *utsname = (struct utsname *)arg0;
     char sysname[] = "CoolPotOS";
     char machine[] = "x86_64";
     char version[] = "0.0.1";
-    if (arg1 == 0) return SYSCALL_FAULT;
-    struct utsname *utsname = (struct utsname *)arg1;
     memcpy(utsname->sysname, sysname, sizeof(sysname));
     memcpy(utsname->nodename, get_current_task()->parent_group->user->name, 50);
     memcpy(utsname->release, KERNEL_NAME, sizeof(KERNEL_NAME));
     memcpy(utsname->version, version, sizeof(version));
     memcpy(utsname->machine, machine, sizeof(machine));
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(nano_sleep) {
+    struct timespec k_req, k_rem;
+    if (arg0 == 0)
+        return SYSCALL_FAULT;
+    memcpy(&k_req, (void*)arg0, sizeof(k_req));
+    if (k_req.tv_nsec >= 1000000000L)
+        return SYSCALL_FAULT;
+    uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
+    nsleep(nsec);
     return SYSCALL_SUCCESS;
 }
 
@@ -286,6 +299,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_ARCH_PRCTL] = syscall_arch_prctl,
     [SYSCALL_YIELD]      = syscall_yield,
     [SYSCALL_UNAME]      = syscall_uname,
+    [SYSCALL_NANO_SLEEP] = syscall_nano_sleep,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {

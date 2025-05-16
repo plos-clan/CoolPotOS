@@ -336,20 +336,20 @@ void acpi_install() {
     hpet_initialize();
     AcpiPowerInit();
     klogf(b & acpi_enable_flag, "Load acpi driver. Rsdp: %08x NanoTime: %d\n", rsdp_address,
-          nanoTime());
+          nano_time());
 }
 
-uint32_t nanoTime() {
+uint32_t nano_time() {
     if (hpetInfo == NULL) return 0;
     uint32_t mcv = hpetInfo->mainCounterValue;
     return mcv * hpetPeriod;
 }
 
 void usleep(uint32_t nano) {
-    uint32_t targetTime = nanoTime();
+    uint32_t targetTime = nano_time();
     uint32_t after      = 0;
     loop {
-        uint64_t n = nanoTime();
+        uint64_t n = nano_time();
         if (n < targetTime) {
             after      += 0xffffffff - targetTime + n;
             targetTime  = n;
