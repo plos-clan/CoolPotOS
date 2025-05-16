@@ -17,15 +17,10 @@ extern void asm_syscall_entry();
 
 extern lock_queue *pgb_queue;
 
-static inline void enable_syscall() {
-    uint64_t efer;
-    efer  = rdmsr(MSR_EFER);
-    efer |= 1;
-    wrmsr(MSR_EFER, efer);
-}
-
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
+                     "cli\n\t"
+                     "cld\n\t"
                      "swapgs\n\t"
                      "call syscall_handle\n\t"
                      "swapgs\n\t"
@@ -82,6 +77,17 @@ __attribute__((naked)) void asm_syscall_entry() {
                      "swapgs\n\t"
                      "sti\n\t"
                      "iretq\n\t");
+}
+
+static inline void enable_syscall() {
+    uint64_t efer;
+    efer           = rdmsr(MSR_EFER);
+    efer          |= 1;
+    uint64_t star  = ((uint64_t)((0x18 | 0x3) - 8) << 48) | ((uint64_t)0x08 << 32);
+    wrmsr(MSR_STAR, star);
+    wrmsr(MSR_EFER, efer);
+    wrmsr(MSR_LSTAR, (uint64_t)asm_syscall_handle);
+    wrmsr(MSR_SYSCALL_MASK, (1 << 9));
 }
 
 syscall_(exit) {
@@ -248,6 +254,20 @@ syscall_(yield) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(uname) {
+    char sysname[] = "CoolPotOS";
+    char machine[] = "x86_64";
+    char version[] = "0.0.1";
+    if (arg1 == 0) return SYSCALL_FAULT;
+    struct utsname *utsname = (struct utsname *)arg1;
+    memcpy(utsname->sysname, sysname, sizeof(sysname));
+    memcpy(utsname->nodename, get_current_task()->parent_group->user->name, 50);
+    memcpy(utsname->release, KERNEL_NAME, sizeof(KERNEL_NAME));
+    memcpy(utsname->version, version, sizeof(version));
+    memcpy(utsname->machine, machine, sizeof(machine));
+    return SYSCALL_SUCCESS;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]       = syscall_exit,
     [SYSCALL_ABORT]      = syscall_abort,
@@ -265,6 +285,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_CLONE]      = syscall_clone,
     [SYSCALL_ARCH_PRCTL] = syscall_arch_prctl,
     [SYSCALL_YIELD]      = syscall_yield,
+    [SYSCALL_UNAME]      = syscall_uname,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {
@@ -281,7 +302,7 @@ USED registers_t *syscall_handle(registers_t *reg) {
 }
 
 void setup_syscall() {
-    UNUSED(enable_syscall);
+    enable_syscall();
     register_interrupt_handler(0x80, asm_syscall_entry, 0, 0x8E | 0x60);
     kinfo("Setup CP_Kernel syscall table.");
 }
