@@ -21,7 +21,6 @@ void update_terminal() {
         int ch = atom_pop(output_buffer);
         if (ch == -1) break;
         need_flush = true;
-        if (ch == '\n') { terminal_process_byte('\r'); }
         terminal_process_byte(ch);
     }
     if (open_flush && need_flush) { terminal_flush(); }
@@ -49,6 +48,7 @@ void terminal_putc(char ch) {
 
 void terminal_puts(const char *msg) {
     while (*msg != '\0') {
+        if (*msg == '\n') { atom_push(output_buffer, '\r'); }
         atom_push(output_buffer, *msg);
         msg++;
     }

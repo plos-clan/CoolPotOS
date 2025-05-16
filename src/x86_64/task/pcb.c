@@ -1,5 +1,6 @@
 #include "pcb.h"
 #include "description_table.h"
+#include "fsgsbase.h"
 #include "heap.h"
 #include "io.h"
 #include "ipc.h"
@@ -273,20 +274,20 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
 int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
     switch (option) {
     case PR_SET_NAME:
-        if (arg2 == 0) return SYSCALL_FAULT;
+        if (arg2 == 0) return -1;
         char *new_name = (char *)arg2;
         int   length   = strlen(new_name);
-        if (length > 16) return SYSCALL_FAULT;
+        if (length > 16) return -1;
         memcpy(get_current_task()->name, new_name, length);
         break;
     case PR_GET_NAME:
-        if (arg2 == 0) return SYSCALL_FAULT;
+        if (arg2 == 0) return -1;
         char *proc_name = (char *)arg2;
         memcpy(proc_name, get_current_task()->name, 16);
         break;
     case PR_GET_DUMPABLE: return 0; //TODO CP_Kernel 不支持核心转储
-    case PR_SET_DUMPABLE: return SYSCALL_FAULT;
-    default: return SYSCALL_FAULT;
+    case PR_SET_DUMPABLE: return -1;
+    default: return -1;
     }
     return SYSCALL_SUCCESS;
 }

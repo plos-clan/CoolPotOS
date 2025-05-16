@@ -1,6 +1,9 @@
 #include "syscall.h"
+#include "errno.h"
 #include "frame.h"
+#include "fsgsbase.h"
 #include "io.h"
+#include "isr.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -33,6 +36,7 @@ __attribute__((naked)) void asm_syscall_entry() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
                      "push 0\n\t" // 对齐
                      "push 0\n\t" // 对齐
+                     "swapgs\n\t"
                      "push r15\n\t"
                      "push r14\n\t"
                      "push r13\n\t"
@@ -75,6 +79,7 @@ __attribute__((naked)) void asm_syscall_entry() {
                      "pop r14\n\t"
                      "pop r15\n\t"
                      "add rsp, 16\n\t" // 越过对齐
+                     "swapgs\n\t"
                      "sti\n\t"
                      "iretq\n\t");
 }
@@ -210,23 +215,68 @@ syscall_(size) {
     return node->size;
 }
 
+syscall_(clone) {
+    uint64_t flags = arg0;
+    uint64_t stack = arg1;
+    uint64_t pt    = arg2;
+    //TODO 待实现
+    return SYSCALL_FAULT;
+}
+
+syscall_(arch_prctl) {
+    uint64_t code   = arg0;
+    uint64_t addr   = arg1;
+    tcb_t    thread = get_current_task();
+    switch (code) {
+    case ARCH_SET_FS:
+        thread->fs_base = addr;
+        write_fsbase(thread->fs_base);
+        break;
+    case ARCH_GET_FS: return thread->fs_base;
+    case ARCH_SET_GS:
+        thread->gs_base = addr;
+        write_gsbase(thread->gs_base);
+        break;
+    case ARCH_GET_GS: return thread->gs_base;
+    default: return SYSCALL_FAULT;
+    }
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(yield) {
+    __asm__ volatile("int %0" ::"i"(timer));
+    return SYSCALL_SUCCESS;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT] = syscall_exit,       [SYSCALL_ABORT] = syscall_abort,
-    [SYSCALL_OPEN] = syscall_open,       [SYSCALL_CLOSE] = syscall_close,
-    [SYSCALL_WRITE] = syscall_write,     [SYSCALL_READ] = syscall_read,
-    [SYSCALL_WAITPID] = syscall_waitpid, [SYSCALL_MMAP] = syscall_mmap,
-    [SYSCALL_SIGNAL] = syscall_signal,   [SYSCALL_SIGRET] = syscall_sigret,
-    [SYSCALL_GETPID] = syscall_getpid,   [SYSCALL_PRCTL] = syscall_prctl,
-    [SYSCALL_SIZE] = syscall_size,
+    [SYSCALL_EXIT]       = syscall_exit,
+    [SYSCALL_ABORT]      = syscall_abort,
+    [SYSCALL_OPEN]       = syscall_open,
+    [SYSCALL_CLOSE]      = syscall_close,
+    [SYSCALL_WRITE]      = syscall_write,
+    [SYSCALL_READ]       = syscall_read,
+    [SYSCALL_WAITPID]    = syscall_waitpid,
+    [SYSCALL_MMAP]       = syscall_mmap,
+    [SYSCALL_SIGNAL]     = syscall_signal,
+    [SYSCALL_SIGRET]     = syscall_sigret,
+    [SYSCALL_GETPID]     = syscall_getpid,
+    [SYSCALL_PRCTL]      = syscall_prctl,
+    [SYSCALL_SIZE]       = syscall_size,
+    [SYSCALL_CLONE]      = syscall_clone,
+    [SYSCALL_ARCH_PRCTL] = syscall_arch_prctl,
+    [SYSCALL_YIELD]      = syscall_yield,
 };
 
 USED registers_t *syscall_handle(registers_t *reg) {
+    write_fsbase((uint64_t)get_current_task());
     open_interrupt;
     size_t syscall_id = reg->rax;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rbx, reg->rcx, reg->rdx, reg->rsi,
                                                              reg->rdi);
-    }
+    } else
+        reg->rax = SYSCALL_FAULT;
+    write_fsbase(get_current_task()->fs_base);
     return reg;
 }
 

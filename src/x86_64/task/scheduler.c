@@ -1,4 +1,5 @@
 #include "scheduler.h"
+#include "fsgsbase.h"
 #include "io.h"
 #include "klog.h"
 #include "kprint.h"
@@ -70,20 +71,28 @@ void remove_task(tcb_t task) {
 }
 
 int get_all_task() {
-    return cpu->ready ? cpu->scheduler_queue->size : 0;
+    return ((smp_cpu_t *)read_kgsbase())->ready
+               ? ((smp_cpu_t *)read_kgsbase())->scheduler_queue->size
+               : 0;
 }
 
 void change_current_tcb(tcb_t new_tcb) {
-    cpu->current_pcb = new_tcb;
-    wrmsr(0xC0000100, (uint64_t)new_tcb);
+    ((smp_cpu_t *)read_kgsbase())->current_pcb = new_tcb;
+    write_fsbase((uint64_t)new_tcb);
 }
 
-void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
-    switch_page_directory(taget->parent_group->page_dir);
-    set_kernel_stack(taget->kernel_stack);
+void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
+    switch_page_directory(target->parent_group->page_dir);
+    set_kernel_stack(target->kernel_stack);
+
+    __asm__ __volatile__("movq %%fs, %0\n\t" : "=r"(current_task0->fs));
+    current_task0->fs_base = read_fsbase();
+
+    __asm__ __volatile__("movq %0, %%fs\n\t" ::"r"(target->fs));
+    write_fsbase(target->fs_base);
 
     save_fpu_context(&current_task0->fpu_context);
-    restore_fpu_context(&taget->fpu_context);
+    restore_fpu_context(&target->fpu_context);
 
     current_task0->context0.r15    = reg->r15;
     current_task0->context0.r14    = reg->r14;
@@ -108,28 +117,28 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t taget) {
     current_task0->context0.cs     = reg->cs;
     current_task0->context0.ds     = reg->ds;
 
-    reg->r15    = taget->context0.r15;
-    reg->r14    = taget->context0.r14;
-    reg->r13    = taget->context0.r13;
-    reg->r12    = taget->context0.r12;
-    reg->r11    = taget->context0.r11;
-    reg->r10    = taget->context0.r10;
-    reg->r9     = taget->context0.r9;
-    reg->r8     = taget->context0.r8;
-    reg->rax    = taget->context0.rax;
-    reg->rbx    = taget->context0.rbx;
-    reg->rcx    = taget->context0.rcx;
-    reg->rdx    = taget->context0.rdx;
-    reg->rdi    = taget->context0.rdi;
-    reg->rsi    = taget->context0.rsi;
-    reg->rbp    = taget->context0.rbp;
-    reg->rflags = taget->context0.rflags;
-    reg->rip    = taget->context0.rip;
-    reg->rsp    = taget->context0.rsp;
-    reg->ss     = taget->context0.ss;
-    reg->es     = taget->context0.es;
-    reg->ds     = taget->context0.ds;
-    reg->cs     = taget->context0.cs;
+    reg->r15    = target->context0.r15;
+    reg->r14    = target->context0.r14;
+    reg->r13    = target->context0.r13;
+    reg->r12    = target->context0.r12;
+    reg->r11    = target->context0.r11;
+    reg->r10    = target->context0.r10;
+    reg->r9     = target->context0.r9;
+    reg->r8     = target->context0.r8;
+    reg->rax    = target->context0.rax;
+    reg->rbx    = target->context0.rbx;
+    reg->rcx    = target->context0.rcx;
+    reg->rdx    = target->context0.rdx;
+    reg->rdi    = target->context0.rdi;
+    reg->rsi    = target->context0.rsi;
+    reg->rbp    = target->context0.rbp;
+    reg->rflags = target->context0.rflags;
+    reg->rip    = target->context0.rip;
+    reg->rsp    = target->context0.rsp;
+    reg->ss     = target->context0.ss;
+    reg->es     = target->context0.es;
+    reg->ds     = target->context0.ds;
+    reg->cs     = target->context0.cs;
 }
 
 /**

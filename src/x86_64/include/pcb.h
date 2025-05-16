@@ -39,6 +39,13 @@
 #define PR_GET_SPECULATION_CTRL     52
 #define PR_SET_SPECULATION_CTRL     53
 
+#define CLONE_VM      0x00000100
+#define CLONE_FS      0x00000200
+#define CLONE_FILES   0x00000400
+#define CLONE_SIGHAND 0x00000800
+#define CLONE_THREAD  0x00010000
+#define CLONE_SETTLS  0x00080000
+
 #include "ctype.h"
 #include "fpu.h"
 #include "isr.h"
@@ -101,6 +108,10 @@ struct thread_control_block {
     uint64_t      kernel_stack; // 内核栈
     uint64_t      user_stack;   // 用户栈
     uint64_t      mem_usage;    // 内存利用率
+
+    uint64_t fs_base; // fs段基址
+    uint64_t gs_base; // gs段基址
+    uint64_t fs, gs;
 
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引
