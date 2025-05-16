@@ -38,8 +38,18 @@
 #define SYSCALL_CLONE      15
 #define SYSCALL_ARCH_PRCTL 16
 #define SYSCALL_YIELD      17
+#define SYSCALL_UNAME      63
 
 #include "ctype.h"
+
+struct utsname {
+    char sysname[65];
+    char nodename[65];
+    char release[65];
+    char version[65];
+    char machine[65];
+    char domainname[65];
+};
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
