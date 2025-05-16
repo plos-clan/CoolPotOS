@@ -21,7 +21,7 @@ target("os-terminal")
     on_build(function (target)
         import("core.project.project")
         local src_dir = "thirdparty/libos-terminal"
-        local build_dir = "$(buildir)/.build_cache/os-terminal"
+        local build_dir = "$(builddir)/.build_cache/os-terminal"
 
         os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
         os.cd("thirdparty/libos-terminal")
@@ -86,7 +86,7 @@ target("kernel64")
     --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
 
     before_build(function (target)
-        local hash = try { function() 
+        local hash = try { function()
             local result = os.iorun("git rev-parse --short HEAD")
             return result and result:trim()
         end }
@@ -97,7 +97,7 @@ target("kernel64")
     -- add_linkdirs("libs/x86_64")
 
     add_links("os_terminal")
-    local build_dir = "$(buildir)/.build_cache/os-terminal"
+    local build_dir = "$(builddir)/.build_cache/os-terminal"
     add_includedirs(build_dir)
     add_linkdirs(build_dir.."/x86_64-unknown-none/release/")
 
@@ -115,7 +115,7 @@ target("iso32")
     on_build(function (target)
         import("core.project.project")
 
-        local iso_dir = "$(buildir)/iso_dir"
+        local iso_dir = "$(builddir)/iso_dir"
         os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
         local kernel = project.target("kernel32")
         os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl32.elf")
@@ -127,7 +127,7 @@ target("iso32")
         os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
         os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
 
-        local iso_file = "$(buildir)/CoolPotOS.iso"
+        local iso_file = "$(builddir)/CoolPotOS.iso"
         local iso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
         os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
         print("ISO image created at: " .. iso_file)
@@ -141,7 +141,7 @@ target("iso64")
     on_build(function (target)
         import("core.project.project")
 
-        local iso_dir = "$(buildir)/iso_dir"
+        local iso_dir = "$(builddir)/iso_dir"
         os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
         local kernel = project.target("kernel64")
         os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl64.elf")
@@ -154,7 +154,7 @@ target("iso64")
         os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
         os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
 
-        local iso_file = "$(buildir)/CoolPotOS.iso"
+        local iso_file = "$(builddir)/CoolPotOS.iso"
         os.run("xorriso -as mkisofs "..
             "-R -r -J -b limine/limine-bios-cd.bin "..
             "-no-emul-boot -boot-load-size 4 -boot-info-table "..
@@ -176,7 +176,7 @@ target("img64")
     on_build(function (target)
         import("core.project.project")
         local kernel = project.target("kernel64")
-        local img_file = "$(buildir)/CoolPotOS.img"
+        local img_file = "$(builddir)/CoolPotOS.img"
 
         os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf "..
             "-f %s:readme.txt -f %s:efi/boot/bootx64.efi -o %s",
@@ -206,7 +206,7 @@ target("run32")
             -- "-device", "ahci,id=ahci",
             -- "-drive", "file=./disk.qcow2,if=none,id=disk0",
             -- "-device", "ide-hd,bus=ahci.0,drive=disk0",
-            "-cdrom", config.buildir() .. "/CoolPotOS.iso"
+            "-cdrom", config.builddir() .. "/CoolPotOS.iso"
         }
         os.execv("qemu-system-i386", flags)
     end)
@@ -232,12 +232,12 @@ target("run64")
             "-device", "sb16,audiodev=audio0",
             "-net","nic,model=pcnet","-net","user",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-            "-cdrom", config.buildir().."/CoolPotOS.iso",
+            "-cdrom", config.builddir().."/CoolPotOS.iso",
             --"-device", "ahci,id=ahci",
             --"-device", "ide-hd,drive=disk,bus=ahci.0",
-            --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
+            --"-drive", disk_template..config.builddir().."/CoolPotOS.img",
             --"-device", "nvme,drive=disk,serial=deadbeef",
-            --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
+            --"-drive", disk_template..config.builddir().."/CoolPotOS.img",
         }
         os.execv("qemu-system-x86_64", flags)
     end)
