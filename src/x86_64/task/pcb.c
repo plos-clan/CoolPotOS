@@ -320,7 +320,7 @@ void init_pcb() {
     kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();
     kernel_head_task->user_stack      = kernel_head_task->kernel_stack;
     kernel_head_task->context0.rflags = get_rflags();
-    kernel_head_task->cpu_timer       = nanoTime();
+    kernel_head_task->cpu_timer       = nano_time();
     kernel_head_task->time_buf        = alloc_timer();
     kernel_head_task->cpu_id          = cpu->id;
     kernel_head_task->status          = RUNNING;

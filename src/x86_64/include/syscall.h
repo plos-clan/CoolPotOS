@@ -38,7 +38,9 @@
 #define SYSCALL_CLONE      15
 #define SYSCALL_ARCH_PRCTL 16
 #define SYSCALL_YIELD      17
+#define SYSCALL_IOCTL      54
 #define SYSCALL_UNAME      63
+#define SYSCALL_NANO_SLEEP  162
 
 #include "ctype.h"
 

@@ -107,7 +107,7 @@ void apu_entry() {
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
     apu_idle->user_stack                            = apu_idle->kernel_stack;
     apu_idle->context0.rflags                       = get_rflags() | 0x200;
-    apu_idle->cpu_timer                             = nanoTime();
+    apu_idle->cpu_timer                             = nano_time();
     apu_idle->time_buf                              = alloc_timer();
     apu_idle->cpu_id                                = cpu->id;
     apu_idle->context0.rip                          = (uint64_t)&halt_service;
