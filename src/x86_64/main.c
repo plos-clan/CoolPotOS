@@ -147,7 +147,7 @@ void kmain() {
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
 
-    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL);
+    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "");
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
 
     create_kernel_thread((void *)cpu_speed_test, NULL, "CPUSpeed", NULL);
