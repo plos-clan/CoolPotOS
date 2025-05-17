@@ -1,6 +1,5 @@
 set_project("CoolPotOS")
 add_rules("mode.debug", "mode.release")
-set_optimize("fastest")
 set_languages("clatest")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
@@ -74,9 +73,11 @@ target("kernel64")
     set_toolchains("clang")
     add_deps("pl_readline", "os-terminal")
 
-    add_cflags("-fno-stack-protector", "-flto", "-fPIC")
+    add_cflags("-target x86_64-freestanding")
+    add_ldflags("-target x86_64-freestanding")
+
     add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
-    add_cflags("-mno-red-zone", "-nostdinc", "-msoft-float")
+    add_cflags("-mno-red-zone", "-msoft-float", "-flto")
     add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
 
     --add_cflags("-fsanitize=undefined")
