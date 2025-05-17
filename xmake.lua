@@ -4,44 +4,12 @@ set_languages("clatest")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
+set_policy("package.install_locally", true)
 
-target("limine")
-    set_kind("binary")
-    set_default(false)
-
-    add_files("thirdparty/limine/*.c")
-    add_includedirs("thirdparty/limine")
-
-target("os-terminal")
-    set_kind("phony")
-    set_default(false)
-    set_policy("build.fence", true)
-
-    on_build(function (target)
-        import("core.project.project")
-        local src_dir = "thirdparty/libos-terminal"
-        local build_dir = "$(buildir)/.build_cache/os-terminal"
-
-        os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
-        os.cd("thirdparty/libos-terminal")
-        os.exec("cargo build --release "..
-            "--features embedded-font "..
-            "--target-dir %s", build_dir)
-        os.exec("cbindgen --output %s/os_terminal.h", build_dir)
-    end)
-
-target("pl_readline")
-    set_kind("static")
-    set_toolchains("clang")
-
-    local base_dir = "thirdparty/pl_readline"
-    add_files(base_dir.."/src/*.c")
-    add_includedirs(base_dir.."/include", {public = true})
-
-    add_defines("PL_ENABLE_HISTORY_FILE=0")
-    add_cflags("-mno-80387", "-mno-mmx", "-DNDEBUG")
-    add_cflags("-mno-sse", "-mno-sse2", "-mno-red-zone")
-    add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector")
+add_requires("limine v9.x-binary")
+add_requires("os-terminal main", {optional = true})
+add_requires("pl_readline main", {optional = true})
+add_requires("cp_shell main", {optional = true})
 
 target("kernel32")
     set_arch("i386")
@@ -71,7 +39,7 @@ target("kernel64")
     set_kind("binary")
     set_default(false)
     set_toolchains("clang")
-    add_deps("pl_readline", "os-terminal")
+    add_packages("os-terminal", "pl_readline")
 
     add_cflags("-target x86_64-freestanding")
     add_ldflags("-target x86_64-freestanding")
@@ -97,11 +65,6 @@ target("kernel64")
     --add_links("ubscan")
     -- add_linkdirs("libs/x86_64")
 
-    add_links("os_terminal")
-    local build_dir = "$(buildir)/.build_cache/os-terminal"
-    add_includedirs(build_dir)
-    add_linkdirs(build_dir.."/x86_64-unknown-none/release/")
-
     add_files("src/x86_64/**.c")
     add_includedirs("libs/x86_64")
     add_includedirs("src/x86_64/include")
@@ -117,43 +80,48 @@ target("iso32")
         import("core.project.project")
 
         local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
+        os.cp("assets/readme.txt", iso_dir.."/readme.txt")
         local kernel = project.target("kernel32")
-        os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl32.elf")
+        os.cp(kernel:targetfile(), iso_dir.."/cpkrnl32.elf")
 
-        local limine_dir = iso_dir .. "/limine"
-        os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
+        local limine_dir = iso_dir.."/limine"
+        os.cp("assets/limine.conf", limine_dir.."/limine.conf")
 
-        local limine_src = "thirdparty/limine"
+        local limine = package:get("limine")
         os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
         os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         local iso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
         os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
-        print("ISO image created at: " .. iso_file)
+        print("ISO image created at: "..iso_file)
     end)
 
 target("iso64")
     set_kind("phony")
-    add_deps("kernel64", "limine")
+    add_deps("kernel64")
+    add_packages("limine", "cp_shell")
     set_default(false)
 
     on_build(function (target)
         import("core.project.project")
 
         local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/readme.txt", iso_dir .. "/readme.txt")
+        os.cp("assets/readme.txt", iso_dir.."/readme.txt")
         local kernel = project.target("kernel64")
-        os.cp(kernel:targetfile(), iso_dir .. "/cpkrnl64.elf")
+        os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
 
-        local limine_dir = iso_dir .. "/limine"
-        os.cp("assets/limine.conf", limine_dir .. "/limine.conf")
+        local limine_dir = iso_dir.."/limine"
+        os.cp("assets/limine.conf", limine_dir.."/limine.conf")
 
-        local limine_src = "thirdparty/limine"
+        local limine_src = target:pkg("limine"):installdir()
+        local limine_src = limine_src.."/share/limine"
         os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
         os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
         os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
+
+        local shell = target:pkg("cp_shell")
+        os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
 
         local iso_file = "$(buildir)/CoolPotOS.iso"
         os.run("xorriso -as mkisofs "..
@@ -164,14 +132,14 @@ target("iso64")
             "-efi-boot-part --efi-boot-image --protective-msdos-label "..
             "%s -o %s", iso_dir, iso_file)
 
-        local limine = project.target("limine")
-        os.run(limine:targetfile().." bios-install "..iso_file)
+        os.run("limine bios-install "..iso_file)
         print("ISO image created at: %s", iso_file)
     end)
 
 target("img64")
     set_kind("phony")
-    add_deps("kernel64", "limine")
+    add_deps("kernel64")
+    add_packages("limine", "cp_shell")
     set_default(false)
 
     on_build(function (target)
@@ -179,10 +147,16 @@ target("img64")
         local kernel = project.target("kernel64")
         local img_file = "$(buildir)/CoolPotOS.img"
 
-        os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf "..
+        local limine_src = target:pkg("limine"):installdir()
+        local limine_src = limine_src.."/share/limine"
+
+        local shell = target:pkg("cp_shell")
+        local shell_bin = shell:installdir().."/bin/shell"
+
+        os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf -f %s:shell.elf "..
             "-f %s:readme.txt -f %s:efi/boot/bootx64.efi -o %s",
-            kernel:targetfile(), "assets/limine.conf",
-            "assets/readme.txt", "thirdparty/limine/BOOTX64.EFI", img_file)
+            kernel:targetfile(), "assets/limine.conf", shell_bin,
+            "assets/readme.txt", limine_src.."/BOOTX64.EFI", img_file)
 
         print("Disk image created at: %s", img_file)
     end)
@@ -207,7 +181,7 @@ target("run32")
             -- "-device", "ahci,id=ahci",
             -- "-drive", "file=./disk.qcow2,if=none,id=disk0",
             -- "-device", "ide-hd,bus=ahci.0,drive=disk0",
-            "-cdrom", config.buildir() .. "/CoolPotOS.iso"
+            "-cdrom", config.buildir().."/CoolPotOS.iso"
         }
         os.execv("qemu-system-i386", flags)
     end)
@@ -226,7 +200,7 @@ target("run64")
             --"-enable-kvm",
             --"-d", "in_asm",
             --"-d", "in_asm,int",
-            "-S","-s",
+            --"-S","-s",
             --"-device","nec-usb-xhci,id=xhci",
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
             "-audiodev", "sdl,id=audio0",
@@ -234,6 +208,7 @@ target("run64")
             "-net","nic,model=pcnet","-net","user",
             "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
             "-cdrom", config.buildir().."/CoolPotOS.iso",
+            -- "-cdrom", "/mnt/local/CoolPotOS.iso",
             --"-device", "ahci,id=ahci",
             --"-device", "ide-hd,drive=disk,bus=ahci.0",
             --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
@@ -242,3 +217,82 @@ target("run64")
         }
         os.execv("qemu-system-x86_64", flags)
     end)
+
+--- CoolPotOS Shell
+package("cp_shell")
+    set_urls("https://github.com/plos-clan/cp_shell.git")
+
+    on_install(function (package)
+        import("package.tools.xmake").install(package)
+    end)
+
+--- Thirdparty Definitions ---
+package("limine")
+    set_kind("binary")
+    set_urls("https://github.com/limine-bootloader/limine.git")
+    
+    on_install(function (package)
+        local prefix = "PREFIX="..package:installdir()
+        import("package.tools.make").make(package)
+        import("package.tools.make").make(package, {"install", prefix})
+    end)
+package_end()
+
+package("pl_readline")
+    set_urls("https://github.com/plos-clan/pl_readline.git")
+
+    on_install(function (package)
+        io.writefile("xmake.lua", [[
+            add_rules("mode.release", "mode.debug")
+            target("pl_readline")
+                set_kind("static")
+                set_toolchains("clang")
+
+                add_files("src/*.c")
+                add_includedirs("include", {public = true})
+
+                add_defines("PL_ENABLE_HISTORY_FILE=0")
+                add_cflags("-mno-80387", "-mno-mmx", "-DNDEBUG")
+                add_cflags("-mno-sse", "-mno-sse2", "-mno-red-zone")
+                add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector")
+            ]])
+        import("package.tools.xmake").install(package)
+        os.cp("include/*.h", package:installdir("include"))
+    end)
+package_end()
+
+package("os-terminal")
+    set_urls("https://github.com/plos-clan/libos-terminal.git")
+
+    add_configs("font", {
+        description = "Set which font should be embedded.",
+        default = "en",
+        values = {"none", "en", "en-zh"}
+    })
+
+    add_configs("arch", {
+        description = "Set which architecture to build for.",
+        default = "x86_64",
+        values = {"x86_64", "i686"}
+    })
+    
+    on_install(function (package)
+        local font_config = package:config("font")
+    
+        if font_config == "en" then
+            os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
+        elseif font_config == "en-zh" then
+            os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
+        end
+
+        os.run(("cargo build %s %s"):format(
+            package:debug() and "" or "--release",
+            font_config ~= "none" and "--features embedded-font" or ""
+        ))
+    
+        local template = "target/%s-unknown-none/release/libos_terminal.a"
+        os.cp(string.format(template, package:config("arch")), package:installdir("lib"))
+
+        os.run("cbindgen --output %s/os_terminal.h", package:installdir("include"))
+    end)
+package_end()

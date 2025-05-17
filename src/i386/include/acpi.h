@@ -260,7 +260,7 @@ uint32_t AcpiGetMadtBase();
 void     hpet_initialize();
 void     acpi_install();
 
-uint32_t nano_time();            // 获取自ACPI启用后的纳秒数
+uint32_t nano_time();           // 获取自ACPI启用后的纳秒数
 void     usleep(uint32_t nano); // 纳秒精度的睡眠
 void     power_reset();         // 重启
 void     power_off();           // 关机
