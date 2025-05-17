@@ -354,13 +354,22 @@ syscall_(uname) {
 }
 
 syscall_(nano_sleep) {
-    struct timespec k_req, k_rem;
+    struct timespec k_req;
     if (arg0 == 0) return SYSCALL_FAULT;
     memcpy(&k_req, (void *)arg0, sizeof(k_req));
     if (k_req.tv_nsec >= 1000000000L) return SYSCALL_FAULT;
     uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
     nsleep(nsec);
     return SYSCALL_SUCCESS;
+}
+
+syscall_(ioctl) {
+    int fd = (int)arg0;
+    int options = (size_t)arg1;
+    if (fd < 0 || arg2 == 0) return SYSCALL_FAULT;
+    vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
+    int        ret    =vfs_ioctl(node, options, (void*)arg2);
+    return ret;
 }
 
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
@@ -376,12 +385,13 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SIGRET]     = syscall_sigret,
     [SYSCALL_GETPID]     = syscall_getpid,
     [SYSCALL_PRCTL]      = syscall_prctl,
-    [SYSCALL_SIZE]       = syscall_size,
+    [SYSCALL_STAT]       = syscall_size,
     [SYSCALL_CLONE]      = syscall_clone,
     [SYSCALL_ARCH_PRCTL] = syscall_arch_prctl,
     [SYSCALL_YIELD]      = syscall_yield,
     [SYSCALL_UNAME]      = syscall_uname,
     [SYSCALL_NANO_SLEEP] = syscall_nano_sleep,
+    [SYSCALL_IOCTL]      = syscall_ioctl,
 };
 
 USED void syscall_handler(struct syscall_regs *regs,
