@@ -11,8 +11,8 @@
 #include "pcb.h"
 #include "scheduler.h"
 #include "signal.h"
-#include "vfs.h"
 #include "time.h"
+#include "vfs.h"
 
 extern void asm_syscall_entry();
 
@@ -164,32 +164,59 @@ syscall_(mmap) {
     size_t   length = arg1;
     uint64_t prot   = arg2;
     uint64_t flags  = arg3;
-    if (addr == 0) return SYSCALL_FAULT;
-    uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
-    if (count == 0) return SYSCALL_SUCCESS;
+    uint64_t fd     = arg4;
+    uint64_t offset = arg5;
 
-    get_current_task()->parent_group->mmap_start += (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+    if ((offset & (PAGE_SIZE - 1)) != 0) { return (uint64_t)-EINVAL; }
 
-    if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT; // 不允许映射到内核地址空间
-    if (!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT;
-    uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
+    uint64_t aligned_len = (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+    if (aligned_len == 0) { return (uint64_t)-EINVAL; }
 
-    for (size_t i = 0; i < count; i++) {
-        uint64_t page_flags = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
-        uint64_t page_addr  = vaddr + i * PAGE_SIZE;
-        if (prot & PROT_READ) { page_flags |= PTE_PRESENT; }
-        if (prot & PROT_WRITE) { page_flags |= PTE_WRITEABLE; }
-        if (prot & PROT_EXEC) { page_flags |= PTE_USER; }
-
-        if (flags & MAP_FIXED) {
-            page_map_to(get_current_directory(), page_addr, page_addr, page_flags);
-        } else {
-            uint64_t phys = alloc_frames(1);
-            page_map_to(get_current_directory(), page_addr, phys, page_flags);
+    if (addr == 0) {
+        addr   = get_current_task()->parent_group->mmap_start;
+        flags &= (~MAP_FIXED);
+        get_current_task()->parent_group->mmap_start += aligned_len;
+        if (get_current_task()->parent_group->mmap_start > USER_MMAP_END) {
+            get_current_task()->parent_group->mmap_start -= aligned_len;
+            return (uint64_t)-ENOMEM;
         }
     }
 
-    return SYSCALL_SUCCESS;
+    uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
+    uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
+    if (count == 0) return EOK;
+    get_current_task()->parent_group->mmap_start += (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+
+    for (size_t i = 0; i < count; i++) {
+        uint64_t page = vaddr + PAGE_SIZE * i;
+        uint64_t flag = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
+        if (prot & PROT_READ) { flag |= PTE_PRESENT; }
+        if (prot & PROT_WRITE) { flag |= PTE_WRITEABLE; }
+        if (prot & PROT_EXEC) { flag |= PTE_USER; }
+
+        if (flags & MAP_FIXED) {
+            page_map_to(get_current_directory(), page, page, flag);
+        } else {
+            uint64_t phys = alloc_frames(1);
+            if (phys == 0) {
+                if ((flags & MAP_FIXED) == 0) {
+                    get_current_task()->parent_group->mmap_start -= aligned_len;
+                }
+                return -ENOMEM;
+            }
+            page_map_to(get_current_directory(), page, phys, flag);
+        }
+    }
+
+    if (fd > 2) {
+        vfs_node_t file = (vfs_node_t)queue_get(get_current_task()->parent_group->file_open, fd);
+        if (!file) return -EBADF;
+        vfs_read(file, (void *)addr, offset, length);
+    } else {
+        memset((void *)addr, 0, length);
+    }
+
+    return addr;
 }
 
 syscall_(signal) {
@@ -257,10 +284,10 @@ syscall_(yield) {
 
 syscall_(uname) {
     if (arg0 == 0) return SYSCALL_FAULT;
-    struct utsname *utsname = (struct utsname *)arg0;
-    char sysname[] = "CoolPotOS";
-    char machine[] = "x86_64";
-    char version[] = "0.0.1";
+    struct utsname *utsname   = (struct utsname *)arg0;
+    char            sysname[] = "CoolPotOS";
+    char            machine[] = "x86_64";
+    char            version[] = "0.0.1";
     memcpy(utsname->sysname, sysname, sizeof(sysname));
     memcpy(utsname->nodename, get_current_task()->parent_group->user->name, 50);
     memcpy(utsname->release, KERNEL_NAME, sizeof(KERNEL_NAME));
@@ -271,11 +298,9 @@ syscall_(uname) {
 
 syscall_(nano_sleep) {
     struct timespec k_req, k_rem;
-    if (arg0 == 0)
-        return SYSCALL_FAULT;
-    memcpy(&k_req, (void*)arg0, sizeof(k_req));
-    if (k_req.tv_nsec >= 1000000000L)
-        return SYSCALL_FAULT;
+    if (arg0 == 0) return SYSCALL_FAULT;
+    memcpy(&k_req, (void *)arg0, sizeof(k_req));
+    if (k_req.tv_nsec >= 1000000000L) return SYSCALL_FAULT;
     uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
     nsleep(nsec);
     return SYSCALL_SUCCESS;
@@ -307,8 +332,8 @@ USED registers_t *syscall_handle(registers_t *reg) {
     open_interrupt;
     size_t syscall_id = reg->rax;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
-        reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rbx, reg->rcx, reg->rdx, reg->rsi,
-                                                             reg->rdi);
+        reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rdi, reg->rsi, reg->rdx, reg->r10,
+                                                             reg->r8, reg->r9);
     } else
         reg->rax = SYSCALL_FAULT;
     write_fsbase(get_current_task()->fs_base);

@@ -3,6 +3,13 @@
 #define VFS_STATUS_FAILED  (-1)
 #define VFS_STATUS_SUCCESS 0
 
+#define FBIOGET_VSCREENINFO 0x4600
+#define FBIOPUT_VSCREENINFO 0x4601
+#define FBIOGET_FSCREENINFO 0x4602
+#define FBIOGETCMAP         0x4604
+#define FBIOPUTCMAP         0x4605
+#define FBIOPAN_DISPLAY     0x4606
+
 #include "ctype.h"
 #include "list.h"
 
@@ -84,6 +91,7 @@ int        vfs_close(vfs_node_t node); // 关闭已打开的节点
 void       vfs_free(vfs_node_t vfs);
 void       vfs_update(vfs_node_t node);
 vfs_node_t vfs_open(const char *str); // 打开一个节点
+int        vfs_ioctl(vfs_node_t device, size_t options, void *arg);
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
 int        vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
