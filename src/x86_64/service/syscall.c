@@ -18,13 +18,70 @@ extern void asm_syscall_entry();
 
 extern lock_queue *pgb_queue;
 
+USED uint64_t get_kernel_stack() {
+    return get_current_task()->kernel_stack;
+}
+
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
                      "cli\n\t"
                      "cld\n\t"
-                     "swapgs\n\t"
-                     "call syscall_handle\n\t"
-                     "swapgs\n\t"
+                     "sub rsp, 0x38\n\t"
+                     "push rax\n\t"
+                     "mov rax, es\n\t"
+                     "push rax\n\t"
+                     "mov rax, ds\n\t"
+                     "push rax\n\t"
+                     "push rbp\n\t"
+                     "push rdi\n\t"
+                     "push rsi\n\t"
+                     "push rdx\n\t"
+                     "push rcx\n\t"
+                     "push rbx\n\t"
+                     "push r8\n\t"
+                     "push r9\n\t"
+                     "push r10\n\t"
+                     "push r11\n\t"
+                     "push r12\n\t"
+                     "push r13\n\t"
+                     "push r14\n\t"
+                     "push r15\n\t"
+                     "mov r15, rsp\n\t"
+                     "call get_kernel_stack\n\t"
+                     "sub rax, 0xc0\n\t"
+                     "mov rsp, rax\n\t"
+                     "mov rdi, rsp\n\t"
+                     "mov rsi, r15\n\t"
+                     "mov rdx, 0xc0\n\t"
+                     "call memcpy\n\t"
+                     "mov rdi, rsp\n\t"
+                     "mov rsi, r15\n\t"
+                     "call syscall_handler\n\t"
+                     "mov rdi, r15\n\t"
+                     "mov rsi, rsp\n\t"
+                     "mov rdx, 0xc0\n\t"
+                     "call memcpy\n\t"
+                     "mov rsp, rax\n\t"
+                     "pop r15\n\t"
+                     "pop r14\n\t"
+                     "pop r13\n\t"
+                     "pop r12\n\t"
+                     "pop r11\n\t"
+                     "pop r10\n\t"
+                     "pop r9\n\t"
+                     "pop r8\n\t"
+                     "pop rbx\n\t"
+                     "pop rcx\n\t"
+                     "pop rdx\n\t"
+                     "pop rsi\n\t"
+                     "pop rdi\n\t"
+                     "pop rbp\n\t"
+                     "pop rax\n\t"
+                     "mov ds, rax\n\t"
+                     "pop rax\n\t"
+                     "mov es, rax\n\t"
+                     "pop rax\n\t"
+                     "add rsp, 0x38\n\t"
                      "sysretq\n\t");
 }
 
@@ -327,7 +384,26 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_NANO_SLEEP] = syscall_nano_sleep,
 };
 
-USED registers_t *syscall_handle(registers_t *reg) {
+USED void syscall_handler(struct syscall_regs *regs,
+                          struct syscall_regs *user_regs) { // syscall 指令处理
+    regs->rip    = regs->rcx;
+    regs->rflags = regs->r11;
+    regs->cs     = (0x20 | 0x3);
+    regs->ss     = (0x18 | 0x3);
+    regs->ds     = (0x18 | 0x3);
+    regs->es     = (0x18 | 0x3);
+    regs->rsp    = (uint64_t)(user_regs + 1);
+    write_fsbase((uint64_t)get_current_task());
+    uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
+    if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
+        regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
+                                                              regs->r10, regs->r8, regs->r9);
+    } else
+        regs->rax = SYSCALL_FAULT;
+    write_fsbase(get_current_task()->fs_base);
+}
+
+USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
     write_fsbase((uint64_t)get_current_task());
     open_interrupt;
     size_t syscall_id = reg->rax;
