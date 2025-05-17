@@ -166,7 +166,6 @@ syscall_(abort) {
 syscall_(open) {
     char *path = (char *)arg0;
     if (path == NULL) return -1;
-
     logkf("syscall open: %s\n", path);
 
     vfs_node_t node  = vfs_open(path);
@@ -224,11 +223,8 @@ syscall_(mmap) {
     uint64_t fd     = arg4;
     uint64_t offset = arg5;
 
-    if ((offset & (PAGE_SIZE - 1)) != 0) { return (uint64_t)-EINVAL; }
-
-    uint64_t aligned_len = (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+    uint64_t aligned_len = PADDING_UP(length, PAGE_SIZE);
     if (aligned_len == 0) { return (uint64_t)-EINVAL; }
-
     if (addr == 0) {
         addr   = get_current_task()->parent_group->mmap_start;
         flags &= (~MAP_FIXED);
@@ -240,28 +236,26 @@ syscall_(mmap) {
     }
 
     uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
-    uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
     if (count == 0) return EOK;
+
     get_current_task()->parent_group->mmap_start += (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
+    if (addr > KERNEL_AREA_MEM) return (uint64_t)-EACCES; // 不允许映射到内核地址空间
+    if (!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT;
+    uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
+
     for (size_t i = 0; i < count; i++) {
-        uint64_t page = vaddr + PAGE_SIZE * i;
-        uint64_t flag = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
-        if (prot & PROT_READ) { flag |= PTE_PRESENT; }
-        if (prot & PROT_WRITE) { flag |= PTE_WRITEABLE; }
-        if (prot & PROT_EXEC) { flag |= PTE_USER; }
+        uint64_t page_flags = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
+        uint64_t page_addr  = vaddr + i * PAGE_SIZE;
+        if (prot & PROT_READ) { page_flags |= PTE_PRESENT; }
+        if (prot & PROT_WRITE) { page_flags |= PTE_WRITEABLE; }
+        if (prot & PROT_EXEC) { page_flags |= PTE_USER; }
 
         if (flags & MAP_FIXED) {
-            page_map_to(get_current_directory(), page, page, flag);
+            page_map_to(get_current_directory(), page_addr, page_addr, page_flags);
         } else {
             uint64_t phys = alloc_frames(1);
-            if (phys == 0) {
-                if ((flags & MAP_FIXED) == 0) {
-                    get_current_task()->parent_group->mmap_start -= aligned_len;
-                }
-                return -ENOMEM;
-            }
-            page_map_to(get_current_directory(), page, phys, flag);
+            page_map_to(get_current_directory(), page_addr, phys, page_flags);
         }
     }
 
@@ -269,8 +263,6 @@ syscall_(mmap) {
         vfs_node_t file = (vfs_node_t)queue_get(get_current_task()->parent_group->file_open, fd);
         if (!file) return -EBADF;
         vfs_read(file, (void *)addr, offset, length);
-    } else {
-        memset((void *)addr, 0, length);
     }
 
     return addr;
@@ -364,11 +356,11 @@ syscall_(nano_sleep) {
 }
 
 syscall_(ioctl) {
-    int fd = (int)arg0;
+    int fd      = (int)arg0;
     int options = (size_t)arg1;
     if (fd < 0 || arg2 == 0) return SYSCALL_FAULT;
-    vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
-    int        ret    =vfs_ioctl(node, options, (void*)arg2);
+    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
+    int        ret  = vfs_ioctl(node, options, (void *)arg2);
     return ret;
 }
 
