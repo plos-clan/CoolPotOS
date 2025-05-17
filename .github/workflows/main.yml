@@ -21,8 +21,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Set up Zig
         uses: mlugg/setup-zig@v2
@@ -38,7 +36,11 @@ jobs:
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
+          actions-cache-key: ${{ matrix.os }}
           build-cache: true
+          build-cache-key: ${{ matrix.os }}
+          package-cache: true
+          package-cache-key: ${{ matrix.os }}
 
       - name: Build CoolPotOS-i386
         run: xmake build iso32
@@ -56,8 +58,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -87,7 +87,11 @@ jobs:
         with:
           xmake-version: latest
           actions-cache-folder: '.xmake-cache'
+          actions-cache-key: ${{ matrix.os }}
           build-cache: true
+          build-cache-key: ${{ matrix.os }}
+          package-cache: true
+          package-cache-key: ${{ matrix.os }}
 
       - name: Build CoolPotOS-x86_64
         run: |
