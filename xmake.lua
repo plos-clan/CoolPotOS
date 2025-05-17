@@ -4,7 +4,6 @@ set_languages("clatest")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
-set_policy("package.install_locally", true)
 
 add_requires("limine v9.x-binary")
 add_requires("os-terminal main", {optional = true})
