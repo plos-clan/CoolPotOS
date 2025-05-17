@@ -74,6 +74,7 @@ target("kernel64")
 target("iso32")
     set_kind("phony")
     add_deps("kernel32")
+    add_packages("limine")
     set_default(false)
 
     on_build(function (target)
@@ -87,7 +88,8 @@ target("iso32")
         local limine_dir = iso_dir.."/limine"
         os.cp("assets/limine.conf", limine_dir.."/limine.conf")
 
-        local limine = package:get("limine")
+        local limine_src = target:pkg("limine"):installdir()
+        local limine_src = limine_src.."/share/limine"
         os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
         os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
 
@@ -285,7 +287,7 @@ package("os-terminal")
             os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
         end
 
-        os.run(("cargo build %s %s"):format(
+        os.exec(("cargo build %s %s"):format(
             package:debug() and "" or "--release",
             font_config ~= "none" and "--features embedded-font" or ""
         ))
@@ -293,6 +295,6 @@ package("os-terminal")
         local template = "target/%s-unknown-none/release/libos_terminal.a"
         os.cp(string.format(template, package:config("arch")), package:installdir("lib"))
 
-        os.run("cbindgen --output %s/os_terminal.h", package:installdir("include"))
+        os.exec("cbindgen --output %s/os_terminal.h", package:installdir("include"))
     end)
 package_end()
