@@ -1,6 +1,5 @@
 #include "pcb.h"
 #include "description_table.h"
-#include "fsgsbase.h"
 #include "heap.h"
 #include "io.h"
 #include "ipc.h"
@@ -93,7 +92,7 @@ void kill_proc0(pcb_t pcb) {
     }
     queue_destroy(pcb->file_open);
     queue_destroy(pcb->ipc_queue);
-
+    free(pcb->cmdline);
     free_tty(pcb->tty);
     free_page_directory(pcb->page_dir);
     free(pcb);
@@ -157,17 +156,20 @@ void kill_all_proc() {
     lapic_timer_stop();
 }
 
-pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle) {
+pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle,
+                           char *cmdline) {
     pcb_t new_pgb = malloc(sizeof(struct process_control_block));
     memset(new_pgb, 0, sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
     strcpy(new_pgb->name, name);
-    new_pgb->pcb_queue   = queue_init();
-    new_pgb->pid_index   = 0;
-    new_pgb->ipc_queue   = queue_init();
-    new_pgb->file_open   = queue_init();
-    new_pgb->tty         = alloc_default_tty();
-    new_pgb->task_level  = TASK_KERNEL_LEVEL;
+    new_pgb->pcb_queue  = queue_init();
+    new_pgb->pid_index  = 0;
+    new_pgb->ipc_queue  = queue_init();
+    new_pgb->file_open  = queue_init();
+    new_pgb->tty        = alloc_default_tty();
+    new_pgb->task_level = TASK_KERNEL_LEVEL;
+    new_pgb->cmdline    = malloc(strlen(cmdline));
+    strcpy(new_pgb->cmdline, cmdline);
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;

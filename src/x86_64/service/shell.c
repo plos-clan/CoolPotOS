@@ -145,7 +145,8 @@ void ps(int argc, char **argv) {
             if (strlen(longest_name->name) > longest_name_len)
                 longest_name_len = strlen(longest_name->name);
         }
-        printk("\033[1;34mGID  %-*s  TaskNum Status  User\033[0m\n", longest_name_len, "NAME");
+        printk("\033[1;34mGID  %-*s  TaskNum Status  User     Cmdline\033[0m\n", longest_name_len,
+               "NAME");
         queue_foreach(pgb_queue, thread) {
             pcb_t pgb = (pcb_t)thread->data;
             printk("\033[35m%-5d\033[0m", pgb->pgb_id);
@@ -159,7 +160,13 @@ void ps(int argc, char **argv) {
                 printk("\033[36mWait    \033[0m");
             else
                 printk("\033[31mDeath   \033[0m");
-            printk("\033[33m%s\033[0m\n", pgb->user->name);
+
+            printk("\033[33m%-9s\033[0m", pgb->user->name);
+
+            if (pgb->cmdline && strlen(pgb->cmdline) > 0)
+                printk("\033[37m%s\033[0m\n", pgb->cmdline);
+            else
+                printk("\033[90m<empty>\033[0m\n"); // 没有命令行时的占位
         }
     } else if (strcmp(argv[1], "-v") == 0) {
         uint32_t     bytes           = get_all_memusage();
@@ -361,7 +368,7 @@ static void exec(int argc, char **argv) {
 
     char *name            = module->module_name;
     ucb_t user_handle     = get_current_task()->parent_group->user;
-    pcb_t user_task       = create_process_group(name, up, user_handle);
+    pcb_t user_task       = create_process_group(name, up, user_handle, "");
     user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);
 

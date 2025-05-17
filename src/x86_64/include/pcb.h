@@ -76,6 +76,7 @@ struct process_control_block {
     uint8_t           task_level;  // 进程权限等级
     int               pid_index;   // 线程PID累加索引
     int               pgb_id;      // 进程ID
+    char             *cmdline;     // 命令行参数
     lock_queue       *pcb_queue;   // 线程队列
     size_t            queue_index; // 进程队列索引
     size_t            death_index; // 死亡队列索引
@@ -158,9 +159,11 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb);
  * @param name 进程名
  * @param directory == NULL ? 使用内核页表 : 使用新页表
  * @param user_handle == NULL ? 内核会话 ? 指定用户会话
+ * @param cmdline 命令行参数 (不得为NULL,无参数放空字符串)
  * @return 进程指针
  */
-pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle);
+pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle,
+                           char *cmdline);
 
 /**
  * 获取当前运行的线程(多核下会获取当前CPU正在调度的线程)
