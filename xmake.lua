@@ -287,6 +287,9 @@ package("os-terminal")
             os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
         end
 
+        print("Cargo path: %s", os.iorun("which cargo"))
+        print("Cargo version: %s", os.iorun("cargo --version"))
+
         os.exec(("cargo build %s %s"):format(
             package:debug() and "" or "--release",
             font_config ~= "none" and "--features embedded-font" or ""
