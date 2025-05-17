@@ -22,25 +22,25 @@
 #define ARCH_GET_GS 0x1005
 
 // plos-clan 通用系统调用编号定义
-#define SYSCALL_EXIT       0
-#define SYSCALL_ABORT      1
-#define SYSCALL_MMAP       2
-#define SYSCALL_SIGRET     5
+#define SYSCALL_READ       0
+#define SYSCALL_WRITE      1
+#define SYSCALL_OPEN       2
+#define SYSCALL_CLOSE      3
+#define SYSCALL_STAT       4
 #define SYSCALL_SIGNAL     6
 #define SYSCALL_WAITPID    7
-#define SYSCALL_OPEN       8
-#define SYSCALL_CLOSE      9
-#define SYSCALL_READ       10
-#define SYSCALL_SIZE       11
-#define SYSCALL_WRITE      12
-#define SYSCALL_GETPID     13
-#define SYSCALL_PRCTL      14
-#define SYSCALL_CLONE      15
-#define SYSCALL_ARCH_PRCTL 16
-#define SYSCALL_YIELD      17
-#define SYSCALL_IOCTL      54
+#define SYSCALL_MMAP       9
+#define SYSCALL_SIGRET     15
+#define SYSCALL_IOCTL      16
+#define SYSCALL_YIELD      24
+#define SYSCALL_NANO_SLEEP 35
+#define SYSCALL_GETPID     39
+#define SYSCALL_CLONE      56
+#define SYSCALL_ABORT      59
+#define SYSCALL_EXIT       60
 #define SYSCALL_UNAME      63
-#define SYSCALL_NANO_SLEEP 162
+#define SYSCALL_PRCTL      157
+#define SYSCALL_ARCH_PRCTL 158
 
 #include "ctype.h"
 
