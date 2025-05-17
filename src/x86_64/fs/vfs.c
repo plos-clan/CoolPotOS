@@ -256,6 +256,13 @@ int vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
     return callbackof(file, write)(file->handle, addr, offset, size);
 }
 
+int vfs_ioctl(vfs_node_t device, size_t options, void *arg) {
+    if (device == NULL) return VFS_STATUS_FAILED;
+    do_update(device);
+    if (device->type == file_dir) return VFS_STATUS_FAILED;
+    return callbackof(device, ioctl)(device->handle, options, arg);
+}
+
 int vfs_unmount(const char *path) {
     vfs_node_t node = vfs_open(path);
     if (node == NULL) return VFS_STATUS_FAILED;

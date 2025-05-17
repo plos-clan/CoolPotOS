@@ -13,7 +13,7 @@
     uint64_t syscall_##name(                                                                       \
         uint64_t arg0 __attribute__((unused)), uint64_t arg1 __attribute__((unused)),              \
         uint64_t arg2 __attribute__((unused)), uint64_t arg3 __attribute__((unused)),              \
-        uint64_t arg4 __attribute__((unused)))
+        uint64_t arg4 __attribute__((unused)), uint64_t arg5 __attribute__((unused)))
 
 // arch_prctl 系统调用 code
 #define ARCH_SET_FS 0x1002
@@ -40,7 +40,7 @@
 #define SYSCALL_YIELD      17
 #define SYSCALL_IOCTL      54
 #define SYSCALL_UNAME      63
-#define SYSCALL_NANO_SLEEP  162
+#define SYSCALL_NANO_SLEEP 162
 
 #include "ctype.h"
 
@@ -53,6 +53,6 @@ struct utsname {
     char domainname[65];
 };
 
-typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 
 void setup_syscall();

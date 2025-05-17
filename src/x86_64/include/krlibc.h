@@ -3,7 +3,7 @@
 /**
  * 定义CP_Kernel内核的各种属性
  */
-#define KERNEL_NAME       "CP_Kernel-x86_64-0.2.0" // 内核编号
+#define KERNEL_NAME       "CP_Kernel-x86_64-0.2.1" // 内核编号
 #define MAX_CPU           256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START 0x4000000                // 内核堆起始地址(未加偏移)
 #define KERNEL_HEAP_SIZE  0x800000                 // 内核堆大小 8MB
@@ -11,7 +11,8 @@
 #define KERNEL_ST_SZ      131072                   // 增强栈大小 128k
 #define MAX_WAIT_INDEX    1000000                  // 阻塞最大循环数
 #define KERNEL_AREA_MEM   0xf000000000000000       // 内核地址空间起始
-#define USER_MMAP_START   0x0000700000000000       // 用户态映射起始地址
+#define USER_MMAP_START   0x0000400000000000       // 用户堆映射起始地址
+#define USER_MMAP_END     0x0000700000000000       // 用户堆映射结束地址
 #define MAX_SIGNALS       64                       // 最大支持信号个数
 
 // 常用工具宏
