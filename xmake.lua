@@ -226,7 +226,7 @@ target("run64")
             --"-enable-kvm",
             --"-d", "in_asm",
             --"-d", "in_asm,int",
-            --"-S","-s",
+            "-S","-s",
             --"-device","nec-usb-xhci,id=xhci",
             --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
             "-audiodev", "sdl,id=audio0",
