@@ -286,10 +286,7 @@ package("os-terminal")
             os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
         end
 
-        print("Cargo path: %s", os.iorun("which cargo"))
-        print("Cargo version: %s", os.iorun("cargo --version"))
-
-        os.exec(("cargo build %s %s"):format(
+        os.run(("cargo build %s %s"):format(
             package:debug() and "" or "--release",
             font_config ~= "none" and "--features embedded-font" or ""
         ))
@@ -297,6 +294,6 @@ package("os-terminal")
         local template = "target/%s-unknown-none/release/libos_terminal.a"
         os.cp(string.format(template, package:config("arch")), package:installdir("lib"))
 
-        os.exec("cbindgen --output %s/os_terminal.h", package:installdir("include"))
+        os.run("cbindgen --output %s/os_terminal.h", package:installdir("include"))
     end)
 package_end()
