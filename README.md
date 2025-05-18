@@ -46,19 +46,20 @@ You need to install them on your computer:
 - cbindgen (x86_64 only, use `cargo install cbindgen`)
 - oib (x86_64 & build img only, use `cargo install oib`)
 
-Should fetch submodules first:
+### Options
+
+You can use the command below to set the target architecture:
 
 ```bash
-git submodule update --init --recursive
+xmake f -y --arch=i686
+# or xmake f -y --arch=x86_64 (default)
 ```
 
-### Available Commands
+### Commands
 
-- `xmake run run32` - Build and run the i386 version.
-- `xmake run run64` - Build and run the x86_64 version (ISO).
-- `xmake build iso32` - Build a ISO image for CoolPotOS i386.
-- `xmake build iso64` - Build a ISO image for CoolPotOS x86_64.
-- `xmake build img64` - Build a bootable disk image for CoolPotOS x86_64.
+- `xmake run` - Build and run the **ISO** image.
+- `xmake build iso` - Build a bootable ISO image.
+- `xmake build img` - Build a bootable disk image (x86_64 only).
 
 ## Development
 
