@@ -10,16 +10,20 @@ option("arch")
     set_default("x86_64")
     set_showmenu(true)
     set_values("x86_64", "i686")
+    set_description("The target architecture of CoolPotOS.")
 option_end()
 
 if is_config("arch", "i686") then arch_i686()
 elseif is_config("arch", "x86_64") then arch_x86_64() end
 
 function arch_i686()
+    add_requires("zig")
+
     target("kernel")
         set_arch("i386")
         set_kind("binary")
         set_default(false)
+        add_packages("zig")
         set_toolchains("@zig", "nasm")
         set_toolset("as", "nasm")
 

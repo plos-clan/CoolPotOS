@@ -22,11 +22,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          use-cache: false
-
       - name: Install packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
