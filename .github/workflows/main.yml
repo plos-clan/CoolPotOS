@@ -45,7 +45,9 @@ jobs:
           package-cache-key: ${{ matrix.os }}
 
       - name: Build CoolPotOS-i386
-        run: xmake build -y iso32
+        run: |
+          xmake f -y --arch=i686
+          xmake build iso
 
       - name: Upload CoolPotOS-i386 ISO
         uses: actions/upload-artifact@v4
@@ -87,8 +89,9 @@ jobs:
 
       - name: Build CoolPotOS-x86_64
         run: |
-          xmake build -y iso64
-          xmake build -y img64
+          xmake f -y --arch=x86_64
+          xmake build iso
+          xmake build img
 
       - name: Upload CoolPotOS-x86_64 ISO
         uses: actions/upload-artifact@v4

@@ -4,222 +4,234 @@ set_languages("clatest")
 set_warnings("all", "extra")
 set_policy("run.autobuild", true)
 set_policy("check.auto_ignore_flags", false)
-
 add_requires("limine v9.x-binary")
-add_requires("os-terminal main", {optional = true})
-add_requires("pl_readline main", {optional = true})
-add_requires("cp_shell main", {optional = true})
 
-target("kernel32")
-    set_arch("i386")
-    set_kind("binary")
-    set_default(false)
-    set_toolchains("@zig", "nasm")
-    set_toolset("as", "nasm")
+option("arch")
+    set_default("x86_64")
+    set_showmenu(true)
+    set_values("x86_64", "i686")
+option_end()
 
-    add_cflags("-target x86-freestanding")
-    add_arflags("-target x86-freestanding")
-    add_ldflags("-target x86-freestanding")
+if is_config("arch", "i686") then arch_i686()
+elseif is_config("arch", "x86_64") then arch_x86_64() end
 
-    add_linkdirs("libs/i386")
-    add_includedirs("src/i386/include")
-    add_files("src/i386/**.asm", "src/i386/**.c")
+function arch_i686()
+    target("kernel")
+        set_arch("i386")
+        set_kind("binary")
+        set_default(false)
+        set_toolchains("@zig", "nasm")
+        set_toolset("as", "nasm")
 
-    add_links("os_terminal")
-    add_links("elf_parse")
-    add_links("alloc")
+        add_cflags("-target x86-freestanding")
+        add_arflags("-target x86-freestanding")
+        add_ldflags("-target x86-freestanding")
 
-    add_asflags("-f", "elf32")
-    add_ldflags("-T", "src/i386/linker.ld")
-    add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
+        add_linkdirs("libs/i386")
+        add_includedirs("src/i386/include")
+        add_files("src/i386/**.asm", "src/i386/**.c")
 
-target("kernel64")
-    set_arch("x86_64")
-    set_kind("binary")
-    set_default(false)
-    set_toolchains("clang")
-    add_packages("os-terminal", "pl_readline")
+        add_links("os_terminal")
+        add_links("elf_parse")
+        add_links("alloc")
 
-    add_cflags("-target x86_64-freestanding")
-    add_ldflags("-target x86_64-freestanding")
+        add_asflags("-f", "elf32")
+        add_ldflags("-T", "src/i386/linker.ld")
+        add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
 
-    add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
-    add_cflags("-mno-red-zone", "-msoft-float", "-flto")
-    add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
+    target("iso")
+        set_kind("phony")
+        add_deps("kernel")
+        add_packages("limine")
+        set_default(false)
 
-    add_cflags("-DCPOS_HEAP_CHECK")
+        on_build(function (target)
+            import("core.project.project")
 
-    --add_cflags("-fsanitize=undefined")
-    --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
-    --add_cflags("-fsanitize=implicit-integer-sign-change")
-    --add_cflags("-fsanitize=shift")
-    --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
+            local iso_dir = "$(buildir)/iso_dir"
+            os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            local kernel = project.target("kernel")
+            os.cp(kernel:targetfile(), iso_dir.."/cpkrnl32.elf")
 
-    before_build(function (target)
-        local hash = try { function()
-            local result = os.iorun("git rev-parse --short HEAD")
-            return result and result:trim()
-        end }
-        if hash then target:add("defines", "GIT_VERSION=\""..hash.."\"") end
-    end)
+            local limine_dir = iso_dir.."/limine"
+            os.cp("assets/limine.conf", limine_dir.."/limine.conf")
 
-    --add_links("ubscan")
-    -- add_linkdirs("libs/x86_64")
+            local limine_src = target:pkg("limine"):installdir()
+            local limine_src = limine_src.."/share/limine"
+            os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
+            os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
 
-    add_files("src/x86_64/**.c")
-    add_includedirs("libs/x86_64")
-    add_includedirs("src/x86_64/include")
-    add_includedirs("src/x86_64/include/types")
-    add_includedirs("src/x86_64/include/iic")
+            local iso_file = "$(buildir)/CoolPotOS.iso"
+            local iso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
+            os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
+            print("ISO image created at: "..iso_file)
+        end)
 
-target("iso32")
-    set_kind("phony")
-    add_deps("kernel32")
-    add_packages("limine")
-    set_default(false)
+    target("run")
+        set_kind("phony")
+        add_deps("iso")
+        set_default(true)
 
-    on_build(function (target)
-        import("core.project.project")
+        on_run(function (target)
+            import("core.project.config")
+            local flags = {
+                "-serial", "stdio", "-m", "4096",
+                "-audiodev", "pa,id=speaker", "-vga", "std",
+                "-machine", "pcspk-audiodev=speaker",
+                "-global", "VGA.vgamem_mb=32",
+                "-net", "nic,model=pcnet", "-net", "user",
+                -- "-enable-kvm",
+                "-device", "sb16,audiodev=speaker",
+                "-device", "intel-hda",
+                "-device", "hda-micro,audiodev=speaker",
+                -- "-device", "ahci,id=ahci",
+                -- "-drive", "file=./disk.qcow2,if=none,id=disk0",
+                -- "-device", "ide-hd,bus=ahci.0,drive=disk0",
+                "-cdrom", config.buildir().."/CoolPotOS.iso"
+            }
+            os.execv("qemu-system-i386", flags)
+        end)
+end
 
-        local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/readme.txt", iso_dir.."/readme.txt")
-        local kernel = project.target("kernel32")
-        os.cp(kernel:targetfile(), iso_dir.."/cpkrnl32.elf")
+function arch_x86_64()
+    add_requires("pl_readline main")
+    add_requires("cp_shell main")
+    add_requires("os-terminal main", {debug = is_mode("debug")})
 
-        local limine_dir = iso_dir.."/limine"
-        os.cp("assets/limine.conf", limine_dir.."/limine.conf")
+    target("kernel")
+        set_arch("x86_64")
+        set_kind("binary")
+        set_default(false)
+        set_toolchains("clang")
+        add_packages("os-terminal", "pl_readline")
 
-        local limine_src = target:pkg("limine"):installdir()
-        local limine_src = limine_src.."/share/limine"
-        os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
-        os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
+        add_cflags("-target x86_64-freestanding")
+        add_ldflags("-target x86_64-freestanding")
 
-        local iso_file = "$(buildir)/CoolPotOS.iso"
-        local iso_flags = "-b limine/limine-bios-cd.bin -no-emul-boot -boot-info-table"
-        os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
-        print("ISO image created at: "..iso_file)
-    end)
+        add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
+        add_cflags("-mno-red-zone", "-msoft-float", "-flto")
+        add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
 
-target("iso64")
-    set_kind("phony")
-    add_deps("kernel64")
-    add_packages("limine", "cp_shell")
-    set_default(false)
+        add_defines("CPOS_HEAP_CHECK")
+        --add_cflags("-fsanitize=undefined")
+        --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
+        --add_cflags("-fsanitize=implicit-integer-sign-change")
+        --add_cflags("-fsanitize=shift")
+        --add_cflags("-fsanitize=implicit-integer-arithmetic-value-change")
 
-    on_build(function (target)
-        import("core.project.project")
+        before_build(function (target)
+            local hash = try { function()
+                local result = os.iorun("git rev-parse --short HEAD")
+                return result and result:trim()
+            end }
+            if hash then target:add("defines", "GIT_VERSION=\""..hash.."\"") end
+        end)
 
-        local iso_dir = "$(buildir)/iso_dir"
-        os.cp("assets/readme.txt", iso_dir.."/readme.txt")
-        local kernel = project.target("kernel64")
-        os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
+        --add_links("ubscan")
+        -- add_linkdirs("libs/x86_64")
 
-        local limine_dir = iso_dir.."/limine"
-        os.cp("assets/limine.conf", limine_dir.."/limine.conf")
+        add_files("src/x86_64/**.c")
+        add_includedirs("libs/x86_64")
+        add_includedirs("src/x86_64/include")
+        add_includedirs("src/x86_64/include/types")
+        add_includedirs("src/x86_64/include/iic")
 
-        local limine_src = target:pkg("limine"):installdir()
-        local limine_src = limine_src.."/share/limine"
-        os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
-        os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
-        os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
+    target("iso")
+        set_kind("phony")
+        add_deps("kernel")
+        add_packages("limine", "cp_shell")
+        set_default(false)
 
-        local shell = target:pkg("cp_shell")
-        os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
+        on_build(function (target)
+            import("core.project.project")
 
-        local iso_file = "$(buildir)/CoolPotOS.iso"
-        os.run("xorriso -as mkisofs "..
-            "-R -r -J -b limine/limine-bios-cd.bin "..
-            "-no-emul-boot -boot-load-size 4 -boot-info-table "..
-            "-hfsplus -apm-block-size 2048 "..
-            "--efi-boot limine/limine-uefi-cd.bin "..
-            "-efi-boot-part --efi-boot-image --protective-msdos-label "..
-            "%s -o %s", iso_dir, iso_file)
+            local iso_dir = "$(buildir)/iso_dir"
+            os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            local kernel = project.target("kernel")
+            os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
 
-        os.run("limine bios-install "..iso_file)
-        print("ISO image created at: %s", iso_file)
-    end)
+            local limine_dir = iso_dir.."/limine"
+            os.cp("assets/limine.conf", limine_dir.."/limine.conf")
 
-target("img64")
-    set_kind("phony")
-    add_deps("kernel64")
-    add_packages("limine", "cp_shell")
-    set_default(false)
+            local limine_src = target:pkg("limine"):installdir()
+            local limine_src = limine_src.."/share/limine"
+            os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
+            os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
+            os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
 
-    on_build(function (target)
-        import("core.project.project")
-        local kernel = project.target("kernel64")
-        local img_file = "$(buildir)/CoolPotOS.img"
+            local shell = target:pkg("cp_shell")
+            os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
 
-        local limine_src = target:pkg("limine"):installdir()
-        local limine_src = limine_src.."/share/limine"
+            local iso_file = "$(buildir)/CoolPotOS.iso"
+            os.run("xorriso -as mkisofs "..
+                "-R -r -J -b limine/limine-bios-cd.bin "..
+                "-no-emul-boot -boot-load-size 4 -boot-info-table "..
+                "-hfsplus -apm-block-size 2048 "..
+                "--efi-boot limine/limine-uefi-cd.bin "..
+                "-efi-boot-part --efi-boot-image --protective-msdos-label "..
+                "%s -o %s", iso_dir, iso_file)
 
-        local shell = target:pkg("cp_shell")
-        local shell_bin = shell:installdir().."/bin/shell"
+            os.run("limine bios-install "..iso_file)
+            print("ISO image created at: %s", iso_file)
+        end)
 
-        os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf -f %s:shell.elf "..
-            "-f %s:readme.txt -f %s:efi/boot/bootx64.efi -o %s",
-            kernel:targetfile(), "assets/limine.conf", shell_bin,
-            "assets/readme.txt", limine_src.."/BOOTX64.EFI", img_file)
+    target("img")
+        set_kind("phony")
+        add_deps("kernel")
+        add_packages("limine", "cp_shell")
+        set_default(false)
 
-        print("Disk image created at: %s", img_file)
-    end)
+        on_build(function (target)
+            import("core.project.project")
+            local kernel = project.target("kernel")
+            local img_file = "$(buildir)/CoolPotOS.img"
 
-target("run32")
-    set_kind("phony")
-    add_deps("iso32")
-    set_default(false)
+            local limine_src = target:pkg("limine"):installdir()
+            local limine_src = limine_src.."/share/limine"
 
-    on_run(function (target)
-        import("core.project.config")
-        local flags = {
-            "-serial", "stdio", "-m", "4096",
-            "-audiodev", "pa,id=speaker", "-vga", "std",
-            "-machine", "pcspk-audiodev=speaker",
-            "-global", "VGA.vgamem_mb=32",
-            "-net", "nic,model=pcnet", "-net", "user",
-            -- "-enable-kvm",
-            "-device", "sb16,audiodev=speaker",
-            "-device", "intel-hda",
-            "-device", "hda-micro,audiodev=speaker",
-            -- "-device", "ahci,id=ahci",
-            -- "-drive", "file=./disk.qcow2,if=none,id=disk0",
-            -- "-device", "ide-hd,bus=ahci.0,drive=disk0",
-            "-cdrom", config.buildir().."/CoolPotOS.iso"
-        }
-        os.execv("qemu-system-i386", flags)
-    end)
+            local shell = target:pkg("cp_shell")
+            local shell_bin = shell:installdir().."/bin/shell"
 
-target("run64")
-    set_kind("phony")
-    add_deps("iso64")
-    set_default(true)
+            os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf -f %s:shell.elf "..
+                "-f %s:readme.txt -f %s:efi/boot/bootx64.efi -o %s",
+                kernel:targetfile(), "assets/limine.conf", shell_bin,
+                "assets/readme.txt", limine_src.."/BOOTX64.EFI", img_file)
 
-    on_run(function (target)
-        import("core.project.config")
-        local disk_template = "if=none,format=raw,id=disk,file="
-        local flags = {
-            "-M", "q35", "-cpu", "qemu64,+x2apic", "-smp", "4",
-            "-serial", "stdio", "-m","1024M", "-no-reboot",
-            --"-enable-kvm",
-            --"-d", "in_asm",
-            --"-d", "in_asm,int",
-            --"-S","-s",
-            --"-device","nec-usb-xhci,id=xhci",
-            --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
-            "-audiodev", "sdl,id=audio0",
-            "-device", "sb16,audiodev=audio0",
-            "-net","nic,model=pcnet","-net","user",
-            "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
-            "-cdrom", config.buildir().."/CoolPotOS.iso",
-            -- "-cdrom", "/mnt/local/CoolPotOS.iso",
-            --"-device", "ahci,id=ahci",
-            --"-device", "ide-hd,drive=disk,bus=ahci.0",
-            --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
-            --"-device", "nvme,drive=disk,serial=deadbeef",
-            --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
-        }
-        os.execv("qemu-system-x86_64", flags)
-    end)
+            print("Disk image created at: %s", img_file)
+        end)
+
+    target("run")
+        set_kind("phony")
+        add_deps("iso")
+        set_default(true)
+
+        on_run(function (target)
+            import("core.project.config")
+            local disk_template = "if=none,format=raw,id=disk,file="
+            local flags = {
+                "-M", "q35", "-cpu", "qemu64,+x2apic", "-smp", "4",
+                "-serial", "stdio", "-m","1024M", "-no-reboot",
+                --"-enable-kvm",
+                --"-d", "in_asm",
+                --"-d", "in_asm,int",
+                --"-S","-s",
+                --"-device","nec-usb-xhci,id=xhci",
+                --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
+                "-audiodev", "sdl,id=audio0",
+                "-device", "sb16,audiodev=audio0",
+                "-net","nic,model=pcnet","-net","user",
+                "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
+                "-cdrom", config.buildir().."/CoolPotOS.iso",
+                -- "-cdrom", "/mnt/local/CoolPotOS.iso",
+                --"-device", "ahci,id=ahci",
+                --"-device", "ide-hd,drive=disk,bus=ahci.0",
+                --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
+                --"-device", "nvme,drive=disk,serial=deadbeef",
+                --"-drive", disk_template..config.buildir().."/CoolPotOS.img",
+            }
+            os.execv("qemu-system-x86_64", flags)
+        end)
+end
 
 --- CoolPotOS Shell
 package("cp_shell")
