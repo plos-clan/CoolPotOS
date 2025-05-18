@@ -17,7 +17,7 @@ Languages
 : [English](../README.md)
 | [简体中文](README-zh-CN.md)
 | [Français](README-fr-FR.md)
-| **日本語**
+| *日本語*
 
 ## Introduction
 

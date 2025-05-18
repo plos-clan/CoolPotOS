@@ -1,9 +1,22 @@
-# CoolPotOS for x86
+<div align="center">
+<img height="200px" src="https://github.com/user-attachments/assets/9542ad95-0f48-43ad-9617-a750db84e907" />
+
+<h1 align="center">CoolPotOS</h1>
+<h3>一个简单的玩具操作系统</h3>
+
+<img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="GitHub issues" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
+<img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
+</div>
+
+---
 
 ## 翻译
 
 - [English](/README.md)
-- **简体中文**
+- *简体中文*
 - [Français](/readme/README-fr-FR.md)
 - [日本語](/readme/README-ja-JP.md)
 
@@ -15,6 +28,7 @@
 
 - `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+- `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
 
 ## 构建并运行
 
@@ -22,25 +36,41 @@
 
 您需要安装这些软件：
 
-- Xmake
-- NASM (x86_64架构无需此汇编器)
-- Zig (x86_64架构需要clang编译器)
-- Windows subsystem for Linux (Ubuntu 22.04)
-    - xorriso
-    - qemu-system-i386 / qemu-system-x86_64
+- xmake
+- xorriso
+- QEMU
+- NASM (仅i386需要)
+- Zig (仅i386需要, 由 xmake 自动安装)
+- git (仅x86_64需要, 用于生成 `GIT_VERSION` 宏)
+- clang (仅x86_64需要)
+- lld (仅x86_64需要, 用于链接 LTO 对象)
+- Rust nightly toolchain (仅x86_64需要)
+- cbindgen (仅x86_64需要, 使用 `cargo install cbindgen` 安装)
+- oib (仅x86_64构建IMG镜像需要, 使用 `cargo install oib` 安装)
 
-### 步骤
+### 选项
 
-#### i386
+你可以使用以下命令设置目标架构（默认 `x86_64`）：
 
-在 `xmake.lua` 的默认构建目标 `default_build` 中，注释掉 `add_deps("iso64")` 并取消注释 `add_deps("iso32")`。
-同时，注释掉 `xmake run x86_64` 下的运行参数，并取消注释 `xmake run i386` 下的运行参数。
+```bash
+xmake f -y --arch=i686
+```
 
-在终端上运行 `xmake run`，项目将开始构建并运行
+### 可用命令
 
-#### x86_64
+- `xmake run` - 构建并运行 **ISO** 镜像
+- `xmake build iso` - 构建 ISO 镜像，不运行
+- `xmake build img` - 构建 IMG 磁盘镜像，不运行
 
-在终端上运行 `xmake run`，项目将开始构建并运行
+## 开发
+
+你可以使用以下命令生成 `compile_commands.json` 文件：
+
+```bash
+xmake project -k compile_commands
+```
+
+这样你的编辑器就能够启用语法高亮与跳转等功能。
 
 ## 许可协议
 
