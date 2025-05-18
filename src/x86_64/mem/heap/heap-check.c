@@ -63,7 +63,7 @@ size_t _check(const void *ptr) {
     const size_t pad2 = data[len - 3] ^ canaria[5];
     if (pad != pad2) _canaria_panic();
     if (pad & (pad - 1)) _canaria_panic();
-    if (pad <= sizeof(size_t) * 2) _canaria_panic();
+    if (pad != 0 && pad <= sizeof(size_t) * 2) _canaria_panic();
     if (data[len - 2] != canaria[6]) _canaria_panic();
     if (data[len - 1] != canaria[7]) _canaria_panic();
     return pad;
@@ -156,19 +156,11 @@ void *realloc(void *ptr, size_t size) {
     for (size_t i = 0; i < sizeof(alloced_mem) / sizeof(*alloced_mem); i++) {
         if (alloced_mem[i]) _check(alloced_mem[i]);
     }
-    size_t *data = (size_t *)ptr - 4;
-    if (data[0] != canaria[0]) _canaria_panic();
-    if (data[1] != canaria[1]) _canaria_panic();
-    size_t len1 = data[2] ^ canaria[2];
-    size_t len2 = data[3] ^ canaria[3];
-    if (len1 != len2) _canaria_panic();
-    size_t len = len1;
-    if (data[len - 4] != (canaria[4] ^ len)) _canaria_panic();
-    if (data[len - 3] != (canaria[5] ^ len)) _canaria_panic();
-    if (data[len - 2] != canaria[6]) _canaria_panic();
-    if (data[len - 1] != canaria[7]) _canaria_panic();
-    size_t new_len = (size + sizeof(size_t) - 1) / sizeof(size_t) + 8;
-    size_t *new    = mpool_realloc(&pool, data, new_len);
+    size_t  pad     = _check(ptr);
+    size_t  len     = ((size_t *)ptr - 4)[2] ^ canaria[2];
+    size_t *data    = pad == 0 ? (size_t *)ptr - 4 : (size_t *)(ptr - pad);
+    size_t  new_len = (size + sizeof(size_t) - 1) / sizeof(size_t) + 8;
+    size_t *new     = mpool_realloc(&pool, data, new_len);
     if (new == NULL) {
         alloc_exit(is_sti);
         return NULL;
@@ -179,14 +171,7 @@ void *realloc(void *ptr, size_t size) {
             break;
         }
     }
-    new[0]           = canaria[0];
-    new[1]           = canaria[1];
-    new[2]           = canaria[2] ^ new_len;
-    new[3]           = canaria[3] ^ new_len;
-    new[new_len - 4] = canaria[4] ^ new_len;
-    new[new_len - 3] = canaria[5] ^ new_len;
-    new[new_len - 2] = canaria[6];
-    new[new_len - 1] = canaria[7];
+    _set(new, new_len, 0);
     if (new_len > len) _malloc_rng(new + len - 4, new_len - len);
     void *addr = alloced_mem_entry = new + 4;
 
