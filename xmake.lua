@@ -47,6 +47,8 @@ target("kernel64")
     add_cflags("-mno-red-zone", "-msoft-float", "-flto")
     add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
 
+    add_cflags("-DCPOS_HEAP_CHECK")
+
     --add_cflags("-fsanitize=undefined")
     --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
     --add_cflags("-fsanitize=implicit-integer-sign-change")
