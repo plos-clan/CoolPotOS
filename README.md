@@ -48,11 +48,10 @@ You need to install them on your computer:
 
 ### Options
 
-You can use the command below to set the target architecture:
+You can use the command to set the target architecture (`x86_64` defuault):
 
 ```bash
 xmake f -y --arch=i686
-# or xmake f -y --arch=x86_64 (default)
 ```
 
 ### Commands
