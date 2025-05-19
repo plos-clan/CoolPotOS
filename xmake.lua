@@ -23,7 +23,6 @@ function arch_i686()
         set_arch("i386")
         set_kind("binary")
         set_default(false)
-        add_packages("zig")
         set_toolchains("@zig", "nasm")
         set_toolset("as", "nasm")
 
@@ -42,6 +41,7 @@ function arch_i686()
         add_asflags("-f", "elf32")
         add_ldflags("-T", "src/i386/linker.ld")
         add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
+    target_end()
 
     target("iso")
         set_kind("phony")
@@ -70,6 +70,7 @@ function arch_i686()
             os.run("xorriso -as mkisofs %s %s -o %s", iso_flags, iso_dir, iso_file)
             print("ISO image created at: "..iso_file)
         end)
+    target_end()
 
     target("run")
         set_kind("phony")
@@ -95,6 +96,7 @@ function arch_i686()
             }
             os.execv("qemu-system-i386", flags)
         end)
+    target_end()
 end
 
 function arch_x86_64()
@@ -139,6 +141,7 @@ function arch_x86_64()
         add_includedirs("src/x86_64/include")
         add_includedirs("src/x86_64/include/types")
         add_includedirs("src/x86_64/include/iic")
+    target_end()
 
     target("iso")
         set_kind("phony")
@@ -178,6 +181,7 @@ function arch_x86_64()
             os.run("limine bios-install "..iso_file)
             print("ISO image created at: %s", iso_file)
         end)
+    target_end()
 
     target("img")
         set_kind("phony")
@@ -203,6 +207,7 @@ function arch_x86_64()
 
             print("Disk image created at: %s", img_file)
         end)
+    target_end()
 
     target("run")
         set_kind("phony")
@@ -235,6 +240,7 @@ function arch_x86_64()
             }
             os.execv("qemu-system-x86_64", flags)
         end)
+    target_end()
 end
 
 --- CoolPotOS Shell
@@ -268,7 +274,7 @@ package("pl_readline")
                 set_toolchains("clang")
 
                 add_files("src/*.c")
-                add_includedirs("include", {public = true})
+                add_includedirs("include")
 
                 add_defines("PL_ENABLE_HISTORY_FILE=0")
                 add_cflags("-mno-80387", "-mno-mmx", "-DNDEBUG")
@@ -297,7 +303,7 @@ package("os-terminal")
     
     on_install(function (package)
         local font_config = package:config("font")
-    
+
         if font_config == "en" then
             os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
         elseif font_config == "en-zh" then
@@ -308,9 +314,11 @@ package("os-terminal")
             package:debug() and "" or "--release",
             font_config ~= "none" and "--features embedded-font" or ""
         ))
-    
-        local template = "target/%s-unknown-none/release/libos_terminal.a"
-        os.cp(string.format(template, package:config("arch")), package:installdir("lib"))
+
+        os.cp(("target/%s-unknown-none/%s/libos_terminal.a"):format(
+            package:config("arch"),
+            package:debug() and "debug" or "release"),
+            package:installdir("lib"))
 
         os.run("cbindgen --output %s/os_terminal.h", package:installdir("include"))
     end)
