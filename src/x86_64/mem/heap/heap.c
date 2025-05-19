@@ -16,10 +16,10 @@ uint64_t get_all_memusage() {
 }
 
 static bool alloc_enter() {
-    const bool is_sti = get_rflags() & (1 << 9);
+    // const bool is_sti = get_rflags() & (1 << 9);
     close_interrupt;
     spin_lock(lock);
-    return is_sti;
+    return true;
 }
 
 static void alloc_exit(bool is_sti) {
