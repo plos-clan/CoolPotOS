@@ -6,8 +6,6 @@
 #include "page.h"
 #include "scheduler.h"
 
-#ifndef CPOS_HEAP_CHECK
-
 static struct mpool pool;
 static spin_t       lock = SPIN_INIT;
 
@@ -114,5 +112,3 @@ void init_heap() {
                              KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
     mpool_init(&pool, phys_to_virt(KERNEL_HEAP_START), KERNEL_HEAP_SIZE);
 }
-
-#endif

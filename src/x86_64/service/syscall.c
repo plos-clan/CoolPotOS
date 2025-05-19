@@ -257,6 +257,7 @@ syscall_(mmap) {
             uint64_t phys = alloc_frames(1);
             page_map_to(get_current_directory(), page_addr, phys, page_flags);
         }
+        logkf("mmap: %p\n", page_addr);
     }
 
     if (fd > 2) {
