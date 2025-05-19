@@ -60,7 +60,6 @@ bool mousedecode(uint8_t data) {
 }
 
 __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
-    send_eoi();
     spin_lock(mouse_lock);
     uint8_t data = io_in8(PS2_DATA_PORT);
     if (mousedecode(data)) {
@@ -80,9 +79,6 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
         if (mouse_decode.btn & 0x04) { mouse_decode.center = true; }
 
         terminal_handle_mouse_scroll(mouse_decode.scroll);
-
-        // 不知道会不会死锁不过大概率会（
-
         //        logkf("mouse x:%d y:%d right:%s left:%s center: %s scroll: %d\n",mouse_x,mouse_y,
         //              mouse_decode.right ? "true" : "false",
         //              mouse_decode.left ? "true" : "false",
@@ -91,6 +87,7 @@ __IRQHANDLER void mouse_handle(interrupt_frame_t *frame) {
         //        );
     }
     spin_unlock(mouse_lock);
+    send_eoi();
 }
 
 static bool send_command(uint8_t value) {
@@ -118,6 +115,7 @@ static MouseType get_mouse_type() {
 }
 
 void mouse_setup() {
+    open_interrupt;
     register_interrupt_handler(mouse, (void *)mouse_handle, 0, 0x8E);
 
     wait_ps2_write();
@@ -147,4 +145,5 @@ void mouse_setup() {
     type = get_mouse_type();
     kinfo("Setup PS/2 %s mouse.",
           type == OnlyScroll ? "OnlyScroll" : (type == FiveButton ? "FiveButton" : "Standard"));
+    close_interrupt;
 }
