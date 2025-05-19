@@ -1,6 +1,7 @@
 #include "heap.h"
 #include "alloc/area.h"
 #include "hhdm.h"
+#include "klog.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "page.h"
@@ -14,10 +15,10 @@ uint64_t get_all_memusage() {
 }
 
 static bool alloc_enter() {
-    // const bool is_sti = get_rflags() & (1 << 9);
+    bool is_sti = are_interrupts_enabled();
     close_interrupt;
     spin_lock(lock);
-    return true;
+    return is_sti;
 }
 
 static void alloc_exit(bool is_sti) {
@@ -108,7 +109,8 @@ void *pvalloc(size_t size) {
 }
 
 void init_heap() {
-    page_map_range_to_random(get_kernel_pagedir(), (uint64_t)phys_to_virt(KERNEL_HEAP_START),
-                             KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
-    mpool_init(&pool, phys_to_virt(KERNEL_HEAP_START), KERNEL_HEAP_SIZE);
+    uint64_t base_addr = KERNEL_HEAP_START;
+    logkf("init heap at %p\n", base_addr);
+    page_map_range_to_random(get_kernel_pagedir(), base_addr, KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
+    mpool_init(&pool, (void *)base_addr, KERNEL_HEAP_SIZE);
 }

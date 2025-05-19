@@ -85,6 +85,7 @@ void wait_ps2_read() {
 }
 
 void keyboard_setup() {
+    open_interrupt;
     kb_fifo.p_head = kb_fifo.buf;
     kb_fifo.p_tail = kb_fifo.buf;
     kb_fifo.count  = 0;
@@ -113,4 +114,5 @@ void keyboard_setup() {
     wait_ps2_read();
     if (io_in8(PS2_DATA_PORT) != 0xFA) { kerror("Keyboard enable failed"); }
     kinfo("Setup PS/2 keyboard.");
+    close_interrupt;
 }

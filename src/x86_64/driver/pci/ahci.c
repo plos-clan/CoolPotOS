@@ -1,4 +1,5 @@
 #include "ahci.h"
+#include "frame.h"
 #include "heap.h"
 #include "hhdm.h"
 #include "klog.h"
@@ -483,7 +484,10 @@ void ahci_setup() {
 
     hba_mem->ghc |= AHCI_GHC_AE;
 
-    ahci_ports_base_addr = (uint64_t)aligned_alloc(PAGE_SIZE, 1048576);
+    uint64_t phy_base_addr = alloc_frames(100);
+    page_map_range_to(get_current_directory(), phy_base_addr, PAGE_SIZE * 100, KERNEL_PTE_FLAGS);
+    ahci_ports_base_addr =
+        (uint64_t)phys_to_virt(phy_base_addr); //(uint64_t)aligned_alloc(PAGE_SIZE, 1048576);
 
     ahci_search_ports(hba_mem);
     size_t i;
