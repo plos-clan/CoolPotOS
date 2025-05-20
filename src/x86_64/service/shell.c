@@ -368,7 +368,11 @@ static void exec(int argc, char **argv) {
 
     char *name            = module->module_name;
     ucb_t user_handle     = get_current_task()->parent_group->user;
-    pcb_t user_task       = create_process_group(name, up, user_handle, "");
+
+    char cmdline_buf[50];
+    sprintf(cmdline_buf, "%s %s", name, "-v");
+
+    pcb_t user_task       = create_process_group(name, up, user_handle, cmdline_buf);
     user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);
 
