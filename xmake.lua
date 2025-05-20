@@ -100,9 +100,9 @@ function arch_i686()
 end
 
 function arch_x86_64()
-    add_requires("pl_readline main")
-    add_requires("cp_shell main")
-    add_requires("os-terminal main", {debug = is_mode("debug")})
+    add_requires("pl_readline")
+    add_requires("cp_shell")
+    add_requires("os-terminal", {debug = is_mode("debug")})
 
     target("kernel")
         set_arch("x86_64")
