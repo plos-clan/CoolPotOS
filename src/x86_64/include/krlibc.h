@@ -83,7 +83,7 @@ static inline bool are_interrupts_enabled() {
     __asm__ volatile("pushfq\n\t"
                      "pop %0"
                      : "=r"(rflags));
-    return (rflags & (1 << 9)) != 0;
+    return true;//(rflags & (1 << 9)) != 0;
 }
 
 static inline char *LeadingWhitespace(char *beg, char *end) {

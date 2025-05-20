@@ -42,6 +42,9 @@
 #define SYSCALL_PRCTL      157
 #define SYSCALL_ARCH_PRCTL 158
 
+#define SYSCALL_CMDLINE     199
+#define SYSCALL_DEBUG_PRINT 200
+
 #include "ctype.h"
 
 struct syscall_regs {

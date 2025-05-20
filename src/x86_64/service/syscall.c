@@ -365,6 +365,21 @@ syscall_(ioctl) {
     return ret;
 }
 
+syscall_(debug_print) {
+    char *str = (char *)arg0;
+    if (str == NULL) return SYSCALL_FAULT;
+    logkf("%s\n", str);
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(cmdline) {
+    char *str = (char *)arg0;
+    if (str == NULL) return SYSCALL_FAULT;
+    logkf("SYSCALL CMDLINE:\n");
+    strcpy(str, get_current_task()->parent_group->cmdline);
+    return strlen(str);
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]       = syscall_exit,
     [SYSCALL_ABORT]      = syscall_abort,
@@ -385,6 +400,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_UNAME]      = syscall_uname,
     [SYSCALL_NANO_SLEEP] = syscall_nano_sleep,
     [SYSCALL_IOCTL]      = syscall_ioctl,
+    [SYSCALL_CMDLINE]    = syscall_cmdline,
+    [SYSCALL_DEBUG_PRINT] = syscall_debug_print
 };
 
 USED void syscall_handler(struct syscall_regs *regs,

@@ -222,6 +222,8 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
     new_task->status                                                      = CREATE;
 
+    new_task->fs_base = (uint64_t)new_task;
+
     add_task(new_task);
     enable_scheduler();
     open_interrupt;
@@ -266,6 +268,8 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->context0.es = 0x10;
     new_task->context0.ds = 0x10;
     new_task->status      = CREATE;
+
+    new_task->fs_base = (uint64_t)new_task;
 
     add_task(new_task);
     enable_scheduler();
