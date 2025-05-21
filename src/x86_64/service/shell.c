@@ -366,15 +366,25 @@ static void exec(int argc, char **argv) {
         return;
     }
 
-    char *name            = module->module_name;
-    ucb_t user_handle     = get_current_task()->parent_group->user;
+    char *name        = module->module_name;
+    ucb_t user_handle = get_current_task()->parent_group->user;
 
-    char cmdline_buf[50];
-    sprintf(cmdline_buf, "%s %s", name, "-v");
+    int total_len = 0;
+    for (int i = 1; i < argc; ++i) {
+        total_len += strlen(argv[i]) + 1;
+    }
+    char *result = malloc(total_len);
+    memset(result, 0, total_len);
+    for (int i = 1; i < argc; ++i) {
+        strcat(result, argv[i]);
+        if (i != argc - 1) strcat(result, " ");
+    }
 
-    pcb_t user_task       = create_process_group(name, up, user_handle, cmdline_buf);
+    pcb_t user_task       = create_process_group(name, up, user_handle, result);
     user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);
+
+    free(result);
 
     int    pgb_id      = user_task->pgb_id;
     size_t queue_index = user_task->queue_index;

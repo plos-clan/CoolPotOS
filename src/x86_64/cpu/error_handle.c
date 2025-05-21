@@ -50,7 +50,6 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     }
     printk("\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(%s:0x%x)<\033[0m\n", msg,
            code);
-    logkf("?");
     print_task_info(get_current_task());
     print_register(frame);
     update_terminal();
