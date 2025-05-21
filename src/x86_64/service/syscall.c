@@ -257,7 +257,6 @@ syscall_(mmap) {
             uint64_t phys = alloc_frames(1);
             page_map_to(get_current_directory(), page_addr, phys, page_flags);
         }
-        logkf("mmap: %p\n", page_addr);
     }
 
     if (fd > 2) {
@@ -375,34 +374,34 @@ syscall_(debug_print) {
 syscall_(cmdline) {
     char *str = (char *)arg0;
     if (str == NULL) return SYSCALL_FAULT;
-    logkf("SYSCALL CMDLINE:\n");
     strcpy(str, get_current_task()->parent_group->cmdline);
     return strlen(str);
 }
-
+// clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT]       = syscall_exit,
-    [SYSCALL_ABORT]      = syscall_abort,
-    [SYSCALL_OPEN]       = syscall_open,
-    [SYSCALL_CLOSE]      = syscall_close,
-    [SYSCALL_WRITE]      = syscall_write,
-    [SYSCALL_READ]       = syscall_read,
-    [SYSCALL_WAITPID]    = syscall_waitpid,
-    [SYSCALL_MMAP]       = syscall_mmap,
-    [SYSCALL_SIGNAL]     = syscall_signal,
-    [SYSCALL_SIGRET]     = syscall_sigret,
-    [SYSCALL_GETPID]     = syscall_getpid,
-    [SYSCALL_PRCTL]      = syscall_prctl,
-    [SYSCALL_STAT]       = syscall_size,
-    [SYSCALL_CLONE]      = syscall_clone,
-    [SYSCALL_ARCH_PRCTL] = syscall_arch_prctl,
-    [SYSCALL_YIELD]      = syscall_yield,
-    [SYSCALL_UNAME]      = syscall_uname,
-    [SYSCALL_NANO_SLEEP] = syscall_nano_sleep,
-    [SYSCALL_IOCTL]      = syscall_ioctl,
-    [SYSCALL_CMDLINE]    = syscall_cmdline,
+    [SYSCALL_EXIT]        = syscall_exit,
+    [SYSCALL_ABORT]       = syscall_abort,
+    [SYSCALL_OPEN]        = syscall_open,
+    [SYSCALL_CLOSE]       = syscall_close,
+    [SYSCALL_WRITE]       = syscall_write,
+    [SYSCALL_READ]        = syscall_read,
+    [SYSCALL_WAITPID]     = syscall_waitpid,
+    [SYSCALL_MMAP]        = syscall_mmap,
+    [SYSCALL_SIGNAL]      = syscall_signal,
+    [SYSCALL_SIGRET]      = syscall_sigret,
+    [SYSCALL_GETPID]      = syscall_getpid,
+    [SYSCALL_PRCTL]       = syscall_prctl,
+    [SYSCALL_STAT]        = syscall_size,
+    [SYSCALL_CLONE]       = syscall_clone,
+    [SYSCALL_ARCH_PRCTL]  = syscall_arch_prctl,
+    [SYSCALL_YIELD]       = syscall_yield,
+    [SYSCALL_UNAME]       = syscall_uname,
+    [SYSCALL_NANO_SLEEP]  = syscall_nano_sleep,
+    [SYSCALL_IOCTL]       = syscall_ioctl,
+    [SYSCALL_CMDLINE]     = syscall_cmdline,
     [SYSCALL_DEBUG_PRINT] = syscall_debug_print
 };
+// clang-format on
 
 USED void syscall_handler(struct syscall_regs *regs,
                           struct syscall_regs *user_regs) { // syscall 指令处理
