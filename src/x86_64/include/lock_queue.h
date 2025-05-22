@@ -14,7 +14,7 @@ typedef struct {
     lock_node *tail;
     spin_t     lock;
     spin_t     iter_lock;
-    int        size;
+    size_t     size;
     int        next_index;
 } lock_queue;
 

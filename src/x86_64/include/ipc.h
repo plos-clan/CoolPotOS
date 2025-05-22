@@ -14,7 +14,7 @@
 typedef struct ipc_message *ipc_message_t;
 
 struct ipc_message {
-    size_t  pid;      // 发送方PID
+    int     pid;      // 发送方PID
     uint8_t type;     // 消息类型
     uint8_t data[64]; // 数据
     size_t  index;    // 消息队列索引

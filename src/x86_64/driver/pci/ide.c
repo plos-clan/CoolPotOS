@@ -309,7 +309,7 @@ uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba, uint8_t n
 }
 
 uint8_t ide_atapi_read(uint8_t drive, uint32_t lba, uint8_t numsects, uint16_t selector,
-                       uint32_t edi) {
+                       uint64_t edi) {
     klog("cdrom read.");
     uint32_t channel  = ide_devices[drive].Channel;
     uint32_t slavebit = ide_devices[drive].Drive;
