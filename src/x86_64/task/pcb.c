@@ -1,5 +1,6 @@
 #include "pcb.h"
 #include "description_table.h"
+#include "elf.h"
 #include "heap.h"
 #include "io.h"
 #include "ipc.h"
@@ -31,12 +32,110 @@ _Noreturn void process_exit() {
     loop;
 }
 
+static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
+    uint64_t tmp_stack  = ustack;
+    tmp_stack          -= len;
+    tmp_stack          -= (tmp_stack % 0x08);
+    memcpy((void *)tmp_stack, slice, len);
+    return tmp_stack;
+}
+
+static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) {
+    uint64_t env_i  = 0;
+    uint64_t argv_i = 0;
+
+    ucb_t user = task->parent_group->user;
+    char *argv[50];
+    int   argc = cmd_parse(task->parent_group->cmdline, argv, ' ');
+
+    char **envp = user->envp;
+
+    uint64_t tmp_stack = sp;
+    tmp_stack          = push_slice(tmp_stack, (uint8_t *)task->name, strlen(task->name) + 1);
+
+    uint64_t execfn_ptr = tmp_stack;
+
+    uint64_t *envps = (uint64_t *)malloc(1024);
+    memset(envps, 0, 1024);
+    uint64_t *argvps = (uint64_t *)malloc(1024);
+    memset(argvps, 0, 1024);
+
+    if (envp != NULL) {
+        for (env_i = 0; env_i < user->envc; env_i++) {
+            tmp_stack    = push_slice(tmp_stack, (uint8_t *)envp[env_i], strlen(envp[env_i]) + 1);
+            envps[env_i] = tmp_stack;
+        }
+    }
+
+    if (argv != NULL) {
+        for (argv_i = 0; argv_i < argc; argv_i++) {
+            tmp_stack = push_slice(tmp_stack, (uint8_t *)argv[argv_i], strlen(argv[argv_i]) + 1);
+            argvps[argv_i] = tmp_stack;
+        }
+    }
+
+    uint64_t total_length = 2 * sizeof(uint64_t) + 7 * 2 * sizeof(uint64_t) +
+                            (env_i + 0) * sizeof(uint64_t) + sizeof(uint64_t) +
+                            (argv_i + 0) * sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint64_t);
+    tmp_stack -= (tmp_stack - total_length) % 0x10;
+
+    // push auxv
+    uint8_t *tmp = (uint8_t *)malloc(2 * sizeof(uint64_t));
+    memset(tmp, 0, 2 * sizeof(uint64_t));
+    tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    //TODO 目前不支持 phdr 信息获取
+    ((uint64_t *)tmp)[0] = AT_PHDR;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_PHENT;
+    ((uint64_t *)tmp)[1] = sizeof(Elf64_Phdr);
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_PHNUM;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_ENTRY;
+    ((uint64_t *)tmp)[1] = entry_point;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_EXECFN;
+    ((uint64_t *)tmp)[1] = execfn_ptr;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_BASE;
+    ((uint64_t *)tmp)[1] = 1;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_PAGESZ;
+    ((uint64_t *)tmp)[1] = PAGE_SIZE;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    memset(tmp, 0, 2 * sizeof(uint64_t));
+
+    tmp_stack = push_slice(tmp_stack, tmp, sizeof(uint64_t));
+    tmp_stack = push_slice(tmp_stack, (uint8_t *)envps, env_i * sizeof(uint64_t));
+
+    tmp_stack = push_slice(tmp_stack, tmp, sizeof(uint64_t));
+    tmp_stack = push_slice(tmp_stack, (uint8_t *)argvps, argv_i * sizeof(uint64_t));
+
+    tmp_stack = push_slice(tmp_stack, (uint8_t *)&argv_i, sizeof(uint64_t));
+
+    free(tmp);
+    free(envps);
+    free(argvps);
+
+    return tmp_stack;
+}
+
 void switch_to_user_mode(uint64_t func) {
     close_interrupt;
     uint64_t rsp                        = (uint64_t)get_current_task()->user_stack + STACK_SIZE;
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
-
+    rsp                                 = build_user_stack(get_current_task(), rsp, func);
     __asm__ volatile("mov %0, %%es\n"
                      "mov %0, %%ds\n"
                      "pushq %5\n" // SS

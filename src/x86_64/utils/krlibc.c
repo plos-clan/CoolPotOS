@@ -2,6 +2,9 @@
 #include "heap.h"
 #include "sprintf.h"
 
+uint8_t stack_random_bytes[16] = { //栈保护随机值
+    0xAA, 0xBB, 0xCC, 0xDD, 0x01, 0x02, 0x03, 0x04, 0x10, 0x20, 0x30, 0x40, 0x05, 0x06, 0x07, 0x08};
+
 int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;
     const char *b = b_;
@@ -283,4 +286,28 @@ char *pathacat(char *p1, char *p2) {
         sprintf(p, "%s/%s", p1, p2);
     }
     return p;
+}
+
+int cmd_parse(const char *cmd_str, char **argv, char token) {
+    int arg_idx = 0;
+
+    while (arg_idx < 50) {
+        argv[arg_idx] = 0;
+        arg_idx++;
+    }
+    char *next = (char *)cmd_str;
+    int   argc = 0;
+
+    while (*next) {
+        while (*next == token)
+            next++;
+        if (*next == 0) break;
+        argv[argc] = next;
+        while (*next && *next != token)
+            next++;
+        if (*next) { *next++ = 0; }
+        if (argc > 50) return -1;
+        argc++;
+    }
+    return argc;
 }

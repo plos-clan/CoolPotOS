@@ -14,6 +14,7 @@
 #define USER_MMAP_START   0x0000400000000000       // 用户堆映射起始地址
 #define USER_MMAP_END     0x0000700000000000       // 用户堆映射结束地址
 #define MAX_SIGNALS       64                       // 最大支持信号个数
+#define MAX_ENVS          256                      // 最大支持环境变量个数
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")
@@ -39,6 +40,8 @@
 
 #include "ctype.h"
 #include "limits.h"
+
+extern uint8_t stack_random_bytes[16];
 
 static inline void empty() {}
 
@@ -78,12 +81,14 @@ char *strtok(char *str, const char *delim);
 
 char *pathacat(char *p1, char *p2);
 
+int cmd_parse(const char *cmd_str, char **argv, char token);
+
 static inline bool are_interrupts_enabled() {
     uint64_t rflags;
     __asm__ volatile("pushfq\n\t"
                      "pop %0"
                      : "=r"(rflags));
-    return true;//(rflags & (1 << 9)) != 0;
+    return true; //(rflags & (1 << 9)) != 0;
 }
 
 static inline char *LeadingWhitespace(char *beg, char *end) {
