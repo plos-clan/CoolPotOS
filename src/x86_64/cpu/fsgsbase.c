@@ -61,17 +61,17 @@ uint32_t has_fsgsbase() {
 
 uint64_t fsgsbase_init() {
     uint32_t support = has_fsgsbase();
-    if (support) {
-        uint64_t cr4 = 0;
-        __asm__ __volatile__("movq %%cr4, %0" : "=r"(cr4));
-        cr4 |= (1 << 16);
-        __asm__ __volatile__("movq %0, %%cr4" ::"r"(cr4));
-
-        read_fsbase  = rdfsbase;
-        write_fsbase = wrfsbase;
-        read_gsbase  = rdgsbase;
-        write_gsbase = wrgsbase;
-    }
+    //    if (support) {
+    //        uint64_t cr4 = 0;
+    //        __asm__ __volatile__("movq %%cr4, %0" : "=r"(cr4));
+    //        cr4 |= (1 << 16);
+    //        __asm__ __volatile__("movq %0, %%cr4" ::"r"(cr4));
+    //
+    //        read_fsbase  = rdfsbase;
+    //        write_fsbase = wrfsbase;
+    //        read_gsbase  = rdgsbase;
+    //        write_gsbase = wrgsbase;
+    //    }
     kinfo("fsgsbase support: %s", support ? "cpu" : "msr");
     return 0;
 }
