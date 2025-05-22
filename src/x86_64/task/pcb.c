@@ -136,6 +136,13 @@ void switch_to_user_mode(uint64_t func) {
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
     rsp                                 = build_user_stack(get_current_task(), rsp, func);
+    vfs_node_t stdout                   = vfs_open("/dev/stdio");
+    vfs_node_t stdin                    = stdout;
+    vfs_node_t stderr                   = stdout;
+    queue_enqueue(get_current_task()->parent_group->file_open, stdin);
+    queue_enqueue(get_current_task()->parent_group->file_open, stdout);
+    queue_enqueue(get_current_task()->parent_group->file_open, stderr);
+
     __asm__ volatile("mov %0, %%es\n"
                      "mov %0, %%ds\n"
                      "pushq %5\n" // SS
