@@ -117,6 +117,7 @@ function arch_x86_64()
         add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
         add_cflags("-mno-red-zone", "-msoft-float", "-flto")
         add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
+        --add_cflags("-Wno-unused-parameter","-Wno-unused-variable","-Wno-unused-value")
 
         --add_cflags("-fsanitize=undefined")
         --add_cflags("-fsanitize=implicit-unsigned-integer-truncation")
