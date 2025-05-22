@@ -373,10 +373,9 @@ syscall_(writev) {
     vfs_node_t    node   = queue_get(get_current_task()->parent_group->file_open, fd);
     ssize_t       total  = 0;
     for (int i = 0; i < iovcnt; i++) {
-        ssize_t written = vfs_write(node, iov[i].iov_base, 0, iov[i].iov_len);
-        if (written < 0) return written;
-        total += written;
-        if ((size_t)written < iov[i].iov_len) break; // 写了一半，退出
+        int status = vfs_write(node, iov[i].iov_base, 0, iov[i].iov_len);
+        if (status == VFS_STATUS_FAILED) return total;
+        total += iov[i].iov_len;
     }
     return total;
 }
