@@ -6,7 +6,7 @@
 #define MSR_SYSCALL_MASK 0xC0000084
 
 #define MAX_SYSCALLS    256
-#define SYSCALL_SUCCESS 0
+#define SYSCALL_SUCCESS EOK
 #define SYSCALL_FAULT   ((uint64_t)-(ENOSYS))
 
 #define syscall_(name)                                                                             \
@@ -27,22 +27,23 @@
 #define SYSCALL_OPEN       2
 #define SYSCALL_CLOSE      3
 #define SYSCALL_STAT       4
-#define SYSCALL_SIGNAL     6
-#define SYSCALL_WAITPID    7
+#define SYSCALL_FSTAT      5
+#define SYSCALL_LSTAT      6
 #define SYSCALL_MMAP       9
 #define SYSCALL_SIGRET     15
 #define SYSCALL_IOCTL      16
+#define SYSCALL_WRITEV     20
 #define SYSCALL_YIELD      24
 #define SYSCALL_NANO_SLEEP 35
 #define SYSCALL_GETPID     39
 #define SYSCALL_CLONE      56
 #define SYSCALL_ABORT      59
 #define SYSCALL_EXIT       60
+#define SYSCALL_WAITPID    61
 #define SYSCALL_UNAME      63
 #define SYSCALL_PRCTL      157
 #define SYSCALL_ARCH_PRCTL 158
 
-#define SYSCALL_CMDLINE     199
 #define SYSCALL_DEBUG_PRINT 200
 
 #include "ctype.h"
@@ -81,6 +82,11 @@ struct utsname {
     char version[65];
     char machine[65];
     char domainname[65];
+};
+
+struct iovec {
+    void  *iov_base;
+    size_t iov_len;
 };
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);

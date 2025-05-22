@@ -364,6 +364,23 @@ syscall_(ioctl) {
     return ret;
 }
 
+syscall_(writev) {
+    int fd = (int)arg0;
+    if (fd < 0 || arg1 == 0) return ENODEV;
+    if (arg2 == 0) return SYSCALL_SUCCESS;
+    int           iovcnt = arg2;
+    struct iovec *iov    = (struct iovec *)arg1;
+    vfs_node_t    node   = queue_get(get_current_task()->parent_group->file_open, fd);
+    ssize_t       total  = 0;
+    for (int i = 0; i < iovcnt; i++) {
+        ssize_t written = vfs_write(node, iov[i].iov_base, 0, iov[i].iov_len);
+        if (written < 0) return written;
+        total += written;
+        if ((size_t)written < iov[i].iov_len) break; // 写了一半，退出
+    }
+    return total;
+}
+
 syscall_(debug_print) {
     char *str = (char *)arg0;
     if (str == NULL) return SYSCALL_FAULT;
@@ -371,12 +388,6 @@ syscall_(debug_print) {
     return SYSCALL_SUCCESS;
 }
 
-syscall_(cmdline) {
-    char *str = (char *)arg0;
-    if (str == NULL) return SYSCALL_FAULT;
-    strcpy(str, get_current_task()->parent_group->cmdline);
-    return strlen(str);
-}
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -387,7 +398,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_READ]        = syscall_read,
     [SYSCALL_WAITPID]     = syscall_waitpid,
     [SYSCALL_MMAP]        = syscall_mmap,
-    [SYSCALL_SIGNAL]      = syscall_signal,
+//TODO [SYSCALL_SIGNAL]      = syscall_signal,
     [SYSCALL_SIGRET]      = syscall_sigret,
     [SYSCALL_GETPID]      = syscall_getpid,
     [SYSCALL_PRCTL]       = syscall_prctl,
@@ -398,8 +409,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_UNAME]       = syscall_uname,
     [SYSCALL_NANO_SLEEP]  = syscall_nano_sleep,
     [SYSCALL_IOCTL]       = syscall_ioctl,
-    [SYSCALL_CMDLINE]     = syscall_cmdline,
-    [SYSCALL_DEBUG_PRINT] = syscall_debug_print
+    [SYSCALL_WRITEV]      = syscall_writev,
+    [SYSCALL_DEBUG_PRINT] = syscall_debug_print,
 };
 // clang-format on
 
