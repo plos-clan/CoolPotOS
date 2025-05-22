@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ctype.h"
+#include "krlibc.h"
 #include "tty.h"
 
 typedef struct user_control_block *ucb_t;
@@ -15,6 +16,8 @@ struct user_control_block {
     char      name[50];         // 用户名
     int       uid;              // 用户ID
     UserLevel permission_level; // 权限等级
+    int       envc;             // 环境变量个数
+    char    **envp;             // 环境变量
 };
 
 /**
@@ -24,9 +27,25 @@ struct user_control_block {
  * @return == NULL ? 创建失败 : 用户会话
  */
 ucb_t create_user(const char *name, UserLevel permission_level);
+
 /**
  * 获取内核态用户会话
  * @return 用户会话
  */
 ucb_t get_kernel_user();
-void  user_setup();
+
+/**
+ * 添加一个环境变量
+ * @param kv 环境变量
+ * @return 0 ? -1 是否成功
+ */
+int add_env(const char *kv);
+
+/**
+ * 删除一个环境变量
+ * @param kv 环境变量
+ * @return 0 ? -1 是否成功
+ */
+int del_env(const char *key);
+
+void user_setup();
