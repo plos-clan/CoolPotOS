@@ -423,13 +423,15 @@ USED void syscall_handler(struct syscall_regs *regs,
     regs->es     = (0x18 | 0x3);
     regs->rsp    = (uint64_t)(user_regs + 1);
     write_fsbase((uint64_t)get_current_task());
-    uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
+    get_current_task()->fs_base0 = (uint64_t)get_current_task();
+    uint64_t syscall_id          = regs->rax & 0xFFFFFFFF;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9);
     } else
         regs->rax = SYSCALL_FAULT;
-    write_fsbase(get_current_task()->fs_base);
+    get_current_task()->fs_base0 = (uint64_t)get_current_task()->fs_base;
+    write_fsbase(get_current_task()->fs_base0);
 }
 
 USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
@@ -441,7 +443,7 @@ USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
                                                              reg->r8, reg->r9);
     } else
         reg->rax = SYSCALL_FAULT;
-    write_fsbase(get_current_task()->fs_base);
+    write_fsbase(get_current_task()->fs_base0);
     return reg;
 }
 

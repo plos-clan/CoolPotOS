@@ -86,10 +86,10 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     set_kernel_stack(target->kernel_stack);
 
     __asm__ __volatile__("movq %%fs, %0\n\t" : "=r"(current_task0->fs));
-    current_task0->fs_base = read_fsbase();
+    current_task0->fs_base0 = read_fsbase();
 
     __asm__ __volatile__("movq %0, %%fs\n\t" ::"r"(target->fs));
-    write_fsbase(target->fs_base);
+    write_fsbase(target->fs_base0);
 
     save_fpu_context(&current_task0->fpu_context);
     restore_fpu_context(&target->fpu_context);
