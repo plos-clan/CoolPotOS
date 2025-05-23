@@ -130,12 +130,14 @@ uint32_t NVMETransfer(NVME_NAMESPACE *ns, void *buf, uint64_t lba, uint32_t coun
     return count ? 0 : -1;
 }
 
-void NvmeRead(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
+size_t NvmeRead(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
     NVMETransfer(nvme_device[id], buf, idx, count, false);
+    return count * SECTORS_ONCE;
 }
 
-void NvmeWrite(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
+size_t NvmeWrite(int id, uint8_t *buf, uint32_t count, uint32_t idx) {
     NVMETransfer(nvme_device[id], buf, idx, count, true);
+    return count * SECTORS_ONCE;
 }
 
 void nvme_setup() {

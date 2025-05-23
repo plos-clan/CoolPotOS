@@ -32,6 +32,7 @@
 #define SYSCALL_MMAP       9
 #define SYSCALL_SIGRET     15
 #define SYSCALL_IOCTL      16
+#define SYSCALL_READV      19
 #define SYSCALL_WRITEV     20
 #define SYSCALL_YIELD      24
 #define SYSCALL_NANO_SLEEP 35

@@ -450,13 +450,14 @@ void ahci_search_ports(HBA_MEM *abar) {
     }
 }
 
-static void ahci_vdisk_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    //                    klog("mapping %d\n",drive_mapping[drive]);
+static size_t ahci_vdisk_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     ahci_read(&(hba_mem->ports[drive_mapping[drive]]), lba, 0, number, (uint16_t *)buffer);
+    return number * SECTORS_ONCE;
 }
 
-static void ahci_vdisk_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+static size_t ahci_vdisk_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     ahci_write(&(hba_mem->ports[drive_mapping[drive]]), lba, 0, number, (uint16_t *)buffer);
+    return number * SECTORS_ONCE;
 }
 
 void swap_and_terminate(uint8_t *src, char *dest, size_t len) {

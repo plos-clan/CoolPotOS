@@ -75,10 +75,10 @@ read:
         buf = malloc(padding_up_to_sector_size * 0x1000);
         memset(buf, 0, padding_up_to_sector_size * 0x1000);
     }
-    vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
+    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
     memcpy(addr, buf, size);
     free(buf);
-    return size;
+    return read_size;
 }
 
 static size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
@@ -106,9 +106,9 @@ write:
         vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
     }
     memcpy(buf, addr, size);
-    vdisk_write(offset / sector_size, sectors_to_do, buf, dev_id);
+    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, buf, dev_id);
     free(buf);
-    return size;
+    return ret_size;
 }
 
 static int devfs_ioctl(void *file, size_t req, void *arg) {

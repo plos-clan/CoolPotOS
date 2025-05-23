@@ -67,7 +67,7 @@ static int find_cmdslot(HBA_PORT *port) {
 }
 
 static void ahci_vdisk_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    //                    klog("mapping %d\n",drive_mapping[drive]);
+
     ahci_read(&(hba_mem->ports[drive_mapping[drive]]), lba, 0, number, (uint16_t *)buffer);
 }
 

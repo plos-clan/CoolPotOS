@@ -40,43 +40,49 @@ uint32_t disk_size(int drive) {
     }
 }
 
-int rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read) {
+size_t rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read) {
     int indx = drive;
     if (indx >= 26) { return 0; }
     if (vdisk_ctl[indx].flag > 0) {
         if (read) {
-            vdisk_ctl[indx].read(drive, buffer, number, lba);
+            return vdisk_ctl[indx].read(drive, buffer, number, lba);
         } else {
-            vdisk_ctl[indx].write(drive, buffer, number, lba);
+            return vdisk_ctl[indx].write(drive, buffer, number, lba);
         }
-        return 1;
     } else {
         return 0;
     }
 }
 
-void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
+size_t vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
     if (have_vdisk(drive)) {
         if (vdisk_ctl[drive].type == VDISK_STREAM) {
-            vdisk_ctl[drive].read(drive, buffer, number, lba);
-            return;
+            return vdisk_ctl[drive].read(drive, buffer, number, lba);
         }
+        size_t ret_size = 0;
         for (size_t i = 0; i < number; i += SECTORS_ONCE) {
-            int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
-            rw_vdisk(drive, lba + i,
-                     (uint8_t *)((uint64_t)buffer + i * vdisk_ctl[drive].sector_size), sectors, 1);
+            int sectors  = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
+            ret_size    += rw_vdisk(drive, lba + i,
+                                    (uint8_t *)((uint64_t)buffer + i * vdisk_ctl[drive].sector_size),
+                                    sectors, 1);
         }
-    }
+        return ret_size;
+    } else
+        return 0;
 }
 
-void vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
+size_t vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
     if (have_vdisk(drive)) {
+        size_t ret_size = 0;
         for (size_t i = 0; i < number; i += SECTORS_ONCE) {
-            int sectors = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
-            rw_vdisk(drive, lba + i,
-                     (uint8_t *)((uint64_t)buffer + i * vdisk_ctl[drive].sector_size), sectors, 0);
+            int sectors  = ((number - i) >= SECTORS_ONCE) ? SECTORS_ONCE : (number - i);
+            ret_size    += rw_vdisk(drive, lba + i,
+                                    (uint8_t *)((uint64_t)buffer + i * vdisk_ctl[drive].sector_size),
+                                    sectors, 0);
         }
-    }
+        return ret_size;
+    } else
+        return 0;
 }
 
 int vdisk_init() {
