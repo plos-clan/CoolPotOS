@@ -5,9 +5,10 @@
 #define MSR_LSTAR        0xC0000082 // LSTAR MSR寄存器
 #define MSR_SYSCALL_MASK 0xC0000084
 
-#define MAX_SYSCALLS    256
-#define SYSCALL_SUCCESS EOK
-#define SYSCALL_FAULT   ((uint64_t)-(ENOSYS))
+#define MAX_SYSCALLS         256
+#define SYSCALL_SUCCESS      EOK
+#define SYSCALL_FAULT        ((uint64_t)-(ENOSYS))
+#define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 
 #define syscall_(name)                                                                             \
     uint64_t syscall_##name(                                                                       \

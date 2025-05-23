@@ -72,9 +72,23 @@ static size_t stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t l
     size_t i = 0;
     for (; i < number; i++) {
         char c = (char)kernel_getch();
-        if (get_current_task()->parent_group->tty->mode == ECHO) printk("%c", c);
+        if (c == 0x7f) { c = '\b'; }
+        if (c == 0x9) { c = '\t'; }
+        if (get_current_task()->parent_group->tty->mode == ECHO) {
+            if (c == '\b') {
+                if (i > 0) {
+                    printk("\b \b");
+                    buffer[i--] = '\0';
+                    i--;
+                }
+                continue;
+            } else
+                printk("%c", c);
+        }
         if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;
+            i++;
+            if (get_current_task()->parent_group->tty->mode == ECHO && c == '\r') printk("\n");
             break;
         }
         buffer[i] = c;
