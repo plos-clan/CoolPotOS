@@ -113,6 +113,7 @@ struct thread_control_block {
     uint64_t fs_base; // fs段基址
     uint64_t gs_base; // gs段基址
     uint64_t fs, gs;
+    uint64_t fs_base0, gs_base0;
 
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引
