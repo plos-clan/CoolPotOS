@@ -380,6 +380,22 @@ syscall_(writev) {
     return total;
 }
 
+syscall_(readv) {
+    int fd = (int)arg0;
+    if (fd < 0 || arg1 == 0) return ENODEV;
+    if (arg2 == 0) return SYSCALL_SUCCESS;
+    int           iovcnt = arg2;
+    struct iovec *iov    = (struct iovec *)arg1;
+    vfs_node_t    node   = queue_get(get_current_task()->parent_group->file_open, fd);
+    ssize_t       total  = 0;
+    for (int i = 0; i < iovcnt; i++) {
+        int status = vfs_read(node, iov[i].iov_base, 0, iov[i].iov_len);
+        if (status == VFS_STATUS_FAILED) return total;
+        total += iov[i].iov_len;
+    }
+    return total;
+}
+
 syscall_(debug_print) {
     char *str = (char *)arg0;
     if (str == NULL) return SYSCALL_FAULT;
@@ -409,6 +425,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_NANO_SLEEP]  = syscall_nano_sleep,
     [SYSCALL_IOCTL]       = syscall_ioctl,
     [SYSCALL_WRITEV]      = syscall_writev,
+    [SYSCALL_READV]       = syscall_readv,
     [SYSCALL_DEBUG_PRINT] = syscall_debug_print,
 };
 // clang-format on

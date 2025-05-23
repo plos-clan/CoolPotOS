@@ -68,8 +68,9 @@ tty_t *get_default_tty() {
     return defualt_tty;
 }
 
-static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
-    for (size_t i = 0; i < number; i++) {
+static size_t stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+    size_t i = 0;
+    for (; i < number; i++) {
         char c = (char)kernel_getch();
         if (get_current_task()->parent_group->tty->mode == ECHO) printk("%c", c);
         if (c == '\n' || c == '\r') {
@@ -78,9 +79,10 @@ static void stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba
         }
         buffer[i] = c;
     }
+    return i;
 }
 
-static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+static size_t stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     tty_t *tty;
     if (get_current_task() == NULL) {
         tty = get_default_tty();
@@ -90,6 +92,8 @@ static void stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t l
     for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }
+
+    return number;
 }
 
 static void tty_ioctl(size_t req, void *arg) {}

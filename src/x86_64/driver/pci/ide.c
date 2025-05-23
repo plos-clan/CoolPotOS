@@ -446,11 +446,14 @@ void ide_write_sectors(uint8_t drive, uint8_t numsects, uint32_t lba, uint16_t e
     }
 }
 
-static void Read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+static size_t Read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     ide_read_sectors(drive_mapping[drive], number, lba, 1 * 8, (uint32_t)buffer);
+    return number * SECTORS_ONCE;
 }
-static void Write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+
+static size_t Write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     ide_write_sectors(drive_mapping[drive], number, lba, 1 * 8, (uint32_t)buffer);
+    return number * SECTORS_ONCE;
 }
 
 void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, uint32_t BAR4) {

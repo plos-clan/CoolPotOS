@@ -10,8 +10,8 @@ typedef enum {
 } vdisk_flag_t;
 
 typedef struct {
-    void (*read)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
-    void (*write)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
+    size_t (*read)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
+    size_t (*write)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
     void (*ioctl)(size_t req, void *handle);
     int          flag;
     uint32_t     size;        // 大小
@@ -28,7 +28,7 @@ int      vdisk_init();
  * @param vd 硬盘设备
  * @return 注册编号
  */
-int  regist_vdisk(vdisk vd);
-bool have_vdisk(int drive);
-void vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive);
-void vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive);
+int    regist_vdisk(vdisk vd);
+bool   have_vdisk(int drive);
+size_t vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive);
+size_t vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive);

@@ -49,13 +49,17 @@ static void modfs_open(void *parent, const char *name, vfs_node_t node) {
     node->size       = mod->size;
 }
 
-static int modfs_read(void *file, void *addr, size_t offset, size_t size) {
+static size_t modfs_read(void *file, void *addr, size_t offset, size_t size) {
     if (file == NULL) return VFS_STATUS_FAILED;
     cp_module_t *mod = (cp_module_t *)file;
     if (offset + size > mod->size) { return VFS_STATUS_FAILED; }
     void *buffer = mod->data + offset;
     memcpy(addr, buffer, size);
-    return VFS_STATUS_SUCCESS;
+    return size;
+}
+
+static size_t modfs_write(void *file, const void *addr, size_t offset, size_t size) {
+    return VFS_STATUS_FAILED;
 }
 
 static struct vfs_callback modfs_callbacks = {
@@ -66,7 +70,7 @@ static struct vfs_callback modfs_callbacks = {
     .stat    = modfs_stat,
     .open    = modfs_open,
     .read    = modfs_read,
-    .write   = (void *)empty,
+    .write   = modfs_write,
     .mkfile  = (void *)empty,
     .ioctl   = (void *)empty,
 };
