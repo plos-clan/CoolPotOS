@@ -14,8 +14,6 @@
 #include "time.h"
 #include "vfs.h"
 
-extern void asm_syscall_entry();
-
 extern lock_queue *pgb_queue;
 
 USED uint64_t get_kernel_stack() {
@@ -165,7 +163,7 @@ syscall_(abort) {
 
 syscall_(open) {
     char *path = (char *)arg0;
-    if (path == NULL) return -1;
+    if (path == NULL) return SYSCALL_FAULT_(EINVAL);
     logkf("syscall open: %s\n", path);
 
     vfs_node_t node  = vfs_open(path);
@@ -174,14 +172,14 @@ syscall_(open) {
     if (index == -1) {
         logkf("syscall open: %s failed.\n", path);
         vfs_free(node);
-        return SYSCALL_FAULT;
+        return SYSCALL_FAULT_(ENOENT);
     }
     return index;
 }
 
 syscall_(close) {
     int fd = (int)arg0;
-    if (fd < 0) return SYSCALL_FAULT;
+    if (fd < 0) return SYSCALL_FAULT_(EINVAL);
     vfs_node_t node = (vfs_node_t)queue_remove_at(get_current_task()->parent_group->file_open, fd);
     vfs_free(node);
     return SYSCALL_SUCCESS;
@@ -189,7 +187,7 @@ syscall_(close) {
 
 syscall_(write) {
     int fd = (int)arg0;
-    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT;
+    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
     if (arg2 == 0) return SYSCALL_SUCCESS;
     uint8_t   *buffer = (uint8_t *)arg1;
     vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
@@ -198,7 +196,7 @@ syscall_(write) {
 
 syscall_(read) {
     int fd = (int)arg0;
-    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT;
+    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
     if (arg2 == 0) return SYSCALL_SUCCESS;
     uint8_t   *buffer = (uint8_t *)arg1;
     vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
@@ -208,8 +206,8 @@ syscall_(read) {
 
 syscall_(waitpid) {
     int pid = arg0;
-    if (pid < 0 || arg1 == 0) return SYSCALL_FAULT;
-    if (found_pcb(pid) == NULL) return SYSCALL_FAULT;
+    if (pid < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
+    if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ESRCH);
     int *status = (int *)arg1;
     *status     = waitpid(pid);
     return SYSCALL_SUCCESS;
@@ -224,14 +222,15 @@ syscall_(mmap) {
     uint64_t offset = arg5;
 
     uint64_t aligned_len = PADDING_UP(length, PAGE_SIZE);
-    if (aligned_len == 0) { return (uint64_t)-EINVAL; }
+    if (aligned_len == 0) { return SYSCALL_FAULT_(EINVAL); }
+
     if (addr == 0) {
         addr   = get_current_task()->parent_group->mmap_start;
         flags &= (~MAP_FIXED);
         get_current_task()->parent_group->mmap_start += aligned_len;
         if (get_current_task()->parent_group->mmap_start > USER_MMAP_END) {
             get_current_task()->parent_group->mmap_start -= aligned_len;
-            return (uint64_t)-ENOMEM;
+            return SYSCALL_FAULT_(ENOMEM);
         }
     }
 
@@ -240,8 +239,8 @@ syscall_(mmap) {
 
     get_current_task()->parent_group->mmap_start += (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
-    if (addr > KERNEL_AREA_MEM) return (uint64_t)-EACCES; // 不允许映射到内核地址空间
-    if (!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT;
+    if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES); // 不允许映射到内核地址空间
+    if (!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT_(EINVAL);
     uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
 
     for (size_t i = 0; i < count; i++) {
@@ -261,8 +260,10 @@ syscall_(mmap) {
 
     if (fd > 2) {
         vfs_node_t file = (vfs_node_t)queue_get(get_current_task()->parent_group->file_open, fd);
-        if (!file) return -EBADF;
+        if (!file) return SYSCALL_FAULT_(EBADF);
         vfs_read(file, (void *)addr, offset, length);
+    } else {
+        memset((void *)addr, 0, length);
     }
 
     return addr;
@@ -270,9 +271,9 @@ syscall_(mmap) {
 
 syscall_(signal) {
     int sig = arg0;
-    if (sig < 0 || sig >= MAX_SIGNALS) return SYSCALL_FAULT;
+    if (sig < 0 || sig >= MAX_SIGNALS) return SYSCALL_FAULT_(EINVAL);
     void *handler = (void *)arg1;
-    if (handler == NULL) return SYSCALL_FAULT;
+    if (handler == NULL) return SYSCALL_FAULT_(EINVAL);
     logkf("Signal syscall: %p\n", handler);
     register_signal(get_current_task()->parent_group, sig, handler);
     return SYSCALL_SUCCESS;
@@ -293,7 +294,7 @@ syscall_(prctl) {
 
 syscall_(size) {
     int fd = (int)arg0;
-    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT;
+    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
     vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
     return node->size;
 }
@@ -303,7 +304,7 @@ syscall_(clone) {
     uint64_t stack = arg1;
     uint64_t pt    = arg2;
     //TODO 待实现
-    return SYSCALL_FAULT;
+    return SYSCALL_FAULT_(ENOSYS);
 }
 
 syscall_(arch_prctl) {
@@ -366,7 +367,7 @@ syscall_(ioctl) {
 
 syscall_(writev) {
     int fd = (int)arg0;
-    if (fd < 0 || arg1 == 0) return ENODEV;
+    if (fd < 0 || arg1 == 0) return -(uint64_t)ENOSTR;
     if (arg2 == 0) return SYSCALL_SUCCESS;
     int           iovcnt = arg2;
     struct iovec *iov    = (struct iovec *)arg1;
@@ -440,27 +441,25 @@ USED void syscall_handler(struct syscall_regs *regs,
     regs->es     = (0x18 | 0x3);
     regs->rsp    = (uint64_t)(user_regs + 1);
     write_fsbase((uint64_t)get_current_task());
-    get_current_task()->fs_base0 = (uint64_t)get_current_task();
-    uint64_t syscall_id          = regs->rax & 0xFFFFFFFF;
+    uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9);
     } else
         regs->rax = SYSCALL_FAULT;
-    get_current_task()->fs_base0 = (uint64_t)get_current_task()->fs_base;
-    write_fsbase(get_current_task()->fs_base0);
+    write_fsbase(get_current_task()->fs_base);
 }
 
 USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
-    write_fsbase((uint64_t)get_current_task());
     open_interrupt;
+    write_fsbase((uint64_t)get_current_task());
     size_t syscall_id = reg->rax;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rdi, reg->rsi, reg->rdx, reg->r10,
                                                              reg->r8, reg->r9);
     } else
         reg->rax = SYSCALL_FAULT;
-    write_fsbase(get_current_task()->fs_base0);
+    write_fsbase(get_current_task()->fs_base);
     return reg;
 }
 
