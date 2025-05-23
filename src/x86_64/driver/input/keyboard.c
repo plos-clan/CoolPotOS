@@ -1,14 +1,11 @@
 #include "keyboard.h"
 #include "atom_queue.h"
-#include "heap.h"
 #include "io.h"
-#include "ipc.h"
 #include "isr.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
-#include "signal.h"
 #include "terminal.h"
 
 static int         caps_lock, shift, ctrl = 0;
@@ -55,8 +52,6 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         send_eoi();
         return;
     }
-
-    if (scancode == 0xaa) { send_signal(2, SIGINT); }
 
     /* temp solution until can pass all scancode to threads */
     terminal_handle_keyboard(scancode);

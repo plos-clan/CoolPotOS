@@ -78,18 +78,15 @@ int get_all_task() {
 
 void change_current_tcb(tcb_t new_tcb) {
     ((smp_cpu_t *)read_kgsbase())->current_pcb = new_tcb;
-    write_fsbase((uint64_t)new_tcb);
+    //write_fsbase((uint64_t)new_tcb);
 }
 
 void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     switch_page_directory(target->parent_group->page_dir);
     set_kernel_stack(target->kernel_stack);
 
-    __asm__ __volatile__("movq %%fs, %0\n\t" : "=r"(current_task0->fs));
-    current_task0->fs_base0 = read_fsbase();
-
     __asm__ __volatile__("movq %0, %%fs\n\t" ::"r"(target->fs));
-    write_fsbase(target->fs_base0);
+    write_fsbase(target->fs_base);
 
     save_fpu_context(&current_task0->fpu_context);
     restore_fpu_context(&target->fpu_context);
@@ -158,6 +155,9 @@ void scheduler(registers_t *reg) {
         spin_unlock(scheduler_lock);
         return;
     }
+
+    write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上
+
     tcb->cpu_clock++;
     if (tcb->time_buf != NULL) {
         tcb->cpu_timer += get_time(tcb->time_buf);
@@ -168,6 +168,7 @@ void scheduler(registers_t *reg) {
     // 下一任务选取
     tcb_t next;
     if (cpu->scheduler_queue->size == 1) {
+        write_fsbase(get_current_task()->fs_base); // 没有进行任务切换，再换回来
         spin_unlock(scheduler_lock);
         return;
     }
@@ -214,6 +215,7 @@ void scheduler(registers_t *reg) {
         change_proccess(reg, cpu->current_pcb, next);
         change_current_tcb(next);
         enable_scheduler();
-    }
+    } else
+        write_fsbase(get_current_task()->fs_base); // 同样，没切任务，换回来
     spin_unlock(scheduler_lock);
 }
