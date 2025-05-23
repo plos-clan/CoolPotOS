@@ -48,7 +48,7 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     node->size = disk_size((int)(uint64_t)node->handle);
 }
 
-static int devfs_read(void *file, void *addr, size_t offset, size_t size) {
+static size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
     int    dev_id = (int)(uint64_t)file;
     size_t sector_size;
     size_t sectors_to_do;
@@ -78,10 +78,10 @@ read:
     vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
     memcpy(addr, buf, size);
     free(buf);
-    return VFS_STATUS_SUCCESS;
+    return size;
 }
 
-static int devfs_write(void *file, const void *addr, size_t offset, size_t size) {
+static size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
     int    dev_id = (int)(uint64_t)file;
     size_t sector_size;
     size_t sectors_to_do;
@@ -108,7 +108,7 @@ write:
     memcpy(buf, addr, size);
     vdisk_write(offset / sector_size, sectors_to_do, buf, dev_id);
     free(buf);
-    return VFS_STATUS_SUCCESS;
+    return size;
 }
 
 static int devfs_ioctl(void *file, size_t req, void *arg) {

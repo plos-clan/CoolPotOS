@@ -23,8 +23,8 @@ typedef void (*vfs_close_t)(void *current);
 typedef void (*vfs_resize_t)(void *current, uint64_t size);
 
 // 读写一个文件
-typedef int (*vfs_write_t)(void *file, const void *addr, size_t offset, size_t size);
-typedef int (*vfs_read_t)(void *file, void *addr, size_t offset, size_t size);
+typedef size_t (*vfs_write_t)(void *file, const void *addr, size_t offset, size_t size);
+typedef size_t (*vfs_read_t)(void *file, void *addr, size_t offset, size_t size);
 typedef int (*vfs_ioctl_t)(void *file, size_t req, void *arg);
 typedef int (*vfs_stat_t)(void *file, vfs_node_t node);
 
@@ -94,8 +94,8 @@ vfs_node_t vfs_open(const char *str); // 打开一个节点
 int        vfs_ioctl(vfs_node_t device, size_t options, void *arg);
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
-int        vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
-int        vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
+size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
+size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 int        vfs_mount(const char *src, vfs_node_t node); // 挂载指定设备至指定节点
 int        vfs_unmount(const char *path);               // 卸载指定设备的挂载点
 vfs_node_t get_rootdir();                               // 获取根节点
