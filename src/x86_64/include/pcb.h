@@ -111,8 +111,9 @@ struct thread_control_block {
     uint64_t      user_stack;   // 用户栈
     uint64_t      mem_usage;    // 内存利用率
 
-    uint64_t fs_base; // fs段基址
-    uint64_t gs_base; // gs段基址
+    uint64_t tid_address; // 线程ID地址
+    uint64_t fs_base;     // fs段基址
+    uint64_t gs_base;     // gs段基址
     uint64_t fs, gs;
 
     size_t queue_index; // 调度队列索引
