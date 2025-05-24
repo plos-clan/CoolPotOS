@@ -378,16 +378,33 @@ syscall_(readv) {
     int fd = (int)arg0;
     if (fd < 0 || arg1 == 0) return ENODEV;
     if (arg2 == 0) return SYSCALL_SUCCESS;
-    int           iovcnt = arg2;
+    size_t        iovcnt = arg2;
     struct iovec *iov    = (struct iovec *)arg1;
     vfs_node_t    node   = queue_get(get_current_task()->parent_group->file_open, fd);
-    ssize_t       total  = 0;
-    for (int i = 0; i < iovcnt; i++) {
-        int status = vfs_read(node, iov[i].iov_base, 0, iov[i].iov_len);
-        if (status == VFS_STATUS_FAILED) return total;
-        total += iov[i].iov_len;
+    logkf("readv: %d\n", iovcnt);
+    size_t buf_len = 0;
+    for (size_t i = 0; i < iovcnt; i++) {
+        buf_len += iov[i].iov_len;
     }
-    return total;
+    uint8_t *buf    = (uint8_t *)malloc(buf_len);
+    size_t   status = vfs_read(node, buf, 0, buf_len);
+    if (status == (size_t)VFS_STATUS_FAILED) {
+        free(buf);
+        return SYSCALL_FAULT_(EIO);
+    }
+    size_t copied = 0;
+    for (size_t i = 0; i < iovcnt; i++) {
+        size_t len = iov[i].iov_len;
+        if (len == 0) continue;
+
+        size_t to_copy = len;
+        if (copied + to_copy > status) { to_copy = status - copied; }
+
+        memcpy(iov[i].iov_base, buf + copied, to_copy);
+        copied += to_copy;
+    }
+    free(buf);
+    return status;
 }
 
 syscall_(munmap) {
@@ -483,6 +500,14 @@ syscall_(poll) {
     return num_ready;
 }
 
+syscall_(set_tid_address) {
+    int *tidptr = (int *)arg0;
+    if (tidptr == NULL) return SYSCALL_FAULT_(EINVAL);
+    tcb_t thread        = get_current_task();
+    thread->tid_address = (uint64_t)tidptr;
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -511,6 +536,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETCWD]      = syscall_getcwd,
     [SYSCALL_CHDIR]       = syscall_chdir,
     [SYSCALL_POLL]        = syscall_poll,
+    [SYSCALL_SETID_ADDR]  = syscall_set_tid_address,
 };
 // clang-format on
 
@@ -531,7 +557,7 @@ USED void syscall_handler(struct syscall_regs *regs,
                                                               regs->r10, regs->r8, regs->r9);
     } else
         regs->rax = SYSCALL_FAULT;
-    // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
+    logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
     write_fsbase(get_current_task()->fs_base);
 }
 

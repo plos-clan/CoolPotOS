@@ -221,7 +221,12 @@ void kill_thread(tcb_t task) {
 
 void kill_thread0(tcb_t task) {
     if (task->time_buf != NULL) free(task->time_buf);
-    task->status = OUT;
+    task->status              = OUT;
+    page_directory_t *src_dir = get_current_directory();
+    switch_process_page_directory(task->parent_group->page_dir);
+    int *tid_addr = (int *)task->tid_address;
+    if (tid_addr != NULL) *tid_addr = 0;
+    switch_process_page_directory(src_dir);
     remove_task(task);
 }
 
