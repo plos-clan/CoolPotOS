@@ -397,6 +397,28 @@ syscall_(readv) {
     return total;
 }
 
+syscall_(munmap) {
+
+    return SYSCALL_FAULT_(ENOSYS);
+}
+
+syscall_(mremap) {
+    return SYSCALL_FAULT_(ENOSYS);
+}
+
+syscall_(getcwd) {
+    char  *buffer = (char *)arg0;
+    size_t length = arg1;
+    if (buffer == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (length == 0) return SYSCALL_SUCCESS;
+    pcb_t  process  = get_current_task()->parent_group;
+    char  *cwd      = process->cwd;
+    size_t cwd_leng = strlen(cwd);
+    if (length > cwd_leng) length = cwd_leng;
+    memcpy(buffer, cwd, length);
+    return length;
+}
+
 syscall_(debug_print) {
     char *str = (char *)arg0;
     if (str == NULL) return SYSCALL_FAULT;
@@ -427,6 +449,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_IOCTL]       = syscall_ioctl,
     [SYSCALL_WRITEV]      = syscall_writev,
     [SYSCALL_READV]       = syscall_readv,
+    [SYSCALL_MUNMAP]      = syscall_munmap,
+    [SYSCALL_MREMAP]      = syscall_mremap,
+    [SYSCALL_GETCWD]      = syscall_getcwd,
     [SYSCALL_DEBUG_PRINT] = syscall_debug_print,
 };
 // clang-format on

@@ -27,7 +27,7 @@ extern void cp_reset();
 extern lock_queue *pgb_queue;
 extern atom_queue *temp_keyboard_buffer;
 
-static char    *current_path;
+static pcb_t    shell_process;
 extern uint64_t memory_size; // hhdm.c
 
 static inline int isprint_syshell(int c) {
@@ -87,7 +87,7 @@ static void cd(int argc, char **argv) {
     if (s[0] == '/') {
         path = strdup(s);
     } else {
-        path = pathacat(current_path, s);
+        path = pathacat(shell_process->cwd, s);
     }
 
     char *normalized_path = normalize_path(path);
@@ -106,7 +106,7 @@ static void cd(int argc, char **argv) {
     }
 
     if (node->type == file_dir) {
-        strcpy(current_path, normalized_path);
+        strcpy(shell_process->cwd, normalized_path);
     } else {
         printk("cd: %s: Not a directory\n", s);
     }
@@ -123,7 +123,7 @@ static void mkdir(int argc, char **argv) {
     if (argv[1][0] == '/') {
         path = strdup(argv[1]);
     } else {
-        path = pathacat(current_path, argv[1]);
+        path = pathacat(shell_process->cwd, argv[1]);
     }
     if (vfs_mkdir(path) == -1) { printk("mkdir: Failed create directory [%s].\n", path); }
     free(path);
@@ -230,12 +230,12 @@ void ps(int argc, char **argv) {
 static void ls(int argc, char **argv) {
     vfs_node_t p;
     if (argc == 1) {
-        p = vfs_open(current_path);
+        p = vfs_open(shell_process->cwd);
     } else {
         if (argv[1][0] == '/') {
             p = vfs_open(argv[1]);
         } else {
-            char *path = pathacat(current_path, argv[1]);
+            char *path = pathacat(shell_process->cwd, argv[1]);
             p          = vfs_open(path);
             free(path);
         }
@@ -380,7 +380,7 @@ static void exec(int argc, char **argv) {
         if (i != argc - 1) strcat(result, " ");
     }
 
-    pcb_t user_task       = create_process_group(name, up, user_handle, result);
+    pcb_t user_task       = create_process_group(name, up, user_handle, result, shell_process);
     user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);
 
@@ -580,7 +580,7 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
     }
 
     if (buf[0] == '\0') {
-        vfs_node_t p = vfs_open(current_path);
+        vfs_node_t p = vfs_open(shell_process->cwd);
         if (!p) return;
         list_foreach(p->child, i) {
             vfs_node_t c = (vfs_node_t)i->data;
@@ -604,7 +604,7 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
         free(path);
     } else {
         char *path      = truncate_path(buf, true);
-        char *full_path = pathacat(current_path, path);
+        char *full_path = pathacat(shell_process->cwd, path);
 
         vfs_node_t p = vfs_open(full_path);
         if (!p) {
@@ -640,16 +640,16 @@ _Noreturn void shell_setup() {
     char     prompt[128];
     uint8_t *argv[MAX_ARG_NR];
 
-    current_path = malloc(1024);
-    not_null_assets(current_path, "work path null");
-    memset(current_path, 0, 1024);
-    current_path[0] = '/';
+    shell_process = get_current_task()->parent_group;
+
+    memset(shell_process->cwd, 0, 1024);
+    shell_process->cwd[0] = '/';
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
     loop {
         char *template = "\033[01;32m%s\033[0m@\033[01;32mlocalhost: \033[34m%s>\033[0m ";
-        sprintf(prompt, template, user_name, current_path);
+        sprintf(prompt, template, user_name, shell_process->cwd);
 
         const char *cmd = pl_readline(pl, prompt);
         if (cmd[0] == 0) continue;

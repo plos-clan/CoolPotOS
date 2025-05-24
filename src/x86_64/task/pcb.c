@@ -199,6 +199,7 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->file_open);
     queue_destroy(pcb->ipc_queue);
     free(pcb->cmdline);
+    free(pcb->cwd);
     free_tty(pcb->tty);
     free_page_directory(pcb->page_dir);
     free(pcb);
@@ -263,24 +264,28 @@ void kill_all_proc() {
 }
 
 pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle,
-                           char *cmdline) {
+                           char *cmdline, pcb_t parent_process) {
     pcb_t new_pgb = malloc(sizeof(struct process_control_block));
     memset(new_pgb, 0, sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
     strcpy(new_pgb->name, name);
-    new_pgb->pcb_queue  = queue_init();
-    new_pgb->pid_index  = 0;
-    new_pgb->ipc_queue  = queue_init();
-    new_pgb->file_open  = queue_init();
-    new_pgb->tty        = alloc_default_tty();
-    new_pgb->task_level = TASK_KERNEL_LEVEL;
-    new_pgb->cmdline    = malloc(strlen(cmdline));
+    new_pgb->parent_task = parent_process == NULL ? kernel_group : parent_process;
+    new_pgb->pcb_queue   = queue_init();
+    new_pgb->pid_index   = 0;
+    new_pgb->ipc_queue   = queue_init();
+    new_pgb->file_open   = queue_init();
+    new_pgb->tty         = alloc_default_tty();
+    new_pgb->task_level  = TASK_KERNEL_LEVEL;
+    new_pgb->cmdline     = malloc(strlen(cmdline));
     strcpy(new_pgb->cmdline, cmdline);
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
-    new_pgb->mmap_start  = USER_MMAP_START;
+    new_pgb->cwd         = malloc(1024);
+    memset(new_pgb->cwd, 0, 1024);
+    memcpy(new_pgb->parent_task->cwd, new_pgb->cwd, strlen(new_pgb->parent_task->cwd));
+    new_pgb->mmap_start = USER_MMAP_START;
     spin_unlock(pgb_queue->lock);
     new_pgb->status = START;
     return new_pgb;
@@ -422,6 +427,9 @@ void init_pcb() {
     kernel_group->ipc_queue                        = queue_init();
     kernel_group->parent_task                      = kernel_group;
     kernel_group->task_level                       = TASK_KERNEL_LEVEL;
+    kernel_group->cwd                              = malloc(1024);
+    memset(kernel_group->cwd, 0, 1024);
+    kernel_group->cwd[0] = '/';
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;
