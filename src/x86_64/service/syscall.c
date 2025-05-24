@@ -452,6 +452,37 @@ syscall_(exit_group) {
     cpu_hlt;
 }
 
+syscall_(poll) {
+    struct pollfd *fds_user = (struct pollfd *)arg0;
+    size_t         nfds     = arg1;
+    int            timeout  = arg2;
+    UNUSED(timeout); //TODO 设备状态超时等待
+
+    struct pollfd *local_fds = (struct pollfd *)malloc(sizeof(struct pollfd) * nfds);
+    memcpy(fds_user, local_fds, sizeof(struct pollfd) * nfds);
+
+    int num_ready = 0;
+    for (size_t i = 0; i < nfds; ++i) {
+        vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, local_fds[i].fd);
+        if (node == NULL) {
+            local_fds[i].revents = POLLNVAL;
+            num_ready++;
+            continue;
+        }
+        short revents = 0;
+
+        if ((local_fds[i].events & POLLIN)) revents |= POLLIN;
+
+        if ((local_fds[i].events & POLLOUT)) revents |= POLLOUT;
+
+        local_fds[i].revents = revents;
+
+        if (revents) num_ready++;
+    }
+
+    return num_ready;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -479,6 +510,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_MREMAP]      = syscall_mremap,
     [SYSCALL_GETCWD]      = syscall_getcwd,
     [SYSCALL_CHDIR]       = syscall_chdir,
+    [SYSCALL_POLL]        = syscall_poll,
 };
 // clang-format on
 
