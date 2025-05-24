@@ -41,7 +41,7 @@
 #define SYSCALL_NANO_SLEEP 35
 #define SYSCALL_GETPID     39
 #define SYSCALL_CLONE      56
-#define SYSCALL_ABORT      59
+
 #define SYSCALL_EXIT       60
 #define SYSCALL_WAITPID    61
 #define SYSCALL_UNAME      63
@@ -49,8 +49,7 @@
 #define SYSCALL_CHDIR      80
 #define SYSCALL_PRCTL      157
 #define SYSCALL_ARCH_PRCTL 158
-
-#define SYSCALL_DEBUG_PRINT 200
+#define SYSCALL_EXIT_GROUP 231
 
 #include "ctype.h"
 

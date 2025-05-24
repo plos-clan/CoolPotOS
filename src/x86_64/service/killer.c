@@ -1,9 +1,11 @@
 #include "killer.h"
 #include "heap.h"
+#include "klog.h"
 #include "lock_queue.h"
 #include "smp.h"
 
-lock_queue *death_proc_queue; // 死亡进程队列
+lock_queue        *death_proc_queue; // 死亡进程队列
+extern lock_queue *pgb_queue;
 
 _Noreturn void halt_service() {
     loop {
@@ -27,10 +29,27 @@ _Noreturn void halt_service() {
 
 _Noreturn void killer_service() {
     loop {
+        // 释放无线程进程
+        spin_lock(pgb_queue->lock);
+        pcb_t death_proc = NULL;
+        queue_foreach(pgb_queue, node) {
+            pcb_t process = (pcb_t)node->data;
+            if (process == NULL) continue;
+            if (process->pcb_queue->size == 0 && process->status == RUNNING) {
+                death_proc = process;
+            }
+        }
+        spin_unlock(pgb_queue->lock);
+        if (death_proc != NULL) {
+            logkf("Process %s has no thread, kill it.\n", death_proc->name);
+            kill_proc(death_proc, 0);
+        }
         if (death_proc_queue->size == 0) {
             __asm__ volatile("pause" ::: "memory");
             continue;
         }
+
+        // 释放死亡进程
         pcb_t task = NULL;
         queue_foreach(death_proc_queue, node) {
             task = (pcb_t)node->data;
