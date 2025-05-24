@@ -22,6 +22,15 @@
 #define ARCH_SET_GS 0x1004
 #define ARCH_GET_GS 0x1005
 
+// poll 系统调用标志
+#define POLLIN  0x0001 // 有数据可读
+#define POLLPRI 0x0002 // 有紧急数据可读（如 socket 的带外数据）
+#define POLLOUT 0x0004 // 写操作不会阻塞（可写）
+
+#define POLLERR  0x0008 // 错误（不需要设置，由内核返回）
+#define POLLHUP  0x0010 // 挂起（对端关闭）
+#define POLLNVAL 0x0020 // fd 无效（文件描述符非法）
+
 // Linux 兼容层系统调用编号定义
 #define SYSCALL_READ       0
 #define SYSCALL_WRITE      1
@@ -30,6 +39,7 @@
 #define SYSCALL_STAT       4
 #define SYSCALL_FSTAT      5
 #define SYSCALL_LSTAT      6
+#define SYSCALL_POLL       7
 #define SYSCALL_MMAP       9
 #define SYSCALL_MUNMAP     11
 #define SYSCALL_SIGRET     15
@@ -92,6 +102,12 @@ struct utsname {
 struct iovec {
     void  *iov_base;
     size_t iov_len;
+};
+
+struct pollfd {
+    int   fd;
+    short events;
+    short revents;
 };
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
