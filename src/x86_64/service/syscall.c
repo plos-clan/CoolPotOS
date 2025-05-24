@@ -148,15 +148,8 @@ static inline void enable_syscall() {
 
 syscall_(exit) {
     int exit_code = arg0;
-    logkf("Process %s exit with code %d.\n", get_current_task()->parent_group->name, exit_code);
-    kill_proc(get_current_task()->parent_group, exit_code);
-    cpu_hlt;
-    return SYSCALL_SUCCESS;
-}
-
-syscall_(abort) {
-    logkf("Process %s abort.\n", get_current_task()->parent_group->name);
-    kill_proc(get_current_task()->parent_group, -1);
+    logkf("Thread %s exit with code %d.\n", get_current_task()->name, exit_code);
+    kill_thread(get_current_task());
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
@@ -452,17 +445,17 @@ syscall_(chdir) {
     return SYSCALL_SUCCESS;
 }
 
-syscall_(debug_print) {
-    char *str = (char *)arg0;
-    if (str == NULL) return SYSCALL_FAULT;
-    logkf("%s\n", str);
-    return SYSCALL_SUCCESS;
+syscall_(exit_group) {
+    int exit_code = arg0;
+    logkf("Process %s exit with code %d.\n", get_current_task()->parent_group->name, exit_code);
+    kill_proc(get_current_task()->parent_group, exit_code);
+    cpu_hlt;
 }
 
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
-    [SYSCALL_ABORT]       = syscall_abort,
+    [SYSCALL_EXIT_GROUP]  = syscall_exit_group,
     [SYSCALL_OPEN]        = syscall_open,
     [SYSCALL_CLOSE]       = syscall_close,
     [SYSCALL_WRITE]       = syscall_write,
@@ -486,7 +479,6 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_MREMAP]      = syscall_mremap,
     [SYSCALL_GETCWD]      = syscall_getcwd,
     [SYSCALL_CHDIR]       = syscall_chdir,
-    [SYSCALL_DEBUG_PRINT] = syscall_debug_print,
 };
 // clang-format on
 
@@ -501,11 +493,13 @@ USED void syscall_handler(struct syscall_regs *regs,
     regs->rsp    = (uint64_t)(user_regs + 1);
     write_fsbase((uint64_t)get_current_task());
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
+
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9);
     } else
         regs->rax = SYSCALL_FAULT;
+    // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
     write_fsbase(get_current_task()->fs_base);
 }
 
