@@ -308,3 +308,46 @@ int cmd_parse(const char *cmd_str, char **argv, char token) {
     }
     return argc;
 }
+
+char *normalize_path(const char *path) {
+    if (!path) return NULL;
+
+    size_t len    = strlen(path);
+    char  *result = malloc(len + 1);
+    if (!result) return NULL;
+
+    char *dup = strdup(path);
+    if (!dup) {
+        free(result);
+        return NULL;
+    }
+
+    strcpy(result, "/");
+    if (strcmp(path, "/") == 0) {
+        free(dup);
+        return result;
+    }
+
+    char *start = dup;
+    if (*start == '/') start++;
+
+    char *token = strtok(start, "/");
+    while (token) {
+        if (strcmp(token, ".") == 0) {
+        } else if (strcmp(token, "..") == 0) {
+            char *last_slash = strrchr(result, '/');
+            if (last_slash != result)
+                *last_slash = '\0';
+            else
+                result[1] = '\0';
+        } else {
+            if (result[strlen(result) - 1] != '/') strcat(result, "/");
+            strcat(result, token);
+        }
+
+        token = strtok(NULL, "/");
+    }
+
+    free(dup);
+    return result;
+}

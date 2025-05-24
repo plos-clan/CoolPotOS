@@ -80,6 +80,8 @@ char *pathacat(char *p1, char *p2);
 
 int cmd_parse(const char *cmd_str, char **argv, char token);
 
+char *normalize_path(const char *path);
+
 static inline bool are_interrupts_enabled() {
     uint64_t rflags;
     __asm__ volatile("pushfq\n\t"

@@ -46,6 +46,7 @@
 #define SYSCALL_WAITPID    61
 #define SYSCALL_UNAME      63
 #define SYSCALL_GETCWD     79
+#define SYSCALL_CHDIR      80
 #define SYSCALL_PRCTL      157
 #define SYSCALL_ARCH_PRCTL 158
 
