@@ -419,6 +419,39 @@ syscall_(getcwd) {
     return length;
 }
 
+syscall_(chdir) {
+    char *s = (char *)arg0;
+    if (s == NULL) return SYSCALL_FAULT_(EINVAL);
+    pcb_t process = get_current_task()->parent_group;
+
+    char *path;
+    if (s[0] == '/') {
+        path = strdup(s);
+    } else {
+        path = pathacat(process->cwd, s);
+    }
+
+    char *normalized_path = normalize_path(path);
+    free(path);
+
+    if (normalized_path == NULL) { return SYSCALL_FAULT_(ENOMEM); }
+
+    vfs_node_t node;
+    if ((node = vfs_open(normalized_path)) == NULL) {
+        free(normalized_path);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+
+    if (node->type == file_dir) {
+        strcpy(process->cwd, normalized_path);
+    } else {
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+
+    free(normalized_path);
+    return SYSCALL_SUCCESS;
+}
+
 syscall_(debug_print) {
     char *str = (char *)arg0;
     if (str == NULL) return SYSCALL_FAULT;
@@ -452,6 +485,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_MUNMAP]      = syscall_munmap,
     [SYSCALL_MREMAP]      = syscall_mremap,
     [SYSCALL_GETCWD]      = syscall_getcwd,
+    [SYSCALL_CHDIR]       = syscall_chdir,
     [SYSCALL_DEBUG_PRINT] = syscall_debug_print,
 };
 // clang-format on
