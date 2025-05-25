@@ -76,14 +76,14 @@ static size_t stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t l
         if (c == 0x9) { c = '\t'; }
         if (get_current_task()->parent_group->tty->mode == ECHO) {
             if (c == '\b') {
+                printk("\b \b");
                 if (i > 0) {
-                    printk("\b \b");
                     buffer[i--] = '\0';
                     i--;
                 }
                 continue;
-            } else
-                printk("%c", c);
+            }
+            printk("%c", c);
         }
         if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;

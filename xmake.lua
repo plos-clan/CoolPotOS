@@ -220,7 +220,7 @@ function arch_x86_64()
             local disk_template = "if=none,format=raw,id=disk,file="
             local flags = {
                 "-M", "q35", "-cpu", "qemu64,+x2apic", "-smp", "4",
-                "-serial", "stdio", "-m","1024M", "-no-reboot",
+                "-serial", "stdio", "-m","1024M", --"-no-reboot",
                 --"-enable-kvm",
                 --"-d", "in_asm",
                 --"-d", "in_asm,int",

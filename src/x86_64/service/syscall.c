@@ -557,7 +557,7 @@ USED void syscall_handler(struct syscall_regs *regs,
                                                               regs->r10, regs->r8, regs->r9);
     } else
         regs->rax = SYSCALL_FAULT;
-    logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
+    // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
     write_fsbase(get_current_task()->fs_base);
 }
 

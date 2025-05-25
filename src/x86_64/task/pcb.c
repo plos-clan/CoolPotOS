@@ -289,7 +289,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
     new_pgb->cwd         = malloc(1024);
     memset(new_pgb->cwd, 0, 1024);
-    memcpy(new_pgb->parent_task->cwd, new_pgb->cwd, strlen(new_pgb->parent_task->cwd));
+    strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
     new_pgb->mmap_start = USER_MMAP_START;
     spin_unlock(pgb_queue->lock);
     new_pgb->status = START;

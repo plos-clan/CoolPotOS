@@ -290,7 +290,7 @@ static void lmod(int argc, char **argv) {
 
     if (!strcmp(argv[1], "list")) {
         for (int i = 0; i < module_count; i++) {
-            printk("\033[1;36mModel(%s)\033[0m load in \033[1;34m%s\033[0m\n",
+            printk("\033[1;36mModule(%s)\033[0m load in \033[1;34m%s\033[0m\n",
                    module_ls[i].module_name, module_ls[i].path);
         }
     } else {
