@@ -1,7 +1,7 @@
 #include "tty.h"
+#include "atom_queue.h"
 #include "gop.h"
 #include "keyboard.h"
-#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -12,7 +12,8 @@
 
 tty_t        *defualt_tty = NULL;
 mpmc_queue_t *queue;
-spin_t        tty_lock = SPIN_INIT;
+spin_t        tty_lock          = SPIN_INIT;
+atom_queue   *temp_stdin_buffer = NULL;
 
 extern bool open_flush; // terminal.c
 
@@ -68,10 +69,15 @@ tty_t *get_default_tty() {
     return defualt_tty;
 }
 
+static int tty_getch() {
+    if (temp_stdin_buffer->size > 0) { return atom_pop(temp_stdin_buffer); }
+    return kernel_getch();
+}
+
 static size_t stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
     size_t i = 0;
     for (; i < number; i++) {
-        char c = (char)kernel_getch();
+        char c = (char)tty_getch();
         if (c == 0x7f) { c = '\b'; }
         if (c == 0x9) { c = '\t'; }
         if (get_current_task()->parent_group->tty->mode == ECHO) {
@@ -150,6 +156,7 @@ void init_tty() {
         free(queue);
         queue = NULL;
     }
+    temp_stdin_buffer = create_atom_queue(2048);
     build_tty_device();
     kinfo("Default tty device init done.");
 }

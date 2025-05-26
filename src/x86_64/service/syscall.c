@@ -211,7 +211,7 @@ syscall_(mmap) {
     size_t   length = arg1;
     uint64_t prot   = arg2;
     uint64_t flags  = arg3;
-    uint64_t fd     = arg4;
+    int      fd     = (int)arg4;
     uint64_t offset = arg5;
 
     uint64_t aligned_len = PADDING_UP(length, PAGE_SIZE);
