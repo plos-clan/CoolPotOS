@@ -243,12 +243,12 @@ syscall_(mmap) {
         if (prot & PROT_WRITE) { page_flags |= PTE_WRITEABLE; }
         if (prot & PROT_EXEC) { page_flags |= PTE_USER; }
 
-        if (flags & MAP_FIXED) {
-            page_map_to(get_current_directory(), page_addr, page_addr, page_flags);
-        } else {
-            uint64_t phys = alloc_frames(1);
-            page_map_to(get_current_directory(), page_addr, phys, page_flags);
-        }
+        //        if (flags & MAP_FIXED) {
+        //TODO 检查地址是否已被映射, 并分配空闲地址
+        //        } else {
+        uint64_t phys = alloc_frames(1);
+        page_map_to(get_current_directory(), page_addr, phys, page_flags);
+        //        }
     }
 
     if (fd > 2) {
@@ -508,6 +508,57 @@ syscall_(set_tid_address) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(sched_getaffinity) {
+    int    pid      = (int)arg0;
+    size_t set_size = (size_t)arg1;
+    return SYSCALL_FAULT_(ENOSYS);
+}
+
+syscall_(rt_sigprocmask) {
+    int       how        = (int)arg0;
+    sigset_t *set        = (sigset_t *)arg1;
+    sigset_t *oldset     = (sigset_t *)arg2;
+    size_t    sigsetsize = (size_t)arg3;
+    pcb_t     process    = get_current_task()->parent_group;
+
+    if (sigsetsize != sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
+
+    if (oldset) {
+        sigset_t old_mask = 0;
+        for (int i = 0; i < MAX_SIGNALS; ++i) {
+            if (process->task_signal.signal_mask[i]) { old_mask |= (1ULL << i); }
+        }
+        *oldset = old_mask;
+    }
+
+    if (set == NULL) { return SYSCALL_SUCCESS; }
+    sigset_t new_set = *set;
+
+    switch (how) {
+    case SIG_BLOCK:
+        for (int i = 0; i < MAX_SIGNALS; ++i) {
+            if (new_set & (1ULL << i)) { process->task_signal.signal_mask[i] = true; }
+        }
+        break;
+
+    case SIG_UNBLOCK:
+        for (int i = 0; i < MAX_SIGNALS; ++i) {
+            if (new_set & (1ULL << i)) { process->task_signal.signal_mask[i] = false; }
+        }
+        break;
+
+    case SIG_SETMASK:
+        for (int i = 0; i < MAX_SIGNALS; ++i) {
+            process->task_signal.signal_mask[i] = (new_set & (1ULL << i)) != 0;
+        }
+        break;
+
+    default: return SYSCALL_FAULT_(EINVAL);
+    }
+
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -537,6 +588,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_CHDIR]       = syscall_chdir,
     [SYSCALL_POLL]        = syscall_poll,
     [SYSCALL_SETID_ADDR]  = syscall_set_tid_address,
+    [SYSCALL_G_AFFINITY]  = syscall_sched_getaffinity,
+    [SYSCALL_RT_SIGMASK]  = syscall_rt_sigprocmask,
 };
 // clang-format on
 
@@ -557,7 +610,7 @@ USED void syscall_handler(struct syscall_regs *regs,
                                                               regs->r10, regs->r8, regs->r9);
     } else
         regs->rax = SYSCALL_FAULT;
-    // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
+    logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
     write_fsbase(get_current_task()->fs_base);
 }
 

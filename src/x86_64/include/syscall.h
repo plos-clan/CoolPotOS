@@ -43,6 +43,7 @@
 #define SYSCALL_MMAP       9
 #define SYSCALL_MUNMAP     11
 /* #define SYSCALL_BRK  12  brk 系统调用不实现*/
+#define SYSCALL_RT_SIGMASK 13
 #define SYSCALL_SIGRET     15
 #define SYSCALL_IOCTL      16
 #define SYSCALL_READV      19
@@ -60,10 +61,12 @@
 #define SYSCALL_CHDIR      80
 #define SYSCALL_PRCTL      157
 #define SYSCALL_ARCH_PRCTL 158
+#define SYSCALL_G_AFFINITY 160
 #define SYSCALL_SETID_ADDR 218
 #define SYSCALL_EXIT_GROUP 231
 
 #include "ctype.h"
+#include "krlibc.h"
 
 struct syscall_regs {
     uint64_t r15;
@@ -111,6 +114,8 @@ struct pollfd {
     short events;
     short revents;
 };
+
+typedef uint64_t sigset_t;
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 

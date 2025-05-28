@@ -22,6 +22,12 @@
 #define SIGTTIN 21 // Background read from tty
 #define SIGTTOU 22 // Background write to tty
 
+#define SIG_BLOCK   0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
+
+#define HAS_SIGNAL(sigset, signum) (sigset & (1ULL << signum))
+
 #include "ctype.h"
 #include "errno.h"
 #include "krlibc.h"
@@ -30,9 +36,9 @@
 typedef struct signal_block signal_block_t;
 
 struct signal_block {
-    uint64_t pending_signals;         // 用 bitmap 表示待处理信号
-    void (*signal_handlers[64])(int); // 每个信号对应的用户处理器
-    bool signal_mask[64];             // 屏蔽的信号
+    uint64_t pending_signals;                  // 用 bitmap 表示待处理信号
+    void (*signal_handlers[MAX_SIGNALS])(int); // 每个信号对应的用户处理器
+    bool signal_mask[MAX_SIGNALS];             // 屏蔽的信号
 } __attribute__((packed));
 
 struct signal_frame {
