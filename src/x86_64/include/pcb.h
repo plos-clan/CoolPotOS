@@ -99,17 +99,18 @@ struct thread_control_block {
     TaskStatus status;       // 线程状态
     char       name[50];     // 线程名
 
-    uint64_t      cpu_clock;    // CPU 调度时间片
-    uint64_t      cpu_timer;    // CPU 占用时间
-    uint64_t      cpu_id;       // 由哪个CPU负责该线程运行
-    timer_t      *time_buf;     // 计时器句柄
-    TaskContext   context0;     // 线程上下文
-    fpu_context_t fpu_context;  // 浮点寄存器上下文
-    bool          fpu_flags;    // 浮点启用标志
-    uint64_t      main;         // 入口函数地址
-    uint64_t      kernel_stack; // 内核栈
-    uint64_t      user_stack;   // 用户栈
-    uint64_t      mem_usage;    // 内存利用率
+    uint64_t      cpu_clock;     // CPU 调度时间片
+    uint64_t      cpu_timer;     // CPU 占用时间
+    uint64_t      cpu_id;        // 由哪个CPU负责该线程运行
+    timer_t      *time_buf;      // 计时器句柄
+    TaskContext   context0;      // 线程上下文
+    fpu_context_t fpu_context;   // 浮点寄存器上下文
+    bool          fpu_flags;     // 浮点启用标志
+    uint64_t      main;          // 入口函数地址
+    uint64_t      kernel_stack;  // 内核栈
+    uint64_t      user_stack;    // 用户栈
+    uint64_t      mem_usage;     // 内存利用率
+    uint64_t      affinity_mask; // 线程亲和性掩码
 
     uint64_t tid_address; // 线程ID地址
     uint64_t fs_base;     // fs段基址
