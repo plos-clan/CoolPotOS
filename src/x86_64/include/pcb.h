@@ -71,6 +71,12 @@ typedef enum {
     OUT     = 6, // 已被处死(线程状态)
 } TaskStatus;
 
+typedef struct {
+    void  *sp;
+    size_t size;
+    int    flags;
+} altstack_t; // 信号备用栈
+
 struct process_control_block {
     char              name[50];    // 进程名
     uint8_t           task_level;  // 进程权限等级
@@ -111,6 +117,7 @@ struct thread_control_block {
     uint64_t      user_stack;    // 用户栈
     uint64_t      mem_usage;     // 内存利用率
     uint64_t      affinity_mask; // 线程亲和性掩码
+    altstack_t    alt_stack;     // 信号备用栈
 
     uint64_t tid_address; // 线程ID地址
     uint64_t fs_base;     // fs段基址

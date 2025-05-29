@@ -32,40 +32,41 @@
 #define POLLNVAL 0x0020 // fd 无效（文件描述符非法）
 
 // Linux 兼容层系统调用编号定义
-#define SYSCALL_READ       0
-#define SYSCALL_WRITE      1
-#define SYSCALL_OPEN       2
-#define SYSCALL_CLOSE      3
-#define SYSCALL_STAT       4
-#define SYSCALL_FSTAT      5
-#define SYSCALL_LSTAT      6
-#define SYSCALL_POLL       7
-#define SYSCALL_MMAP       9
-#define SYSCALL_MUNMAP     11
+#define SYSCALL_READ        0
+#define SYSCALL_WRITE       1
+#define SYSCALL_OPEN        2
+#define SYSCALL_CLOSE       3
+#define SYSCALL_STAT        4
+#define SYSCALL_FSTAT       5
+#define SYSCALL_LSTAT       6
+#define SYSCALL_POLL        7
+#define SYSCALL_MMAP        9
+#define SYSCALL_MUNMAP      11
 /* #define SYSCALL_BRK  12  brk 系统调用不实现*/
-#define SYSCALL_RT_SIGMASK 13
-#define SYSCALL_SIGRET     15
-#define SYSCALL_IOCTL      16
-#define SYSCALL_READV      19
-#define SYSCALL_WRITEV     20
-#define SYSCALL_YIELD      24
-#define SYSCALL_MREMAP     25
-#define SYSCALL_DUP        32
-#define SYSCALL_DUP2       33
-#define SYSCALL_NANO_SLEEP 35
-#define SYSCALL_GETPID     39
-#define SYSCALL_CLONE      56
-#define SYSCALL_EXIT       60
-#define SYSCALL_WAITPID    61
-#define SYSCALL_UNAME      63
-#define SYSCALL_FCNTL      72
-#define SYSCALL_GETCWD     79
-#define SYSCALL_CHDIR      80
-#define SYSCALL_PRCTL      157
-#define SYSCALL_ARCH_PRCTL 158
-#define SYSCALL_G_AFFINITY 160
-#define SYSCALL_SETID_ADDR 218
-#define SYSCALL_EXIT_GROUP 231
+#define SYSCALL_RT_SIGMASK  14
+#define SYSCALL_SIGRET      15
+#define SYSCALL_IOCTL       16
+#define SYSCALL_READV       19
+#define SYSCALL_WRITEV      20
+#define SYSCALL_YIELD       24
+#define SYSCALL_MREMAP      25
+#define SYSCALL_DUP         32
+#define SYSCALL_DUP2        33
+#define SYSCALL_NANO_SLEEP  35
+#define SYSCALL_GETPID      39
+#define SYSCALL_CLONE       56
+#define SYSCALL_EXIT        60
+#define SYSCALL_WAITPID     61
+#define SYSCALL_UNAME       63
+#define SYSCALL_FCNTL       72
+#define SYSCALL_GETCWD      79
+#define SYSCALL_CHDIR       80
+#define SYSCALL_SIGALTSTACK 131
+#define SYSCALL_PRCTL       157
+#define SYSCALL_ARCH_PRCTL  158
+#define SYSCALL_G_AFFINITY  160
+#define SYSCALL_SETID_ADDR  218
+#define SYSCALL_EXIT_GROUP  231
 
 #include "ctype.h"
 #include "krlibc.h"
