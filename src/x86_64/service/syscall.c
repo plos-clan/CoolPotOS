@@ -621,6 +621,13 @@ syscall_(sigaltstack) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(sigaction) {
+    int               sig    = (int)arg0;
+    struct sigaction *act    = (struct sigaction *)arg1;
+    struct sigaction *oldact = (struct sigaction *)arg2;
+    return signal_action(sig, act, oldact);
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -656,6 +663,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_DUP]         = syscall_dup,
     [SYSCALL_DUP2]        = syscall_dup2,
     [SYSCALL_SIGALTSTACK] = syscall_sigaltstack,
+    [SYSCALL_SIGACTION]   = syscall_sigaction,
 };
 // clang-format on
 

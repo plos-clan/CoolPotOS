@@ -22,11 +22,18 @@
 #define SIGTTIN 21 // Background read from tty
 #define SIGTTOU 22 // Background write to tty
 
+#define SIG_NOMASK  0x40000000
+#define SIG_ONESHOT 0x80000000
+
 #define SIG_BLOCK   0
 #define SIG_UNBLOCK 1
 #define SIG_SETMASK 2
 
+#define MINSIG 1
+#define MAXSIG 32
+
 #define HAS_SIGNAL(sigset, signum) (sigset & (1ULL << signum))
+#define SIGMASK(sig)               (1 << (sig))
 
 #include "ctype.h"
 #include "errno.h"
@@ -34,15 +41,21 @@
 #include "scheduler.h"
 
 typedef struct signal_block signal_block_t;
+typedef uint64_t            sigset_t;
+typedef void (*sighandler_t)(void);
+
+typedef struct sigaction {
+    sighandler_t  sa_handler;
+    unsigned long sa_flags;
+    void (*sa_restorer)(void);
+    sigset_t sa_mask;
+} sigaction_t;
 
 struct signal_block {
     uint64_t pending_signals;                  // 用 bitmap 表示待处理信号
     void (*signal_handlers[MAX_SIGNALS])(int); // 每个信号对应的用户处理器
-    bool signal_mask[MAX_SIGNALS];             // 屏蔽的信号
-} __attribute__((packed));
-
-struct signal_frame {
-
+    bool        signal_mask[MAX_SIGNALS];      // 屏蔽的信号
+    sigaction_t actions[MAXSIG];
 } __attribute__((packed));
 
 typedef struct thread_control_block  *tcb_t;
@@ -52,3 +65,4 @@ int  send_signal(int pid, int sig);
 void setup_signal_thread(tcb_t thread, int signum, void *handler);
 void register_signal(pcb_t task, int sig, void (*handler)(int));
 void check_pending_signals(pcb_t proc, tcb_t thread);
+int  signal_action(int sig, sigaction_t *action, sigaction_t *oldaction);
