@@ -50,13 +50,15 @@
 #define SYSCALL_WRITEV     20
 #define SYSCALL_YIELD      24
 #define SYSCALL_MREMAP     25
+#define SYSCALL_DUP        32
+#define SYSCALL_DUP2       33
 #define SYSCALL_NANO_SLEEP 35
 #define SYSCALL_GETPID     39
 #define SYSCALL_CLONE      56
-
 #define SYSCALL_EXIT       60
 #define SYSCALL_WAITPID    61
 #define SYSCALL_UNAME      63
+#define SYSCALL_FCNTL      72
 #define SYSCALL_GETCWD     79
 #define SYSCALL_CHDIR      80
 #define SYSCALL_PRCTL      157

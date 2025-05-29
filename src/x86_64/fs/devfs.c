@@ -118,6 +118,17 @@ static int devfs_ioctl(void *file, size_t req, void *arg) {
     return VFS_STATUS_FAILED;
 }
 
+static vfs_node_t devfs_dup(vfs_node_t node) {
+    vfs_node_t new_node = vfs_node_alloc(node->parent, node->name);
+    if (new_node == NULL) return NULL;
+    new_node->type   = node->type;
+    new_node->handle = node->handle;
+    new_node->size   = node->size;
+    new_node->child  = node->child;
+    new_node->flags  = node->flags;
+    return new_node;
+}
+
 static struct vfs_callback devfs_callbacks = {
     .mount   = devfs_mount,
     .unmount = (void *)empty,
@@ -129,6 +140,7 @@ static struct vfs_callback devfs_callbacks = {
     .write   = devfs_write,
     .mkfile  = (void *)empty,
     .ioctl   = devfs_ioctl,
+    .dup     = devfs_dup,
 };
 
 void devfs_setup() {

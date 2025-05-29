@@ -169,7 +169,6 @@ function arch_x86_64()
             local shell = target:pkg("cp_shell")
             os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
             --os.cp("assets/shell.elf", iso_dir.."/shell.elf")
-            --os.cp("assets/lua.elf", iso_dir.."/lua.elf")
 
             local iso_file = "$(buildir)/CoolPotOS.iso"
             os.run("xorriso -as mkisofs "..

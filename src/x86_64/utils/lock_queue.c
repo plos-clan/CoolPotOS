@@ -70,6 +70,35 @@ size_t queue_enqueue(lock_queue *q, void *data) {
     return new_node->index;
 }
 
+size_t queue_enqueue_id(lock_queue *q, void *data, size_t id) {
+    if (q == NULL) return -1;
+    spin_lock(q->lock);
+
+    lock_node *new_node = (lock_node *)malloc(sizeof(lock_node));
+    if (!new_node) return -1;
+    new_node->data  = data;
+    new_node->next  = NULL;
+    new_node->index = id;
+
+    if (q->head == NULL) {
+        q->head = new_node;
+    } else {
+        lock_node *current = q->head;
+        loop {
+            if (current->next == NULL) {
+                current->next = new_node;
+                break;
+            }
+            current = current->next;
+        }
+    }
+    q->tail = new_node;
+    q->size++;
+    spin_unlock(q->lock);
+
+    return new_node->index;
+}
+
 void *queue_get(lock_queue *q, size_t index) {
     if (q == NULL) return NULL;
     spin_lock(q->lock);

@@ -71,11 +71,21 @@ void queue_iterate(lock_queue *q, void (*callback)(void *, void *), void *argume
 
 /**
  * 获取指定索引的节点
- * @param q
- * @param index
+ * @param q 队列
+ * @param index 索引
  * @return == NULL ? 未找到 : 该节点存储的句柄
  */
 void *queue_get(lock_queue *q, size_t index);
+
+/**
+ * 以指定 ID 入队
+ * warning: 确保加入id与现有id的元素不冲突, 否则禁止使用该函数
+ * @param q 队列
+ * @param data 存储的句柄
+ * @param id 指定的 ID
+ * @return 该节点的索引
+ */
+size_t queue_enqueue_id(lock_queue *q, void *data, size_t id);
 
 /**
  * 迭代宏

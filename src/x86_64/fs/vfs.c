@@ -190,6 +190,10 @@ void vfs_deinit() {
     // 目前并不支持
 }
 
+vfs_node_t vfs_dup(vfs_node_t node) {
+    return callbackof(node, dup)(node);
+}
+
 vfs_node_t get_rootdir() {
     return rootdir;
 }
