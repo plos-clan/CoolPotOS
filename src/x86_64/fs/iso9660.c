@@ -407,6 +407,7 @@ static struct vfs_callback iso_callbacks = {
     .mkfile  = iso9660_mkfile,
     .stat    = iso9660_stat,
     .ioctl   = (void *)empty,
+    .dup     = (void *)empty, //TODO 未实现
 };
 
 void iso9660_regist() {

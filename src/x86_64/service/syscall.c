@@ -559,6 +559,58 @@ syscall_(rt_sigprocmask) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(dup2) {
+    int        fd    = (int)arg0;
+    int        newfd = (int)arg1;
+    vfs_node_t node  = queue_get(get_current_task()->parent_group->file_open, fd);
+    if (!node) return (uint64_t)-EBADF;
+
+    vfs_node_t new = vfs_dup(node);
+    if (!new) return (uint64_t)-ENOSPC;
+    vfs_node_t new_node = queue_get(get_current_task()->parent_group->file_open, newfd);
+    if (new_node != NULL) { vfs_close(new_node); }
+    queue_enqueue_id(get_current_task()->parent_group->file_open, new, newfd);
+    return newfd;
+}
+
+syscall_(dup) {
+    int fd = (int)arg0;
+    if (fd < 0) return SYSCALL_FAULT_(EINVAL);
+    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
+    if (node == NULL) return SYSCALL_FAULT_(EBADF);
+    uint64_t i;
+    for (i = 3; i < INT32_MAX; i++) {
+        vfs_node_t node0 = queue_get(get_current_task()->parent_group->file_open, fd);
+        if (node0 == NULL) { break; }
+    }
+    return syscall_dup2(fd, i, 0, 0, 0, 0);
+}
+
+syscall_(fcntl) {
+    int      fd  = (int)arg0;
+    int      cmd = (int)arg1;
+    uint64_t arg = arg2;
+    if (fd < 0 || cmd < 0) return SYSCALL_FAULT_(EINVAL);
+    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
+    if (node == NULL) return SYSCALL_FAULT_(EBADF);
+
+    switch (cmd) {
+    case F_GETFD: return !!(node->flags & O_CLOEXEC);
+    case F_SETFD: return node->flags |= O_CLOEXEC;
+    case F_DUPFD_CLOEXEC:
+        uint64_t newfd  = syscall_dup(fd, 0, 0, 0, 0, 0);
+        node->flags    |= O_CLOEXEC;
+        return newfd;
+    case F_DUPFD: return syscall_dup(fd, 0, 0, 0, 0, 0);
+    case F_GETFL: return node->flags;
+    case F_SETFL:
+        uint32_t valid_flags  = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
+        node->flags          &= ~valid_flags;
+        node->flags          |= arg & valid_flags;
+        return 0;
+    }
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -590,6 +642,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SETID_ADDR]  = syscall_set_tid_address,
     [SYSCALL_G_AFFINITY]  = syscall_sched_getaffinity,
     [SYSCALL_RT_SIGMASK]  = syscall_rt_sigprocmask,
+    [SYSCALL_FCNTL]       = syscall_fcntl,
+    [SYSCALL_DUP]         = syscall_dup,
+    [SYSCALL_DUP2]        = syscall_dup2,
 };
 // clang-format on
 

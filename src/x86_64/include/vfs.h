@@ -10,6 +10,56 @@
 #define FBIOPUTCMAP         0x4605
 #define FBIOPAN_DISPLAY     0x4606
 
+#define F_DUPFD         0
+#define F_GETFD         1
+#define F_SETFD         2
+#define F_GETFL         3
+#define F_SETFL         4
+#define F_SETOWN        8
+#define F_GETOWN        9
+#define F_SETSIG        10
+#define F_GETSIG        11
+#define F_DUPFD_CLOEXEC 1030
+
+#define SEEK_SET 0 /* Seek from beginning of file.  */
+#define SEEK_CUR 1 /* Seek from current position.  */
+#define SEEK_END 2 /* Seek from end of file.  */
+
+#define FIOCLEX 0x5451
+
+#define DT_UNKNOWN 0
+#define DT_FIFO    1
+#define DT_CHR     2
+#define DT_DIR     4
+#define DT_BLK     6
+#define DT_REG     8
+#define DT_LNK     10
+#define DT_SOCK    12
+#define DT_WHT     14
+
+#define AT_FDCWD (-100)
+
+#define O_CREAT     0100
+#define O_EXCL      0200
+#define O_NOCTTY    0400
+#define O_TRUNC     01000
+#define O_APPEND    02000
+#define O_NONBLOCK  04000
+#define O_DSYNC     010000
+#define O_SYNC      04010000
+#define O_RSYNC     04010000
+#define O_DIRECTORY 0200000
+#define O_NOFOLLOW  0400000
+#define O_CLOEXEC   02000000
+
+#define O_ASYNC     020000
+#define O_DIRECT    040000
+#define O_LARGEFILE 0100000
+#define O_NOATIME   01000000
+#define O_PATH      010000000
+#define O_TMPFILE   020200000
+#define O_NDELAY    O_NONBLOCK
+
 #include "ctype.h"
 #include "list.h"
 
@@ -25,7 +75,7 @@ typedef void (*vfs_resize_t)(void *current, uint64_t size);
 // 读写一个文件
 typedef size_t (*vfs_write_t)(void *file, const void *addr, size_t offset, size_t size);
 typedef size_t (*vfs_read_t)(void *file, void *addr, size_t offset, size_t size);
-typedef int (*vfs_ioctl_t)(void *file, size_t req, void *arg);
+
 typedef int (*vfs_stat_t)(void *file, vfs_node_t node);
 
 // 创建一个文件或文件夹
@@ -33,6 +83,10 @@ typedef int (*vfs_mk_t)(void *parent, const char *name, vfs_node_t node);
 
 // 映射文件从 offset 开始的 size 大小
 typedef void *(*vfs_mapfile_t)(void *file, size_t offset, size_t size);
+
+// VFS扩展接口 (CPOS特有, PLOS不支持)
+typedef int (*vfs_ioctl_t)(void *file, size_t req, void *arg);
+typedef vfs_node_t (*vfs_dup_t)(vfs_node_t node);
 
 enum {
     file_none,   // 未获取信息
@@ -52,6 +106,7 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_mk_t      mkfile;     // 创建文件
     vfs_stat_t    stat;       // 检查文件状态信息
     vfs_ioctl_t   ioctl;      // I/O 控制接口 (仅 devfs 等特殊文件系统实现)
+    vfs_dup_t     dup;        // 复制文件节点
 } *vfs_callback_t;
 
 struct vfs_node {           // vfs节点
@@ -68,6 +123,7 @@ struct vfs_node {           // vfs节点
     uint8_t    type;        // 类型
     uint16_t   fsid;        // 文件系统的 id
     void      *handle;      // 操作文件的句柄
+    uint64_t   flags;       // 文件标志
     list_t     child;       // 子节点
     vfs_node_t root;        // 根目录
 };
@@ -87,6 +143,7 @@ int        vfs_mkfile(const char *name);                          // 创建文�
 int        vfs_regist(const char *name, vfs_callback_t callback); // 注册文件系统
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
+vfs_node_t vfs_dup(vfs_node_t node);
 int        vfs_close(vfs_node_t node); // 关闭已打开的节点
 void       vfs_free(vfs_node_t vfs);
 void       vfs_update(vfs_node_t node);
