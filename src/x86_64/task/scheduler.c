@@ -190,7 +190,7 @@ void scheduler(registers_t *reg) {
         }
     }
 
-    //logkf("Scheduler: %d:%s -> %d:%s\n", tcb->status,tcb->name,next->status,next->name);
+    if (next->parent_group->pgb_id == 2) { logkf("Scheduler: %d:%s\n", next->status, next->name); }
 
     // 任务寻父处理
     extern pcb_t kernel_group;
