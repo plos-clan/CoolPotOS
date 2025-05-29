@@ -4,14 +4,14 @@
 
 void check_pending_signals(pcb_t proc, tcb_t thread) {
     for (size_t sig = 0; sig < MAX_SIGNALS; sig++) {
-        if ((proc->task_signal.pending_signals & (1 << sig)) &&
-            !proc->task_signal.signal_mask[sig]) {
-            proc->task_signal.pending_signals &= ~(1 << sig); // 清除信号
+        if ((proc->task_signal->pending_signals & (1 << sig)) &&
+            !proc->task_signal->signal_mask[sig]) {
+            proc->task_signal->pending_signals &= ~(1 << sig); // 清除信号
 
             logkf("Signal %d pending for %s\n", sig, proc->name);
 
-            if (proc->task_signal.signal_handlers[sig]) {
-                setup_signal_thread(thread, sig, proc->task_signal.signal_handlers[sig]);
+            if (proc->task_signal->signal_handlers[sig]) {
+                setup_signal_thread(thread, sig, proc->task_signal->signal_handlers[sig]);
             } else {
                 //TODO 执行默认行为
             }
@@ -20,7 +20,7 @@ void check_pending_signals(pcb_t proc, tcb_t thread) {
 }
 
 void register_signal(pcb_t task, int sig, void (*handler)(int)) {
-    task->task_signal.signal_handlers[sig] = handler;
+    task->task_signal->signal_handlers[sig] = handler;
 }
 
 void setup_signal_thread(tcb_t thread, int signum, void *handler) {
@@ -49,8 +49,8 @@ int send_signal(int pid, int sig) {
 
     logkf("Send interrupt signal: %d\n", sig);
 
-    if (!target->task_signal.signal_mask[sig]) {
-        target->task_signal.pending_signals |= (1 << sig);
+    if (!target->task_signal->signal_mask[sig]) {
+        target->task_signal->pending_signals |= (1 << sig);
         logkf("Signal %d pending for %s\n", sig, target->name);
     }
 
@@ -60,7 +60,7 @@ int send_signal(int pid, int sig) {
 int signal_action(int sig, sigaction_t *action, sigaction_t *oldaction) {
     if (sig < MINSIG || sig > MAXSIG || sig == SIGKILL) { return EOK; }
     tcb_t        thread = get_current_task();
-    sigaction_t *ptr    = &thread->parent_group->task_signal.actions[sig];
+    sigaction_t *ptr    = &thread->parent_group->task_signal->actions[sig];
     if (oldaction) { *oldaction = *ptr; }
 
     if (action) { *ptr = *action; }

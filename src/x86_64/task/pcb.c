@@ -200,6 +200,7 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->ipc_queue);
     free(pcb->cmdline);
     free(pcb->cwd);
+    free(pcb->task_signal);
     free_tty(pcb->tty);
     free_page_directory(pcb->page_dir);
     free(pcb);
@@ -282,6 +283,9 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->tty         = alloc_default_tty();
     new_pgb->task_level  = TASK_KERNEL_LEVEL;
     new_pgb->cmdline     = malloc(strlen(cmdline));
+    new_pgb->task_signal = malloc(sizeof(struct signal_block));
+    memset(new_pgb->task_signal, 0, sizeof(struct signal_block));
+
     strcpy(new_pgb->cmdline, cmdline);
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
@@ -433,6 +437,7 @@ void init_pcb() {
     kernel_group->parent_task                      = kernel_group;
     kernel_group->task_level                       = TASK_KERNEL_LEVEL;
     kernel_group->cwd                              = malloc(1024);
+    kernel_group->task_signal                      = malloc(sizeof(struct signal_block));
     memset(kernel_group->cwd, 0, 1024);
     kernel_group->cwd[0] = '/';
 
@@ -449,6 +454,7 @@ void init_pcb() {
     kernel_head_task->time_buf        = alloc_timer();
     kernel_head_task->cpu_id          = cpu->id;
     kernel_head_task->status          = RUNNING;
+
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", cpu->id);
     memcpy(kernel_head_task->name, name, strlen(name));
