@@ -56,3 +56,20 @@ int send_signal(int pid, int sig) {
 
     return 0;
 }
+
+int signal_action(int sig, sigaction_t *action, sigaction_t *oldaction) {
+    if (sig < MINSIG || sig > MAXSIG || sig == SIGKILL) { return EOK; }
+    tcb_t        thread = get_current_task();
+    sigaction_t *ptr    = &thread->parent_group->task_signal.actions[sig];
+    if (oldaction) { *oldaction = *ptr; }
+
+    if (action) { *ptr = *action; }
+
+    if (ptr->sa_flags & SIG_NOMASK) {
+        ptr->sa_mask = 0;
+    } else {
+        ptr->sa_mask |= SIGMASK(sig);
+    }
+
+    return EOK;
+}
