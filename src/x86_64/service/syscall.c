@@ -293,11 +293,17 @@ syscall_(size) {
 }
 
 syscall_(clone) {
-    uint64_t flags = arg0;
-    uint64_t stack = arg1;
-    uint64_t pt    = arg2;
-    //TODO 待实现
-    return SYSCALL_FAULT_(ENOSYS);
+    close_interrupt;
+    disable_scheduler();
+    uint64_t flags      = arg0;
+    uint64_t stack      = arg1;
+    int     *parent_tid = (int *)arg2;
+    int     *child_tid  = (int *)arg3;
+    uint64_t tls        = arg5;
+    uint64_t id         = thread_clone(regs, flags, stack, parent_tid, child_tid, tls);
+    open_interrupt;
+    enable_scheduler();
+    return id;
 }
 
 syscall_(arch_prctl) {
@@ -582,7 +588,7 @@ syscall_(dup) {
         vfs_node_t node0 = queue_get(get_current_task()->parent_group->file_open, fd);
         if (node0 == NULL) { break; }
     }
-    return syscall_dup2(fd, i, 0, 0, 0, 0);
+    return syscall_dup2(fd, i, 0, 0, 0, 0, regs);
 }
 
 syscall_(fcntl) {
@@ -597,10 +603,10 @@ syscall_(fcntl) {
     case F_GETFD: return !!(node->flags & O_CLOEXEC);
     case F_SETFD: return node->flags |= O_CLOEXEC;
     case F_DUPFD_CLOEXEC:
-        uint64_t newfd  = syscall_dup(fd, 0, 0, 0, 0, 0);
+        uint64_t newfd  = syscall_dup(fd, 0, 0, 0, 0, 0, regs);
         node->flags    |= O_CLOEXEC;
         return newfd;
-    case F_DUPFD: return syscall_dup(fd, 0, 0, 0, 0, 0);
+    case F_DUPFD: return syscall_dup(fd, 0, 0, 0, 0, 0, regs);
     case F_GETFL: return node->flags;
     case F_SETFL:
         uint32_t valid_flags  = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
@@ -680,7 +686,7 @@ USED void syscall_handler(struct syscall_regs *regs,
 
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
-                                                              regs->r10, regs->r8, regs->r9);
+                                                              regs->r10, regs->r8, regs->r9, regs);
     } else
         regs->rax = SYSCALL_FAULT;
     logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
@@ -690,10 +696,33 @@ USED void syscall_handler(struct syscall_regs *regs,
 USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
     open_interrupt;
     write_fsbase((uint64_t)get_current_task());
-    size_t syscall_id = reg->rax;
+    size_t              syscall_id = reg->rax;
+    struct syscall_regs regs;
+    regs.rax    = reg->rax;
+    regs.rdi    = reg->rdi;
+    regs.rsi    = reg->rsi;
+    regs.rdx    = reg->rdx;
+    regs.r10    = reg->r10;
+    regs.r8     = reg->r8;
+    regs.r9     = reg->r9;
+    regs.r15    = reg->r15;
+    regs.r14    = reg->r14;
+    regs.r13    = reg->r13;
+    regs.r12    = reg->r12;
+    regs.r11    = reg->r11;
+    regs.rbx    = reg->rbx;
+    regs.rcx    = reg->rcx;
+    regs.rbp    = reg->rbp;
+    regs.ds     = reg->ds;
+    regs.es     = reg->es;
+    regs.rip    = reg->rip;
+    regs.cs     = reg->cs;
+    regs.rflags = reg->rflags;
+    regs.rsp    = reg->rsp;
+    regs.ss     = reg->ss;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rdi, reg->rsi, reg->rdx, reg->r10,
-                                                             reg->r8, reg->r9);
+                                                             reg->r8, reg->r9, &regs);
     } else
         reg->rax = SYSCALL_FAULT;
     write_fsbase(get_current_task()->fs_base);

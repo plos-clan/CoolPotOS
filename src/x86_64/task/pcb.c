@@ -5,6 +5,7 @@
 #include "io.h"
 #include "ipc.h"
 #include "killer.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -416,6 +417,68 @@ int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uin
     default: return -1;
     }
     return SYSCALL_SUCCESS;
+}
+
+uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid,
+                      int *child_tid, uint64_t tls) {
+    tcb_t parent_task = get_current_task();
+
+    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
+    if (new_task == NULL) return SYSCALL_FAULT_(ENOMEM);
+    memset(new_task, 0, sizeof(struct thread_control_block));
+    new_task->task_level      = TASK_APPLICATION_LEVEL;
+    new_task->cpu_clock       = 0;
+    new_task->cpu_timer       = 0;
+    new_task->mem_usage       = get_all_memusage();
+    new_task->cpu_id          = cpu->id;
+    new_task->status          = START;
+    new_task->context0.rsp    = stack;
+    new_task->context0.rflags = reg->rflags;
+    new_task->kernel_stack    = (uint64_t)new_task + STACK_SIZE;
+    new_task->main            = parent_task->main;
+    strcpy(new_task->name, parent_task->name);
+
+    new_task->context0.rip = parent_task->context0.rip;
+    new_task->context0.cs  = parent_task->context0.cs;
+    new_task->context0.ss  = parent_task->context0.ss;
+    new_task->context0.es  = parent_task->context0.es;
+    new_task->context0.ds  = parent_task->context0.ds;
+    new_task->context0.rax = parent_task->context0.rax;
+    new_task->context0.rdi = parent_task->context0.rdi;
+    new_task->context0.rsi = parent_task->context0.rsi;
+    new_task->context0.rdx = parent_task->context0.rdx;
+    new_task->context0.r9  = parent_task->context0.r9;
+    new_task->context0.r8  = parent_task->context0.r8;
+    new_task->context0.r10 = parent_task->context0.r10;
+    new_task->context0.r11 = parent_task->context0.r11;
+    new_task->context0.r12 = parent_task->context0.r12;
+    new_task->context0.r13 = parent_task->context0.r13;
+    new_task->context0.r14 = parent_task->context0.r14;
+    new_task->context0.r15 = parent_task->context0.r15;
+    new_task->context0.rbx = parent_task->context0.rbx;
+    new_task->context0.rbp = parent_task->context0.rbp;
+    new_task->context0.rcx = parent_task->context0.rcx;
+
+    memcpy(parent_task->fpu_context.fxsave_area, new_task->fpu_context.fxsave_area, 512);
+    new_task->fpu_flags = parent_task->fpu_flags;
+
+    new_task->affinity_mask = parent_task->affinity_mask;
+    new_task->fs            = parent_task->fs;
+    new_task->fs_base       = parent_task->fs_base;
+
+    new_task->parent_group = parent_task->parent_group;
+    new_task->group_index  = lock_queue_enqueue(parent_task->parent_group->pcb_queue, new_task);
+    spin_unlock(parent_task->parent_group->pcb_queue->lock);
+    new_task->pid          = parent_task->parent_group->pid_index++;
+    new_task->parent_group = parent_task->parent_group;
+
+    if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
+
+    if (flags & CLONE_PARENT_SETTID) { *parent_tid = (int)parent_task->pid; }
+
+    if (flags & CLONE_CHILD_SETTID) { *child_tid = (int)new_task->pid; }
+    add_task(new_task);
+    return new_task->pid;
 }
 
 void init_pcb() {
