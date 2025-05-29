@@ -378,11 +378,10 @@ syscall_(readv) {
     int fd = (int)arg0;
     if (fd < 0 || arg1 == 0) return ENODEV;
     if (arg2 == 0) return SYSCALL_SUCCESS;
-    size_t        iovcnt = arg2;
-    struct iovec *iov    = (struct iovec *)arg1;
-    vfs_node_t    node   = queue_get(get_current_task()->parent_group->file_open, fd);
-    logkf("readv: %d\n", iovcnt);
-    size_t buf_len = 0;
+    size_t        iovcnt  = arg2;
+    struct iovec *iov     = (struct iovec *)arg1;
+    vfs_node_t    node    = queue_get(get_current_task()->parent_group->file_open, fd);
+    size_t        buf_len = 0;
     for (size_t i = 0; i < iovcnt; i++) {
         buf_len += iov[i].iov_len;
     }
@@ -526,7 +525,7 @@ syscall_(rt_sigprocmask) {
     if (oldset) {
         sigset_t old_mask = 0;
         for (int i = 0; i < MAX_SIGNALS; ++i) {
-            if (process->task_signal.signal_mask[i]) { old_mask |= (1ULL << i); }
+            if (process->task_signal->signal_mask[i]) { old_mask |= (1ULL << i); }
         }
         *oldset = old_mask;
     }
@@ -537,19 +536,19 @@ syscall_(rt_sigprocmask) {
     switch (how) {
     case SIG_BLOCK:
         for (int i = 0; i < MAX_SIGNALS; ++i) {
-            if (new_set & (1ULL << i)) { process->task_signal.signal_mask[i] = true; }
+            if (new_set & (1ULL << i)) { process->task_signal->signal_mask[i] = true; }
         }
         break;
 
     case SIG_UNBLOCK:
         for (int i = 0; i < MAX_SIGNALS; ++i) {
-            if (new_set & (1ULL << i)) { process->task_signal.signal_mask[i] = false; }
+            if (new_set & (1ULL << i)) { process->task_signal->signal_mask[i] = false; }
         }
         break;
 
     case SIG_SETMASK:
         for (int i = 0; i < MAX_SIGNALS; ++i) {
-            process->task_signal.signal_mask[i] = (new_set & (1ULL << i)) != 0;
+            process->task_signal->signal_mask[i] = (new_set & (1ULL << i)) != 0;
         }
         break;
 
