@@ -607,8 +607,18 @@ syscall_(fcntl) {
         uint32_t valid_flags  = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
         node->flags          &= ~valid_flags;
         node->flags          |= arg & valid_flags;
-        return 0;
     }
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(sigaltstack) {
+    altstack_t *old_stack = (altstack_t *)arg0;
+    altstack_t *new_stack = (altstack_t *)arg1;
+
+    tcb_t thread = get_current_task();
+    if (old_stack) { *old_stack = thread->alt_stack; }
+    if (new_stack) { thread->alt_stack = *new_stack; }
+    return SYSCALL_SUCCESS;
 }
 
 // clang-format off
@@ -645,6 +655,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FCNTL]       = syscall_fcntl,
     [SYSCALL_DUP]         = syscall_dup,
     [SYSCALL_DUP2]        = syscall_dup2,
+    [SYSCALL_SIGALTSTACK] = syscall_sigaltstack,
 };
 // clang-format on
 
