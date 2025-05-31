@@ -1,12 +1,10 @@
 #include "gop.h"
+#include "boot.h"
 #include "ctype.h"
-#include "limine.h"
+#include "krlibc.h"
 #include <stddef.h>
 
 struct limine_framebuffer *framebuffer = NULL;
-
-LIMINE_REQUEST struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
 
 uint64_t get_screen_width() {
     return framebuffer->width;
@@ -17,13 +15,8 @@ uint64_t get_screen_height() {
 }
 
 void init_gop() {
-    if (framebuffer_request.response == NULL ||
-        framebuffer_request.response->framebuffer_count < 1) {
-        for (;;)
-            __asm__("hlt");
-    }
-
-    framebuffer = framebuffer_request.response->framebuffers[0];
+    framebuffer = get_graphics_framebuffer();
+    if (framebuffer == NULL) cpu_hlt;
     gop_clear(0xffffff);
 }
 

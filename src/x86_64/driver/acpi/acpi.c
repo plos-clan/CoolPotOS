@@ -1,8 +1,8 @@
 #include "acpi.h"
+#include "boot.h"
 #include "hhdm.h"
 #include "kprint.h"
 #include "krlibc.h"
-#include "limine.h"
 
 #define load_table(name, func)                                                                     \
     do {                                                                                           \
@@ -15,8 +15,6 @@
     } while (0)
 
 XSDT *xsdt;
-
-LIMINE_REQUEST struct limine_rsdp_request rsdp_request = {.id = LIMINE_RSDP_REQUEST, .revision = 0};
 
 void *find_table(const char *name) {
     uint64_t  entry_count = (xsdt->h.Length - 32) / 8;
@@ -31,9 +29,7 @@ void *find_table(const char *name) {
 }
 
 void acpi_setup() {
-    struct limine_rsdp_response *response = rsdp_request.response;
-
-    RSDP *rsdp = (RSDP *)response->address;
+    RSDP *rsdp = (RSDP *)get_acpi_rsdp();
     if (rsdp == NULL) {
         kwarn("Cannot find acpi rsdp table.");
         return;

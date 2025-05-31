@@ -1,4 +1,5 @@
 #include "smp.h"
+#include "boot.h"
 #include "description_table.h"
 #include "fpu.h"
 #include "fsgsbase.h"
@@ -8,7 +9,6 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "lock.h"
 #include "pcb.h"
 #include "sprintf.h"
@@ -141,9 +141,9 @@ smp_cpu_t *get_cpu_smp(uint32_t processor_id) {
     return cpu->ready ? cpu : NULL;
 }
 
-void apu_startup(struct limine_smp_request smp_request) {
+void smp_setup() {
     apu_lock                             = SPIN_INIT;
-    struct limine_smp_response *response = smp_request.response;
+    struct limine_smp_response *response = get_smp_info();
     cpu_count                            = response->cpu_count > 8 ? 8 : response->cpu_count;
     for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++) {
         struct limine_smp_info *info     = response->cpus[i];

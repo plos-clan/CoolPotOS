@@ -1,5 +1,6 @@
 #include "acpi.h"
 #include "ahci.h"
+#include "boot.h"
 #include "cpuid.h"
 #include "cpusp.h"
 #include "description_table.h"
@@ -16,7 +17,6 @@
 #include "killer.h"
 #include "kprint.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "modfs.h"
 #include "module.h"
 #include "page.h"
@@ -58,24 +58,6 @@
 
 void kmain();
 
-USED SECTION(".limine_requests_start") static const volatile LIMINE_REQUESTS_START_MARKER;
-
-USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
-
-LIMINE_REQUEST LIMINE_BASE_REVISION(2);
-
-LIMINE_REQUEST struct limine_stack_size_request stack_request = {
-    .id         = LIMINE_STACK_SIZE_REQUEST,
-    .revision   = 0,
-    .stack_size = KERNEL_ST_SZ // 128K
-};
-
-LIMINE_REQUEST struct limine_entry_point_request entry = {
-    .id       = LIMINE_ENTRY_POINT_REQUEST,
-    .revision = 3,
-    .entry    = &kmain,
-};
-
 extern void  error_setup();    // error_handle.c
 extern void  iso9660_regist(); // iso9660.c
 extern tcb_t kernel_head_task; // scheduler.c
@@ -104,8 +86,8 @@ void kmain() {
     module_setup();
     init_terminal();
 
-    printk("CoolPotOS %s (git:%s) (%s version %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
-           COMPILER_NAME, COMPILER_VERSION);
+    printk("CoolPotOS %s (git:%s) (%s %s) (%s %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
+           COMPILER_NAME, COMPILER_VERSION, get_bootloader_name(), get_bootloader_version());
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     error_setup();
