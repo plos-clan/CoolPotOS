@@ -1,12 +1,10 @@
 #include "hhdm.h"
-#include "limine.h"
-
-LIMINE_REQUEST struct limine_hhdm_request hhdm_request = {.id = LIMINE_HHDM_REQUEST, .revision = 0};
+#include "boot.h"
 
 uint64_t physical_memory_offset = 0;
 
 void init_hhdm() {
-    physical_memory_offset = hhdm_request.response->offset;
+    physical_memory_offset = boot_physical_memory_offset();
 }
 
 uint64_t get_physical_memory_offset() {

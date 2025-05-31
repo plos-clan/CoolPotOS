@@ -1,23 +1,16 @@
 #include "acpi.h"
+#include "boot.h"
 #include "hhdm.h"
 #include "io.h"
 #include "isr.h"
 #include "klog.h"
 #include "kprint.h"
-#include "limine.h"
 #include "smp.h"
 #include "timer.h"
 
 bool     x2apic_mode;
 uint64_t lapic_address;
 uint64_t ioapic_address;
-
-LIMINE_REQUEST struct limine_smp_request smp_request = {
-    .id       = LIMINE_SMP_REQUEST,
-    .revision = 0,
-    .response = NULL,
-    .flags    = 1U,
-};
 
 void disable_pic() {
     io_out8(0x21, 0xff);
@@ -61,7 +54,7 @@ uint64_t lapic_id() {
 }
 
 void local_apic_init(bool is_print) {
-    x2apic_mode = (smp_request.response->flags & 1U) != 0;
+    x2apic_mode = x2apic_mode_supported();
 
     if (x2apic_mode) { wrmsr(0x1b, rdmsr(0x1b) | 1 << 10); }
 
@@ -143,8 +136,4 @@ void apic_setup(MADT *madt) {
     disable_pic();
     local_apic_init(true);
     io_apic_init();
-}
-
-void smp_setup() {
-    apu_startup(smp_request);
 }

@@ -1,26 +1,14 @@
 #include "frame.h"
+#include "boot.h"
 #include "hhdm.h"
 #include "klog.h"
-#include "limine.h"
-
-LIMINE_REQUEST struct limine_memmap_request memmap_request = {
-    .id       = LIMINE_MEMMAP_REQUEST,
-    .revision = 0,
-};
 
 FrameAllocator frame_allocator;
 uint64_t       memory_size = 0;
 
 void init_frame() {
-    struct limine_memmap_response *memory_map = memmap_request.response;
-
-    for (uint64_t i = memory_map->entry_count - 1; i >= 0; i--) {
-        struct limine_memmap_entry *region = memory_map->entries[i];
-        if (region->type == LIMINE_MEMMAP_USABLE) {
-            memory_size = region->base + region->length;
-            break;
-        }
-    }
+    struct limine_memmap_response *memory_map = get_memory_map();
+    memory_size                               = get_memory_size();
 
     size_t   bitmap_size    = (memory_size / 4096 + 7) / 8;
     uint64_t bitmap_address = 0;

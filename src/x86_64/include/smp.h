@@ -35,7 +35,6 @@ extern smp_cpu_t smp_cpus[MAX_CPU];
  */
 uint32_t   get_current_cpuid();
 void       smp_setup();
-void       apu_startup(struct limine_smp_request smp_request);
 uint64_t   cpu_num();
 smp_cpu_t *get_cpu_smp(uint32_t processor_id);
 
