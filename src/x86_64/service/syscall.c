@@ -2,6 +2,7 @@
 #include "errno.h"
 #include "frame.h"
 #include "fsgsbase.h"
+#include "hhdm.h"
 #include "io.h"
 #include "isr.h"
 #include "klog.h"
@@ -633,6 +634,36 @@ syscall_(sigaction) {
     return signal_action(sig, act, oldact);
 }
 
+syscall_(fork) {
+    tcb_t parent = get_current_task();
+    tcb_t child  = (tcb_t)malloc(STACK_SIZE);
+    return SYSCALL_FAULT_(ENOSYS);
+}
+
+syscall_(futex) {
+    int             *uaddr   = (int *)arg0;
+    int              op      = (int)arg1;
+    int              val     = (int)arg2;
+    struct timespec *time    = (struct timespec *)arg3;
+    int              timeout = (int)arg4;
+    tcb_t            thread  = get_current_task();
+
+    switch (op) {
+    case FUTEX_WAIT:
+        if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
+        int observed = *uaddr;
+        if (observed != val) { return SYSCALL_FAULT_(EAGAIN); }
+        thread->status = FUTEX; // 挂起当前线程
+        futex_add((void *)page_virt_to_phys((uint64_t)uaddr), thread);
+        syscall_yield(0, 0, 0, 0, 0, 0, 0);
+        return SYSCALL_SUCCESS;
+    case FUTEX_WAKE:
+        futex_wake((void *)page_virt_to_phys((uint64_t)uaddr), val);
+        return SYSCALL_SUCCESS;
+    default: return SYSCALL_FAULT_(EINVAL);
+    }
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -669,6 +700,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_DUP2]        = syscall_dup2,
     [SYSCALL_SIGALTSTACK] = syscall_sigaltstack,
     [SYSCALL_SIGACTION]   = syscall_sigaction,
+    [SYSCALL_FORK]        = syscall_fork,
+    [SYSCALL_FUTEX]       = syscall_futex,
 };
 // clang-format on
 

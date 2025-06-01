@@ -21,3 +21,10 @@ uint64_t get_physical_memory_offset();
  * @return 物理地址
  */
 void *virt_to_phys(uint64_t virt_addr);
+
+/*
+ * 将虚拟地址转换为物理地址 (根据页表解析)
+ * @param va 虚拟地址
+ * @return 物理地址
+ */
+uint64_t page_virt_to_phys(uint64_t va);
