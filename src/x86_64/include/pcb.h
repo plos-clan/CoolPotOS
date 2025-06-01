@@ -86,8 +86,8 @@ typedef enum {
     WAIT    = 2, // 线程阻塞
     DEATH   = 3, // 死亡(无法被调度, 线程状态为等待处死)
     START   = 4, // 准备调度
-    WAIT_IO = 5, // 外部原因主动性阻塞 (无法被调度)
-    OUT     = 6, // 已被处死(线程状态)
+    FUTEX   = 5, // 被挂起(无法被调度, 线程状态为等待唤醒)
+    OUT     = 6, // 已被处死(无法被调度)
 } TaskStatus;
 
 typedef struct {
@@ -146,6 +146,7 @@ struct thread_control_block {
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引
     size_t death_index; // 死亡队列索引
+    size_t futex_index; // 挂起队列索引
 
     int seq_state; // 键盘状态标志
     int last_key;  // 标志按键
@@ -256,7 +257,28 @@ int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uin
 uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid,
                       int *child_tid, uint64_t tls);
 
+/**
+ * 将一个线程添加到挂起队列
+ * @param phys_addr 用户态锁物理地址
+ * @param thread 线程
+ */
+void futex_add(void *phys_addr, tcb_t thread);
+
+/**
+ * 唤醒指定锁地址的线程
+ * @param phys_addr 用户态锁物理地址
+ * @param count 唤醒数量
+ */
+void futex_wake(void *phys_addr, int count);
+
+/**
+ * 释放挂起队列的线程引用
+ * @param thread 线程
+ */
+void futex_free(tcb_t thread);
+
 void init_pcb();
+void futex_init();
 
 void kill_proc0(pcb_t pcb);
 void kill_thread0(tcb_t task);

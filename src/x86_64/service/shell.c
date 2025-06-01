@@ -115,6 +115,8 @@ void ps(int argc, char **argv) {
                 printk("\033[33mStart   \033[0m");
             else if (pgb->status == WAIT)
                 printk("\033[36mWait    \033[0m");
+            else if (pgb->status == FUTEX)
+                printk("\033[36mFutex   \033[0m");
             else
                 printk("\033[31mDeath   \033[0m");
 
@@ -170,6 +172,8 @@ void ps(int argc, char **argv) {
                         printk("\033[36mWait    \033[0m");
                     else if (pcb->status == DEATH)
                         printk("\033[31mDeath   \033[0m");
+                    else if (pcb->status == FUTEX)
+                        printk("\033[31mFutex   \033[0m");
                     else
                         printk("\033[37mOut     \033[0m");
                     printk("\033[1;34mCPU%-d\033[0m\n", pcb->cpu_id);

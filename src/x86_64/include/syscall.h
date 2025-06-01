@@ -32,6 +32,18 @@
 #define POLLHUP  0x0010 // 挂起（对端关闭）
 #define POLLNVAL 0x0020 // fd 无效（文件描述符非法）
 
+// futex 系统调用操作码
+#define FUTEX_WAIT        0
+#define FUTEX_WAKE        1
+#define FUTEX_FD          2
+#define FUTEX_REQUEUE     3
+#define FUTEX_CMP_REQUEUE 4
+#define FUTEX_WAKE_OP     5
+#define FUTEX_LOCK_PI     6
+#define FUTEX_UNLOCK_PI   7
+#define FUTEX_TRYLOCK_PI  8
+#define FUTEX_WAIT_BITSET 9
+
 // Linux 兼容层系统调用编号定义
 #define SYSCALL_READ        0
 #define SYSCALL_WRITE       1
@@ -57,6 +69,7 @@
 #define SYSCALL_NANO_SLEEP  35
 #define SYSCALL_GETPID      39
 #define SYSCALL_CLONE       56
+#define SYSCALL_FORK        57
 #define SYSCALL_EXIT        60
 #define SYSCALL_WAITPID     61
 #define SYSCALL_UNAME       63
@@ -67,6 +80,7 @@
 #define SYSCALL_PRCTL       157
 #define SYSCALL_ARCH_PRCTL  158
 #define SYSCALL_G_AFFINITY  160
+#define SYSCALL_FUTEX       202
 #define SYSCALL_SETID_ADDR  218
 #define SYSCALL_EXIT_GROUP  231
 

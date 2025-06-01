@@ -20,6 +20,9 @@
 #    define PAGE_SIZE ((size_t)4096)
 #endif
 
+#define PAGE_MASK  (~(PAGE_SIZE - 1))
+#define ENTRY_MASK 0x1FF
+
 #include "ctype.h"
 
 typedef struct page_table_entry {

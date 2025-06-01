@@ -218,6 +218,7 @@ void kill_thread(tcb_t task) {
     task->status      = DEATH;
     smp_cpu_t *cpu    = get_cpu_smp(task->cpu_id);
     task->death_index = lock_queue_enqueue(cpu->death_queue, task);
+    futex_free(task);
     spin_unlock(cpu->death_queue->lock);
 }
 
@@ -523,6 +524,6 @@ void init_pcb() {
     memcpy(kernel_head_task->name, name, strlen(name));
     kernel_head_task->name[strlen(name)] = '\0';
     kernel_head_task->group_index        = queue_enqueue(kernel_group->pcb_queue, kernel_head_task);
-
+    futex_init();
     kinfo("Load task schedule. | Process(%s) PID: %d", kernel_group->name, kernel_head_task->pid);
 }

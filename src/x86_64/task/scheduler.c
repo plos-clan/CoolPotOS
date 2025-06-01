@@ -183,10 +183,13 @@ void scheduler(registers_t *reg) {
         next = (tcb_t)cpu->iter_node->data;
         not_null_assets(next, "scheduler next null");
         switch (next->status) {
+        case FUTEX:
         case DEATH:
         case OUT: goto resche;
         default:
-            if (next->parent_group->status == DEATH) { goto resche; }
+            if (next->parent_group->status == DEATH || next->parent_group->status == FUTEX) {
+                goto resche;
+            }
         }
     }
 
