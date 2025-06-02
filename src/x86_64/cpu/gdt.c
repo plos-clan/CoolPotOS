@@ -1,6 +1,6 @@
+#include "boot.h"
 #include "description_table.h"
 #include "io.h"
-#include "kprint.h"
 #include "krlibc.h"
 #include "smp.h"
 
@@ -42,7 +42,7 @@ void gdt_setup() {
                        "b"((uint16_t)0x8U)
                      : "memory");
 
-    uint32_t   boot_id  = get_current_cpuid();
+    uint32_t   boot_id  = get_smp_info()->bsp_lapic_id;
     smp_cpu_t *boot_cpu = &smp_cpus[boot_id];
     wrmsr(0xC0000100, 0);
     wrmsr(0xC0000101, (uint64_t)boot_cpu);
