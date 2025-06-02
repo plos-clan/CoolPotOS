@@ -138,10 +138,11 @@ struct thread_control_block {
     uint64_t      affinity_mask; // 线程亲和性掩码
     altstack_t    alt_stack;     // 信号备用栈
 
-    uint64_t tid_address; // 线程ID地址
-    uint64_t fs_base;     // fs段基址
-    uint64_t gs_base;     // gs段基址
-    uint64_t fs, gs;
+    uint64_t          tid_address;   // 线程ID地址
+    page_directory_t *tid_directory; // 线程id所属页表
+    uint64_t          fs_base;       // fs段基址
+    uint64_t          gs_base;       // gs段基址
+    uint64_t          fs, gs;
 
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引

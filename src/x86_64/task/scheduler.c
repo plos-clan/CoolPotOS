@@ -30,6 +30,30 @@ void disable_scheduler() {
     is_scheduler = false;
 }
 
+void scheduler_yield() {
+    if ((!cpu->ready) || cpu->current_pcb == NULL) return;
+    __asm__ volatile("int %0" ::"i"(timer));
+}
+
+void scheduler_nano_sleep(uint64_t nano) {
+    uint64_t targetTime = nano_time();
+    uint64_t after      = 0;
+    loop {
+        uint64_t n = nano_time();
+        if (n < targetTime) {
+            after      += 0xffffffff - targetTime + n;
+            targetTime  = n;
+        } else {
+            after      += n - targetTime;
+            targetTime  = n;
+        }
+        if (after >= nano) { return; }
+        if (nano < 10) {
+            scheduler_yield(); // 让出CPU时间片
+        }
+    }
+}
+
 int add_task(tcb_t new_task) {
     if (new_task == NULL) return -1;
     spin_lock(scheduler_lock);
@@ -144,15 +168,12 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
  */
 void scheduler(registers_t *reg) {
     if (!is_scheduler) return;
-    //spin_lock(scheduler_lock);
     if (!cpu->ready) {
         logkf("Error: scheduler null %d\n", cpu->id);
-        //spin_unlock(scheduler_lock);
         return;
     }
     if (cpu->current_pcb == NULL) {
         logkf("Error: scheduler null %d\n", cpu->id);
-        //spin_unlock(scheduler_lock);
         return;
     }
 
@@ -182,6 +203,8 @@ void scheduler(registers_t *reg) {
         if (cpu->iter_node == NULL) goto iter_head;
         next = (tcb_t)cpu->iter_node->data;
         not_null_assets(next, "scheduler next null");
+
+        // 死亡/回收/挂起的线程不调度
         switch (next->status) {
         case FUTEX:
         case DEATH:
@@ -192,8 +215,6 @@ void scheduler(registers_t *reg) {
             }
         }
     }
-
-    if (next->parent_group->pgb_id == 2) { logkf("Scheduler: %d:%s\n", next->status, next->name); }
 
     // 任务寻父处理
     extern pcb_t kernel_group;
@@ -220,5 +241,4 @@ void scheduler(registers_t *reg) {
         enable_scheduler();
     } else
         write_fsbase(get_current_task()->fs_base); // 同样，没切任务，换回来
-    //spin_unlock(scheduler_lock);
 }
