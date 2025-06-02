@@ -113,6 +113,8 @@ void ps(int argc, char **argv) {
                 printk("\033[32mRunning \033[0m");
             else if (pgb->status == START)
                 printk("\033[33mStart   \033[0m");
+            else if (pgb->status == CREATE)
+                printk("\033[33mCreate  \033[0m");
             else if (pgb->status == WAIT)
                 printk("\033[36mWait    \033[0m");
             else if (pgb->status == FUTEX)
@@ -168,6 +170,8 @@ void ps(int argc, char **argv) {
                         printk("\033[32mRunning \033[0m");
                     else if (pcb->status == START)
                         printk("\033[33mStart   \033[0m");
+                    else if (pcb->status == CREATE)
+                        printk("\033[33mCreate  \033[0m");
                     else if (pcb->status == WAIT)
                         printk("\033[36mWait    \033[0m");
                     else if (pcb->status == DEATH)

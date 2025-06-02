@@ -4,6 +4,8 @@
 #define IA32_GS_BASE        0xc0000101
 #define IA32_KERNEL_GS_BASE 0xc0000102
 
+#define current_cpu ((smp_cpu_t *)read_kgsbase())
+
 #include "ctype.h"
 
 extern uint64_t (*read_fsbase)();

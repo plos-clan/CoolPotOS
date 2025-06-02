@@ -144,15 +144,15 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
  */
 void scheduler(registers_t *reg) {
     if (!is_scheduler) return;
-    spin_lock(scheduler_lock);
+    //spin_lock(scheduler_lock);
     if (!cpu->ready) {
         logkf("Error: scheduler null %d\n", cpu->id);
-        spin_unlock(scheduler_lock);
+        //spin_unlock(scheduler_lock);
         return;
     }
     if (cpu->current_pcb == NULL) {
         logkf("Error: scheduler null %d\n", cpu->id);
-        spin_unlock(scheduler_lock);
+        //spin_unlock(scheduler_lock);
         return;
     }
 
@@ -220,5 +220,5 @@ void scheduler(registers_t *reg) {
         enable_scheduler();
     } else
         write_fsbase(get_current_task()->fs_base); // 同样，没切任务，换回来
-    spin_unlock(scheduler_lock);
+    //spin_unlock(scheduler_lock);
 }
