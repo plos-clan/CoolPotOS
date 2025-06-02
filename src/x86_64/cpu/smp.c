@@ -112,21 +112,21 @@ void apu_entry() {
     apu_idle->time_buf                              = alloc_timer();
     apu_idle->cpu_id                                = cpu->id;
     apu_idle->context0.rip                          = (uint64_t)&halt_service;
+    apu_idle->status                                = RUNNING;
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", cpu->id);
     memcpy(apu_idle->name, name, strlen(name));
-    apu_idle->name[strlen(name)]            = '\0';
-    ((smp_cpu_t *)read_kgsbase())->idle_pcb = apu_idle;
-    ((smp_cpu_t *)read_kgsbase())->ready    = true;
+    apu_idle->name[strlen(name)] = '\0';
+    current_cpu->idle_pcb        = apu_idle;
+    current_cpu->ready           = true;
     change_current_tcb(apu_idle);
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
     apu_idle->queue_index = queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, apu_idle);
     if (apu_idle->queue_index == (size_t)-1) {
-        kerror("Unable to add task to scheduler queue for CPU%d",
-               ((smp_cpu_t *)read_kgsbase())->id);
-        ((smp_cpu_t *)read_kgsbase())->ready = false;
-        kerror("Scheduler queue %p", ((smp_cpu_t *)read_kgsbase())->scheduler_queue);
+        kerror("Unable to add task to scheduler queue for CPU%d", current_cpu->id);
+        current_cpu->ready = false;
+        kerror("Scheduler queue %p", current_cpu->scheduler_queue);
         cpu_done_count++;
         spin_unlock(apu_lock);
         open_interrupt;
@@ -168,14 +168,13 @@ void smp_setup() {
         __asm__ volatile("pause" ::: "memory");
     }
 
-    ((smp_cpu_t *)read_kgsbase())->idle_pcb = kernel_head_task;
+    current_cpu->idle_pcb = kernel_head_task;
     kernel_head_task->queue_index =
         queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, kernel_head_task);
     if (kernel_head_task->queue_index == (size_t)-1) {
-        logkf("Error: scheduler null %d\n", ((smp_cpu_t *)read_kgsbase())->id);
-        kerror("Unable to add kernel head task to scheduler queue for CPU%d",
-               ((smp_cpu_t *)read_kgsbase())->id);
-        ((smp_cpu_t *)read_kgsbase())->ready = false;
+        logkf("Error: scheduler null %d\n", current_cpu->id);
+        kerror("Unable to add kernel head task to scheduler queue for CPU%d", current_cpu->id);
+        current_cpu->ready = false;
     }
 
     kinfo("%d processors have been enabled.", cpu_count);

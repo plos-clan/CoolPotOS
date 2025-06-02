@@ -1,3 +1,4 @@
+#include "fsgsbase.h"
 #include "gop.h"
 #include "io.h"
 #include "isr.h"
@@ -23,10 +24,10 @@ void print_register(interrupt_frame_t *frame) {
 
 void print_task_info(tcb_t pcb) {
     if (pcb == NULL)
-        printk("No process load, CPU%d\n", cpu->id);
+        printk("No process load, CPU%d\n", current_cpu->id);
     else
         printk("Current process PID: %d:%s (%s) CPU%d\n", pcb->pid, pcb->name,
-               pcb->parent_group->name, cpu->id);
+               pcb->parent_group->name, current_cpu->id);
 }
 
 void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {

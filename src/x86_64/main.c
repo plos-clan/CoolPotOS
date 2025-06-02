@@ -132,9 +132,9 @@ void kmain() {
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL);
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
 
-    create_kernel_thread((void *)cpu_speed_test, NULL, "CPUSpeed", NULL);
+    extern void ps(int argc, char **argv);
+    ps(2, (char *[]){"ps", "-v"});
 
-    // beep();
     open_interrupt;
     enable_scheduler();
 
