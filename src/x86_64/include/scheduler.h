@@ -62,5 +62,16 @@ void enable_scheduler();
  */
 void disable_scheduler();
 
+/**
+ * 调度器优化性休眠
+ * @param nano
+ */
+void scheduler_nano_sleep(uint64_t nano);
+
+/**
+ * 主动触发调度器
+ */
+void scheduler_yield();
+
 void scheduler(registers_t *registers);
 int  get_all_task();

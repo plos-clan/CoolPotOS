@@ -11,7 +11,7 @@
 #include "sprintf.h"
 #include "terminal.h"
 
-spin_t error_lock;
+spin_t error_lock = SPIN_INIT;
 
 void print_register(interrupt_frame_t *frame) {
     printk("ss: 0x%p ", frame->ss);

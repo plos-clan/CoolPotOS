@@ -148,9 +148,10 @@ static inline void enable_syscall() {
 }
 
 syscall_(exit) {
-    int exit_code = arg0;
-    logkf("Thread %s exit with code %d.\n", get_current_task()->name, exit_code);
-    kill_thread(get_current_task());
+    int   exit_code   = arg0;
+    tcb_t exit_thread = get_current_task();
+    logkf("Thread %s exit with code %d.\n", exit_thread->name, exit_code);
+    kill_thread(exit_thread);
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
@@ -300,7 +301,7 @@ syscall_(clone) {
     uint64_t stack      = arg1;
     int     *parent_tid = (int *)arg2;
     int     *child_tid  = (int *)arg3;
-    uint64_t tls        = arg5;
+    uint64_t tls        = arg4;
     uint64_t id         = thread_clone(regs, flags, stack, parent_tid, child_tid, tls);
     open_interrupt;
     enable_scheduler();
@@ -328,7 +329,7 @@ syscall_(arch_prctl) {
 }
 
 syscall_(yield) {
-    __asm__ volatile("int %0" ::"i"(timer));
+    scheduler_yield();
     return SYSCALL_SUCCESS;
 }
 
@@ -352,7 +353,7 @@ syscall_(nano_sleep) {
     memcpy(&k_req, (void *)arg0, sizeof(k_req));
     if (k_req.tv_nsec >= 1000000000L) return SYSCALL_FAULT;
     uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
-    nsleep(nsec);
+    scheduler_nano_sleep(nsec);
     return SYSCALL_SUCCESS;
 }
 
@@ -469,9 +470,10 @@ syscall_(chdir) {
 }
 
 syscall_(exit_group) {
-    int exit_code = arg0;
-    logkf("Process %s exit with code %d.\n", get_current_task()->parent_group->name, exit_code);
-    kill_proc(get_current_task()->parent_group, exit_code);
+    int   exit_code    = arg0;
+    pcb_t exit_process = get_current_task()->parent_group;
+    logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
+    kill_proc(exit_process, exit_code);
     cpu_hlt;
 }
 
@@ -509,8 +511,9 @@ syscall_(poll) {
 syscall_(set_tid_address) {
     int *tidptr = (int *)arg0;
     if (tidptr == NULL) return SYSCALL_FAULT_(EINVAL);
-    tcb_t thread        = get_current_task();
-    thread->tid_address = (uint64_t)tidptr;
+    tcb_t thread          = get_current_task();
+    thread->tid_address   = (uint64_t)tidptr;
+    thread->tid_directory = get_current_directory();
     return SYSCALL_SUCCESS;
 }
 
@@ -756,8 +759,26 @@ USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         reg->rax = ((syscall_t)syscall_handlers[syscall_id])(reg->rdi, reg->rsi, reg->rdx, reg->r10,
                                                              reg->r8, reg->r9, &regs);
+        reg->rdi = regs.rdi;
+        reg->rsi = regs.rsi;
+        reg->rdx = regs.rdx;
+        reg->r10 = regs.r10;
+        reg->r8  = regs.r8;
+        reg->r9  = regs.r9;
+        reg->r15 = regs.r15;
+        reg->r14 = regs.r14;
+        reg->r13 = regs.r13;
+        reg->r12 = regs.r12;
+        reg->r11 = regs.r11;
+        reg->rbx = regs.rbx;
+        reg->rcx = regs.rcx;
+        reg->rbp = regs.rbp;
+        reg->ds  = regs.ds;
+        reg->es  = regs.es;
+        reg->rip = regs.rip;
     } else
         reg->rax = SYSCALL_FAULT;
+
     write_fsbase(get_current_task()->fs_base);
     return reg;
 }

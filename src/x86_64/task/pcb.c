@@ -1,7 +1,9 @@
 #include "pcb.h"
 #include "description_table.h"
 #include "elf.h"
+#include "errno.h"
 #include "heap.h"
+#include "hhdm.h"
 #include "io.h"
 #include "ipc.h"
 #include "killer.h"
@@ -12,6 +14,7 @@
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
+#include "syscall.h"
 #include "timer.h"
 #include "vfs.h"
 
@@ -215,7 +218,13 @@ void kill_thread(tcb_t task) {
         kerror("Cannot stop kernel thread.");
         return;
     }
-    task->status      = DEATH;
+    task->status = DEATH;
+
+    page_directory_t *directory = get_current_directory();
+    switch_process_page_directory(task->tid_directory);
+    futex_wake((void *)page_virt_to_phys(task->tid_address), 1);
+    switch_process_page_directory(directory);
+
     smp_cpu_t *cpu    = get_cpu_smp(task->cpu_id);
     task->death_index = lock_queue_enqueue(cpu->death_queue, task);
     futex_free(task);
@@ -460,7 +469,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->context0.rbp = parent_task->context0.rbp;
     new_task->context0.rcx = parent_task->context0.rcx;
 
-    memcpy(parent_task->fpu_context.fxsave_area, new_task->fpu_context.fxsave_area, 512);
+    memcpy(new_task->fpu_context.fxsave_area, parent_task->fpu_context.fxsave_area, 512);
     new_task->fpu_flags = parent_task->fpu_flags;
 
     new_task->affinity_mask = parent_task->affinity_mask;
@@ -475,9 +484,14 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
 
     if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
 
-    if (flags & CLONE_PARENT_SETTID) { *parent_tid = (int)parent_task->pid; }
+    if (flags & CLONE_PARENT_SETTID) { *parent_tid = parent_task->pid; }
 
-    if (flags & CLONE_CHILD_SETTID) { *child_tid = (int)new_task->pid; }
+    if (flags & CLONE_CHILD_SETTID) { *child_tid = new_task->pid; }
+
+    if (flags & CLONE_CHILD_CLEARTID) {
+        new_task->tid_address   = (uint64_t)child_tid;
+        new_task->tid_directory = get_current_directory();
+    }
     add_task(new_task);
     return new_task->pid;
 }
