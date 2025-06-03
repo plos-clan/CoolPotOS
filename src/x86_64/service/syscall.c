@@ -667,6 +667,10 @@ syscall_(futex) {
     }
 }
 
+syscall_(get_tid) {
+    return get_current_task()->pid;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -705,6 +709,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SIGACTION]   = syscall_sigaction,
     [SYSCALL_FORK]        = syscall_fork,
     [SYSCALL_FUTEX]       = syscall_futex,
+    [SYSCALL_GET_TID]     = syscall_get_tid,
 };
 // clang-format on
 

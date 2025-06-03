@@ -27,6 +27,7 @@ lock_queue *pgb_queue = NULL;
 pcb_t kernel_group;
 
 int now_pid = 0;
+int now_tid = 0;
 
 _Noreturn void process_exit() {
     uint64_t rax = 0;
@@ -288,7 +289,6 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     strcpy(new_pgb->name, name);
     new_pgb->parent_task = parent_process == NULL ? kernel_group : parent_process;
     new_pgb->pcb_queue   = queue_init();
-    new_pgb->pid_index   = 0;
     new_pgb->ipc_queue   = queue_init();
     new_pgb->file_open   = queue_init();
     new_pgb->tty         = alloc_default_tty();
@@ -323,12 +323,12 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     if (pcb == NULL) {
         new_task->group_index = lock_queue_enqueue(kernel_group->pcb_queue, new_task);
         spin_unlock(kernel_group->pcb_queue->lock);
-        new_task->pid          = kernel_group->pid_index++;
+        new_task->pid          = now_tid++;
         new_task->parent_group = kernel_group;
     } else {
         new_task->group_index = lock_queue_enqueue(pcb->pcb_queue, new_task);
         spin_unlock(pcb->pcb_queue->lock);
-        new_task->pid          = pcb->pid_index++;
+        new_task->pid          = now_tid++;
         new_task->parent_group = pcb;
     }
 
@@ -370,11 +370,11 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
 
     if (pcb == NULL) {
         new_task->group_index  = queue_enqueue(kernel_group->pcb_queue, new_task);
-        new_task->pid          = kernel_group->pid_index++;
+        new_task->pid          = now_tid++;
         new_task->parent_group = kernel_group;
     } else {
         queue_enqueue(pcb->pcb_queue, new_task);
-        new_task->pid          = pcb->pid_index++;
+        new_task->pid          = now_tid++;
         new_task->parent_group = pcb;
     }
 
@@ -449,6 +449,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     strcpy(new_task->name, parent_task->name);
 
     new_task->context0.rip    = reg->rcx; // syscall 指令中 rcx 寄存器为 rip
+    new_task->context0.rflags = reg->r11; // syscall 指令中 r11 寄存器为 rflags
     new_task->context0.cs     = reg->cs;
     new_task->context0.ss     = reg->ss;
     new_task->context0.es     = reg->es;
@@ -460,7 +461,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->context0.r9     = reg->r9;
     new_task->context0.r8     = reg->r8;
     new_task->context0.r10    = reg->r10;
-    new_task->context0.rflags = reg->r11; // syscall 指令中 r11 寄存器为 rflags
+    new_task->context0.r11    = reg->r11;
     new_task->context0.r12    = reg->r12;
     new_task->context0.r13    = reg->r13;
     new_task->context0.r14    = reg->r14;
@@ -479,7 +480,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->parent_group = parent_task->parent_group;
     new_task->group_index  = lock_queue_enqueue(parent_task->parent_group->pcb_queue, new_task);
     spin_unlock(parent_task->parent_group->pcb_queue->lock);
-    new_task->pid          = parent_task->parent_group->pid_index++;
+    new_task->pid          = now_tid++;
     new_task->parent_group = parent_task->parent_group;
 
     if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
@@ -504,25 +505,25 @@ void init_pcb() {
     kernel_group = malloc(sizeof(struct process_control_block));
     memset(kernel_group, 0, sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
-    kernel_group->pid_index = kernel_group->pgb_id = now_pid++;
-    kernel_group->pcb_queue                        = queue_init();
-    kernel_group->queue_index                      = queue_enqueue(pgb_queue, kernel_group);
-    kernel_group->page_dir                         = get_kernel_pagedir();
-    kernel_group->user                             = get_kernel_user();
-    kernel_group->tty                              = get_default_tty();
-    kernel_group->status                           = RUNNING;
-    kernel_group->ipc_queue                        = queue_init();
-    kernel_group->parent_task                      = kernel_group;
-    kernel_group->task_level                       = TASK_KERNEL_LEVEL;
-    kernel_group->cwd                              = malloc(1024);
-    kernel_group->task_signal                      = malloc(sizeof(struct signal_block));
+    kernel_group->pgb_id      = now_pid++;
+    kernel_group->pcb_queue   = queue_init();
+    kernel_group->queue_index = queue_enqueue(pgb_queue, kernel_group);
+    kernel_group->page_dir    = get_kernel_pagedir();
+    kernel_group->user        = get_kernel_user();
+    kernel_group->tty         = get_default_tty();
+    kernel_group->status      = RUNNING;
+    kernel_group->ipc_queue   = queue_init();
+    kernel_group->parent_task = kernel_group;
+    kernel_group->task_level  = TASK_KERNEL_LEVEL;
+    kernel_group->cwd         = malloc(1024);
+    kernel_group->task_signal = malloc(sizeof(struct signal_block));
     memset(kernel_group->cwd, 0, 1024);
     kernel_group->cwd[0] = '/';
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;
     kernel_head_task->task_level   = 0;
-    kernel_head_task->pid          = kernel_group->pid_index++;
+    kernel_head_task->pid          = now_tid++;
     kernel_head_task->cpu_clock    = 0;
     set_kernel_stack(get_rsp()); // 给IDLE线程设置TSS内核栈, 不然这个线程炸了后会发生 DoubleFault
     kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();

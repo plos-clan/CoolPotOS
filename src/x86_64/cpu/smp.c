@@ -17,6 +17,7 @@ extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c
 extern bool                x2apic_mode;      // apic.c
 extern pcb_t               kernel_group;     // pcb.c
+extern int                 now_tid;          // pcb.c
 spin_t                     apu_lock;
 
 smp_cpu_t smp_cpus[MAX_CPU];
@@ -102,7 +103,7 @@ void apu_entry() {
     tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
     not_null_assets(apu_idle, "apu idle null");
     apu_idle->task_level = TASK_KERNEL_LEVEL;
-    apu_idle->pid        = kernel_group->pid_index++;
+    apu_idle->pid        = now_tid++;
     apu_idle->cpu_clock  = 0;
     set_kernel_stack(get_rsp());
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
