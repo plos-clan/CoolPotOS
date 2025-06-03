@@ -219,46 +219,43 @@ syscall_(mmap) {
     uint64_t aligned_len = PADDING_UP(length, PAGE_SIZE);
     if (aligned_len == 0) { return SYSCALL_FAULT_(EINVAL); }
 
-    if (addr == 0) {
-        addr   = get_current_task()->parent_group->mmap_start;
-        flags &= (~MAP_FIXED);
-        get_current_task()->parent_group->mmap_start += aligned_len;
-        if (get_current_task()->parent_group->mmap_start > USER_MMAP_END) {
-            get_current_task()->parent_group->mmap_start -= aligned_len;
-            return SYSCALL_FAULT_(ENOMEM);
-        }
-    }
+    pcb_t process = get_current_task()->parent_group;
 
     uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
     if (count == 0) return EOK;
 
-    get_current_task()->parent_group->mmap_start += (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+    if (addr == 0) {
+        addr                 = process->mmap_start;
+        flags               &= (~MAP_FIXED);
+        process->mmap_start += aligned_len;
+        if (process->mmap_start > USER_MMAP_END) {
+            process->mmap_start -= aligned_len;
+            return SYSCALL_FAULT_(ENOMEM);
+        }
+    } else
+        process->mmap_start += aligned_len;
 
     if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES); // 不允许映射到内核地址空间
     if (!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT_(EINVAL);
-    uint64_t vaddr = addr & ~(PAGE_SIZE - 1);
+    uint64_t vaddr      = addr & ~(PAGE_SIZE - 1);
+    uint64_t page_flags = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
+    if (prot & PROT_READ) { page_flags |= PTE_PRESENT; }
+    if (prot & PROT_WRITE) { page_flags |= PTE_WRITEABLE; }
+    if (prot & PROT_EXEC) { page_flags |= PTE_USER; }
 
-    for (size_t i = 0; i < count; i++) {
-        uint64_t page_flags = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
-        uint64_t page_addr  = vaddr + i * PAGE_SIZE;
-        if (prot & PROT_READ) { page_flags |= PTE_PRESENT; }
-        if (prot & PROT_WRITE) { page_flags |= PTE_WRITEABLE; }
-        if (prot & PROT_EXEC) { page_flags |= PTE_USER; }
-
-        //        if (flags & MAP_FIXED) {
-        //TODO 检查地址是否已被映射, 并分配空闲地址
-        //        } else {
-        uint64_t phys = alloc_frames(1);
-        page_map_to(get_current_directory(), page_addr, phys, page_flags);
-        //        }
-    }
+    // 预分配机制, 只有用户程序访问这段区域才进行实际分配(具体如何分配看page.c/page_fault_handle)
+    mm_virtual_page_t *virt_page = malloc(sizeof(mm_virtual_page_t));
+    not_null_assets(virt_page, "Out of memory for virtual page allocation");
+    virt_page->start     = vaddr;
+    virt_page->count     = count;
+    virt_page->flags     = flags;
+    virt_page->pte_flags = page_flags;
+    virt_page->index     = queue_enqueue(process->virt_queue, virt_page);
 
     if (fd > 2) {
         vfs_node_t file = (vfs_node_t)queue_get(get_current_task()->parent_group->file_open, fd);
         if (!file) return SYSCALL_FAULT_(EBADF);
         vfs_read(file, (void *)addr, offset, length);
-    } else {
-        memset((void *)addr, 0, length);
     }
 
     return addr;
@@ -651,6 +648,8 @@ syscall_(futex) {
     int              timeout = (int)arg4;
     tcb_t            thread  = get_current_task();
 
+    bool is_pre_sub = false;
+re_futex: //TODO PRIVATE 标志暂时不支持
     switch (op) {
     case FUTEX_WAIT:
         if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
@@ -658,12 +657,19 @@ syscall_(futex) {
         if (observed != val) { return SYSCALL_FAULT_(EAGAIN); }
         thread->status = FUTEX; // 挂起当前线程
         futex_add((void *)page_virt_to_phys((uint64_t)uaddr), thread);
-        syscall_yield(0, 0, 0, 0, 0, 0, 0);
+        scheduler_yield();
         return SYSCALL_SUCCESS;
     case FUTEX_WAKE:
         futex_wake((void *)page_virt_to_phys((uint64_t)uaddr), val);
         return SYSCALL_SUCCESS;
-    default: return SYSCALL_FAULT_(EINVAL);
+    default: {
+        if (!is_pre_sub) {
+            op         -= 1;
+            is_pre_sub  = true;
+            goto re_futex;
+        }
+        return SYSCALL_FAULT_(EINVAL);
+    }
     }
 }
 

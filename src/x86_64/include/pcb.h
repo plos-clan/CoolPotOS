@@ -107,6 +107,7 @@ struct process_control_block {
     size_t            death_index; // 死亡队列索引
     lock_queue       *ipc_queue;   // 进程消息队列
     lock_queue       *file_open;   // 文件句柄占用队列
+    lock_queue       *virt_queue;  // 虚拟页分配队列
     page_directory_t *page_dir;    // 进程页表
     signal_block_t   *task_signal; // 信号处理
     ucb_t             user;        // 用户会话

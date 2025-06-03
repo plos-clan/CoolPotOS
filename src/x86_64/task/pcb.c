@@ -201,8 +201,23 @@ void kill_proc0(pcb_t pcb) {
         if (node == NULL) break;
         vfs_close(node);
     }
+
+    mm_virtual_page_t *virt_page = NULL;
+refree_virt:
+    queue_foreach(pcb->virt_queue, node) {
+        mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
+        virt_page                = vpage;
+        break;
+    }
+    if (virt_page != NULL) {
+        queue_remove_at(pcb->virt_queue, virt_page->index);
+        free(virt_page);
+        goto refree_virt;
+    }
+
     queue_destroy(pcb->file_open);
     queue_destroy(pcb->ipc_queue);
+    queue_destroy(pcb->virt_queue);
     free(pcb->cmdline);
     free(pcb->cwd);
     free(pcb->task_signal);
@@ -291,6 +306,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->pcb_queue   = queue_init();
     new_pgb->ipc_queue   = queue_init();
     new_pgb->file_open   = queue_init();
+    new_pgb->virt_queue  = queue_init();
     new_pgb->tty         = alloc_default_tty();
     new_pgb->task_level  = TASK_KERNEL_LEVEL;
     new_pgb->cmdline     = malloc(strlen(cmdline));
@@ -454,7 +470,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->context0.ss     = reg->ss;
     new_task->context0.es     = reg->es;
     new_task->context0.ds     = reg->ds;
-    new_task->context0.rax    = reg->rax;
+    new_task->context0.rax    = 0; // 子线程返回 0
     new_task->context0.rdi    = reg->rdi;
     new_task->context0.rsi    = reg->rsi;
     new_task->context0.rdx    = reg->rdx;
@@ -515,6 +531,7 @@ void init_pcb() {
     kernel_group->ipc_queue   = queue_init();
     kernel_group->parent_task = kernel_group;
     kernel_group->task_level  = TASK_KERNEL_LEVEL;
+    kernel_group->virt_queue  = queue_init();
     kernel_group->cwd         = malloc(1024);
     kernel_group->task_signal = malloc(sizeof(struct signal_block));
     memset(kernel_group->cwd, 0, 1024);
