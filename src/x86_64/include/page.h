@@ -37,6 +37,14 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
+typedef struct mm_virtual_page {
+    uint64_t start;
+    uint64_t count;
+    uint64_t flags;
+    uint64_t pte_flags;
+    size_t   index;
+} mm_virtual_page_t;
+
 /**
  * 获取内核用页表
  * @return 页表指针

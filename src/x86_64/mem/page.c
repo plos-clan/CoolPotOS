@@ -29,21 +29,54 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     terminal_close_flush();
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
-    logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
-    logkf("Type: %s\n", !(error_code & 0x1) ? "NotPresent"
-                        : error_code & 0x2  ? "WriteError"
-                        : error_code & 0x4  ? "UserMode"
-                        : error_code & 0x8  ? "ReservedBitsSet"
-                        : error_code & 0x10 ? "DecodeAddress"
-                                            : "Unknown");
+
     if (get_current_task() != NULL) {
-        logkf("Current process PID: %d:%s (%s)\n", get_current_task()->pid,
-              get_current_task()->name, get_current_task()->parent_group->name);
-        if (get_current_task()->parent_group->task_level == TASK_APPLICATION_LEVEL)
-            kill_proc(get_current_task()->parent_group, -1);
+        pcb_t current_proc = get_current_task()->parent_group;
+        logkf("#PF Current process PID: %d:%s (%s)\n", get_current_task()->pid,
+              get_current_task()->name, current_proc->name);
+
+        if (current_proc->task_level == TASK_APPLICATION_LEVEL) {
+            mm_virtual_page_t *virt_page = NULL;
+            spin_lock(current_proc->virt_queue->lock);
+            queue_foreach(current_proc->virt_queue, node) {
+                mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
+                if (faulting_address >= vpage->start &&
+                    faulting_address < vpage->start + vpage->count * PAGE_SIZE) {
+                    virt_page = vpage;
+                    break;
+                }
+            }
+            spin_unlock(current_proc->virt_queue->lock);
+            if (virt_page == NULL) {
+                kill_proc(get_current_task()->parent_group, -1);
+            } else {
+                // 实际分配预分配的地址
+                for (size_t i = 0; i < virt_page->count; i++) {
+                    uint64_t page_addr = virt_page->start + i * PAGE_SIZE;
+
+                    //        if (flags & MAP_FIXED) {
+                    //TODO 检查地址是否已被映射, 并分配空闲地址
+                    //        } else {
+                    uint64_t phys = alloc_frames(1);
+                    page_map_to(get_current_directory(), page_addr, phys, virt_page->pte_flags);
+                    //        }
+                    memset((void *)page_addr, 0, PAGE_SIZE);
+                }
+                queue_remove_at(current_proc->virt_queue, virt_page->index);
+                free(virt_page);
+            }
+        }
         terminal_open_flush();
         enable_scheduler();
         cpu_hlt;
+    } else {
+        logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
+        logkf("Type: %s\n", !(error_code & 0x1) ? "NotPresent"
+                            : error_code & 0x2  ? "WriteError"
+                            : error_code & 0x4  ? "UserMode"
+                            : error_code & 0x8  ? "ReservedBitsSet"
+                            : error_code & 0x10 ? "DecodeAddress"
+                                                : "Unknown");
     }
 
     printk("\n");
