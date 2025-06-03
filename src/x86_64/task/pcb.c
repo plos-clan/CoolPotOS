@@ -448,26 +448,26 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->main            = parent_task->main;
     strcpy(new_task->name, parent_task->name);
 
-    new_task->context0.rip = parent_task->context0.rip;
-    new_task->context0.cs  = parent_task->context0.cs;
-    new_task->context0.ss  = parent_task->context0.ss;
-    new_task->context0.es  = parent_task->context0.es;
-    new_task->context0.ds  = parent_task->context0.ds;
-    new_task->context0.rax = parent_task->context0.rax;
-    new_task->context0.rdi = parent_task->context0.rdi;
-    new_task->context0.rsi = parent_task->context0.rsi;
-    new_task->context0.rdx = parent_task->context0.rdx;
-    new_task->context0.r9  = parent_task->context0.r9;
-    new_task->context0.r8  = parent_task->context0.r8;
-    new_task->context0.r10 = parent_task->context0.r10;
-    new_task->context0.r11 = parent_task->context0.r11;
-    new_task->context0.r12 = parent_task->context0.r12;
-    new_task->context0.r13 = parent_task->context0.r13;
-    new_task->context0.r14 = parent_task->context0.r14;
-    new_task->context0.r15 = parent_task->context0.r15;
-    new_task->context0.rbx = parent_task->context0.rbx;
-    new_task->context0.rbp = parent_task->context0.rbp;
-    new_task->context0.rcx = parent_task->context0.rcx;
+    new_task->context0.rip    = reg->rcx; // syscall 指令中 rcx 寄存器为 rip
+    new_task->context0.cs     = reg->cs;
+    new_task->context0.ss     = reg->ss;
+    new_task->context0.es     = reg->es;
+    new_task->context0.ds     = reg->ds;
+    new_task->context0.rax    = reg->rax;
+    new_task->context0.rdi    = reg->rdi;
+    new_task->context0.rsi    = reg->rsi;
+    new_task->context0.rdx    = reg->rdx;
+    new_task->context0.r9     = reg->r9;
+    new_task->context0.r8     = reg->r8;
+    new_task->context0.r10    = reg->r10;
+    new_task->context0.rflags = reg->r11; // syscall 指令中 r11 寄存器为 rflags
+    new_task->context0.r12    = reg->r12;
+    new_task->context0.r13    = reg->r13;
+    new_task->context0.r14    = reg->r14;
+    new_task->context0.r15    = reg->r15;
+    new_task->context0.rbx    = reg->rbx;
+    new_task->context0.rbp    = reg->rbp;
+    new_task->context0.rcx    = reg->rcx;
 
     memcpy(new_task->fpu_context.fxsave_area, parent_task->fpu_context.fxsave_area, 512);
     new_task->fpu_flags = parent_task->fpu_flags;
@@ -484,7 +484,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
 
     if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
 
-    if (flags & CLONE_PARENT_SETTID) { *parent_tid = parent_task->pid; }
+    if (flags & CLONE_PARENT_SETTID) { *parent_tid = new_task->pid; }
 
     if (flags & CLONE_CHILD_SETTID) { *child_tid = new_task->pid; }
 
