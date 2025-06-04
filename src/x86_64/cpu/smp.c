@@ -12,6 +12,7 @@
 #include "lock.h"
 #include "pcb.h"
 #include "sprintf.h"
+#include "syscall.h"
 
 extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c
@@ -135,6 +136,9 @@ void apu_entry() {
     }
     cpu_done_count++;
     spin_unlock(apu_lock);
+
+    setup_syscall(false);
+
     open_interrupt;
     halt_service();
 }

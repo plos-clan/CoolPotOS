@@ -51,6 +51,11 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
             if (virt_page == NULL) {
                 kill_proc(get_current_task()->parent_group, -1);
                 spin_unlock(current_proc->virt_queue->lock);
+                terminal_open_flush();
+                enable_scheduler();
+                update_terminal();
+                open_interrupt;
+                cpu_hlt;
             } else {
                 size_t   fault_index = (faulting_address - virt_page->start) / PAGE_SIZE;
                 uint64_t page_addr   = virt_page->start + fault_index * PAGE_SIZE;
@@ -91,7 +96,9 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         }
         terminal_open_flush();
         enable_scheduler();
-        cpu_hlt;
+        open_interrupt;
+        update_terminal();
+        return;
     } else {
         logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
         logkf("Type: %s\n", !(error_code & 0x1) ? "NotPresent"
@@ -127,6 +134,81 @@ void page_table_clear(page_table_t *table) {
     for (int i = 0; i < 512; i++) {
         table->entries[i].value = 0;
     }
+}
+
+bool page_table_get_flags(page_directory_t *directory, uint64_t addr, uint64_t *out_flags) {
+    uint64_t l4_index = (((addr >> 39)) & 0x1FF);
+    uint64_t l3_index = (((addr >> 30)) & 0x1FF);
+    uint64_t l2_index = (((addr >> 21)) & 0x1FF);
+    uint64_t l1_index = (((addr >> 12)) & 0x1FF);
+
+    page_table_t *pml4 = directory->table;
+
+    if (!(pml4->entries[l4_index].value & PTE_PRESENT)) return false;
+    if (pml4->entries[l4_index].value & PTE_HUGE) {
+        *out_flags = pml4->entries[l4_index].value & 0xFFF;
+        return true;
+    }
+
+    page_table_t *pdpt = (page_table_t *)(pml4->entries[l4_index].value & PAGE_MASK);
+    if (!(pdpt->entries[l3_index].value & PTE_PRESENT)) return false;
+    if (pdpt->entries[l3_index].value & PTE_HUGE) {
+        *out_flags = pdpt->entries[l3_index].value & 0xFFF;
+        return true;
+    }
+
+    page_table_t *pd = (page_table_t *)(pdpt->entries[l3_index].value & PAGE_MASK);
+    if (!(pd->entries[l2_index].value & PTE_PRESENT)) return false;
+    if (pd->entries[l2_index].value & PTE_HUGE) {
+        *out_flags = pd->entries[l2_index].value & 0xFFF;
+        return true;
+    }
+
+    page_table_t *pt = (page_table_t *)(pd->entries[l2_index].value & PAGE_MASK);
+    if (!(pt->entries[l1_index].value & PTE_PRESENT)) return false;
+
+    *out_flags = pt->entries[l1_index].value & 0xFFF;
+    return true;
+}
+
+bool page_table_update_flags(page_directory_t *directory, uint64_t addr, uint64_t new_flags) {
+    page_table_t *pml4     = directory->table;
+    uint64_t      l4_index = (((addr >> 39)) & 0x1FF);
+    uint64_t      l3_index = (((addr >> 30)) & 0x1FF);
+    uint64_t      l2_index = (((addr >> 21)) & 0x1FF);
+    uint64_t      l1_index = (((addr >> 12)) & 0x1FF);
+
+    if (!(pml4->entries[l4_index].value & PTE_PRESENT)) return false;
+    if (pml4->entries[l4_index].value & PTE_HUGE) {
+        uint64_t phys                 = pml4->entries[l4_index].value & PAGE_MASK;
+        pml4->entries[l4_index].value = phys | (new_flags & 0xFFF);
+        return true;
+    }
+
+    page_table_t *pdpt = (page_table_t *)(pml4->entries[l4_index].value & PAGE_MASK);
+    if (!(pdpt->entries[l3_index].value & PTE_PRESENT)) return false;
+    if (pdpt->entries[l3_index].value & PTE_HUGE) {
+        uint64_t phys                 = pdpt->entries[l3_index].value & PAGE_MASK;
+        pdpt->entries[l3_index].value = phys | (new_flags & 0xFFF);
+        return true;
+    }
+
+    page_table_t *pd = (page_table_t *)(pdpt->entries[l3_index].value & PAGE_MASK);
+    if (!(pd->entries[l2_index].value & PTE_PRESENT)) return false;
+    if (pd->entries[l2_index].value & PTE_HUGE) {
+        uint64_t phys               = pd->entries[l2_index].value & PAGE_MASK;
+        pd->entries[l2_index].value = phys | (new_flags & 0xFFF);
+        return true;
+    }
+
+    page_table_t *pt = (page_table_t *)(pd->entries[l2_index].value & PAGE_MASK);
+    if (!(pt->entries[l1_index].value & PTE_PRESENT)) return false;
+
+    uint64_t phys               = pt->entries[l1_index].value & PAGE_MASK;
+    pt->entries[l1_index].value = phys | (new_flags & 0xFFF);
+
+    __asm__ volatile("invlpg (%0)" ::"r"(addr) : "memory");
+    return true;
 }
 
 page_table_t *page_table_create(page_table_entry_t *entry) {

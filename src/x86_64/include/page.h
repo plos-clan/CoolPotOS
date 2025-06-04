@@ -115,6 +115,24 @@ void switch_process_page_directory(page_directory_t *dir);
 uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags);
 
 /**
+ * 获取指定地址的页表项标志
+ * @param directory 页表
+ * @param addr 地址 (需要 4k 对齐)
+ * @param out_flags 输出的标志
+ * @return 是否成功获取
+ */
+bool page_table_get_flags(page_directory_t *directory, uint64_t addr, uint64_t *out_flags);
+
+/**
+ * 设置指定地址的页表项标志
+ * @param root 页表
+ * @param addr 地址 (需要 4k 对齐)
+ * @param new_flags 标志
+ * @return 是否成功设置
+ */
+bool page_table_update_flags(page_directory_t *directory, uint64_t addr, uint64_t new_flags);
+
+/**
  * 获取当前CPU核心的页表
  * @return 页表指针
  */

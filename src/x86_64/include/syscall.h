@@ -54,6 +54,7 @@
 #define SYSCALL_LSTAT       6
 #define SYSCALL_POLL        7
 #define SYSCALL_MMAP        9
+#define SYSCALL_MPROTECT    10
 #define SYSCALL_MUNMAP      11
 /* #define SYSCALL_BRK  12  brk 系统调用不实现*/
 #define SYSCALL_SIGACTION   13
@@ -138,4 +139,4 @@ struct pollfd {
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
                               struct syscall_regs *);
 
-void setup_syscall();
+void setup_syscall(bool is_print);
