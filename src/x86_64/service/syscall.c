@@ -141,8 +141,8 @@ static inline void enable_syscall() {
     efer           = rdmsr(MSR_EFER);
     efer          |= 1;
     uint64_t star  = ((uint64_t)((0x18 | 0x3) - 8) << 48) | ((uint64_t)0x08 << 32);
-    wrmsr(MSR_STAR, star);
     wrmsr(MSR_EFER, efer);
+    wrmsr(MSR_STAR, star);
     wrmsr(MSR_LSTAR, (uint64_t)asm_syscall_handle);
     wrmsr(MSR_SYSCALL_MASK, (1 << 9));
 }
@@ -677,6 +677,57 @@ syscall_(get_tid) {
     return get_current_task()->pid;
 }
 
+syscall_(mprotect) {
+    uint64_t addr   = arg0;
+    size_t   length = arg1;
+    uint64_t prot   = arg2;
+
+    if (addr == 0 || length == 0) return SYSCALL_FAULT_(EINVAL);
+    if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES);
+
+    addr              = PADDING_DOWN(addr, PAGE_SIZE);
+    size_t page_count = PADDING_UP(length, PAGE_SIZE) / PAGE_SIZE;
+    pcb_t  process    = get_current_task()->parent_group;
+
+    for (size_t i = 0; i < page_count; i++) {
+        uint64_t page_addr = addr + i * PAGE_SIZE;
+
+        bool updated = false;
+
+        spin_lock(process->virt_queue->lock);
+        queue_foreach(process->virt_queue, node) {
+            mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
+            if (page_addr >= vpage->start && page_addr < vpage->start + vpage->count * PAGE_SIZE) {
+                uint64_t new_flags = 0;
+                if (prot & PROT_READ) new_flags |= PTE_PRESENT;
+                if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
+                if (prot & PROT_EXEC) new_flags |= PTE_USER;
+
+                vpage->pte_flags = new_flags;
+                updated          = true;
+                break;
+            }
+        }
+        spin_unlock(process->virt_queue->lock);
+
+        if (!updated) {
+            uint64_t old_flags;
+            if (!page_table_get_flags(get_current_directory(), page_addr, &old_flags)) {
+                return SYSCALL_FAULT_(ENOMEM);
+            }
+
+            uint64_t new_flags = old_flags & ~(PTE_WRITEABLE | PTE_USER);
+            if (prot & PROT_READ) new_flags |= PTE_PRESENT;
+            if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
+            if (prot & PROT_EXEC) new_flags |= PTE_USER;
+
+            page_table_update_flags(get_current_directory(), page_addr, new_flags);
+        }
+    }
+
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -716,6 +767,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FORK]        = syscall_fork,
     [SYSCALL_FUTEX]       = syscall_futex,
     [SYSCALL_GET_TID]     = syscall_get_tid,
+    [SYSCALL_MPROTECT]    = syscall_mprotect,
 };
 // clang-format on
 
@@ -794,8 +846,8 @@ USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理
     return reg;
 }
 
-void setup_syscall() {
+void setup_syscall(bool is_print) {
     enable_syscall();
     register_interrupt_handler(0x80, asm_syscall_entry, 0, 0x8E | 0x60);
-    kinfo("Setup CP_Kernel syscall table.");
+    if (is_print) kinfo("Setup CP_Kernel syscall table.");
 }

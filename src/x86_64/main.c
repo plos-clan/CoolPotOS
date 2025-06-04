@@ -123,7 +123,7 @@ void kmain() {
     smp_setup();
 
     killer_setup();
-    setup_syscall();
+    setup_syscall(true);
     xhci_setup();
     kinfo("Kernel load Done!");
 
