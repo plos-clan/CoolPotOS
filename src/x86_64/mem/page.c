@@ -35,7 +35,8 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         logkf("#PF Current process PID: %d:%s (%s)\n", get_current_task()->pid,
               get_current_task()->name, current_proc->name);
 
-        if (current_proc->task_level == TASK_APPLICATION_LEVEL) {
+        // 应用程序懒分配机制
+        if (current_proc->task_level == TASK_APPLICATION_LEVEL && !(error_code & 0x1)) {
             mm_virtual_page_t *virt_page = NULL;
             spin_lock(current_proc->virt_queue->lock);
             queue_foreach(current_proc->virt_queue, node) {
@@ -46,24 +47,46 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                     break;
                 }
             }
-            spin_unlock(current_proc->virt_queue->lock);
+
             if (virt_page == NULL) {
                 kill_proc(get_current_task()->parent_group, -1);
+                spin_unlock(current_proc->virt_queue->lock);
             } else {
-                // 实际分配预分配的地址
-                for (size_t i = 0; i < virt_page->count; i++) {
-                    uint64_t page_addr = virt_page->start + i * PAGE_SIZE;
+                size_t   fault_index = (faulting_address - virt_page->start) / PAGE_SIZE;
+                uint64_t page_addr   = virt_page->start + fault_index * PAGE_SIZE;
 
-                    //        if (flags & MAP_FIXED) {
-                    //TODO 检查地址是否已被映射, 并分配空闲地址
-                    //        } else {
-                    uint64_t phys = alloc_frames(1);
-                    page_map_to(get_current_directory(), page_addr, phys, virt_page->pte_flags);
-                    //        }
-                    memset((void *)page_addr, 0, PAGE_SIZE);
+                uint64_t phys = alloc_frames(1);
+                page_map_to(get_current_directory(), page_addr, phys, virt_page->pte_flags);
+                memset((void *)page_addr, 0, PAGE_SIZE);
+
+                uint64_t range_start = virt_page->start;
+                // uint64_t range_end = range_start + virt_page->count * PAGE_SIZE;
+
+                mm_virtual_page_t *left  = NULL;
+                mm_virtual_page_t *right = NULL;
+
+                // 左侧未分配部分
+                if (fault_index > 0) {
+                    left            = malloc(sizeof(mm_virtual_page_t));
+                    left->start     = range_start;
+                    left->count     = fault_index;
+                    left->pte_flags = virt_page->pte_flags;
+                    left->index     = queue_enqueue(current_proc->virt_queue, left);
                 }
+
+                // 右侧未分配部分
+                if (fault_index + 1 < virt_page->count) {
+                    right            = malloc(sizeof(mm_virtual_page_t));
+                    right->start     = range_start + (fault_index + 1) * PAGE_SIZE;
+                    right->count     = virt_page->count - fault_index - 1;
+                    right->pte_flags = virt_page->pte_flags;
+                    right->index     = queue_enqueue(current_proc->virt_queue, right);
+                }
+
+                // 移除原始 mm_virtual_page
                 queue_remove_at(current_proc->virt_queue, virt_page->index);
                 free(virt_page);
+                spin_unlock(current_proc->virt_queue->lock);
             }
         }
         terminal_open_flush();

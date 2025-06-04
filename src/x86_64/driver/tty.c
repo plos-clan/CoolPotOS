@@ -26,7 +26,7 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
             char c = msg[i];
             if (c == '\n') {
                 terminal_process_byte('\r');
-                terminal_flush();
+                update_terminal();
             }
             terminal_process_byte(c);
         }
@@ -42,7 +42,7 @@ static void tty_kernel_putc(tty_t *tty, int c) {
         spin_lock(tty_lock);
         if (c == '\n') {
             terminal_process_byte('\r');
-            terminal_flush();
+            update_terminal();
         }
         terminal_process_byte(c);
         spin_unlock(tty_lock);
