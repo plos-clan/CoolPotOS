@@ -7,10 +7,13 @@
 #define TERMINAL_EMBEDDED_FONT
 #include "os_terminal.h"
 
-int  terminal_flush_service(void *pVoid);
-void init_terminal();
-void update_terminal();
-void terminal_putc(char c);
-void terminal_puts(const char *msg);
-void terminal_open_flush();
-void terminal_close_flush();
+int    terminal_flush_service(void *pVoid);
+void   init_terminal();
+void   update_terminal();
+void   terminal_putc(char c);
+void   terminal_puts(const char *msg);
+void   terminal_open_flush();
+void   terminal_close_flush();
+float  get_terminal_font_size();
+size_t get_terminal_row(size_t height);
+size_t get_terminal_col(size_t width);

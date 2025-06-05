@@ -61,6 +61,30 @@ void terminal_pty_writer(const uint8_t *data) {
     }
 }
 
+float get_terminal_font_size() {
+    return 16.0f * ((float)framebuffer->width / 1920);
+}
+
+size_t get_terminal_row(size_t height) {
+    float dpi = 96.0;
+
+    float font_size_pt   = 12.0;
+    int   font_height_px = (int)(font_size_pt * dpi / 72.0 + 0.5f);
+
+    return height / font_height_px;
+}
+
+size_t get_terminal_col(size_t width) {
+    float dpi = 96.0;
+
+    float font_size_pt   = 12.0;
+    int   font_height_px = (int)(font_size_pt * dpi / 72.0 + 0.5f);
+
+    int font_width_px = font_height_px / 2;
+
+    return width / font_width_px;
+}
+
 void init_terminal() {
     TerminalDisplay display = {.width            = framebuffer->width,
                                .height           = framebuffer->height,
@@ -72,7 +96,8 @@ void init_terminal() {
                                .red_mask_shift   = framebuffer->red_mask_shift,
                                .red_mask_size    = framebuffer->red_mask_size,
                                .pitch            = framebuffer->pitch};
-    float           size    = 16.0f * ((float)framebuffer->width / 1920);
+
+    float size = get_terminal_font_size();
 
     //    cp_module_t *mod = get_module("sysfont");
     //    if(mod == NULL){

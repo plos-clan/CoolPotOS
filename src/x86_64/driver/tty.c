@@ -1,6 +1,7 @@
 #include "tty.h"
 #include "atom_queue.h"
 #include "gop.h"
+#include "ioctl.h"
 #include "keyboard.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -116,7 +117,21 @@ static size_t stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t
     return number;
 }
 
-static void tty_ioctl(size_t req, void *arg) {}
+static int tty_ioctl(size_t req, void *arg) {
+    switch (req) {
+    case TIOCGWINSZ:
+        struct winsize *ws = (struct winsize *)arg;
+        if (ws != NULL) {
+            ws->ws_row    = get_terminal_row(get_current_task()->parent_group->tty->height);
+            ws->ws_col    = get_terminal_col(get_current_task()->parent_group->tty->width);
+            ws->ws_xpixel = get_current_task()->parent_group->tty->width;
+            ws->ws_ypixel = get_current_task()->parent_group->tty->height;
+        }
+        break;
+    default: return -1;
+    }
+    return 0;
+}
 
 void build_tty_device() {
     vdisk stdio;
@@ -127,7 +142,7 @@ void build_tty_device() {
     stdio.size        = 1;
     stdio.read        = stdin_read;
     stdio.write       = stdout_write;
-    stdio.ioctl       = (void *)empty;
+    stdio.ioctl       = tty_ioctl;
     regist_vdisk(stdio);
 
     vdisk tty0;
