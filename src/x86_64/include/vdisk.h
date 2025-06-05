@@ -12,7 +12,7 @@ typedef enum {
 typedef struct {
     size_t (*read)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
     size_t (*write)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);
-    void (*ioctl)(size_t req, void *handle);
+    int (*ioctl)(size_t req, void *handle);
     int          flag;
     uint32_t     size;        // 大小
     uint32_t     sector_size; // 扇区大小
