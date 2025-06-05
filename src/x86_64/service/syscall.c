@@ -224,7 +224,8 @@ syscall_(mmap) {
     uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
     if (count == 0) return EOK;
 
-    if (addr == 0) {
+    if (addr == 0 || (addr > USER_MMAP_START && addr < USER_MMAP_END)) {
+        if (flags & MAP_FIXED) return SYSCALL_FAULT_(EINVAL);
         addr                 = process->mmap_start;
         flags               &= (~MAP_FIXED);
         process->mmap_start += aligned_len;
@@ -232,10 +233,10 @@ syscall_(mmap) {
             process->mmap_start -= aligned_len;
             return SYSCALL_FAULT_(ENOMEM);
         }
-    } else
-        process->mmap_start += aligned_len;
+    }
 
     if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES); // 不允许映射到内核地址空间
+
     if (!(flags & MAP_ANONYMOUS)) return SYSCALL_FAULT_(EINVAL);
     uint64_t vaddr      = addr & ~(PAGE_SIZE - 1);
     uint64_t page_flags = PTE_PRESENT | PTE_USER | PTE_WRITEABLE;
@@ -698,7 +699,7 @@ syscall_(mprotect) {
         queue_foreach(process->virt_queue, node) {
             mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
             if (page_addr >= vpage->start && page_addr < vpage->start + vpage->count * PAGE_SIZE) {
-                uint64_t new_flags = 0;
+                uint64_t new_flags = vpage->pte_flags;
                 if (prot & PROT_READ) new_flags |= PTE_PRESENT;
                 if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
                 if (prot & PROT_EXEC) new_flags |= PTE_USER;
