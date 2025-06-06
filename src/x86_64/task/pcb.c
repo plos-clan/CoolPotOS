@@ -209,17 +209,20 @@ void kill_proc0(pcb_t pcb) {
         vfs_close(node);
     }
 
-    mm_virtual_page_t *virt_page = NULL;
-refree_virt:
-    queue_foreach(pcb->virt_queue, node) {
-        mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
-        virt_page                = vpage;
-        break;
-    }
-    if (virt_page != NULL) {
-        queue_remove_at(pcb->virt_queue, virt_page->index);
-        free(virt_page);
-        goto refree_virt;
+    if (pcb->virt_queue->size > 0) {
+    refree_virt:
+        mm_virtual_page_t *virt_page = NULL;
+
+        queue_foreach(pcb->virt_queue, node) {
+            mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
+            virt_page                = vpage;
+            break;
+        }
+        if (virt_page != NULL) {
+            queue_remove_at(pcb->virt_queue, virt_page->index);
+            free(virt_page);
+            goto refree_virt;
+        }
     }
 
     queue_destroy(pcb->file_open);
