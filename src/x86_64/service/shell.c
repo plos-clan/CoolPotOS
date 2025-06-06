@@ -345,7 +345,8 @@ static void exec(int argc, char **argv) {
         if (i != argc - 1) strcat(result, " ");
     }
 
-    pcb_t user_task       = create_process_group(name, up, user_handle, result, shell_process);
+    pcb_t user_task       = create_process_group(name, up, user_handle, result, shell_process,
+                                                 module->data, module->size);
     user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);
 

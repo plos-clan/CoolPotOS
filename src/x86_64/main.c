@@ -129,7 +129,7 @@ void kmain() {
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);
 
-    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL);
+    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
 
     extern void ps(int argc, char **argv);
