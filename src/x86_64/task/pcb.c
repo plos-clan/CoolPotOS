@@ -89,9 +89,16 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
     memset(tmp, 0, 2 * sizeof(uint64_t));
     tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    //TODO 目前不支持 phdr 信息获取
+    page_map_range_to_random(get_current_task()->parent_group->page_dir, EHDR_START_ADDR,
+                             (get_current_task()->parent_group->elf_size + PAGE_SIZE - 1) /
+                                 PAGE_SIZE,
+                             PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+
+    Elf64_Ehdr *ehdr  = (Elf64_Ehdr *)EHDR_START_ADDR;
+    Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
+
     ((uint64_t *)tmp)[0] = AT_PHDR;
-    ((uint64_t *)tmp)[1] = 0;
+    ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_PHENT;
@@ -99,7 +106,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_PHNUM;
-    ((uint64_t *)tmp)[1] = 0;
+    ((uint64_t *)tmp)[1] = ehdr->e_phnum;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_ENTRY;
@@ -297,7 +304,7 @@ void kill_all_proc() {
 }
 
 pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle,
-                           char *cmdline, pcb_t parent_process) {
+                           char *cmdline, pcb_t parent_process, void *elf_file, size_t elf_size) {
     pcb_t new_pgb = malloc(sizeof(struct process_control_block));
     memset(new_pgb, 0, sizeof(struct process_control_block));
     new_pgb->pgb_id = now_pid++;
@@ -312,7 +319,8 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->cmdline     = malloc(strlen(cmdline));
     new_pgb->task_signal = malloc(sizeof(struct signal_block));
     memset(new_pgb->task_signal, 0, sizeof(struct signal_block));
-
+    new_pgb->elf_file = elf_file;
+    new_pgb->elf_size = elf_size;
     strcpy(new_pgb->cmdline, cmdline);
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;

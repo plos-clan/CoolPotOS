@@ -115,6 +115,8 @@ struct process_control_block {
     TaskStatus        status;      // 进程状态
     uint64_t          mmap_start;  // 映射起始地址
     pcb_t             parent_task; // 父进程
+    void             *elf_file;    // 可执行文件指针
+    size_t            elf_size;    // 可执行文件大小
 };
 
 struct thread_control_block {
@@ -192,10 +194,12 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb);
  * @param user_handle == NULL ? 内核会话 ? 指定用户会话
  * @param cmdline 命令行参数 (不得为NULL,无参数放空字符串)
  * @param parent_process 父进程(为NULL自动寻父)
+ * @param elf_file 可执行文件指针 (用户态程序不得为NULL)
+ * @param elf_size 可执行文件大小 (用户态程序不得为0)
  * @return 进程指针
  */
 pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_handle,
-                           char *cmdline, pcb_t parent_process);
+                           char *cmdline, pcb_t parent_process, void *elf_file, size_t elf_size);
 
 /**
  * 获取当前运行的线程(多核下会获取当前CPU正在调度的线程)
