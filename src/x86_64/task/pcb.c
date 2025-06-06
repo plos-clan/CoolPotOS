@@ -94,7 +94,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
                                  PAGE_SIZE,
                              PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
 
-    Elf64_Ehdr *ehdr  = (Elf64_Ehdr *)EHDR_START_ADDR;
+    Elf64_Ehdr *ehdr  = (Elf64_Ehdr *)0; //EHDR_START_ADDR;
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
 
     ((uint64_t *)tmp)[0] = AT_PHDR;
@@ -106,7 +106,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_PHNUM;
-    ((uint64_t *)tmp)[1] = ehdr->e_phnum;
+    ((uint64_t *)tmp)[1] = 0; //ehdr->e_phnum;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_ENTRY;
@@ -243,10 +243,12 @@ void kill_thread(tcb_t task) {
     }
     task->status = DEATH;
 
-    page_directory_t *directory = get_current_directory();
-    switch_process_page_directory(task->tid_directory);
-    futex_wake((void *)page_virt_to_phys(task->tid_address), 1);
-    switch_process_page_directory(directory);
+    if (task->tid_directory != NULL) {
+        page_directory_t *directory = get_current_directory();
+        switch_process_page_directory(task->tid_directory);
+        futex_wake((void *)page_virt_to_phys(task->tid_address), 1);
+        switch_process_page_directory(directory);
+    }
 
     smp_cpu_t *cpu    = get_cpu_smp(task->cpu_id);
     task->death_index = lock_queue_enqueue(cpu->death_queue, task);

@@ -26,7 +26,7 @@
 // 而在没有 libc 的情况下管理内存请使用下方的自定义内存分配函数
 
 // 分配器通用属性
-#define ALLOC __THROW __wur __attr_dealloc(free, 1) __attr_dealloc(realloc, 1)
+#define ALLOC __THROW __wur
 
 void *malloc(size_t size)
 
