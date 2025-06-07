@@ -350,7 +350,7 @@ syscall_(nano_sleep) {
     if (arg0 == 0) return SYSCALL_FAULT;
     memcpy(&k_req, (void *)arg0, sizeof(k_req));
     if (k_req.tv_nsec >= 1000000000L) return SYSCALL_FAULT;
-    uint64_t nsec = (uint64_t)k_req.tv_sec * 100000000ULL + k_req.tv_nsec;
+    uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
     scheduler_nano_sleep(nsec);
     return SYSCALL_SUCCESS;
 }
