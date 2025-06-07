@@ -91,20 +91,19 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     memset(tmp, 0, 2 * sizeof(uint64_t));
     tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    page_map_range_to_random(get_current_task()->parent_group->page_dir, EHDR_START_ADDR,
-                             (get_current_task()->parent_group->elf_size + PAGE_SIZE - 1) /
-                                 PAGE_SIZE,
+    page_map_range_to_random(get_current_directory(), EHDR_START_ADDR,
+                             get_current_task()->parent_group->elf_size,
                              PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     memcpy((void *)EHDR_START_ADDR, get_current_task()->parent_group->elf_file,
            get_current_task()->parent_group->elf_size);
 
-    page_map_range_to_random(get_current_task()->parent_group->page_dir, INTERPRETER_EHDR_ADDR,
-                             (link->size + PAGE_SIZE - 1) / PAGE_SIZE,
+    page_map_range_to_random(get_current_directory(), INTERPRETER_EHDR_ADDR, link->size,
                              PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     memcpy((void *)INTERPRETER_EHDR_ADDR, link->data, link->size);
 
-    Elf64_Ehdr *ehdr  = (Elf64_Ehdr *)EHDR_START_ADDR;
-    Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)EHDR_START_ADDR;
+    // CP_Kernel 将用户程序本体从 0 地址加载故不加phdrs的偏移
+    Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr->e_phoff);
 
     ((uint64_t *)tmp)[0] = AT_PHDR;
     ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
@@ -163,12 +162,14 @@ void switch_to_user_mode(uint64_t func) {
         process_exit();
     }
 
-    elf_start linker_main = load_executor_elf(module, get_current_task()->parent_group->page_dir,
-                                              INTERPRETER_BASE_ADDR);
+    elf_start linker_main =
+        load_executor_elf(module, get_current_directory(), INTERPRETER_BASE_ADDR);
     if (linker_main == NULL) {
         kerror("Cannot load ld-musl-x86_64.so module.");
         process_exit();
     }
+    linker_main = linker_main + INTERPRETER_BASE_ADDR;
+    logkf("Linker main: %p | Program main: %p\n", linker_main, func);
 
     rsp               = build_user_stack(get_current_task(), rsp, func, module);
     vfs_node_t stdout = vfs_open("/dev/stdio");
