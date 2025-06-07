@@ -10,9 +10,10 @@ typedef void (*elf_start)(void);
  * 加载一个ELF可执行文件
  * @param file ELF文件句柄
  * @param dir 需要映射到的页表
+ * @param offset 映射偏移
  * @return == NULL ? 无法识别或正确加载ELF : ELF入口函数
  */
-elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir);
+elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset);
 
 /**
  * 映射ELF文件的程序头段

@@ -1,6 +1,7 @@
 #include "pcb.h"
 #include "description_table.h"
 #include "elf.h"
+#include "elf_util.h"
 #include "errno.h"
 #include "heap.h"
 #include "hhdm.h"
@@ -11,6 +12,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
+#include "module.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -34,7 +36,7 @@ _Noreturn void process_exit() {
     __asm__("movq %%rax,%0" ::"r"(rax) :);
     printk("Kernel thread exit, Code: %d\n", rax);
     kill_thread(get_current_task());
-    loop;
+    loop __asm__ volatile("hlt");
 }
 
 static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
@@ -45,7 +47,7 @@ static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
     return tmp_stack;
 }
 
-static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) {
+static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, cp_module_t *link) {
     uint64_t env_i  = 0;
     uint64_t argv_i = 0;
 
@@ -93,8 +95,15 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
                              (get_current_task()->parent_group->elf_size + PAGE_SIZE - 1) /
                                  PAGE_SIZE,
                              PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+    memcpy((void *)EHDR_START_ADDR, get_current_task()->parent_group->elf_file,
+           get_current_task()->parent_group->elf_size);
 
-    Elf64_Ehdr *ehdr  = (Elf64_Ehdr *)0; //EHDR_START_ADDR;
+    page_map_range_to_random(get_current_task()->parent_group->page_dir, INTERPRETER_EHDR_ADDR,
+                             (link->size + PAGE_SIZE - 1) / PAGE_SIZE,
+                             PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+    memcpy((void *)INTERPRETER_EHDR_ADDR, link->data, link->size);
+
+    Elf64_Ehdr *ehdr  = (Elf64_Ehdr *)EHDR_START_ADDR;
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
 
     ((uint64_t *)tmp)[0] = AT_PHDR;
@@ -106,7 +115,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_PHNUM;
-    ((uint64_t *)tmp)[1] = 0; //ehdr->e_phnum;
+    ((uint64_t *)tmp)[1] = ehdr->e_phnum;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_ENTRY;
@@ -118,7 +127,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point) 
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_BASE;
-    ((uint64_t *)tmp)[1] = 1;
+    ((uint64_t *)tmp)[1] = INTERPRETER_BASE_ADDR;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_PAGESZ;
@@ -147,10 +156,24 @@ void switch_to_user_mode(uint64_t func) {
     uint64_t rsp                        = (uint64_t)get_current_task()->user_stack + STACK_SIZE;
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
-    rsp                                 = build_user_stack(get_current_task(), rsp, func);
-    vfs_node_t stdout                   = vfs_open("/dev/stdio");
-    vfs_node_t stdin                    = stdout;
-    vfs_node_t stderr                   = stdout;
+
+    cp_module_t *module = get_module("ld-musl-x86_64");
+    if (module == NULL) {
+        kerror("Cannot find ld-musl-x86_64.so module.");
+        process_exit();
+    }
+
+    elf_start linker_main = load_executor_elf(module, get_current_task()->parent_group->page_dir,
+                                              INTERPRETER_BASE_ADDR);
+    if (linker_main == NULL) {
+        kerror("Cannot load ld-musl-x86_64.so module.");
+        process_exit();
+    }
+
+    rsp               = build_user_stack(get_current_task(), rsp, func, module);
+    vfs_node_t stdout = vfs_open("/dev/stdio");
+    vfs_node_t stdin  = stdout;
+    vfs_node_t stderr = stdout;
     queue_enqueue(get_current_task()->parent_group->file_open, stdin);
     queue_enqueue(get_current_task()->parent_group->file_open, stdout);
     queue_enqueue(get_current_task()->parent_group->file_open, stderr);
@@ -165,8 +188,8 @@ void switch_to_user_mode(uint64_t func) {
                      "iretq\n"
                      :
                      : "r"((uint64_t)GET_SEL(4 * 8, SA_RPL3)), "r"(rsp),
-                       "r"(get_current_task()->context0.rflags), "r"((uint64_t)0x23), "r"(func),
-                       "r"((uint64_t)0x1b)
+                       "r"(get_current_task()->context0.rflags), "r"((uint64_t)0x23),
+                       "r"(linker_main), "r"((uint64_t)0x1b)
                      : "memory");
 }
 
