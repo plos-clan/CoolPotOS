@@ -686,6 +686,8 @@ syscall_(mprotect) {
     if (addr == 0 || length == 0) return SYSCALL_FAULT_(EINVAL);
     if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES);
 
+    return EOK; //TODO mprotect 实现有问题
+
     addr              = PADDING_DOWN(addr, PAGE_SIZE);
     size_t page_count = PADDING_UP(length, PAGE_SIZE) / PAGE_SIZE;
     pcb_t  process    = get_current_task()->parent_group;
@@ -712,10 +714,12 @@ syscall_(mprotect) {
         spin_unlock(process->virt_queue->lock);
 
         if (!updated) {
+            logkf("physical page address: %p\n", (void *)page_addr);
             uint64_t old_flags;
             if (!page_table_get_flags(get_current_directory(), page_addr, &old_flags)) {
                 return SYSCALL_FAULT_(ENOMEM);
             }
+            logkf("old flags: %lx\n", old_flags);
             uint64_t new_flags = old_flags & ~(PTE_WRITEABLE | PTE_USER);
             if (prot & PROT_READ) new_flags |= PTE_PRESENT;
             if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
