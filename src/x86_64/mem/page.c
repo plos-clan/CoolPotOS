@@ -30,9 +30,16 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
 
+    char *error_msg = !(error_code & 0x1) ? "NotPresent"
+                      : error_code & 0x2  ? "WriteError"
+                      : error_code & 0x4  ? "UserMode"
+                      : error_code & 0x8  ? "ReservedBitsSet"
+                      : error_code & 0x10 ? "DecodeAddress"
+                                          : "Unknown";
+
     if (get_current_task() != NULL) {
         pcb_t current_proc = get_current_task()->parent_group;
-        logkf("#PF(%p) Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
+        logkf("#PF(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address, error_msg,
               get_current_task()->pid, get_current_task()->name, current_proc->name,
               get_current_task()->cpu_id);
 
@@ -105,24 +112,13 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         return;
     } else {
         logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
-        logkf("Type: %s\n", !(error_code & 0x1) ? "NotPresent"
-                            : error_code & 0x2  ? "WriteError"
-                            : error_code & 0x4  ? "UserMode"
-                            : error_code & 0x8  ? "ReservedBitsSet"
-                            : error_code & 0x10 ? "DecodeAddress"
-                                                : "Unknown");
+        logkf("Type: %s\n", error_msg);
     }
 
     printk("\n");
     printk(
         "\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
-        !(error_code & 0x1) ? "NotPresent"
-        : error_code & 0x2  ? "WriteError"
-        : error_code & 0x4  ? "UserMode"
-        : error_code & 0x8  ? "ReservedBitsSet"
-        : error_code & 0x10 ? "DecodeAddress"
-                            : "Unknown",
-        faulting_address);
+        error_msg, faulting_address);
     if (get_current_task() != NULL) {
         printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->pid,
                get_current_task()->name, get_current_task()->parent_group->name, cpu->id);

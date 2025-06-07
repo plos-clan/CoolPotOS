@@ -689,7 +689,7 @@ syscall_(mprotect) {
     addr              = PADDING_DOWN(addr, PAGE_SIZE);
     size_t page_count = PADDING_UP(length, PAGE_SIZE) / PAGE_SIZE;
     pcb_t  process    = get_current_task()->parent_group;
-
+    logkf("addr: %p, length: %zu, prot: %lx pc: %d\n", (void *)addr, length, prot, page_count);
     for (size_t i = 0; i < page_count; i++) {
         uint64_t page_addr = addr + i * PAGE_SIZE;
 
@@ -716,12 +716,10 @@ syscall_(mprotect) {
             if (!page_table_get_flags(get_current_directory(), page_addr, &old_flags)) {
                 return SYSCALL_FAULT_(ENOMEM);
             }
-
             uint64_t new_flags = old_flags & ~(PTE_WRITEABLE | PTE_USER);
             if (prot & PROT_READ) new_flags |= PTE_PRESENT;
             if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
             if (prot & PROT_EXEC) new_flags |= PTE_USER;
-
             page_table_update_flags(get_current_directory(), page_addr, new_flags);
         }
     }
@@ -783,7 +781,7 @@ USED void syscall_handler(struct syscall_regs *regs,
     regs->rsp    = (uint64_t)(user_regs + 1);
     write_fsbase((uint64_t)get_current_task());
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
-    uint64_t start      = 0;
+    logkf("syscall start: %d\n", syscall_id);
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
