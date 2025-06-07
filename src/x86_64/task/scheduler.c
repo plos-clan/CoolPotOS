@@ -41,14 +41,14 @@ void scheduler_nano_sleep(uint64_t nano) {
     loop {
         uint64_t n = nano_time();
         if (n < targetTime) {
-            after      += 0xffffffff - targetTime + n;
+            after      += UINT64_MAX - targetTime + n;
             targetTime  = n;
         } else {
             after      += n - targetTime;
             targetTime  = n;
         }
         if (after >= nano) { return; }
-        if (nano < 10) {
+        if (nano > 10) {
             scheduler_yield(); // 让出CPU时间片
         }
     }
