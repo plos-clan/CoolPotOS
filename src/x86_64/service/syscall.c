@@ -350,7 +350,7 @@ syscall_(nano_sleep) {
     if (arg0 == 0) return SYSCALL_FAULT;
     memcpy(&k_req, (void *)arg0, sizeof(k_req));
     if (k_req.tv_nsec >= 1000000000L) return SYSCALL_FAULT;
-    uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
+    uint64_t nsec = (uint64_t)k_req.tv_sec * 100000000ULL + k_req.tv_nsec;
     scheduler_nano_sleep(nsec);
     return SYSCALL_SUCCESS;
 }
@@ -783,7 +783,7 @@ USED void syscall_handler(struct syscall_regs *regs,
     regs->rsp    = (uint64_t)(user_regs + 1);
     write_fsbase((uint64_t)get_current_task());
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
-
+    uint64_t start      = 0;
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
