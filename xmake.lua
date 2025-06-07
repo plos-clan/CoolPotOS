@@ -165,6 +165,7 @@ function arch_x86_64()
             os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
             os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
             os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
+            os.cp("assets/ld-musl-x86_64.so", iso_dir.."/ld-musl-x86_64.so")
 
             local shell = target:pkg("cp_shell")
             os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")

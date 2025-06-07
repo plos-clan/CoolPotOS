@@ -325,7 +325,7 @@ static void exec(int argc, char **argv) {
     }
 
     page_directory_t *up   = clone_directory(get_kernel_pagedir());
-    void             *main = load_executor_elf(module, up);
+    void             *main = load_executor_elf(module, up, 0);
     if (main == NULL) {
         printk("\033[31mCannot load elf file.\033[0m\n");
         return;

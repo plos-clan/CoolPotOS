@@ -65,13 +65,13 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *di
     return true;
 }
 
-elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir) {
+elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)file->data;
     if (!elf_test_head(ehdr)) { return NULL; }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
     switch_process_page_directory(dir);
-    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, 0)) { return NULL; }
+    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset)) { return NULL; }
     switch_process_page_directory(cur);
     return (elf_start)ehdr->e_entry;
 }
