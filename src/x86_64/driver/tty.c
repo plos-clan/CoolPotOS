@@ -128,6 +128,28 @@ static int tty_ioctl(size_t req, void *arg) {
             ws->ws_ypixel = get_current_task()->parent_group->tty->height;
         }
         break;
+    case TCGETS:
+        struct termios *term = (struct termios *)arg;
+
+        term->c_iflag = BRKINT | ICRNL | IXON;
+        term->c_oflag = OPOST;
+        term->c_cflag = CREAD | CS8;
+        term->c_lflag = get_current_task()->parent_group->tty->mode;
+
+        term->c_cc[VINTR]  = 3;   // Ctrl-C
+        term->c_cc[VQUIT]  = 28;  // Ctrl-\
+
+        term->c_cc[VERASE] = 127; // Backspace
+        term->c_cc[VKILL]  = 21;  // Ctrl-U
+        term->c_cc[VEOF]   = 4;   // Ctrl-D
+        term->c_cc[VTIME]  = 0;
+        term->c_cc[VMIN]   = 1;
+
+        term->c_line = 0;
+
+        term->c_ispeed = 96000;
+        term->c_ospeed = 96000;
+        break;
     default: return -1;
     }
     return 0;

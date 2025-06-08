@@ -85,6 +85,8 @@ static struct vfs_callback modfs_callbacks = {
     .mkfile  = (void *)empty,
     .ioctl   = (void *)empty,
     .dup     = modfs_dup,
+    .delete  = (void *)empty,
+    .rename  = (void *)empty,
 };
 
 void modfs_setup() {

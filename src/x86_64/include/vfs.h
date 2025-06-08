@@ -80,6 +80,8 @@ typedef int (*vfs_stat_t)(void *file, vfs_node_t node);
 
 // 创建一个文件或文件夹
 typedef int (*vfs_mk_t)(void *parent, const char *name, vfs_node_t node);
+typedef int (*vfs_del_t)(void *parent, vfs_node_t node);
+typedef int (*vfs_rename_t)(void *current, const char *new);
 
 // 映射文件从 offset 开始的 size 大小
 typedef void *(*vfs_mapfile_t)(void *file, size_t offset, size_t size);
@@ -89,10 +91,17 @@ typedef int (*vfs_ioctl_t)(void *file, size_t req, void *arg);
 typedef vfs_node_t (*vfs_dup_t)(vfs_node_t node);
 
 enum {
-    file_none,   // 未获取信息
-    file_dir,    // 文件夹
-    file_block,  // 块设备，如硬盘
-    file_stream, // 流式设备，如终端
+    file_none     = 0x0UL,    // 未获取信息
+    file_dir      = 0x2UL,    // 文件夹
+    file_block    = 0x4UL,    // 块设备，如硬盘
+    file_stream   = 0x8UL,    // 流式设备，如终端
+    file_symlink  = 0x16UL,   // 符号链接
+    file_fbdev    = 0x32UL,   // 帧缓冲设备
+    file_keyboard = 0x64UL,   // 键盘设备
+    file_mouse    = 0x128UL,  // 鼠标设备
+    file_pipe     = 0x256UL,  // 管道设备
+    file_socket   = 0x512UL,  // 套接字设备
+    file_epoll    = 0x1024UL, // epoll 设备
 };
 
 typedef struct vfs_callback { // VFS回调函数
@@ -107,11 +116,14 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_stat_t    stat;       // 检查文件状态信息
     vfs_ioctl_t   ioctl;      // I/O 控制接口 (仅 devfs 等特殊文件系统实现)
     vfs_dup_t     dup;        // 复制文件节点
+    vfs_del_t delete;         // 删除文件或文件夹
+    vfs_rename_t rename;      // 重命名文件或文件夹
 } *vfs_callback_t;
 
 struct vfs_node {           // vfs节点
     vfs_node_t parent;      // 父目录
     char      *name;        // 名称
+    char      *linkname;    // 符号链接名称
     uint64_t   realsize;    // 项目真实占用的空间 (可选)
     uint64_t   size;        // 文件大小或若是文件夹则填0
     uint64_t   createtime;  // 创建时间
@@ -151,6 +163,8 @@ vfs_node_t vfs_open(const char *str); // 打开一个节点
 int        vfs_ioctl(vfs_node_t device, size_t options, void *arg);
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
+int        vfs_delete(vfs_node_t node);
+int        vfs_rename(vfs_node_t node, const char *new);
 size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 int        vfs_mount(const char *src, vfs_node_t node); // 挂载指定设备至指定节点
