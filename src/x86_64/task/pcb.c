@@ -47,7 +47,8 @@ static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
     return tmp_stack;
 }
 
-static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, cp_module_t *link) {
+static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, cp_module_t *link,
+                                 uint64_t link_start) {
     uint64_t env_i  = 0;
     uint64_t argv_i = 0;
 
@@ -97,27 +98,33 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     memcpy((void *)EHDR_START_ADDR, get_current_task()->parent_group->elf_file,
            get_current_task()->parent_group->elf_size);
 
-    page_map_range_to_random(get_current_directory(), INTERPRETER_EHDR_ADDR, link->size,
-                             PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    memcpy((void *)INTERPRETER_EHDR_ADDR, link->data, link->size);
+    if (link != NULL) {
+        page_map_range_to_random(get_current_directory(), INTERPRETER_EHDR_ADDR, link->size,
+                                 PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+        memcpy((void *)INTERPRETER_EHDR_ADDR, link->data, link->size);
+    }
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)EHDR_START_ADDR;
     // CP_Kernel 将用户程序本体从 0 地址加载故不加phdrs的偏移
     Elf64_Phdr *phdrs =
         (Elf64_Phdr *)(ehdr->e_phoff + get_current_task()->parent_group->load_start);
 
-    ((uint64_t *)tmp)[0] = AT_PHDR;
-    ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
-    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    ((uint64_t *)tmp)[0] = AT_NULL;
+    ((uint64_t *)tmp)[1] = 0;
 
-    ((uint64_t *)tmp)[0] = AT_PHENT;
-    ((uint64_t *)tmp)[1] = sizeof(Elf64_Phdr);
-    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    if (link != NULL) {
+        ((uint64_t *)tmp)[0] = AT_PHDR;
+        ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
+        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    ((uint64_t *)tmp)[0] = AT_PHNUM;
-    ((uint64_t *)tmp)[1] = ehdr->e_phnum;
-    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+        ((uint64_t *)tmp)[0] = AT_PHENT;
+        ((uint64_t *)tmp)[1] = sizeof(Elf64_Phdr);
+        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
+        ((uint64_t *)tmp)[0] = AT_PHNUM;
+        ((uint64_t *)tmp)[1] = ehdr->e_phnum;
+        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    }
     ((uint64_t *)tmp)[0] = AT_ENTRY;
     ((uint64_t *)tmp)[1] = entry_point;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
@@ -126,9 +133,11 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     ((uint64_t *)tmp)[1] = execfn_ptr;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    ((uint64_t *)tmp)[0] = AT_BASE;
-    ((uint64_t *)tmp)[1] = INTERPRETER_BASE_ADDR;
-    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    if (link_start != 0) {
+        ((uint64_t *)tmp)[0] = AT_BASE;
+        ((uint64_t *)tmp)[1] = link_start;
+        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    }
 
     ((uint64_t *)tmp)[0] = AT_PAGESZ;
     ((uint64_t *)tmp)[1] = PAGE_SIZE;
@@ -157,22 +166,31 @@ void switch_to_user_mode(uint64_t func) {
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
 
-    cp_module_t *module = get_module("ld-musl-x86_64");
-    if (module == NULL) {
-        kerror("Cannot find ld-musl-x86_64.so module.");
-        process_exit();
+    elf_start main_func = (elf_start)func;
+    if (is_dynamic(get_current_task()->parent_group->elf_file)) {
+        logkf("Dynamic %s\n", get_current_task()->name);
+
+        cp_module_t *module = get_module("libc");
+        if (module == NULL) {
+            kerror("Cannot find libc.so module.");
+            process_exit();
+        }
+
+        uint64_t  linker_start = UINT64_MAX;
+        elf_start linker_main  = load_executor_elf(module, get_current_directory(),
+                                                   INTERPRETER_BASE_ADDR, &linker_start);
+        if (linker_main == NULL) {
+            kerror("Cannot load libc.so module.");
+            process_exit();
+        }
+        linker_main = linker_main + linker_start;
+        logkf("Linker main: %p | Program main: %p\n", linker_main, func);
+        rsp       = build_user_stack(get_current_task(), rsp, func, module, linker_start);
+        main_func = linker_main;
+    } else {
+        rsp = build_user_stack(get_current_task(), rsp, func, NULL, 0);
     }
 
-    elf_start linker_main =
-        load_executor_elf(module, get_current_directory(), INTERPRETER_BASE_ADDR, NULL);
-    if (linker_main == NULL) {
-        kerror("Cannot load ld-musl-x86_64.so module.");
-        process_exit();
-    }
-    linker_main = linker_main + INTERPRETER_BASE_ADDR;
-    logkf("Linker main: %p | Program main: %p\n", linker_main, func);
-
-    rsp               = build_user_stack(get_current_task(), rsp, func, module);
     vfs_node_t stdout = vfs_open("/dev/stdio");
     vfs_node_t stdin  = stdout;
     vfs_node_t stderr = stdout;
@@ -191,7 +209,7 @@ void switch_to_user_mode(uint64_t func) {
                      :
                      : "r"((uint64_t)GET_SEL(4 * 8, SA_RPL3)), "r"(rsp),
                        "r"(get_current_task()->context0.rflags), "r"((uint64_t)0x23),
-                       "r"(linker_main), "r"((uint64_t)0x1b)
+                       "r"(main_func), "r"((uint64_t)0x1b)
                      : "memory");
 }
 

@@ -48,3 +48,10 @@ bool elf_test_head(Elf64_Ehdr *ehdr);
  */
 void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user,
                   uint64_t offset, uint64_t *load_start);
+
+/**
+ * 判断 elf 是否是动态链接的
+ * @param ehdr
+ * @return 是否为动态 (没有程序头也会返回 false)
+ */
+bool is_dynamic(Elf64_Ehdr *ehdr);

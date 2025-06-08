@@ -68,6 +68,12 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *di
     return true;
 }
 
+bool is_dynamic(Elf64_Ehdr *ehdr) {
+    if (ehdr->e_type != ET_DYN) { return false; }
+    if (ehdr->e_phnum == 0 || ehdr->e_phoff == 0) { return false; }
+    return true;
+}
+
 elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset,
                             uint64_t *load_start) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)file->data;
