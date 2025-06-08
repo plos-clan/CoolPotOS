@@ -132,6 +132,20 @@ int vfs_mkfile(const char *name) {
     return VFS_STATUS_SUCCESS;
 }
 
+int vfs_delete(vfs_node_t node) {
+    if (node == rootdir) return VFS_STATUS_FAILED;
+    int res = callbackof(node, delete)(node->parent->handle, node);
+    if (res < 0) return VFS_STATUS_FAILED;
+    list_delete(node->parent->child, node);
+    node->handle = NULL;
+    vfs_free(node);
+    return VFS_STATUS_SUCCESS;
+}
+
+int vfs_rename(vfs_node_t node, const char *new) {
+    return callbackof(node, rename)(node->handle, new);
+}
+
 int vfs_regist(const char *name, vfs_callback_t callback) {
     if (callback == NULL) return VFS_STATUS_FAILED;
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {

@@ -408,6 +408,8 @@ static struct vfs_callback iso_callbacks = {
     .stat    = iso9660_stat,
     .ioctl   = (void *)empty,
     .dup     = (void *)empty, //TODO 未实现
+    .delete  = (void *)empty, // 只读文件系统
+    .rename  = (void *)empty, // 只读文件系统
 };
 
 void iso9660_regist() {

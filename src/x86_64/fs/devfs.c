@@ -140,6 +140,8 @@ static struct vfs_callback devfs_callbacks = {
     .mkfile  = (void *)empty,
     .ioctl   = devfs_ioctl,
     .dup     = devfs_dup,
+    .delete  = (void *)empty,
+    .rename  = (void *)empty,
 };
 
 void devfs_setup() {
