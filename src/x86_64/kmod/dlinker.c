@@ -137,7 +137,7 @@ void dlinker_load(cp_module_t *module) {
     }
 
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
-    if (!mmap_phdr_segment(ehdr, phdrs, get_kernel_pagedir(), false, 0)) {
+    if (!mmap_phdr_segment(ehdr, phdrs, get_kernel_pagedir(), false, 0, NULL)) {
         kwarn("Cannot mmap elf segment.");
         return;
     }

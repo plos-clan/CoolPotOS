@@ -39,8 +39,8 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
 
     if (get_current_task() != NULL) {
         pcb_t current_proc = get_current_task()->parent_group;
-        logkf("#PF(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address, error_msg,
-              get_current_task()->pid, get_current_task()->name, current_proc->name,
+        logkf("Lazy alloc try(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
+              error_msg, get_current_task()->pid, get_current_task()->name, current_proc->name,
               get_current_task()->cpu_id);
 
         // 应用程序懒分配机制
@@ -58,6 +58,8 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
 
             if (virt_page == NULL) {
                 spin_unlock(current_proc->virt_queue->lock);
+                logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
+                logkf("Type: %s\n", error_msg);
                 kill_proc(get_current_task()->parent_group, -1);
                 terminal_open_flush();
                 enable_scheduler();

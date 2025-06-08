@@ -21,9 +21,12 @@ bool elf_test_head(Elf64_Ehdr *ehdr) {
 }
 
 void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user,
-                  uint64_t offset) {
-    size_t   hi    = PADDING_UP(phdr->p_paddr + phdr->p_memsz, 0x1000) + offset;
-    size_t   lo    = PADDING_DOWN(phdr->p_paddr, 0x1000) + offset;
+                  uint64_t offset, uint64_t *load_start) {
+    size_t hi = PADDING_UP(phdr->p_paddr + phdr->p_memsz, 0x1000) + offset;
+    size_t lo = PADDING_DOWN(phdr->p_paddr, 0x1000) + offset;
+    if (load_start != NULL) {
+        if (lo < *load_start) { *load_start = lo; }
+    }
     uint64_t flags = PTE_PRESENT | PTE_WRITEABLE;
     if (is_user) flags |= PTE_USER;
     if ((phdr->p_flags & PF_R) && !(phdr->p_flags & PF_W)) {
@@ -48,7 +51,7 @@ void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool
 }
 
 bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *directory,
-                       bool is_user, uint64_t offset) {
+                       bool is_user, uint64_t offset, uint64_t *load_start) {
     size_t i = 0;
     while (i < ehdr->e_phnum && phdrs[i].p_type != PT_LOAD) {
         i++;
@@ -58,20 +61,21 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *di
 
     for (i = 0; i < ehdr->e_phnum; i++) {
         if (phdrs[i].p_type == PT_LOAD) {
-            load_segment(&phdrs[i], (void *)ehdr, directory, is_user, offset);
+            load_segment(&phdrs[i], (void *)ehdr, directory, is_user, offset, load_start);
         }
     }
 
     return true;
 }
 
-elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset) {
+elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset,
+                            uint64_t *load_start) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)file->data;
     if (!elf_test_head(ehdr)) { return NULL; }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
     switch_process_page_directory(dir);
-    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset)) { return NULL; }
+    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start)) { return NULL; }
     switch_process_page_directory(cur);
     return (elf_start)ehdr->e_entry;
 }

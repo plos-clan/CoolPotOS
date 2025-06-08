@@ -103,7 +103,8 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)EHDR_START_ADDR;
     // CP_Kernel 将用户程序本体从 0 地址加载故不加phdrs的偏移
-    Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr->e_phoff);
+    Elf64_Phdr *phdrs =
+        (Elf64_Phdr *)(ehdr->e_phoff + get_current_task()->parent_group->load_start);
 
     ((uint64_t *)tmp)[0] = AT_PHDR;
     ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
@@ -163,7 +164,7 @@ void switch_to_user_mode(uint64_t func) {
     }
 
     elf_start linker_main =
-        load_executor_elf(module, get_current_directory(), INTERPRETER_BASE_ADDR);
+        load_executor_elf(module, get_current_directory(), INTERPRETER_BASE_ADDR, NULL);
     if (linker_main == NULL) {
         kerror("Cannot load ld-musl-x86_64.so module.");
         process_exit();
