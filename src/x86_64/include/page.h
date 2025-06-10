@@ -115,6 +115,14 @@ void switch_process_page_directory(page_directory_t *dir);
 uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags);
 
 /**
+ * 释放一段页映射 (未使用 alloc_frames 的页不可使用此方法取消映射)
+ * @param directory 页表
+ * @param vaddr 虚拟地址 (4k对齐)
+ * @param size 大小
+ */
+void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size);
+
+/**
  * 获取指定地址的页表项标志
  * @param directory 页表
  * @param addr 地址 (需要 4k 对齐)

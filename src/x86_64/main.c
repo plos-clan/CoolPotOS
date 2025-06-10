@@ -32,6 +32,7 @@
 #include "sysuser.h"
 #include "terminal.h"
 #include "timer.h"
+#include "tmpfs.h"
 #include "vdisk.h"
 #include "vfs.h"
 #include "xhci.h"
@@ -103,6 +104,7 @@ void kmain() {
     kinfo("RTC time %s", date);
     free(date);
     vfs_init();
+    tmpfs_setup();
     iso9660_regist();
 
     vdisk_init();
@@ -131,9 +133,6 @@ void kmain() {
 
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group);
-
-    extern void ps(int argc, char **argv);
-    ps(2, (char *[]){"ps", "-v"});
 
     open_interrupt;
     enable_scheduler();

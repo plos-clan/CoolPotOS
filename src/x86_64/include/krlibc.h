@@ -17,6 +17,9 @@
 #define EHDR_START_ADDR       0x0000300000000000       // ELF头起始地址
 #define INTERPRETER_EHDR_ADDR 0x0000200000000000       // 链接器ELF头起始地址
 #define INTERPRETER_BASE_ADDR 0x0000100000000000       // 链接器基址起始地址
+#define DEVFS_REGISTER_ID     0                        // 设备文件系统注册ID
+#define MODFS_REGISTER_ID     1                        // 模块文件系统注册ID
+#define TMPFS_REGISTER_ID     2                        // 临时文件系统注册ID
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")
@@ -52,6 +55,8 @@ int memcmp(const void *a_, const void *b_, size_t size);
 void *memcpy(void *s, const void *ct, size_t n);
 
 void *memset(void *dst, int val, size_t size);
+
+void *memmove(void *dest, const void *src, size_t n);
 
 size_t strlen(const char *str);
 

@@ -39,12 +39,12 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
 
     if (get_current_task() != NULL) {
         pcb_t current_proc = get_current_task()->parent_group;
-        logkf("Lazy alloc try(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
-              error_msg, get_current_task()->pid, get_current_task()->name, current_proc->name,
-              get_current_task()->cpu_id);
 
         // 应用程序懒分配机制
         if (current_proc->task_level == TASK_APPLICATION_LEVEL) {
+            logkf("Lazy alloc try(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
+                  error_msg, get_current_task()->pid, get_current_task()->name, current_proc->name,
+                  get_current_task()->cpu_id);
             mm_virtual_page_t *virt_page = NULL;
             spin_lock(current_proc->virt_queue->lock);
             queue_foreach(current_proc->virt_queue, node) {
@@ -105,17 +105,16 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                 // 移除原始 mm_virtual_page
                 queue_remove_at(current_proc->virt_queue, virt_page->index);
                 free(virt_page);
+                terminal_open_flush();
+                enable_scheduler();
+                open_interrupt;
+                update_terminal();
+                return;
             }
         }
-        terminal_open_flush();
-        enable_scheduler();
-        open_interrupt;
-        update_terminal();
-        return;
-    } else {
-        logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
-        logkf("Type: %s\n", error_msg);
     }
+    logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
+    logkf("Type: %s\n", error_msg);
 
     printk("\n");
     printk(
@@ -295,6 +294,17 @@ void free_page_directory(page_directory_t *dir) {
     free_frame((uint64_t)virt_to_phys((uint64_t)dir->table));
     free(dir);
     spin_unlock(page_lock);
+}
+
+void unmap_page(page_directory_t *directory, uint64_t vaddr) {
+    
+    flush_tlb(vaddr);
+}
+
+void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size) {
+    for (uint64_t va = vaddr; va < vaddr + size; va += PAGE_SIZE) {
+        unmap_page(directory, va);
+    }
 }
 
 void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags) {

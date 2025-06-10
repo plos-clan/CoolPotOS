@@ -15,6 +15,7 @@ tty_t        *defualt_tty = NULL;
 mpmc_queue_t *queue;
 spin_t        tty_lock          = SPIN_INIT;
 atom_queue   *temp_stdin_buffer = NULL;
+bool          ioSwitch          = false;
 
 extern bool open_flush; // terminal.c
 
@@ -150,9 +151,23 @@ static int tty_ioctl(size_t req, void *arg) {
         term->c_ispeed = 96000;
         term->c_ospeed = 96000;
         break;
-    default: return -1;
+    case TIOCGPGRP:
+        int *pid = (int *)arg;
+        *pid     = get_current_task()->pid;
+        break;
+    default: return -ENOTTY;
     }
-    return 0;
+    return EOK;
+}
+
+static int tty_poll(size_t events) {
+    ssize_t revents = 0;
+    if (events & EPOLLERR || events & EPOLLPRI) return 0;
+
+    if (events & EPOLLIN && ioSwitch) revents |= EPOLLIN;
+    if (events & EPOLLOUT) revents |= EPOLLOUT;
+    ioSwitch = !ioSwitch;
+    return revents;
 }
 
 void build_tty_device() {
@@ -165,18 +180,8 @@ void build_tty_device() {
     stdio.read        = stdin_read;
     stdio.write       = stdout_write;
     stdio.ioctl       = tty_ioctl;
+    stdio.poll        = tty_poll;
     regist_vdisk(stdio);
-
-    vdisk tty0;
-    tty0.type = VDISK_STREAM;
-    strcpy(tty0.drive_name, "tty0");
-    tty0.flag        = 1;
-    tty0.sector_size = 1;
-    tty0.size        = 1;
-    tty0.read        = (void *)empty;
-    tty0.write       = (void *)empty;
-    tty0.ioctl       = tty_ioctl;
-    regist_vdisk(tty0);
 }
 
 void init_tty() {
