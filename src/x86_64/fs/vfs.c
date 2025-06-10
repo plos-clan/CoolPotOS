@@ -281,6 +281,12 @@ int vfs_ioctl(vfs_node_t device, size_t options, void *arg) {
     return callbackof(device, ioctl)(device->handle, options, arg);
 }
 
+int vfs_poll(vfs_node_t node, size_t event) {
+    do_update(node);
+    if (node->type & file_dir) return -1;
+    return callbackof(node, poll)(node->handle, event);
+}
+
 int vfs_unmount(const char *path) {
     vfs_node_t node = vfs_open(path);
     if (node == NULL) return VFS_STATUS_FAILED;

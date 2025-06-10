@@ -18,7 +18,7 @@ static vfs_node_t  devfs_root = NULL;
 static rbtree_sp_t dev_rbtree;
 
 static int devfs_mount(const char *handle, vfs_node_t node) {
-    if (handle != NULL) return VFS_STATUS_FAILED;
+    if (handle != DEVFS_REGISTER_ID) return VFS_STATUS_FAILED;
     if (devfs_root) {
         kerror("Device file system has been mounted.");
         return VFS_STATUS_FAILED;
@@ -128,6 +128,13 @@ static vfs_node_t devfs_dup(vfs_node_t node) {
     return new_node;
 }
 
+static int devfs_poll(void *file, size_t events) {
+    int dev_id = (int)(uint64_t)file;
+    if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
+    if (vdisk_ctl[dev_id].poll) { return vdisk_ctl[dev_id].poll(events); }
+    return VFS_STATUS_FAILED;
+}
+
 static struct vfs_callback devfs_callbacks = {
     .mount   = devfs_mount,
     .unmount = (void *)empty,
@@ -142,6 +149,7 @@ static struct vfs_callback devfs_callbacks = {
     .dup     = devfs_dup,
     .delete  = (void *)empty,
     .rename  = (void *)empty,
+    .poll    = devfs_poll,
 };
 
 void devfs_setup() {
@@ -152,7 +160,9 @@ void devfs_setup() {
         kerror("'dev' handle is null.");
         return;
     }
-    if (vfs_mount(0, dev) == VFS_STATUS_FAILED) { kerror("Cannot mount device file system."); }
+    if (vfs_mount(DEVFS_REGISTER_ID, dev) == VFS_STATUS_FAILED) {
+        kerror("Cannot mount device file system.");
+    }
 }
 
 void devfs_regist_dev(int drive_id) {

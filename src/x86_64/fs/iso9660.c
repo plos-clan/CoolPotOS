@@ -360,7 +360,9 @@ void iso9660_close(file_t handle) {
 }
 
 int iso9660_mount(const char *src, vfs_node_t node) {
-    if (src == NULL || ((uint64_t)src) == 1) return VFS_STATUS_FAILED;
+    if (src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
+        ((uint64_t)src) == TMPFS_REGISTER_ID)
+        return VFS_STATUS_FAILED;
     vfs_node_t device = vfs_open(src);
     if (device == NULL || device->type == file_dir) { return VFS_STATUS_FAILED; }
     l9660_fs    *fs     = (l9660_fs *)malloc(sizeof(l9660_fs));
@@ -410,6 +412,7 @@ static struct vfs_callback iso_callbacks = {
     .dup     = (void *)empty, //TODO 未实现
     .delete  = (void *)empty, // 只读文件系统
     .rename  = (void *)empty, // 只读文件系统
+    .poll    = (void *)empty, // 只读文件系统
 };
 
 void iso9660_regist() {

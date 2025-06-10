@@ -60,6 +60,10 @@
 #define O_TMPFILE   020200000
 #define O_NDELAY    O_NONBLOCK
 
+#define POLLIN  0x001 /* There is data to read.  */
+#define POLLPRI 0x002 /* There is urgent data to read.  */
+#define POLLOUT 0x004 /* Writing now will not block.  */
+
 #include "ctype.h"
 #include "list.h"
 
@@ -89,6 +93,7 @@ typedef void *(*vfs_mapfile_t)(void *file, size_t offset, size_t size);
 // VFS扩展接口 (CPOS特有, PLOS不支持)
 typedef int (*vfs_ioctl_t)(void *file, size_t req, void *arg);
 typedef vfs_node_t (*vfs_dup_t)(vfs_node_t node);
+typedef int (*vfs_poll_t)(void *file, size_t events);
 
 enum {
     file_none     = 0x0UL,    // 未获取信息
@@ -116,6 +121,7 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_stat_t    stat;       // 检查文件状态信息
     vfs_ioctl_t   ioctl;      // I/O 控制接口 (仅 devfs 等特殊文件系统实现)
     vfs_dup_t     dup;        // 复制文件节点
+    vfs_poll_t    poll;       // 轮询文件状态 (仅 devfs 等特殊文件系统实现)
     vfs_del_t delete;         // 删除文件或文件夹
     vfs_rename_t rename;      // 重命名文件或文件夹
 } *vfs_callback_t;
@@ -165,6 +171,7 @@ vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
 int        vfs_delete(vfs_node_t node);
 int        vfs_rename(vfs_node_t node, const char *new);
+int        vfs_poll(vfs_node_t node, size_t event);
 size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 int        vfs_mount(const char *src, vfs_node_t node); // 挂载指定设备至指定节点

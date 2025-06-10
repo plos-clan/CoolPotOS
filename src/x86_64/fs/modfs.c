@@ -22,7 +22,7 @@ static int modfs_mkdir(void *handle, const char *name, vfs_node_t node) {
 }
 
 static int modfs_mount(const char *handle, vfs_node_t node) {
-    if (handle != (void *)1) return VFS_STATUS_FAILED;
+    if (handle != (void *)MODFS_REGISTER_ID) return VFS_STATUS_FAILED;
     if (modfs_root) {
         kerror("Module file system has been mounted.");
         return VFS_STATUS_FAILED;
@@ -87,6 +87,7 @@ static struct vfs_callback modfs_callbacks = {
     .dup     = modfs_dup,
     .delete  = (void *)empty,
     .rename  = (void *)empty,
+    .poll    = (void *)empty,
 };
 
 void modfs_setup() {
@@ -97,7 +98,7 @@ void modfs_setup() {
         kerror("'mod' handle is null.");
         return;
     }
-    if (vfs_mount((const char *)1, mod) == VFS_STATUS_FAILED) {
+    if (vfs_mount((const char *)MODFS_REGISTER_ID, mod) == VFS_STATUS_FAILED) {
         kerror("Cannot mount module file system.");
         return;
     }

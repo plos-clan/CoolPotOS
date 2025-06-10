@@ -225,7 +225,7 @@ syscall_(mmap) {
     if (count == 0) return EOK;
 
     if (addr == 0 || (addr > USER_MMAP_START && addr < USER_MMAP_END)) {
-        if (flags & MAP_FIXED) return SYSCALL_FAULT_(EINVAL);
+        if (flags & MAP_FIXED) { return SYSCALL_FAULT_(EINVAL); }
         addr                 = process->mmap_start;
         flags               &= (~MAP_FIXED);
         process->mmap_start += aligned_len;
@@ -413,8 +413,11 @@ syscall_(readv) {
 }
 
 syscall_(munmap) {
-
-    return SYSCALL_FAULT_(ENOSYS);
+    uint64_t vaddr  = arg0;
+    size_t   length = arg1;
+    if (length == 0) return SYSCALL_SUCCESS;
+    unmap_page_range(get_current_directory(), vaddr, length);
+    return SYSCALL_SUCCESS;
 }
 
 syscall_(mremap) {

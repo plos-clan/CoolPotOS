@@ -1,5 +1,22 @@
 #pragma once
 
+#define EPOLLIN        0x001
+#define EPOLLPRI       0x002
+#define EPOLLOUT       0x004
+#define EPOLLRDNORM    0x040
+#define EPOLLNVAL      0x020
+#define EPOLLRDBAND    0x080
+#define EPOLLWRNORM    0x100
+#define EPOLLWRBAND    0x200
+#define EPOLLMSG       0x400
+#define EPOLLERR       0x008
+#define EPOLLHUP       0x010
+#define EPOLLRDHUP     0x2000
+#define EPOLLEXCLUSIVE (1U << 28)
+#define EPOLLWAKEUP    (1U << 29)
+#define EPOLLONESHOT   (1U << 30)
+#define EPOLLET        (1U << 31)
+
 #include "ctype.h"
 #include "lock_queue.h"
 
