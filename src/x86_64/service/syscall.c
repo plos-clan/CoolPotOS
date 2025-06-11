@@ -224,6 +224,13 @@ syscall_(mmap) {
     uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
     if (count == 0) return EOK;
 
+    if (fd > 2) {
+        vfs_node_t file = (vfs_node_t)queue_get(get_current_task()->parent_group->file_open, fd);
+        if (!file) return SYSCALL_FAULT_(EBADF);
+        vfs_map(file, addr, aligned_len, prot, flags, offset);
+        return addr;
+    }
+
     if (addr == 0 || (addr > USER_MMAP_START && addr < USER_MMAP_END)) {
         if (flags & MAP_FIXED) { return SYSCALL_FAULT_(EINVAL); }
         addr                 = process->mmap_start;
@@ -252,12 +259,6 @@ syscall_(mmap) {
     virt_page->flags     = flags;
     virt_page->pte_flags = page_flags;
     virt_page->index     = queue_enqueue(process->virt_queue, virt_page);
-
-    if (fd > 2) {
-        vfs_node_t file = (vfs_node_t)queue_get(get_current_task()->parent_group->file_open, fd);
-        if (!file) return SYSCALL_FAULT_(EBADF);
-        vfs_read(file, (void *)addr, offset, length);
-    }
 
     return addr;
 }
