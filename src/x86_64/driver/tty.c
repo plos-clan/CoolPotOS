@@ -183,6 +183,19 @@ void build_tty_device() {
     stdio.poll        = tty_poll;
     stdio.map         = (void *)empty;
     regist_vdisk(stdio);
+
+    vdisk ttydev;
+    ttydev.type = VDISK_STREAM;
+    strcpy(ttydev.drive_name, "tty0");
+    ttydev.flag        = 1;
+    ttydev.sector_size = 1;
+    ttydev.size        = 1;
+    ttydev.read        = stdin_read;
+    ttydev.write       = stdout_write;
+    ttydev.ioctl       = tty_ioctl;
+    ttydev.poll        = tty_poll;
+    ttydev.map         = (void *)empty;
+    regist_vdisk(ttydev);
 }
 
 void init_tty() {

@@ -97,6 +97,17 @@
 
 #define TIOCSER_TEMT 0x01
 
+#define FBIOGET_VSCREENINFO 0x4600
+#define FBIOPUT_VSCREENINFO 0x4601
+#define FBIOGET_FSCREENINFO 0x4602
+#define FBIOGETCMAP         0x4604
+#define FBIOPUTCMAP         0x4605
+#define FBIOPAN_DISPLAY     0x4606
+#define FBIOGET_CON2FBMAP   0x460f
+#define FBIOPUT_CON2FBMAP   0x4610
+#define FBIOBLANK           0x4611
+#define FBIOGET_VBLANK      0x4612
+
 struct winsize {
     unsigned short ws_row;
     unsigned short ws_col;
