@@ -4,6 +4,7 @@
 extern struct limine_framebuffer *framebuffer;
 
 void init_gop();
+void gop_dev_setup();
 
 void gop_clear(uint32_t color);
 

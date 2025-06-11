@@ -64,9 +64,7 @@ size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
 }
 
 int tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
-    logkf("name: %s\n", name);
     tmpfs_file_t *p = (tmpfs_file_t *)parent;
-    logkf("tmpfs: %s\n", p->name);
     if (p->child_count >= 64) return VFS_STATUS_FAILED;
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
@@ -153,6 +151,7 @@ static struct vfs_callback tmpfs_callbacks = {
     .delete  = tmpfs_delete,
     .rename  = tmpfs_rename,
     .poll    = tmpfs_poll,
+    .map     = (void *)empty, // tmpfs 不支持内存映射
 };
 
 void tmpfs_setup() {

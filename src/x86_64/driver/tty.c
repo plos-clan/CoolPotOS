@@ -181,6 +181,7 @@ void build_tty_device() {
     stdio.write       = stdout_write;
     stdio.ioctl       = tty_ioctl;
     stdio.poll        = tty_poll;
+    stdio.map         = (void *)empty;
     regist_vdisk(stdio);
 }
 

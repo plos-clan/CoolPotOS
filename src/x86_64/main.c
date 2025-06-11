@@ -2,7 +2,6 @@
 #include "ahci.h"
 #include "boot.h"
 #include "cpuid.h"
-#include "cpusp.h"
 #include "description_table.h"
 #include "devfs.h"
 #include "dlinker.h"
@@ -123,6 +122,7 @@ void kmain() {
     disable_scheduler();
     init_pcb();
     smp_setup();
+    gop_dev_setup();
 
     killer_setup();
     setup_syscall(true);

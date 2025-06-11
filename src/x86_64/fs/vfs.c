@@ -212,6 +212,13 @@ vfs_node_t get_rootdir() {
     return rootdir;
 }
 
+void *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags,
+              uint64_t offset) {
+    if (node == NULL) return NULL;
+    if (node->type == file_dir) return NULL;
+    return callbackof(node, map)(node->handle, (void *)addr, offset, len, prot, flags);
+}
+
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     vfs_node_t node = malloc(sizeof(struct vfs_node));
     not_null_assets(node, "vfs alloc null");

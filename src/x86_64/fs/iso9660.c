@@ -413,6 +413,7 @@ static struct vfs_callback iso_callbacks = {
     .delete  = (void *)empty, // 只读文件系统
     .rename  = (void *)empty, // 只读文件系统
     .poll    = (void *)empty, // 只读文件系统
+    .map     = (void *)empty, //TODO 未实现
 };
 
 void iso9660_regist() {
