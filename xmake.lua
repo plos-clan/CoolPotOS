@@ -100,7 +100,7 @@ function arch_i686()
 end
 
 function arch_x86_64()
-    add_requires("pl_readline")
+    add_requires("pl_readline", {debug = is_mode("debug")})
     add_requires("cp_shell")
     add_requires("os-terminal", {debug = is_mode("debug")})
 

@@ -1,11 +1,5 @@
 #include "vdisk.h"
 #include "devfs.h"
-#include "keyboard.h"
-#include "klog.h"
-#include "kprint.h"
-#include "krlibc.h"
-#include "pcb.h"
-#include "tty.h"
 
 vdisk vdisk_ctl[26];
 
@@ -37,6 +31,19 @@ uint32_t disk_size(int drive) {
         return vdisk_ctl[indx].size;
     } else {
         return 0;
+    }
+}
+
+void *device_mmap(int drive, void *addr, uint64_t len) {
+    if (have_vdisk(drive)) {
+        int indx = drive;
+        if (vdisk_ctl[indx].map) {
+            return vdisk_ctl[indx].map(drive, addr, len);
+        } else {
+            return NULL;
+        }
+    } else {
+        return NULL;
     }
 }
 

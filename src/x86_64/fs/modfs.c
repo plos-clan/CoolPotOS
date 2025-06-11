@@ -88,6 +88,7 @@ static struct vfs_callback modfs_callbacks = {
     .delete  = (void *)empty,
     .rename  = (void *)empty,
     .poll    = (void *)empty,
+    .map     = (void *)empty,
 };
 
 void modfs_setup() {

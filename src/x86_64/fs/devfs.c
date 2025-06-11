@@ -4,7 +4,6 @@
  */
 #define ALL_IMPLEMENTATION
 #include "devfs.h"
-#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "rbtree-strptr.h"
@@ -135,6 +134,14 @@ static int devfs_poll(void *file, size_t events) {
     return VFS_STATUS_FAILED;
 }
 
+static void *devfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
+                       size_t flags) {
+    int dev_id = (int)(uint64_t)file;
+    if (vdisk_ctl[dev_id].flag == 0) return NULL;
+    if (vdisk_ctl[dev_id].map) { return vdisk_ctl[dev_id].map(dev_id, addr, size); }
+    return NULL;
+}
+
 static struct vfs_callback devfs_callbacks = {
     .mount   = devfs_mount,
     .unmount = (void *)empty,
@@ -150,6 +157,7 @@ static struct vfs_callback devfs_callbacks = {
     .delete  = (void *)empty,
     .rename  = (void *)empty,
     .poll    = devfs_poll,
+    .map     = devfs_map,
 };
 
 void devfs_setup() {

@@ -99,6 +99,10 @@ void *get_acpi_rsdp() {
     return response->address;
 }
 
+struct limine_framebuffer_response *get_framebuffer_response() {
+    return framebuffer_request.response;
+}
+
 struct limine_framebuffer *get_graphics_framebuffer() {
     struct limine_framebuffer_response *response = framebuffer_request.response;
 
