@@ -264,6 +264,13 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
                       int *child_tid, uint64_t tls);
 
 /**
+ * fork vfork 系统调用实现
+ * @param is_vfork 是否是 vfork
+ * @return 新进程的 PID
+ */
+uint64_t process_fork(struct syscall_regs *reg, bool is_vfork);
+
+/**
  * 将一个线程添加到挂起队列
  * @param phys_addr 用户态锁物理地址
  * @param thread 线程

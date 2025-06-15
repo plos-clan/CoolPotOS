@@ -159,6 +159,45 @@ void *queue_dequeue(lock_queue *q) {
     return data;
 }
 
+lock_queue *queue_copy(lock_queue *src, void *(*data_copy)(void *)) {
+    if (!src) return NULL;
+
+    spin_lock(src->lock);
+
+    lock_queue *new_q = queue_init();
+    if (!new_q) {
+        spin_unlock(src->lock);
+        return NULL;
+    }
+
+    lock_node *current = src->head;
+    while (current != NULL) {
+        lock_node *new_node = malloc(sizeof(lock_node));
+        if (!new_node) {
+            spin_unlock(src->lock);
+            return NULL;
+        }
+        new_node->data  = data_copy != NULL ? data_copy(current->data) : current->data;
+        new_node->index = current->index;
+        new_node->next  = NULL;
+
+        if (!new_q->head) {
+            new_q->head = new_q->tail = new_node;
+        } else {
+            new_q->tail->next = new_node;
+            new_q->tail       = new_node;
+        }
+
+        current = current->next;
+    }
+
+    new_q->size       = src->size;
+    new_q->next_index = src->next_index;
+
+    spin_unlock(src->lock);
+    return new_q;
+}
+
 void queue_iterate(lock_queue *q, void (*callback)(void *, void *), void *argument) {
     spin_trylock(q->lock);
     lock_node *current = q->head;

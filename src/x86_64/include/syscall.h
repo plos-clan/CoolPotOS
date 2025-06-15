@@ -71,6 +71,8 @@
 #define SYSCALL_GETPID      39
 #define SYSCALL_CLONE       56
 #define SYSCALL_FORK        57
+#define SYSCALL_VFORK       58
+#define SYSCALL_EXECVE      59
 #define SYSCALL_EXIT        60
 #define SYSCALL_WAITPID     61
 #define SYSCALL_UNAME       63
