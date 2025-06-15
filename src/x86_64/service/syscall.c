@@ -534,35 +534,17 @@ syscall_(rt_sigprocmask) {
 
     if (sigsetsize != sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
 
-    if (oldset) {
-        sigset_t old_mask = 0;
-        for (int i = 0; i < MAX_SIGNALS; ++i) {
-            if (process->task_signal->signal_mask[i]) { old_mask |= (1ULL << i); }
-        }
-        *oldset = old_mask;
-    }
+    if (oldset) { *oldset = process->task_signal->blocked; }
 
     if (set == NULL) { return SYSCALL_SUCCESS; }
     sigset_t new_set = *set;
 
     switch (how) {
-    case SIG_BLOCK:
-        for (int i = 0; i < MAX_SIGNALS; ++i) {
-            if (new_set & (1ULL << i)) { process->task_signal->signal_mask[i] = true; }
-        }
-        break;
+    case SIG_BLOCK: process->task_signal->blocked |= new_set; break;
 
-    case SIG_UNBLOCK:
-        for (int i = 0; i < MAX_SIGNALS; ++i) {
-            if (new_set & (1ULL << i)) { process->task_signal->signal_mask[i] = false; }
-        }
-        break;
+    case SIG_UNBLOCK: process->task_signal->blocked &= ~new_set; break;
 
-    case SIG_SETMASK:
-        for (int i = 0; i < MAX_SIGNALS; ++i) {
-            process->task_signal->signal_mask[i] = (new_set & (1ULL << i)) != 0;
-        }
-        break;
+    case SIG_SETMASK: process->task_signal->blocked = new_set; break;
 
     default: return SYSCALL_FAULT_(EINVAL);
     }
@@ -640,9 +622,7 @@ syscall_(sigaction) {
 }
 
 syscall_(fork) {
-    tcb_t parent = get_current_task();
-    tcb_t child  = (tcb_t)malloc(STACK_SIZE);
-    return SYSCALL_FAULT_(ENOSYS);
+    return process_fork(regs, false);
 }
 
 syscall_(futex) {
@@ -735,6 +715,10 @@ syscall_(mprotect) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(vfork) {
+    return process_fork(regs, true);
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -775,6 +759,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FUTEX]       = syscall_futex,
     [SYSCALL_GET_TID]     = syscall_get_tid,
     [SYSCALL_MPROTECT]    = syscall_mprotect,
+    [SYSCALL_VFORK]       = syscall_vfork,
 };
 // clang-format on
 

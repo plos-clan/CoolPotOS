@@ -52,9 +52,9 @@ typedef struct sigaction {
 } sigaction_t;
 
 struct signal_block {
-    uint64_t pending_signals;                  // 用 bitmap 表示待处理信号
     void (*signal_handlers[MAX_SIGNALS])(int); // 每个信号对应的用户处理器
-    bool        signal_mask[MAX_SIGNALS];      // 屏蔽的信号
+    uint64_t    pending_signals;               // 用 bitmap 表示待处理信号
+    uint64_t    blocked;                       // 屏蔽的信号
     sigaction_t actions[MAXSIG];
 } __attribute__((packed));
 

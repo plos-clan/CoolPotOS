@@ -88,6 +88,13 @@ void *queue_get(lock_queue *q, size_t index);
 size_t queue_enqueue_id(lock_queue *q, void *data, size_t id);
 
 /**
+ * 拷贝一个队列
+ * @param src 源队列
+ * @return 拷贝后的新队列
+ */
+lock_queue *queue_copy(lock_queue *src, void *(*data_copy)(void *));
+
+/**
  * 迭代宏
  * @param list 传入队列
  * @param node 节点名
