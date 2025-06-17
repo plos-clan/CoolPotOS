@@ -14,10 +14,12 @@ uint64_t get_physical_memory_offset() {
 }
 
 void *phys_to_virt(uint64_t phys_addr) {
+    if (phys_addr == 0) return NULL;
     return (void *)(phys_addr + physical_memory_offset);
 }
 
 void *virt_to_phys(uint64_t virt_addr) {
+    if (virt_addr == 0) return NULL;
     return (void *)(virt_addr - physical_memory_offset);
 }
 

@@ -772,16 +772,40 @@ USED void syscall_handler(struct syscall_regs *regs,
     regs->ds     = (0x18 | 0x3);
     regs->es     = (0x18 | 0x3);
     regs->rsp    = (uint64_t)(user_regs + 1);
-    write_fsbase((uint64_t)get_current_task());
+
+    tcb_t thread = get_current_task();
+    write_fsbase((uint64_t)thread);
+    thread->context0.rsp    = regs->rsp;
+    thread->context0.rip    = regs->rip;
+    thread->context0.rflags = regs->rflags;
+    thread->context0.cs     = regs->cs;
+    thread->context0.ss     = regs->ss;
+    thread->context0.ds     = regs->ds;
+    thread->context0.es     = regs->es;
+    thread->context0.rdi    = regs->rdi;
+    thread->context0.rsi    = regs->rsi;
+    thread->context0.rdx    = regs->rdx;
+    thread->context0.r10    = regs->r10;
+    thread->context0.r8     = regs->r8;
+    thread->context0.r9     = regs->r9;
+    thread->context0.r15    = regs->r15;
+    thread->context0.r14    = regs->r14;
+    thread->context0.r13    = regs->r13;
+    thread->context0.r12    = regs->r12;
+    thread->context0.r11    = regs->r11;
+    thread->context0.rbx    = regs->rbx;
+    thread->context0.rcx    = regs->rcx;
+    thread->context0.rbp    = regs->rbp;
+
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
-    logkf("syscall start: %d\n", syscall_id);
+    logkf("syscall start: %d P(%s) id:%d\n", syscall_id, thread->name, thread->pid);
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
     } else
         regs->rax = SYSCALL_FAULT;
     logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
-    write_fsbase(get_current_task()->fs_base);
+    write_fsbase(thread->fs_base);
 }
 
 USED registers_t *syscall_handle(registers_t *reg) { // int 0x80 软中断处理

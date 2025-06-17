@@ -7,6 +7,7 @@
 #define MAX_CPU               256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START     0xffff900000000000       // 内核堆起始地址
 #define KERNEL_HEAP_SIZE      0x1000000                // 内核堆大小 16MB
+#define SMALL_STACK_SIZE      8192                     // fork 精简栈大小(byte)
 #define STACK_SIZE            32768                    // 栈大小(byte)
 #define KERNEL_ST_SZ          131072                   // 增强栈大小 128k
 #define MAX_WAIT_INDEX        1000000                  // 阻塞最大循环数
@@ -20,6 +21,7 @@
 #define DEVFS_REGISTER_ID     0                        // 设备文件系统注册ID
 #define MODFS_REGISTER_ID     1                        // 模块文件系统注册ID
 #define TMPFS_REGISTER_ID     2                        // 临时文件系统注册ID
+#define LAPIC_TIMER_SPEED     50                       // LAPIC定时器速度(单位: Hz)
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")
@@ -52,9 +54,9 @@ void not_null_assets(void *ptr, const char *message); // error_handle.c defined
 
 int memcmp(const void *a_, const void *b_, size_t size);
 
-void *memcpy(void *s, const void *ct, size_t n);
+void *memcpy(void *dest, const void *src, size_t n);
 
-void *memset(void *dst, int val, size_t size);
+void *memset(void *dest, int val, size_t size);
 
 void *memmove(void *dest, const void *src, size_t n);
 
@@ -95,7 +97,7 @@ static inline bool are_interrupts_enabled() {
     __asm__ volatile("pushfq\n\t"
                      "pop %0"
                      : "=r"(rflags));
-    return true; //(rflags & (1 << 9)) != 0;
+    return (rflags & (1 << 9)) != 0;
 }
 
 static inline char *LeadingWhitespace(char *beg, char *end) {
