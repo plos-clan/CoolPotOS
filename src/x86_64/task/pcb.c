@@ -414,8 +414,9 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     *(--stack_top)            = (uint64_t)switch_to_user_mode;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
-    new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+    new_task->context0.rsp   = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
+    new_task->user_stack_top = new_task->context0.rsp;
+    new_task->kernel_stack   = (new_task->context0.rsp &= ~0xF); // 栈16字节对齐
     new_task->user_stack =
         page_alloc_random(pcb->page_dir, STACK_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     new_task->main        = (uint64_t)_start;
@@ -464,11 +465,12 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->kernel_stack = (new_task->context0.rsp &= ~(uint64_t)0xF);             // 栈16字节对齐
     new_task->user_stack =
         new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
-    new_task->context0.cs = 0x8;
-    new_task->context0.ss = 0x10;
-    new_task->context0.es = 0x10;
-    new_task->context0.ds = 0x10;
-    new_task->status      = CREATE;
+    new_task->user_stack_top = new_task->user_stack;
+    new_task->context0.cs    = 0x8;
+    new_task->context0.ss    = 0x10;
+    new_task->context0.es    = 0x10;
+    new_task->context0.ds    = 0x10;
+    new_task->status         = CREATE;
 
     new_task->fs_base = (uint64_t)new_task;
 
@@ -510,6 +512,7 @@ void init_pcb() {
     set_kernel_stack(get_rsp()); // 给IDLE线程设置TSS内核栈, 不然这个线程炸了后会发生 DoubleFault
     kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();
     kernel_head_task->user_stack      = kernel_head_task->kernel_stack;
+    kernel_head_task->user_stack_top  = kernel_head_task->user_stack;
     kernel_head_task->context0.rflags = get_rflags();
     kernel_head_task->cpu_timer       = nano_time();
     kernel_head_task->time_buf        = alloc_timer();

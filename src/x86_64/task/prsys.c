@@ -25,6 +25,8 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->cpu_id          = cpu->id;
     new_task->status          = START;
     new_task->context0.rsp    = stack;
+    new_task->user_stack      = new_task->context0.rsp;
+    new_task->user_stack_top  = new_task->user_stack;
     new_task->context0.rflags = reg->rflags;
     new_task->kernel_stack    = (uint64_t)new_task + STACK_SIZE;
     new_task->main            = parent_task->main;
@@ -119,12 +121,16 @@ static void *file_copy(void *ptr) {
     return new;
 }
 
+USED void debug_write_cr3(uint64_t cr3) {
+    __asm__ __volatile__("mov %0, %%cr3" ::"r"(cr3) : "memory");
+}
+
 uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     close_interrupt;
     disable_scheduler();
 
     pcb_t             current_pcb   = get_current_task()->parent_group;
-    page_directory_t *new_directory = clone_directory(current_pcb->page_dir);
+    page_directory_t *new_directory = clone_directory(current_pcb->page_dir, true);
 
     pcb_t new_pcb = malloc(sizeof(struct process_control_block));
     memset(new_pcb, 0, sizeof(struct process_control_block));
@@ -152,12 +158,9 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->queue_index = lock_queue_enqueue(pgb_queue, new_pcb);
     spin_unlock(pgb_queue->lock);
 
-    uint64_t new_stack =
-        page_alloc_random(new_directory, STACK_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-
     tcb_t parent_task = get_current_task();
 
-    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
+    tcb_t new_task = (tcb_t)malloc(SMALL_STACK_SIZE);
     if (new_task == NULL) return SYSCALL_FAULT_(ENOMEM);
     memset(new_task, 0, sizeof(struct thread_control_block));
     new_task->task_level      = TASK_APPLICATION_LEVEL;
@@ -166,9 +169,10 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->mem_usage       = get_all_memusage();
     new_task->cpu_id          = cpu->id;
     new_task->status          = START;
-    new_task->context0.rsp    = new_stack;
+    new_task->context0.rsp    = reg->rsp;
+    new_task->user_stack      = new_task->context0.rsp;
     new_task->context0.rflags = reg->rflags;
-    new_task->kernel_stack    = (uint64_t)new_task + STACK_SIZE;
+    new_task->kernel_stack    = (uint64_t)new_task + SMALL_STACK_SIZE;
     new_task->main            = parent_task->main;
     strcpy(new_task->name, parent_task->name);
 

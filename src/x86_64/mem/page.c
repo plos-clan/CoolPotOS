@@ -232,34 +232,46 @@ page_directory_t *get_current_directory() {
     return cpu->ready ? cpu->directory : current_directory;
 }
 
-static void copy_page_table_recursive(page_table_t *source_table, page_table_t *new_table,
-                                      int level) {
-    for (int i = 0; i < 512; i++) {
-        page_table_entry_t *entry = &source_table->entries[i];
-
-        if (level == 1 || entry->value == 0 || is_huge_page(entry)) {
-            new_table->entries[i].value = entry->value;
-            continue;
-        }
-
-        uint64_t      frame          = alloc_frames(1);
-        page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
-        new_table->entries[i].value  = frame | (entry->value & 0xFFF);
-
-        page_table_t *source_page_table_next = phys_to_virt(entry->value & 0x000fffffffff000);
-        page_table_t *target_page_table_next = new_page_table;
-
-        copy_page_table_recursive(source_page_table_next, target_page_table_next, level - 1);
-    }
+bool is_stack_memory_region(uint64_t vaddr) {
+    tcb_t thread = get_current_task();
+    return (vaddr <= thread->user_stack_top) && (vaddr >= thread->context0.rsp);
 }
 
-page_directory_t *clone_directory(page_directory_t *src) {
+static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level,
+                                               uint64_t virt_addr, bool is_fork) {
+    if (source_table == NULL) { return NULL; } // 就是这样
+    if (level == 0) {
+        page_table_t *pt = (page_table_t *)source_table->entries;
+        if (is_fork || is_stack_memory_region(virt_addr)) {
+            uint64_t      frame          = alloc_frames(1);
+            page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
+            memcpy(new_page_table, source_table->entries, PAGE_SIZE);
+            pt = new_page_table;
+        }
+        return pt;
+    }
+
+    uint64_t      phy_frame = alloc_frames(1);
+    page_table_t *new_table = phys_to_virt(phy_frame);
+    for (uint64_t i = 0; i < (level == 4 ? 256 : 512); i++) {
+        uint64_t      new_virt_addr = virt_addr | (i << ((level - 1) * 9 + 12));
+        page_table_t *source_page_table_next =
+            phys_to_virt(source_table->entries[i].value & 0x000fffffffff000);
+
+        page_table_t *new_page_table =
+            copy_page_table_recursive(source_page_table_next, level - 1, new_virt_addr, is_fork);
+        new_table->entries[i].value = (uint64_t)virt_to_phys((uint64_t)new_page_table) |
+                                      (source_table->entries[i].value & 0xFFFF000000000FFF);
+    }
+    return new_table;
+}
+
+page_directory_t *clone_directory(page_directory_t *src, bool is_fork) {
     spin_lock(page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     if (new_directory == NULL) return NULL;
-    uint64_t phy_frame   = alloc_frames(1);
-    new_directory->table = phys_to_virt(phy_frame);
-    copy_page_table_recursive(src->table, new_directory->table, 4);
+    new_directory->table = copy_page_table_recursive(src->table, 4, 0, is_fork);
+    memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)src->table + 256, PAGE_SIZE / 2);
     spin_unlock(page_lock);
     return new_directory;
 }
@@ -297,7 +309,20 @@ void free_page_directory(page_directory_t *dir) {
 }
 
 void unmap_page(page_directory_t *directory, uint64_t vaddr) {
-    
+    uint64_t l4_index = (((vaddr >> 39)) & 0x1FF);
+    uint64_t l3_index = (((vaddr >> 30)) & 0x1FF);
+    uint64_t l2_index = (((vaddr >> 21)) & 0x1FF);
+    uint64_t l1_index = (((vaddr >> 12)) & 0x1FF);
+
+    page_table_t *l4_table = directory->table;
+    page_table_t *l3_table =
+        phys_to_virt((&(l4_table->entries[l4_index]))->value & 0x000fffffffff000);
+    page_table_t *l2_table =
+        phys_to_virt((&(l3_table->entries[l3_index]))->value & 0x000fffffffff000);
+    page_table_t *l1_table =
+        phys_to_virt((&(l2_table->entries[l2_index]))->value & 0x000fffffffff000);
+
+    free_frame(l1_table->entries[l1_index].value & 0x000fffffffff000);
     flush_tlb(vaddr);
 }
 

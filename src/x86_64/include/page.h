@@ -83,9 +83,10 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
 /**
  * 克隆指定页表
  * @param src 源页表
+ * @param is_fork 是否为fork操作 (fork会复制页表, 其他情况会共享页表)
  * @return == NULL ? 未分配成功 : 新页表
  */
-page_directory_t *clone_directory(page_directory_t *src);
+page_directory_t *clone_directory(page_directory_t *src, bool is_fork);
 
 /**
  * 释放指定页表 (不得为内核页, 内核页由引导程序提供,不遵循页框分配器的规则)
@@ -121,6 +122,13 @@ uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_
  * @param size 大小
  */
 void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size);
+
+/**
+ * 释放指定地址的映射 (未使用 alloc_frames 的页不可使用此方法取消映射)
+ * @param directory 页表
+ * @param vaddr 虚拟地址 (4k对齐)
+ */
+void unmap_page(page_directory_t *directory, uint64_t vaddr);
 
 /**
  * 获取指定地址的页表项标志

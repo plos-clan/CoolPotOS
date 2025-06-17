@@ -61,7 +61,6 @@ __attribute__((naked)) void save_registers() {
 }
 
 USED registers_t *timer_handle(registers_t *reg) {
-    close_interrupt;
     scheduler(reg);
     send_eoi();
     return reg;
