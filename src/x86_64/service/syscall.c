@@ -719,6 +719,14 @@ syscall_(vfork) {
     return process_fork(regs, true);
 }
 
+syscall_(execve) {
+    char  *path = (char *)arg0;
+    char **argv = (char **)arg1;
+    char **envp = (char **)arg2;
+    if (path == NULL) return SYSCALL_FAULT_(EINVAL);
+    return process_execve(path, argv, envp);
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -760,6 +768,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GET_TID]     = syscall_get_tid,
     [SYSCALL_MPROTECT]    = syscall_mprotect,
     [SYSCALL_VFORK]       = syscall_vfork,
+    [SYSCALL_EXECVE]      = syscall_execve,
 };
 // clang-format on
 

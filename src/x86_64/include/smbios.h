@@ -44,6 +44,13 @@ struct Header {
     uint16_t handle; // 结构句柄
 };
 
+typedef struct {
+    uint32_t Data1;
+    uint16_t Data2;
+    uint16_t Data3;
+    uint8_t  Data4[8];
+} efi_guid_t;
+
 /* 获取SMBIOS主版本 */
 int smbios_major_version(void);
 

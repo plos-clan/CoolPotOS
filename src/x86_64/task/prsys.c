@@ -1,10 +1,15 @@
 /**
  * @file prsys.c
  * 多任务相关系统调用实现
+ * 非常不建议内核态调用这里的函数, 此函数仅供用户态使用
+ * 内核态操作进程请使用 pcb.c 中的函数
  */
+#include "elf_util.h"
 #include "heap.h"
+#include "hhdm.h"
 #include "pcb.h"
 #include "smp.h"
+#include "sprintf.h"
 #include "vfs.h"
 
 extern int         now_tid;
@@ -217,4 +222,96 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     enable_scheduler();
     open_interrupt;
     return new_pcb->pgb_id;
+}
+
+uint64_t process_execve(char *path, char **argv, char **envp) {
+    vfs_node_t node = vfs_open(path);
+    if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
+    uint64_t buf_len = (node->size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+
+    char **new_argv = (char **)malloc(1024);
+    memset(new_argv, 0, 1024);
+    char **new_envp = (char **)malloc(1024);
+    memset(new_envp, 0, 1024);
+
+    int argv_count = 0;
+    int envp_count = 0;
+
+    close_interrupt;
+    disable_scheduler();
+
+    if (argv && (page_virt_to_phys((uint64_t)argv) != 0)) {
+        for (argv_count = 0;
+             argv[argv_count] != NULL && (page_virt_to_phys((uint64_t)argv[argv_count]) != 0);
+             argv_count++) {
+            new_argv[argv_count] = strdup(argv[argv_count]);
+        }
+    }
+    new_argv[argv_count] = NULL;
+
+    if (envp && (page_virt_to_phys((uint64_t)envp) != 0)) {
+        for (envp_count = 0;
+             envp[envp_count] != NULL && (page_virt_to_phys((uint64_t)envp[envp_count]) != 0);
+             envp_count++) {
+            new_envp[envp_count] = strdup(envp[envp_count]);
+        }
+    }
+    new_envp[envp_count] = NULL;
+
+    uint8_t *buffer = (uint8_t *)EHDR_START_ADDR;
+    page_map_range_to_random(get_current_directory(), EHDR_START_ADDR, buf_len,
+                             PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+
+    vfs_read(node, buffer, 0, node->size);
+    vfs_close(node);
+
+    uint64_t     e_entry     = 0;
+    uint64_t     load_start  = 0;
+    cp_module_t *exec_module = malloc(sizeof(cp_module_t));
+    exec_module->path        = path;
+    exec_module->data        = buffer;
+    exec_module->size        = node->size;
+    e_entry = (uint64_t)load_executor_elf(exec_module, get_current_directory(), 0, &load_start);
+
+    if (e_entry == 0) {
+        for (int i = 0; i < argv_count; i++)
+            if (new_argv[i]) free(new_argv[i]);
+        free(new_argv);
+        for (int i = 0; i < envp_count; i++)
+            if (new_envp[i]) free(new_envp[i]);
+        free(new_envp);
+
+        enable_scheduler();
+        open_interrupt;
+        return SYSCALL_FAULT_(EINVAL);
+    }
+
+    char cmdline[PAGE_SIZE];
+    memset(cmdline, 0, sizeof(cmdline));
+    char *cmdline_ptr = cmdline;
+    for (int i = 0; i < argv_count; i++) {
+        int len      = sprintf(cmdline_ptr, "%s ", new_argv[i]);
+        cmdline_ptr += len;
+    }
+    if (get_current_task()->parent_group->cmdline != NULL)
+        free(get_current_task()->parent_group->cmdline);
+    get_current_task()->parent_group->cmdline = strdup(cmdline);
+
+    uint64_t stack                 = page_alloc_random(get_current_directory(), STACK_SIZE,
+                                                       PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+    get_current_task()->user_stack = stack;
+
+    for (int i = 0; i < argv_count; i++) {
+        if (new_argv[i]) { free(new_argv[i]); }
+    }
+    free(new_argv);
+
+    for (int i = 0; i < envp_count; i++) {
+        if (new_envp[i]) { free(new_envp[i]); }
+    }
+    free(new_envp);
+    enable_scheduler();
+    open_interrupt;
+    switch_to_user_mode(e_entry);
+    return SYSCALL_FAULT_(EAGAIN);
 }

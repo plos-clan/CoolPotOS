@@ -272,6 +272,15 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
 uint64_t process_fork(struct syscall_regs *reg, bool is_vfork);
 
 /**
+ * execve 系统调用实现
+ * @param path 可执行程序路径
+ * @param argv 可执行程序参数
+ * @param envp 环境变量
+ * @return 有返回代表失败, 否则当前进程完全更改为新进程
+ */
+uint64_t process_execve(char *path, char **argv, char **envp);
+
+/**
  * 将一个线程添加到挂起队列
  * @param phys_addr 用户态锁物理地址
  * @param thread 线程
