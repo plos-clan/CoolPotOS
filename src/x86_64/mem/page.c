@@ -232,78 +232,54 @@ page_directory_t *get_current_directory() {
     return cpu->ready ? cpu->directory : current_directory;
 }
 
-bool is_stack_memory_region(uint64_t vaddr) {
-    tcb_t thread = get_current_task();
-    return (vaddr <= thread->user_stack_top) && (vaddr >= thread->context0.rsp);
-}
-
-static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level,
-                                               uint64_t virt_addr, bool is_fork) {
-    if (source_table == NULL) { return NULL; } // 就是这样
+static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level) {
+    if (source_table == NULL) return NULL; // 就是这样
     if (level == 0) {
-        page_table_t *pt = (page_table_t *)source_table->entries;
-        if (is_fork || is_stack_memory_region(virt_addr)) {
-            uint64_t      frame          = alloc_frames(1);
-            page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
-            memcpy(new_page_table, source_table->entries, PAGE_SIZE);
-            pt = new_page_table;
-        }
-        return pt;
+        uint64_t      frame          = alloc_frames(1);
+        page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
+        memcpy(new_page_table, source_table->entries, PAGE_SIZE);
+        return new_page_table;
     }
 
     uint64_t      phy_frame = alloc_frames(1);
     page_table_t *new_table = phys_to_virt(phy_frame);
     for (uint64_t i = 0; i < (level == 4 ? 256 : 512); i++) {
-        uint64_t      new_virt_addr = virt_addr | (i << ((level - 1) * 9 + 12));
         page_table_t *source_page_table_next =
             phys_to_virt(source_table->entries[i].value & 0x000fffffffff000);
-
-        page_table_t *new_page_table =
-            copy_page_table_recursive(source_page_table_next, level - 1, new_virt_addr, is_fork);
-        new_table->entries[i].value = (uint64_t)virt_to_phys((uint64_t)new_page_table) |
+        page_table_t *new_page_table = copy_page_table_recursive(source_page_table_next, level - 1);
+        new_table->entries[i].value  = (uint64_t)virt_to_phys((uint64_t)new_page_table) |
                                       (source_table->entries[i].value & 0xFFFF000000000FFF);
     }
     return new_table;
 }
 
-page_directory_t *clone_directory(page_directory_t *src, bool is_fork) {
-    spin_lock(page_lock);
-    page_directory_t *new_directory = malloc(sizeof(page_directory_t));
-    if (new_directory == NULL) return NULL;
-    new_directory->table = copy_page_table_recursive(src->table, 4, 0, is_fork);
-    memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)src->table + 256, PAGE_SIZE / 2);
-    spin_unlock(page_lock);
-    return new_directory;
-}
-
 static void free_page_table_recursive(page_table_t *table, int level) {
-    uint64_t virtual_address  = (uint64_t)table;
-    uint64_t physical_address = (uint64_t)virt_to_phys(virtual_address);
+    if (table == NULL) return;
     if (level == 0) {
-        free_frame(physical_address & 0x000fffffffff000);
+        free_frame((uint64_t)virt_to_phys((uint64_t)table));
         return;
     }
 
-    for (int i = 0; i < 512; i++) {
-        page_table_entry_t *entry = &table->entries[i];
-        if (entry->value == 0 || is_huge_page(entry)) continue;
-
-        if (level == 1) {
-            if (entry->value & PTE_PRESENT && entry->value & PTE_WRITEABLE &&
-                entry->value & PTE_USER) {
-                free_frame(entry->value & 0x000fffffffff000);
-            }
-        } else {
-            free_page_table_recursive(phys_to_virt(entry->value & 0x000fffffffff000), level - 1);
-        }
+    for (int i = 0; i < (level == 4 ? 256 : 512); i++) {
+        page_table_t *page_table_next = phys_to_virt(table->entries[i].value & 0x000fffffffff000);
+        free_page_table_recursive(page_table_next, level - 1);
     }
-    free_frame(physical_address & 0x000fffffffff000);
+    free_frame((uint64_t)virt_to_phys((uint64_t)table));
+}
+
+page_directory_t *clone_page_directory(page_directory_t *dir) {
+    spin_lock(page_lock);
+    page_directory_t *new_directory = malloc(sizeof(page_directory_t));
+    if (new_directory == NULL) return NULL;
+    new_directory->table = copy_page_table_recursive(dir->table, 4);
+    memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)dir->table + 256, PAGE_SIZE / 2);
+    spin_unlock(page_lock);
+    return new_directory;
 }
 
 void free_page_directory(page_directory_t *dir) {
     spin_lock(page_lock);
     free_page_table_recursive(dir->table, 4);
-    free_frame((uint64_t)virt_to_phys((uint64_t)dir->table));
     free(dir);
     spin_unlock(page_lock);
 }

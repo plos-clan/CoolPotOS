@@ -118,6 +118,7 @@ struct process_control_block {
     void             *elf_file;    // 可执行文件指针
     size_t            elf_size;    // 可执行文件大小
     uint64_t          load_start;  // 加载起始地址
+    bool              vfork;       // 是否是 vfork 创建的进程
 };
 
 struct thread_control_block {
@@ -152,9 +153,6 @@ struct thread_control_block {
     size_t group_index; // 进程队列索引
     size_t death_index; // 死亡队列索引
     size_t futex_index; // 挂起队列索引
-
-    int seq_state; // 键盘状态标志
-    int last_key;  // 标志按键
 };
 
 static __attr(address_space(257)) struct thread_control_block *const tcb =
