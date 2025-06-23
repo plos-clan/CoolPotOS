@@ -324,7 +324,7 @@ static void exec(int argc, char **argv) {
         return;
     }
 
-    page_directory_t *up         = clone_directory(get_kernel_pagedir(), false);
+    page_directory_t *up         = clone_page_directory(get_kernel_pagedir());
     uint64_t          load_start = UINT64_MAX;
     void             *main       = load_executor_elf(module, up, 0, &load_start);
     if (main == NULL) {

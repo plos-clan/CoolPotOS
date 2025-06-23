@@ -160,7 +160,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
 
 void switch_to_user_mode(uint64_t func) {
     close_interrupt;
-    uint64_t rsp                        = (uint64_t)get_current_task()->user_stack + STACK_SIZE;
+    uint64_t rsp                        = (uint64_t)get_current_task()->user_stack_top;
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
 
@@ -273,7 +273,9 @@ void kill_proc0(pcb_t pcb) {
     free(pcb->cwd);
     free(pcb->task_signal);
     free_tty(pcb->tty);
-    free_page_directory(pcb->page_dir);
+    logkf("Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pgb_id,
+          pcb->vfork ? "true" : "false");
+    if (!pcb->vfork) free_page_directory(pcb->page_dir);
     free(pcb);
     open_interrupt;
     enable_scheduler();
@@ -372,6 +374,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
+    new_pgb->vfork       = false;
     new_pgb->cwd         = malloc(1024);
     memset(new_pgb->cwd, 0, 1024);
     strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
@@ -414,13 +417,14 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     *(--stack_top)            = (uint64_t)switch_to_user_mode;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
-    new_task->context0.rsp   = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->user_stack_top = new_task->context0.rsp;
-    new_task->kernel_stack   = (new_task->context0.rsp &= ~0xF); // 栈16字节对齐
+    new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
+    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+
     new_task->user_stack =
         page_alloc_random(pcb->page_dir, STACK_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    new_task->main        = (uint64_t)_start;
-    new_task->context0.cs = 0x8;
+    new_task->user_stack_top = new_task->user_stack + STACK_SIZE;
+    new_task->main           = (uint64_t)_start;
+    new_task->context0.cs    = 0x8;
     new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
     new_task->status                                                      = CREATE;
 

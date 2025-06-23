@@ -37,6 +37,7 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
+// 懒分配
 typedef struct mm_virtual_page {
     uint64_t start;
     uint64_t count;
@@ -82,11 +83,10 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
 
 /**
  * 克隆指定页表
- * @param src 源页表
- * @param is_fork 是否为fork操作 (fork会复制页表, 其他情况会共享页表)
+ * @param dir 源页表
  * @return == NULL ? 未分配成功 : 新页表
  */
-page_directory_t *clone_directory(page_directory_t *src, bool is_fork);
+page_directory_t *clone_page_directory(page_directory_t *dir);
 
 /**
  * 释放指定页表 (不得为内核页, 内核页由引导程序提供,不遵循页框分配器的规则)

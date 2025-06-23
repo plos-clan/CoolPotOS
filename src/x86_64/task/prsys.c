@@ -30,8 +30,8 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->cpu_id          = cpu->id;
     new_task->status          = START;
     new_task->context0.rsp    = stack;
-    new_task->user_stack      = new_task->context0.rsp;
-    new_task->user_stack_top  = new_task->user_stack;
+    new_task->user_stack      = stack;
+    new_task->user_stack_top  = new_task->context0.rsp;
     new_task->context0.rflags = reg->rflags;
     new_task->kernel_stack    = (uint64_t)new_task + STACK_SIZE;
     new_task->main            = parent_task->main;
@@ -126,16 +126,11 @@ static void *file_copy(void *ptr) {
     return new;
 }
 
-USED void debug_write_cr3(uint64_t cr3) {
-    __asm__ __volatile__("mov %0, %%cr3" ::"r"(cr3) : "memory");
-}
-
 uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     close_interrupt;
     disable_scheduler();
 
-    pcb_t             current_pcb   = get_current_task()->parent_group;
-    page_directory_t *new_directory = clone_directory(current_pcb->page_dir, true);
+    pcb_t current_pcb = get_current_task()->parent_group;
 
     pcb_t new_pcb = malloc(sizeof(struct process_control_block));
     memset(new_pcb, 0, sizeof(struct process_control_block));
@@ -144,10 +139,11 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->task_level = TASK_APPLICATION_LEVEL;
     new_pcb->status     = START;
     new_pcb->tty        = alloc_default_tty();
-    new_pcb->page_dir   = new_directory;
-    new_pcb->elf_file   = current_pcb->elf_file;
-    new_pcb->elf_size   = current_pcb->elf_size;
-    new_pcb->cmdline    = malloc(strlen(current_pcb->cmdline));
+    new_pcb->page_dir =
+        is_vfork ? current_pcb->page_dir : clone_page_directory(current_pcb->page_dir);
+    new_pcb->elf_file = current_pcb->elf_file;
+    new_pcb->elf_size = current_pcb->elf_size;
+    new_pcb->cmdline  = malloc(strlen(current_pcb->cmdline));
     strcpy(new_pcb->cmdline, current_pcb->cmdline);
     new_pcb->pcb_queue   = queue_init();
     new_pcb->ipc_queue   = queue_init();
@@ -161,6 +157,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->mmap_start  = current_pcb->mmap_start;
     new_pcb->file_open   = queue_copy(current_pcb->file_open, file_copy);
     new_pcb->queue_index = lock_queue_enqueue(pgb_queue, new_pcb);
+    new_pcb->vfork       = is_vfork;
     spin_unlock(pgb_queue->lock);
 
     tcb_t parent_task = get_current_task();
@@ -174,8 +171,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->mem_usage       = get_all_memusage();
     new_task->cpu_id          = cpu->id;
     new_task->status          = START;
-    new_task->context0.rsp    = reg->rsp;
-    new_task->user_stack      = new_task->context0.rsp;
+    new_task->user_stack      = parent_task->user_stack;
+    new_task->user_stack_top  = parent_task->user_stack_top;
     new_task->context0.rflags = reg->rflags;
     new_task->kernel_stack    = (uint64_t)new_task + SMALL_STACK_SIZE;
     new_task->main            = parent_task->main;
@@ -201,6 +198,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->context0.r15    = reg->r15;
     new_task->context0.rbx    = reg->rbx;
     new_task->context0.rbp    = reg->rbp;
+    new_task->context0.rsp    = reg->rsp;
     new_task->context0.rcx    = reg->rcx;
 
     memcpy(new_task->fpu_context.fxsave_area, parent_task->fpu_context.fxsave_area, 512);
@@ -221,6 +219,12 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     add_task(new_task);
     enable_scheduler();
     open_interrupt;
+
+    if (is_vfork) {
+        int npid = new_pcb->pgb_id;
+        waitpid(npid);
+    }
+
     return new_pcb->pgb_id;
 }
 
@@ -239,6 +243,12 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
 
     close_interrupt;
     disable_scheduler();
+
+    pcb_t process = get_current_task()->parent_group;
+
+    if (0) free_page_directory(process->page_dir);
+    process->pgb_id   = now_pid++;
+    process->page_dir = clone_page_directory(get_kernel_pagedir());
 
     if (argv && (page_virt_to_phys((uint64_t)argv) != 0)) {
         for (argv_count = 0;
@@ -273,6 +283,9 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     exec_module->size        = node->size;
     e_entry = (uint64_t)load_executor_elf(exec_module, get_current_directory(), 0, &load_start);
 
+    process->elf_file = buffer;
+    process->elf_size = node->size;
+
     if (e_entry == 0) {
         for (int i = 0; i < argv_count; i++)
             if (new_argv[i]) free(new_argv[i]);
@@ -293,13 +306,13 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
         int len      = sprintf(cmdline_ptr, "%s ", new_argv[i]);
         cmdline_ptr += len;
     }
-    if (get_current_task()->parent_group->cmdline != NULL)
-        free(get_current_task()->parent_group->cmdline);
-    get_current_task()->parent_group->cmdline = strdup(cmdline);
+    if (process->cmdline != NULL) free(process->cmdline);
+    process->cmdline = strdup(cmdline);
 
-    uint64_t stack                 = page_alloc_random(get_current_directory(), STACK_SIZE,
-                                                       PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    get_current_task()->user_stack = stack;
+    uint64_t stack                     = page_alloc_random(get_current_directory(), STACK_SIZE,
+                                                           PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+    get_current_task()->user_stack     = stack;
+    get_current_task()->user_stack_top = stack + STACK_SIZE;
 
     for (int i = 0; i < argv_count; i++) {
         if (new_argv[i]) { free(new_argv[i]); }
