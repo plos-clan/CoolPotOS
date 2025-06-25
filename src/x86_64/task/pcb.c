@@ -175,7 +175,7 @@ void switch_to_user_mode(uint64_t func) {
         }
 
         uint64_t  linker_start = UINT64_MAX;
-        elf_start linker_main  = load_executor_elf(module, get_current_directory(),
+        elf_start linker_main  = load_executor_elf(module->data, get_current_directory(),
                                                    INTERPRETER_BASE_ADDR, &linker_start);
         if (linker_main == NULL) {
             kerror("Cannot load libc.so module.");
@@ -273,6 +273,7 @@ void kill_proc0(pcb_t pcb) {
     free(pcb->cwd);
     free(pcb->task_signal);
     free_tty(pcb->tty);
+    free(pcb->elf_file);
     logkf("Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pgb_id,
           pcb->vfork ? "true" : "false");
     if (!pcb->vfork) free_page_directory(pcb->page_dir);
@@ -333,12 +334,15 @@ tcb_t found_thread(pcb_t pcb, int tid) {
 int waitpid(int pid) {
     if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
+    bool          is_sti = are_interrupts_enabled();
     loop {
+        open_interrupt;
         mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         if (pid == mesg->pid) {
             int exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |
                             mesg->data[0];
             free(mesg);
+            if (!is_sti) close_interrupt;
             return exit_code;
         }
         ipc_send(get_current_task()->parent_group, mesg);

@@ -3,6 +3,7 @@
 #include "elf.h"
 #include "module.h"
 #include "page.h"
+#include "vfs.h"
 
 typedef void (*elf_start)(void);
 
@@ -14,7 +15,7 @@ typedef void (*elf_start)(void);
  * @param load_start 加载起始地址
  * @return == NULL ? 无法识别或正确加载ELF : ELF入口函数
  */
-elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset,
+elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
                             uint64_t *load_start);
 
 /**

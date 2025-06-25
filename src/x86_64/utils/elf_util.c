@@ -74,9 +74,10 @@ bool is_dynamic(Elf64_Ehdr *ehdr) {
     return true;
 }
 
-elf_start load_executor_elf(cp_module_t *file, page_directory_t *dir, uint64_t offset,
+elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
                             uint64_t *load_start) {
-    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)file->data;
+
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
     if (!elf_test_head(ehdr)) { return NULL; }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
