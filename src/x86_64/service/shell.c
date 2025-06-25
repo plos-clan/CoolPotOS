@@ -318,21 +318,28 @@ static void exec(int argc, char **argv) {
         return;
     }
 
-    cp_module_t *module = get_module(argv[1]);
-    if (module == NULL) {
-        printk("\033[31mCannot find module [%s]\033[0m\n", argv[1]);
+    vfs_node_t file = vfs_open(argv[1]);
+    if (file == NULL) {
+        printk("\033[31mCannot find file [%s]\033[0m\n", argv[1]);
+        return;
+    }
+
+    uint8_t *data = malloc(file->size);
+    if (vfs_read(file, data, 0, file->size) == (size_t)VFS_STATUS_FAILED) {
+        printk("\033[31mFailed to read file [%s]\033[0m\n", file->name);
+        free(data);
         return;
     }
 
     page_directory_t *up         = clone_page_directory(get_kernel_pagedir());
     uint64_t          load_start = UINT64_MAX;
-    void             *main       = load_executor_elf(module, up, 0, &load_start);
+    void             *main       = load_executor_elf(data, up, 0, &load_start);
     if (main == NULL) {
         printk("\033[31mCannot load elf file.\033[0m\n");
         return;
     }
 
-    char *name        = module->module_name;
+    char *name        = file->name;
     ucb_t user_handle = get_current_task()->parent_group->user;
 
     int total_len = 0;
@@ -346,8 +353,8 @@ static void exec(int argc, char **argv) {
         if (i != argc - 1) strcat(result, " ");
     }
 
-    pcb_t user_task       = create_process_group(name, up, user_handle, result, shell_process,
-                                                 module->data, module->size);
+    pcb_t user_task =
+        create_process_group(name, up, user_handle, result, shell_process, data, file->size);
     user_task->load_start = load_start;
     user_task->task_level = TASK_APPLICATION_LEVEL;
     create_user_thread(main, "main", user_task);

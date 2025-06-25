@@ -201,11 +201,13 @@ syscall_(read) {
 
 syscall_(waitpid) {
     int pid = arg0;
-    if (pid < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
-    if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ESRCH);
-    int *status = (int *)arg1;
-    *status     = waitpid(pid);
-    return SYSCALL_SUCCESS;
+    if (pid < 0) return SYSCALL_FAULT_(EINVAL);
+    if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ECHILD);
+    if (arg1 != 0) {
+        int *status = (int *)arg1;
+        *status     = 0;
+    }
+    return waitpid(pid);
 }
 
 syscall_(mmap) {

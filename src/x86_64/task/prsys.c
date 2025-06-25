@@ -7,6 +7,7 @@
 #include "elf_util.h"
 #include "heap.h"
 #include "hhdm.h"
+#include "ipc.h"
 #include "pcb.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -141,7 +142,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->tty        = alloc_default_tty();
     new_pcb->page_dir =
         is_vfork ? current_pcb->page_dir : clone_page_directory(current_pcb->page_dir);
-    new_pcb->elf_file = current_pcb->elf_file;
+    new_pcb->elf_file = malloc(current_pcb->elf_size);
+    memcpy(new_pcb->elf_file, current_pcb->elf_file, current_pcb->elf_size);
     new_pcb->elf_size = current_pcb->elf_size;
     new_pcb->cmdline  = malloc(strlen(current_pcb->cmdline));
     strcpy(new_pcb->cmdline, current_pcb->cmdline);
@@ -233,40 +235,40 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
     uint64_t buf_len = (node->size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
-    char **new_argv = (char **)malloc(1024);
-    memset(new_argv, 0, 1024);
-    char **new_envp = (char **)malloc(1024);
-    memset(new_envp, 0, 1024);
-
-    int argv_count = 0;
-    int envp_count = 0;
+    pcb_t process = get_current_task()->parent_group;
 
     close_interrupt;
     disable_scheduler();
 
-    pcb_t process = get_current_task()->parent_group;
-
-    if (0) free_page_directory(process->page_dir);
-    process->pgb_id   = now_pid++;
-    process->page_dir = clone_page_directory(get_kernel_pagedir());
-
-    if (argv && (page_virt_to_phys((uint64_t)argv) != 0)) {
-        for (argv_count = 0;
-             argv[argv_count] != NULL && (page_virt_to_phys((uint64_t)argv[argv_count]) != 0);
-             argv_count++) {
-            new_argv[argv_count] = strdup(argv[argv_count]);
-        }
+    char cmdline[PAGE_SIZE];
+    memset(cmdline, 0, sizeof(cmdline));
+    char *cmdline_ptr = cmdline;
+    if (argv == NULL) {
+        enable_scheduler();
+        open_interrupt;
+        return SYSCALL_FAULT_(EINVAL);
     }
-    new_argv[argv_count] = NULL;
-
-    if (envp && (page_virt_to_phys((uint64_t)envp) != 0)) {
-        for (envp_count = 0;
-             envp[envp_count] != NULL && (page_virt_to_phys((uint64_t)envp[envp_count]) != 0);
-             envp_count++) {
-            new_envp[envp_count] = strdup(envp[envp_count]);
-        }
+    for (int i = 0; argv[i]; i++) {
+        int len      = sprintf(cmdline_ptr, "%s ", argv[i]);
+        cmdline_ptr += len;
     }
-    new_envp[envp_count] = NULL;
+
+    if (process->cmdline) free(process->cmdline);
+    process->cmdline = strdup(cmdline);
+    strncpy(process->name, path, 50);
+
+    if (process->vfork) {
+        ipc_message_t message = calloc(1, sizeof(struct ipc_message));
+        message->type         = IPC_MSG_TYPE_EPID;
+        message->pid          = process->pgb_id;
+        ipc_send(process->parent_task, message);
+    }
+
+    page_directory_t *old_page_dir = process->page_dir;
+    switch_process_page_directory(clone_page_directory(get_kernel_pagedir()));
+    if (!process->vfork) free_page_directory(old_page_dir);
+
+    process->vfork = false;
 
     uint8_t *buffer = (uint8_t *)EHDR_START_ADDR;
     page_map_range_to_random(get_current_directory(), EHDR_START_ADDR, buf_len,
@@ -275,54 +277,54 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     vfs_read(node, buffer, 0, node->size);
     vfs_close(node);
 
-    uint64_t     e_entry     = 0;
-    uint64_t     load_start  = 0;
-    cp_module_t *exec_module = malloc(sizeof(cp_module_t));
-    exec_module->path        = path;
-    exec_module->data        = buffer;
-    exec_module->size        = node->size;
-    e_entry = (uint64_t)load_executor_elf(exec_module, get_current_directory(), 0, &load_start);
+    spin_lock(process->file_open->lock);
+    queue_foreach(process->file_open, node) {
+        vfs_node_t file_node = (vfs_node_t)node->data;
+        vfs_close(file_node);
+    }
+    spin_unlock(process->file_open->lock);
+    queue_destroy(process->file_open);
+    process->file_open = queue_init();
 
-    process->elf_file = buffer;
-    process->elf_size = node->size;
+    spin_lock(process->virt_queue->lock);
+    queue_foreach(process->virt_queue, node) {
+        mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
+        free(vpage);
+    }
+    spin_unlock(process->virt_queue->lock);
+    queue_destroy(process->virt_queue);
+    process->virt_queue = queue_init();
+
+    spin_lock(process->ipc_queue->lock);
+    queue_foreach(process->ipc_queue, node) {
+        ipc_message_t msg = (ipc_message_t)node->data;
+        free(msg);
+    }
+    spin_unlock(process->ipc_queue->lock);
+    queue_destroy(process->ipc_queue);
+    process->ipc_queue = queue_init();
+
+    uint64_t e_entry    = 0;
+    uint64_t load_start = 0;
+    e_entry = (uint64_t)load_executor_elf(buffer, get_current_directory(), 0, &load_start);
+
+    uint8_t *pcb_buffer = malloc(node->size);
+    memcpy(pcb_buffer, buffer, node->size);
+    process->load_start = load_start;
+    process->elf_file   = pcb_buffer;
+    process->elf_size   = node->size;
 
     if (e_entry == 0) {
-        for (int i = 0; i < argv_count; i++)
-            if (new_argv[i]) free(new_argv[i]);
-        free(new_argv);
-        for (int i = 0; i < envp_count; i++)
-            if (new_envp[i]) free(new_envp[i]);
-        free(new_envp);
-
         enable_scheduler();
         open_interrupt;
         return SYSCALL_FAULT_(EINVAL);
     }
-
-    char cmdline[PAGE_SIZE];
-    memset(cmdline, 0, sizeof(cmdline));
-    char *cmdline_ptr = cmdline;
-    for (int i = 0; i < argv_count; i++) {
-        int len      = sprintf(cmdline_ptr, "%s ", new_argv[i]);
-        cmdline_ptr += len;
-    }
-    if (process->cmdline != NULL) free(process->cmdline);
-    process->cmdline = strdup(cmdline);
 
     uint64_t stack                     = page_alloc_random(get_current_directory(), STACK_SIZE,
                                                            PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     get_current_task()->user_stack     = stack;
     get_current_task()->user_stack_top = stack + STACK_SIZE;
 
-    for (int i = 0; i < argv_count; i++) {
-        if (new_argv[i]) { free(new_argv[i]); }
-    }
-    free(new_argv);
-
-    for (int i = 0; i < envp_count; i++) {
-        if (new_envp[i]) { free(new_envp[i]); }
-    }
-    free(new_envp);
     enable_scheduler();
     open_interrupt;
     switch_to_user_mode(e_entry);
