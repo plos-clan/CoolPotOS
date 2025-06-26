@@ -161,8 +161,9 @@ syscall_(open) {
     if (path == NULL) return SYSCALL_FAULT_(EINVAL);
     logkf("syscall open: %s\n", path);
 
-    vfs_node_t node  = vfs_open(path);
-    int        index = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, node);
+    vfs_node_t node = vfs_open(path);
+    if (node == NULL) return SYSCALL_FAULT_(EPERM);
+    int index = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, node);
     spin_unlock(get_current_task()->parent_group->file_open->lock);
     if (index == -1) {
         logkf("syscall open: %s failed.\n", path);
@@ -193,9 +194,11 @@ syscall_(read) {
     int fd = (int)arg0;
     if (fd < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
     if (arg2 == 0) return SYSCALL_SUCCESS;
+    logkf("fd = %d, arg1 = %p, arg2 = %d\n", fd, arg1, arg2);
     uint8_t   *buffer = (uint8_t *)arg1;
     vfs_node_t node   = queue_get(get_current_task()->parent_group->file_open, fd);
-    int        ret    = vfs_read(node, buffer, 0, arg2);
+    if (!node) return SYSCALL_FAULT_(EBADF);
+    int ret = vfs_read(node, buffer, 0, arg2);
     return ret;
 }
 
@@ -288,10 +291,23 @@ syscall_(prctl) {
     return process_control(arg0, arg1, arg2, arg3, arg4);
 }
 
-syscall_(size) {
-    int fd = (int)arg0;
-    if (fd < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
-    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
+syscall_(stat) {
+    char        *fn  = (char *)arg0;
+    struct stat *buf = (struct stat *)arg1;
+    if (fn == NULL || buf == NULL) return SYSCALL_FAULT_(EINVAL);
+    vfs_node_t node = vfs_open(fn);
+    if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
+    buf->st_gid   = (int)node->group;
+    buf->st_uid   = (int)node->owner;
+    buf->st_size  = (long long int)node->size;
+    buf->st_mode  = node->type | (node->type == file_symlink  ? S_IFLNK
+                                  : node->type == file_dir    ? S_IFDIR
+                                  : node->type == file_block  ? S_IFBLK
+                                  : node->type == file_socket ? S_IFSOCK
+                                  : node->type == file_none   ? S_IFREG
+                                  : node->type == file_stream ? S_IFCHR
+                                                              : 0);
+    buf->st_nlink = 1;
     return node->size;
 }
 
@@ -558,10 +574,10 @@ syscall_(dup2) {
     int        fd    = (int)arg0;
     int        newfd = (int)arg1;
     vfs_node_t node  = queue_get(get_current_task()->parent_group->file_open, fd);
-    if (!node) return (uint64_t)-EBADF;
+    if (!node) return SYSCALL_FAULT_(EBADF);
 
     vfs_node_t new = vfs_dup(node);
-    if (!new) return (uint64_t)-ENOSPC;
+    if (!new) return SYSCALL_FAULT_(ENOSPC);
     vfs_node_t new_node = queue_get(get_current_task()->parent_group->file_open, newfd);
     if (new_node != NULL) { vfs_close(new_node); }
     queue_enqueue_id(get_current_task()->parent_group->file_open, new, newfd);
@@ -573,12 +589,8 @@ syscall_(dup) {
     if (fd < 0) return SYSCALL_FAULT_(EINVAL);
     vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
     if (node == NULL) return SYSCALL_FAULT_(EBADF);
-    uint64_t i;
-    for (i = 3; i < INT32_MAX; i++) {
-        vfs_node_t node0 = queue_get(get_current_task()->parent_group->file_open, fd);
-        if (node0 == NULL) { break; }
-    }
-    return syscall_dup2(fd, i, 0, 0, 0, 0, regs);
+    vfs_node_t new = vfs_dup(node);
+    return queue_enqueue(get_current_task()->parent_group->file_open, new);
 }
 
 syscall_(fcntl) {
@@ -729,6 +741,27 @@ syscall_(execve) {
     return process_execve(path, argv, envp);
 }
 
+syscall_(fstat) {
+    int          fd  = (int)arg0;
+    struct stat *buf = (struct stat *)arg1;
+    if (buf == NULL) return SYSCALL_FAULT_(EINVAL);
+
+    vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, fd);
+    if (node == NULL) return SYSCALL_FAULT_(EBADF);
+    buf->st_gid   = (int)node->group;
+    buf->st_uid   = (int)node->owner;
+    buf->st_size  = (long long int)node->size;
+    buf->st_mode  = node->type | (node->type == file_symlink  ? S_IFLNK
+                                  : node->type == file_dir    ? S_IFDIR
+                                  : node->type == file_block  ? S_IFBLK
+                                  : node->type == file_socket ? S_IFSOCK
+                                  : node->type == file_none   ? S_IFREG
+                                  : node->type == file_stream ? S_IFCHR
+                                                              : 0);
+    buf->st_nlink = 1;
+    return node->size;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -743,7 +776,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SIGRET]      = syscall_sigret,
     [SYSCALL_GETPID]      = syscall_getpid,
     [SYSCALL_PRCTL]       = syscall_prctl,
-    [SYSCALL_STAT]        = syscall_size,
+    [SYSCALL_STAT]        = syscall_stat,
     [SYSCALL_CLONE]       = syscall_clone,
     [SYSCALL_ARCH_PRCTL]  = syscall_arch_prctl,
     [SYSCALL_YIELD]       = syscall_yield,
@@ -771,6 +804,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_MPROTECT]    = syscall_mprotect,
     [SYSCALL_VFORK]       = syscall_vfork,
     [SYSCALL_EXECVE]      = syscall_execve,
+    [SYSCALL_FSTAT]       = syscall_fstat,
 };
 // clang-format on
 

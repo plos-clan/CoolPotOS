@@ -85,6 +85,7 @@ void user_setup() {
     }
     strcpy(kernel_user->name, "Kernel");
     add_env("PATH=/boot:/limine");
+    add_env("HOME=/");
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;
     kernel_user->envc             = user_envc;
