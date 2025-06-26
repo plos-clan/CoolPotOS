@@ -44,6 +44,19 @@
 #define FUTEX_TRYLOCK_PI  8
 #define FUTEX_WAIT_BITSET 9
 
+// stat 文件类型标志
+#define S_IFMT   00170000
+#define S_IFSOCK 0140000
+#define S_IFLNK  0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
+
 // Linux 兼容层系统调用编号定义
 #define SYSCALL_READ        0
 #define SYSCALL_WRITE       1
@@ -90,6 +103,7 @@
 
 #include "ctype.h"
 #include "krlibc.h"
+#include "time.h"
 
 struct syscall_regs {
     uint64_t r15;
@@ -136,6 +150,23 @@ struct pollfd {
     int   fd;
     short events;
     short revents;
+};
+
+struct stat {
+    long              st_dev;
+    unsigned long     st_ino;
+    unsigned long     st_nlink;
+    int               st_mode;
+    int               st_uid;
+    int               st_gid;
+    long              st_rdev;
+    long long         st_size;
+    long              st_blksize;
+    unsigned long int st_blocks;
+    struct timespec   st_atim;
+    struct timespec   st_mtim;
+    struct timespec   st_ctim;
+    char              _pad[24];
 };
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,

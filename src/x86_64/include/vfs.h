@@ -138,7 +138,7 @@ struct vfs_node {           // vfs节点
     uint32_t   owner;       // 所有者
     uint32_t   group;       // 所有组
     uint32_t   permissions; // 权限
-    uint8_t    type;        // 类型
+    uint16_t   type;        // 类型
     uint16_t   fsid;        // 文件系统的 id
     void      *handle;      // 操作文件的句柄
     uint64_t   flags;       // 文件标志
