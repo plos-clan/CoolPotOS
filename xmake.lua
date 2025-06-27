@@ -54,7 +54,6 @@ function arch_i686()
 
             local iso_dir = "$(builddir)/iso_dir"
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
-            os.cp("assets/background.jpg", iso_dir.."/background.jpg")
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl32.elf")
 
@@ -155,7 +154,6 @@ function arch_x86_64()
 
             local iso_dir = "$(builddir)/iso_dir"
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
-            os.cp("assets/background.jpg", iso_dir.."/background.jpg")
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
 
@@ -172,7 +170,6 @@ function arch_x86_64()
             local shell = target:pkg("cp_shell")
             os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
             --os.cp("assets/shell.elf", iso_dir.."/shell.elf")
-            --os.cp("assets/test.elf", iso_dir.."/test.elf")
 
             local iso_file = "$(builddir)/CoolPotOS.iso"
             os.run("xorriso -as mkisofs "..
@@ -272,21 +269,15 @@ package("pl_readline")
     set_urls("https://github.com/plos-clan/pl_readline.git")
 
     on_install(function (package)
-        io.writefile("xmake.lua", [[
-            add_rules("mode.release", "mode.debug")
-            target("pl_readline")
-                set_kind("static")
-                set_toolchains("clang")
+        local cflags = {
+            "-mno-80387", "-mno-mmx", "-DPL_ENABLE_HISTORY_FILE=0",
+            "-mno-sse", "-mno-sse2", "-mno-red-zone", "-nostdlib", 
+            "-fno-builtin", "-fno-stack-protector", "-DNDEBUG"
+        }
+        local make = import("package.tools.make")
+        make.make(package, {"lib", "USER_CFLAGS="..table.concat(cflags, " ")})
 
-                add_files("src/*.c")
-                add_includedirs("include")
-
-                add_defines("PL_ENABLE_HISTORY_FILE=0")
-                add_cflags("-mno-80387", "-mno-mmx", "-DNDEBUG")
-                add_cflags("-mno-sse", "-mno-sse2", "-mno-red-zone")
-                add_cflags("-nostdlib", "-fno-builtin", "-fno-stack-protector")
-            ]])
-        import("package.tools.xmake").install(package)
+        os.cp("libplreadln.a", package:installdir("lib"))
         os.cp("include/*.h", package:installdir("include"))
     end)
 package_end()
@@ -315,7 +306,7 @@ package("os-terminal")
             os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
         end
 
-        os.run(("cargo build %s %s"):format(
+        os.exec(("cargo build %s %s"):format(
             package:debug() and "" or "--release",
             font_config ~= "none" and "--features embedded-font" or ""
         ))
@@ -325,6 +316,6 @@ package("os-terminal")
             package:debug() and "debug" or "release"),
             package:installdir("lib"))
 
-        os.run("cbindgen --output %s/os_terminal.h", package:installdir("include"))
+        os.exec("cbindgen --output %s/os_terminal.h", package:installdir("include"))
     end)
 package_end()
