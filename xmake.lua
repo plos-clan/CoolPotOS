@@ -54,6 +54,7 @@ function arch_i686()
 
             local iso_dir = "$(builddir)/iso_dir"
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            os.cp("assets/background.jpg", iso_dir.."/background.jpg")
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl32.elf")
 
@@ -154,6 +155,7 @@ function arch_x86_64()
 
             local iso_dir = "$(builddir)/iso_dir"
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            os.cp("assets/background.jpg", iso_dir.."/background.jpg")
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
 
