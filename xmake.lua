@@ -270,9 +270,10 @@ package("pl_readline")
 
     on_install(function (package)
         local cflags = {
-            "-mno-80387", "-mno-mmx", "-DPL_ENABLE_HISTORY_FILE=0",
-            "-mno-sse", "-mno-sse2", "-mno-red-zone", "-nostdlib", 
-            "-fno-builtin", "-fno-stack-protector", "-DNDEBUG"
+            "-mno-80387", "-mno-mmx", "-DNDEBUG",
+            "-mno-sse", "-mno-sse2", "-mno-red-zone",
+            "-nostdlib", "-fno-builtin", "-fno-stack-protector",
+            "-ffreestanding", "-DPL_ENABLE_HISTORY_FILE=0"
         }
         local make = import("package.tools.make")
         make.make(package, {"lib", "USER_CFLAGS="..table.concat(cflags, " ")})
