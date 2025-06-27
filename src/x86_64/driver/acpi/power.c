@@ -8,7 +8,6 @@
 
 uint16_t     SLP_TYPa;
 uint16_t     SLP_TYPb;
-uint32_t     SMI_CMD;
 uint16_t     SLP_EN;
 uint16_t     SCI_EN;
 acpi_facp_t *facp;
@@ -20,8 +19,8 @@ void enable_acpi() {
         return;
     }
 
-    if (SMI_CMD && facp->acpi_enable) {
-        io_out8(SMI_CMD, facp->acpi_enable);
+    if (facp->smi_cmd && facp->acpi_enable) {
+        io_out8(facp->smi_cmd, facp->acpi_enable);
         for (i = 0; i < 300; i++) {
             if (io_in16(facp->pm1a_cnt_blk) & SCI_EN) break;
             nsleep(5);
@@ -102,6 +101,6 @@ void power_off() {
     if (!SCI_EN) return;
     loop {
         io_out16((uint32_t)facp->pm1a_cnt_blk, SLP_TYPa | SLP_EN);
-        if (!facp->pm1b_cnt_blk) { io_out16((uint32_t)facp->pm1b_cnt_blk, SLP_TYPb | SLP_EN); }
+        if (facp->pm1b_cnt_blk) { io_out16((uint32_t)facp->pm1b_cnt_blk, SLP_TYPb | SLP_EN); }
     }
 }
