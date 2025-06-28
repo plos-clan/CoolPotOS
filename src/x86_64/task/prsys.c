@@ -267,8 +267,8 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     page_directory_t *old_page_dir = process->page_dir;
     switch_process_page_directory(clone_page_directory(get_kernel_pagedir()));
     if (!process->vfork) free_page_directory(old_page_dir);
-
-    process->vfork = false;
+    process->page_dir = get_current_directory();
+    process->vfork    = false;
 
     uint8_t *buffer = (uint8_t *)EHDR_START_ADDR;
     page_map_range_to_random(get_current_directory(), EHDR_START_ADDR, buf_len,
@@ -320,10 +320,14 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
         return SYSCALL_FAULT_(EINVAL);
     }
 
-    uint64_t stack                     = page_alloc_random(get_current_directory(), STACK_SIZE,
+    uint64_t stack                     = page_alloc_random(get_current_directory(), BIG_USER_STACK,
                                                            PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     get_current_task()->user_stack     = stack;
-    get_current_task()->user_stack_top = stack + STACK_SIZE;
+    get_current_task()->user_stack_top = stack + BIG_USER_STACK;
+    get_current_task()->main           = e_entry;
+    get_current_task()->tid_directory  = NULL;
+    get_current_task()->tid_address    = 0;
+    get_current_task()->cpu_clock      = 0;
 
     enable_scheduler();
     open_interrupt;

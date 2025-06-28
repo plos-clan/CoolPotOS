@@ -14,6 +14,11 @@
 #define CMOS_CUR_YEAR 0x9
 #define CMOS_CUR_CEN  0x32
 
+#define MINUTE 60
+#define HOUR   (60 * MINUTE)
+#define DAY    (24 * HOUR)
+#define YEAR   (365 * DAY)
+
 #include "ctype.h"
 #include "isr.h"
 
@@ -34,6 +39,6 @@ uint32_t get_mon();
 uint32_t get_year();
 int      is_leap_year(int year);
 char    *get_date_time();
-
+int64_t  mktime();
 timer_t *alloc_timer();
 uint64_t get_time(timer_t *timer1);

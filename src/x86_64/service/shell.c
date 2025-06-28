@@ -325,6 +325,7 @@ static void exec(int argc, char **argv) {
     }
 
     uint8_t *data = malloc(file->size);
+    not_null_assets(data, "Out of Memory Kernel Heap\n");
     if (vfs_read(file, data, 0, file->size) == (size_t)VFS_STATUS_FAILED) {
         printk("\033[31mFailed to read file [%s]\033[0m\n", file->name);
         free(data);

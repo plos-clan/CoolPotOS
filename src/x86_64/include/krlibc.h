@@ -6,10 +6,11 @@
 #define KERNEL_NAME           "CP_Kernel-x86_64-0.2.9" // 内核编号
 #define MAX_CPU               256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START     0xffff900000000000       // 内核堆起始地址
-#define KERNEL_HEAP_SIZE      0x1000000                // 内核堆大小 16MB
+#define KERNEL_HEAP_SIZE      0x2000000                // 内核堆大小 32MB
 #define SMALL_STACK_SIZE      8192                     // fork 精简栈大小(byte)
 #define STACK_SIZE            32768                    // 栈大小(byte)
 #define KERNEL_ST_SZ          131072                   // 增强栈大小 128k
+#define BIG_USER_STACK        1000000                  // 用户栈大小
 #define MAX_WAIT_INDEX        1000000                  // 阻塞最大循环数
 #define KERNEL_AREA_MEM       0xf000000000000000       // 内核地址空间起始
 #define USER_MMAP_START       0x0000400000000000UL     // 用户堆映射起始地址

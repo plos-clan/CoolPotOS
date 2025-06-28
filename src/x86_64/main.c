@@ -61,6 +61,7 @@ void kmain();
 extern void  error_setup();    // error_handle.c
 extern void  iso9660_regist(); // iso9660.c
 extern tcb_t kernel_head_task; // scheduler.c
+extern void  setup_urandom();  // urandom.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -123,7 +124,7 @@ void kmain() {
     init_pcb();
     smp_setup();
     gop_dev_setup();
-
+    setup_urandom();
     killer_setup();
     setup_syscall(true);
     xhci_setup();

@@ -3,6 +3,32 @@
 #include "sprintf.h"
 #include "timer.h"
 
+static int month[25] = {0, // 这里占位，没有 0 月，从 1 月开始
+                        0,
+                        (31),
+                        (31 + 29),
+                        (31 + 29 + 31),
+                        (31 + 29 + 31 + 30),
+                        (31 + 29 + 31 + 30 + 31),
+                        (31 + 29 + 31 + 30 + 31 + 30),
+                        (31 + 29 + 31 + 30 + 31 + 30 + 31),
+                        (31 + 29 + 31 + 30 + 31 + 30 + 31 + 31),
+                        (31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30),
+                        (31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31),
+                        (31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30),
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0};
+
 #define bcd2hex(n) ((n >> 4) * 10) + (n & 0xf)
 
 uint8_t read_cmos(uint8_t p) {
@@ -45,6 +71,25 @@ int is_leap_year(int year) {
     if (year % 4 != 0) return 0;
     if (year % 400 == 0) return 1;
     return year % 100 != 0;
+}
+
+int64_t mktime() {
+    int64_t res;
+    int     year;
+    if (get_year() >= 70)
+        year = get_year() - 70;
+    else
+        year = get_year() - 70 + 100;
+    res  = YEAR * year;
+    res += DAY * ((year + 1) / 4);
+    res += month[get_mon()] * DAY;
+    if (get_mon() > 2 && ((year + 2) % 4)) res -= DAY;
+    res += DAY * (get_day_of_month() - 1);
+    res += HOUR * get_hour();
+    res += MINUTE * get_min();
+    res += get_sec();
+
+    return res;
 }
 
 char *get_date_time() {

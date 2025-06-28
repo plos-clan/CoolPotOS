@@ -175,13 +175,19 @@ void switch_to_user_mode(uint64_t func) {
         }
 
         uint64_t  linker_start = UINT64_MAX;
-        elf_start linker_main  = load_executor_elf(module->data, get_current_directory(),
-                                                   INTERPRETER_BASE_ADDR, &linker_start);
+        elf_start linker_main;
+
+        linker_main = load_interpreter_elf(get_current_task()->parent_group->elf_file,
+                                           get_current_directory(), &linker_start);
+
+        linker_main = load_executor_elf(module->data, get_current_directory(),
+                                        INTERPRETER_BASE_ADDR, &linker_start);
         if (linker_main == NULL) {
             kerror("Cannot load libc.so module.");
             process_exit();
         }
         linker_main = linker_main + linker_start;
+
         logkf("Linker main: %p | Program main: %p\n", linker_main, func);
         rsp       = build_user_stack(get_current_task(), rsp, func, module, linker_start);
         main_func = linker_main;
@@ -425,8 +431,8 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
 
     new_task->user_stack =
-        page_alloc_random(pcb->page_dir, STACK_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    new_task->user_stack_top = new_task->user_stack + STACK_SIZE;
+        page_alloc_random(pcb->page_dir, BIG_USER_STACK, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
+    new_task->user_stack_top = new_task->user_stack + BIG_USER_STACK;
     new_task->main           = (uint64_t)_start;
     new_task->context0.cs    = 0x8;
     new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
