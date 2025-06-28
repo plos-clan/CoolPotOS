@@ -12,6 +12,7 @@ enum InterruptIndex {
     pcnet,
     xhci,
     sb16,
+    power,
 };
 
 struct interrupt_frame {

@@ -86,3 +86,18 @@ elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offse
     switch_process_page_directory(cur);
     return (elf_start)ehdr->e_entry;
 }
+
+elf_start load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_start) {
+
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
+    if (!elf_test_head(ehdr)) { return NULL; }
+    Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
+    for (int i = 0; i < ehdr->e_phnum; ++i) {
+        if (phdrs[i].p_type == PT_INTERP) {
+            const char *interpreter_name = ((const char *)ehdr + phdrs[i].p_offset);
+            logkf("load interpreter: %s\n", interpreter_name);
+        }
+    }
+
+    return (elf_start)ehdr->e_entry;
+}

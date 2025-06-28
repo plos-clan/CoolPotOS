@@ -2,6 +2,7 @@
 #include "acpi.h"
 #include "hhdm.h"
 #include "io.h"
+#include "isr.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "timer.h"
@@ -12,13 +13,16 @@ uint16_t     SLP_EN;
 uint16_t     SCI_EN;
 acpi_facp_t *facp;
 
+__IRQHANDLER void power_handler(interrupt_frame_t *frame) {}
+
 void enable_acpi() {
     int i;
     if (io_in16(facp->pm1a_cnt_blk) & SCI_EN) {
         kinfo("ACPI already enabled.");
         return;
     }
-
+    ioapic_add(power, facp->sci_int);
+    register_interrupt_handler(power, power_handler, 0, 0x8E);
     if (facp->smi_cmd && facp->acpi_enable) {
         io_out8(facp->smi_cmd, facp->acpi_enable);
         for (i = 0; i < 300; i++) {

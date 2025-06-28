@@ -177,7 +177,7 @@ syscall_(close) {
     int fd = (int)arg0;
     if (fd < 0) return SYSCALL_FAULT_(EINVAL);
     vfs_node_t node = (vfs_node_t)queue_remove_at(get_current_task()->parent_group->file_open, fd);
-    vfs_free(node);
+    vfs_close(node);
     return SYSCALL_SUCCESS;
 }
 
@@ -762,6 +762,38 @@ syscall_(fstat) {
     return node->size;
 }
 
+syscall_(clock_gettime) {
+    switch (arg0) {
+    case 1:
+    case 6:
+    case 4: {
+        if (arg1 != 0) {
+            struct timespec *ts   = (struct timespec *)arg1;
+            uint64_t         nano = nano_time();
+            ts->tv_sec            = nano / 1000000000ULL;
+            ts->tv_nsec           = nano % 1000000000ULL;
+        }
+        return SYSCALL_SUCCESS;
+    }
+    case 0: {
+        uint64_t timestamp = mktime();
+        if (arg1 != 0) {
+            struct timespec *ts = (struct timespec *)arg1;
+            ts->tv_sec          = timestamp;
+            ts->tv_nsec         = 0;
+        }
+        return SYSCALL_SUCCESS;
+    }
+    default: logkf("clock not supported\n"); return SYSCALL_FAULT_(EINVAL);
+    }
+}
+
+syscall_(clock_getres) {
+    if (arg2 == 0) return SYSCALL_FAULT_(EINVAL);
+    ((struct timespec *)arg2)->tv_nsec = 1000000;
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -805,6 +837,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_VFORK]       = syscall_vfork,
     [SYSCALL_EXECVE]      = syscall_execve,
     [SYSCALL_FSTAT]       = syscall_fstat,
+    [SYSCALL_C_GETTIME]   = syscall_clock_gettime,
+    [SYSCALL_C_GETRES]    = syscall_clock_getres,
 };
 // clang-format on
 

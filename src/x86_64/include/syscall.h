@@ -100,6 +100,10 @@
 #define SYSCALL_FUTEX       202
 #define SYSCALL_SETID_ADDR  218
 #define SYSCALL_EXIT_GROUP  231
+#define SYSCALL_C_SETTIME   227
+#define SYSCALL_C_GETTIME   228
+#define SYSCALL_C_GETRES    229
+#define SYSCALL_C_NANOSLEEP 230
 
 #include "ctype.h"
 #include "krlibc.h"

@@ -2,6 +2,7 @@
 #include "heap.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "sprintf.h"
 #include "tty.h"
 
 ucb_t kernel_user   = NULL;
@@ -84,11 +85,15 @@ void user_setup() {
         loop __asm__ volatile("hlt");
     }
     strcpy(kernel_user->name, "Kernel");
-    add_env("PATH=/boot:/limine");
-    add_env("HOME=/");
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;
     kernel_user->envc             = user_envc;
     kernel_user->envp             = user_envp;
     kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
+    add_env("PATH=/boot:/limine");
+    add_env("HOME=/");
+    add_env("HOSTTYPE=x86_64");
+    char buf[20];
+    sprintf(buf, "USER=%s", kernel_user->name);
+    add_env(buf);
 }

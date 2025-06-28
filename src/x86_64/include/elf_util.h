@@ -56,3 +56,12 @@ void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool
  * @return 是否为动态 (没有程序头也会返回 false)
  */
 bool is_dynamic(Elf64_Ehdr *ehdr);
+
+/**
+ * 根据程序头提供的信息，加载指定的动态链接器和动态库
+ * @param data 程序 elf
+ * @param dir 程序页表
+ * @param load_start 链接器加载起始地址
+ * @return == NULL ? 无法识别或正确加载链接器 : 链接器入口函数
+ */
+elf_start load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_start);
