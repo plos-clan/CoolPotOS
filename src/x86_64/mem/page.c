@@ -233,7 +233,7 @@ page_directory_t *get_current_directory() {
 }
 
 static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level) {
-    if (source_table == NULL) return NULL; // 就是这样
+    if (source_table == NULL) return NULL;
     if (level == 0) {
         uint64_t      frame          = alloc_frames(1);
         page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
@@ -299,6 +299,7 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
         phys_to_virt((&(l2_table->entries[l2_index]))->value & 0x000fffffffff000);
 
     free_frame(l1_table->entries[l1_index].value & 0x000fffffffff000);
+    l1_table->entries[l1_index].value = 0;
     flush_tlb(vaddr);
 }
 

@@ -8,6 +8,7 @@
 #include "heap.h"
 #include "hhdm.h"
 #include "ipc.h"
+#include "klog.h"
 #include "pcb.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -140,8 +141,10 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->task_level = TASK_APPLICATION_LEVEL;
     new_pcb->status     = START;
     new_pcb->tty        = alloc_default_tty();
+
     new_pcb->page_dir =
         is_vfork ? current_pcb->page_dir : clone_page_directory(current_pcb->page_dir);
+
     new_pcb->elf_file = malloc(current_pcb->elf_size);
     memcpy(new_pcb->elf_file, current_pcb->elf_file, current_pcb->elf_size);
     new_pcb->elf_size = current_pcb->elf_size;
