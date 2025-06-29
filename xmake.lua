@@ -274,7 +274,7 @@ package("pl_readline")
             "-mno-80387", "-mno-mmx", "-DNDEBUG",
             "-mno-sse", "-mno-sse2", "-mno-red-zone",
             "-nostdlib", "-fno-builtin", "-fno-stack-protector",
-            "-ffreestanding", "-DPL_ENABLE_HISTORY_FILE=0"
+            "-ffreestanding", "-DPL_ENABLE_HISTORY_FILE=0", "-U_FORTIFY_SOURCE"
         }
         local make = import("package.tools.make")
         make.make(package, {"lib", "USER_CFLAGS="..table.concat(cflags, " ")})
