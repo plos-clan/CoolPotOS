@@ -66,6 +66,7 @@
 #define SYSCALL_FSTAT       5
 #define SYSCALL_LSTAT       6
 #define SYSCALL_POLL        7
+#define SYSCALL_LSEEK       8
 #define SYSCALL_MMAP        9
 #define SYSCALL_MPROTECT    10
 #define SYSCALL_MUNMAP      11
@@ -110,6 +111,7 @@
 #include "ctype.h"
 #include "krlibc.h"
 #include "time.h"
+#include "vfs.h"
 
 struct syscall_regs {
     uint64_t r15;
@@ -174,6 +176,12 @@ struct stat {
     struct timespec   st_ctim;
     char              _pad[24];
 };
+
+typedef struct {
+    vfs_node_t node;
+    size_t     offset;
+    size_t     fd;
+} fd_file_handle;
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
                               struct syscall_regs *);

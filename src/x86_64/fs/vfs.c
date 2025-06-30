@@ -120,7 +120,7 @@ int vfs_mkfile(const char *name) {
         parent = vfs_open(fullpath);
     }
 
-    free(fullpath);
+
 
     if (parent == NULL || parent->type != file_dir) { return VFS_STATUS_FAILED; }
 
@@ -128,7 +128,7 @@ int vfs_mkfile(const char *name) {
     vfs_node_t node = vfs_child_append(parent, filename, NULL);
     node->type      = file_block;
     callbackof(parent, mkfile)(parent->handle, filename, node);
-
+    free(fullpath);
     return VFS_STATUS_SUCCESS;
 }
 

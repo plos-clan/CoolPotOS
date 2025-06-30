@@ -119,11 +119,13 @@ static int devfs_ioctl(void *file, size_t req, void *arg) {
 static vfs_node_t devfs_dup(vfs_node_t node) {
     vfs_node_t new_node = vfs_node_alloc(node->parent, node->name);
     if (new_node == NULL) return NULL;
-    new_node->type   = node->type;
-    new_node->handle = node->handle;
-    new_node->size   = node->size;
-    new_node->child  = node->child;
-    new_node->flags  = node->flags;
+    new_node->type        = node->type;
+    new_node->handle      = node->handle;
+    new_node->size        = node->size;
+    new_node->child       = node->child;
+    new_node->flags       = node->flags;
+    new_node->permissions = node->permissions;
+    new_node->realsize    = node->realsize;
     return new_node;
 }
 
