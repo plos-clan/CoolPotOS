@@ -150,12 +150,10 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->elf_size = current_pcb->elf_size;
     new_pcb->cmdline  = malloc(strlen(current_pcb->cmdline));
     strcpy(new_pcb->cmdline, current_pcb->cmdline);
-    new_pcb->pcb_queue   = queue_init();
-    new_pcb->ipc_queue   = queue_init();
-    new_pcb->task_signal = malloc(sizeof(signal_block_t));
-    memset(new_pcb->task_signal, 0, sizeof(signal_block_t));
-    new_pcb->user = current_pcb->user;
-    new_pcb->cwd  = malloc(strlen(current_pcb->cwd));
+    new_pcb->pcb_queue = queue_init();
+    new_pcb->ipc_queue = queue_init();
+    new_pcb->user      = current_pcb->user;
+    new_pcb->cwd       = malloc(strlen(current_pcb->cwd));
     strcpy(new_pcb->cwd, current_pcb->cwd);
     new_pcb->parent_task = current_pcb;
     new_pcb->virt_queue  = queue_copy(current_pcb->virt_queue, virt_copy);
