@@ -86,6 +86,21 @@ static void mkdir(int argc, char **argv) {
     free(path);
 }
 
+static void mkfile(int argc, char **argv) {
+    if (argc == 1) {
+        printk("mkfile: Too few parameters.\n");
+        return;
+    }
+    char *path;
+    if (argv[1][0] == '/') {
+        path = strdup(argv[1]);
+    } else {
+        path = pathacat(shell_process->cwd, argv[1]);
+    }
+    if (vfs_mkfile(path) == -1) { printk("mkfile: Failed create file [%s].\n", path); }
+    free(path);
+}
+
 void ps(int argc, char **argv) {
     size_t longest_name_len = 0;
     if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
@@ -371,6 +386,33 @@ static void exec(int argc, char **argv) {
     get_current_task()->status = RUNNING;
 }
 
+static void read(int argc, char **argv) {
+    if (argc == 1) {
+        printk("read: Too few parameters.\n");
+        return;
+    }
+    char *path;
+    if (argv[1][0] == '/') {
+        path = strdup(argv[1]);
+    } else {
+        path = pathacat(shell_process->cwd, argv[1]);
+    }
+    vfs_node_t file = vfs_open(path);
+    if (file != NULL) {
+        uint8_t *buffer = malloc(file->size);
+        if (vfs_read(file, buffer, 0, file->size) != (size_t)VFS_STATUS_FAILED) {
+            for (size_t i = 0; i < file->size; i++) {
+                printk("%c", buffer[i]);
+            }
+            printk("\n");
+        } else
+            printk("Error: cannot open file [%s]\n", path);
+        vfs_close(file);
+    } else
+        printk("Error: cannot open file [%s]\n", path);
+    free(path);
+}
+
 static void sys_info() {
     cpu_t        cpu = get_cpu_info();
     extern MCFG *mcfg;
@@ -446,6 +488,8 @@ static void print_help() {
     printk("\033[1mmount\033[0m     <dev> <path>   Mount a device to path.\n");
     printk("\033[1mlmod\033[0m      <module|list>  Load or list module.\n");
     printk("\033[1mexec\033[0m      <module>       Load a user application.\n");
+    printk("\033[1mmkfile\033[0m    <path>         Create a file.\n");
+    printk("\033[1mread\033[0m      <path>         Read a file info.\n");
 }
 
 // ====== pl_readline ======
@@ -471,7 +515,9 @@ builtin_cmd_t builtin_cmds[] = {
     {"echo",     (void (*)(int, char **))echo       },
     {"mount",    (void (*)(int, char **))mount      },
     {"lmod",     (void (*)(int, char **))lmod       },
-    {"exec",     (void (*)(int, char **))exec       }
+    {"exec",     (void (*)(int, char **))exec       },
+    {"mkfile",   (void (*)(int, char **))mkfile     },
+    {"read",     (void (*)(int, char **))read       },
 };
 
 /* 内建命令数量 */

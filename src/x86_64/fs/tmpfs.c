@@ -115,8 +115,16 @@ int tmpfs_rename(void *current, const char *new_name) {
 }
 
 vfs_node_t tmpfs_dup(vfs_node_t node) {
-    vfs_node_t copy = malloc(sizeof(struct vfs_node));
-    memcpy(copy, node, sizeof(struct vfs_node));
+    vfs_node_t copy   = vfs_node_alloc(node->parent, node->name);
+    copy->handle      = node->handle;
+    copy->type        = node->type;
+    copy->size        = node->size;
+    copy->linkname    = node->linkname == NULL ? NULL : strdup(node->linkname);
+    copy->flags       = node->flags;
+    copy->permissions = node->permissions;
+    copy->owner       = node->owner;
+    copy->child       = node->child;
+    copy->realsize    = node->realsize;
     return copy;
 }
 
