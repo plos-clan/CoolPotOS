@@ -109,7 +109,6 @@ struct process_control_block {
     lock_queue       *file_open;   // 文件句柄占用队列
     lock_queue       *virt_queue;  // 虚拟页分配队列
     page_directory_t *page_dir;    // 进程页表
-    signal_block_t   *task_signal; // 信号处理
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备
     TaskStatus        status;      // 进程状态
@@ -128,20 +127,23 @@ struct thread_control_block {
     TaskStatus status;       // 线程状态
     char       name[50];     // 线程名
 
-    uint64_t      cpu_clock;      // CPU 调度时间片
-    uint64_t      cpu_timer;      // CPU 占用时间
-    uint64_t      cpu_id;         // 由哪个CPU负责该线程运行
-    timer_t      *time_buf;       // 计时器句柄
-    TaskContext   context0;       // 线程上下文
-    fpu_context_t fpu_context;    // 浮点寄存器上下文
-    bool          fpu_flags;      // 浮点启用标志
-    uint64_t      main;           // 入口函数地址
-    uint64_t      kernel_stack;   // 内核栈
-    uint64_t      user_stack;     // 用户栈
-    uint64_t      user_stack_top; // 用户栈顶部地址
-    uint64_t      mem_usage;      // 内存利用率
-    uint64_t      affinity_mask;  // 线程亲和性掩码
-    altstack_t    alt_stack;      // 信号备用栈
+    sigaction_t   actions[MAXSIG]; // 信号处理器回调
+    uint64_t      signal;          // 信号位图
+    uint64_t      blocked;         // 屏蔽位图
+    uint64_t      cpu_clock;       // CPU 调度时间片
+    uint64_t      cpu_timer;       // CPU 占用时间
+    uint64_t      cpu_id;          // 由哪个CPU负责该线程运行
+    timer_t      *time_buf;        // 计时器句柄
+    TaskContext   context0;        // 线程上下文
+    fpu_context_t fpu_context;     // 浮点寄存器上下文
+    bool          fpu_flags;       // 浮点启用标志
+    uint64_t      main;            // 入口函数地址
+    uint64_t      kernel_stack;    // 内核栈
+    uint64_t      user_stack;      // 用户栈
+    uint64_t      user_stack_top;  // 用户栈顶部地址
+    uint64_t      mem_usage;       // 内存利用率
+    uint64_t      affinity_mask;   // 线程亲和性掩码
+    altstack_t    alt_stack;       // 信号备用栈
 
     uint64_t          tid_address;   // 线程ID地址
     page_directory_t *tid_directory; // 线程id所属页表

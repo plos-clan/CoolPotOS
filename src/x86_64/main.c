@@ -121,6 +121,7 @@ void kmain() {
     pcnet_setup();
     init_iic();
     disable_scheduler();
+    signal_init();
     init_pcb();
     smp_setup();
     gop_dev_setup();

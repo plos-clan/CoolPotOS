@@ -544,30 +544,10 @@ syscall_(sched_getaffinity) {
 }
 
 syscall_(rt_sigprocmask) {
-    int       how        = (int)arg0;
-    sigset_t *set        = (sigset_t *)arg1;
-    sigset_t *oldset     = (sigset_t *)arg2;
-    size_t    sigsetsize = (size_t)arg3;
-    pcb_t     process    = get_current_task()->parent_group;
-
-    if (sigsetsize != sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
-
-    if (oldset) { *oldset = process->task_signal->blocked; }
-
-    if (set == NULL) { return SYSCALL_SUCCESS; }
-    sigset_t new_set = *set;
-
-    switch (how) {
-    case SIG_BLOCK: process->task_signal->blocked |= new_set; break;
-
-    case SIG_UNBLOCK: process->task_signal->blocked &= ~new_set; break;
-
-    case SIG_SETMASK: process->task_signal->blocked = new_set; break;
-
-    default: return SYSCALL_FAULT_(EINVAL);
-    }
-
-    return SYSCALL_SUCCESS;
+    int       how    = (int)arg0;
+    sigset_t *set    = (sigset_t *)arg1;
+    sigset_t *oldset = (sigset_t *)arg2;
+    return syscall_ssetmask(how, set, oldset);
 }
 
 syscall_(dup2) {
@@ -632,7 +612,7 @@ syscall_(sigaction) {
     int               sig    = (int)arg0;
     struct sigaction *act    = (struct sigaction *)arg1;
     struct sigaction *oldact = (struct sigaction *)arg2;
-    return signal_action(sig, act, oldact);
+    return syscall_sig_action(sig, act, oldact);
 }
 
 syscall_(fork) {
@@ -794,6 +774,28 @@ syscall_(clock_getres) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(sigsuspend) {
+    sigset_t *mask = (sigset_t *)arg0;
+    if (mask == NULL) return SYSCALL_FAULT_(EINVAL);
+    sigset_t old = get_current_task()->blocked;
+
+    get_current_task()->blocked = *mask;
+    while (!signals_pending_quick(get_current_task())) {
+        open_interrupt;
+        __asm__("pause");
+    }
+    close_interrupt;
+    get_current_task()->blocked = old;
+    return SYSCALL_FAULT_(EINTR);
+}
+
+syscall_(mkdir) {
+    char    *name = (char *)arg0;
+    uint64_t mode = arg1;
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    return vfs_mkdir(name) == VFS_STATUS_FAILED ? -1 : 0;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -839,6 +841,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FSTAT]       = syscall_fstat,
     [SYSCALL_C_GETTIME]   = syscall_clock_gettime,
     [SYSCALL_C_GETRES]    = syscall_clock_getres,
+    [SYSCALL_SIGSUSPEND]  = syscall_sigsuspend,
+    [SYSCALL_MKDIR]       = syscall_mkdir,
 };
 // clang-format on
 

@@ -92,6 +92,8 @@
 #define SYSCALL_FCNTL       72
 #define SYSCALL_GETCWD      79
 #define SYSCALL_CHDIR       80
+#define SYSCALL_MKDIR       83
+#define SYSCALL_SIGSUSPEND  130
 #define SYSCALL_SIGALTSTACK 131
 #define SYSCALL_PRCTL       157
 #define SYSCALL_ARCH_PRCTL  158
