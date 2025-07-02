@@ -47,7 +47,7 @@ void *device_mmap(int drive, void *addr, uint64_t len) {
     }
 }
 
-size_t rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int read) {
+size_t rw_vdisk(int drive, size_t lba, uint8_t *buffer, size_t number, int read) {
     int indx = drive;
     if (indx >= 26) { return 0; }
     if (vdisk_ctl[indx].flag > 0) {
@@ -61,7 +61,7 @@ size_t rw_vdisk(int drive, uint32_t lba, uint8_t *buffer, uint32_t number, int r
     }
 }
 
-size_t vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
+size_t vdisk_read(size_t lba, size_t number, void *buffer, int drive) {
     if (have_vdisk(drive)) {
         if (vdisk_ctl[drive].type == VDISK_STREAM) {
             return vdisk_ctl[drive].read(drive, buffer, number, lba);
@@ -78,7 +78,7 @@ size_t vdisk_read(uint32_t lba, uint32_t number, void *buffer, int drive) {
         return 0;
 }
 
-size_t vdisk_write(uint32_t lba, uint32_t number, const void *buffer, int drive) {
+size_t vdisk_write(size_t lba, size_t number, const void *buffer, int drive) {
     if (have_vdisk(drive)) {
         size_t ret_size = 0;
         for (size_t i = 0; i < number; i += SECTORS_ONCE) {

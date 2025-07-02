@@ -76,7 +76,7 @@ static int tty_getch() {
     return kernel_getch();
 }
 
-static size_t stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+static size_t stdin_read(int drive, uint8_t *buffer, size_t number, size_t lba) {
     size_t i = 0;
     for (; i < number; i++) {
         char c = (char)tty_getch();
@@ -104,7 +104,7 @@ static size_t stdin_read(int drive, uint8_t *buffer, uint32_t number, uint32_t l
     return i;
 }
 
-static size_t stdout_write(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+static size_t stdout_write(int drive, uint8_t *buffer, size_t number, size_t lba) {
     tty_t *tty;
     if (get_current_task() == NULL) {
         tty = get_default_tty();

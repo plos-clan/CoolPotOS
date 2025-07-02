@@ -2,7 +2,7 @@
 #include "timer.h"
 #include "vdisk.h"
 
-static size_t urandom_read(int drive, uint8_t *buffer, uint32_t number, uint32_t lba) {
+static size_t urandom_read(int drive, uint8_t *buffer, size_t number, size_t lba) {
     for (size_t i = 0; i < number; i++) {
         uint64_t speed = nano_time() / 32768 + 12345;
         buffer[i]      = (uint8_t)((speed >> (i % 8)) & 0xFF);
