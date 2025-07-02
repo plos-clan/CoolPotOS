@@ -13,6 +13,8 @@
 
 ---
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plos-clan/CoolPotOS)
+
 Languages
 : *English*
 | [简体中文](readme/README-zh-CN.md)
@@ -28,7 +30,8 @@ and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
 
 - `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-- `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
+- `plant-vfs` by min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
+- `musllibc` by seL4 [seL4/musllibc](https://github.com/seL4/musllibc)
 
 ## Build & Run
 
@@ -101,6 +104,7 @@ Use Limine bootloader.
 - [ ] PCNET and Rtl8169 Driver
 - [x] SB16 and PCSpeaker Driver
 - [ ] TTY Driver
+- [x] SATA/SATAPI Driver
 
 ## Contributing
 
@@ -108,18 +112,4 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 
 ### Contributors
 
-- XIAOYI12 - OS Developer
-- min0911Y - OS FileSystem Developer
-- copi143 - UserHeap Developer
-- QtLittleXu - XuYuxuan OS Document
-- ViudiraTech - PCI Driver Optimization
-- Vinbe Wan - IIC Developer
-- A4-Tacks - Write Some Build Scripts
-- wenxuanjun(blurryrect) - OS Developer
-- Minsecrus - Memory Usage Optimization
-- CLimber-Rong - Software Developer
-- shiyu - Debugger and Comments Writer
-- 27Onion - Translated French README
-- LY-Xiang - Optimized actions process
-- suhuajun-github - Fix several bugs in the AHCI driver
-- FengHeting - SMBIOS driver Developer
+* Goto [CoolPotOS | Website](cpos.plos-clan.org) to see the contributors list.

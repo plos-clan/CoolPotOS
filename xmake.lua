@@ -233,6 +233,7 @@ function arch_x86_64()
                 "-device", "sb16,audiodev=audio0",
                 "-net","nic,model=pcnet","-net","user",
                 "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
+                --"-drive", "file=disk.img,format=raw,if=ide,index=0",
                 "-cdrom", config.builddir().."/CoolPotOS.iso",
                 -- "-cdrom", "/mnt/local/CoolPotOS.iso",
                 --"-device", "ahci,id=ahci",
