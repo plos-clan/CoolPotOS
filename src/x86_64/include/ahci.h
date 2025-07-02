@@ -1,18 +1,88 @@
 #pragma once
 
-#define SATA_SIG_ATA   0x00000101 // SATA drive
-#define SATA_SIG_ATAPI 0xEB140101 // SATAPI drive
-#define SATA_SIG_SEMB  0xC33C0101 // Enclosure management bridge
-#define SATA_SIG_PM    0x96690101 // Port multiplier
-#define HBA_PxCMD_ST   0x0001
-#define HBA_PxCMD_FRE  0x0010
-#define HBA_PxCMD_FR   0x4000
-#define HBA_PxCMD_CR   0x8000
-#define HBA_PxIS_TFES  (1 << 30) /* TFES - Task File Error Status */
+#define HBA_RCAP 0
+#define HBA_RGHC 1
+#define HBA_RIS  2
+#define HBA_RPI  3
+#define HBA_RVER 4
 
-#define AHCI_GHC_RST (0x00000001) /* reset controller; self-clear */
-#define AHCI_GHC_IE  (0x00000002) /* global IRQ enable */
-#define AHCI_GHC_AE  (0x80000000) /* AHCI enabled */
+#define HBA_RPBASE  (0x40)
+#define HBA_RPSIZE  (0x80 / sizeof(hba_reg_t))
+#define HBA_RPxCLB  0
+#define HBA_RPxFB   2
+#define HBA_RPxIS   4
+#define HBA_RPxIE   5
+#define HBA_RPxCMD  6
+#define HBA_RPxTFD  8
+#define HBA_RPxSIG  9
+#define HBA_RPxSSTS 10
+#define HBA_RPxSCTL 11
+#define HBA_RPxSERR 12
+#define HBA_RPxSACT 13
+#define HBA_RPxCI   14
+#define HBA_RPxSNTF 15
+#define HBA_RPxFBS  16
+
+#define HBA_PxCMD_FRE  (1 << 4)
+#define HBA_PxCMD_CR   (1 << 15)
+#define HBA_PxCMD_FR   (1 << 14)
+#define HBA_PxCMD_ST   (1)
+#define HBA_PxINTR_DMA (1 << 2)
+#define HBA_PxINTR_DHR (1)
+#define HBA_PxINTR_DPS (1 << 5)
+#define HBA_PxINTR_TFE (1 << 30)
+#define HBA_PxINTR_HBF (1 << 29)
+#define HBA_PxINTR_HBD (1 << 28)
+#define HBA_PxINTR_IF  (1 << 27)
+#define HBA_PxINTR_NIF (1 << 26)
+#define HBA_PxINTR_OF  (1 << 24)
+#define HBA_PxTFD_ERR  (1)
+#define HBA_PxTFD_BSY  (1 << 7)
+#define HBA_PxTFD_DRQ  (1 << 3)
+
+#define HBA_FATAL (HBA_PxINTR_TFE | HBA_PxINTR_HBF | HBA_PxINTR_HBD | HBA_PxINTR_IF)
+
+#define HBA_NONFATAL (HBA_PxINTR_NIF | HBA_PxINTR_OF)
+
+#define HBA_RGHC_ACHI_ENABLE ((uint32_t)1 << 31)
+#define HBA_RGHC_INTR_ENABLE ((uint32_t)1 << 1)
+#define HBA_RGHC_RESET       1
+
+#define HBA_RPxSSTS_PWR(x)      (((x) >> 8) & 0xf)
+#define HBA_RPxSSTS_IF(x)       (((x) >> 4) & 0xf)
+#define HBA_RPxSSTS_PHYSTATE(x) ((x) & 0xf)
+
+#define hba_clear_reg(reg) (reg) = (hba_reg_t)(-1)
+
+#define HBA_DEV_SIG_ATAPI 0xeb140101
+#define HBA_DEV_SIG_ATA   0x00000101
+
+#define __HBA_PACKED__ __attribute__((packed))
+
+#define HBA_CMDH_FIS_LEN(fis_bytes) (((fis_bytes) / 4) & 0x1f)
+#define HBA_CMDH_ATAPI              (1 << 5)
+#define HBA_CMDH_WRITE              (1 << 6)
+#define HBA_CMDH_PREFETCH           (1 << 7)
+#define HBA_CMDH_R                  (1 << 8)
+#define HBA_CMDH_CLR_BUSY           (1 << 10)
+#define HBA_CMDH_PRDT_LEN(entries)  (((entries) & 0xffff) << 16)
+
+#define SCSI_CDB16 16
+#define SCSI_CDB12 12
+
+#define HBA_MAX_PRDTE 4
+
+#define SCSI_READ_CAPACITY_16 0x9e
+#define SCSI_READ_CAPACITY_10 0x25
+#define SCSI_READ_BLOCKS_16   0x88
+#define SCSI_READ_BLOCKS_12   0xa8
+#define SCSI_WRITE_BLOCKS_16  0x8a
+#define SCSI_WRITE_BLOCKS_12  0xaa
+
+#define SATA_REG_FIS_D2H                0x34
+#define SATA_REG_FIS_H2D                0x27
+#define SATA_REG_FIS_COMMAND            0x80
+#define SATA_LBA_COMPONENT(lba, offset) ((uint8_t)(((lba) >> (offset)) & 0xff))
 
 #define ATA_IDENTIFY_DEVICE        0xec
 #define ATA_IDENTIFY_PAKCET_DEVICE 0xa1
@@ -22,57 +92,170 @@
 #define ATA_WRITE_DMA_EXT          0x35
 #define ATA_WRITE_DMA              0xca
 
-#define AHCI_DEV_NULL   0
-#define AHCI_DEV_SATA   1
-#define AHCI_DEV_SEMB   2
-#define AHCI_DEV_PM     3
-#define AHCI_DEV_SATAPI 4
+// ATA 状态寄存器 (STS) 位定义
+#define ATA_STS_ERR (1 << 0) // Error
+#define ATA_STS_DRQ (1 << 3) // Data Request
+#define ATA_STS_BSY (1 << 7) // Busy
 
-#define ATA_DEV_BUSY           0x80
-#define ATA_DEV_DRQ            0x08
-#define AHCI_CMD_READ_DMA_EXT  0x25
-#define AHCI_CMD_WRITE_DMA_EXT 0x35
+// ATA 错误寄存器 (ERR) 位定义
+#define ATA_ERR_AMNF  (1 << 0) // Address Mark Not Found
+#define ATA_ERR_TKZNF (1 << 1) // Track Zero Not Found
+#define ATA_ERR_ABRT  (1 << 2) // Command Aborted
+#define ATA_ERR_IDNF  (1 << 4) // ID Not Found (LBA out of range)
+#define ATA_ERR_UNC   (1 << 6) // Uncorrectable Data Error
 
-#define HBA_PORT_IPM_ACTIVE  1
-#define HBA_PORT_DET_PRESENT 3
+// AHCI 命令寄存器 (PxCMD) 位定义
+#define AHCI_CMD_FR (1 << 14) // FIS Receive Running
+#define AHCI_CMD_CR (1 << 15) // Command Running
 
-#define SCSI_CDB16            16
-#define SCSI_CDB12            12
-#define SCSI_READ_CAPACITY_16 0x9e
-#define SCSI_READ_CAPACITY_10 0x25
-#define SCSI_READ_BLOCKS_16   0x88
-#define SCSI_READ_BLOCKS_12   0xa8
-#define SCSI_WRITE_BLOCKS_16  0x8a
-#define SCSI_WRITE_BLOCKS_12  0xaa
+#define IDDEV_OFFMAXLBA       60
+#define IDDEV_OFFMAXLBA_EXT   230
+#define IDDEV_OFFLSECSIZE     117
+#define IDDEV_OFFWWN          108
+#define IDDEV_OFFSERIALNUM    10
+#define IDDEV_OFFMODELNUM     27
+#define IDDEV_OFFADDSUPPORT   69
+#define IDDEV_OFFA48SUPPORT   83
+#define IDDEV_OFFALIGN        209
+#define IDDEV_OFFLPP          106
+#define IDDEV_OFFCAPABILITIES 49
 
-#define SATA_LBA_COMPONENT(lba, offset) ((uint8_t)(((lba) >> (offset)) & 0xff))
+#define HBA_FIS_SIZE 256
+#define HBA_CLB_SIZE 1024
+
+#define MAX_RETRY        2
+#define AHCI_MAX_DEVICES 20
+
+#define HBA_PRDTE_BYTE_CNT(cnt) ((cnt & 0x3FFFFF) | 0x1)
+
+#define BLKIO_WRITE (1UL << 0)
+
+#define ICEIL(x, y) ((x) / (y) + ((x) % (y) != 0))
+
 #define SCSI_FLIP(val)                                                                             \
     ((((val) & 0x000000ff) << 24) | (((val) & 0x0000ff00) << 8) | (((val) & 0x00ff0000) >> 8) |    \
      (((val) & 0xff000000) >> 24))
 
+#define wait_until(cond)                                                                           \
+    ({                                                                                             \
+        while (!(cond))                                                                            \
+            ;                                                                                      \
+    })
+
+#define wait_until_expire(cond, max)                                                               \
+    ({                                                                                             \
+        uint64_t __wcounter__ = (max);                                                             \
+        while (!(cond) && __wcounter__-- > 1)                                                      \
+            ;                                                                                      \
+        __wcounter__;                                                                              \
+    })
+
 #include "ctype.h"
 
-typedef enum {
-    FIS_TYPE_REG_H2D   = 0x27, // Register FIS - host to device
-    FIS_TYPE_REG_D2H   = 0x34, // Register FIS - device to host
-    FIS_TYPE_DMA_ACT   = 0x39, // DMA activate FIS - device to host
-    FIS_TYPE_DMA_SETUP = 0x41, // DMA setup FIS - bidirectional
-    FIS_TYPE_DATA      = 0x46, // Data FIS - bidirectional
-    FIS_TYPE_BIST      = 0x58, // BIST activate FIS - bidirectional
-    FIS_TYPE_PIO_SETUP = 0x5F, // PIO setup FIS - device to host
-    FIS_TYPE_DEV_BITS  = 0xA1, // Set device bits FIS - device to host
-} FIS_TYPE;
+typedef uint32_t hba_reg_t;
 
-typedef struct tagSCSI_cdb12 {
+struct blkio_req {
+    uint64_t buf;
+    uint64_t lba;
+    uint64_t len;
+    uint64_t flags;
+};
+
+struct hba_cmdh {
+    uint16_t          options;
+    uint16_t          prdt_len;
+    volatile uint32_t transferred_size;
+    uint32_t          cmd_table_base;
+    uint32_t          cmd_table_base_upper;
+    uint32_t          reserved[4];
+} __HBA_PACKED__;
+
+struct hba_prdte {
+    uint32_t data_base;
+    uint32_t data_base_upper;
+    uint32_t reserved;
+    uint32_t byte_count : 22;
+    uint32_t rsv1       : 9;
+    uint32_t i          : 1;
+} __HBA_PACKED__;
+
+struct hba_cmdt {
+    uint8_t          command_fis[64];
+    uint8_t          atapi_cmd[16];
+    uint8_t          reserved[0x30];
+    struct hba_prdte entries[HBA_MAX_PRDTE];
+} __HBA_PACKED__;
+
+#define HBA_DEV_FEXTLBA 1
+#define HBA_DEV_FATAPI  (1 << 1)
+
+struct hba_port;
+struct ahci_hba;
+
+struct hba_device {
+    char     serial_num[20];
+    char     model[40];
+    uint32_t flags;
+    uint64_t max_lba;
+    uint32_t block_size;
+    uint64_t wwn;
+    uint8_t  cbd_size;
+    struct {
+        uint8_t sense_key;
+        uint8_t error;
+        uint8_t status;
+        uint8_t reserve;
+    } last_result;
+    uint32_t         alignment_offset;
+    uint32_t         block_per_sec;
+    uint32_t         capabilities;
+    struct hba_port *port;
+    struct ahci_hba *hba;
+
+    struct {
+        void (*submit)(struct hba_device *dev, struct blkio_req *io_req);
+    } ops;
+};
+
+struct hba_cmd_state {
+    struct hba_cmdt *cmd_table;
+    void            *state_ctx;
+};
+
+struct hba_cmd_context {
+    struct hba_cmd_state *issued[32];
+    uint32_t              tracked_ci;
+};
+
+struct hba_port {
+    volatile hba_reg_t    *regs;
+    uint32_t               ssts;
+    struct hba_cmdh       *cmdlst;
+    struct hba_cmd_context cmdctx;
+    void                  *fis;
+    struct hba_device     *device;
+    struct ahci_hba       *hba;
+};
+
+struct ahci_hba {
+    volatile hba_reg_t *base;
+    uint32_t            ports_num;
+    uint32_t            ports_bmp;
+    uint32_t            cmd_slots;
+    uint32_t            version;
+    struct hba_port    *ports[32];
+};
+
+struct scsi_cdb12 {
     uint8_t  opcode;
     uint8_t  misc1;
     uint32_t lba_be;
     uint32_t length;
     uint8_t  misc2;
     uint8_t  ctrl;
-} __attribute__((packed)) SCSI_cdb12;
+} __attribute__((packed));
 
-typedef struct tagSCSI_cdb16 {
+struct scsi_cdb16 {
     uint8_t  opcode;
     uint8_t  misc1;
     uint32_t lba_be_hi;
@@ -80,266 +263,52 @@ typedef struct tagSCSI_cdb16 {
     uint32_t length;
     uint8_t  misc2;
     uint8_t  ctrl;
-} __attribute__((packed)) SCSI_cdb16;
+} __attribute__((packed));
 
-typedef struct tagHBA_CMD_HEADER {
-    // DW0
-    uint8_t cfl : 5; // Command FIS length in DWORDS, 2 ~ 16
-    uint8_t a   : 1; // ATAPI
-    uint8_t w   : 1; // Write, 1: H2D, 0: D2H
-    uint8_t p   : 1; // Prefetchable
+struct sata_fis_head {
+    uint8_t type;
+    uint8_t options;
+    uint8_t status_cmd;
+    uint8_t feat_err;
+} __HBA_PACKED__;
 
-    uint8_t r    : 1; // Reset
-    uint8_t b    : 1; // BIST
-    uint8_t c    : 1; // Clear busy upon R_OK
-    uint8_t rsv0 : 1; // Reserved
-    uint8_t pmp  : 4; // Port multiplier port
+struct sata_reg_fis {
+    struct sata_fis_head head;
 
-    uint16_t prdtl; // Physical region descriptor table length in entries
+    uint8_t lba0, lba8, lba16;
+    uint8_t dev;
+    uint8_t lba24, lba32, lba40;
+    uint8_t feature;
 
-    // DW1
-    volatile uint32_t prdbc; // Physical region descriptor byte count transferred
+    uint16_t count;
 
-    // DW2, 3
-    uint32_t ctba;  // Command table descriptor base address (开发心得: 必须为物理地址!!!!)
-    uint32_t ctbau; // Command table descriptor base address upper 32 bits
+    uint8_t reserved[6];
+} __HBA_PACKED__;
 
-    // DW4 - 7
-    uint32_t rsv1[4]; // Reserved
-} __attribute__((packed)) HBA_CMD_HEADER;
+struct sata_data_fis {
+    struct sata_fis_head head;
 
-typedef volatile struct tagHBA_PORT {
-    uint32_t clb;       // 0x00, command list base address, 1K-byte aligned
-    uint32_t clbu;      // 0x04, command list base address upper 32 bits
-    uint32_t fb;        // 0x08, FIS base address, 256-byte aligned
-    uint32_t fbu;       // 0x0C, FIS base address upper 32 bits
-    uint32_t is;        // 0x10, interrupt status
-    uint32_t ie;        // 0x14, interrupt enable
-    uint32_t cmd;       // 0x18, command and status
-    uint32_t rsv0;      // 0x1C, Reserved
-    uint32_t tfd;       // 0x20, task file data
-    uint32_t sig;       // 0x24, signature
-    uint32_t ssts;      // 0x28, SATA status (SCR0:SStatus)
-    uint32_t sctl;      // 0x2C, SATA control (SCR2:SControl)
-    uint32_t serr;      // 0x30, SATA error (SCR1:SError)
-    uint32_t sact;      // 0x34, SATA active (SCR3:SActive)
-    uint32_t ci;        // 0x38, command issue
-    uint32_t sntf;      // 0x3C, SATA notification (SCR4:SNotification)
-    uint32_t fbs;       // 0x40, FIS-based switch control
-    uint32_t rsv1[11];  // 0x44 ~ 0x6F, Reserved
-    uint32_t vendor[4]; // 0x70 ~ 0x7F, vendor specific
-} __attribute__((packed)) HBA_PORT;
+    uint8_t data[0];
+} __HBA_PACKED__;
 
-typedef volatile struct tagHBA_MEM {
-    // 0x00 - 0x2B, Generic Host Control
-    uint32_t cap;     // 0x00, Host capability
-    uint32_t ghc;     // 0x04, Global host control
-    uint32_t is;      // 0x08, Interrupt status
-    uint32_t pi;      // 0x0C, Port implemented
-    uint32_t vs;      // 0x10, Version
-    uint32_t ccc_ctl; // 0x14, Command completion coalescing control
-    uint32_t ccc_pts; // 0x18, Command completion coalescing ports
-    uint32_t em_loc;  // 0x1C, Enclosure management location
-    uint32_t em_ctl;  // 0x20, Enclosure management control
-    uint32_t cap2;    // 0x24, Host capabilities extended
-    uint32_t bohc;    // 0x28, BIOS/OS handoff control and status
-
-    // 0x2C - 0x9F, Reserved
-    uint8_t rsv[0xA0 - 0x2C];
-
-    // 0xA0 - 0xFF, Vendor specific registers
-    uint8_t vendor[0x100 - 0xA0];
-
-    // 0x100 - 0x10FF, Port control registers
-    HBA_PORT ports[1]; // 1 ~ 32
-} __attribute__((packed)) HBA_MEM;
-
-typedef struct tagHBA_PRDT_ENTRY {
-    uint32_t dba;  // Data base address
-    uint32_t dbau; // Data base address upper 32 bits
-    uint32_t rsv0; // Reserved
-
-    // DW3
-    uint32_t dbc  : 22; // Byte count, 4M max
-    uint32_t rsv1 : 9;  // Reserved
-    uint32_t i    : 1;  // Interrupt on completion
-} __attribute__((packed)) HBA_PRDT_ENTRY;
-
-typedef struct tagHBA_CMD_TBL {
-    // 0x00
-    uint8_t cfis[64]; // Command FIS
-
-    // 0x40
-    uint8_t acmd[16]; // ATAPI command, 12 or 16 bytes
-
-    // 0x50
-    uint8_t rsv[48]; // Reserved
-
-    // 0x80
-    HBA_PRDT_ENTRY prdt_entry[1]; // Physical region descriptor table entries, 0 ~ 65535
-} __attribute__((packed)) HBA_CMD_TBL;
-
-typedef struct tagFIS_REG_H2D {
-    // DWORD 0
-    uint8_t fis_type; // FIS_TYPE_REG_H2D
-
-    uint8_t pmport : 4; // Port multiplier
-    uint8_t rsv0   : 3; // Reserved
-    uint8_t c      : 1; // 1: Command, 0: Control
-
-    uint8_t command;  // Command register
-    uint8_t featurel; // Feature register, 7:0
-
-    // DWORD 1
-    uint8_t lba0;   // LBA low register, 7:0
-    uint8_t lba1;   // LBA mid register, 15:8
-    uint8_t lba2;   // LBA high register, 23:16
-    uint8_t device; // Device register
-
-    // DWORD 2
-    uint8_t lba3;     // LBA register, 31:24
-    uint8_t lba4;     // LBA register, 39:32
-    uint8_t lba5;     // LBA register, 47:40
-    uint8_t featureh; // Feature register, 15:8
-
-    // DWORD 3
-    uint8_t countl;  // Count register, 7:0
-    uint8_t counth;  // Count register, 15:8
-    uint8_t icc;     // Isochronous command completion
-    uint8_t control; // Control register
-
-    // DWORD 4
-    uint8_t rsv1[4]; // Reserved
-} __attribute__((packed)) FIS_REG_H2D;
-
-typedef struct SATA_Ident {
-    uint16_t config;        /* lots of obsolete bit flags */
-    uint16_t cyls;          /* obsolete */
-    uint16_t reserved2;     /* special config */
-    uint16_t heads;         /* "physical" heads */
-    uint16_t track_bytes;   /* unformatted bytes per track */
-    uint16_t sector_bytes;  /* unformatted bytes per sector */
-    uint16_t sectors;       /* "physical" sectors per track */
-    uint16_t vendor0;       /* vendor unique */
-    uint16_t vendor1;       /* vendor unique */
-    uint16_t vendor2;       /* vendor unique */
-    uint8_t  serial_no[20]; /* 0 = not_specified */
-    uint16_t buf_type;
-    uint16_t buf_size;             /* 512 byte increments; 0 = not_specified */
-    uint16_t ecc_bytes;            /* for r/w long cmds; 0 = not_specified */
-    uint8_t  fw_rev[8];            /* 0 = not_specified */
-    uint8_t  model[40];            /* 0 = not_specified */
-    uint16_t multi_count;          /* Multiple Count */
-    uint16_t dword_io;             /* 0=not_implemented; 1=implemented */
-    uint16_t capability1;          /* vendor unique */
-    uint16_t capability2;          /* bits 0:DMA 1:LBA 2:IORDYsw 3:IORDYsup word: 50 */
-    uint8_t  vendor5;              /* vendor unique */
-    uint8_t  tPIO;                 /* 0=slow, 1=medium, 2=fast */
-    uint8_t  vendor6;              /* vendor unique */
-    uint8_t  tDMA;                 /* 0=slow, 1=medium, 2=fast */
-    uint16_t field_valid;          /* bits 0:cur_ok 1:eide_ok */
-    uint16_t cur_cyls;             /* logical cylinders */
-    uint16_t cur_heads;            /* logical heads word 55*/
-    uint16_t cur_sectors;          /* logical sectors per track */
-    uint16_t cur_capacity0;        /* logical total sectors on drive */
-    uint16_t cur_capacity1;        /*  (2 words, misaligned int)     */
-    uint8_t  multsect;             /* current multiple sector count */
-    uint8_t  multsect_valid;       /* when (bit0==1) multsect is ok */
-    uint32_t lba_capacity;         /* total number of sectors */
-    uint16_t dma_1word;            /* single-word dma info */
-    uint16_t dma_mword;            /* multiple-word dma info */
-    uint16_t eide_pio_modes;       /* bits 0:mode3 1:mode4 */
-    uint16_t eide_dma_min;         /* min mword dma cycle time (ns) */
-    uint16_t eide_dma_time;        /* recommended mword dma cycle time (ns) */
-    uint16_t eide_pio;             /* min cycle time (ns), no IORDY  */
-    uint16_t eide_pio_iordy;       /* min cycle time (ns), with IORDY */
-    uint16_t words69_70[2];        /* reserved words 69-70 */
-    uint16_t words71_74[4];        /* reserved words 71-74 */
-    uint16_t queue_depth;          /*  */
-    uint16_t sata_capability;      /*  SATA Capabilities word 76*/
-    uint16_t sata_additional;      /*  Additional Capabilities */
-    uint16_t sata_supported;       /* SATA Features supported  */
-    uint16_t features_enabled;     /* SATA features enabled */
-    uint16_t major_rev_num;        /*  Major rev number word 80 */
-    uint16_t minor_rev_num;        /*  */
-    uint16_t command_set_1;        /* bits 0:Smart 1:Security 2:Removable 3:PM */
-    uint16_t command_set_2;        /* bits 14:Smart Enabled 13:0 zero */
-    uint16_t cfsse;                /* command set-feature supported extensions */
-    uint16_t cfs_enable_1;         /* command set-feature enabled */
-    uint16_t cfs_enable_2;         /* command set-feature enabled */
-    uint16_t csf_default;          /* command set-feature default */
-    uint16_t dma_ultra;            /*  */
-    uint16_t word89;               /* reserved (word 89) */
-    uint16_t word90;               /* reserved (word 90) */
-    uint16_t CurAPMvalues;         /* current APM values */
-    uint16_t word92;               /* reserved (word 92) */
-    uint16_t comreset;             /* should be cleared to 0 */
-    uint16_t accoustic;            /*  accoustic management */
-    uint16_t min_req_sz;           /* Stream minimum required size */
-    uint16_t transfer_time_dma;    /* Streaming Transfer Time-DMA */
-    uint16_t access_latency;       /* Streaming access latency-DMA & PIO WORD 97*/
-    uint32_t perf_granularity;     /* Streaming performance granularity */
-    uint32_t total_usr_sectors[2]; /* Total number of user addressable sectors */
-    uint16_t transfer_time_pio;    /* Streaming Transfer time PIO */
-    uint16_t reserved105;          /* Word 105 */
-    uint16_t sector_sz;            /* Puysical Sector size / Logical sector size */
-    uint16_t inter_seek_delay;     /* In microseconds */
-    uint16_t words108_116[9];      /*  */
-    uint32_t words_per_sector;     /* words per logical sectors */
-    uint16_t supported_settings;   /* continued from words 82-84 */
-    uint16_t command_set_3;        /* continued from words 85-87 */
-    uint16_t words121_126[6];      /* reserved words 121-126 */
-    uint16_t word127;              /* reserved (word 127) */
-    uint16_t security_status;      /* device lock function
-                                      * 15:9   reserved
-                                      * 8   security level 1:max 0:high
-                                      * 7:6   reserved
-                                      * 5   enhanced erase
-                                      * 4   expire
-                                      * 3   frozen
-                                      * 2   locked
-                                      * 1   en/disabled
-                                      * 0   capability
-                                      */
-    uint16_t csfo;                 /* current set features options
-                                      * 15:4   reserved
-                                      * 3   auto reassign
-                                      * 2   reverting
-                                      * 1   read-look-ahead
-                                      * 0   write cache
-                                      */
-    uint16_t words130_155[26];     /* reserved vendor words 130-155 */
-    uint16_t word156;
-    uint16_t words157_159[3];     /* reserved vendor words 157-159 */
-    uint16_t cfa;                 /* CFA Power mode 1 */
-    uint16_t words161_175[15];    /* Reserved */
-    uint8_t  media_serial[60];    /* words 176-205 Current Media serial number */
-    uint16_t sct_cmd_transport;   /* SCT Command Transport */
-    uint16_t words207_208[2];     /* reserved */
-    uint16_t block_align;         /* Alignement of logical blocks in larger physical blocks */
-    uint32_t WRV_sec_count;       /* Write-Read-Verify sector count mode 3 only */
-    uint32_t verf_sec_count;      /* Verify Sector count mode 2 only */
-    uint16_t nv_cache_capability; /* NV Cache capabilities */
-    uint16_t nv_cache_sz;         /* NV Cache size in logical blocks */
-    uint16_t nv_cache_sz2;        /* NV Cache size in logical blocks */
-    uint16_t rotation_rate;       /* Nominal media rotation rate */
-    uint16_t reserved218;         /*  */
-    uint16_t nv_cache_options;    /* NV Cache options */
-    uint16_t words220_221[2];     /* reserved */
-    uint16_t transport_major_rev; /*  */
-    uint16_t transport_minor_rev; /*  */
-    uint16_t words224_233[10];    /* Reserved */
-    uint16_t min_dwnload_blocks;  /* Minimum number of 512byte units per
-                             DOWNLOAD MICROCODE  command for mode 03h */
-    uint16_t max_dwnload_blocks;  /* Maximum number of 512byte units per
-                             DOWNLOAD MICROCODE  command for mode 03h */
-    uint16_t words236_254[19];    /* Reserved */
-    uint16_t integrity;           /* Cheksum, Signature */
-} __attribute__((packed)) SATA_ident_t;
-
-void ahci_search_ports(HBA_MEM *abar);
-void ahci_port_rebase(HBA_PORT *port, int portno);
-bool ahci_identify(HBA_PORT *port, void *buf, int type);
-bool ahci_read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
-bool ahci_write(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count, uint16_t *buf);
+void scsi_submit(struct hba_device *dev, struct blkio_req *io_req);
+void sata_submit(struct hba_device *dev, struct blkio_req *io_req);
+void sata_read_error(struct hba_port *port);
+void ahci_post(struct hba_port *port, struct hba_cmd_state *state, int slot);
+int  ahci_try_send(struct hba_port *port, int slot);
+void achi_register_ops(struct hba_port *port);
+void ahci_parsestr(char *str, uint16_t *reg_start, int size_word);
+void ahci_parse_dev_info(struct hba_device *dev_info, uint16_t *data);
+int  __get_free_slot(struct hba_port *port);
+int  hba_prepare_cmd(struct hba_port *port, struct hba_cmdt **cmdt, struct hba_cmdh **cmdh);
+void __hba_reset_port(hba_reg_t *port_reg);
+int  hba_bind_sbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, void *buf, uint32_t len);
+void sata_create_fis(struct sata_reg_fis *cmd_fis, uint8_t command, uint64_t lba,
+                     uint16_t sector_count);
+int  ahci_init_device(struct hba_port *port);
+void scsi_create_packet12(struct scsi_cdb12 *cdb, uint8_t opcode, uint32_t lba,
+                          uint32_t alloc_size);
+void scsi_create_packet16(struct scsi_cdb16 *cdb, uint8_t opcode, uint64_t lba,
+                          uint32_t alloc_size);
+void scsi_parse_capacity(struct hba_device *device, uint32_t *parameter);
 void ahci_setup();
