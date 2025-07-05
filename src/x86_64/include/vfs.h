@@ -176,7 +176,9 @@ void      *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, 
                    uint64_t offset);
 size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
-int        vfs_mount(const char *src, vfs_node_t node); // 挂载指定设备至指定节点
-int        vfs_unmount(const char *path);               // 卸载指定设备的挂载点
-vfs_node_t get_rootdir();                               // 获取根节点
+void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
+                  uint64_t flags, uint64_t offset); // 文件映射
+int   vfs_mount(const char *src, vfs_node_t node);  // 挂载指定设备至指定节点
+int   vfs_unmount(const char *path);                // 卸载指定设备的挂载点
+vfs_node_t get_rootdir();                           // 获取根节点
 bool       vfs_init();

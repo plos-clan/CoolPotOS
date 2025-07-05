@@ -76,7 +76,7 @@ uint64_t get_memory_size() {
     uint64_t                       all_memory_size = 0;
     struct limine_memmap_response *memory_map      = memmap_request.response;
 
-    for (uint64_t i = memory_map->entry_count - 1; i >= 0; i--) {
+    for (uint64_t i = memory_map->entry_count - 1;; i--) {
         struct limine_memmap_entry *region = memory_map->entries[i];
         if (region->type == LIMINE_MEMMAP_USABLE) {
             all_memory_size = region->base + region->length;

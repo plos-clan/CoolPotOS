@@ -13,7 +13,7 @@ int ahci_try_send(struct hba_port *port, int slot) {
         // PxCI寄存器置位，告诉HBA这儿有个数据需要发送到SATA端口
         port->regs[HBA_RPxCI] = bitmask;
 
-        uint64_t counter = wait_until_expire(!(port->regs[HBA_RPxCI] & bitmask), 1000);
+        uint64_t counter = wait_until_expire(!(port->regs[HBA_RPxCI] & bitmask), 10000);
         if (counter <= 1) return false;
 
         port->regs[HBA_RPxCI] &= ~bitmask; // ensure CI bit is cleared
@@ -36,7 +36,7 @@ void ahci_post(struct hba_port *port, struct hba_cmd_state *state, int slot) {
 
     // 确保端口是空闲的
     uint64_t counter =
-        wait_until_expire(!(port->regs[HBA_RPxTFD] & (HBA_PxTFD_BSY | HBA_PxTFD_DRQ)), 1000);
+        wait_until_expire(!(port->regs[HBA_RPxTFD] & (HBA_PxTFD_BSY | HBA_PxTFD_DRQ)), 10000);
     if (!counter) {
         printk("AHCI wait timeout\n");
         return;

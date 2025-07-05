@@ -6,9 +6,11 @@
 #define ALL_IMPLEMENTATION
 
 #include "vfs.h"
+#include "errno.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "list.h"
+#include "pcb.h"
 
 vfs_node_t rootdir = NULL;
 
@@ -119,8 +121,6 @@ int vfs_mkfile(const char *name) {
     } else {
         parent = vfs_open(fullpath);
     }
-
-
 
     if (parent == NULL || parent->type != file_dir) { return VFS_STATUS_FAILED; }
 
@@ -315,6 +315,33 @@ int vfs_unmount(const char *path) {
         }
     }
     return VFS_STATUS_FAILED;
+}
+
+void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
+                  uint64_t flags, uint64_t offset) {
+    pcb_t current_task        = get_current_task()->parent_group;
+    current_task->mmap_start += (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+    if (current_task->mmap_start > USER_MMAP_END) {
+        current_task->mmap_start -= (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+        return (void *)-ENOMEM;
+    }
+
+    uint64_t pt_flags = PTE_FLAG_U | PTE_WRITEABLE;
+
+    if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
+    if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
+    if (prot & PROT_EXEC) pt_flags |= PTE_USER;
+
+    // if (flags & MAP_FIXED && addr < USER_BRK_START)
+    //     map_page_range(get_current_page_dir(true), addr & (~(DEFAULT_PAGE_SIZE - 1)), addr & (~(DEFAULT_PAGE_SIZE - 1)), (len + DEFAULT_PAGE_SIZE - 1) & (~(DEFAULT_PAGE_SIZE - 1)), pt_flags);
+    // else
+    page_map_range_to_random(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
+                             (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
+
+    ssize_t ret = read_callback(file, (void *)addr, offset, len);
+    if (ret < 0) return (void *)-ENOMEM;
+
+    return (void *)addr;
 }
 
 bool vfs_init() {

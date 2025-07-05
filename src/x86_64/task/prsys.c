@@ -143,7 +143,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->tty        = alloc_default_tty();
 
     new_pcb->page_dir =
-        is_vfork ? current_pcb->page_dir : clone_page_directory(current_pcb->page_dir);
+        is_vfork ? current_pcb->page_dir : clone_page_directory(current_pcb->page_dir, false);
 
     new_pcb->elf_file = malloc(current_pcb->elf_size);
     memcpy(new_pcb->elf_file, current_pcb->elf_file, current_pcb->elf_size);
@@ -266,7 +266,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     }
 
     page_directory_t *old_page_dir = process->page_dir;
-    switch_process_page_directory(clone_page_directory(get_kernel_pagedir()));
+    switch_process_page_directory(clone_page_directory(get_kernel_pagedir(), false));
     if (!process->vfork) free_page_directory(old_page_dir);
     process->page_dir = get_current_directory();
     process->vfork    = false;

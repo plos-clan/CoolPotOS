@@ -166,6 +166,7 @@ function arch_x86_64()
             os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
             os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
             os.cp("assets/libc.so", iso_dir.."/libc.so")
+            os.cp("assets/background.jpg", iso_dir.."/background.jpg")
 
             local shell = target:pkg("cp_shell")
             os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
@@ -235,7 +236,6 @@ function arch_x86_64()
                 "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
                 --"-drive", "file=disk.img,format=raw,if=ide,index=0",
                 "-cdrom", config.builddir().."/CoolPotOS.iso",
-                -- "-cdrom", "/mnt/local/CoolPotOS.iso",
                 --"-device", "ahci,id=ahci",
                 --"-device", "ide-hd,drive=disk,bus=ahci.0",
                 --"-drive", disk_template..config.builddir().."/CoolPotOS.img",

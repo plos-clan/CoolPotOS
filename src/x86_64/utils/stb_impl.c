@@ -14,3 +14,14 @@ int sprintf(char *buf, char const *fmt, ...) {
     spin_unlock(sprintf_lock);
     return result;
 }
+
+int snprintf(char *buf, int count, const char *fmt, ...) {
+    spin_lock(sprintf_lock);
+    int     result;
+    va_list va;
+    va_start(va, fmt);
+    result = STB_SPRINTF_DECORATE(vsnprintf)(buf, count, fmt, va);
+    va_end(va);
+    spin_unlock(sprintf_lock);
+    return result;
+}
