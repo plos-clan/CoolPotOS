@@ -134,7 +134,9 @@ bool fatfs_close(file_t handle) {
 
 int fatfs_mount(const char *src, vfs_node_t node) {
     if (node == rootdir) return -1; // 不支持fatfs作为rootfs
-    if (!src) return -1;
+    if (src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
+        ((uint64_t)src) == TMPFS_REGISTER_ID)
+        return VFS_STATUS_FAILED;
     int drive                   = alloc_number();
     drive_number_mapping[drive] = vfs_open(src);
     char *path                  = malloc(3);
@@ -222,6 +224,20 @@ void *fatfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
     return general_map((vfs_read_t)fatfs_readfile, file, (uint64_t)addr, size, prot, flags, offset);
 }
 
+vfs_node_t fatfs_dup(vfs_node_t node) {
+    vfs_node_t copy   = vfs_node_alloc(node->parent, node->name);
+    copy->handle      = node->handle;
+    copy->type        = node->type;
+    copy->size        = node->size;
+    copy->linkname    = node->linkname == NULL ? NULL : strdup(node->linkname);
+    copy->flags       = node->flags;
+    copy->permissions = node->permissions;
+    copy->owner       = node->owner;
+    copy->child       = node->child;
+    copy->realsize    = node->realsize;
+    return copy;
+}
+
 static struct vfs_callback fatfs_callbacks = {
     .mount   = fatfs_mount,
     .unmount = fatfs_unmount,
@@ -239,8 +255,10 @@ static struct vfs_callback fatfs_callbacks = {
     .stat   = fatfs_stat,
     .ioctl  = fatfs_ioctl,
     .poll   = fatfs_poll,
+    .dup    = fatfs_dup,
 };
 
 void fatfs_init() {
     fatfs_id = vfs_regist("fatfs", &fatfs_callbacks);
+    if (fatfs_id == VFS_STATUS_FAILED) { kerror("Failed to register fat filesystem\n"); }
 }
