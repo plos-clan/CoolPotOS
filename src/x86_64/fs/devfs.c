@@ -4,8 +4,11 @@
  */
 #define ALL_IMPLEMENTATION
 #include "devfs.h"
+#include "frame.h"
+#include "hhdm.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "page.h"
 #include "rbtree-strptr.h"
 #include "vdisk.h"
 #include "vfs.h"
@@ -37,6 +40,7 @@ static int devfs_stat(void *handle, vfs_node_t node) {
     node->handle = rbtree_sp_get(dev_rbtree, node->name);
     node->type = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM ? file_stream : file_block;
     node->size = disk_size((int)(uint64_t)node->handle);
+    node->realsize = vdisk_ctl[(uint64_t)node->handle].sector_size;
     return VFS_STATUS_SUCCESS;
 }
 
@@ -47,7 +51,7 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     node->size = disk_size((int)(uint64_t)node->handle);
 }
 
-static size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
+size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
     int    dev_id = (int)(uint64_t)file;
     size_t sector_size;
     size_t sectors_to_do;
@@ -56,7 +60,6 @@ static size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
 
-    void *buf;
     if (vdisk_ctl[dev_id].type == VDISK_STREAM) goto read;
     if (offset > vdisk_ctl[dev_id].size) return VFS_STATUS_SUCCESS;
     if (vdisk_ctl[dev_id].size < offset + padding_up_to_sector_size) {
@@ -67,20 +70,24 @@ static size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
 read:
 
     sectors_to_do = padding_up_to_sector_size / sector_size;
+    uint64_t phys = alloc_frames(padding_up_to_sector_size);
+    page_map_range_to(get_current_directory(), phys, padding_up_to_sector_size * PAGE_SIZE,
+                      PTE_PRESENT | PTE_WRITEABLE);
+    uint8_t *buffer0 = phys_to_virt(phys);
+
     if (padding_up_to_sector_size == size) {
-        buf = malloc(size);
-        memset(buf, 0, size);
+        memset(buffer0, 0, size);
     } else {
-        buf = malloc(padding_up_to_sector_size * 0x1000);
-        memset(buf, 0, padding_up_to_sector_size * 0x1000);
+        memset(buffer0, 0, padding_up_to_sector_size * 0x1000);
     }
-    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
-    memcpy(addr, buf, size);
-    free(buf);
+    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, buffer0, dev_id);
+    memcpy(addr, buffer0, size);
+    unmap_page_range(get_current_directory(), (uint64_t)buffer0,
+                     padding_up_to_sector_size * PAGE_SIZE);
     return read_size;
 }
 
-static size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
+size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
     int    dev_id = (int)(uint64_t)file;
     size_t sector_size;
     size_t sectors_to_do;
@@ -88,7 +95,6 @@ static size_t devfs_write(void *file, const void *addr, size_t offset, size_t si
     sector_size                      = vdisk_ctl[dev_id].sector_size;
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
-    void *buf;
     if (vdisk_ctl[dev_id].type == VDISK_STREAM) goto write;
     if (offset > vdisk_ctl[dev_id].size) return VFS_STATUS_SUCCESS;
     if (vdisk_ctl[dev_id].size < offset + padding_up_to_sector_size) {
@@ -98,15 +104,19 @@ static size_t devfs_write(void *file, const void *addr, size_t offset, size_t si
 write:
     sectors_to_do = padding_up_to_sector_size / sector_size;
 
+    uint64_t phys = alloc_frames(padding_up_to_sector_size);
+    page_map_range_to(get_current_directory(), phys, padding_up_to_sector_size * PAGE_SIZE,
+                      PTE_PRESENT | PTE_WRITEABLE);
+    uint8_t *buffer0 = phys_to_virt(phys);
+
     if (padding_up_to_sector_size == size) {
-        buf = malloc(size);
     } else {
-        buf = malloc(padding_up_to_sector_size);
-        vdisk_read(offset / sector_size, sectors_to_do, buf, dev_id);
+        vdisk_read(offset / sector_size, sectors_to_do, buffer0, dev_id);
     }
-    memcpy(buf, addr, size);
-    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, buf, dev_id);
-    free(buf);
+    memcpy(buffer0, addr, size);
+    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, buffer0, dev_id);
+    unmap_page_range(get_current_directory(), (uint64_t)buffer0,
+                     padding_up_to_sector_size * PAGE_SIZE);
     return ret_size;
 }
 

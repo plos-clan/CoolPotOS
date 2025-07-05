@@ -1,5 +1,8 @@
 #pragma once
 
+#define GPT_HEADER_SIGNATURE "EFI PART"
+#define MAX_PARTITIONS_NUM   128
+
 #include "ctype.h"
 
 struct GPT_DPT {
@@ -18,3 +21,28 @@ struct GPT_DPT {
     uint32_t size_of_partition_entry;     // 每个分区表项的大小（通常为 128 字节）
     uint32_t partition_entry_array_crc32; // 分区表项的CRC32校验值
 } __attribute__((packed));
+
+struct GPT_DPTE {
+    uint8_t  partition_type_guid[16];   // Partition type GUID
+    uint8_t  unique_partition_guid[16]; // Unique partition GUID
+    uint64_t starting_lba;              // Starting LBA of the partition
+    uint64_t ending_lba;                // Ending LBA of the partition
+    uint64_t attributes;                // Partition attributes
+    uint16_t partition_name[36];        // Partition name (UTF-16LE, null-terminated)
+} __attribute__((packed));
+
+typedef struct partition {
+    size_t vdisk_id;
+    size_t starting_lba;
+    size_t ending_lba;
+    size_t sector_size;
+    enum {
+        MBR = 1,
+        GPT,
+        PRAW,
+    } type;
+    bool     is_used;
+    uint16_t partition_name[36];
+} partition_t;
+
+void partition_init();

@@ -3,6 +3,7 @@
 #define PTE_PRESENT    (0x1 << 0)
 #define PTE_WRITEABLE  (0x1 << 1)
 #define PTE_USER       (0x1 << 2)
+#define PTE_FLAG_U     (0x1 << 3)
 #define PTE_HUGE       (0x1 << 7)
 #define PTE_NO_EXECUTE (((uint64_t)0x1) << 63)
 
@@ -84,9 +85,10 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
 /**
  * 克隆指定页表
  * @param dir 源页表
+ * @param all_copy 是否深拷贝 (false不会拷贝内核部分)
  * @return == NULL ? 未分配成功 : 新页表
  */
-page_directory_t *clone_page_directory(page_directory_t *dir);
+page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
 
 /**
  * 释放指定页表 (不得为内核页, 内核页由引导程序提供,不遵循页框分配器的规则)
@@ -153,4 +155,7 @@ bool page_table_update_flags(page_directory_t *directory, uint64_t addr, uint64_
  * @return 页表指针
  */
 page_directory_t *get_current_directory();
-void              page_setup();
+
+/* 将引导器提供的页表置换成 CP_Kernel 自己构建的页表 */
+void switch_cp_kernel_page_directory();
+void page_setup();

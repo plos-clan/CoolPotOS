@@ -232,9 +232,15 @@ page_directory_t *get_current_directory() {
     return cpu->ready ? cpu->directory : current_directory;
 }
 
-static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level) {
+static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy,
+                                               bool kernel_space) {
     if (source_table == NULL) return NULL;
     if (level == 0) {
+        if (kernel_space) {
+            // If we are copying the kernel space, we can just return the same table
+            return source_table;
+        }
+
         uint64_t      frame          = alloc_frames(1);
         page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
         memcpy(new_page_table, source_table->entries, PAGE_SIZE);
@@ -243,11 +249,17 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
 
     uint64_t      phy_frame = alloc_frames(1);
     page_table_t *new_table = phys_to_virt(phy_frame);
-    for (uint64_t i = 0; i < (level == 4 ? 256 : 512); i++) {
+    for (uint64_t i = 0; i < (all_copy ? 512 : (level == 4 ? 256 : 512)); i++) {
+        if (source_table->entries[i].value & PTE_HUGE) {
+            new_table->entries[i].value = source_table->entries[i].value;
+            continue;
+        }
+
         page_table_t *source_page_table_next =
             phys_to_virt(source_table->entries[i].value & 0x000fffffffff000);
-        page_table_t *new_page_table = copy_page_table_recursive(source_page_table_next, level - 1);
-        new_table->entries[i].value  = (uint64_t)virt_to_phys((uint64_t)new_page_table) |
+        page_table_t *new_page_table = copy_page_table_recursive(
+            source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256);
+        new_table->entries[i].value = (uint64_t)virt_to_phys((uint64_t)new_page_table) |
                                       (source_table->entries[i].value & 0xFFFF000000000FFF);
     }
     return new_table;
@@ -267,12 +279,13 @@ static void free_page_table_recursive(page_table_t *table, int level) {
     free_frame((uint64_t)virt_to_phys((uint64_t)table));
 }
 
-page_directory_t *clone_page_directory(page_directory_t *dir) {
+page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     spin_lock(page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     if (new_directory == NULL) return NULL;
-    new_directory->table = copy_page_table_recursive(dir->table, 4);
-    memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)dir->table + 256, PAGE_SIZE / 2);
+    new_directory->table = copy_page_table_recursive(dir->table, 4, all_copy, false);
+    if (!all_copy)
+        memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)dir->table + 256, PAGE_SIZE / 2);
     spin_unlock(page_lock);
     return new_directory;
 }
@@ -370,6 +383,15 @@ void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t len
         uint64_t var = (uint64_t)phys_to_virt(frame + i);
         page_map_to(directory, var, frame + i, flags);
     }
+}
+
+void switch_cp_kernel_page_directory() {
+    page_directory_t *new_directory = clone_page_directory(&kernel_page_dir, true);
+    kernel_page_dir.table           = new_directory->table;
+    free(new_directory);
+    switch_page_directory(&kernel_page_dir);
+    double_fault_page = get_cr3();
+    current_directory = &kernel_page_dir;
 }
 
 void page_setup() {

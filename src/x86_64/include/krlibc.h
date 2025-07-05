@@ -110,3 +110,7 @@ static inline char *LeadingWhitespace(char *beg, char *end) {
     }
     return beg;
 }
+
+static inline void *fast_memcpy(void *s1, const void *s2, size_t n) {
+    return memcpy(s1, s2, n);
+}

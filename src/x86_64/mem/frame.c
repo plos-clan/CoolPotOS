@@ -1,6 +1,7 @@
 #include "frame.h"
 #include "boot.h"
 #include "hhdm.h"
+#include "io.h"
 #include "klog.h"
 
 FrameAllocator frame_allocator;

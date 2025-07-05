@@ -19,6 +19,7 @@
 #include "modfs.h"
 #include "module.h"
 #include "page.h"
+#include "partition.h"
 #include "pcb.h"
 #include "pci.h"
 #include "pcnet.h"
@@ -60,6 +61,7 @@ void kmain();
 
 extern void  error_setup();    // error_handle.c
 extern void  iso9660_regist(); // iso9660.c
+extern void  fatfs_init();     // fatfs.c
 extern tcb_t kernel_head_task; // scheduler.c
 extern void  setup_urandom();  // urandom.c
 
@@ -106,6 +108,7 @@ void kmain() {
     vfs_init();
     tmpfs_setup();
     iso9660_regist();
+    fatfs_init();
 
     vdisk_init();
     devfs_setup();
@@ -129,6 +132,7 @@ void kmain() {
     killer_setup();
     setup_syscall(true);
     xhci_setup();
+    partition_init();
     kinfo("Kernel load Done!");
 
     create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL);

@@ -113,4 +113,5 @@ void init_heap() {
     logkf("init heap at %p\n", base_addr);
     page_map_range_to_random(get_kernel_pagedir(), base_addr, KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
     mpool_init(&pool, (void *)base_addr, KERNEL_HEAP_SIZE);
+    switch_cp_kernel_page_directory();
 }
