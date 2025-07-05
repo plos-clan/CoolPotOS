@@ -367,7 +367,11 @@ int iso9660_mount(const char *src, vfs_node_t node) {
     if (device == NULL || device->type == file_dir) { return VFS_STATUS_FAILED; }
     l9660_fs    *fs     = (l9660_fs *)malloc(sizeof(l9660_fs));
     l9660_status status = l9660_openfs(fs, read_sector, device);
-    if (status != L9660_OK) return VFS_STATUS_FAILED;
+    if (status != L9660_OK) {
+        free(fs);
+        vfs_close(device);
+        return VFS_STATUS_FAILED;
+    }
     l9660_dir *root_dir = (l9660_dir *)malloc(sizeof(l9660_dir));
     l9660_fs_open_root(root_dir, fs);
     file_t handle  = (file_t)malloc(sizeof(struct file));
