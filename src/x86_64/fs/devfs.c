@@ -70,20 +70,18 @@ size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
 read:
 
     sectors_to_do = padding_up_to_sector_size / sector_size;
-    uint64_t phys = alloc_frames(padding_up_to_sector_size);
-    page_map_range_to(get_current_directory(), phys, padding_up_to_sector_size * PAGE_SIZE,
+    size_t page_size =
+        (padding_up_to_sector_size / PAGE_SIZE) == 0 ? 1 : (padding_up_to_sector_size / PAGE_SIZE);
+    uint64_t phys = alloc_frames(page_size);
+    page_map_range_to(get_current_directory(), phys, page_size * PAGE_SIZE,
                       PTE_PRESENT | PTE_WRITEABLE);
     uint8_t *buffer0 = phys_to_virt(phys);
 
-    if (padding_up_to_sector_size == size) {
-        memset(buffer0, 0, size);
-    } else {
-        memset(buffer0, 0, padding_up_to_sector_size * 0x1000);
-    }
+    memset(buffer0, 0, size);
+
     size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, buffer0, dev_id);
     memcpy(addr, buffer0, size);
-    unmap_page_range(get_current_directory(), (uint64_t)buffer0,
-                     padding_up_to_sector_size * PAGE_SIZE);
+    unmap_page_range(get_current_directory(), (uint64_t)buffer0, page_size * PAGE_SIZE);
     return read_size;
 }
 
@@ -104,8 +102,10 @@ size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
 write:
     sectors_to_do = padding_up_to_sector_size / sector_size;
 
-    uint64_t phys = alloc_frames(padding_up_to_sector_size);
-    page_map_range_to(get_current_directory(), phys, padding_up_to_sector_size * PAGE_SIZE,
+    size_t page_size =
+        (padding_up_to_sector_size / PAGE_SIZE) == 0 ? 1 : (padding_up_to_sector_size / PAGE_SIZE);
+    uint64_t phys = alloc_frames(page_size);
+    page_map_range_to(get_current_directory(), phys, page_size * PAGE_SIZE,
                       PTE_PRESENT | PTE_WRITEABLE);
     uint8_t *buffer0 = phys_to_virt(phys);
 
@@ -115,8 +115,7 @@ write:
     }
     memcpy(buffer0, addr, size);
     size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, buffer0, dev_id);
-    unmap_page_range(get_current_directory(), (uint64_t)buffer0,
-                     padding_up_to_sector_size * PAGE_SIZE);
+    unmap_page_range(get_current_directory(), (uint64_t)buffer0, page_size * PAGE_SIZE);
     return ret_size;
 }
 
@@ -142,8 +141,10 @@ static vfs_node_t devfs_dup(vfs_node_t node) {
 static int devfs_poll(void *file, size_t events) {
     int dev_id = (int)(uint64_t)file;
     if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
-    if (vdisk_ctl[dev_id].poll) { return vdisk_ctl[dev_id].poll(events); }
-    return VFS_STATUS_FAILED;
+    if (vdisk_ctl[dev_id].poll != (void *)empty) {
+        return vdisk_ctl[dev_id].poll(events);
+    } else
+        return VFS_STATUS_SUCCESS;
 }
 
 static void *devfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,

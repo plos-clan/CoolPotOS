@@ -116,3 +116,8 @@ static inline char *LeadingWhitespace(char *beg, char *end) {
 static inline void *fast_memcpy(void *s1, const void *s2, size_t n) {
     return memcpy(s1, s2, n);
 }
+
+static inline bool check_user_overflow(uint64_t addr, uint64_t size) {
+    if ((addr + size) > KERNEL_AREA_MEM) { return true; }
+    return false;
+}

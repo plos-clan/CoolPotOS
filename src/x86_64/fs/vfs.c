@@ -18,7 +18,7 @@ static void empty_func() {}
 
 struct vfs_callback vfs_empty_callback;
 
-static vfs_callback_t fs_callbacks[256] = {
+vfs_callback_t fs_callbacks[256] = {
     [0] = &vfs_empty_callback,
 };
 static int fs_nextid = 1;

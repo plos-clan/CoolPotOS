@@ -517,33 +517,50 @@ syscall_(exit_group) {
 syscall_(poll) {
     struct pollfd *fds_user = (struct pollfd *)arg0;
     size_t         nfds     = arg1;
-    int            timeout  = arg2;
-    UNUSED(timeout); //TODO 设备状态超时等待
+    size_t         timeout  = arg2;
 
-    struct pollfd *local_fds = (struct pollfd *)malloc(sizeof(struct pollfd) * nfds);
-    memcpy(fds_user, local_fds, sizeof(struct pollfd) * nfds);
+    int      ready      = 0;
+    uint64_t start_time = nano_time();
+    bool     sigexit    = false;
 
-    int num_ready = 0;
-    for (size_t i = 0; i < nfds; ++i) {
-        fd_file_handle *handle =
-            queue_get(get_current_task()->parent_group->file_open, local_fds[i].fd);
-        if (handle == NULL) {
-            local_fds[i].revents = POLLNVAL;
-            num_ready++;
-            continue;
+    extern vfs_callback_t fs_callbacks[256];
+
+    do {
+        // 检查每个文件描述符
+        size_t i = 0;
+        queue_foreach(get_current_task()->parent_group->file_open, node0) {
+            if (i > nfds) break;
+            fd_file_handle *handle = (fd_file_handle *)node0->data;
+            vfs_node_t      node   = handle->node;
+            if (fs_callbacks[node->fsid]->poll == (void *)empty) {
+                if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {
+                    fds_user[i].revents = fds_user[i].events & POLLIN ? POLLIN : POLLOUT;
+                    ready++;
+                }
+                i++;
+                continue;
+            }
+            int revents =
+                epoll_to_poll_comp(vfs_poll(node, poll_to_epoll_comp(fds_user[i].events)));
+            if (revents > 0) {
+                fds_user[i].revents = revents;
+                ready++;
+            }
+            i++;
         }
-        short revents = 0;
 
-        if ((local_fds[i].events & POLLIN)) revents |= POLLIN;
+        // sigexit = signals_pending_quick(current_task);
 
-        if ((local_fds[i].events & POLLOUT)) revents |= POLLOUT;
+        if (ready > 0 || sigexit) break;
 
-        local_fds[i].revents = revents;
+        open_interrupt;
+        __asm__("pause");
+    } while (timeout != 0 && ((int)timeout == -1 || (nano_time() - start_time) < timeout));
 
-        if (revents) num_ready++;
-    }
+    close_interrupt;
 
-    return num_ready;
+    if (!ready && sigexit) return (size_t)-EINTR;
+    return ready;
 }
 
 syscall_(set_tid_address) {
@@ -845,6 +862,112 @@ syscall_(lseek) {
     return handle->offset;
 }
 
+syscall_(select) {
+    int             nfds    = (int)arg0;
+    uint8_t        *read    = (uint8_t *)arg1;
+    uint8_t        *write   = (uint8_t *)arg2;
+    uint8_t        *except  = (uint8_t *)arg3;
+    struct timeval *timeout = (struct timeval *)arg4;
+    if (read && check_user_overflow((uint64_t)read, sizeof(struct pollfd))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (write && check_user_overflow((uint64_t)write, sizeof(struct pollfd))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (except && check_user_overflow((uint64_t)except, sizeof(struct pollfd))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    size_t         complength = sizeof(struct pollfd);
+    struct pollfd *comp       = (struct pollfd *)malloc(complength);
+    size_t         compIndex  = 0;
+    if (read) {
+        for (int i = 0; i < nfds; i++) {
+            if (select_bitmap(read, i)) select_add(&comp, &compIndex, &complength, i, POLLIN);
+        }
+    }
+    if (write) {
+        for (int i = 0; i < nfds; i++) {
+            if (select_bitmap(write, i)) select_add(&comp, &compIndex, &complength, i, POLLOUT);
+        }
+    }
+    if (except) {
+        for (int i = 0; i < nfds; i++) {
+            if (select_bitmap(except, i))
+                select_add(&comp, &compIndex, &complength, i, POLLPRI | POLLERR);
+        }
+    }
+
+    int toZero = (nfds + 8) / 8;
+    if (read) memset(read, 0, toZero);
+    if (write) memset(write, 0, toZero);
+    if (except) memset(except, 0, toZero);
+
+    size_t res = syscall_poll(
+        (uint64_t)comp, compIndex,
+        timeout ? (timeout->tv_sec * 1000 + (timeout->tv_usec + 1000) / 1000) : -1, 0, 0, 0, 0);
+
+    if ((int64_t)res < 0) {
+        free(comp);
+        return res;
+    }
+
+    size_t verify = 0;
+    for (size_t i = 0; i < compIndex; i++) {
+        if (!comp[i].revents) continue;
+        if (comp[i].events & POLLIN && comp[i].revents & POLLIN) {
+            select_bitmap_set(read, comp[i].fd);
+            verify++;
+        }
+        if (comp[i].events & POLLOUT && comp[i].revents & POLLOUT) {
+            select_bitmap_set(write, comp[i].fd);
+            verify++;
+        }
+        if ((comp[i].events & POLLPRI && comp[i].revents & POLLPRI) ||
+            (comp[i].events & POLLERR && comp[i].revents & POLLERR)) {
+            select_bitmap_set(except, comp[i].fd);
+            verify++;
+        }
+    }
+
+    free(comp);
+    return verify;
+}
+
+syscall_(pselect6) {
+    uint64_t         nfds          = arg0;
+    fd_set          *readfds       = (fd_set *)arg1;
+    fd_set          *writefds      = (fd_set *)arg2;
+    fd_set          *exceptfds     = (fd_set *)arg3;
+    struct timespec *timeout       = (struct timespec *)arg4;
+    WeirdPselect6   *weirdPselect6 = (WeirdPselect6 *)arg5;
+    if (readfds && check_user_overflow((uint64_t)readfds, sizeof(fd_set) * nfds)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (writefds && check_user_overflow((uint64_t)writefds, sizeof(fd_set) * nfds)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (exceptfds && check_user_overflow((uint64_t)exceptfds, sizeof(fd_set) * nfds)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    size_t    sigsetsize = weirdPselect6->ss_len;
+    sigset_t *sigmask    = weirdPselect6->ss;
+    if (sigsetsize < sizeof(sigset_t)) { return SYSCALL_FAULT_(EINVAL); }
+    sigset_t origmask;
+    if (sigmask) syscall_ssetmask(SIG_SETMASK, sigmask, &origmask);
+    struct timeval timeoutConv;
+    if (timeout) {
+        timeoutConv = (struct timeval){.tv_sec  = timeout->tv_sec,
+                                       .tv_usec = (timeout->tv_nsec + 1000) / 1000};
+    } else {
+        timeoutConv = (struct timeval){.tv_sec = (uint64_t)-1, .tv_usec = (uint64_t)-1};
+    }
+
+    size_t ret = syscall_select(nfds, (uint64_t)(uint8_t *)readfds, (uint64_t)(uint8_t *)writefds,
+                                (uint64_t)(uint8_t *)exceptfds, (uint64_t)&timeoutConv, 0, 0);
+    if (sigmask) syscall_ssetmask(SIG_SETMASK, &origmask, NULL);
+    return ret;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -893,6 +1016,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SIGSUSPEND]  = syscall_sigsuspend,
     [SYSCALL_MKDIR]       = syscall_mkdir,
     [SYSCALL_LSEEK]       = syscall_lseek,
+    [SYSCALL_PSELECT6]    = syscall_pselect6,
+    [SYSCALL_SELECT]      = syscall_select,
 };
 // clang-format on
 

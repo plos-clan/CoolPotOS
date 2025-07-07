@@ -77,6 +77,9 @@ static int tty_getch() {
 }
 
 static size_t stdin_read(int drive, uint8_t *buffer, size_t number, size_t lba) {
+    bool is_sti = are_interrupts_enabled();
+    open_interrupt;
+
     size_t i = 0;
     for (; i < number; i++) {
         char c = (char)tty_getch();
@@ -101,6 +104,9 @@ static size_t stdin_read(int drive, uint8_t *buffer, size_t number, size_t lba) 
         }
         buffer[i] = c;
     }
+    
+    if (!is_sti) open_interrupt;
+
     return i;
 }
 
@@ -164,7 +170,7 @@ static int tty_poll(size_t events) {
     ssize_t revents = 0;
     if (events & EPOLLERR || events & EPOLLPRI) return 0;
 
-    if (events & EPOLLIN && ioSwitch) revents |= EPOLLIN;
+    if (events & EPOLLIN) revents |= EPOLLIN;
     if (events & EPOLLOUT) revents |= EPOLLOUT;
     ioSwitch = !ioSwitch;
     return revents;

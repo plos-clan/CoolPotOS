@@ -133,10 +133,11 @@ bool fatfs_close(file_t handle) {
 }
 
 int fatfs_mount(const char *src, vfs_node_t node) {
-    if (node == rootdir) return -1; // 不支持fatfs作为rootfs
+    // if (node == rootdir) return -1; // 不支持fatfs作为rootfs
     if (src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
         ((uint64_t)src) == TMPFS_REGISTER_ID)
         return VFS_STATUS_FAILED;
+
     int drive                   = alloc_number();
     drive_number_mapping[drive] = vfs_open(src);
     char *path                  = malloc(3);

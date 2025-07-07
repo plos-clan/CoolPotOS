@@ -195,12 +195,19 @@ void switch_to_user_mode(uint64_t func) {
         rsp = build_user_stack(get_current_task(), rsp, func, NULL, 0);
     }
 
-    vfs_node_t stdout = vfs_open("/dev/stdio");
-    vfs_node_t stdin  = stdout;
-    vfs_node_t stderr = stdout;
-    queue_enqueue(get_current_task()->parent_group->file_open, stdin);
-    queue_enqueue(get_current_task()->parent_group->file_open, stdout);
-    queue_enqueue(get_current_task()->parent_group->file_open, stderr);
+    vfs_node_t      stdio  = vfs_open("/dev/stdio");
+    fd_file_handle *stdout = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    stdout->node           = stdio;
+    stdout->offset         = 0;
+    fd_file_handle *stdin  = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    stdin->node            = stdio;
+    stdin->offset          = 0;
+    fd_file_handle *stderr = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    stderr->node           = stdio;
+    stderr->offset         = 0;
+    stdin->fd  = queue_enqueue(get_current_task()->parent_group->file_open, stdin);  // stdin
+    stdout->fd = queue_enqueue(get_current_task()->parent_group->file_open, stdout); // stdout
+    stderr->fd = queue_enqueue(get_current_task()->parent_group->file_open, stderr); // stderr
 
     __asm__ volatile("mov %0, %%es\n"
                      "mov %0, %%ds\n"
@@ -251,9 +258,10 @@ void kill_proc0(pcb_t pcb) {
     queue_remove_at(pgb_queue, pcb->queue_index);
 
     loop {
-        vfs_node_t node = (vfs_node_t)queue_dequeue(pcb->file_open);
-        if (node == NULL) break;
-        vfs_close(node);
+        fd_file_handle *handle = (fd_file_handle *)queue_dequeue(pcb->file_open);
+        if (handle == NULL) break;
+        vfs_close(handle->node);
+        free(handle);
     }
 
     if (pcb->virt_queue->size > 0) {
