@@ -5,10 +5,11 @@
 #define MSR_LSTAR        0xC0000082 // LSTAR MSR寄存器
 #define MSR_SYSCALL_MASK 0xC0000084
 
-#define MAX_SYSCALLS         256
+#define MAX_SYSCALLS         400
 #define SYSCALL_SUCCESS      EOK
 #define SYSCALL_FAULT        ((uint64_t)-(ENOSYS))
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
+#define FD_SETSIZE           1024
 
 #define syscall_(name)                                                                             \
     uint64_t syscall_##name(                                                                       \
@@ -22,15 +23,6 @@
 #define ARCH_GET_FS 0x1003
 #define ARCH_SET_GS 0x1004
 #define ARCH_GET_GS 0x1005
-
-// poll 系统调用标志
-#define POLLIN  0x0001 // 有数据可读
-#define POLLPRI 0x0002 // 有紧急数据可读（如 socket 的带外数据）
-#define POLLOUT 0x0004 // 写操作不会阻塞（可写）
-
-#define POLLERR  0x0008 // 错误（不需要设置，由内核返回）
-#define POLLHUP  0x0010 // 挂起（对端关闭）
-#define POLLNVAL 0x0020 // fd 无效（文件描述符非法）
 
 // futex 系统调用操作码
 #define FUTEX_WAIT        0
@@ -77,6 +69,7 @@
 #define SYSCALL_IOCTL       16
 #define SYSCALL_READV       19
 #define SYSCALL_WRITEV      20
+#define SYSCALL_SELECT      23
 #define SYSCALL_YIELD       24
 #define SYSCALL_MREMAP      25
 #define SYSCALL_DUP         32
@@ -107,9 +100,12 @@
 #define SYSCALL_C_GETTIME   228
 #define SYSCALL_C_GETRES    229
 #define SYSCALL_C_NANOSLEEP 230
+#define SYSCALL_PSELECT6    270
 
 #include "ctype.h"
 #include "krlibc.h"
+#include "poll.h"
+#include "signal.h"
 #include "time.h"
 #include "vfs.h"
 
@@ -154,12 +150,6 @@ struct iovec {
     size_t iov_len;
 };
 
-struct pollfd {
-    int   fd;
-    short events;
-    short revents;
-};
-
 struct stat {
     long              st_dev;
     unsigned long     st_ino;
@@ -182,6 +172,20 @@ typedef struct {
     size_t     offset;
     size_t     fd;
 } fd_file_handle;
+
+typedef struct {
+    unsigned long fds_bits[FD_SETSIZE / 8 / sizeof(long)];
+} fd_set;
+
+typedef struct {
+    sigset_t *ss;
+    size_t    ss_len;
+} WeirdPselect6;
+
+struct timeval {
+    long tv_sec;
+    long tv_usec;
+};
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
                               struct syscall_regs *);
