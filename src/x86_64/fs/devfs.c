@@ -73,9 +73,10 @@ read:
     size_t page_size =
         (padding_up_to_sector_size / PAGE_SIZE) == 0 ? 1 : (padding_up_to_sector_size / PAGE_SIZE);
     uint64_t phys = alloc_frames(page_size);
-    page_map_range_to(get_current_directory(), phys, page_size * PAGE_SIZE,
-                      PTE_PRESENT | PTE_WRITEABLE);
-    uint8_t *buffer0 = phys_to_virt(phys);
+
+    page_map_range(get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys,
+                   page_size * PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE);
+    uint8_t *buffer0 = driver_phys_to_virt(phys);
 
     memset(buffer0, 0, size);
 
@@ -105,9 +106,9 @@ write:
     size_t page_size =
         (padding_up_to_sector_size / PAGE_SIZE) == 0 ? 1 : (padding_up_to_sector_size / PAGE_SIZE);
     uint64_t phys = alloc_frames(page_size);
-    page_map_range_to(get_current_directory(), phys, page_size * PAGE_SIZE,
-                      PTE_PRESENT | PTE_WRITEABLE);
-    uint8_t *buffer0 = phys_to_virt(phys);
+    page_map_range(get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys,
+                   page_size * PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE);
+    uint8_t *buffer0 = driver_phys_to_virt(phys);
 
     if (padding_up_to_sector_size == size) {
     } else {

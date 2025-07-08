@@ -73,6 +73,17 @@ void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t len
                        uint64_t flags);
 
 /**
+ * 映射一组物理地址并指定物理地址基址
+ * @param directory 页表
+ * @param addr 虚拟地址
+ * @param frame 物理地址
+ * @param length 长度
+ * @param flags 页表项标志位
+ */
+void page_map_range(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t length,
+                    uint64_t flags);
+
+/**
  * 将指定虚拟地址随机映射到物理地址上(物理地址由页框分配器决定)
  * @param directory 页表
  * @param addr 虚拟地址

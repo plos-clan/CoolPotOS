@@ -968,6 +968,24 @@ syscall_(pselect6) {
     return ret;
 }
 
+syscall_(reboot) {
+    int      magic1 = arg0;
+    int      magic2 = arg1;
+    uint32_t cmd    = arg2;
+    void    *arg    = (void *)arg3;
+
+    extern void cp_shutdown();
+    extern void cp_reset();
+
+    if (magic1 != REBOOT_MAGIC1 || magic2 != REBOOT_MAGIC2) return SYSCALL_FAULT_(EINVAL);
+    switch (cmd) {
+    case REBOOT_CMD_RESTART: cp_reset(); break;
+    case REBOOT_CMD_CAD_OFF: cp_shutdown(); break;
+    default: return SYSCALL_FAULT_(EINVAL);
+    }
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1018,6 +1036,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_LSEEK]       = syscall_lseek,
     [SYSCALL_PSELECT6]    = syscall_pselect6,
     [SYSCALL_SELECT]      = syscall_select,
+    [SYSCALL_REBOOT]      = syscall_reboot,
 };
 // clang-format on
 

@@ -4,6 +4,7 @@
 #include "hhdm.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "page.h"
 #include "pci.h"
 #include "sprintf.h"
 #include "vdisk.h"
@@ -67,7 +68,8 @@ int hba_prepare_cmd(struct hba_port *port, struct hba_cmdt **cmdt, struct hba_cm
     struct hba_cmdh *cmd_header = phys_to_virt((uint64_t)&port->cmdlst[slot]);
     memset(cmd_header, 0, sizeof(struct hba_cmdh));
     uint64_t         phys      = alloc_frames(1);
-    struct hba_cmdt *cmd_table = (struct hba_cmdt *)phys_to_virt(phys);
+    struct hba_cmdt *cmd_table = (struct hba_cmdt *)driver_phys_to_virt(phys);
+    page_map_to(get_current_directory(), (uint64_t)cmd_table, phys, KERNEL_PTE_FLAGS);
 
     memset(cmd_header, 0, sizeof(struct hba_cmdh));
 
@@ -100,7 +102,7 @@ int hba_bind_sbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, void *buf, uint3
         return -1;
     }
 
-    uint64_t buf_phys = (uint64_t)virt_to_phys((uint64_t)buf);
+    uint64_t buf_phys = (uint64_t)driver_virt_to_phys((uint64_t)buf);
     if (buf_phys == 0) {
         printk("AHCI buffer not mapped\n");
         return -1;
@@ -139,7 +141,8 @@ int ahci_init_device(struct hba_port *port) {
     struct hba_cmdh *cmd_header;
 
     uint16_t *data_in = (uint16_t *)alloc_frames(1);
-    uint16_t *data    = phys_to_virt((uint64_t)data_in);
+    uint16_t *data    = driver_phys_to_virt((uint64_t)data_in);
+    page_map_to(get_current_directory(), (uint64_t)data, (uint64_t)data_in, KERNEL_PTE_FLAGS);
 
     int slot = hba_prepare_cmd(port, &cmd_table, &cmd_header);
     hba_bind_sbuf(cmd_header, cmd_table, data, 512);
