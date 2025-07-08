@@ -348,8 +348,8 @@ int waitpid(int pid) {
     if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
     bool          is_sti = are_interrupts_enabled();
+    open_interrupt;
     loop {
-        open_interrupt;
         mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         if (pid == mesg->pid) {
             int exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |

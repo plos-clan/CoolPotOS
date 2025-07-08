@@ -123,8 +123,11 @@ static void *virt_copy(void *ptr) {
 
 static void *file_copy(void *ptr) {
     if (ptr == NULL) return NULL;
-    vfs_node_t src = (vfs_node_t)ptr;
-    vfs_node_t new = vfs_dup(src);
+    fd_file_handle *src = ptr;
+    fd_file_handle *new = malloc(sizeof(fd_file_handle));
+    new->node           = vfs_dup(src->node);
+    new->offset         = src->offset;
+    new->fd             = src->fd;
     return new;
 }
 
@@ -165,7 +168,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     tcb_t parent_task = get_current_task();
 
-    tcb_t new_task = (tcb_t)malloc(SMALL_STACK_SIZE);
+    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
     if (new_task == NULL) return SYSCALL_FAULT_(ENOMEM);
     memset(new_task, 0, sizeof(struct thread_control_block));
     new_task->task_level      = TASK_APPLICATION_LEVEL;
@@ -177,7 +180,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->user_stack      = parent_task->user_stack;
     new_task->user_stack_top  = parent_task->user_stack_top;
     new_task->context0.rflags = reg->rflags;
-    new_task->kernel_stack    = (uint64_t)new_task + SMALL_STACK_SIZE;
+    new_task->kernel_stack    = ((uint64_t)new_task) + STACK_SIZE;
     new_task->main            = parent_task->main;
     strcpy(new_task->name, parent_task->name);
 

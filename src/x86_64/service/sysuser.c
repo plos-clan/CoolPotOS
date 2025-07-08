@@ -90,8 +90,8 @@ void user_setup() {
     kernel_user->envc             = user_envc;
     kernel_user->envp             = user_envp;
     kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
-    add_env("PATH=/boot:/limine");
-    add_env("HOME=/");
+    //add_env("PATH=/boot:/limine");
+    add_env("HOME=/root");
     add_env("HOSTTYPE=x86_64");
     char buf[20];
     sprintf(buf, "USER=%s", kernel_user->name);

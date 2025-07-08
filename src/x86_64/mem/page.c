@@ -385,6 +385,14 @@ void page_map_range_to(page_directory_t *directory, uint64_t frame, uint64_t len
     }
 }
 
+void page_map_range(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t length,
+                    uint64_t flags) {
+    for (uint64_t i = 0; i < length; i += 0x1000) {
+        uint64_t var = (uint64_t)addr + i;
+        page_map_to(directory, var, frame + i, flags);
+    }
+}
+
 void switch_cp_kernel_page_directory() {
     page_directory_t *new_directory = clone_page_directory(&kernel_page_dir, true);
     kernel_page_dir.table           = new_directory->table;
