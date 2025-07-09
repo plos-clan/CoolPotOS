@@ -344,7 +344,18 @@ tcb_t found_thread(pcb_t pcb, int tid) {
     return NULL;
 }
 
-int waitpid(int pid) {
+int waitpid(int pid, int *pid_ret) {
+    if (pid == -1) {
+        bool is_sti = are_interrupts_enabled();
+        open_interrupt;
+        ipc_message_t mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
+        int           exit_code =
+            (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
+        *pid_ret = mesg->pid;
+        free(mesg);
+        if (!is_sti) close_interrupt;
+        return exit_code;
+    }
     if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
     bool          is_sti = are_interrupts_enabled();
@@ -354,6 +365,7 @@ int waitpid(int pid) {
         if (pid == mesg->pid) {
             int exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |
                             mesg->data[0];
+            *pid_ret = mesg->pid;
             free(mesg);
             if (!is_sti) close_interrupt;
             return exit_code;
