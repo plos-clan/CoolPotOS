@@ -181,4 +181,6 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
 int   vfs_mount(const char *src, vfs_node_t node);  // 挂载指定设备至指定节点
 int   vfs_unmount(const char *path);                // 卸载指定设备的挂载点
 vfs_node_t get_rootdir();                           // 获取根节点
+char      *vfs_get_fullpath(vfs_node_t node);
+char      *at_resolve_pathname(int dirfd, char *pathname);
 bool       vfs_init();

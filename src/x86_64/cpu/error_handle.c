@@ -121,6 +121,11 @@ __IRQHANDLER void stack_segment_fault(interrupt_frame_t *frame, uint64_t error_c
     kernel_error("Stack Segment Fault", error_code, frame);
 }
 
+__IRQHANDLER void float_exception_handler(interrupt_frame_t *frame, uint64_t error_code) {
+    close_interrupt;
+    kernel_error("Float Fault", error_code, frame);
+}
+
 void error_setup() {
     register_interrupt_handler(0, (void *)dived_error, 0, 0x8E);
     register_interrupt_handler(6, (void *)invalid_opcode, 0, 0x8E);
@@ -130,4 +135,5 @@ void error_setup() {
     register_interrupt_handler(11, (void *)segment_not_present, 0, 0x8E);
     register_interrupt_handler(12, (void *)stack_segment_fault, 0, 0x8E);
     register_interrupt_handler(13, (void *)general_protection_fault, 0, 0x8E);
+    register_interrupt_handler(16, float_exception_handler, 0, 0x8E);
 }

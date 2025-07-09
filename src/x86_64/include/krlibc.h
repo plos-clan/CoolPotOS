@@ -118,6 +118,5 @@ static inline void *fast_memcpy(void *s1, const void *s2, size_t n) {
 }
 
 static inline bool check_user_overflow(uint64_t addr, uint64_t size) {
-    if ((addr + size) > KERNEL_AREA_MEM) { return true; }
-    return false;
+    return (addr + size) > KERNEL_AREA_MEM;
 }

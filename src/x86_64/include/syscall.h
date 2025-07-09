@@ -111,13 +111,16 @@
 #define SYSCALL_REBOOT      169
 #define SYSCALL_GET_TID     186
 #define SYSCALL_FUTEX       202
+#define SYSCALL_GETDENTS64  217
 #define SYSCALL_SETID_ADDR  218
 #define SYSCALL_EXIT_GROUP  231
 #define SYSCALL_C_SETTIME   227
 #define SYSCALL_C_GETTIME   228
 #define SYSCALL_C_GETRES    229
 #define SYSCALL_C_NANOSLEEP 230
+#define SYSCALL_NEWFSTATAT  262
 #define SYSCALL_PSELECT6    270
+#define SYSCALL_STATX       332
 
 #include "ctype.h"
 #include "krlibc.h"
@@ -202,6 +205,55 @@ typedef struct {
 struct timeval {
     long tv_sec;
     long tv_usec;
+};
+
+struct dirent {
+    long           d_ino;
+    long           d_off;
+    unsigned short d_reclen;
+    unsigned char  d_type;
+    char           d_name[256];
+};
+
+struct statx_timestamp {
+    int64_t  tv_sec;
+    uint32_t tv_nsec;
+    int32_t  __reserved;
+};
+
+struct statx {
+    /* 0x00 */
+    uint32_t stx_mask;       /* What results were written [uncond] */
+    uint32_t stx_blksize;    /* Preferred general I/O size [uncond] */
+    uint64_t stx_attributes; /* Flags conveying information about the file [uncond] */
+    /* 0x10 */
+    uint32_t stx_nlink; /* Number of hard links */
+    uint32_t stx_uid;   /* User ID of owner */
+    uint32_t stx_gid;   /* Group ID of owner */
+    uint16_t stx_mode;  /* File mode */
+    uint16_t __spare0[1];
+    /* 0x20 */
+    uint64_t stx_ino;             /* Inode number */
+    uint64_t stx_size;            /* File size */
+    uint64_t stx_blocks;          /* Number of 512-byte blocks allocated */
+    uint64_t stx_attributes_mask; /* Mask to show what's supported in stx_attributes */
+    /* 0x40 */
+    struct statx_timestamp stx_atime; /* Last access time */
+    struct statx_timestamp stx_btime; /* File creation time */
+    struct statx_timestamp stx_ctime; /* Last attribute change time */
+    struct statx_timestamp stx_mtime; /* Last data modification time */
+    /* 0x80 */
+    uint32_t               stx_rdev_major; /* Device ID of special file [if bdev/cdev] */
+    uint32_t               stx_rdev_minor;
+    uint32_t               stx_dev_major; /* ID of device containing file [uncond] */
+    uint32_t               stx_dev_minor;
+    /* 0x90 */
+    uint64_t               stx_mnt_id;
+    uint32_t               stx_dio_mem_align;    /* Memory buffer alignment for direct I/O */
+    uint32_t               stx_dio_offset_align; /* File offset alignment for direct I/O */
+    /* 0xa0 */
+    uint64_t               __spare3[12]; /* Spare space for future expansion */
+                                         /* 0x100 */
 };
 
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
