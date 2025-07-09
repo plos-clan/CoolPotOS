@@ -236,9 +236,10 @@ tcb_t found_thread(pcb_t pcb, int tid);
 /**
  * 等待指定PID进程执行完毕
  * @param pid 线程ID
+ * @param pid_ret 设置实际监听的进程 PID
  * @return == -25565 ? 未找到线程 : 退出代码
  */
-int waitpid(int pid);
+int waitpid(int pid, int *pid_ret);
 
 /**
  * syscall_prctl 系统调用实现

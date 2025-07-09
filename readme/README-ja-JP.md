@@ -21,13 +21,15 @@ Languages
 
 ## Introduction
 
-これは、[ia32](https://en.wikipedia.org/wiki/IA-32)および[amd64](https://en.wikipedia.org/wiki/X86-64)アーキテクチャ向けのシンプルなオペレーティングシステムです。
+これは、[ia32](https://en.wikipedia.org/wiki/IA-32)および[amd64](https://en.wikipedia.org/wiki/X86-64)
+アーキテクチャ向けのシンプルなオペレーティングシステムです。
 
 ## Modules
 
 - `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-- `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
+- `plant-vfs` by min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
+- `musllibc` by seL4 [seL4/musllibc](https://github.com/seL4/musllibc)
 
 ## Build & Run
 
@@ -100,6 +102,7 @@ Limineブートローダーを使用。
 - [ ] PCNETおよびRTL8169ドライバ
 - [x] SB16およびPCSpeakerドライバ
 - [ ] TTYドライバ
+- [x] SATA/SATAPIドライバ
 
 ## Contributing
 
@@ -107,18 +110,4 @@ Limineブートローダーを使用。
 
 ### Contributors
 
-- XIAOYI12 - OS開発者
-- min0911Y - OSファイルシステム開発者
-- copi143 - ユーザーヒープ開発者
-- QtLittleXu - XuYuxuan OSドキュメント
-- ViudiraTech - PCIドライバ最適化
-- Vinbe Wan - IIC開発者
-- A4-Tacks - ビルドスクリプトの作成
-- wenxuanjun(blurryrect) - OS開発者
-- Minsecrus - メモリ使用量の最適化
-- CLimber-Rong - ソフトウェア開発者
-- shiyu - デバッガおよびコメントライター
-- 27Onion - フランス語README翻訳
-- LY-Xiang - アクションプロセスの最適化
-- suhuajun-github - AHCIドライバのいくつかのバグ修正
-- FengHeting - SMBIOSドライバ開発者
+* [CoolPotOS | Website](cpos.plos-clan.org) に行って、貢献者リストを見てください。

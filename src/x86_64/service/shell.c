@@ -380,9 +380,9 @@ static void exec(int argc, char **argv) {
     int    pgb_id      = user_task->pgb_id;
     size_t queue_index = user_task->queue_index;
     logkf("User application %s : %d : index: %d loaded.\n", name, pgb_id, queue_index);
-
+    int status;
     get_current_task()->status = WAIT;
-    waitpid(user_task->pgb_id);
+    waitpid(user_task->pgb_id, &status);
     get_current_task()->status = RUNNING;
 }
 

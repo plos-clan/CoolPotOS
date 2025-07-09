@@ -220,14 +220,16 @@ syscall_(read) {
 }
 
 syscall_(waitpid) {
-    int pid = arg0;
-    if (pid < 0) return SYSCALL_FAULT_(EINVAL);
+    int      pid     = arg0;
+    int     *status  = (int *)arg1;
+    uint64_t options = arg2;
+    if (pid == -1) goto wait;
     if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ECHILD);
-    if (arg1 != 0) {
-        int *status = (int *)arg1;
-        *status     = 0;
-    }
-    return waitpid(pid);
+wait:
+    int ret_pid;
+    int status0 = waitpid(pid, &ret_pid);
+    if (status) *status = status0;
+    return ret_pid;
 }
 
 syscall_(mmap) {

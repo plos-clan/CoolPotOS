@@ -26,9 +26,10 @@
 
 ## 模块
 
-- `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
-- `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-- `liballoc` by wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
+- `pl_readline` 来自 min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
+- `os_terminal` 来自 wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
+- `plant-vfs` 来自 min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
+- `musllibc` 来自 seL4 [seL4/musllibc](https://github.com/seL4/musllibc)
 
 ## 构建并运行
 
@@ -103,6 +104,7 @@ xmake project -k compile_commands
 - [ ] PCNET 和 Rtl8169 驱动
 - [x] SB16 和 PCSpeaker 驱动
 - [ ] TTY 驱动
+- [x] SATA/SATAPI 驱动
 
 ## 贡献
 
@@ -110,18 +112,4 @@ xmake project -k compile_commands
 
 ### 贡献者们
 
-- XIAOYI12 - 负责主要的OS开发
-- min0911Y - 负责OS文件系统开发
-- copi143 - 新版用户堆框架开发
-- QtLittleXu - 负责OS文档编写
-- ViudiraTech - PCI驱动优化
-- VinbeWan - IIC驱动程序开发
-- A4-Tacks - 编写一些构建脚本
-- wenxuanjun(blurryrect) - OS 重构开发
-- Minsecrus - OS 内存统计算法优化
-- CLimber-Rong - 软件开发
-- shiyu - 负责到处捉虫和帮助代码添加注释
-- 27Onion - 翻译了法语README
-- LY-Xiang - 优化了 actions 流程
-- suhuajun-github - 修复AHCI驱动的BUG
-- FengHeting - SMBIOS 驱动开发
+* 前往 [CoolPotOS | Website](cpos.plos-clan.org) 查看贡献者列表

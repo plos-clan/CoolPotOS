@@ -162,9 +162,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_pcb->virt_queue  = queue_copy(current_pcb->virt_queue, virt_copy);
     new_pcb->mmap_start  = current_pcb->mmap_start;
     new_pcb->file_open   = queue_copy(current_pcb->file_open, file_copy);
-    new_pcb->queue_index = lock_queue_enqueue(pgb_queue, new_pcb);
+    new_pcb->queue_index = queue_enqueue(pgb_queue, new_pcb);
     new_pcb->vfork       = is_vfork;
-    spin_unlock(pgb_queue->lock);
 
     tcb_t parent_task = get_current_task();
 
@@ -215,9 +214,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->fs_base       = parent_task->fs_base;
 
     new_task->parent_group = new_pcb;
-    new_task->group_index  = lock_queue_enqueue(new_pcb->pcb_queue, new_task);
-    spin_unlock(new_pcb->pcb_queue->lock);
-    new_task->pid = now_tid++;
+    new_task->group_index  = queue_enqueue(new_pcb->pcb_queue, new_task);
+    new_task->pid          = now_tid++;
 
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
@@ -228,7 +226,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     if (is_vfork) {
         int npid = new_pcb->pgb_id;
-        waitpid(npid);
+        int status;
+        waitpid(npid, &status);
     }
 
     return new_pcb->pgb_id;

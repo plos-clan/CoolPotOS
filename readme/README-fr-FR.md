@@ -101,6 +101,7 @@ Utilise le chargeur d'amorçage Limine.
 - [ ] Pilotes PCNET et RTL8169
 - [x] Pilotes SB16 et PCSpeaker
 - [ ] Pilote TTY
+- [x] Pilote SATA/SATAPI
 
 ## Contribution
 
@@ -108,18 +109,4 @@ Vous êtes invité à créer des demandes de tirage ou à signaler des problème
 
 ### Contributeurs
 
-- XIAOYI12 - Développeur du système d'exploitation
-- min0911Y - Développeur du système de fichiers
-- copi143 - Développeur du tas utilisateur
-- QtLittleXu - Documentation XuYuxuan OS
-- ViudiraTech - Optimisation du pilote PCI
-- Vinbe Wan - Développeur IIC
-- A4-Tacks - Écriture de scripts de construction
-- wenxuanjun(blurryrect) - Développeur du système d'exploitation
-- Minsecrus - Optimisation de l'utilisation de la mémoire
-- CLimber-Rong - Développeur logiciel
-- shiyu - Débogueur et rédacteur de commentaires
-- 27Onion - Traduction du README en français
-- LY-Xiang - Optimisation du processus des actions
-- suhuajun-github - Correction de plusieurs bogues dans le pilote AHCI
-- FengHeting - Développeur du pilote SMBIOS
+* Allez sur [CoolPotOS | Site web](cpos.plos-clan.org) pour voir la liste des contributeurs.
