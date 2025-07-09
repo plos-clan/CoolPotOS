@@ -1,9 +1,4 @@
 #include "fpu.h"
-#include "io.h"
-#include "isr.h"
-#include "kprint.h"
-#include "krlibc.h"
-#include "pcb.h"
 
 static inline void enable_sse() {
     __asm__ volatile("movq %cr0, %rax\n\t"

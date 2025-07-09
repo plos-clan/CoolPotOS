@@ -15,6 +15,16 @@
 #include "time.h"
 #include "vfs.h"
 
+size_t list_length(list_t list) {
+    size_t count   = 0;
+    list_t current = list;
+    while (current != NULL) {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
 extern lock_queue *pgb_queue;
 
 USED uint64_t get_kernel_stack() {
@@ -157,12 +167,23 @@ syscall_(exit) {
 }
 
 syscall_(open) {
-    char    *path  = (char *)arg0;
+    char    *path0 = (char *)arg0;
     uint64_t flags = arg1;
-    if (path == NULL) return SYSCALL_FAULT_(EINVAL);
-    logkf("syscall open: %s\n", path);
+    if (path0 == NULL) return SYSCALL_FAULT_(EINVAL);
 
-    vfs_node_t node = vfs_open(path);
+    char *s = path0;
+    char *path;
+    if (s[0] == '/') {
+        path = strdup(s);
+    } else {
+        path = pathacat(get_current_task()->parent_group->cwd, s);
+    }
+    char *normalized_path = normalize_path(path);
+    free(path);
+
+    logkf("syscall open: %s\n", normalized_path);
+
+    vfs_node_t node = vfs_open(normalized_path);
     if (node == NULL) {
         if (flags & O_CREAT) {
             vfs_mkfile(path);
@@ -170,7 +191,8 @@ syscall_(open) {
             if (node == NULL) goto err;
         } else
         err:
-            return SYSCALL_FAULT_(ENOENT);
+            free(normalized_path);
+        return SYSCALL_FAULT_(ENOENT);
     }
     fd_file_handle *fd_handle = malloc(sizeof(fd_handle));
     fd_handle->offset         = 0;
@@ -182,8 +204,10 @@ syscall_(open) {
         logkf("syscall open: %s failed.\n", path);
         vfs_close(node);
         free(fd_handle);
+        free(normalized_path);
         return SYSCALL_FAULT_(ENOENT);
     }
+    free(normalized_path);
     return index;
 }
 
@@ -988,6 +1012,103 @@ syscall_(reboot) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(getdents) {
+    int      fd   = arg0;
+    uint64_t buf  = arg1;
+    size_t   size = arg2;
+    if (check_user_overflow(buf, size)) { return SYSCALL_FAULT_(EFAULT); }
+    fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
+    if (handle == NULL) return SYSCALL_FAULT_(EBADF);
+    if (handle->node->type != file_dir) { return SYSCALL_FAULT_(ENOTDIR); }
+    size_t         child_count   = (uint64_t)list_length(handle->node->child);
+    struct dirent *dents         = (struct dirent *)buf;
+    int64_t        max_dents_num = size / sizeof(struct dirent);
+    int64_t        read_count    = 0;
+    uint64_t       offset        = 0;
+    list_foreach(handle->node->child, i) {
+        if (offset < handle->offset) goto next;
+        if (handle->offset >= (child_count * sizeof(struct dirent))) break;
+        if (read_count >= max_dents_num) break;
+        vfs_node_t child_node      = (vfs_node_t)i->data;
+        dents[read_count].d_ino    = 0;
+        dents[read_count].d_off    = handle->offset;
+        dents[read_count].d_reclen = sizeof(struct dirent);
+        if (child_node->type & file_symlink)
+            dents[read_count].d_type = DT_LNK;
+        else if (child_node->type & file_none)
+            dents[read_count].d_type = DT_REG;
+        else if (child_node->type & file_dir)
+            dents[read_count].d_type = DT_DIR;
+        else
+            dents[read_count].d_type = DT_UNKNOWN;
+        strncpy(dents[read_count].d_name, child_node->name, 1024);
+        handle->offset += sizeof(struct dirent);
+        read_count++;
+    next:
+        offset += sizeof(struct dirent);
+    }
+    return read_count * sizeof(struct dirent);
+}
+
+syscall_(newfstatat) {
+    int          dirfd    = arg0;
+    char        *pathname = (char *)arg1;
+    struct stat *buf      = (struct stat *)arg2;
+    uint64_t     flags    = arg3;
+
+    char *resolved = at_resolve_pathname(dirfd, (char *)pathname);
+
+    uint64_t ret = syscall_stat((uint64_t)resolved, (uint64_t)buf, 0, 0, 0, 0, 0);
+
+    free(resolved);
+
+    return ret;
+}
+
+syscall_(statx) {
+    int           dirfd    = arg0;
+    char         *pathname = (char *)arg1;
+    uint64_t      flags    = arg2;
+    uint64_t      mask     = arg3;
+    struct statx *buff     = (struct statx *)arg4;
+    if (!pathname || check_user_overflow((uint64_t)pathname, strlen(pathname))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (!buff || check_user_overflow((uint64_t)buff, sizeof(struct statx))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    struct stat simple;
+    memset(&simple, 0, sizeof(struct stat));
+    uint64_t ret = syscall_newfstatat(dirfd, (uint64_t)pathname, (uint64_t)&simple, flags, 0, 0, 0);
+    if ((int64_t)ret < 0) return ret;
+
+    buff->stx_mask            = mask;
+    buff->stx_blksize         = simple.st_blksize;
+    buff->stx_attributes      = 0;
+    buff->stx_nlink           = simple.st_nlink;
+    buff->stx_uid             = simple.st_uid;
+    buff->stx_gid             = simple.st_gid;
+    buff->stx_mode            = simple.st_mode;
+    buff->stx_ino             = simple.st_ino;
+    buff->stx_size            = simple.st_size;
+    buff->stx_blocks          = simple.st_blocks;
+    buff->stx_attributes_mask = 0;
+
+    buff->stx_atime.tv_sec  = simple.st_atim.tv_sec;
+    buff->stx_atime.tv_nsec = simple.st_atim.tv_nsec;
+
+    buff->stx_btime.tv_sec  = simple.st_ctim.tv_sec;
+    buff->stx_btime.tv_nsec = simple.st_ctim.tv_nsec;
+
+    buff->stx_ctime.tv_sec  = simple.st_ctim.tv_sec;
+    buff->stx_ctime.tv_nsec = simple.st_ctim.tv_nsec;
+
+    buff->stx_mtime.tv_sec  = simple.st_mtim.tv_sec;
+    buff->stx_mtime.tv_nsec = simple.st_mtim.tv_nsec;
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1039,6 +1160,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_PSELECT6]    = syscall_pselect6,
     [SYSCALL_SELECT]      = syscall_select,
     [SYSCALL_REBOOT]      = syscall_reboot,
+    [SYSCALL_GETDENTS64]  = syscall_getdents,
+    [SYSCALL_STATX]       = syscall_statx,
+    [SYSCALL_NEWFSTATAT]  = syscall_newfstatat,
 };
 // clang-format on
 

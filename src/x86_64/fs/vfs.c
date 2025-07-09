@@ -235,6 +235,7 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
 
 int vfs_close(vfs_node_t node) {
     if (node == NULL) return VFS_STATUS_FAILED;
+    if (node == rootdir) return VFS_STATUS_SUCCESS;
     if (node->handle == NULL) return 0;
     callbackof(node, close)(node->handle);
     node->handle = NULL;
@@ -342,6 +343,71 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
     if (ret < 0) return (void *)-ENOMEM;
 
     return (void *)addr;
+}
+
+spin_t get_path_lock = SPIN_INIT;
+
+// 使用请记得free掉返回的buff
+char *vfs_get_fullpath(vfs_node_t node) {
+    if (node == NULL) return NULL;
+    int inital = 32;
+    spin_lock(get_path_lock);
+    vfs_node_t *nodes = (vfs_node_t *)malloc(sizeof(vfs_node_t) * inital);
+    int         count = 0;
+    for (vfs_node_t cur = node; cur; cur = cur->parent) {
+        if (count >= inital) {
+            inital *= 2;
+            nodes   = (vfs_node_t *)realloc((void *)nodes, (size_t)(sizeof(vfs_node_t) * inital));
+        }
+        nodes[count++] = cur;
+    }
+    // 正常的路径都不应该超过这个数值
+    char *buff = (char *)malloc(256);
+    strcpy(buff, "/");
+    for (int j = count - 1; j >= 0; j--) {
+        if (nodes[j] == rootdir) continue;
+        strcat(buff, nodes[j]->name);
+        if (j != 0) strcat(buff, "/");
+    }
+    free(nodes);
+    spin_unlock(get_path_lock);
+    return buff;
+}
+
+char *at_resolve_pathname(int dirfd, char *pathname) {
+    if (pathname[0] == '/') { // by absolute pathname
+        return strdup(pathname);
+    } else if (pathname[0] != '/') {
+        if (dirfd == AT_FDCWD) { // relative to cwd
+            return strdup(pathname);
+        } else { // relative to dirfd, resolve accordingly
+            vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, dirfd);
+            if (!node) return NULL;
+            if (node->type != file_dir) return NULL;
+
+            char *dirname = vfs_get_fullpath(node);
+
+            char *prefix = vfs_get_fullpath(node->root);
+
+            int prefixLen   = strlen(prefix);
+            int rootDirLen  = strlen(dirname);
+            int pathnameLen = strlen(pathname) + 1;
+
+            char *out = malloc(prefixLen + rootDirLen + 1 + pathnameLen + 1);
+
+            memcpy(out, prefix, prefixLen);
+            memcpy(&out[prefixLen], dirname, rootDirLen);
+            out[prefixLen + rootDirLen] = '/';
+            memcpy(&out[prefixLen + rootDirLen + 1], pathname, pathnameLen);
+
+            free(dirname);
+            free(prefix);
+
+            return out;
+        }
+    }
+
+    return NULL;
 }
 
 bool vfs_init() {
