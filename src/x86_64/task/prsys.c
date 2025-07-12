@@ -170,17 +170,16 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
     if (new_task == NULL) return SYSCALL_FAULT_(ENOMEM);
     memset(new_task, 0, sizeof(struct thread_control_block));
-    new_task->task_level      = TASK_APPLICATION_LEVEL;
-    new_task->cpu_clock       = 0;
-    new_task->cpu_timer       = 0;
-    new_task->mem_usage       = get_all_memusage();
-    new_task->cpu_id          = cpu->id;
-    new_task->status          = START;
-    new_task->user_stack      = parent_task->user_stack;
-    new_task->user_stack_top  = parent_task->user_stack_top;
-    new_task->context0.rflags = reg->rflags;
-    new_task->kernel_stack    = ((uint64_t)new_task) + STACK_SIZE;
-    new_task->main            = parent_task->main;
+    new_task->task_level     = TASK_APPLICATION_LEVEL;
+    new_task->cpu_clock      = 0;
+    new_task->cpu_timer      = 0;
+    new_task->mem_usage      = get_all_memusage();
+    new_task->cpu_id         = cpu->id;
+    new_task->status         = START;
+    new_task->user_stack     = parent_task->user_stack;
+    new_task->user_stack_top = parent_task->user_stack_top;
+    new_task->kernel_stack   = ((uint64_t)new_task) + STACK_SIZE;
+    new_task->main           = parent_task->main;
     strcpy(new_task->name, parent_task->name);
 
     new_task->context0.rip    = reg->rcx; // syscall 指令中 rcx 寄存器为 rip
