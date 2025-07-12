@@ -171,23 +171,15 @@ syscall_(open) {
     uint64_t flags = arg1;
     if (path0 == NULL) return SYSCALL_FAULT_(EINVAL);
 
-    char *s = path0;
-    char *path;
-    if (s[0] == '/') {
-        path = strdup(s);
-    } else {
-        path = pathacat(get_current_task()->parent_group->cwd, s);
-    }
-    char *normalized_path = normalize_path(path);
-    free(path);
+    char *normalized_path = vfs_cwd_path_build(path0);
 
     logkf("syscall open: %s\n", normalized_path);
 
     vfs_node_t node = vfs_open(normalized_path);
     if (node == NULL) {
         if (flags & O_CREAT) {
-            vfs_mkfile(path);
-            node = vfs_open(path);
+            vfs_mkfile(normalized_path);
+            node = vfs_open(normalized_path);
             if (node == NULL) goto err;
         } else
         err:
@@ -201,7 +193,7 @@ syscall_(open) {
     fd_handle->fd = index;
     spin_unlock(get_current_task()->parent_group->file_open->lock);
     if (index == -1) {
-        logkf("syscall open: %s failed.\n", path);
+        logkf("syscall open: %s failed.\n", normalized_path);
         vfs_close(node);
         free(fd_handle);
         free(normalized_path);
@@ -338,7 +330,8 @@ syscall_(stat) {
     char        *fn  = (char *)arg0;
     struct stat *buf = (struct stat *)arg1;
     if (fn == NULL || buf == NULL) return SYSCALL_FAULT_(EINVAL);
-    vfs_node_t node = vfs_open(fn);
+    char      *path = vfs_cwd_path_build(fn);
+    vfs_node_t node = vfs_open(path);
     if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
     buf->st_gid   = (int)node->group;
     buf->st_uid   = (int)node->owner;
@@ -351,6 +344,7 @@ syscall_(stat) {
                                   : node->type == file_stream ? S_IFCHR
                                                               : 0);
     buf->st_nlink = 1;
+    free(path);
     return node->size;
 }
 
@@ -555,7 +549,7 @@ syscall_(poll) {
         // 检查每个文件描述符
         size_t i = 0;
         queue_foreach(get_current_task()->parent_group->file_open, node0) {
-            if (i > nfds) break;
+            if (i >= nfds) break;
             fd_file_handle *handle = (fd_file_handle *)node0->data;
             vfs_node_t      node   = handle->node;
             if (fs_callbacks[node->fsid]->poll == (void *)empty) {
@@ -905,7 +899,8 @@ syscall_(select) {
     }
     size_t         complength = sizeof(struct pollfd);
     struct pollfd *comp       = (struct pollfd *)malloc(complength);
-    size_t         compIndex  = 0;
+    memset(comp, 0, complength);
+    size_t compIndex = 0;
     if (read) {
         for (int i = 0; i < nfds; i++) {
             if (select_bitmap(read, i)) select_add(&comp, &compIndex, &complength, i, POLLIN);
@@ -923,14 +918,21 @@ syscall_(select) {
         }
     }
 
-    int toZero = (nfds + 8) / 8;
+    //int toZero = (nfds + 8) / 8;
+    int toZero = (nfds + 7) / 8;
     if (read) memset(read, 0, toZero);
     if (write) memset(write, 0, toZero);
     if (except) memset(except, 0, toZero);
 
-    size_t res = syscall_poll(
-        (uint64_t)comp, compIndex,
-        timeout ? (timeout->tv_sec * 1000 + (timeout->tv_usec + 1000) / 1000) : -1, 0, 0, 0, 0);
+    size_t time = 0;
+    if (timeout == NULL) {
+        time = -1;
+    } else if (timeout->tv_sec == -1 || timeout->tv_usec == -1) {
+        time = -1;
+    } else
+        time = (timeout->tv_sec * 1000 + (timeout->tv_usec + 1000) / 1000);
+
+    size_t res = syscall_poll((uint64_t)comp, compIndex, time, 0, 0, 0, 0);
 
     if ((int64_t)res < 0) {
         free(comp);
@@ -948,8 +950,7 @@ syscall_(select) {
             select_bitmap_set(write, comp[i].fd);
             verify++;
         }
-        if ((comp[i].events & POLLPRI && comp[i].revents & POLLPRI) ||
-            (comp[i].events & POLLERR && comp[i].revents & POLLERR)) {
+        if ((comp[i].events & POLLPRI && comp[i].revents & POLLPRI)) {
             select_bitmap_set(except, comp[i].fd);
             verify++;
         }
@@ -1022,8 +1023,8 @@ syscall_(getdents) {
     if (handle->node->type != file_dir) { return SYSCALL_FAULT_(ENOTDIR); }
     size_t         child_count   = (uint64_t)list_length(handle->node->child);
     struct dirent *dents         = (struct dirent *)buf;
-    int64_t        max_dents_num = size / sizeof(struct dirent);
-    int64_t        read_count    = 0;
+    size_t         max_dents_num = size / sizeof(struct dirent);
+    size_t         read_count    = 0;
     uint64_t       offset        = 0;
     list_foreach(handle->node->child, i) {
         if (offset < handle->offset) goto next;
@@ -1041,7 +1042,7 @@ syscall_(getdents) {
             dents[read_count].d_type = DT_DIR;
         else
             dents[read_count].d_type = DT_UNKNOWN;
-        strncpy(dents[read_count].d_name, child_node->name, 1024);
+        strncpy(dents[read_count].d_name, child_node->name, 256);
         handle->offset += sizeof(struct dirent);
         read_count++;
     next:
@@ -1163,6 +1164,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETDENTS64]  = syscall_getdents,
     [SYSCALL_STATX]       = syscall_statx,
     [SYSCALL_NEWFSTATAT]  = syscall_newfstatat,
+    [SYSCALL_LSTAT]       = syscall_stat,
 };
 // clang-format on
 

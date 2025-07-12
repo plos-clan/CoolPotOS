@@ -78,12 +78,14 @@ int del_env(const char *key) {
     return -1;
 }
 
+/*
 void user_setup() {
     kernel_user = (ucb_t)malloc(sizeof(struct user_control_block));
     if (kernel_user == NULL) {
         kerror("Kernel user malloc failed.");
         loop __asm__ volatile("hlt");
     }
+    user_envp = malloc(sizeof(char *) * 10);
     strcpy(kernel_user->name, "Kernel");
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;
@@ -96,4 +98,23 @@ void user_setup() {
     char buf[20];
     sprintf(buf, "USER=%s", kernel_user->name);
     add_env(buf);
+}
+*/
+void user_setup() {
+    kernel_user = (ucb_t)malloc(sizeof(struct user_control_block));
+    if (kernel_user == NULL) {
+        kerror("Kernel user malloc failed.");
+        loop __asm__ volatile("hlt");
+    }
+    strcpy(kernel_user->name, "Kernel");
+    kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
+
+    add_env("HOME=/root");
+    add_env("HOSTTYPE=x86_64");
+    add_env("USER=root");
+
+    kernel_user->uid              = user_id_index++;
+    kernel_user->permission_level = Kernel;
+    kernel_user->envc             = user_envc;
+    kernel_user->envp             = user_envp;
 }

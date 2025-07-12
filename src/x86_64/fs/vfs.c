@@ -410,6 +410,19 @@ char *at_resolve_pathname(int dirfd, char *pathname) {
     return NULL;
 }
 
+char *vfs_cwd_path_build(char *src) {
+    char *s = src;
+    char *path;
+    if (s[0] == '/') {
+        path = strdup(s);
+    } else {
+        path = pathacat(get_current_task()->parent_group->cwd, s);
+    }
+    char *normalized_path = normalize_path(path);
+    free(path);
+    return normalized_path;
+}
+
 bool vfs_init() {
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         ((void **)&vfs_empty_callback)[i] = (void *)empty_func;

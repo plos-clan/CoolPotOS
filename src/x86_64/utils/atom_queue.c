@@ -22,6 +22,7 @@ bool atom_push(atom_queue *queue, uint8_t data) {
     if (next == load(&queue->tail)) return false;
     *(&queue->buf[head]) = data;
     store(&queue->head, next);
+    queue->size++;
     return true;
 }
 
@@ -31,6 +32,7 @@ int atom_pop(atom_queue *queue) {
     if (tail == load(&queue->head)) return -1;
     uint8_t data = queue->buf[tail];
     store(&queue->tail, (((uint64_t)(tail + 1U)) & queue->mask));
+    queue->size--;
     return (int)data;
 }
 
@@ -67,6 +69,7 @@ bool atom_push_mpmc(atom_queue_mpmc *queue, uint8_t data) {
         if (next == tail) { return false; }
         if (cas(&queue->head, head, next)) {
             queue->buf[head] = data;
+            queue->size++;
             return true;
         }
     }
@@ -81,6 +84,7 @@ int atom_pop_mpmc(atom_queue_mpmc *queue) {
         uint64_t next = (tail + 1) & queue->mask;
         if (cas(&queue->tail, tail, next)) {
             uint8_t data = queue->buf[tail];
+            queue->size--;
             return data;
         }
     }

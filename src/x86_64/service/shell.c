@@ -669,6 +669,19 @@ _Noreturn void shell_setup() {
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
+    /***************** debug *******************/
+    {
+        int   argc    = 3;
+        char *argv[3] = {"mount", "/dev/part1", "/"};
+        mount(argc, argv);
+    }
+    {
+        int   argc    = 2;
+        char *argv[2] = {"exec", "/usr/bin/bash"};
+        exec(argc, argv);
+    }
+    /***************** debug *******************/
+
     loop {
         char *template = "\033[01;32m%s\033[0m@\033[01;32mlocalhost: \033[34m%s>\033[0m ";
         sprintf(prompt, template, user_name, shell_process->cwd);

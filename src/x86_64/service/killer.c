@@ -9,6 +9,7 @@ extern lock_queue *pgb_queue;
 
 _Noreturn void halt_service() {
     loop {
+        open_interrupt;
         __asm__ volatile("hlt");
         if (!cpu->ready) continue;
         tcb_t task = NULL;
