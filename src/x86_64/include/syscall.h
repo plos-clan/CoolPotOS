@@ -191,6 +191,7 @@ typedef struct {
     vfs_node_t node;
     size_t     offset;
     size_t     fd;
+    uint64_t   flags;
 } fd_file_handle;
 
 typedef struct {

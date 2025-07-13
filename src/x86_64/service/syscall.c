@@ -1203,13 +1203,13 @@ USED void syscall_handler(struct syscall_regs *regs,
     thread->context0.rbp    = regs->rbp;
 
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
-    logkf("syscall start: %d P(%s) id:%d\n", syscall_id, thread->name, thread->pid);
+    // logkf("syscall start: %d P(%s) id:%d\n", syscall_id, thread->name, thread->pid);
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
     } else
         regs->rax = SYSCALL_FAULT;
-    logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
+    // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
     write_fsbase(thread->fs_base);
 }
 

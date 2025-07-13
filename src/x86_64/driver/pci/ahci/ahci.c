@@ -96,6 +96,22 @@ void __hba_reset_port(hba_reg_t *port_reg) {
     port_reg[HBA_RPxSCTL] &= ~0xf;
 }
 
+int hba_bind_vbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, struct vecbuf *vbuf) {
+    size_t         i   = 0;
+    struct vecbuf *pos = vbuf;
+
+    do {
+        cmdt->entries[i++] = (struct hba_prdte){
+            .data_base  = (uint64_t)driver_virt_to_phys((uint64_t)pos->buf.buffer),
+            .byte_count = pos->buf.size - 1};
+        pos = list_entry(pos->components.next, struct vecbuf, components);
+    } while (pos != vbuf);
+
+    cmdh->prdt_len = i + 1;
+
+    return 0;
+}
+
 int hba_bind_sbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, void *buf, uint32_t len) {
     if (len > 0x400000UL) {
         printk("AHCI buffer too large\n");

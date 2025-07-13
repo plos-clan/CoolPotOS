@@ -511,6 +511,14 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     return new_task->pid;
 }
 
+int task_block(tcb_t thread, TaskStatus state, int timeout_ms) {
+    UNUSED(timeout_ms);
+    thread->status = state;
+    if (get_current_task()->pid == thread->pid) { __asm__("pause"); }
+    close_interrupt;
+    return thread->status;
+}
+
 void init_pcb() {
     pcb_lock       = SPIN_INIT;
     scheduler_lock = SPIN_INIT;

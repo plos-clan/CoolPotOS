@@ -151,6 +151,7 @@
     })
 
 #include "ctype.h"
+#include "vbuffer.h"
 
 typedef uint32_t hba_reg_t;
 
@@ -302,6 +303,7 @@ void ahci_parse_dev_info(struct hba_device *dev_info, uint16_t *data);
 int  __get_free_slot(struct hba_port *port);
 int  hba_prepare_cmd(struct hba_port *port, struct hba_cmdt **cmdt, struct hba_cmdh **cmdh);
 void __hba_reset_port(hba_reg_t *port_reg);
+int  hba_bind_vbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, struct vecbuf *vbuf);
 int  hba_bind_sbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, void *buf, uint32_t len);
 void sata_create_fis(struct sata_reg_fis *cmd_fis, uint8_t command, uint64_t lba,
                      uint16_t sector_count);
