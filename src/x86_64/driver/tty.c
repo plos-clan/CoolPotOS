@@ -3,6 +3,7 @@
 #include "gop.h"
 #include "ioctl.h"
 #include "keyboard.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -47,8 +48,10 @@ static void tty_kernel_putc(tty_t *tty, int c) {
         spin_lock(tty_lock);
         if (c == '\n') {
             terminal_process_byte('\r');
+            logk("\r");
             update_terminal();
         }
+        logkf("%c", c);
         terminal_process_byte(c);
         spin_unlock(tty_lock);
     }

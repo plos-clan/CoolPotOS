@@ -301,6 +301,8 @@ void futex_wake(void *phys_addr, int count);
  */
 void futex_free(tcb_t thread);
 
+int task_block(tcb_t thread, TaskStatus state, int timeout_ms);
+
 void init_pcb();
 void futex_init();
 

@@ -169,7 +169,7 @@ int fatfs_mount(const char *src, vfs_node_t node) {
     // node->inode  = ino++;
     node->handle = f;
     // node->blksz  = DEFAULT_PAGE_SIZE;
-    return 0;
+    return VFS_STATUS_SUCCESS;
 }
 
 void fatfs_unmount(void *root) {

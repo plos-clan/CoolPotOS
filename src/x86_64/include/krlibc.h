@@ -3,7 +3,7 @@
 /**
  * 定义CP_Kernel内核的各种属性
  */
-#define KERNEL_NAME           "CP_Kernel-x86_64-0.3.1" // 内核编号
+#define KERNEL_NAME           "CP_Kernel-x86_64-0.3.2" // 内核编号
 #define MAX_CPU               256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START     0xffff900000000000       // 内核堆起始地址
 #define KERNEL_HEAP_SIZE      0x2000000                // 内核堆大小 32MB
@@ -22,7 +22,9 @@
 #define DEVFS_REGISTER_ID     0                        // 设备文件系统注册ID
 #define MODFS_REGISTER_ID     1                        // 模块文件系统注册ID
 #define TMPFS_REGISTER_ID     2                        // 临时文件系统注册ID
+#define PIEFS_REGISTER_ID     3                        // 管道文件系统注册ID
 #define LAPIC_TIMER_SPEED     50                       // LAPIC定时器速度(单位: Hz)
+#define PIPE_BUFF             8192                     // 管道缓冲区大小
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")
@@ -45,6 +47,16 @@
         const char *_s1 = (s1), *_s2 = (s2);                                                       \
         (_s1 && _s2) ? strcmp(_s1, _s2) == 0 : _s1 == _s2;                                         \
     })
+
+#define container_of(ptr, type, member)                                                            \
+    ({                                                                                             \
+        uint64_t __mptr = ((uint64_t)(ptr));                                                       \
+        (type *)((char *)__mptr - offsetof(type, member));                                         \
+    })
+
+#define ABS(x)    ((x) > 0 ? (x) : -(x))
+#define MAX(x, y) ((x > y) ? (x) : (y))
+#define MIN(x, y) ((x < y) ? (x) : (y))
 
 #include "ctype.h"
 #include "limits.h"

@@ -20,7 +20,7 @@ int tmpfs_mount(const char *handle, vfs_node_t node) {
     tmpfs_root->child_count = 0;
     tmpfs_root->ready       = true;
     node->handle            = tmpfs_root;
-    return 0;
+    return VFS_STATUS_SUCCESS;
 }
 
 void tmpfs_open(void *parent, const char *name, vfs_node_t node) {

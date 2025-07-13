@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "hhdm.h"
 #include "kprint.h"
+#include "page.h"
 
 void sata_read_error(struct hba_port *port) {
     printk("SATA read error\n");
@@ -19,7 +20,11 @@ void sata_submit(struct hba_device *dev, struct blkio_req *io_req) {
 
     int write = !!(io_req->flags & BLKIO_WRITE);
     int slot  = hba_prepare_cmd(port, &table, &header);
-    hba_bind_sbuf(header, table, (void *)io_req->buf, io_req->len);
+
+    struct vecbuf *vbuf = NULL;
+    vbuf_chunkify(&vbuf, (void *)(uintptr_t)io_req->buf, (size_t)io_req->len, PAGE_SIZE);
+    hba_bind_vbuf(header, table, vbuf);
+    vbuf_free(vbuf);
 
     header->options |= HBA_CMDH_WRITE * write;
 

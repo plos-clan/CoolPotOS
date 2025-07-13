@@ -62,6 +62,7 @@ void kmain();
 extern void  error_setup();    // error_handle.c
 extern void  iso9660_regist(); // iso9660.c
 extern void  fatfs_init();     // fatfs.c
+extern void  pipefs_setup();   // pipefs.c
 extern tcb_t kernel_head_task; // scheduler.c
 extern void  setup_urandom();  // urandom.c
 
@@ -108,6 +109,7 @@ void kmain() {
     vfs_init();
     tmpfs_setup();
     iso9660_regist();
+    // pipefs_setup();
     fatfs_init();
 
     vdisk_init();
