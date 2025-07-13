@@ -10,8 +10,10 @@
 #include "krlibc.h"
 #include "page.h"
 #include "pcb.h"
+#include "pipefs.h"
 #include "scheduler.h"
 #include "signal.h"
+#include "sprintf.h"
 #include "time.h"
 #include "vfs.h"
 
@@ -614,8 +616,14 @@ syscall_(dup2) {
     vfs_node_t new = vfs_dup(handle->node);
     if (!new) return SYSCALL_FAULT_(ENOSPC);
     fd_file_handle *new_node = queue_get(get_current_task()->parent_group->file_open, newfd);
-    if (new_node != NULL) { vfs_close(new_node->node); }
-    queue_enqueue_id(get_current_task()->parent_group->file_open, new, newfd);
+    if (new_node != NULL) {
+        vfs_close(new_node->node);
+        new_node->node = NULL;
+    }
+    new_node->node   = new;
+    new_node->offset = handle->offset;
+    new_node->flags  = handle->flags;
+    queue_enqueue_id(get_current_task()->parent_group->file_open, new_node, newfd);
     return newfd;
 }
 
@@ -626,9 +634,10 @@ syscall_(dup) {
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     vfs_node_t new             = vfs_dup(handle->node);
     fd_file_handle *new_handle = malloc(sizeof(fd_file_handle));
-    new_handle->offset         = 0;
+    new_handle->offset         = handle->offset;
     new_handle->node           = new;
-    return queue_enqueue(get_current_task()->parent_group->file_open, new_handle);
+    new_handle->flags          = handle->flags;
+    return new_handle->fd = queue_enqueue(get_current_task()->parent_group->file_open, new_handle);
 }
 
 syscall_(fcntl) {
@@ -1110,6 +1119,188 @@ syscall_(statx) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(pipe) {
+    int     *pipefd = (int *)arg0;
+    uint64_t flags  = arg1;
+
+    /* fs/pipefs.c */
+    extern vfs_node_t pipefs_root;
+    extern int        pipefd_id;
+    extern int        pipefs_id;
+
+    char buf[16];
+    sprintf(buf, "pipe%d", pipefd_id++);
+
+    vfs_node_t node_input = vfs_node_alloc(pipefs_root, buf);
+    node_input->type      = file_pipe;
+    node_input->fsid      = pipefs_id;
+    node_input->refcount++;
+    pipefs_root->mode = 0700;
+
+    sprintf(buf, "pipe%d", pipefd_id++);
+    vfs_node_t node_output = vfs_node_alloc(pipefs_root, buf);
+    node_output->type      = file_pipe;
+    node_output->fsid      = pipefs_id;
+    node_output->refcount++;
+    pipefs_root->mode = 0700;
+
+    pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));
+    memset(info, 0, sizeof(pipe_info_t));
+    info->read_fds            = 1;
+    info->write_fds           = 1;
+    info->blocking_read.next  = NULL;
+    info->blocking_write.next = NULL;
+    info->lock                = SPIN_INIT;
+    info->read_ptr            = 0;
+    info->write_ptr           = 0;
+    info->assigned            = 0;
+
+    pipe_specific_t *read_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
+    read_spec->write           = false;
+    read_spec->info            = info;
+    read_spec->node            = node_input;
+
+    pipe_specific_t *write_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
+    write_spec->write           = true;
+    write_spec->info            = info;
+    write_spec->node            = node_output;
+
+    node_input->handle  = read_spec;
+    node_output->handle = write_spec;
+
+    lock_queue     *queue     = get_current_task()->parent_group->file_open;
+    fd_file_handle *handle_in = malloc(sizeof(fd_file_handle));
+    handle_in->node           = node_input;
+    handle_in->offset         = 0;
+    handle_in->flags          = flags;
+    handle_in->fd             = queue_enqueue(queue, handle_in);
+
+    fd_file_handle *handle_out = malloc(sizeof(fd_file_handle));
+    handle_out->node           = node_output;
+    handle_out->offset         = 0;
+    handle_out->flags          = flags;
+    handle_out->fd             = queue_enqueue(queue, handle_in);
+
+    pipefd[0] = handle_in->fd;
+    pipefd[1] = handle_out->fd;
+
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(unlink) {
+    char *name = (char *)arg0;
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    vfs_node_t node = vfs_open(name);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (node->type != file_none && node->type != file_symlink) {
+        vfs_close(node);
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+    if (node->refcount > 0) {
+        node->refcount--;
+        return SYSCALL_SUCCESS;
+    } else
+        return vfs_delete(node) == VFS_STATUS_SUCCESS ? SYSCALL_SUCCESS : SYSCALL_FAULT_(ENOENT);
+}
+
+syscall_(rmdir) {
+    char *name = (char *)arg0;
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    vfs_node_t node = vfs_open(name);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (node->type != file_dir) {
+        vfs_close(node);
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+    if (node->refcount > 0) {
+        node->refcount--;
+        return SYSCALL_SUCCESS;
+    } else
+        return vfs_delete(node) == VFS_STATUS_SUCCESS ? SYSCALL_SUCCESS : SYSCALL_FAULT_(ENOENT);
+}
+
+syscall_(unlinkat) {
+    int   dirfd = (int)arg0;
+    char *name  = (char *)arg1;
+    if (check_user_overflow((uint64_t)name, strlen(name))) { return (uint64_t)-EFAULT; }
+    char *path = at_resolve_pathname(dirfd, (char *)name);
+    if (!path) return -ENOENT;
+
+    uint64_t ret = syscall_unlink((uint64_t)path, 0, 0, 0, 0, 0, regs);
+
+    free(path);
+
+    return ret;
+}
+
+syscall_(access) {
+    char       *filename = (char *)arg0;
+    struct stat buf;
+    return syscall_stat((uint64_t)filename, (uint64_t)&buf, 0, 0, 0, 0, regs);
+}
+
+syscall_(faccessat) {
+    int      dirfd    = arg0;
+    char    *pathname = (char *)arg1;
+    uint64_t mode     = arg2;
+    if (pathname[0] == '\0') { // by fd
+        return 0;
+    }
+    if (check_user_overflow((uint64_t)pathname, strlen(pathname))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    char *resolved = at_resolve_pathname(dirfd, (char *)pathname);
+    if (resolved == NULL) return SYSCALL_FAULT_(ENOENT);
+
+    size_t ret = syscall_access((uint64_t)resolved, mode, 0, 0, 0, 0, regs);
+
+    free(resolved);
+
+    return ret;
+}
+
+syscall_(faccessat2) {
+    uint64_t dirfd    = arg0;
+    char    *pathname = (char *)arg1;
+    uint64_t mode     = arg2;
+    uint64_t flag     = arg3;
+    if (pathname[0] == '\0') { // by fd
+        return 0;
+    }
+    if (check_user_overflow((uint64_t)pathname, strlen(pathname))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    char *resolved = at_resolve_pathname(dirfd, (char *)pathname);
+    if (resolved == NULL) return SYSCALL_FAULT_(ENOENT);
+
+    size_t ret = syscall_access((uint64_t)resolved, mode, 0, 0, 0, 0, regs);
+
+    free(resolved);
+
+    return ret;
+}
+
+syscall_(openat) {
+    int      dirfd = arg0;
+    char    *name  = (char *)arg1;
+    uint64_t flags = arg2;
+    uint64_t mode  = arg3;
+
+    if (!name || check_user_overflow((uint64_t)name, strlen(name))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    char *path = at_resolve_pathname(dirfd, (char *)name);
+    if (!path) return SYSCALL_FAULT_(ENOMEM);
+
+    uint64_t ret = syscall_open((uint64_t)path, flags, mode, 0, 0, 0, regs);
+
+    free(path);
+
+    return ret;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1165,6 +1356,15 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_STATX]       = syscall_statx,
     [SYSCALL_NEWFSTATAT]  = syscall_newfstatat,
     [SYSCALL_LSTAT]       = syscall_stat,
+    [SYSCALL_PIPE]        = syscall_pipe,
+    [SYSCALL_PIPE2]       = syscall_pipe,
+    [SYSCALL_UNLINK]      = syscall_unlink,
+    [SYSCALL_RMDIR]       = syscall_rmdir,
+    [SYSCALL_UNLINKAT]    = syscall_unlinkat,
+    [SYSCALL_FACCESSAT]   = syscall_faccessat,
+    [SYSCALL_FACCESSAT2]  = syscall_faccessat2,
+    [SYSCALL_ACCESS]      = syscall_access,
+    [SYSCALL_OPENAT]      = syscall_openat,
 };
 // clang-format on
 

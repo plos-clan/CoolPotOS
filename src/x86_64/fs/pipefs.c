@@ -5,6 +5,7 @@
 
 vfs_node_t pipefs_root;
 int        pipefs_id = 0;
+int        pipefd_id = 0;
 
 void wake_blocked_tasks(task_block_list_t *head) {
     task_block_list_t *current = head->next;
@@ -240,6 +241,7 @@ static struct vfs_callback pipefs_callbacks = {
     .stat    = (vfs_stat_t)empty,
     .ioctl   = (vfs_ioctl_t)pipefs_ioctl,
     .poll    = pipefs_poll,
+    .dup     = (vfs_dup_t)empty,
 };
 
 void pipefs_setup() {

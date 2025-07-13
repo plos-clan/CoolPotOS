@@ -361,7 +361,7 @@ void iso9660_close(file_t handle) {
 
 int iso9660_mount(const char *src, vfs_node_t node) {
     if (src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
-        ((uint64_t)src) == TMPFS_REGISTER_ID)
+        ((uint64_t)src) == TMPFS_REGISTER_ID || ((uint64_t)src) == PIEFS_REGISTER_ID)
         return VFS_STATUS_FAILED;
     vfs_node_t device = vfs_open(src);
     if (device == NULL || device->type == file_dir) { return VFS_STATUS_FAILED; }

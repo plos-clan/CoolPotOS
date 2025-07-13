@@ -135,7 +135,7 @@ bool fatfs_close(file_t handle) {
 int fatfs_mount(const char *src, vfs_node_t node) {
     // if (node == rootdir) return -1; // 不支持fatfs作为rootfs
     if (src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
-        ((uint64_t)src) == TMPFS_REGISTER_ID)
+        ((uint64_t)src) == TMPFS_REGISTER_ID || ((uint64_t)src) == PIEFS_REGISTER_ID)
         return VFS_STATUS_FAILED;
 
     int drive                   = alloc_number();
@@ -227,7 +227,11 @@ void *fatfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
 
 vfs_node_t fatfs_dup(vfs_node_t node) {
     vfs_node_t copy   = vfs_node_alloc(node->parent, node->name);
-    copy->handle      = node->handle;
+    file_t     src    = node->handle;
+    file_t     tar    = malloc(sizeof(struct file));
+    tar->path         = strdup(src->path);
+    tar->handle       = src->handle;
+    copy->handle      = tar;
     copy->type        = node->type;
     copy->size        = node->size;
     copy->linkname    = node->linkname == NULL ? NULL : strdup(node->linkname);

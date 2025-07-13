@@ -82,6 +82,7 @@ DRESULT disk_ioctl(byte  pdrv, /* Physical drive nmuber (0..) */
     case GET_SECTOR_SIZE: *(u16 *)buff = 512; return RES_OK;
     case GET_SECTOR_COUNT: *(u32 *)buff = Fdisk_size(pdrv + 0x41); return RES_OK;
     case GET_BLOCK_SIZE: *(u16 *)buff = 0; return RES_OK;
+    case CTRL_SYNC: return RES_OK;
     default: break;
     }
 

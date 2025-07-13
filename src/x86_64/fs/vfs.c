@@ -379,7 +379,7 @@ char *at_resolve_pathname(int dirfd, char *pathname) {
         return strdup(pathname);
     } else if (pathname[0] != '/') {
         if (dirfd == AT_FDCWD) { // relative to cwd
-            return strdup(pathname);
+            return vfs_cwd_path_build(pathname);
         } else { // relative to dirfd, resolve accordingly
             vfs_node_t node = queue_get(get_current_task()->parent_group->file_open, dirfd);
             if (!node) return NULL;
