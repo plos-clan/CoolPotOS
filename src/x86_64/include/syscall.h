@@ -5,7 +5,7 @@
 #define MSR_LSTAR        0xC0000082 // LSTAR MSR寄存器
 #define MSR_SYSCALL_MASK 0xC0000084
 
-#define MAX_SYSCALLS         400
+#define MAX_SYSCALLS         450
 #define SYSCALL_SUCCESS      EOK
 #define SYSCALL_FAULT        ((uint64_t)-(ENOSYS))
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
@@ -85,6 +85,8 @@
 #define SYSCALL_IOCTL       16
 #define SYSCALL_READV       19
 #define SYSCALL_WRITEV      20
+#define SYSCALL_ACCESS      21
+#define SYSCALL_PIPE        22
 #define SYSCALL_SELECT      23
 #define SYSCALL_YIELD       24
 #define SYSCALL_MREMAP      25
@@ -103,6 +105,8 @@
 #define SYSCALL_GETCWD      79
 #define SYSCALL_CHDIR       80
 #define SYSCALL_MKDIR       83
+#define SYSCALL_RMDIR       84
+#define SYSCALL_UNLINK      87
 #define SYSCALL_SIGSUSPEND  130
 #define SYSCALL_SIGALTSTACK 131
 #define SYSCALL_PRCTL       157
@@ -118,9 +122,14 @@
 #define SYSCALL_C_GETTIME   228
 #define SYSCALL_C_GETRES    229
 #define SYSCALL_C_NANOSLEEP 230
+#define SYSCALL_OPENAT      257
 #define SYSCALL_NEWFSTATAT  262
+#define SYSCALL_UNLINKAT    263
+#define SYSCALL_FACCESSAT   269
 #define SYSCALL_PSELECT6    270
+#define SYSCALL_PIPE2       293
 #define SYSCALL_STATX       332
+#define SYSCALL_FACCESSAT2  439
 
 #include "ctype.h"
 #include "krlibc.h"

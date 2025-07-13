@@ -109,7 +109,7 @@ void kmain() {
     vfs_init();
     tmpfs_setup();
     iso9660_regist();
-    // pipefs_setup();
+    pipefs_setup();
     fatfs_init();
 
     vdisk_init();
