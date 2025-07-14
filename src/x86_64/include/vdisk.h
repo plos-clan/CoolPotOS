@@ -22,8 +22,8 @@ typedef struct {
     char         drive_name[50];
 } vdisk; // 块设备
 
-uint32_t disk_size(int drive);
-int      vdisk_init();
+size_t disk_size(int drive);
+int    vdisk_init();
 
 /**
  * 注册一个硬盘设备

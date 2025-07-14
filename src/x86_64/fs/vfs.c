@@ -21,7 +21,8 @@ struct vfs_callback vfs_empty_callback;
 vfs_callback_t fs_callbacks[256] = {
     [0] = &vfs_empty_callback,
 };
-static int fs_nextid = 1;
+static int    fs_nextid      = 1;
+static size_t fs_inode_count = 1;
 
 #define callbackof(node, _name_) (fs_callbacks[(node)->fsid]->_name_)
 
@@ -205,6 +206,7 @@ void vfs_deinit() {
 }
 
 vfs_node_t vfs_dup(vfs_node_t node) {
+    node->refcount++;
     return callbackof(node, dup)(node);
 }
 
@@ -224,11 +226,15 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     not_null_assets(node, "vfs alloc null");
     if (node == NULL) return NULL;
     memset(node, 0, sizeof(struct vfs_node));
-    node->parent = parent;
-    node->name   = name ? strdup(name) : NULL;
-    node->type   = file_none;
-    node->fsid   = parent ? parent->fsid : 0;
-    node->root   = parent ? parent->root : node;
+    node->parent   = parent;
+    node->name     = name ? strdup(name) : NULL;
+    node->type     = file_none;
+    node->fsid     = parent ? parent->fsid : 0;
+    node->root     = parent ? parent->root : node;
+    node->refcount = 0;
+    node->blksz    = PAGE_SIZE;
+    node->mode     = 0777;
+    node->inode    = fs_inode_count++;
     if (parent) list_prepend(parent->child, node);
     return node;
 }
@@ -237,8 +243,12 @@ int vfs_close(vfs_node_t node) {
     if (node == NULL) return VFS_STATUS_FAILED;
     if (node == rootdir) return VFS_STATUS_SUCCESS;
     if (node->handle == NULL) return 0;
-    callbackof(node, close)(node->handle);
-    node->handle = NULL;
+    if (node->refcount > 0) {
+        node->refcount--;
+    } else {
+        callbackof(node, close)(node->handle);
+        node->handle = NULL;
+    }
     return VFS_STATUS_SUCCESS;
 }
 
