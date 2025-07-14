@@ -39,7 +39,9 @@ static int devfs_stat(void *handle, vfs_node_t node) {
     if (node->type == file_dir) return VFS_STATUS_SUCCESS;
     node->handle = rbtree_sp_get(dev_rbtree, node->name);
     node->type = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM ? file_stream : file_block;
-    node->size = disk_size((int)(uint64_t)node->handle);
+    node->size = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM
+                     ? (uint64_t)-1
+                     : disk_size((int)(uint64_t)node->handle);
     node->realsize = vdisk_ctl[(uint64_t)node->handle].sector_size;
     return VFS_STATUS_SUCCESS;
 }
@@ -48,7 +50,9 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     if (node->type == file_dir) return;
     node->handle = rbtree_sp_get(dev_rbtree, name);
     node->type = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM ? file_stream : file_block;
-    node->size = disk_size((int)(uint64_t)node->handle);
+    node->size = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM
+                     ? (uint64_t)-1
+                     : disk_size((int)(uint64_t)node->handle);
 }
 
 size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {

@@ -222,7 +222,9 @@ syscall_(write) {
     uint8_t        *buffer = (uint8_t *)arg1;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
-    return vfs_write(handle->node, buffer, handle->offset, arg2);
+    int ret = vfs_write(handle->node, buffer, handle->offset, arg2);
+    if (handle->node->size != (uint64_t)-1) handle->offset += arg2;
+    return ret;
 }
 
 syscall_(read) {
@@ -234,6 +236,7 @@ syscall_(read) {
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
     int ret = vfs_read(handle->node, buffer, handle->offset, arg2);
+    if (handle->node->size != (uint64_t)-1) handle->offset += arg2;
     return ret;
 }
 
@@ -347,7 +350,7 @@ syscall_(stat) {
                                                               : 0);
     buf->st_nlink = 1;
     free(path);
-    return node->size;
+    return SYSCALL_SUCCESS;
 }
 
 syscall_(clone) {
@@ -432,6 +435,7 @@ syscall_(writev) {
     ssize_t         total  = 0;
     for (int i = 0; i < iovcnt; i++) {
         int status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
+        if (handle->node->size != (uint64_t)-1) handle->offset += iov[i].iov_len;
         if (status == VFS_STATUS_FAILED) return total;
         total += iov[i].iov_len;
     }
@@ -451,6 +455,7 @@ syscall_(readv) {
     }
     uint8_t *buf    = (uint8_t *)malloc(buf_len);
     size_t   status = vfs_read(handle->node, buf, handle->offset, buf_len);
+    if (handle->node->size != (uint64_t)-1) handle->offset += buf_len;
     if (status == (size_t)VFS_STATUS_FAILED) {
         free(buf);
         return SYSCALL_FAULT_(EIO);
@@ -798,7 +803,7 @@ syscall_(fstat) {
     vfs_node_t node = handle->node;
     buf->st_gid     = (int)node->group;
     buf->st_uid     = (int)node->owner;
-    buf->st_size    = (long long int)node->size;
+    buf->st_size    = node->size == (uint64_t)-1 ? 0 : (long long int)node->size;
     buf->st_mode    = node->type | (node->type == file_symlink  ? S_IFLNK
                                     : node->type == file_dir    ? S_IFDIR
                                     : node->type == file_block  ? S_IFBLK
@@ -807,7 +812,13 @@ syscall_(fstat) {
                                     : node->type == file_stream ? S_IFCHR
                                                                 : 0);
     buf->st_nlink   = 1;
-    return node->size;
+    buf->st_dev = buf->st_rdev = 0;
+    buf->st_ctim = buf->st_atim = buf->st_ctim = buf->st_mtim = (struct timespec){
+        .tv_sec = node->createtime / 1000000000ULL, .tv_nsec = node->createtime % 1000000000ULL};
+    buf->st_blksize = PAGE_SIZE;
+    buf->st_blocks  = (node->size + PAGE_SIZE - 1) / PAGE_SIZE;
+    buf->st_ino     = 0;
+    return SYSCALL_SUCCESS;
 }
 
 syscall_(clock_gettime) {
@@ -1040,7 +1051,7 @@ syscall_(getdents) {
         if (handle->offset >= (child_count * sizeof(struct dirent))) break;
         if (read_count >= max_dents_num) break;
         vfs_node_t child_node      = (vfs_node_t)i->data;
-        dents[read_count].d_ino    = 0;
+        dents[read_count].d_ino    = child_node->inode;
         dents[read_count].d_off    = handle->offset;
         dents[read_count].d_reclen = sizeof(struct dirent);
         if (child_node->type & file_symlink)

@@ -135,6 +135,8 @@ struct vfs_node {           // vfs节点
     uint64_t   createtime;  // 创建时间
     uint64_t   readtime;    // 最后读取时间
     uint64_t   writetime;   // 最后写入时间
+    uint64_t   inode;       // 节点编号
+    uint64_t   blksz;       // 块大小
     uint32_t   owner;       // 所有者
     uint32_t   group;       // 所有组
     uint32_t   permissions; // 权限

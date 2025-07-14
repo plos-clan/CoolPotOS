@@ -24,7 +24,7 @@ bool have_vdisk(int drive) {
     }
 }
 
-uint32_t disk_size(int drive) {
+size_t disk_size(int drive) {
     uint8_t drive1 = drive;
     if (have_vdisk(drive1)) {
         int indx = drive1;
