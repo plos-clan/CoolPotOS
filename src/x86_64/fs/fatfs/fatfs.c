@@ -47,14 +47,6 @@ int fatfs_mkfile(void *parent, const char *name, vfs_node_t node) {
     return 0;
 }
 
-int fatfs_link(void *parent, const char *name, vfs_node_t node) {
-    return -ENOSYS;
-}
-
-int fatfs_symlink(void *parent, const char *name, vfs_node_t node) {
-    return -ENOSYS;
-}
-
 size_t fatfs_readfile(file_t file, void *addr, size_t offset, size_t size) {
     if (file == NULL || addr == NULL) return -1;
     FRESULT res;
@@ -99,6 +91,8 @@ void fatfs_open(void *parent, const char *name, vfs_node_t node) {
             if (res != FR_OK || fno.fname[0] == 0) break;
             vfs_node_t child_node = vfs_child_append(node, fno.fname, NULL);
             child_node->type      = ((fno.fattrib & AM_DIR) != 0) ? file_dir : file_none;
+            child_node->inode     = ino++;
+            child_node->size      = fno.fsize;
         }
         node->inode = ino++;
         node->blksz = PAGE_SIZE;
@@ -254,15 +248,13 @@ static struct vfs_callback fatfs_callbacks = {
     .write   = (vfs_write_t)fatfs_writefile,
     .mkdir   = fatfs_mkdir,
     .mkfile  = fatfs_mkfile,
-    // .link = fatfs_link,
-    // .symlink = fatfs_symlink,
-    .delete = (vfs_del_t)fatfs_delete,
-    .rename = (vfs_rename_t)fatfs_rename,
-    .map    = (vfs_mapfile_t)fatfs_map,
-    .stat   = fatfs_stat,
-    .ioctl  = fatfs_ioctl,
-    .poll   = fatfs_poll,
-    .dup    = fatfs_dup,
+    .delete  = (vfs_del_t)fatfs_delete,
+    .rename  = (vfs_rename_t)fatfs_rename,
+    .map     = (vfs_mapfile_t)fatfs_map,
+    .stat    = fatfs_stat,
+    .ioctl   = fatfs_ioctl,
+    .poll    = fatfs_poll,
+    .dup     = fatfs_dup,
 };
 
 void fatfs_init() {
