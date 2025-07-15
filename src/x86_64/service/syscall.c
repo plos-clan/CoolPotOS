@@ -484,7 +484,29 @@ syscall_(munmap) {
 }
 
 syscall_(mremap) {
-    return SYSCALL_FAULT_(ENOSYS);
+    uint64_t old_addr = arg0;
+    uint64_t old_size = arg1;
+    uint64_t new_size = arg2;
+    uint64_t flags    = arg3;
+    uint64_t new_addr = arg4;
+    if (check_user_overflow(old_addr, old_size) || check_user_overflow(new_addr, new_size)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    uint64_t aligned_old = (old_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+    uint64_t aligned_new = (new_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+
+    if (aligned_new < aligned_old) {
+        unmap_page_range(get_current_directory(), old_addr + aligned_new,
+                         aligned_old - aligned_new);
+        return old_addr;
+    }
+
+    uint64_t extension = aligned_new - aligned_old;
+
+    page_map_range_to_random(get_current_directory(), old_addr + aligned_old, extension,
+                             PTE_WRITEABLE | PTE_PRESENT | PTE_USER);
+
+    return old_addr;
 }
 
 syscall_(getcwd) {
@@ -737,48 +759,6 @@ syscall_(mprotect) {
     if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES);
 
     return EOK; //TODO mprotect 实现有问题
-
-    addr              = PADDING_DOWN(addr, PAGE_SIZE);
-    size_t page_count = PADDING_UP(length, PAGE_SIZE) / PAGE_SIZE;
-    pcb_t  process    = get_current_task()->parent_group;
-    logkf("addr: %p, length: %zu, prot: %lx pc: %d\n", (void *)addr, length, prot, page_count);
-    for (size_t i = 0; i < page_count; i++) {
-        uint64_t page_addr = addr + i * PAGE_SIZE;
-
-        bool updated = false;
-
-        spin_lock(process->virt_queue->lock);
-        queue_foreach(process->virt_queue, node) {
-            mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
-            if (page_addr >= vpage->start && page_addr < vpage->start + vpage->count * PAGE_SIZE) {
-                uint64_t new_flags = vpage->pte_flags;
-                if (prot & PROT_READ) new_flags |= PTE_PRESENT;
-                if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
-                if (prot & PROT_EXEC) new_flags |= PTE_USER;
-
-                vpage->pte_flags = new_flags;
-                updated          = true;
-                break;
-            }
-        }
-        spin_unlock(process->virt_queue->lock);
-
-        if (!updated) {
-            logkf("physical page address: %p\n", (void *)page_addr);
-            uint64_t old_flags;
-            if (!page_table_get_flags(get_current_directory(), page_addr, &old_flags)) {
-                return SYSCALL_FAULT_(ENOMEM);
-            }
-            logkf("old flags: %lx\n", old_flags);
-            uint64_t new_flags = old_flags & ~(PTE_WRITEABLE | PTE_USER);
-            if (prot & PROT_READ) new_flags |= PTE_PRESENT;
-            if (prot & PROT_WRITE) new_flags |= PTE_WRITEABLE;
-            if (prot & PROT_EXEC) new_flags |= PTE_USER;
-            page_table_update_flags(get_current_directory(), page_addr, new_flags);
-        }
-    }
-
-    return SYSCALL_SUCCESS;
 }
 
 syscall_(vfork) {
@@ -1312,6 +1292,10 @@ syscall_(openat) {
     return ret;
 }
 
+syscall_(getuid) {
+    return get_current_task()->parent_group->user->uid;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1376,6 +1360,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FACCESSAT2]  = syscall_faccessat2,
     [SYSCALL_ACCESS]      = syscall_access,
     [SYSCALL_OPENAT]      = syscall_openat,
+    [SYSCALL_GETUID]      = syscall_getuid,
 };
 // clang-format on
 

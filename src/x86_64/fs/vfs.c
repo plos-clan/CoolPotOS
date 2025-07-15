@@ -21,8 +21,7 @@ struct vfs_callback vfs_empty_callback;
 vfs_callback_t fs_callbacks[256] = {
     [0] = &vfs_empty_callback,
 };
-static int    fs_nextid      = 1;
-static size_t fs_inode_count = 1;
+static int fs_nextid = 1;
 
 #define callbackof(node, _name_) (fs_callbacks[(node)->fsid]->_name_)
 
@@ -234,7 +233,6 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     node->refcount = 0;
     node->blksz    = PAGE_SIZE;
     node->mode     = 0777;
-    node->inode    = fs_inode_count++;
     if (parent) list_prepend(parent->child, node);
     return node;
 }
