@@ -165,7 +165,6 @@ int        vfs_mkfile(const char *name);                          // 创建文�
 int        vfs_regist(const char *name, vfs_callback_t callback); // 注册文件系统
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
-vfs_node_t vfs_dup(vfs_node_t node);
 int        vfs_close(vfs_node_t node); // 关闭已打开的节点
 void       vfs_free(vfs_node_t vfs);
 void       vfs_update(vfs_node_t node);

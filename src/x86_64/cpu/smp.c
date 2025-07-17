@@ -103,8 +103,9 @@ void apu_entry() {
 
     tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
     not_null_assets(apu_idle, "apu idle null");
-    apu_idle->task_level = TASK_KERNEL_LEVEL;
-    apu_idle->pid        = now_tid++;
+    apu_idle->task_level = TASK_IDLE_LEVEL;
+    apu_idle->tid        = now_tid++;
+    apu_idle->weight     = 0;
     apu_idle->cpu_clock  = 0;
     set_kernel_stack(get_rsp());
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();

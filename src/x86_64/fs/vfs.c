@@ -11,6 +11,7 @@
 #include "krlibc.h"
 #include "list.h"
 #include "pcb.h"
+#include "pipefs.h"
 
 vfs_node_t rootdir = NULL;
 
@@ -204,9 +205,24 @@ void vfs_deinit() {
     // 目前并不支持
 }
 
-vfs_node_t vfs_dup(vfs_node_t node) {
-    node->refcount++;
-    return callbackof(node, dup)(node);
+fd_file_handle *fd_dup(fd_file_handle *src) {
+    fd_file_handle *new = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    not_null_assets(new, "fd_dup out of memory.");
+    src->node->refcount++;
+    new->node       = src->node;
+    new->offset     = src->offset;
+    new->flags      = src->flags;
+    vfs_node_t node = new->node;
+    if (node->type == file_pipe) {
+        pipe_specific_t *spec = node->handle;
+        pipe_info_t     *pipe = spec->info;
+        if (spec->write) {
+            pipe->write_fds++;
+        } else {
+            pipe->read_fds++;
+        }
+    }
+    return new;
 }
 
 vfs_node_t get_rootdir() {

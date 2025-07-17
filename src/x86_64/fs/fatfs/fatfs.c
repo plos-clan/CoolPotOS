@@ -66,6 +66,7 @@ size_t fatfs_writefile(file_t file, const void *addr, size_t offset, size_t size
     uint32_t n;
     res = f_write(file->handle, addr, size, &n);
     if (res != FR_OK) return -1;
+    f_sync(file->handle);
     return n;
 }
 
@@ -160,6 +161,7 @@ int fatfs_mount(const char *src, vfs_node_t node) {
         if (res != FR_OK || fno.fname[0] == 0) break;
         vfs_node_t child_node = vfs_child_append(node, (const char *)fno.fname, NULL);
         child_node->type      = ((fno.fattrib & AM_DIR) != 0) ? file_dir : file_none;
+        child_node->inode     = ino++;
     }
     // node->inode  = ino++;
     node->handle = f;

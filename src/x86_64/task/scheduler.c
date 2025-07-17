@@ -1,6 +1,5 @@
 #include "scheduler.h"
 #include "fsgsbase.h"
-#include "io.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -36,6 +35,7 @@ void scheduler_yield() {
 }
 
 void scheduler_nano_sleep(uint64_t nano) {
+    weight_submit(get_current_task());
     uint64_t targetTime = nano_time();
     uint64_t after      = 0;
     loop {
@@ -54,6 +54,10 @@ void scheduler_nano_sleep(uint64_t nano) {
     }
 }
 
+/*
+ * CP_Kernel 内核默认任务分配器 - 公平负载核心分配
+ * 保证每一个CPU核心的任务数量大致相同
+ */
 int add_task(tcb_t new_task) {
     if (new_task == NULL) return -1;
     spin_lock(scheduler_lock);
@@ -162,6 +166,10 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     reg->cs     = target->context0.cs;
 }
 
+void weight_submit(tcb_t thread) {
+    if (thread->weight > 0) thread->weight--;
+}
+
 /**
  * CP_Kernel 内核默认多核调度器 - 循环绝对公平调度
  * @param reg 当前任务上下文
@@ -180,6 +188,7 @@ void scheduler(registers_t *reg) {
     write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上
 
     tcb->cpu_clock++;
+    if (tcb->task_level != TASK_IDLE_LEVEL) tcb->weight++;
     if (tcb->time_buf != NULL) {
         tcb->cpu_timer += get_time(tcb->time_buf);
         tcb->time_buf   = NULL;

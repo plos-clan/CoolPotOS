@@ -22,6 +22,7 @@ void wake_blocked_tasks(task_block_list_t *head) {
 void pipefs_open(void *parent, const char *name, vfs_node_t node) {
     (void)parent;
     (void)name;
+    node->type = file_pipe;
 }
 
 size_t pipefs_read(void *file, void *addr, size_t offset, size_t size) {

@@ -204,7 +204,7 @@ static int tty_ioctl(size_t req, void *arg) {
         break;
     case TIOCGPGRP:
         int *pid = (int *)arg;
-        *pid     = get_current_task()->pid;
+        *pid     = get_current_task()->tid;
         break;
     case TCSETS:
     case TCSETSF:
