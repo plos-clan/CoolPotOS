@@ -171,6 +171,7 @@ syscall_(exit) {
 syscall_(open) {
     char    *path0 = (char *)arg0;
     uint64_t flags = arg1;
+    uint64_t mode  = arg2;
     if (path0 == NULL) return SYSCALL_FAULT_(EINVAL);
 
     char *normalized_path = vfs_cwd_path_build(path0);
@@ -180,16 +181,23 @@ syscall_(open) {
     vfs_node_t node = vfs_open(normalized_path);
     if (node == NULL) {
         if (flags & O_CREAT) {
-            vfs_mkfile(normalized_path);
+            if (mode & O_DIRECTORY) {
+                vfs_mkdir(normalized_path);
+            } else
+                vfs_mkfile(normalized_path);
             node = vfs_open(normalized_path);
-            if (node == NULL) goto err;
+            if (node == NULL)
+                goto err;
+            else
+                goto next;
         } else
         err:
             free(normalized_path);
         return SYSCALL_FAULT_(ENOENT);
     }
-    fd_file_handle *fd_handle = malloc(sizeof(fd_handle));
-    fd_handle->offset         = 0;
+next:
+    fd_file_handle *fd_handle = malloc(sizeof(fd_file_handle));
+    fd_handle->offset         = flags & O_APPEND ? node->size : 0;
     fd_handle->node           = node;
     int index     = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, fd_handle);
     fd_handle->fd = index;
@@ -324,7 +332,7 @@ syscall_(getpid) {
     if (arg0 == UINT64_MAX || arg1 == UINT64_MAX || arg2 == UINT64_MAX || arg3 == UINT64_MAX ||
         arg4 == UINT64_MAX)
         return 1;
-    return get_current_task()->parent_group->pgb_id;
+    return get_current_task()->parent_group->pid;
 }
 
 syscall_(prctl) {
@@ -634,23 +642,24 @@ syscall_(rt_sigprocmask) {
     return syscall_ssetmask(how, set, oldset);
 }
 
+extern fd_file_handle *fd_dup(fd_file_handle *src);
+
 syscall_(dup2) {
     int             fd     = (int)arg0;
     int             newfd  = (int)arg1;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
 
-    vfs_node_t new = vfs_dup(handle->node);
-    if (!new) return SYSCALL_FAULT_(ENOSPC);
-    fd_file_handle *new_node = queue_get(get_current_task()->parent_group->file_open, newfd);
-    if (new_node != NULL) {
-        vfs_close(new_node->node);
-        new_node->node = NULL;
+    fd_file_handle *old_handle = queue_get(get_current_task()->parent_group->file_open, newfd);
+    if (old_handle != NULL) {
+        queue_remove_at(get_current_task()->parent_group->file_open, newfd);
+        vfs_close(old_handle->node);
+        free(old_handle);
     }
-    new_node->node   = new;
-    new_node->offset = handle->offset;
-    new_node->flags  = handle->flags;
-    queue_enqueue_id(get_current_task()->parent_group->file_open, new_node, newfd);
+
+    fd_file_handle *new_handle = fd_dup(handle);
+    if (new_handle == NULL) return SYSCALL_FAULT_(ENOMEM);
+    queue_enqueue_id(get_current_task()->parent_group->file_open, new_handle, newfd);
     return newfd;
 }
 
@@ -659,11 +668,7 @@ syscall_(dup) {
     if (fd < 0) return SYSCALL_FAULT_(EINVAL);
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
-    vfs_node_t new             = vfs_dup(handle->node);
-    fd_file_handle *new_handle = malloc(sizeof(fd_file_handle));
-    new_handle->offset         = handle->offset;
-    new_handle->node           = new;
-    new_handle->flags          = handle->flags;
+    fd_file_handle *new_handle = fd_dup(handle);
     return new_handle->fd = queue_enqueue(get_current_task()->parent_group->file_open, new_handle);
 }
 
@@ -747,7 +752,7 @@ re_futex: //TODO PRIVATE 标志暂时不支持
 }
 
 syscall_(get_tid) {
-    return get_current_task()->pid;
+    return get_current_task()->tid;
 }
 
 syscall_(mprotect) {

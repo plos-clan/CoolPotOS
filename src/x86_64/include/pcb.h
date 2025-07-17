@@ -1,8 +1,8 @@
 #pragma once
 
-#define TASK_KERNEL_LEVEL         0 // 内核任务 (崩溃后会挂起内核)
-#define TASK_SYSTEM_SERVICE_LEVEL 1 // 系统服务 (崩溃后会在终端提示)
-#define TASK_APPLICATION_LEVEL    2 // 应用程序
+#define TASK_KERNEL_LEVEL      0 // 内核任务 (崩溃后会挂起内核)
+#define TASK_IDLE_LEVEL        1 // IDLE (崩溃后与普通内核任务相同行为)
+#define TASK_APPLICATION_LEVEL 2 // 应用程序
 
 #define PR_SET_PDEATHSIG            1
 #define PR_GET_PDEATHSIG            2
@@ -99,7 +99,7 @@ typedef struct {
 struct process_control_block {
     char              name[50];    // 进程名
     uint8_t           task_level;  // 进程权限等级
-    int               pgb_id;      // 进程ID
+    int               pid;         // 进程ID
     char             *cmdline;     // 命令行参数
     char             *cwd;         // 工作目录路径
     lock_queue       *pcb_queue;   // 线程队列
@@ -123,9 +123,10 @@ struct process_control_block {
 struct thread_control_block {
     pcb_t      parent_group; // 父进程
     uint8_t    task_level;   // 线程权限等级
-    int        pid;          // 线程 TID
+    int        tid;          // 线程 TID
     TaskStatus status;       // 线程状态
     char       name[50];     // 线程名
+    size_t     weight;       // 调度权重
 
     sigaction_t   actions[MAXSIG]; // 信号处理器回调
     uint64_t      signal;          // 信号位图
@@ -300,6 +301,13 @@ void futex_wake(void *phys_addr, int count);
  * @param thread 线程
  */
 void futex_free(tcb_t thread);
+
+/**
+ * 减少线程调度权重
+ * @param thread 被操作线程
+ */
+void weight_submit(tcb_t thread);
+;
 
 int task_block(tcb_t thread, TaskStatus state, int timeout_ms);
 

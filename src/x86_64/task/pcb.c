@@ -226,7 +226,7 @@ void switch_to_user_mode(uint64_t func) {
 
 void kill_proc(pcb_t pcb, int exit_code) {
     if (pcb == NULL) return;
-    if (pcb->pgb_id == kernel_group->pgb_id) {
+    if (pcb->pid == kernel_group->pid) {
         kerror("Cannot kill System process.");
         return;
     }
@@ -234,7 +234,7 @@ void kill_proc(pcb_t pcb, int exit_code) {
     disable_scheduler();
     pcb->status       = DEATH;
     ipc_message_t msg = malloc(sizeof(struct ipc_message));
-    msg->pid          = pcb->pgb_id;
+    msg->pid          = pcb->pid;
     msg->type         = IPC_MSG_TYPE_EPID;
     msg->data[0]      = exit_code & 0xFF;
     msg->data[1]      = (exit_code >> 8) & 0xFF;
@@ -287,7 +287,7 @@ void kill_proc0(pcb_t pcb) {
     free(pcb->cwd);
     free_tty(pcb->tty);
     free(pcb->elf_file);
-    logkf("Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pgb_id,
+    logkf("Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pid,
           pcb->vfork ? "true" : "false");
     if (!pcb->vfork) free_page_directory(pcb->page_dir);
     free(pcb);
@@ -297,7 +297,7 @@ void kill_proc0(pcb_t pcb) {
 
 void kill_thread(tcb_t task) {
     if (task == NULL) return;
-    if (task->task_level == TASK_KERNEL_LEVEL) {
+    if (task->task_level == TASK_KERNEL_LEVEL || task->task_level == TASK_IDLE_LEVEL) {
         kerror("Cannot stop kernel thread.");
         return;
     }
@@ -330,7 +330,7 @@ void kill_thread0(tcb_t task) {
 pcb_t found_pcb(int pid) {
     queue_foreach(pgb_queue, node) {
         pcb_t pcb = (pcb_t)node->data;
-        if (pcb->pgb_id == pid) { return pcb; }
+        if (pcb->pid == pid) { return pcb; }
     }
     return NULL;
 }
@@ -339,7 +339,7 @@ tcb_t found_thread(pcb_t pcb, int tid) {
     if (pcb == NULL) return NULL;
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t thread = (tcb_t)node->data;
-        if (thread->pid == tid) { return thread; }
+        if (thread->tid == tid) { return thread; }
     }
     return NULL;
 }
@@ -354,6 +354,7 @@ int waitpid(int pid, int *pid_ret) {
         *pid_ret = mesg->pid;
         free(mesg);
         if (!is_sti) close_interrupt;
+        weight_submit(get_current_task());
         return exit_code;
     }
     if (found_pcb(pid) == NULL) return -25565;
@@ -368,6 +369,7 @@ int waitpid(int pid, int *pid_ret) {
             *pid_ret = mesg->pid;
             free(mesg);
             if (!is_sti) close_interrupt;
+            weight_submit(get_current_task());
             return exit_code;
         }
         ipc_send(get_current_task()->parent_group, mesg);
@@ -384,7 +386,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
                            char *cmdline, pcb_t parent_process, void *elf_file, size_t elf_size) {
     pcb_t new_pgb = malloc(sizeof(struct process_control_block));
     memset(new_pgb, 0, sizeof(struct process_control_block));
-    new_pgb->pgb_id = now_pid++;
+    new_pgb->pid = now_pid++;
     strcpy(new_pgb->name, name);
     new_pgb->parent_task = parent_process == NULL ? kernel_group : parent_process;
     new_pgb->pcb_queue   = queue_init();
@@ -412,7 +414,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
 }
 
 int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
-    if (pcb == NULL || name == NULL || _start == NULL) return -1;
+    if (name == NULL || _start == NULL) return -1;
 
     close_interrupt;
     disable_scheduler();
@@ -423,12 +425,12 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     if (pcb == NULL) {
         new_task->group_index = lock_queue_enqueue(kernel_group->pcb_queue, new_task);
         spin_unlock(kernel_group->pcb_queue->lock);
-        new_task->pid          = now_tid++;
+        new_task->tid          = now_tid++;
         new_task->parent_group = kernel_group;
     } else {
         new_task->group_index = lock_queue_enqueue(pcb->pcb_queue, new_task);
         spin_unlock(pcb->pcb_queue->lock);
-        new_task->pid          = now_tid++;
+        new_task->tid          = now_tid++;
         new_task->parent_group = pcb;
     }
 
@@ -437,6 +439,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
     new_task->cpu_id     = cpu->id;
+    new_task->weight     = 0;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
     *(--stack_top)            = (uint64_t)_start;
@@ -460,7 +463,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     add_task(new_task);
     enable_scheduler();
     open_interrupt;
-    return new_task->pid;
+    return new_task->tid;
 }
 
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pcb) {
@@ -472,11 +475,11 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
 
     if (pcb == NULL) {
         new_task->group_index  = queue_enqueue(kernel_group->pcb_queue, new_task);
-        new_task->pid          = now_tid++;
+        new_task->tid          = now_tid++;
         new_task->parent_group = kernel_group;
     } else {
         queue_enqueue(pcb->pcb_queue, new_task);
-        new_task->pid          = now_tid++;
+        new_task->tid          = now_tid++;
         new_task->parent_group = pcb;
     }
 
@@ -485,6 +488,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
     new_task->cpu_id     = cpu->id;
+    new_task->weight     = 0;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
     *(--stack_top)            = (uint64_t)args;
@@ -508,13 +512,13 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     add_task(new_task);
     enable_scheduler();
     open_interrupt;
-    return new_task->pid;
+    return new_task->tid;
 }
 
 int task_block(tcb_t thread, TaskStatus state, int timeout_ms) {
     UNUSED(timeout_ms);
     thread->status = state;
-    if (get_current_task()->pid == thread->pid) { __asm__("pause"); }
+    if (get_current_task()->tid == thread->tid) { __asm__("pause"); }
     close_interrupt;
     return thread->status;
 }
@@ -527,7 +531,7 @@ void init_pcb() {
     kernel_group = malloc(sizeof(struct process_control_block));
     memset(kernel_group, 0, sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
-    kernel_group->pgb_id      = now_pid++;
+    kernel_group->pid         = now_pid++;
     kernel_group->pcb_queue   = queue_init();
     kernel_group->queue_index = queue_enqueue(pgb_queue, kernel_group);
     kernel_group->page_dir    = get_kernel_pagedir();
@@ -545,7 +549,7 @@ void init_pcb() {
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;
     kernel_head_task->task_level   = 0;
-    kernel_head_task->pid          = now_tid++;
+    kernel_head_task->tid          = now_tid++;
     kernel_head_task->cpu_clock    = 0;
     set_kernel_stack(get_rsp()); // 给IDLE线程设置TSS内核栈, 不然这个线程炸了后会发生 DoubleFault
     kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();
@@ -556,6 +560,8 @@ void init_pcb() {
     kernel_head_task->time_buf        = alloc_timer();
     kernel_head_task->cpu_id          = cpu->id;
     kernel_head_task->status          = RUNNING;
+    kernel_head_task->weight          = 0;
+    kernel_head_task->task_level      = TASK_IDLE_LEVEL;
 
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", cpu->id);
@@ -563,5 +569,5 @@ void init_pcb() {
     kernel_head_task->name[strlen(name)] = '\0';
     kernel_head_task->group_index        = queue_enqueue(kernel_group->pcb_queue, kernel_head_task);
     futex_init();
-    kinfo("Load task schedule. | Process(%s) PID: %d", kernel_group->name, kernel_head_task->pid);
+    kinfo("Load task schedule. | Process(%s) PID: %d", kernel_group->name, kernel_head_task->tid);
 }

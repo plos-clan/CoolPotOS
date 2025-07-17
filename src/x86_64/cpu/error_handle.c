@@ -26,7 +26,7 @@ void print_task_info(tcb_t pcb) {
     if (pcb == NULL)
         printk("No process load, CPU%d\n", current_cpu->id);
     else
-        printk("Current process PID: %d:%s (%s) CPU%d\n", pcb->pid, pcb->name,
+        printk("Current process PID: %d:%s (%s) CPU%d\n", pcb->tid, pcb->name,
                pcb->parent_group->name, current_cpu->id);
 }
 
@@ -40,7 +40,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     if (get_current_task() == NULL) {
         logkf("Current process PID: NULL CPU%d\n", cpu->id);
     } else {
-        logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->pid,
+        logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->tid,
               get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
         if (get_current_task()->parent_group->task_level == TASK_APPLICATION_LEVEL)
             kill_proc(get_current_task()->parent_group, -1);

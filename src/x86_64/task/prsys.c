@@ -28,6 +28,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->task_level      = TASK_APPLICATION_LEVEL;
     new_task->cpu_clock       = 0;
     new_task->cpu_timer       = 0;
+    new_task->weight          = 0;
     new_task->mem_usage       = get_all_memusage();
     new_task->cpu_id          = cpu->id;
     new_task->status          = START;
@@ -71,21 +72,21 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->parent_group = parent_task->parent_group;
     new_task->group_index  = lock_queue_enqueue(parent_task->parent_group->pcb_queue, new_task);
     spin_unlock(parent_task->parent_group->pcb_queue->lock);
-    new_task->pid          = now_tid++;
+    new_task->tid          = now_tid++;
     new_task->parent_group = parent_task->parent_group;
 
     if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
 
-    if (flags & CLONE_PARENT_SETTID) { *parent_tid = new_task->pid; }
+    if (flags & CLONE_PARENT_SETTID) { *parent_tid = new_task->tid; }
 
-    if (flags & CLONE_CHILD_SETTID) { *child_tid = new_task->pid; }
+    if (flags & CLONE_CHILD_SETTID) { *child_tid = new_task->tid; }
 
     if (flags & CLONE_CHILD_CLEARTID) {
         new_task->tid_address   = (uint64_t)child_tid;
         new_task->tid_directory = get_current_directory();
     }
     add_task(new_task);
-    return new_task->pid;
+    return new_task->tid;
 }
 
 int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
@@ -121,14 +122,12 @@ static void *virt_copy(void *ptr) {
     return new_page;
 }
 
+extern fd_file_handle *fd_dup(fd_file_handle *src);
+
 static void *file_copy(void *ptr) {
     if (ptr == NULL) return NULL;
     fd_file_handle *src = ptr;
-    fd_file_handle *new = malloc(sizeof(fd_file_handle));
-    new->node           = vfs_dup(src->node);
-    new->offset         = src->offset;
-    new->fd             = src->fd;
-    return new;
+    return fd_dup(src);
 }
 
 uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
@@ -139,7 +138,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     pcb_t new_pcb = malloc(sizeof(struct process_control_block));
     memset(new_pcb, 0, sizeof(struct process_control_block));
-    new_pcb->pgb_id = now_pid++;
+    new_pcb->pid = now_pid++;
     strcpy(new_pcb->name, current_pcb->name);
     new_pcb->task_level = TASK_APPLICATION_LEVEL;
     new_pcb->status     = START;
@@ -214,7 +213,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     new_task->parent_group = new_pcb;
     new_task->group_index  = queue_enqueue(new_pcb->pcb_queue, new_task);
-    new_task->pid          = now_tid++;
+    new_task->tid          = now_tid++;
 
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
@@ -224,12 +223,12 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     open_interrupt;
 
     if (is_vfork) {
-        int npid = new_pcb->pgb_id;
+        int npid = new_pcb->pid;
         int status;
         waitpid(npid, &status);
     }
 
-    return new_pcb->pgb_id;
+    return new_pcb->pid;
 }
 
 uint64_t process_execve(char *path, char **argv, char **envp) {
@@ -262,7 +261,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     if (process->vfork) {
         ipc_message_t message = calloc(1, sizeof(struct ipc_message));
         message->type         = IPC_MSG_TYPE_EPID;
-        message->pid          = process->pgb_id;
+        message->pid          = process->pid;
         ipc_send(process->parent_task, message);
     }
 
@@ -281,8 +280,9 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
 
     spin_lock(process->file_open->lock);
     queue_foreach(process->file_open, node) {
-        vfs_node_t file_node = (vfs_node_t)node->data;
-        vfs_close(file_node);
+        fd_file_handle *file_node = (fd_file_handle *)node->data;
+        vfs_close(file_node->node);
+        free(file_node);
     }
     spin_unlock(process->file_open->lock);
     queue_destroy(process->file_open);
@@ -330,6 +330,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     get_current_task()->tid_directory  = NULL;
     get_current_task()->tid_address    = 0;
     get_current_task()->cpu_clock      = 0;
+    get_current_task()->weight         = 0;
 
     enable_scheduler();
     open_interrupt;

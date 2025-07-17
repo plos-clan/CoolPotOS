@@ -43,7 +43,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         // 应用程序懒分配机制
         if (current_proc->task_level == TASK_APPLICATION_LEVEL) {
             logkf("Lazy alloc try(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
-                  error_msg, get_current_task()->pid, get_current_task()->name, current_proc->name,
+                  error_msg, get_current_task()->tid, get_current_task()->name, current_proc->name,
                   get_current_task()->cpu_id);
             mm_virtual_page_t *virt_page = NULL;
             spin_lock(current_proc->virt_queue->lock);
@@ -121,7 +121,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         "\033[31m:3 Your CP_Kernel ran into a problem.\nERROR CODE >(PageFault%s:0x%p)<\033[0m\n",
         error_msg, faulting_address);
     if (get_current_task() != NULL) {
-        printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->pid,
+        printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->tid,
                get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
     }
     print_register(frame);
@@ -339,13 +339,12 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
 }
 
 void switch_process_page_directory(page_directory_t *dir) {
-    disable_scheduler();
+    bool is_sti = are_interrupts_enabled();
     close_interrupt;
     pcb_t pcb     = get_current_task()->parent_group;
     pcb->page_dir = dir;
     switch_page_directory(dir);
-    enable_scheduler();
-    open_interrupt;
+    if (is_sti) open_interrupt;
 }
 
 void switch_page_directory(page_directory_t *dir) {

@@ -121,7 +121,7 @@ void ps(int argc, char **argv) {
                "NAME");
         queue_foreach(pgb_queue, thread) {
             pcb_t pgb = (pcb_t)thread->data;
-            printk("\033[35m%-5d\033[0m", pgb->pgb_id);
+            printk("\033[35m%-5d\033[0m", pgb->pid);
             printk("\033[1;36m%-*s\033[0m  ", longest_name_len, pgb->name);
             printk("\033[32m%-7d\033[0m ", pgb->pcb_queue->size);
             if (pgb->status == RUNNING)
@@ -175,7 +175,7 @@ void ps(int argc, char **argv) {
                     all_time  += pcb->cpu_timer;
                     if (pcb->task_level != TASK_KERNEL_LEVEL) mem_use += pcb->mem_usage;
 
-                    printk("\033[35m%-5d\033[0m", pcb->pid);
+                    printk("\033[35m%-5d\033[0m", pcb->tid);
                     printk("\033[1;36m%-*s\033[0m ", longest_name_len, pcb->name);
                     printk("\033[33m%-*s\033[0m  ", longest_pgb_len, pcb->parent_group->name);
                     printk("\033[32m%-10d\033[0m ", pcb->mem_usage);
@@ -377,12 +377,12 @@ static void exec(int argc, char **argv) {
 
     free(result);
 
-    int    pgb_id      = user_task->pgb_id;
+    int    pgb_id      = user_task->pid;
     size_t queue_index = user_task->queue_index;
     logkf("User application %s : %d : index: %d loaded.\n", name, pgb_id, queue_index);
     int status;
     get_current_task()->status = WAIT;
-    waitpid(user_task->pgb_id, &status);
+    waitpid(user_task->pid, &status);
     get_current_task()->status = RUNNING;
 }
 
