@@ -42,9 +42,9 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
 
         // 应用程序懒分配机制
         if (current_proc->task_level == TASK_APPLICATION_LEVEL) {
-            logkf("Lazy alloc try(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
-                  error_msg, get_current_task()->tid, get_current_task()->name, current_proc->name,
-                  get_current_task()->cpu_id);
+            //            logkf("Lazy alloc try(%p) %s Current process PID: %d:%s (%s) CPU%d\n", faulting_address,
+            //                  error_msg, get_current_task()->tid, get_current_task()->name, current_proc->name,
+            //                  get_current_task()->cpu_id);
             mm_virtual_page_t *virt_page = NULL;
             spin_lock(current_proc->virt_queue->lock);
             queue_foreach(current_proc->virt_queue, node) {
@@ -70,7 +70,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                 size_t   fault_index = (faulting_address - virt_page->start) / PAGE_SIZE;
                 uint64_t page_addr   = virt_page->start + fault_index * PAGE_SIZE;
 
-                logkf("lazy alloc %p\n", page_addr);
+                // logkf("lazy alloc %p\n", page_addr);
 
                 uint64_t phys = alloc_frames(1);
                 page_map_to(get_current_directory(), page_addr, phys, virt_page->pte_flags);

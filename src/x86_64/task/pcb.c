@@ -241,9 +241,11 @@ void kill_proc(pcb_t pcb, int exit_code) {
     msg->data[2]      = (exit_code >> 16) & 0xFF;
     msg->data[3]      = (exit_code >> 24) & 0xFF;
     ipc_send(pcb->parent_task, msg);
-    queue_foreach(pcb->pcb_queue, node) {
-        tcb_t tcb = (tcb_t)node->data;
-        kill_thread(tcb);
+    if (pcb->pcb_queue->size > 0) {
+        queue_foreach(pcb->pcb_queue, node) {
+            tcb_t tcb = (tcb_t)node->data;
+            kill_thread(tcb);
+        }
     }
     add_death_proc(pcb);
     enable_scheduler();

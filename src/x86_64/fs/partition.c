@@ -85,8 +85,7 @@ bool parser_block_device(vfs_node_t device, vdisk disk, size_t vdisk_id) {
                     char out[37];
                     format_guid(entry->unique_partition_guid, out);
                     kinfo("GPT Partition(%s) %zu GUID: %s", disk.drive_name, partition_num, out);
-                } else
-                    logkf("Empty GPT partition\r\n");
+                }
             }
             free(dptes);
             free(gpt);

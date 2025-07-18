@@ -263,6 +263,8 @@ static int tty_ioctl(size_t req, void *arg) {
         break;
     }
     case VT_OPENQRY: *(int *)arg = 1; return 0;
+    case TIOCSCTTY:
+    case TIOCSPGRP: break;
     default: return -ENOTTY;
     }
     return EOK;
@@ -294,7 +296,7 @@ void build_tty_device() {
 
     vdisk ttydev;
     ttydev.type = VDISK_STREAM;
-    strcpy(ttydev.drive_name, "tty0");
+    strcpy(ttydev.drive_name, "tty");
     ttydev.flag        = 1;
     ttydev.sector_size = 1;
     ttydev.size        = 1;
