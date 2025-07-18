@@ -31,6 +31,7 @@ void disable_scheduler() {
 
 void scheduler_yield() {
     if ((!cpu->ready) || cpu->current_pcb == NULL) return;
+    open_interrupt;
     __asm__ volatile("int %0" ::"i"(timer));
 }
 

@@ -164,6 +164,7 @@ syscall_(exit) {
     tcb_t exit_thread = get_current_task();
     logkf("Thread %s exit with code %d.\n", exit_thread->name, exit_code);
     kill_thread(exit_thread);
+    open_interrupt;
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
@@ -348,6 +349,7 @@ syscall_(stat) {
     if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
     buf->st_gid   = (int)node->group;
     buf->st_uid   = (int)node->owner;
+    buf->st_ino   = node->inode;
     buf->st_size  = (long long int)node->size;
     buf->st_mode  = node->type | (node->type == file_symlink  ? S_IFLNK
                                   : node->type == file_dir    ? S_IFDIR
@@ -357,6 +359,7 @@ syscall_(stat) {
                                   : node->type == file_stream ? S_IFCHR
                                                               : 0);
     buf->st_nlink = 1;
+    buf->st_dev = buf->st_rdev = 0;
     free(path);
     return SYSCALL_SUCCESS;
 }
@@ -568,6 +571,7 @@ syscall_(exit_group) {
     pcb_t exit_process = get_current_task()->parent_group;
     logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
     kill_proc(exit_process, exit_code);
+    open_interrupt;
     cpu_hlt;
 }
 
@@ -802,7 +806,7 @@ syscall_(fstat) {
         .tv_sec = node->createtime / 1000000000ULL, .tv_nsec = node->createtime % 1000000000ULL};
     buf->st_blksize = PAGE_SIZE;
     buf->st_blocks  = (node->size + PAGE_SIZE - 1) / PAGE_SIZE;
-    buf->st_ino     = 0;
+    buf->st_ino     = node->inode;
     return SYSCALL_SUCCESS;
 }
 

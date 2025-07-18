@@ -558,6 +558,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
             vd.sector_size = vd.flag == 2 ? 2048 : 512;
             vd.ioctl       = (void *)empty;
             vd.poll        = (void *)empty;
+            vd.type        = VDISK_BLOCK;
 
             int c            = regist_vdisk(vd);
             drive_mapping[c] = i;

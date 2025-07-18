@@ -152,7 +152,7 @@ smp_cpu_t *get_cpu_smp(uint32_t processor_id) {
 void smp_setup() {
     apu_lock                             = SPIN_INIT;
     struct limine_smp_response *response = get_smp_info();
-    cpu_count                            = response->cpu_count > 8 ? 8 : response->cpu_count;
+    cpu_count                            = response->cpu_count;
     for (uint64_t i = 0; i < cpu_count && i < MAX_CPU - 1; i++) {
         struct limine_smp_info *info     = response->cpus[i];
         size_t                  cpuid0   = info->lapic_id;
