@@ -7,8 +7,13 @@
 #include "page.h"
 #include "scheduler.h"
 
-static struct mpool pool;
-static spin_t       lock = SPIN_INIT;
+/* 内核堆扩容措施 */
+void *heap_alloc(void *ptr, size_t size);
+
+static struct mpool pool = {
+    .cb_reqmem = heap_alloc,
+};
+static spin_t lock = SPIN_INIT;
 
 uint64_t get_all_memusage() {
     return KERNEL_HEAP_SIZE;
@@ -105,6 +110,18 @@ void *pvalloc(size_t size) {
     const bool is_sti = alloc_enter();
     void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
     alloc_exit(is_sti);
+    return ptr;
+}
+
+void *heap_alloc(void *ptr, size_t size) {
+    if (ptr == NULL) {
+        uint64_t ptr0 = page_alloc_random(get_kernel_pagedir(), size, KERNEL_PTE_FLAGS);
+        not_null_assets((void *)ptr0, "Out of memory in kernel heap");
+        return (void *)ptr0;
+    }
+    if ((uint64_t)ptr > DRIVER_AREA_MEM)
+        not_null_assets(NULL, "Out of memory in heap virtual area");
+    page_map_range_to_random(get_kernel_pagedir(), (uint64_t)ptr, size, KERNEL_PTE_FLAGS);
     return ptr;
 }
 
