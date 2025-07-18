@@ -232,7 +232,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 }
 
 uint64_t process_execve(char *path, char **argv, char **envp) {
-    vfs_node_t node = vfs_open(path);
+    char      *norm_path = vfs_cwd_path_build(path);
+    vfs_node_t node      = vfs_open(norm_path);
     if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
     uint64_t buf_len = (node->size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
@@ -245,6 +246,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     memset(cmdline, 0, sizeof(cmdline));
     char *cmdline_ptr = cmdline;
     if (argv == NULL) {
+        free(norm_path);
         enable_scheduler();
         open_interrupt;
         return SYSCALL_FAULT_(EINVAL);
@@ -256,7 +258,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
 
     if (process->cmdline) free(process->cmdline);
     process->cmdline = strdup(cmdline);
-    strncpy(process->name, path, 50);
+    strncpy(process->name, norm_path, 50);
 
     if (process->vfork) {
         ipc_message_t message = calloc(1, sizeof(struct ipc_message));
@@ -315,6 +317,8 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     process->load_start = load_start;
     process->elf_file   = pcb_buffer;
     process->elf_size   = node->size;
+
+    free(norm_path);
 
     if (e_entry == 0) {
         enable_scheduler();
