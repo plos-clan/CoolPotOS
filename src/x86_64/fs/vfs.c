@@ -351,15 +351,12 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
         return (void *)-ENOMEM;
     }
 
-    uint64_t pt_flags = PTE_FLAG_U | PTE_WRITEABLE;
+    uint64_t pt_flags = PTE_USER | PTE_WRITEABLE | PTE_PRESENT;
 
     if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
     if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
-    if (prot & PROT_EXEC) pt_flags |= PTE_USER;
+    if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
 
-    // if (flags & MAP_FIXED && addr < USER_BRK_START)
-    //     map_page_range(get_current_page_dir(true), addr & (~(DEFAULT_PAGE_SIZE - 1)), addr & (~(DEFAULT_PAGE_SIZE - 1)), (len + DEFAULT_PAGE_SIZE - 1) & (~(DEFAULT_PAGE_SIZE - 1)), pt_flags);
-    // else
     page_map_range_to_random(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
                              (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
 

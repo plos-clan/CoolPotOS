@@ -1,7 +1,6 @@
 #include "shell.h"
 #include "atom_queue.h"
 #include "cpuid.h"
-#include "cpusp.h"
 #include "dlinker.h"
 #include "elf_util.h"
 #include "gop.h"
@@ -10,6 +9,7 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "memstats.h"
 #include "module.h"
 #include "os_terminal.h"
 #include "pcb.h"
@@ -199,9 +199,9 @@ void ps(int argc, char **argv) {
                 }
             }
         }
-        printk("\033[1;32m   --- CPU Usage: %d%% IPS: %d | Memory Usage: %d%s/%dMB ---\033[0m\n",
-               idle_time * 100 / all_time, get_cpu_speed(), mem_use + memory,
-               bytes > 10485760 ? "MB" : "KB", memory_size / 1024 / 1024);
+        printk("\033[1;32m   --- CPU Usage: %d%% | Memory Usage: %d%s/%dMB ---\033[0m\n",
+               idle_time * 100 / all_time, mem_use + memory, bytes > 10485760 ? "MB" : "KB",
+               memory_size / 1024 / 1024);
     } else {
         printk("\033[31mUnknown argument, please entry 'help'.\033[0m\n");
     }
@@ -413,6 +413,16 @@ static void read(int argc, char **argv) {
     free(path);
 }
 
+static void mem() {
+    printk("CoolPotOS Memory Statistics\n");
+    printk("----------------------------\n");
+    printk("All Memory:      %d MB\n", get_all_memory() / 1024 / 1024);
+    printk("Free Memory:     %d MB\n", get_available_memory() / 1024 / 1024);
+    printk("Used Memory:     %d MB\n", get_used_memory() / 1024 / 1024);
+    printk("Commit Memory:   %d MB\n", get_commit_memory() / 1024 / 1024);
+    printk("Reserved Memory: %d MB\n", get_reserved_memory() / 1024 / 1024);
+}
+
 static void sys_info() {
     cpu_t        cpu = get_cpu_info();
     extern MCFG *mcfg;
@@ -490,6 +500,7 @@ static void print_help() {
     printk("\033[1mexec\033[0m      <module>       Load a user application.\n");
     printk("\033[1mmkfile\033[0m    <path>         Create a file.\n");
     printk("\033[1mread\033[0m      <path>         Read a file info.\n");
+    printk("\033[1mmem\033[0m       <path>         List memory statistical information.\n");
 }
 
 // ====== pl_readline ======
@@ -518,6 +529,7 @@ builtin_cmd_t builtin_cmds[] = {
     {"exec",     (void (*)(int, char **))exec       },
     {"mkfile",   (void (*)(int, char **))mkfile     },
     {"read",     (void (*)(int, char **))read       },
+    {"mem",      (void (*)(int, char **))mem        },
 };
 
 /* 内建命令数量 */
