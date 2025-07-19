@@ -278,13 +278,6 @@ syscall_(mmap) {
     uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
     if (count == 0) return EOK;
 
-    if (fd > 2) {
-        fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
-        if (!handle) return SYSCALL_FAULT_(EBADF);
-        vfs_map(handle->node, addr, aligned_len, prot, flags, offset);
-        return addr;
-    }
-
     if (addr == 0 || (addr > USER_MMAP_START && addr < USER_MMAP_END)) {
         if (flags & MAP_FIXED) { return SYSCALL_FAULT_(EINVAL); }
         addr                 = process->mmap_start;
@@ -294,6 +287,12 @@ syscall_(mmap) {
             process->mmap_start -= aligned_len;
             return SYSCALL_FAULT_(ENOMEM);
         }
+    }
+
+    if (fd > 2) {
+        fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
+        if (!handle) return SYSCALL_FAULT_(EBADF);
+        return (size_t)vfs_map(handle->node, addr, aligned_len, prot, flags, offset);
     }
 
     if (addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(EACCES); // 不允许映射到内核地址空间
@@ -1305,6 +1304,37 @@ syscall_(getuid) {
     return get_current_task()->parent_group->user->uid;
 }
 
+syscall_(copy_file_range) {
+    int       fd_in   = arg0;
+    uint64_t *off_in  = (uint64_t *)arg1;
+    int       fd_out  = arg2;
+    uint64_t *off_out = (uint64_t *)arg3;
+    size_t    len     = arg4;
+    uint64_t  flags   = arg5;
+
+    if (flags != 0) { return SYSCALL_FAULT_(EINVAL); }
+    fd_file_handle *src_handle = queue_get(get_current_task()->parent_group->file_open, fd_in);
+    fd_file_handle *dst_handle = queue_get(get_current_task()->parent_group->file_open, fd_out);
+    if (src_handle == NULL || dst_handle == NULL) { return SYSCALL_FAULT_(EBADF); }
+    uint64_t src_offset = off_in ? *off_in : src_handle->offset;
+    uint64_t dst_offset = off_out ? *off_out : dst_handle->offset;
+    uint64_t length     = src_handle->node->size > len ? len : src_handle->node->size;
+    uint8_t *buffer     = (uint8_t *)malloc(length);
+    size_t   copy_total = 0;
+    if (vfs_read(src_handle->node, buffer, length, src_offset) == (size_t)VFS_STATUS_FAILED) {
+        goto errno_;
+    }
+    if ((copy_total = vfs_write(dst_handle->node, buffer, length, dst_offset)) ==
+        (size_t)VFS_STATUS_FAILED) {
+        goto errno_;
+    }
+    free(buffer);
+    return copy_total;
+errno_:
+    free(buffer);
+    return SYSCALL_FAULT_(EFAULT);
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1370,6 +1400,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_ACCESS]      = syscall_access,
     [SYSCALL_OPENAT]      = syscall_openat,
     [SYSCALL_GETUID]      = syscall_getuid,
+    [SYSCALL_CP_F_RANGE]  = syscall_copy_file_range,
 };
 // clang-format on
 

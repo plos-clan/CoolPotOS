@@ -306,10 +306,13 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
     page_table_t *l4_table = directory->table;
     page_table_t *l3_table =
         phys_to_virt((&(l4_table->entries[l4_index]))->value & 0x000fffffffff000);
+    if (l3_table == NULL) return;
     page_table_t *l2_table =
         phys_to_virt((&(l3_table->entries[l3_index]))->value & 0x000fffffffff000);
+    if (l2_table == NULL) return;
     page_table_t *l1_table =
         phys_to_virt((&(l2_table->entries[l2_index]))->value & 0x000fffffffff000);
+    if (l1_table == NULL) return;
 
     free_frame(l1_table->entries[l1_index].value & 0x000fffffffff000);
     l1_table->entries[l1_index].value = 0;
