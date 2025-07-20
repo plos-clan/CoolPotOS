@@ -62,6 +62,9 @@ bool is_dynamic(Elf64_Ehdr *ehdr);
  * @param data 程序 elf
  * @param dir 程序页表
  * @param load_start 链接器加载起始地址
+ * @param inter_data 获取链接器数据
+ * @param link_size 获取链接器数据大小
  * @return == NULL ? 无法识别或正确加载链接器 : 链接器入口函数
  */
-elf_start load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_start);
+elf_start load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_start,
+                               uint8_t **inter_data, size_t *link_size);

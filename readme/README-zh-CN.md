@@ -29,7 +29,6 @@
 - `pl_readline` 来自 min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` 来自 wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 - `plant-vfs` 来自 min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
-- `musllibc` 来自 seL4 [seL4/musllibc](https://github.com/seL4/musllibc)
 
 ## 构建并运行
 
@@ -103,7 +102,7 @@ xmake project -k compile_commands
 - [ ] Nvme 和 USB 驱动
 - [ ] PCNET 和 Rtl8169 驱动
 - [x] SB16 和 PCSpeaker 驱动
-- [ ] TTY 驱动
+- [x] TTY 驱动
 - [x] SATA/SATAPI 驱动
 
 ## 贡献

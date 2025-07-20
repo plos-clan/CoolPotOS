@@ -31,7 +31,6 @@ and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
 - `pl_readline` by min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 - `plant-vfs` by min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
-- `musllibc` by seL4 [seL4/musllibc](https://github.com/seL4/musllibc)
 
 ## Build & Run
 
@@ -103,7 +102,7 @@ Use Limine bootloader.
 - [ ] Nvme and USB Driver
 - [ ] PCNET and Rtl8169 Driver
 - [x] SB16 and PCSpeaker Driver
-- [ ] TTY Driver
+- [x] TTY Driver
 - [x] SATA/SATAPI Driver
 
 ## Contributing

@@ -28,7 +28,7 @@ et [amd64](https://en.wikipedia.org/wiki/X86-64).
 
 - `pl_readline` par min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` par wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
-- `liballoc` par wenxuanjun [plos-clan/liballoc](https://github.com/plos-clan/liballoc)
+- `plant-vfs` par min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
 
 ## Compilation et exécution
 
@@ -100,7 +100,7 @@ Utilise le chargeur d'amorçage Limine.
 - [ ] Pilotes NVMe et USB
 - [ ] Pilotes PCNET et RTL8169
 - [x] Pilotes SB16 et PCSpeaker
-- [ ] Pilote TTY
+- [x] Pilote TTY
 - [x] Pilote SATA/SATAPI
 
 ## Contribution

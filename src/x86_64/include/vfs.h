@@ -21,9 +21,11 @@
 #define F_GETSIG        11
 #define F_DUPFD_CLOEXEC 1030
 
-#define SEEK_SET 0 /* Seek from beginning of file.  */
-#define SEEK_CUR 1 /* Seek from current position.  */
-#define SEEK_END 2 /* Seek from end of file.  */
+#define SEEK_SET  0 /* Seek from beginning of file.  */
+#define SEEK_CUR  1 /* Seek from current position.  */
+#define SEEK_END  2 /* Seek from end of file.  */
+#define SEEK_DATA 3
+#define SEEK_HOLE 4
 
 #define FIOCLEX 0x5451
 
