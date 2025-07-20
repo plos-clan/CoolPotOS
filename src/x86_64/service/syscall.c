@@ -884,7 +884,8 @@ syscall_(lseek) {
         }
         break;
     case SEEK_END: handle->offset = handle->node->size - real_offset; break;
-    default: return SYSCALL_FAULT_(ENOSYS);
+
+    default: return SYSCALL_FAULT_(ENXIO);
     }
 
     return handle->offset;
@@ -1335,6 +1336,16 @@ errno_:
     return SYSCALL_FAULT_(EFAULT);
 }
 
+syscall_(pread) {
+    syscall_lseek(arg0, arg3, SEEK_SET, 0, 0, 0, regs);
+    return syscall_read(arg0, arg1, arg2, 0, 0, 0, regs);
+}
+
+syscall_(pwrite) {
+    syscall_lseek(arg0, arg3, SEEK_SET, 0, 0, 0, regs);
+    return syscall_write(arg0, arg1, arg2, 0, 0, 0, regs);
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1401,6 +1412,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_OPENAT]      = syscall_openat,
     [SYSCALL_GETUID]      = syscall_getuid,
     [SYSCALL_CP_F_RANGE]  = syscall_copy_file_range,
+    [SYSCALL_PREAD]       = syscall_pread,
+    [SYSCALL_PWRITE]      = syscall_pwrite,
 };
 // clang-format on
 

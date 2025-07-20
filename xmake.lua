@@ -165,7 +165,6 @@ function arch_x86_64()
             os.cp(limine_src.."/limine-bios.sys", limine_dir.."/limine-bios.sys")
             os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
             os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
-            os.cp("assets/libc.so", iso_dir.."/libc.so")
             os.cp("assets/background.jpg", iso_dir.."/background.jpg")
 
             local shell = target:pkg("cp_shell")

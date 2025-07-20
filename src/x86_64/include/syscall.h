@@ -83,6 +83,8 @@
 #define SYSCALL_RT_SIGMASK  14
 #define SYSCALL_SIGRET      15
 #define SYSCALL_IOCTL       16
+#define SYSCALL_PREAD       17
+#define SYSCALL_PWRITE      18
 #define SYSCALL_READV       19
 #define SYSCALL_WRITEV      20
 #define SYSCALL_ACCESS      21

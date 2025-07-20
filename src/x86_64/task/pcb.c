@@ -45,8 +45,8 @@ static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
     return tmp_stack;
 }
 
-static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, cp_module_t *link,
-                                 uint64_t link_start) {
+static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, uint64_t link_start,
+                                 uint8_t *link_data, size_t link_size) {
     uint64_t env_i  = 0;
     uint64_t argv_i = 0;
 
@@ -96,10 +96,10 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     memcpy((void *)EHDR_START_ADDR, get_current_task()->parent_group->elf_file,
            get_current_task()->parent_group->elf_size);
 
-    if (link != NULL) {
-        page_map_range_to_random(get_current_directory(), INTERPRETER_EHDR_ADDR, link->size,
+    if (link_data != NULL) {
+        page_map_range_to_random(get_current_directory(), INTERPRETER_EHDR_ADDR, link_size,
                                  PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-        memcpy((void *)INTERPRETER_EHDR_ADDR, link->data, link->size);
+        memcpy((void *)INTERPRETER_EHDR_ADDR, link_data, link_size);
     }
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)EHDR_START_ADDR;
@@ -110,7 +110,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     ((uint64_t *)tmp)[0] = AT_NULL;
     ((uint64_t *)tmp)[1] = 0;
 
-    if (link != NULL) {
+    if (link_data != NULL) {
         ((uint64_t *)tmp)[0] = AT_PHDR;
         ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
         tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
@@ -154,6 +154,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     free(tmp);
     free(envps);
     free(argvps);
+    free(link_data);
 
     return tmp_stack;
 }
@@ -167,32 +168,25 @@ void switch_to_user_mode(uint64_t func) {
     elf_start main_func = (elf_start)func;
     if (is_dynamic(get_current_task()->parent_group->elf_file)) {
         logkf("Dynamic %s\n", get_current_task()->name);
-
-        cp_module_t *module = get_module("libc");
-        if (module == NULL) {
-            kerror("Cannot find libc.so module.");
-            process_exit();
-        }
-
         uint64_t  linker_start = UINT64_MAX;
         elf_start linker_main;
+        uint8_t  *link_data = NULL;
+        size_t    link_size = 0;
 
-        linker_main = load_interpreter_elf(get_current_task()->parent_group->elf_file,
-                                           get_current_directory(), &linker_start);
-
-        linker_main = load_executor_elf(module->data, get_current_directory(),
-                                        INTERPRETER_BASE_ADDR, &linker_start);
+        linker_main =
+            load_interpreter_elf(get_current_task()->parent_group->elf_file,
+                                 get_current_directory(), &linker_start, &link_data, &link_size);
         if (linker_main == NULL) {
-            kerror("Cannot load libc.so module.");
+            kerror("Cannot load libc module.");
             process_exit();
         }
         linker_main = linker_main + linker_start;
 
         logkf("Linker main: %p | Program main: %p\n", linker_main, func);
-        rsp       = build_user_stack(get_current_task(), rsp, func, module, linker_start);
+        rsp = build_user_stack(get_current_task(), rsp, func, linker_start, link_data, link_size);
         main_func = linker_main;
     } else {
-        rsp = build_user_stack(get_current_task(), rsp, func, NULL, 0);
+        rsp = build_user_stack(get_current_task(), rsp, func, 0, NULL, 0);
     }
 
     vfs_node_t      stdio  = vfs_open("/dev/stdio");
