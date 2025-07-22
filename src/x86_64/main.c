@@ -65,6 +65,7 @@ extern void  fatfs_init();     // fatfs.c
 extern void  pipefs_setup();   // pipefs.c
 extern tcb_t kernel_head_task; // scheduler.c
 extern void  setup_urandom();  // urandom.c
+extern void  zero_setup();     // zero.c
 
 _Noreturn void cp_shutdown() {
     printk("Shutdown %s...\n", KERNEL_NAME);
@@ -131,6 +132,7 @@ void kmain() {
     smp_setup();
     gop_dev_setup();
     setup_urandom();
+    zero_setup();
     killer_setup();
     setup_syscall(true);
     xhci_setup();

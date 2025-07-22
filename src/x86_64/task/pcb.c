@@ -11,7 +11,6 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
-#include "module.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
