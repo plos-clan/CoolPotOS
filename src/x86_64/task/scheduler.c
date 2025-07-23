@@ -1,7 +1,6 @@
 #include "scheduler.h"
 #include "fsgsbase.h"
 #include "klog.h"
-#include "kprint.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "lock_queue.h"

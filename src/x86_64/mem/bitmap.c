@@ -76,3 +76,10 @@ size_t bitmap_find_range(const Bitmap *bitmap, size_t length, bool value) {
 
     return (size_t)-1;
 }
+
+bool bitmap_range_all(const Bitmap *bitmap, size_t start, size_t end, bool value) {
+    for (size_t i = start; i < end; i++) {
+        if (bitmap_get(bitmap, i) != value) return false;
+    }
+    return true;
+}

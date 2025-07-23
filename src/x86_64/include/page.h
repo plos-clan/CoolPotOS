@@ -1,11 +1,14 @@
 #pragma once
 
-#define PTE_PRESENT    (0x1 << 0)
-#define PTE_WRITEABLE  (0x1 << 1)
-#define PTE_USER       (0x1 << 2)
-#define PTE_FLAG_U     (0x1 << 3)
-#define PTE_HUGE       (0x1 << 7)
-#define PTE_NO_EXECUTE (((uint64_t)0x1) << 63)
+#define PTE_PRESENT    (0x1UL << 0)  // 页面是否存在
+#define PTE_WRITEABLE  (0x1UL << 1)  // 页面可写
+#define PTE_USER       (0x1UL << 2)  // 页面是否可被用户访问
+#define PTE_HUGE       (0x1UL << 7)  // 大页标志 (页表项为 PAT位)
+#define PTE_NO_EXECUTE (0x1UL << 63) // 不可执行
+#define PTE_DIS_CACHE  (1ULL << 4)   // 禁用缓存
+#define PTE_PWT        (1ULL << 3)   // CPU缓存写通策略
+#define PTE_U_ACCESSED (1ULL << 5)   // 已访问 (CPU主动标记)
+#define PTE_U_DIRTY    (1ULL << 6)   // 已写入 (CPU主动标记)
 
 #define MAP_ANONYMOUS 32
 #define MAP_FIXED     16
@@ -61,6 +64,24 @@ page_directory_t *get_kernel_pagedir();
  * @param flags 页表项标志位
  */
 void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
+
+/**
+ * 映射一页地址到指定物理地址 (1G页)
+ * @param directory 页表
+ * @param addr 虚拟地址
+ * @param frame 物理地址 (必须用 alloc_frames_1G 分配)
+ * @param flags 页表项标志位
+ */
+void page_map_to_1G(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
+
+/*
+ * 映射一页地址到指定物理地址 (2M页)
+ * @param directory 页表
+ * @param addr 虚拟地址
+ * @param frame 物理地址 (必须用 alloc_frames_2M 分配)
+ * @param flags 页表项标志位
+ */
+void page_map_to_2M(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
 
 /**
  * 映射一组物理地址 (对应的虚拟地址用hhdm计算)
@@ -142,6 +163,20 @@ void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size
  * @param vaddr 虚拟地址 (4k对齐)
  */
 void unmap_page(page_directory_t *directory, uint64_t vaddr);
+
+/**
+ * 释放指定地址的映射 (未使用 alloc_frames_2M 的页不可使用此方法取消映射)
+ * @param directory 页表
+ * @param vaddr 虚拟地址 (2M对齐)
+ */
+void unmap_page_2M(page_directory_t *directory, uint64_t vaddr);
+
+/**
+ * 释放指定地址的映射 (未使用 alloc_frames_1G 的页不可使用此方法取消映射)
+ * @param directory 页表
+ * @param vaddr 虚拟地址 (1G对齐)
+ */
+void unmap_page_1G(page_directory_t *directory, uint64_t vaddr);
 
 /**
  * 获取指定地址的页表项标志

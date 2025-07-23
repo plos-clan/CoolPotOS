@@ -95,7 +95,8 @@ void kmain() {
            COMPILER_NAME, COMPILER_VERSION, get_bootloader_name(), get_bootloader_version());
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
-    kinfo("DMI: %s %s, BIOS %s %s", smbios_sys_manufacturer(), smbios_sys_product_name(), smbios_bios_version(), smbios_bios_release_date());
+    kinfo("DMI: %s %s, BIOS %s %s", smbios_sys_manufacturer(), smbios_sys_product_name(),
+          smbios_bios_version(), smbios_bios_release_date());
     error_setup();
     float_processor_setup();
     fsgsbase_init();
