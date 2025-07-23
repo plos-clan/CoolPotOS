@@ -319,6 +319,44 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
     flush_tlb(vaddr);
 }
 
+void unmap_page_2M(page_directory_t *directory, uint64_t vaddr) {
+    uint64_t l4_index = (vaddr >> 39) & 0x1FF;
+    uint64_t l3_index = (vaddr >> 30) & 0x1FF;
+    uint64_t l2_index = (vaddr >> 21) & 0x1FF;
+
+    page_table_t *l4_table = directory->table;
+    page_table_t *l3_table = phys_to_virt(l4_table->entries[l4_index].value & 0x000fffffffff000);
+    if (!l3_table) return;
+
+    page_table_t *l2_table = phys_to_virt(l3_table->entries[l3_index].value & 0x000fffffffff000);
+    if (!l2_table) return;
+
+    uint64_t entry = l2_table->entries[l2_index].value;
+
+    if (entry & PTE_HUGE) {
+        free_frames_2M(entry & 0x000fffffffff000); // 清除物理页框
+        l2_table->entries[l2_index].value = 0;
+        flush_tlb(vaddr);
+    }
+}
+
+void unmap_page_1G(page_directory_t *directory, uint64_t vaddr) {
+    uint64_t l4_index = (vaddr >> 39) & 0x1FF;
+    uint64_t l3_index = (vaddr >> 30) & 0x1FF;
+
+    page_table_t *l4_table = directory->table;
+    page_table_t *l3_table = phys_to_virt(l4_table->entries[l4_index].value & 0x000fffffffff000);
+    if (!l3_table) return;
+
+    uint64_t entry = l3_table->entries[l3_index].value;
+
+    if (entry & PTE_HUGE) {
+        free_frames_1G(entry & 0x000fffffffff000); // 清除物理页框
+        l3_table->entries[l3_index].value = 0;
+        flush_tlb(vaddr);
+    }
+}
+
 void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size) {
     for (uint64_t va = vaddr; va < vaddr + size; va += PAGE_SIZE) {
         unmap_page(directory, va);
@@ -337,6 +375,32 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
     page_table_t *l1_table = page_table_create(&(l2_table->entries[l2_index]));
 
     l1_table->entries[l1_index].value = (frame & 0x000fffffffff000) | flags;
+
+    flush_tlb(addr);
+}
+
+void page_map_to_2M(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags) {
+    uint64_t l4_index = (addr >> 39) & 0x1FF;
+    uint64_t l3_index = (addr >> 30) & 0x1FF;
+    uint64_t l2_index = (addr >> 21) & 0x1FF;
+
+    page_table_t *l4_table = directory->table;
+    page_table_t *l3_table = page_table_create(&l4_table->entries[l4_index]);
+    page_table_t *l2_table = page_table_create(&l3_table->entries[l3_index]);
+
+    l2_table->entries[l2_index].value = (frame & 0x000fffffffe00000) | flags | PTE_HUGE;
+
+    flush_tlb(addr);
+}
+
+void page_map_to_1G(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags) {
+    uint64_t l4_index = (addr >> 39) & 0x1FF;
+    uint64_t l3_index = (addr >> 30) & 0x1FF;
+
+    page_table_t *l4_table = directory->table;
+    page_table_t *l3_table = page_table_create(&l4_table->entries[l4_index]);
+
+    l3_table->entries[l3_index].value = (frame & 0x000fffffc0000000) | flags | PTE_HUGE;
 
     flush_tlb(addr);
 }
