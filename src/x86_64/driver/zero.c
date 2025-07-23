@@ -33,9 +33,10 @@ int zero_poll(size_t events) {
     return revents;
 }
 
-int zero_ioctl(size_t req, void *handle) {
+int zero_ioctl(vdisk *device, size_t req, void *handle) {
     UNUSED(req);
     UNUSED(handle);
+    UNUSED(device);
     return -ENOSYS;
 }
 

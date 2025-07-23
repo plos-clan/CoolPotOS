@@ -49,7 +49,7 @@ void *gop_map(int drive, void *addr, uint64_t len) {
     return (void *)addr;
 }
 
-int gop_ioctl(size_t req, void *arg) {
+int gop_ioctl(vdisk *device, size_t req, void *arg) {
     switch (req) {
     case FBIOGET_FSCREENINFO:
         struct fb_fix_screeninfo *fb_fix = (struct fb_fix_screeninfo *)arg;

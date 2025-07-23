@@ -127,7 +127,7 @@ write:
 static int devfs_ioctl(void *file, size_t req, void *arg) {
     int dev_id = (int)(uint64_t)file;
     if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
-    return vdisk_ctl[dev_id].ioctl(req, arg);
+    return vdisk_ctl[dev_id].ioctl(&vdisk_ctl[dev_id], req, arg);
 }
 
 static vfs_node_t devfs_dup(vfs_node_t node) {

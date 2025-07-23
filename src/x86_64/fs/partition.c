@@ -1,6 +1,7 @@
 #include "partition.h"
-#include "devfs.h"
+#include "errno.h"
 #include "heap.h"
+#include "ioctl.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -80,6 +81,9 @@ bool parser_block_device(vfs_node_t device, vdisk disk, size_t vdisk_id) {
                     partition->type         = GPT;
                     partition->sector_size  = disk.sector_size;
                     partition->is_used      = true;
+                    memcpy(partition->disk_guid, gpt->disk_guid, 16);
+                    memcpy(partition->partition_type_guid, entry->partition_type_guid, 16);
+                    memcpy(partition->unique_partition_guid, entry->unique_partition_guid, 16);
                     memcpy(partition->partition_name, entry->partition_name, 36 * 2);
                     partition_num++;
                     char out[37];
@@ -95,6 +99,46 @@ bool parser_block_device(vfs_node_t device, vdisk disk, size_t vdisk_id) {
     }
     free(mbr);
     return true;
+}
+
+int extract_partition_index(const char *name) {
+    const char *prefix     = "part";
+    size_t      prefix_len = strlen(prefix);
+    if (strncmp(name, prefix, prefix_len) != 0) { return -1; }
+    const char *suffix = name + prefix_len;
+    for (const char *p = suffix; *p; p++) {
+        if (!isdigit((unsigned char)*p)) { return -1; }
+    }
+    return atoi(suffix);
+}
+
+int partition_ioctl(vdisk *device, size_t req, void *arg) {
+    int device_id = extract_partition_index(device->drive_name);
+    if (device_id == -1) return -ENODEV;
+    partition_t partition = partitions[device_id];
+    switch (req) {
+    case IOGPTYPE:
+        if (arg == NULL) return -EINVAL;
+        uint16_t *type = (uint16_t *)arg;
+        *type          = partition.type == GPT   ? PARTITION_TYPE_GPT
+                         : partition.type == MBR ? PARTITION_TYPE_MBR
+                                                 : PARTITION_TYPE_UNKNOWN;
+        break;
+    case IOGPINFO:
+        if (arg == NULL) return -EINVAL;
+        if (partition.type == GPT) {
+            struct ioctl_gpt_partition *info = (struct ioctl_gpt_partition *)arg;
+            memcpy(info->disk_guid, partition.disk_guid, 16);
+            memcpy(info->partition_type_guid, partition.partition_type_guid, 16);
+            memcpy(info->unique_partition_guid, partition.unique_partition_guid, 16);
+            memcpy(info->name, partition.partition_name, 36);
+            info->size  = partition.sector_size;
+            info->start = partition.starting_lba;
+            info->end   = partition.ending_lba;
+        }
+        break;
+    }
+    return EOK;
 }
 
 void partition_init() {
@@ -121,6 +165,7 @@ void partition_init() {
         part.type        = VDISK_BLOCK;
         part.read        = partition_read;
         part.write       = partition_write;
+        part.ioctl       = partition_ioctl;
         part.size = (partition.ending_lba - partition.starting_lba + 1) * partition.sector_size;
         char buf[20];
         sprintf(buf, "part%zu", j);

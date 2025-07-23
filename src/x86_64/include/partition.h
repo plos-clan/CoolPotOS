@@ -3,6 +3,10 @@
 #define GPT_HEADER_SIGNATURE "EFI PART"
 #define MAX_PARTITIONS_NUM   128
 
+#define PARTITION_TYPE_GPT     0xC12A7328
+#define PARTITION_TYPE_MBR     0xEBD0A0A2
+#define PARTITION_TYPE_UNKNOWN 0xFFFFFFFF
+
 #include "ctype.h"
 
 struct GPT_DPT {
@@ -43,6 +47,9 @@ typedef struct partition {
     } type;
     bool     is_used;
     uint16_t partition_name[36];
+    uint8_t  partition_type_guid[16];   // 分区类型 GUID
+    uint8_t  unique_partition_guid[16]; // 分区 GUID
+    uint8_t  disk_guid[16];             // 设备 GUID
 } partition_t;
 
 void partition_init();

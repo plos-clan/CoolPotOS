@@ -115,6 +115,7 @@
 #define SYSCALL_PRCTL       157
 #define SYSCALL_ARCH_PRCTL  158
 #define SYSCALL_G_AFFINITY  160
+#define SYSCALL_MOUNT       165
 #define SYSCALL_REBOOT      169
 #define SYSCALL_GET_TID     186
 #define SYSCALL_FUTEX       202

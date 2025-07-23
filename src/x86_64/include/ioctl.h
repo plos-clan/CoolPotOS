@@ -247,3 +247,17 @@ struct winsize {
 
 #define SIOCDEVPRIVATE   0x89F0
 #define SIOCPROTOPRIVATE 0x89E0
+
+/* CP_Kernel 特有 ioctl */
+#define IOGPTYPE 0x545E // 获取分区类型
+#define IOGPINFO 0x545F // 获取分区信息
+
+struct ioctl_gpt_partition {
+    uint16_t name[36];                  // 分区名
+    uint64_t start;                     // 起始扇区
+    uint64_t end;                       // 结束扇区
+    uint64_t size;                      // 分区大小（单位：扇区）
+    uint8_t  partition_type_guid[16];   // 分区类型 GUID
+    uint8_t  unique_partition_guid[16]; // 分区 GUID
+    uint8_t  disk_guid[16];
+};
