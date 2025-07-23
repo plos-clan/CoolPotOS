@@ -1346,6 +1346,22 @@ syscall_(pwrite) {
     return syscall_write(arg0, arg1, arg2, 0, 0, 0, regs);
 }
 
+syscall_(mount) {
+    char      *dev_name = (char *)arg0;
+    char      *dir_name = (char *)arg1;
+    char      *type     = (char *)arg2;
+    uint64_t   flags    = arg3;
+    void      *data     = (void *)arg4;
+    vfs_node_t dir      = vfs_open((const char *)dir_name);
+    if (!dir) { return SYSCALL_FAULT_(ENOENT); }
+
+    if (vfs_mount((const char *)dev_name, dir) == VFS_STATUS_FAILED) {
+        return SYSCALL_FAULT_(ENOENT);
+    }
+
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1414,6 +1430,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_CP_F_RANGE]  = syscall_copy_file_range,
     [SYSCALL_PREAD]       = syscall_pread,
     [SYSCALL_PWRITE]      = syscall_pwrite,
+    [SYSCALL_MOUNT]       = syscall_mount,
 };
 // clang-format on
 

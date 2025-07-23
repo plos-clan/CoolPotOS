@@ -101,6 +101,10 @@ char *strrchr(const char *s, int c);
 
 char *strtok(char *str, const char *delim);
 
+int isdigit(int c);
+
+int atoi(const char *pstr);
+
 char *pathacat(char *p1, char *p2);
 
 int cmd_parse(const char *cmd_str, char **argv, char token);

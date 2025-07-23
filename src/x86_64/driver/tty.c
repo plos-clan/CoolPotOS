@@ -159,7 +159,7 @@ static size_t stdout_write(int drive, uint8_t *buffer, size_t number, size_t lba
     return number;
 }
 
-static int tty_ioctl(size_t req, void *arg) {
+static int tty_ioctl(vdisk *device, size_t req, void *arg) {
     switch (req) {
     case TIOCGWINSZ:
         struct winsize *ws = (struct winsize *)arg;
