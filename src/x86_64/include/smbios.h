@@ -58,3 +58,62 @@ int smbios_major_version(void);
 int smbios_minor_version(void);
 
 void smbios_setup();
+
+/* 获取BIOS厂家字符串 */
+const char *smbios_bios_vendor(void);
+
+/* 获取BIOS版本字符串 */
+const char *smbios_bios_version(void);
+
+/* 获取BIOS起始地址段 */
+uint16_t smbios_bios_starting_address_segment(void);
+
+/* 获取BIOS发布日期字符串 */
+const char *smbios_bios_release_date(void);
+
+/* 获取BIOS ROM大小 */
+uint32_t smbios_bios_rom_size(void);
+
+/* 获取BIOS特性 */
+uint64_t smbios_bios_characteristics(void);
+
+/* 获取BIOS特性扩展字节 */
+uint16_t smbios_bios_characteristics_ext(void);
+
+/* 获取BIOS主要版本 */
+uint8_t smbios_bios_major_release(void);
+
+/* 获取BIOS次要版本 */
+uint8_t smbios_bios_minor_release(void);
+
+/* 获取BIOS嵌入式控制器固件主要版本 */
+uint8_t smbios_bios_ec_major_release(void);
+
+/* 获取BIOS嵌入式控制器固件次要版本 */
+uint8_t smbios_bios_ec_minor_release(void);
+
+/* Type-1 */
+
+/* 获取系统制造商字符串 */
+const char *smbios_sys_manufacturer(void);
+
+/* 获取系统产品名称字符串 */
+const char *smbios_sys_product_name(void);
+
+/* 获取系统版本字符串 */
+const char *smbios_sys_version(void);
+
+/* 获取系统序列号字符串 */
+const char *smbios_sys_serial_number(void);
+
+/* 获取系统UUID */
+void smbios_sys_uuid(uint8_t uuid[16]);
+
+/* 获取系统唤醒类型 */
+uint8_t smbios_sys_wakeup_type(void);
+
+/* 获取系统SKU编号字符串 */
+const char *smbios_sys_sku_number(void);
+
+/* 获取系统系列字符串 */
+const char *smbios_sys_family(void);
