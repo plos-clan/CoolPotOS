@@ -1,4 +1,5 @@
 #include "killer.h"
+#include "fsgsbase.h"
 #include "heap.h"
 #include "klog.h"
 #include "lock_queue.h"
@@ -11,17 +12,17 @@ _Noreturn void halt_service() {
     loop {
         open_interrupt;
         __asm__ volatile("hlt");
-        if (!cpu->ready) continue;
+        if (!current_cpu->ready) continue;
         tcb_t task = NULL;
-        spin_lock(cpu->death_queue->lock);
-        queue_foreach(cpu->death_queue, node) {
+        spin_lock(current_cpu->death_queue->lock);
+        queue_foreach(current_cpu->death_queue, node) {
             task = (tcb_t)node->data;
             if (task == NULL) continue;
             break;
         }
-        spin_unlock(cpu->death_queue->lock);
+        spin_unlock(current_cpu->death_queue->lock);
         if (task == NULL || task->status != DEATH) { continue; }
-        queue_remove_at(cpu->death_queue, task->death_index);
+        queue_remove_at(current_cpu->death_queue, task->death_index);
         kill_thread0(task);
         queue_remove_at(task->parent_group->pcb_queue, task->group_index);
         free(task);

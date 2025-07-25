@@ -14,10 +14,12 @@ volatile bool is_scheduler     = false;
 extern uint64_t cpu_count;        // smp.c
 extern uint32_t bsp_processor_id; // smp.c
 
+tcb_t (*scheduler_add)(void) = NULL;
+
 spin_t scheduler_lock;
 
 tcb_t get_current_task() {
-    return cpu->ready ? cpu->current_pcb : NULL;
+    return current_cpu->ready ? current_cpu->current_pcb : NULL;
 }
 
 void enable_scheduler() {
@@ -29,15 +31,15 @@ void disable_scheduler() {
 }
 
 void scheduler_yield() {
-    if ((!cpu->ready) || cpu->current_pcb == NULL) return;
+    if ((!current_cpu->ready) || current_cpu->current_pcb == NULL) return;
     open_interrupt;
     __asm__ volatile("int %0" ::"i"(timer));
 }
 
 void scheduler_nano_sleep(uint64_t nano) {
-    weight_submit(get_current_task());
-    uint64_t targetTime = nano_time();
-    uint64_t after      = 0;
+    uint64_t targetTime        = nano_time();
+    uint64_t after             = 0;
+    get_current_task()->status = WAIT;
     loop {
         uint64_t n = nano_time();
         if (n < targetTime) {
@@ -47,7 +49,10 @@ void scheduler_nano_sleep(uint64_t nano) {
             after      += n - targetTime;
             targetTime  = n;
         }
-        if (after >= nano) { return; }
+        if (after >= nano) {
+            get_current_task()->status = RUNNING;
+            return;
+        }
         if (nano > 10) {
             scheduler_yield(); // 让出CPU时间片
         }
@@ -55,7 +60,7 @@ void scheduler_nano_sleep(uint64_t nano) {
 }
 
 /*
- * CP_Kernel 内核默认任务分配器 - 公平负载核心分配
+ * CP_Kernel 内核默认任务分配器 - 公平任务核心分配
  * 保证每一个CPU核心的任务数量大致相同
  */
 int add_task(tcb_t new_task) {
@@ -166,87 +171,45 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     reg->cs     = target->context0.cs;
 }
 
-void weight_submit(tcb_t thread) {
-    if (thread->weight > 0) thread->weight--;
-}
-
 /**
- * CP_Kernel 内核默认多核调度器 - 循环绝对公平调度
+ * CP_Kernel 多核调度器 - EEVDF 多队列公平负载调度
  * @param reg 当前任务上下文
  */
 void scheduler(registers_t *reg) {
     if (!is_scheduler) return;
-    if (!cpu->ready) {
-        logkf("Error: scheduler null %d\n", cpu->id);
+    if (!current_cpu->ready) {
+        logkf("Error: scheduler null %d\n", current_cpu->id);
         return;
     }
-    if (cpu->current_pcb == NULL) {
-        logkf("Error: scheduler null %d\n", cpu->id);
+    if (current_cpu->current_pcb == NULL) {
+        logkf("Error: scheduler null %d\n", current_cpu->id);
         return;
     }
 
+    tcb_t current = get_current_task();
+    tcb_t best    = scheduler_add();
     write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上
-
-    tcb->cpu_clock++;
-    if (tcb->task_level != TASK_IDLE_LEVEL) tcb->weight++;
-    if (tcb->time_buf != NULL) {
-        tcb->cpu_timer += get_time(tcb->time_buf);
-        tcb->time_buf   = NULL;
-    }
-    tcb->time_buf = alloc_timer();
-
-    // 下一任务选取
-    tcb_t next;
-    if (cpu->scheduler_queue->size == 1) {
-        write_fsbase(get_current_task()->fs_base); // 没有进行任务切换，再换回来
-        spin_unlock(scheduler_lock);
-        return;
-    }
-    if (cpu->iter_node == NULL) {
-    iter_head:
-        cpu->iter_node = cpu->scheduler_queue->head;
-        next           = (tcb_t)cpu->iter_node->data;
-    } else {
-    resche:
-        cpu->iter_node = cpu->iter_node->next;
-        if (cpu->iter_node == NULL) goto iter_head;
-        next = (tcb_t)cpu->iter_node->data;
-        not_null_assets(next, "scheduler next null");
-
-        // 死亡/回收/挂起的线程不调度
-        switch (next->status) {
-        case FUTEX:
-        case DEATH:
-        case OUT: goto resche;
-        default:
-            if (next->parent_group->status == DEATH || next->parent_group->status == FUTEX) {
-                goto resche;
-            }
-        }
-    }
 
     // 任务寻父处理
     extern pcb_t kernel_group;
-    if (next->parent_group->parent_task == NULL ||
-        next->parent_group->parent_task->status == DEATH ||
-        next->parent_group->parent_task->status == OUT) {
-        next->parent_group->parent_task = kernel_group;
+    if (best->parent_group->parent_task == NULL ||
+        best->parent_group->parent_task->status == DEATH ||
+        best->parent_group->parent_task->status == OUT) {
+        best->parent_group->parent_task = kernel_group;
     }
 
     // 信号检查
-    check_pending_signals(next->parent_group, next);
+    check_pending_signals(best->parent_group, best);
 
     // 正式切换
-    if (cpu->current_pcb != next) {
+    if (current_cpu->current_pcb != best) {
         disable_scheduler();
-        if (tcb->status == RUNNING) tcb->status = START;
-        if (next->status == START || next->status == CREATE) {
-            next->status               = RUNNING;
-            next->parent_group->status = RUNNING;
-        }
+        if (current->status == RUNNING) { current->status = START; }
+        if (best->status == START || best->status == CREATE) { best->status = RUNNING; }
 
-        change_proccess(reg, cpu->current_pcb, next);
-        change_current_tcb(next);
+        change_proccess(reg, current_cpu->current_pcb, best);
+        change_current_tcb(best);
+        current_cpu->current_pcb = best;
         enable_scheduler();
     } else
         write_fsbase(get_current_task()->fs_base); // 同样，没切任务，换回来

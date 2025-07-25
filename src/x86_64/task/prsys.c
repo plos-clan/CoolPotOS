@@ -5,6 +5,7 @@
  * 内核态操作进程请使用 pcb.c 中的函数
  */
 #include "elf_util.h"
+#include "fsgsbase.h"
 #include "heap.h"
 #include "hhdm.h"
 #include "ipc.h"
@@ -30,7 +31,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->cpu_timer       = 0;
     new_task->weight          = 0;
     new_task->mem_usage       = get_all_memusage();
-    new_task->cpu_id          = cpu->id;
+    new_task->cpu_id          = current_cpu->id;
     new_task->status          = START;
     new_task->context0.rsp    = stack;
     new_task->user_stack      = stack;
@@ -74,6 +75,10 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     spin_unlock(parent_task->parent_group->pcb_queue->lock);
     new_task->tid          = now_tid++;
     new_task->parent_group = parent_task->parent_group;
+
+    new_task->weight     = 200;
+    new_task->time_slice = 30;
+    new_task->use_slice  = 30;
 
     if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
 
@@ -173,7 +178,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->cpu_clock      = 0;
     new_task->cpu_timer      = 0;
     new_task->mem_usage      = get_all_memusage();
-    new_task->cpu_id         = cpu->id;
+    new_task->cpu_id         = current_cpu->id;
     new_task->status         = START;
     new_task->user_stack     = parent_task->user_stack;
     new_task->user_stack_top = parent_task->user_stack_top;
@@ -217,6 +222,10 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
+
+    new_task->weight     = 200;
+    new_task->time_slice = 30;
+    new_task->use_slice  = 30;
 
     add_task(new_task);
     enable_scheduler();

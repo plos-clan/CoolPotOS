@@ -1,7 +1,9 @@
 #include "pcb.h"
+#include "boot.h"
 #include "description_table.h"
 #include "elf.h"
 #include "elf_util.h"
+#include "fsgsbase.h"
 #include "heap.h"
 #include "hhdm.h"
 #include "io.h"
@@ -341,7 +343,8 @@ tcb_t found_thread(pcb_t pcb, int tid) {
 
 int waitpid(int pid, int *pid_ret) {
     if (pid == -1) {
-        bool is_sti = are_interrupts_enabled();
+        bool is_sti                = are_interrupts_enabled();
+        get_current_task()->status = WAIT;
         open_interrupt;
         ipc_message_t mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         int           exit_code =
@@ -349,12 +352,13 @@ int waitpid(int pid, int *pid_ret) {
         *pid_ret = mesg->pid;
         free(mesg);
         if (!is_sti) close_interrupt;
-        weight_submit(get_current_task());
+        get_current_task()->status = RUNNING;
         return exit_code;
     }
     if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
-    bool          is_sti = are_interrupts_enabled();
+    bool          is_sti       = are_interrupts_enabled();
+    get_current_task()->status = WAIT;
     open_interrupt;
     loop {
         mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
@@ -364,7 +368,7 @@ int waitpid(int pid, int *pid_ret) {
             *pid_ret = mesg->pid;
             free(mesg);
             if (!is_sti) close_interrupt;
-            weight_submit(get_current_task());
+            get_current_task()->status = RUNNING;
             return exit_code;
         }
         ipc_send(get_current_task()->parent_group, mesg);
@@ -433,7 +437,7 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->cpu_clock  = 0;
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
-    new_task->cpu_id     = cpu->id;
+    new_task->cpu_id     = current_cpu->id;
     new_task->weight     = 0;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
@@ -452,6 +456,10 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->context0.cs    = 0x8;
     new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
     new_task->status                                                      = CREATE;
+
+    new_task->weight     = 200;
+    new_task->time_slice = 30;
+    new_task->use_slice  = 30;
 
     new_task->fs_base = (uint64_t)new_task;
 
@@ -482,7 +490,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->cpu_clock  = 0;
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
-    new_task->cpu_id     = cpu->id;
+    new_task->cpu_id     = current_cpu->id;
     new_task->weight     = 0;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
@@ -501,6 +509,10 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->context0.es    = 0x10;
     new_task->context0.ds    = 0x10;
     new_task->status         = CREATE;
+
+    new_task->weight     = 200;
+    new_task->time_slice = 30;
+    new_task->use_slice  = 30;
 
     new_task->fs_base = (uint64_t)new_task;
 
@@ -522,6 +534,11 @@ void init_pcb() {
     pcb_lock       = SPIN_INIT;
     scheduler_lock = SPIN_INIT;
     pgb_queue      = queue_init();
+
+    extern tcb_t select_next_task_eevdf();
+    extern tcb_t select_next_task_rrs();
+    extern tcb_t (*scheduler_add)(void);
+    scheduler_add = get_smp_info()->cpu_count > 3 ? select_next_task_eevdf : select_next_task_rrs;
 
     kernel_group = malloc(sizeof(struct process_control_block));
     memset(kernel_group, 0, sizeof(struct process_control_block));
@@ -553,13 +570,17 @@ void init_pcb() {
     kernel_head_task->context0.rflags = get_rflags();
     kernel_head_task->cpu_timer       = nano_time();
     kernel_head_task->time_buf        = alloc_timer();
-    kernel_head_task->cpu_id          = cpu->id;
+    kernel_head_task->cpu_id          = lapic_id();
     kernel_head_task->status          = RUNNING;
     kernel_head_task->weight          = 0;
     kernel_head_task->task_level      = TASK_IDLE_LEVEL;
 
+    kernel_head_task->weight     = 10;
+    kernel_head_task->time_slice = 5;
+    kernel_head_task->use_slice  = 1;
+
     char name[50];
-    sprintf(name, "CP_IDLE_CPU%u", cpu->id);
+    sprintf(name, "CP_IDLE_CPU%u", lapic_id());
     memcpy(kernel_head_task->name, name, strlen(name));
     kernel_head_task->name[strlen(name)] = '\0';
     kernel_head_task->group_index        = queue_enqueue(kernel_group->pcb_queue, kernel_head_task);

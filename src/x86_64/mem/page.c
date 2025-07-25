@@ -1,5 +1,6 @@
 #include "page.h"
 #include "frame.h"
+#include "fsgsbase.h"
 #include "hhdm.h"
 #include "io.h"
 #include "isr.h"
@@ -122,7 +123,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
         error_msg, faulting_address);
     if (get_current_task() != NULL) {
         printk("Current process PID: %d:%s (%s) at CPU%d\n", get_current_task()->tid,
-               get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
+               get_current_task()->name, get_current_task()->parent_group->name, current_cpu->id);
     }
     print_register(frame);
     terminal_flush();
@@ -229,7 +230,7 @@ page_directory_t *get_kernel_pagedir() {
 }
 
 page_directory_t *get_current_directory() {
-    return cpu->ready ? cpu->directory : current_directory;
+    return current_cpu->ready ? current_cpu->directory : current_directory;
 }
 
 static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy,
@@ -415,8 +416,8 @@ void switch_process_page_directory(page_directory_t *dir) {
 }
 
 void switch_page_directory(page_directory_t *dir) {
-    if (cpu->ready) {
-        cpu->directory = dir;
+    if (current_cpu->ready) {
+        current_cpu->directory = dir;
     } else {
         current_directory = dir;
     }

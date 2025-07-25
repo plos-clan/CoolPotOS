@@ -1,5 +1,6 @@
 #include "boot.h"
 #include "description_table.h"
+#include "fsgsbase.h"
 #include "io.h"
 #include "krlibc.h"
 #include "smp.h"
@@ -47,7 +48,7 @@ void gdt_setup() {
     wrmsr(0xC0000100, 0);
     wrmsr(0xC0000101, (uint64_t)boot_cpu);
     wrmsr(0xC0000102, (uint64_t)boot_cpu);
-    cpu->id = boot_id;
+    current_cpu->id = boot_id;
 
     tss_setup();
 }
@@ -68,7 +69,7 @@ void tss_setup() {
 }
 
 void set_kernel_stack(uint64_t rsp) {
-    uint64_t cpuid = cpu->id;
+    uint64_t cpuid = current_cpu->id;
     if (cpuid == bsp_processor_id)
         tss0.rsp[0] = rsp;
     else { smp_cpus[cpuid].tss0.rsp[0] = rsp; }

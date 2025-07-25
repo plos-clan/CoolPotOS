@@ -104,6 +104,7 @@
 #define SYSCALL_WAITPID     61
 #define SYSCALL_UNAME       63
 #define SYSCALL_FCNTL       72
+#define SYSCALL_FTRUNCATE   77
 #define SYSCALL_GETCWD      79
 #define SYSCALL_CHDIR       80
 #define SYSCALL_MKDIR       83

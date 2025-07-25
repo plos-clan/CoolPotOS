@@ -1362,6 +1362,10 @@ syscall_(mount) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(ftruncate) {
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1431,6 +1435,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_PREAD]       = syscall_pread,
     [SYSCALL_PWRITE]      = syscall_pwrite,
     [SYSCALL_MOUNT]       = syscall_mount,
+    [SYSCALL_FTRUNCATE]   = syscall_ftruncate,
 };
 // clang-format on
 

@@ -36,12 +36,12 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
     init_print_lock();
     spin_lock(error_lock);
     terminal_close_flush();
-    logkf("Kernel Error: %s:0x%x CPU%d %p\n", msg, code, cpu->id, frame->rip); // 679a0
+    logkf("Kernel Error: %s:0x%x CPU%d %p\n", msg, code, current_cpu->id, frame->rip); // 679a0
     if (get_current_task() == NULL) {
-        logkf("Current process PID: NULL CPU%d\n", cpu->id);
+        logkf("Current process PID: NULL CPU%d\n", current_cpu->id);
     } else {
         logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->tid,
-              get_current_task()->name, get_current_task()->parent_group->name, cpu->id);
+              get_current_task()->name, get_current_task()->parent_group->name, current_cpu->id);
         if (get_current_task()->parent_group->task_level == TASK_APPLICATION_LEVEL)
             kill_proc(get_current_task()->parent_group, -1);
         spin_unlock(error_lock);
