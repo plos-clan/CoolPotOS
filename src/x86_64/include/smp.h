@@ -38,4 +38,4 @@ void       smp_setup();
 uint64_t   cpu_num();
 smp_cpu_t *get_cpu_smp(uint32_t processor_id);
 
-static __attr(address_space(256)) smp_cpu_t *const cpu = (__attr(address_space(256)) void *)0;
+// static __attr(address_space(256)) smp_cpu_t *const cpu = (__attr(address_space(256)) void *)0;

@@ -126,7 +126,6 @@ struct thread_control_block {
     int        tid;          // 线程 TID
     TaskStatus status;       // 线程状态
     char       name[50];     // 线程名
-    size_t     weight;       // 调度权重
 
     sigaction_t   actions[MAXSIG]; // 信号处理器回调
     uint64_t      signal;          // 信号位图
@@ -151,6 +150,13 @@ struct thread_control_block {
     uint64_t          fs_base;       // fs段基址
     uint64_t          gs_base;       // gs段基址
     uint64_t          fs, gs;
+
+    size_t vruntime;
+    size_t deadline;
+    size_t weight;
+    size_t lag;
+    int    time_slice;
+    int    use_slice;
 
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引
@@ -301,13 +307,6 @@ void futex_wake(void *phys_addr, int count);
  * @param thread 线程
  */
 void futex_free(tcb_t thread);
-
-/**
- * 减少线程调度权重
- * @param thread 被操作线程
- */
-void weight_submit(tcb_t thread);
-;
 
 int task_block(tcb_t thread, TaskStatus state, int timeout_ms);
 
