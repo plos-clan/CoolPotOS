@@ -168,12 +168,17 @@ static __attr(address_space(257)) struct thread_control_block *const tcb =
     (__attr(address_space(257)) void *)0;
 
 /**
- * 向当下cpu核心的调度队列增加一个任务
+ * 由分配算法决定向哪个核心添加任务
  * @param new_task
  * @return == -1 ? 添加失败 : 返回的队列索引
  */
 int  add_task(tcb_t new_task);
 void remove_task(tcb_t task);
+
+/**
+ * 向指定CPU核心添加一个任务
+ */
+int add_task_cpu(tcb_t new_task, size_t cpuid);
 
 void switch_to_user_mode(uint64_t func);
 
@@ -183,9 +188,11 @@ void switch_to_user_mode(uint64_t func);
  * @param args 传入参数
  * @param name 线程名
  * @param pgb_group == NULL ? 无父进程自动进入System进程 : 添加至指定的进程
+ * @param cpuid 向指定CPU核心添加线程, (SIZE_MAX为自动分配)
  * @return 线程 tid
  */
-int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pgb_group);
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pgb_group,
+                         size_t cpuid);
 
 /**
  * 创建用户态线程
