@@ -11,7 +11,7 @@ size_t scale_inverse_fair(tcb_t t, double value) {
 }
 
 void compute_lag() {
-    size_t total_vruntime = 0.0;
+    size_t total_vruntime = 0;
     queue_foreach(current_cpu->scheduler_queue, node) {
         tcb_t tcb1      = (tcb_t)node->data;
         total_vruntime += tcb1->vruntime;

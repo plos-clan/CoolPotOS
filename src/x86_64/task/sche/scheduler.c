@@ -93,6 +93,26 @@ int add_task(tcb_t new_task) {
     return new_task->queue_index;
 }
 
+int add_task_cpu(tcb_t new_task, size_t cpuid) {
+    if (new_task == NULL) return -1;
+    spin_lock(scheduler_lock);
+
+    smp_cpu_t *cpu0 = get_cpu_smp(cpuid);
+
+    if (cpu0 == NULL) {
+        spin_unlock(scheduler_lock);
+        return -1;
+    }
+    new_task->cpu_id      = cpuid;
+    new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
+    spin_unlock(cpu0->scheduler_queue->lock);
+
+    if (new_task->queue_index == (size_t)-1) { return -1; }
+
+    spin_unlock(scheduler_lock);
+    return new_task->queue_index;
+}
+
 void remove_task(tcb_t task) {
     if (task == NULL) return;
     spin_lock(scheduler_lock);

@@ -254,7 +254,7 @@ uint32_t ConfigureXHCI(XHCI_CONTROLLER *controller) {
     open_interrupt;
     enable_scheduler();
 
-    if (use_kthread) { create_kernel_thread(usb_kernel_thread, (void *)0, "XHCI", NULL); }
+    if (use_kthread) { create_kernel_thread(usb_kernel_thread, (void *)0, "XHCI", NULL, SIZE_MAX); }
 
     int count = USBEnumerate(hub);
     // xhci_free_pipes

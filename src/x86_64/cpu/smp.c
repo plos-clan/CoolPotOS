@@ -94,7 +94,9 @@ static void apu_gdt_setup() {
     __asm__ volatile("ltr %[offset]\n\t" : : [offset] "rm"(0x28U) : "memory");
 }
 
-void apu_entry() {
+extern void halt_service();
+
+_Noreturn void apu_entry() {
     spin_lock(apu_lock);
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
@@ -114,9 +116,8 @@ void apu_entry() {
     apu_idle->cpu_timer                             = nano_time();
     apu_idle->time_buf                              = alloc_timer();
     apu_idle->cpu_id                                = current_cpu->id;
-    apu_idle->context0.rip                          = (uint64_t)&halt_service;
     apu_idle->status                                = RUNNING;
-    apu_idle->weight                                = 10;
+    apu_idle->weight                                = 1;
     apu_idle->time_slice                            = 50;
     apu_idle->use_slice                             = 1;
     char name[50];
@@ -143,8 +144,10 @@ void apu_entry() {
 
     setup_syscall(false);
 
+    create_kernel_thread((void *)halt_service, NULL, "free service", kernel_group, lapic_id());
+
     open_interrupt;
-    halt_service();
+    loop __asm__ volatile("hlt");
 }
 
 smp_cpu_t *get_cpu_smp(uint32_t processor_id) {

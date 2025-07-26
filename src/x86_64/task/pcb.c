@@ -469,7 +469,8 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     return new_task->tid;
 }
 
-int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pcb) {
+int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pcb,
+                         size_t cpuid) {
     close_interrupt;
     disable_scheduler();
     tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
@@ -516,7 +517,7 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
 
     new_task->fs_base = (uint64_t)new_task;
 
-    add_task(new_task);
+    cpuid == SIZE_MAX ? add_task(new_task) : add_task_cpu(new_task, cpuid);
     enable_scheduler();
     open_interrupt;
     return new_task->tid;
@@ -575,7 +576,7 @@ void init_pcb() {
     kernel_head_task->weight          = 0;
     kernel_head_task->task_level      = TASK_IDLE_LEVEL;
 
-    kernel_head_task->weight     = 10;
+    kernel_head_task->weight     = 100;
     kernel_head_task->time_slice = 5;
     kernel_head_task->use_slice  = 1;
 

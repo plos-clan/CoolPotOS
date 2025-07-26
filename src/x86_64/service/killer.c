@@ -11,7 +11,6 @@ extern lock_queue *pgb_queue;
 _Noreturn void halt_service() {
     loop {
         open_interrupt;
-        __asm__ volatile("hlt");
         if (!current_cpu->ready) continue;
         tcb_t task = NULL;
         spin_lock(current_cpu->death_queue->lock);
@@ -84,5 +83,5 @@ void add_death_proc(pcb_t task) {
 
 void killer_setup() {
     death_proc_queue = queue_init();
-    create_kernel_thread((void *)killer_service, NULL, "KillerService", NULL);
+    create_kernel_thread((void *)killer_service, NULL, "KillerService", NULL, SIZE_MAX);
 }
