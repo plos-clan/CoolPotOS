@@ -14,7 +14,6 @@
 #define KERNEL_AREA_MEM       0xf000000000000000       // 内核地址空间起始
 #define DRIVER_AREA_MEM       0xffffb00000000000       // 驱动恒等映射空间偏移
 #define USER_MMAP_START       0x0000400000000000UL     // 用户堆映射起始地址
-#define USER_MMAP_END         0x0000700000000000UL     // 用户堆映射结束地址
 #define MAX_SIGNALS           64                       // 最大支持信号个数
 #define EHDR_START_ADDR       0x0000300000000000       // ELF头起始地址
 #define INTERPRETER_EHDR_ADDR 0x0000200000000000       // 链接器ELF头起始地址

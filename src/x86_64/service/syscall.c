@@ -262,6 +262,76 @@ wait:
     return ret_pid;
 }
 
+void unmap_virtual_page(pcb_t process, uint64_t vaddr, size_t length) {
+    uint64_t vaddr_end = vaddr + length;
+    do {
+        mm_virtual_page_t *vpage = NULL;
+        spin_lock(process->virt_queue->lock);
+        queue_foreach(process->virt_queue, node) {
+            mm_virtual_page_t *virtual_page = (mm_virtual_page_t *)node->data;
+            uint64_t           start        = virtual_page->start;
+            uint64_t           end          = virtual_page->start + virtual_page->count * PAGE_SIZE;
+
+            if (end > vaddr && start < vaddr_end) {
+                vpage = virtual_page;
+                break;
+            }
+        }
+        spin_unlock(process->virt_queue->lock);
+        if (vpage == NULL) break;
+        uint64_t start = vpage->start;
+        uint64_t end   = vpage->start + vpage->count * PAGE_SIZE;
+
+        if (vaddr <= start && vaddr_end >= end) {
+            // 完全覆盖
+            goto free_end;
+        }
+        if (vaddr <= start && vaddr_end < end) {
+            // 覆盖左边，保留右段
+            mm_virtual_page_t *right = malloc(sizeof(mm_virtual_page_t));
+            right->start             = vaddr_end;
+            right->count             = (end - vaddr_end) / PAGE_SIZE;
+            right->flags             = vpage->flags;
+            right->pte_flags         = vpage->pte_flags;
+            right->index             = queue_enqueue(process->virt_queue, right);
+            goto free_end;
+        }
+
+        if (vaddr > start && vaddr_end >= end) {
+            // 覆盖右边，保留左段
+            mm_virtual_page_t *left = malloc(sizeof(mm_virtual_page_t));
+            left->start             = start;
+            left->count             = (vaddr - start) / PAGE_SIZE;
+            left->flags             = vpage->flags;
+            left->pte_flags         = vpage->pte_flags;
+            left->index             = queue_enqueue(process->virt_queue, left);
+            goto free_end;
+        }
+
+        if (vaddr > start && vaddr_end < end) {
+            // 中间部分覆盖，要拆成两段
+            mm_virtual_page_t *left = malloc(sizeof(mm_virtual_page_t));
+            left->start             = start;
+            left->count             = (vaddr - start) / PAGE_SIZE;
+            left->flags             = vpage->flags;
+            left->pte_flags         = vpage->pte_flags;
+            left->index             = queue_enqueue(process->virt_queue, left);
+
+            mm_virtual_page_t *right = malloc(sizeof(mm_virtual_page_t));
+            right->start             = vaddr_end;
+            right->count             = (end - vaddr_end) / PAGE_SIZE;
+            right->flags             = vpage->flags;
+            right->pte_flags         = vpage->pte_flags;
+            right->index             = queue_enqueue(process->virt_queue, right);
+            goto free_end;
+        }
+    free_end:
+        queue_remove_at(process->virt_queue, vpage->index); //删掉信息
+        free(vpage);                                        // 释放信息
+        vpage = NULL;
+    } while (true);
+}
+
 syscall_(mmap) {
     uint64_t addr   = arg0;
     size_t   length = arg1;
@@ -278,20 +348,23 @@ syscall_(mmap) {
     uint64_t count = (length + PAGE_SIZE - 1) / PAGE_SIZE;
     if (count == 0) return EOK;
 
-    if (addr == 0 || (addr > USER_MMAP_START && addr < USER_MMAP_END)) {
-        if (flags & MAP_FIXED) { return SYSCALL_FAULT_(EINVAL); }
+    if (addr == 0) {
         addr                 = process->mmap_start;
         flags               &= (~MAP_FIXED);
         process->mmap_start += aligned_len;
-        if (process->mmap_start > USER_MMAP_END) {
+        if (process->mmap_start > KERNEL_AREA_MEM) {
             process->mmap_start -= aligned_len;
-            return SYSCALL_FAULT_(ENOMEM);
+            return SYSCALL_FAULT_(EACCES);
         }
     }
 
     if (fd > 2) {
         fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
         if (!handle) return SYSCALL_FAULT_(EBADF);
+        if (flags & MAP_FIXED) {
+            unmap_virtual_page(process, addr, aligned_len);
+            unmap_page_range(get_current_directory(), addr, aligned_len);
+        }
         return (size_t)vfs_map(handle->node, addr, aligned_len, prot, flags, offset);
     }
 
@@ -304,14 +377,20 @@ syscall_(mmap) {
     if (prot & PROT_WRITE) { page_flags |= PTE_WRITEABLE; }
     if (prot & PROT_EXEC) { page_flags |= PTE_USER; }
 
-    // 预分配机制, 只有用户程序访问这段区域才进行实际分配(具体如何分配看page.c/page_fault_handle)
-    mm_virtual_page_t *virt_page = malloc(sizeof(mm_virtual_page_t));
-    not_null_assets(virt_page, "Out of memory for virtual page allocation");
-    virt_page->start     = vaddr;
-    virt_page->count     = count;
-    virt_page->flags     = flags;
-    virt_page->pte_flags = page_flags;
-    virt_page->index     = queue_enqueue(process->virt_queue, virt_page);
+    if (flags & MAP_FIXED) {
+        unmap_virtual_page(process, vaddr, length);
+        unmap_page_range(get_current_directory(), vaddr, length);
+        page_map_range_to_random(get_current_directory(), vaddr, length, page_flags);
+    } else {
+        // 预分配机制, 只有用户程序访问这段区域才进行实际分配(具体如何分配看page.c/page_fault_handle)
+        mm_virtual_page_t *virt_page = malloc(sizeof(mm_virtual_page_t));
+        not_null_assets(virt_page, "Out of memory for virtual page allocation");
+        virt_page->start     = vaddr;
+        virt_page->count     = count;
+        virt_page->flags     = flags;
+        virt_page->pte_flags = page_flags;
+        virt_page->index     = queue_enqueue(process->virt_queue, virt_page);
+    }
 
     return addr;
 }
@@ -489,6 +568,7 @@ syscall_(munmap) {
     uint64_t vaddr  = arg0;
     size_t   length = arg1;
     if (length == 0) return SYSCALL_SUCCESS;
+    unmap_virtual_page(get_current_task()->parent_group, vaddr, length);
     unmap_page_range(get_current_directory(), vaddr, length);
     return SYSCALL_SUCCESS;
 }
@@ -506,6 +586,8 @@ syscall_(mremap) {
     uint64_t aligned_new = (new_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
     if (aligned_new < aligned_old) {
+        unmap_virtual_page(get_current_task()->parent_group, old_addr + aligned_new,
+                           aligned_old - aligned_new);
         unmap_page_range(get_current_directory(), old_addr + aligned_new,
                          aligned_old - aligned_new);
         return old_addr;
@@ -1476,8 +1558,10 @@ USED void syscall_handler(struct syscall_regs *regs,
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
     // logkf("syscall start: %d P(%s) id:%d\n", syscall_id, thread->name, thread->pid);
     if (syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL) {
+        open_interrupt;
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
+        close_interrupt;
     } else
         regs->rax = SYSCALL_FAULT;
     // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
