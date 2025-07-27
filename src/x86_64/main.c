@@ -2,6 +2,7 @@
 #include "ahci.h"
 #include "boot.h"
 #include "cpuid.h"
+#include "cpustats.h"
 #include "description_table.h"
 #include "devfs.h"
 #include "dlinker.h"
@@ -109,6 +110,7 @@ void kmain() {
     char *date = get_date_time();
     kinfo("RTC time %s", date);
     free(date);
+    calibrate_tsc_with_hpet();
     vfs_init();
     tmpfs_setup();
     iso9660_regist();

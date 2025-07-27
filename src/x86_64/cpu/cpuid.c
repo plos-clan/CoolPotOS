@@ -37,6 +37,12 @@ bool cpuid_has_sse() {
     return edx & (1 << 25);
 }
 
+bool cpu_has_rdtsc() {
+    uint32_t eax, ebx, ecx, edx;
+    cpuid(1, &eax, &ebx, &ecx, &edx);
+    return (edx & (1 << 4)) != 0;
+}
+
 cpu_t get_cpu_info() {
     return cpu;
 }
