@@ -536,11 +536,6 @@ void init_pcb() {
     scheduler_lock = SPIN_INIT;
     pgb_queue      = queue_init();
 
-    extern tcb_t select_next_task_eevdf();
-    extern tcb_t select_next_task_rrs();
-    extern tcb_t (*scheduler_add)(void);
-    scheduler_add = get_smp_info()->cpu_count > 3 ? select_next_task_eevdf : select_next_task_rrs;
-
     kernel_group = malloc(sizeof(struct process_control_block));
     memset(kernel_group, 0, sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
