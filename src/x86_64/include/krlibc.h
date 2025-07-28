@@ -22,7 +22,7 @@
 #define MODFS_REGISTER_ID     1                        // 模块文件系统注册ID
 #define TMPFS_REGISTER_ID     2                        // 临时文件系统注册ID
 #define PIEFS_REGISTER_ID     3                        // 管道文件系统注册ID
-#define LAPIC_TIMER_SPEED     50                       // LAPIC定时器速度(单位: Hz)
+#define LAPIC_TIMER_SPEED     100                      // LAPIC定时器速度(单位: Hz)
 #define PIPE_BUFF             8192                     // 管道缓冲区大小
 
 // 常用工具宏
@@ -61,6 +61,8 @@
 #include "limits.h"
 
 static inline void empty() {}
+
+void close_interrupt_native();
 
 void not_null_assets(void *ptr, const char *message); // error_handle.c defined
 
@@ -103,6 +105,8 @@ char *strtok(char *str, const char *delim);
 int isdigit(int c);
 
 int atoi(const char *pstr);
+
+int fls(unsigned int x);
 
 char *pathacat(char *p1, char *p2);
 

@@ -438,7 +438,6 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
     new_task->cpu_id     = current_cpu->id;
-    new_task->weight     = 0;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
     *(--stack_top)            = (uint64_t)_start;
@@ -456,10 +455,6 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->context0.cs    = 0x8;
     new_task->context0.ss = new_task->context0.es = new_task->context0.ds = 0x10;
     new_task->status                                                      = CREATE;
-
-    new_task->weight     = 200;
-    new_task->time_slice = 30;
-    new_task->use_slice  = 30;
 
     new_task->fs_base = (uint64_t)new_task;
 
@@ -492,7 +487,6 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->cpu_timer  = 0;
     new_task->mem_usage  = get_all_memusage();
     new_task->cpu_id     = current_cpu->id;
-    new_task->weight     = 0;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
     *(--stack_top)            = (uint64_t)args;
@@ -510,10 +504,6 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->context0.es    = 0x10;
     new_task->context0.ds    = 0x10;
     new_task->status         = CREATE;
-
-    new_task->weight     = 200;
-    new_task->time_slice = 30;
-    new_task->use_slice  = 30;
 
     new_task->fs_base = (uint64_t)new_task;
 
@@ -556,7 +546,6 @@ void init_pcb() {
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;
-    kernel_head_task->task_level   = 0;
     kernel_head_task->tid          = now_tid++;
     kernel_head_task->cpu_clock    = 0;
     set_kernel_stack(get_rsp()); // 给IDLE线程设置TSS内核栈, 不然这个线程炸了后会发生 DoubleFault
@@ -568,12 +557,7 @@ void init_pcb() {
     kernel_head_task->time_buf        = alloc_timer();
     kernel_head_task->cpu_id          = lapic_id();
     kernel_head_task->status          = RUNNING;
-    kernel_head_task->weight          = 0;
     kernel_head_task->task_level      = TASK_IDLE_LEVEL;
-
-    kernel_head_task->weight     = 100;
-    kernel_head_task->time_slice = 5;
-    kernel_head_task->use_slice  = 1;
 
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", lapic_id());

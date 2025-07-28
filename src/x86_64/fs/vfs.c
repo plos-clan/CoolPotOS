@@ -370,7 +370,8 @@ char *vfs_get_fullpath(vfs_node_t node) {
     int inital = 32;
     spin_lock(get_path_lock);
     vfs_node_t *nodes = (vfs_node_t *)malloc(sizeof(vfs_node_t) * inital);
-    int         count = 0;
+    not_null_assets(nodes, "vfs_get_fullpath: null alloc.");
+    int count = 0;
     for (vfs_node_t cur = node; cur; cur = cur->parent) {
         if (count >= inital) {
             inital *= 2;

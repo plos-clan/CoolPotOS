@@ -113,6 +113,10 @@ void user_setup() {
     add_env("HOSTTYPE=x86_64");
     add_env("USER=root");
 
+    /********* debug ********/
+    add_env("PATH=/usr/bin");
+    /********* debug ********/
+
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;
     kernel_user->envc             = user_envc;

@@ -151,13 +151,6 @@ struct thread_control_block {
     uint64_t          gs_base;       // gs段基址
     uint64_t          fs, gs;
 
-    size_t vruntime;
-    size_t deadline;
-    size_t weight;
-    size_t lag;
-    int    time_slice;
-    int    use_slice;
-
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引
     size_t death_index; // 死亡队列索引
@@ -314,6 +307,18 @@ void futex_wake(void *phys_addr, int count);
  * @param thread 线程
  */
 void futex_free(tcb_t thread);
+
+/**
+ * 初始化任务负载权重
+ * @param thread 被初始化的任务
+ */
+void set_load_wight(tcb_t thread);
+
+/**
+ * 更新虚拟时间
+ * @param thread 被更新线程
+ */
+void update_vruntime(tcb_t thread);
 
 int task_block(tcb_t thread, TaskStatus state, int timeout_ms);
 

@@ -1,4 +1,5 @@
 #include "scheduler.h"
+#include "cpustats.h"
 #include "fsgsbase.h"
 #include "klog.h"
 #include "krlibc.h"
@@ -193,13 +194,9 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
  * CP_Kernel 多核调度器 - 循环公平调度算法
  * @param reg 当前任务上下文
  */
-
 tcb_t select_next_task() {
     tcb_t next;
-    if (current_cpu->scheduler_queue->size == 1) {
-        write_fsbase(get_current_task()->fs_base); // 没有进行任务切换，再换回来
-        return get_current_task();
-    }
+    if (current_cpu->scheduler_queue->size == 1) { return get_current_task(); }
     if (current_cpu->iter_node == NULL) {
     iter_head:
         current_cpu->iter_node = current_cpu->scheduler_queue->head;
@@ -238,6 +235,7 @@ void scheduler(registers_t *reg) {
 
     tcb_t current = get_current_task();
     tcb_t best    = select_next_task();
+    if (best == current) return;
     write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上
 
     // 任务寻父处理
