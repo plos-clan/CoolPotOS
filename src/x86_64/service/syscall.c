@@ -198,8 +198,9 @@ syscall_(open) {
     }
 next:
     fd_file_handle *fd_handle = malloc(sizeof(fd_file_handle));
-    fd_handle->offset         = flags & O_APPEND ? node->size : 0;
-    fd_handle->node           = node;
+    not_null_assets(fd_handle, "sys_open: null alloc fd");
+    fd_handle->offset = flags & O_APPEND ? node->size : 0;
+    fd_handle->node   = node;
     int index     = (int)lock_queue_enqueue(get_current_task()->parent_group->file_open, fd_handle);
     fd_handle->fd = index;
     spin_unlock(get_current_task()->parent_group->file_open->lock);

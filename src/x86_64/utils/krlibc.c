@@ -10,6 +10,10 @@
 #define HIGHS      (ONES * (UCHAR_MAX / 2 + 1))
 #define HASZERO(x) ((x) - ONES & ~(x) & HIGHS)
 
+void close_interrupt_native() {
+    __asm__ volatile("cli" ::: "memory");
+}
+
 int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;
     const char *b = b_;
@@ -354,6 +358,11 @@ int atoi(const char *pstr) {
     Ret_Integer = Integer_sign * Ret_Integer;
 
     return Ret_Integer;
+}
+
+int fls(unsigned int x) {
+    if (x == 0) return 0;
+    return 32 - __builtin_clz(x);
 }
 
 char *pathacat(char *p1, char *p2) {

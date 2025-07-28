@@ -107,7 +107,6 @@ _Noreturn void apu_entry() {
     not_null_assets(apu_idle, "apu idle null");
     apu_idle->task_level = TASK_IDLE_LEVEL;
     apu_idle->tid        = now_tid++;
-    apu_idle->weight     = 0;
     apu_idle->cpu_clock  = 0;
     set_kernel_stack(get_rsp());
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
@@ -117,9 +116,6 @@ _Noreturn void apu_entry() {
     apu_idle->time_buf                              = alloc_timer();
     apu_idle->cpu_id                                = current_cpu->id;
     apu_idle->status                                = RUNNING;
-    apu_idle->weight                                = 1;
-    apu_idle->time_slice                            = 50;
-    apu_idle->use_slice                             = 1;
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", current_cpu->id);
     memcpy(apu_idle->name, name, strlen(name));

@@ -148,8 +148,6 @@ void kmain() {
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group, SIZE_MAX);
 
-    get_current_task()->weight = 1;
-
     open_interrupt;
     enable_scheduler();
 

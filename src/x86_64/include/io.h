@@ -1,8 +1,9 @@
 #pragma once
 
 #include "ctype.h"
+#include "krlibc.h"
 
-#define close_interrupt __asm__ volatile("cli" ::: "memory")
+#define close_interrupt close_interrupt_native()
 #define open_interrupt  __asm__ volatile("sti" ::: "memory")
 
 static inline uint8_t io_in8(uint16_t port) {

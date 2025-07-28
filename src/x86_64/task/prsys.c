@@ -29,7 +29,6 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->task_level      = TASK_APPLICATION_LEVEL;
     new_task->cpu_clock       = 0;
     new_task->cpu_timer       = 0;
-    new_task->weight          = 0;
     new_task->mem_usage       = get_all_memusage();
     new_task->cpu_id          = current_cpu->id;
     new_task->status          = START;
@@ -75,10 +74,6 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     spin_unlock(parent_task->parent_group->pcb_queue->lock);
     new_task->tid          = now_tid++;
     new_task->parent_group = parent_task->parent_group;
-
-    new_task->weight     = 200;
-    new_task->time_slice = 30;
-    new_task->use_slice  = 30;
 
     if (flags & CLONE_SETTLS) { new_task->fs_base = tls; }
 
@@ -136,8 +131,8 @@ static void *file_copy(void *ptr) {
 }
 
 uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
-    close_interrupt;
-    disable_scheduler();
+    //    close_interrupt;
+    //    disable_scheduler();
 
     pcb_t current_pcb = get_current_task()->parent_group;
 
@@ -222,10 +217,6 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
-
-    new_task->weight     = 200;
-    new_task->time_slice = 30;
-    new_task->use_slice  = 30;
 
     add_task(new_task);
     enable_scheduler();
@@ -343,7 +334,6 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     get_current_task()->tid_directory  = NULL;
     get_current_task()->tid_address    = 0;
     get_current_task()->cpu_clock      = 0;
-    get_current_task()->weight         = 0;
 
     enable_scheduler();
     open_interrupt;
