@@ -251,14 +251,40 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
         open_interrupt;
         return SYSCALL_FAULT_(EINVAL);
     }
+
     for (int i = 0; argv[i]; i++) {
         int len      = sprintf(cmdline_ptr, "%s ", argv[i]);
         cmdline_ptr += len;
     }
 
-    if (process->cmdline) free(process->cmdline);
-    process->cmdline = strdup(cmdline);
+    char *old_cmdline = process->cmdline;
+    process->cmdline  = strdup(cmdline);
     strncpy(process->name, norm_path, 50);
+
+    page_directory_t *old_page_dir = process->page_dir;
+    switch_process_page_directory(clone_page_directory(get_kernel_pagedir(), false));
+
+    uint8_t *pcb_buffer = malloc(node->size);
+    not_null_assets(pcb_buffer, "process_execve: pcb_buffer alloc null.");
+    vfs_read(node, pcb_buffer, 0, node->size);
+    uint64_t e_entry    = 0;
+    uint64_t load_start = 0;
+    e_entry = (uint64_t)load_executor_elf(pcb_buffer, get_current_directory(), 0, &load_start);
+
+    if (e_entry == 0) {
+        vfs_close(node);
+        free(pcb_buffer);
+        free(norm_path);
+        free(process->cmdline);
+        process->cmdline          = old_cmdline;
+        page_directory_t *new_dir = get_current_directory();
+        switch_process_page_directory(old_page_dir);
+        free_page_directory(new_dir);
+        enable_scheduler();
+        open_interrupt;
+        return SYSCALL_FAULT_(EINVAL);
+    }
+    if (old_cmdline) free(old_cmdline);
 
     if (process->vfork) {
         ipc_message_t message = calloc(1, sizeof(struct ipc_message));
@@ -267,17 +293,18 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
         ipc_send(process->parent_task, message);
     }
 
-    page_directory_t *old_page_dir = process->page_dir;
-    switch_process_page_directory(clone_page_directory(get_kernel_pagedir(), false));
     if (!process->vfork) free_page_directory(old_page_dir);
     process->page_dir = get_current_directory();
     process->vfork    = false;
 
+    process->load_start = load_start;
+    process->elf_file   = pcb_buffer;
+    process->elf_size   = node->size;
+
     uint8_t *buffer = (uint8_t *)EHDR_START_ADDR;
     page_map_range_to_random(get_current_directory(), EHDR_START_ADDR, buf_len,
                              PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-
-    vfs_read(node, buffer, 0, node->size);
+    memcpy(buffer, pcb_buffer, node->size);
     vfs_close(node);
 
     spin_lock(process->file_open->lock);
@@ -308,23 +335,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     queue_destroy(process->ipc_queue);
     process->ipc_queue = queue_init();
 
-    uint64_t e_entry    = 0;
-    uint64_t load_start = 0;
-    e_entry = (uint64_t)load_executor_elf(buffer, get_current_directory(), 0, &load_start);
-
-    uint8_t *pcb_buffer = malloc(node->size);
-    memcpy(pcb_buffer, buffer, node->size);
-    process->load_start = load_start;
-    process->elf_file   = pcb_buffer;
-    process->elf_size   = node->size;
-
     free(norm_path);
-
-    if (e_entry == 0) {
-        enable_scheduler();
-        open_interrupt;
-        return SYSCALL_FAULT_(EINVAL);
-    }
 
     uint64_t stack                     = page_alloc_random(get_current_directory(), BIG_USER_STACK,
                                                            PTE_PRESENT | PTE_WRITEABLE | PTE_USER);

@@ -7,9 +7,12 @@ typedef _Atomic volatile bool spin_t;
 #define spin_trylock(_spin_) (!__atomic_test_and_set(&(_spin_), 5))
 #define spin_lock(_spin_)                                                                          \
     ({                                                                                             \
-        while (__atomic_test_and_set(&(_spin_), 5)) {}                                             \
+        extern void scheduler_yield();                                                             \
+        while (__atomic_test_and_set(&(_spin_), 5)) {                                              \
+            scheduler_yield();                                                                     \
+        }                                                                                          \
     })
-#define spin_unlock(_spin_) __atomic_clear(&(_spin_), 5)
+#define spin_unlock(_spin_) ({ __atomic_clear(&(_spin_), 5); })
 
 #define spin_lockall(...)                                                                          \
     ({                                                                                             \
