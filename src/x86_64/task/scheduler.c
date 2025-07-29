@@ -218,6 +218,8 @@ tcb_t select_next_task() {
                 goto resche;
             }
         }
+
+        if (next->task_level == TASK_IDLE_LEVEL) goto resche;
     }
     return next;
 }
