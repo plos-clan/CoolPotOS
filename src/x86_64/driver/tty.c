@@ -24,37 +24,28 @@ struct vt_mode current_vt_mode   = {0};
 extern bool open_flush; // terminal.c
 
 static void tty_kernel_print(tty_t *tty, const char *msg) {
-    if (open_flush) {
-        terminal_puts(msg);
-    } else {
-        spin_lock(tty_lock);
-        for (size_t i = 0; msg[i] != '\0'; i++) {
-            char c = msg[i];
-            if (c == '\n') {
-                terminal_process_byte('\r');
-                update_terminal();
-            }
+    spin_lock(tty_lock);
+    for (size_t i = 0; msg[i] != '\0'; i++) {
+        char c = msg[i];
+        if (c == '\n') {
+            terminal_process_byte('\r');
+            terminal_process_byte('\n');
+            terminal_flush();
+        } else
             terminal_process_byte(c);
-        }
-        spin_unlock(tty_lock);
     }
+    spin_unlock(tty_lock);
 }
 
 static void tty_kernel_putc(tty_t *tty, int c) {
-    if (open_flush) {
-        if (c == '\n') { terminal_putc('\r'); }
-        terminal_putc((char)c);
-    } else {
-        spin_lock(tty_lock);
-        if (c == '\n') {
-            terminal_process_byte('\r');
-            logk("\r");
-            update_terminal();
-        }
-        logkf("%c", c);
+    spin_lock(tty_lock);
+    if (c == '\n') {
+        terminal_process_byte('\r');
+        terminal_process_byte('\n');
+        terminal_flush();
+    } else
         terminal_process_byte(c);
-        spin_unlock(tty_lock);
-    }
+    spin_unlock(tty_lock);
 }
 
 tty_t *alloc_default_tty() {
@@ -155,7 +146,7 @@ static size_t stdout_write(int drive, uint8_t *buffer, size_t number, size_t lba
     for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }
-
+    terminal_flush();
     return number;
 }
 

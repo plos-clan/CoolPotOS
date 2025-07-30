@@ -143,8 +143,6 @@ void kmain() {
     partition_init();
     kinfo("Kernel load Done!");
 
-    create_kernel_thread(terminal_flush_service, NULL, "TerminalFlush", NULL, SIZE_MAX);
-
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
     create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group, SIZE_MAX);
 
