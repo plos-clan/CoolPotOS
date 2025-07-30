@@ -801,7 +801,7 @@ syscall_(sigaction) {
 }
 
 syscall_(fork) {
-    return process_fork(regs, false);
+    return process_fork(regs, false, 0);
 }
 
 syscall_(futex) {
@@ -853,7 +853,7 @@ syscall_(mprotect) {
 }
 
 syscall_(vfork) {
-    return process_fork(regs, true);
+    return process_fork(regs, true, 0);
 }
 
 syscall_(execve) {
@@ -1262,7 +1262,7 @@ syscall_(pipe) {
     handle_out->node           = node_output;
     handle_out->offset         = 0;
     handle_out->flags          = flags;
-    handle_out->fd             = queue_enqueue(queue, handle_in);
+    handle_out->fd             = queue_enqueue(queue, handle_out);
 
     pipefd[0] = handle_in->fd;
     pipefd[1] = handle_out->fd;

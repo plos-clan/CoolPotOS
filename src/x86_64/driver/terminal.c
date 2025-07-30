@@ -23,7 +23,7 @@ void update_terminal() {
         need_flush = true;
         terminal_process_byte(ch);
     }
-    if (open_flush && need_flush) { terminal_flush(); }
+    if (need_flush) { terminal_flush(); }
     spin_unlock(terminal_lock);
 }
 
@@ -33,13 +33,6 @@ void terminal_open_flush() {
 
 void terminal_close_flush() {
     open_flush = false;
-}
-
-int terminal_flush_service(void *pVoid) {
-    //    terminal_set_auto_flush(false);
-    open_flush = true;
-    loop update_terminal();
-    return 0;
 }
 
 void terminal_putc(char ch) {

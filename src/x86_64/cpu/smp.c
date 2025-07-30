@@ -184,6 +184,6 @@ void smp_setup() {
         kerror("Unable to add kernel head task to scheduler queue for CPU%d", current_cpu->id);
         current_cpu->ready = false;
     }
-
+    create_kernel_thread((void *)halt_service, NULL, "free_service", kernel_group, lapic_id());
     kinfo("%d processors have been enabled.", cpu_count);
 }

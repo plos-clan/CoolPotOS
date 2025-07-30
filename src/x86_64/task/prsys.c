@@ -21,6 +21,9 @@ extern lock_queue *pgb_queue;
 
 uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid,
                       int *child_tid, uint64_t tls) {
+
+    if (flags & CLONE_VFORK) { return process_fork(reg, true, stack); }
+
     tcb_t parent_task = get_current_task();
 
     tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
@@ -86,6 +89,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
         new_task->tid_directory = get_current_directory();
     }
     add_task(new_task);
+
     return new_task->tid;
 }
 
@@ -130,7 +134,7 @@ static void *file_copy(void *ptr) {
     return fd_dup(src);
 }
 
-uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
+uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_stack) {
     //    close_interrupt;
     //    disable_scheduler();
 
@@ -149,9 +153,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
 
     new_pcb->elf_file = malloc(current_pcb->elf_size);
     memcpy(new_pcb->elf_file, current_pcb->elf_file, current_pcb->elf_size);
-    new_pcb->elf_size = current_pcb->elf_size;
-    new_pcb->cmdline  = malloc(strlen(current_pcb->cmdline));
-    strcpy(new_pcb->cmdline, current_pcb->cmdline);
+    new_pcb->elf_size  = current_pcb->elf_size;
+    new_pcb->cmdline   = strdup(current_pcb->cmdline);
     new_pcb->pcb_queue = queue_init();
     new_pcb->ipc_queue = queue_init();
     new_pcb->user      = current_pcb->user;
@@ -201,7 +204,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork) {
     new_task->context0.r15    = reg->r15;
     new_task->context0.rbx    = reg->rbx;
     new_task->context0.rbp    = reg->rbp;
-    new_task->context0.rsp    = reg->rsp;
+    new_task->context0.rsp    = user_stack == 0 ? reg->rsp : user_stack;
     new_task->context0.rcx    = reg->rcx;
 
     memcpy(new_task->fpu_context.fxsave_area, parent_task->fpu_context.fxsave_area, 512);

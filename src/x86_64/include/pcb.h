@@ -275,9 +275,10 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
 /**
  * fork vfork 系统调用实现
  * @param is_vfork 是否是 vfork
+ * @param user_stack 不为 NULL 时为 clone 带 vfork 标志实现
  * @return 新进程的 PID
  */
-uint64_t process_fork(struct syscall_regs *reg, bool is_vfork);
+uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_stack);
 
 /**
  * execve 系统调用实现
