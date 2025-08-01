@@ -6,6 +6,7 @@
 #include "description_table.h"
 #include "devfs.h"
 #include "dlinker.h"
+#include "eevdf.h"
 #include "frame.h"
 #include "fsgsbase.h"
 #include "gop.h"
@@ -148,6 +149,7 @@ void kmain() {
 
     open_interrupt;
     enable_scheduler();
+    change_bsp_weight();
 
     loop __asm__ volatile("hlt");
 }

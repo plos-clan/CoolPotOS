@@ -1,6 +1,6 @@
 #include "pcb.h"
-#include "boot.h"
 #include "description_table.h"
+#include "eevdf.h"
 #include "elf.h"
 #include "elf_util.h"
 #include "fsgsbase.h"
@@ -225,8 +225,6 @@ void kill_proc(pcb_t pcb, int exit_code) {
         kerror("Cannot kill System process.");
         return;
     }
-    close_interrupt;
-    disable_scheduler();
     pcb->status       = DEATH;
     ipc_message_t msg = malloc(sizeof(struct ipc_message));
     msg->pid          = pcb->pid;
@@ -243,14 +241,9 @@ void kill_proc(pcb_t pcb, int exit_code) {
         }
     }
     add_death_proc(pcb);
-    enable_scheduler();
-    open_interrupt;
 }
 
 void kill_proc0(pcb_t pcb) {
-    close_interrupt;
-    disable_scheduler();
-
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue, pcb->queue_index);
 
@@ -288,8 +281,6 @@ void kill_proc0(pcb_t pcb) {
           pcb->vfork ? "true" : "false");
     if (!pcb->vfork) free_page_directory(pcb->page_dir);
     free(pcb);
-    open_interrupt;
-    enable_scheduler();
 }
 
 void kill_thread(tcb_t task) {
@@ -299,6 +290,7 @@ void kill_thread(tcb_t task) {
         return;
     }
     task->status = DEATH;
+    remove_eevdf_entity(task, get_cpu_smp(task->cpu_id));
 
     if (task->tid_directory != NULL) {
         page_directory_t *directory = get_current_directory();

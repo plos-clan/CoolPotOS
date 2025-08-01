@@ -1,11 +1,11 @@
 #include "smp.h"
 #include "boot.h"
 #include "description_table.h"
+#include "eevdf.h"
 #include "fpu.h"
 #include "fsgsbase.h"
 #include "heap.h"
 #include "io.h"
-#include "killer.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -137,6 +137,7 @@ _Noreturn void apu_entry() {
     }
     cpu_done_count++;
     spin_unlock(apu_lock);
+    init_ap_idle(current_cpu, apu_idle);
 
     setup_syscall(false);
 
@@ -184,6 +185,19 @@ void smp_setup() {
         kerror("Unable to add kernel head task to scheduler queue for CPU%d", current_cpu->id);
         current_cpu->ready = false;
     }
+
+    close_interrupt;
+    current_cpu->sched_handle = (struct eevdf_t *)malloc(sizeof(struct eevdf_t));
+    ((struct eevdf_t *)current_cpu->sched_handle)->root =
+        (struct rb_root *)malloc(sizeof(struct rb_root));
+    ((struct eevdf_t *)current_cpu->sched_handle)->min_vruntime = 0;
+    ((struct eevdf_t *)current_cpu->sched_handle)->wait_queue   = queue_init();
+    struct sched_entity *idle_entity = new_entity(kernel_head_task, NICE_TO_PRIO(0));
+    kernel_head_task->sched_handle   = idle_entity;
+    insert_sched_entity(((struct eevdf_t *)current_cpu->sched_handle)->root, idle_entity);
+    eevdf_sched->current = idle_entity;
+    open_interrupt;
+
     create_kernel_thread((void *)halt_service, NULL, "free_service", kernel_group, lapic_id());
     kinfo("%d processors have been enabled.", cpu_count);
 }
