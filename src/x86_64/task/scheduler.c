@@ -1,5 +1,6 @@
 #include "scheduler.h"
 #include "cpustats.h"
+#include "eevdf.h"
 #include "fsgsbase.h"
 #include "klog.h"
 #include "krlibc.h"
@@ -82,6 +83,11 @@ int add_task(tcb_t new_task) {
         spin_unlock(scheduler_lock);
         return -1;
     }
+    close_interrupt;
+    disable_scheduler();
+    add_eevdf_entity(new_task, cpu0);
+    open_interrupt;
+    enable_scheduler();
     new_task->cpu_id      = cpuid;
     new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
     spin_unlock(cpu0->scheduler_queue->lock);
@@ -237,6 +243,7 @@ void scheduler(registers_t *reg) {
 
     tcb_t current = get_current_task();
     tcb_t best    = select_next_task();
+    //tcb_t best = pick_next_task();
     if (best == current) return;
     write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上
 

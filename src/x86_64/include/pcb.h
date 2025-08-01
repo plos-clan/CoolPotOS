@@ -155,6 +155,8 @@ struct thread_control_block {
     size_t group_index; // 进程队列索引
     size_t death_index; // 死亡队列索引
     size_t futex_index; // 挂起队列索引
+
+    void *sched_handle; // 调度器句柄
 };
 
 static __attr(address_space(257)) struct thread_control_block *const tcb =
