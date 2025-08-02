@@ -33,6 +33,7 @@ void disable_scheduler() {
 void scheduler_yield() {
     if ((!current_cpu->ready) || current_cpu->current_pcb == NULL) return;
     open_interrupt;
+    update_current_task();
     __asm__ volatile("int %0" ::"i"(timer));
 }
 
@@ -230,6 +231,9 @@ tcb_t select_next_task() {
     return next;
 }
 
+USED volatile int is_debug = 0;
+void              for_each_rb_tree();
+
 void scheduler(registers_t *reg) {
     if (!is_scheduler) return;
     if (!current_cpu->ready) {
@@ -242,8 +246,9 @@ void scheduler(registers_t *reg) {
     }
 
     tcb_t current = get_current_task();
-    tcb_t best    = select_next_task();
-    //tcb_t best = pick_next_task();
+    //tcb_t best    = select_next_task();
+    if (is_debug) for_each_rb_tree();
+    tcb_t best = pick_next_task();
     if (best == current) return;
     write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上
 

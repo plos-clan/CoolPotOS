@@ -140,7 +140,6 @@ static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct l
 
 static inline uint64_t calc_delta_fair(uint64_t delta, struct sched_entity *se) {
     if (se->load.weight != NICE_0_LOAD) delta = __calc_delta(delta, NICE_0_LOAD, &se->load);
-
     return delta;
 }
 
@@ -150,16 +149,25 @@ static inline uint64_t min_vruntime(uint64_t min_vruntime, uint64_t vruntime) {
     return min_vruntime;
 }
 
-struct sched_entity *new_entity(tcb_t task, uint64_t prio) {
+static bool update_deadline(struct sched_entity *se) {
+    if ((int64_t)(se->vruntime - se->deadline) < 0) return false;
+    if (!se->custom_slice) se->slice = sysctl_sched_base_slice;
+    se->deadline = se->vruntime + calc_delta_fair(se->slice, se);
+    return true;
+}
+
+struct sched_entity *new_entity(tcb_t task, uint64_t prio, smp_cpu_t *cpu) {
     struct sched_entity *entity = (struct sched_entity *)malloc(sizeof(struct sched_entity));
     entity->is_idle             = prio == NICE_TO_PRIO(20);
     entity->prio                = prio;
     entity->slice               = sysctl_sched_base_slice;
     entity->custom_slice        = 0;
     entity->on_rq               = true;
-    entity->vruntime            = eevdf_sched->min_vruntime;
-    entity->exec_start          = 0;
+    entity->deadline            = 0;
+    entity->vruntime            = ((struct eevdf_t *)cpu->sched_handle)->min_vruntime;
+    entity->exec_start          = sched_clock();
     set_load_weight(entity);
+    update_deadline(entity);
     entity->thread = task;
     return entity;
 }
@@ -169,6 +177,21 @@ void change_bsp_weight() {
     struct sched_entity *entity = get_current_task()->sched_handle;
     entity->is_idle             = true;
     entity->prio                = NICE_TO_PRIO(20);
+    set_load_weight(entity);
+    rb_erase(&entity->run_node, eevdf_sched->root);
+    insert_sched_entity(eevdf_sched->root, entity);
+    open_interrupt;
+}
+
+void change_entity_weight(tcb_t thread, uint64_t prio) {
+    close_interrupt;
+    struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
+    if (entity->prio == prio) {
+        open_interrupt;
+        return;
+    }
+    entity->is_idle = prio == NICE_TO_PRIO(20);
+    entity->prio    = prio;
     set_load_weight(entity);
     rb_erase(&entity->run_node, eevdf_sched->root);
     insert_sched_entity(eevdf_sched->root, entity);
@@ -250,13 +273,6 @@ static int64_t update_curr_se(struct sched_entity *curr) {
     return delta_exec;
 }
 
-static bool update_deadline(struct sched_entity *se) {
-    if ((int64_t)(se->vruntime - se->deadline) < 0) return false;
-    if (!se->custom_slice) se->slice = sysctl_sched_base_slice;
-    se->deadline = se->vruntime + calc_delta_fair(se->slice, se);
-    return true;
-}
-
 void update_current_task() {
     struct sched_entity *curr = eevdf_sched->current;
     int64_t              delta_exec;
@@ -288,7 +304,7 @@ tcb_t pick_next_task() {
 }
 
 void add_eevdf_entity(tcb_t new_task, smp_cpu_t *cpu) {
-    struct sched_entity *entity = new_entity(new_task, NICE_TO_PRIO(0));
+    struct sched_entity *entity = new_entity(new_task, NICE_TO_PRIO(0), cpu);
     new_task->sched_handle      = entity;
     insert_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity);
 }
@@ -315,8 +331,8 @@ void init_ap_idle(smp_cpu_t *cpu, tcb_t ap_idle) {
     ((struct eevdf_t *)cpu->sched_handle)->root = (struct rb_root *)malloc(sizeof(struct rb_root));
     ((struct eevdf_t *)cpu->sched_handle)->min_vruntime = 0;
     ((struct eevdf_t *)cpu->sched_handle)->wait_queue   = queue_init();
-    struct sched_entity *idle_entity                    = new_entity(ap_idle, NICE_TO_PRIO(20));
-    ap_idle->sched_handle                               = idle_entity;
+    struct sched_entity *idle_entity = new_entity(ap_idle, NICE_TO_PRIO(20), cpu);
+    ap_idle->sched_handle            = idle_entity;
     insert_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, idle_entity);
     eevdf_sched->current = idle_entity;
 }
@@ -324,9 +340,11 @@ void init_ap_idle(smp_cpu_t *cpu, tcb_t ap_idle) {
 void cb(struct rb_node *node) {
     struct sched_entity *entity = container_of(node, struct sched_entity, run_node);
     tcb_t                thread = entity->thread;
-    logkf("Name: %s, TID: %d\r\n", thread->name, thread->tid);
+    logkf("name: %s, tid: %d, cmdline: %s, deadline: %lu\r\n", thread->name, thread->tid,
+          thread->parent_group->cmdline, entity->deadline);
 }
 
 USED void for_each_rb_tree() {
     rb_traverse_with_callback(((struct eevdf_t *)current_cpu->sched_handle)->root, cb);
+    logkf("\r\n");
 }

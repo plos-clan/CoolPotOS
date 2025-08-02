@@ -338,11 +338,13 @@ int waitpid(int pid, int *pid_ret) {
         bool is_sti                = are_interrupts_enabled();
         get_current_task()->status = WAIT;
         open_interrupt;
+        change_entity_weight(get_current_task(), NICE_TO_PRIO(10));
         ipc_message_t mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         int           exit_code =
             (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
         *pid_ret = mesg->pid;
         free(mesg);
+        change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
         if (!is_sti) close_interrupt;
         get_current_task()->status = RUNNING;
         return exit_code;
@@ -352,6 +354,7 @@ int waitpid(int pid, int *pid_ret) {
     bool          is_sti       = are_interrupts_enabled();
     get_current_task()->status = WAIT;
     open_interrupt;
+    change_entity_weight(get_current_task(), NICE_TO_PRIO(10));
     loop {
         mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         if (pid == mesg->pid) {
@@ -359,6 +362,7 @@ int waitpid(int pid, int *pid_ret) {
                             mesg->data[0];
             *pid_ret = mesg->pid;
             free(mesg);
+            change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
             if (!is_sti) close_interrupt;
             get_current_task()->status = RUNNING;
             return exit_code;

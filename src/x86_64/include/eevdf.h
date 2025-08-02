@@ -87,7 +87,7 @@ struct eevdf_t {
  * @param prio 优先级
  * @return NULL ? 生成失败 : 调度单元
  */
-struct sched_entity *new_entity(tcb_t task, uint64_t prio);
+struct sched_entity *new_entity(tcb_t task, uint64_t prio, smp_cpu_t *cpu);
 
 /**
  * 将一个调度单元添加到树(会触发红黑树重排)
@@ -159,3 +159,10 @@ void futex_eevdf_entity(tcb_t thread, smp_cpu_t *cpu);
  * 调整CPU0的IDLE进程为正常权重
  */
 void change_bsp_weight();
+
+/**
+ * 调整指定线程的权重
+ * @param thread 线程实体
+ * @param prio 任务优先级
+ */
+void change_entity_weight(tcb_t thread, uint64_t prio);

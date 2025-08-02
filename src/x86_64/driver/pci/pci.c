@@ -129,7 +129,7 @@ struct {
     {0x0F0300, "Satellite Voice Controller"                 },
     {0x0F0400, "Satellite Data Controller"                  },
 
-    {0x100000, "Network and Computing Encrpytion/Decryption"},
+    {0x100000, "Network and Computing Encryption/Decryption"},
     {0x101000, "Entertainment Encryption/Decryption"        },
     {0x108000, "Other Encryption Controller"                },
 
