@@ -109,13 +109,10 @@ void user_setup() {
     strcpy(kernel_user->name, "Kernel");
     kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
 
-    add_env("HOME=/root");
-    add_env("HOSTTYPE=x86_64");
     add_env("USER=root");
-
-    /********* debug ********/
-    add_env("PATH=/usr/bin");
-    /********* debug ********/
+    add_env("HOME=/root");
+    add_env("PWD=/");
+    add_env("HOSTTYPE=x86_64");
 
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;

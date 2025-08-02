@@ -55,7 +55,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     char *argv[50];
     int   argc = cmd_parse(task->parent_group->cmdline, argv, ' ');
 
-    char **envp = user->envp;
+    char **envp = task->parent_group->envp ? task->parent_group->envp : user->envp;
 
     uint64_t tmp_stack = sp;
     tmp_stack          = push_slice(tmp_stack, (uint8_t *)task->name, strlen(task->name) + 1);
@@ -68,7 +68,8 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     memset(argvps, 0, 1024);
 
     if (envp != NULL) {
-        for (env_i = 0; env_i < user->envc; env_i++) {
+        for (env_i = 0; env_i < (task->parent_group->envp ? task->parent_group->envc : user->envc);
+             env_i++) {
             tmp_stack    = push_slice(tmp_stack, (uint8_t *)envp[env_i], strlen(envp[env_i]) + 1);
             envps[env_i] = tmp_stack;
         }
@@ -277,6 +278,7 @@ void kill_proc0(pcb_t pcb) {
     free(pcb->cwd);
     free_tty(pcb->tty);
     free(pcb->elf_file);
+    if (pcb->envp) free_envp(pcb->envp);
     logkf("Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pid,
           pcb->vfork ? "true" : "false");
     if (!pcb->vfork) free_page_directory(pcb->page_dir);
@@ -400,6 +402,8 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
     new_pgb->vfork       = false;
     new_pgb->cwd         = malloc(1024);
+    new_pgb->envp        = NULL;
+    new_pgb->envc        = 0;
     memset(new_pgb->cwd, 0, 1024);
     strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
     new_pgb->mmap_start = USER_MMAP_START;

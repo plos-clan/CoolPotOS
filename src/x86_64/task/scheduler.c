@@ -33,7 +33,7 @@ void disable_scheduler() {
 void scheduler_yield() {
     if ((!current_cpu->ready) || current_cpu->current_pcb == NULL) return;
     open_interrupt;
-    update_current_task();
+    if (get_current_task()->status == RUNNING) update_current_task();
     __asm__ volatile("int %0" ::"i"(timer));
 }
 

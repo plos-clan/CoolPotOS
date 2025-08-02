@@ -109,6 +109,8 @@ struct process_control_block {
     lock_queue       *file_open;   // 文件句柄占用队列
     lock_queue       *virt_queue;  // 虚拟页分配队列
     page_directory_t *page_dir;    // 进程页表
+    char            **envp;        // 环境变量指针
+    size_t            envc;        // 环境变量数量
     ucb_t             user;        // 用户会话
     tty_t            *tty;         // TTY设备
     TaskStatus        status;      // 进程状态
