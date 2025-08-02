@@ -22,7 +22,7 @@ size_t sched_clock() {
     uint64_t now   = read_tsc();
     uint64_t delta = now - tsc_base_tsc;
     uint64_t ns    = ((delta * (uint64_t)tsc_conv_mul) >> tsc_conv_shift);
-    return tsc_base_ns + ns;
+    return (ns - tsc_base_tsc) / 1000;
 }
 
 void calibrate_tsc_with_hpet() {
