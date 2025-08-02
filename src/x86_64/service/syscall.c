@@ -165,6 +165,7 @@ syscall_(exit) {
     logkf("Thread %s exit with code %d.\n", exit_thread->name, exit_code);
     kill_thread(exit_thread);
     open_interrupt;
+    scheduler_yield();
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
@@ -654,6 +655,7 @@ syscall_(exit_group) {
     logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
     kill_proc(exit_process, exit_code);
     open_interrupt;
+    scheduler_yield();
     cpu_hlt;
 }
 

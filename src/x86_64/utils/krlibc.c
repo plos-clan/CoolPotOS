@@ -441,3 +441,40 @@ char *normalize_path(const char *path) {
     free(dup);
     return result;
 }
+
+size_t envp_length(char **envp) {
+    size_t count = 0;
+    while (envp[count] != NULL) {
+        count++;
+    }
+    return count;
+}
+
+char **copy_envp(char **envp) {
+    size_t count = 0;
+    while (envp[count] != NULL) {
+        count++;
+    }
+    char **new_envp = malloc((count + 1) * sizeof(char *));
+    if (!new_envp) return NULL;
+    for (size_t i = 0; i < count; i++) {
+        new_envp[i] = strdup(envp[i]);
+        if (!new_envp[i]) {
+            for (size_t j = 0; j < i; j++) {
+                free(new_envp[j]);
+            }
+            free(new_envp);
+            return NULL;
+        }
+    }
+    new_envp[count] = NULL;
+    return new_envp;
+}
+
+void free_envp(char **envp) {
+    if (!envp) return;
+    for (size_t i = 0; envp[i] != NULL; i++) {
+        free(envp[i]);
+    }
+    free(envp);
+}

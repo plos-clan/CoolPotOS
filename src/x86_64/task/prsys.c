@@ -264,6 +264,11 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     process->cmdline  = strdup(cmdline);
     strncpy(process->name, norm_path, 50);
 
+    char **old_envp = process->envp;
+    size_t old_envc = process->envc;
+    process->envp   = copy_envp(envp);
+    process->envc   = envp_length(envp);
+
     page_directory_t *old_page_dir = process->page_dir;
     switch_process_page_directory(clone_page_directory(get_kernel_pagedir(), false));
 
@@ -283,6 +288,9 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
         page_directory_t *new_dir = get_current_directory();
         switch_process_page_directory(old_page_dir);
         free_page_directory(new_dir);
+        if (old_envp) free(process->envp);
+        process->envp = old_envp;
+        process->envc = old_envc;
         enable_scheduler();
         open_interrupt;
         return SYSCALL_FAULT_(EINVAL);
