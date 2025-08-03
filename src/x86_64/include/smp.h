@@ -24,7 +24,6 @@ typedef struct smp_cpu {
     page_directory_t   *directory;
     lock_queue         *death_queue;     // 死亡线程队列
     lock_queue         *scheduler_queue; // 该核心的线程调度队列
-    lock_node          *iter_node;       // 该核心当前迭代的节点
     void               *sched_handle;    // 调度器句柄
 } __attr(packed) smp_cpu_t;
 

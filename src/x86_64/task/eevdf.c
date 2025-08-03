@@ -303,6 +303,12 @@ tcb_t pick_next_task() {
     return current->thread;
 }
 
+void add_eevdf_entity_with_prio(tcb_t new_task, uint64_t prio, smp_cpu_t *cpu) {
+    struct sched_entity *entity = new_entity(new_task, prio, cpu);
+    new_task->sched_handle      = entity;
+    insert_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity);
+}
+
 void add_eevdf_entity(tcb_t new_task, smp_cpu_t *cpu) {
     struct sched_entity *entity = new_entity(new_task, NICE_TO_PRIO(0), cpu);
     new_task->sched_handle      = entity;

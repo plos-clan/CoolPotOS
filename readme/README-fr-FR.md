@@ -29,6 +29,7 @@ et [amd64](https://en.wikipedia.org/wiki/X86-64).
 - `pl_readline` par min0911Y [plos-clan/pl_readline](https://github.com/plos-clan/pl_readline)
 - `os_terminal` par wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 - `plant-vfs` par min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
+- `EEVDF` par xiaoyi1212 [plos-clan/EEVDF](https://github.com/plos-clan/EEVDF)
 
 ## Compilation et exécution
 
