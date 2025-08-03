@@ -20,7 +20,10 @@ _Noreturn void halt_service() {
             break;
         }
         spin_unlock(current_cpu->death_queue->lock);
-        if (task == NULL || task->status != DEATH) { continue; }
+        if (task == NULL || task->status != DEATH) {
+            scheduler_yield();
+            continue;
+        }
         queue_remove_at(current_cpu->death_queue, task->death_index);
         kill_thread0(task);
         queue_remove_at(task->parent_group->pcb_queue, task->group_index);

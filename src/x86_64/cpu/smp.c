@@ -161,7 +161,6 @@ void smp_setup() {
         size_t                  cpuid0   = info->lapic_id;
         smp_cpus[cpuid0].scheduler_queue = queue_init();
         smp_cpus[cpuid0].death_queue     = queue_init();
-        smp_cpus[cpuid0].iter_node       = NULL;
         smp_cpus[cpuid0].lapic_id        = info->lapic_id;
         smp_cpus[cpuid0].directory       = get_kernel_pagedir();
         if (info->lapic_id == response->bsp_lapic_id) {

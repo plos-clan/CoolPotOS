@@ -1,3 +1,4 @@
+#include "eevdf.h"
 #include "lock_queue.h"
 #include "map.h"
 #include "pcb.h"
@@ -15,6 +16,7 @@ void futex_add(void *phys_addr, tcb_t thread) {
         map_set(futex_map, phys_addr, queue);
     }
     queue_enqueue(queue, thread);
+    wait_eevdf_entity(thread, get_cpu_smp(thread->cpu_id));
 }
 
 void futex_wake(void *phys_addr, int count) {
@@ -23,7 +25,10 @@ void futex_wake(void *phys_addr, int count) {
 
     for (int i = 0; i < count && queue->size != 0; i++) {
         tcb_t thread = queue_dequeue(queue);
-        if (thread != NULL) { thread->status = START; }
+        if (thread != NULL) {
+            thread->status = START;
+            futex_eevdf_entity(thread, get_cpu_smp(thread->cpu_id));
+        }
     }
 
     if (queue->size == 0) {

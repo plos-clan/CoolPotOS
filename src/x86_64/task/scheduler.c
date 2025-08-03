@@ -109,7 +109,9 @@ int add_task_cpu(tcb_t new_task, size_t cpuid) {
         spin_unlock(scheduler_lock);
         return -1;
     }
-    new_task->cpu_id      = cpuid;
+    new_task->cpu_id = cpuid;
+    add_eevdf_entity_with_prio(new_task, NICE_TO_PRIO(10), cpu0);
+
     new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
     spin_unlock(cpu0->scheduler_queue->lock);
 
@@ -197,40 +199,6 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     reg->cs     = target->context0.cs;
 }
 
-/**
- * CP_Kernel 多核调度器 - 循环公平调度算法
- * @param reg 当前任务上下文
- */
-tcb_t select_next_task() {
-    tcb_t next;
-    if (current_cpu->scheduler_queue->size == 1) { return get_current_task(); }
-    if (current_cpu->iter_node == NULL) {
-    iter_head:
-        current_cpu->iter_node = current_cpu->scheduler_queue->head;
-        next                   = (tcb_t)current_cpu->iter_node->data;
-    } else {
-    resche:
-        current_cpu->iter_node = current_cpu->iter_node->next;
-        if (current_cpu->iter_node == NULL) goto iter_head;
-        next = (tcb_t)current_cpu->iter_node->data;
-        not_null_assets(next, "scheduler next null");
-
-        // 死亡/回收/挂起的线程不调度
-        switch (next->status) {
-        case FUTEX:
-        case DEATH:
-        case OUT: goto resche;
-        default:
-            if (next->parent_group->status == DEATH || next->parent_group->status == FUTEX) {
-                goto resche;
-            }
-        }
-
-        if (next->task_level == TASK_IDLE_LEVEL) goto resche;
-    }
-    return next;
-}
-
 USED volatile int is_debug = 0;
 void              for_each_rb_tree();
 
@@ -246,7 +214,6 @@ void scheduler(registers_t *reg) {
     }
 
     tcb_t current = get_current_task();
-    //tcb_t best    = select_next_task();
     if (is_debug) for_each_rb_tree();
     tcb_t best = pick_next_task();
     if (best == current) return;

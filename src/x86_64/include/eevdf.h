@@ -135,6 +135,14 @@ tcb_t pick_next_task();
 void add_eevdf_entity(tcb_t new_task, smp_cpu_t *cpu);
 
 /**
+ * 添加一个任务进红黑树(指定优先级)
+ * @param new_task 新任务
+ * @param prio 优先级
+ * @param cpu 任务被添加的CPU核心
+ */
+void add_eevdf_entity_with_prio(tcb_t new_task, uint64_t prio, smp_cpu_t *cpu);
+
+/**
  * 删除一个任务
  * @param thread 任务
  * @param cpu 被删除的CPU核心
