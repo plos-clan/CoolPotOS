@@ -7,7 +7,8 @@
 #include "timer.h"
 
 HpetInfo       *hpet_addr;
-static uint32_t hpetPeriod = 0;
+static uint32_t hpetPeriod   = 0;
+static uint64_t fms_per_tick = 0;
 
 __attribute__((naked)) void save_registers() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
@@ -84,8 +85,13 @@ void nsleep(uint64_t nano) {
 
 uint64_t nano_time() {
     if (hpet_addr == NULL) return 0;
-    uint64_t mcv = hpet_addr->mainCounterValue;
+    uint64_t mcv = mmio_read64((void *)hpet_addr + 0xf0); //hpet_addr->mainCounterValue;
     return mcv * hpetPeriod;
+}
+
+uint64_t elapsed() {
+    uint64_t mcv = mmio_read64((void *)hpet_addr + 0xf0);
+    return (uint64_t)((mcv * fms_per_tick) / 1000000U);
 }
 
 void hpet_init(Hpet *hpet) {
@@ -94,6 +100,10 @@ void hpet_init(Hpet *hpet) {
     hpetPeriod                                    = counterClockPeriod / 1000000;
     hpet_addr->generalConfiguration              |= 1;
     *(__volatile__ uint64_t *)(hpet_addr + 0xf0)  = 0;
+
+    uint64_t period_addr = (uint64_t)phys_to_virt(hpet->base_address.address) + 0x4;
+    fms_per_tick         = mmio_read64((void *)period_addr);
+
     register_interrupt_handler(timer, (void *)save_registers, 0, 0x8E);
     kinfo("Setup acpi hpet table (nano_time: %p).", (uint64_t)nano_time());
 }

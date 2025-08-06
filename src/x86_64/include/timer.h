@@ -29,6 +29,7 @@ typedef struct timer {
 //void timer_handle(void); __attribute__((naked));
 void     nsleep(uint64_t nano);
 uint64_t nano_time();
+uint64_t elapsed();
 
 uint32_t get_hour();
 uint32_t get_min();

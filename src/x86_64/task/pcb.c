@@ -287,7 +287,7 @@ void kill_proc0(pcb_t pcb) {
 
 void kill_thread(tcb_t task) {
     if (task == NULL) return;
-    if (task->task_level == TASK_KERNEL_LEVEL || task->task_level == TASK_IDLE_LEVEL) {
+    if (task->task_level == TASK_IDLE_LEVEL) {
         kerror("Cannot stop kernel thread.");
         return;
     }

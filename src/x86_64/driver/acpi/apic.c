@@ -5,7 +5,7 @@
 #include "isr.h"
 #include "klog.h"
 #include "kprint.h"
-#include "smp.h"
+#include "krlibc.h"
 #include "timer.h"
 
 bool     x2apic_mode;
@@ -35,7 +35,7 @@ void ioapic_add(uint8_t vector, uint32_t irq) {
     ioapic_write(ioredtbl + 1, (uint32_t)(redirect >> 32));
 }
 
-static void lapic_write(uint32_t reg, uint32_t value) {
+static void lapic_write(uint32_t reg, uint64_t value) {
     if (x2apic_mode) {
         wrmsr(0x800 + (reg >> 4), value);
         return;
@@ -43,7 +43,7 @@ static void lapic_write(uint32_t reg, uint32_t value) {
     mmio_write32((uint32_t *)((uint64_t)lapic_address + reg), value);
 }
 
-uint32_t lapic_read(uint32_t reg) {
+uint64_t lapic_read(uint32_t reg) {
     if (x2apic_mode) { return rdmsr(0x800 + (reg >> 4)); }
     return mmio_read32((uint32_t *)((uint64_t)lapic_address + reg));
 }
@@ -56,17 +56,22 @@ uint64_t lapic_id() {
 void local_apic_init(bool is_print) {
     x2apic_mode = x2apic_mode_supported();
 
-    if (x2apic_mode) { wrmsr(0x1b, rdmsr(0x1b) | 1 << 10); }
+    uint64_t data  = rdmsr(0x1b);
+    data          |= 1UL << 11;
+    if (x2apic_mode) { data |= 1UL << 10; }
+    wrmsr(0x1b, data);
 
-    lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
+    lapic_timer_stop();
+
     lapic_write(LAPIC_REG_TIMER, timer);
+    lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
-    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
+    //lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
 
-    uint64_t b = nano_time();
+    uint64_t b = elapsed();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t)0));
     for (;;)
-        if (nano_time() - b >= 10000000) break;
+        if (elapsed() - b >= 1000000) break;
     uint64_t lapic_timer = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     uint64_t calibrated_timer_initial =
         (uint64_t)((uint64_t)(lapic_timer * 1000) / LAPIC_TIMER_SPEED);

@@ -1,4 +1,5 @@
 #include "kprint.h"
+#include "klog.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "os_terminal.h"
@@ -41,6 +42,8 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
         for (size_t i = 0; buf[i] != '\0'; i++) {
             if (buf[i] == '\n') terminal_process_byte('\r');
             terminal_process_byte(buf[i]);
+            //            if (buf[i] == '\n') logk("\r");
+            //            logkf("%c",buf[i]);
         }
     }
     extern bool open_flush;
