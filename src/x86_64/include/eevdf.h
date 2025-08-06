@@ -47,7 +47,8 @@
 #include "rbtree.h"
 #include "smp.h"
 
-extern unsigned int sysctl_sched_base_slice;
+extern unsigned int    sysctl_sched_base_slice;
+typedef struct eevdf_t eevdf_t;
 
 struct load_weight {
     uint64_t weight;
@@ -69,12 +70,16 @@ struct sched_entity {
     bool               on_rq;      // 是否就绪
     tcb_t              thread;     // 任务句柄
     size_t             wait_index; // 等待队列索引
+    bool               is_yield;   // 是否是yield任务
+    eevdf_t           *handle;     // EEVDF调度环境
 };
 
 struct eevdf_t {
     struct rb_root      *root;
-    struct sched_entity *current;
-    lock_queue          *wait_queue; // 阻塞队列
+    struct sched_entity *current;     // 当前调度单元
+    struct sched_entity *idle_entity; // IDLE调度单元
+    lock_queue          *wait_queue;  // 阻塞队列
+    size_t               task_count;  // 当前调度单元数量
 
     uint64_t avg_load;
     uint64_t avg_vruntime;

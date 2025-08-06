@@ -50,6 +50,7 @@ _Noreturn void killer_service() {
         }
         if (death_proc_queue->size == 0) {
             __asm__ volatile("pause" ::: "memory");
+            scheduler_yield();
             continue;
         }
 

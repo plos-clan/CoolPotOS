@@ -186,13 +186,15 @@ void smp_setup() {
     }
 
     close_interrupt;
-    current_cpu->sched_handle = (struct eevdf_t *)malloc(sizeof(struct eevdf_t));
+    current_cpu->sched_handle = (struct eevdf_t *)calloc(1, sizeof(struct eevdf_t));
     ((struct eevdf_t *)current_cpu->sched_handle)->root =
         (struct rb_root *)malloc(sizeof(struct rb_root));
     ((struct eevdf_t *)current_cpu->sched_handle)->min_vruntime = 0;
     ((struct eevdf_t *)current_cpu->sched_handle)->wait_queue   = queue_init();
+    ((struct eevdf_t *)current_cpu->sched_handle)->task_count   = 0;
     struct sched_entity *idle_entity = new_entity(kernel_head_task, NICE_TO_PRIO(0), current_cpu);
-    kernel_head_task->sched_handle   = idle_entity;
+    ((struct eevdf_t *)current_cpu->sched_handle)->idle_entity = idle_entity;
+    kernel_head_task->sched_handle                             = idle_entity;
     insert_sched_entity(((struct eevdf_t *)current_cpu->sched_handle)->root, idle_entity);
     eevdf_sched->current = idle_entity;
     open_interrupt;

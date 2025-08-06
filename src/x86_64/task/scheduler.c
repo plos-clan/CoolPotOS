@@ -33,7 +33,7 @@ void disable_scheduler() {
 void scheduler_yield() {
     if ((!current_cpu->ready) || current_cpu->current_pcb == NULL) return;
     open_interrupt;
-    if (get_current_task()->status == RUNNING) update_current_task();
+    ((struct sched_entity *)get_current_task()->sched_handle)->is_yield = true;
     __asm__ volatile("int %0" ::"i"(timer));
 }
 
@@ -110,7 +110,7 @@ int add_task_cpu(tcb_t new_task, size_t cpuid) {
         return -1;
     }
     new_task->cpu_id = cpuid;
-    add_eevdf_entity_with_prio(new_task, NICE_TO_PRIO(10), cpu0);
+    add_eevdf_entity_with_prio(new_task, NICE_TO_PRIO(0), cpu0);
 
     new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
     spin_unlock(cpu0->scheduler_queue->lock);
@@ -232,14 +232,12 @@ void scheduler(registers_t *reg) {
 
     // 正式切换
     if (current_cpu->current_pcb != best) {
-        disable_scheduler();
         if (current->status == RUNNING) { current->status = START; }
         if (best->status == START || best->status == CREATE) { best->status = RUNNING; }
 
         change_proccess(reg, current_cpu->current_pcb, best);
         change_current_tcb(best);
         current_cpu->current_pcb = best;
-        enable_scheduler();
     } else
         write_fsbase(get_current_task()->fs_base); // 同样，没切任务，换回来
 }

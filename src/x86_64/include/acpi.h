@@ -230,8 +230,6 @@ void ioapic_add(uint8_t vector, uint32_t irq);
 
 void ioapic_enable(uint8_t vector);
 
-uint32_t lapic_read(uint32_t reg);
-
 void local_apic_init(bool is_print);
 
 void setup_facp(acpi_facp_t *facp);
