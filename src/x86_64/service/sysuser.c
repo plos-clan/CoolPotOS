@@ -113,6 +113,7 @@ void user_setup() {
     add_env("HOME=/root");
     add_env("PWD=/");
     add_env("HOSTTYPE=x86_64");
+    add_env("TERM=vt100");
 
     kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;

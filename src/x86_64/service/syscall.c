@@ -242,7 +242,6 @@ syscall_(read) {
     int fd = (int)arg0;
     if (fd < 0 || arg1 == 0) return SYSCALL_FAULT_(EINVAL);
     if (arg2 == 0) return SYSCALL_SUCCESS;
-    logkf("fd = %d, arg1 = %p, arg2 = %d\n", fd, arg1, arg2);
     uint8_t        *buffer = (uint8_t *)arg1;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);

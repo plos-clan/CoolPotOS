@@ -14,6 +14,15 @@
 #define KB_SEND2MOUSE       0xd4
 #define MOUSE_EN            0xf4
 
+#define SCANCODE_ENTER 28
+#define SCANCODE_BACK  14
+#define SCANCODE_SHIFT 42
+#define SCANCODE_CAPS  58
+#define SCANCODE_UP    0x48
+
+#define CHARACTER_ENTER '\n'
+#define CHARACTER_BACK  '\b'
+
 #include "ctype.h"
 
 typedef enum mouse_type {
@@ -41,6 +50,13 @@ struct keyboard_buf {
     bool     alt;
     bool     caps;
     uint8_t  buf[64];
+};
+
+enum {
+    KEY_BUTTON_UP    = 0x81,
+    KEY_BUTTON_DOWN  = 0x82,
+    KEY_BUTTON_LEFT  = 0x83,
+    KEY_BUTTON_RIGHT = 0x84,
 };
 
 void keyboard_setup();
