@@ -1,32 +1,47 @@
 #include "keyboard.h"
 #include "atom_queue.h"
+#include "heap.h"
 #include "io.h"
 #include "isr.h"
-#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
 #include "terminal.h"
 
-static int         caps_lock, shift, ctrl = 0;
-extern tcb_t       kernel_head_task;
-extern lock_queue *pgb_queue;
+uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode_2);
 
+extern tcb_t        kernel_head_task;
+extern lock_queue  *pgb_queue;
 struct keyboard_buf kb_fifo;
+extern atom_queue  *temp_keyboard_buffer;
 
-char keytable[0x54] = { // 按下Shift
-    0,   0x01, '!', '@', '#', '$', '%',  '^', '&', '*', '(', ')', '_', '+', '\b', '\t', 'Q',
-    'W', 'E',  'R', 'T', 'Y', 'U', 'I',  'O', 'P', '{', '}', 10,  0,   'A', 'S',  'D',  'F',
-    'G', 'H',  'J', 'K', 'L', ':', '\"', '~', 0,   '|', 'Z', 'X', 'C', 'V', 'B',  'N',  'M',
-    '<', '>',  '?', 0,   '*', 0,   ' ',  0,   0,   0,   0,   0,   0,   0,   0,    0,    0,
-    0,   0,    0,   '7', 'D', '8', '-',  '4', '5', '6', '+', '1', '2', '3', '0',  '.'};
+bool ctrled     = false;
+bool shifted    = false;
+bool capsLocked = false;
 
-char keytable1[0x54] = { // 未按下Shift
-    0,   0x01, '1', '2', '3', '4', '5',  '6', '7', '8',  '9', '0', '-', '=', '\b', '\t', 'q',
-    'w', 'e',  'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', 10,  0,   'a', 's',  'd',  'f',
-    'g', 'h',  'j', 'k', 'l', ';', '\'', '`', 0,   '\\', 'z', 'x', 'c', 'v', 'b',  'n',  'm',
-    ',', '.',  '/', 0,   '*', 0,   ' ',  0,   0,   0,    0,   0,   0,   0,   0,    0,    0,
-    0,   0,    0,   '7', '8', '9', '-',  '4', '5', '6',  '+', '1', '2', '3', '0',  '.'};
+char character_table[140] = {
+    0,    27,   '1',  '2', '3', '4', '5', '6', '7',  '8',  '9',  '0',  '-',  '=',  0,    9,
+    'q',  'w',  'e',  'r', 't', 'y', 'u', 'i', 'o',  'p',  '[',  ']',  0,    0,    'a',  's',
+    'd',  'f',  'g',  'h', 'j', 'k', 'l', ';', '\'', '`',  0,    '\\', 'z',  'x',  'c',  'v',
+    'b',  'n',  'm',  ',', '.', '/', 0,   '*', 0,    ' ',  0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,   0,   0,   0,   0,   0,    0,    0,    0,    0,    0,    0,    0,
+    0x1B, 0,    0,    0,   0,   0,   0,   0,   0,    0,    0,    0x0E, 0x1C, 0,    0,    0,
+    0,    0,    0,    0,   0,   '/', 0,   0,   0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,   0,   0,   0,   0,   0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
+    0x26, 0x27, 0x28, 0,   0,   0,   0,   0,   0,    0,    0,    0x2C,
+};
+
+char shifted_character_table[140] = {
+    0,    27,   '!',  '@', '#', '$', '%', '^', '&',  '*',  '(',  ')',  '_',  '+',  0,    9,
+    'Q',  'W',  'E',  'R', 'T', 'Y', 'U', 'I', 'O',  'P',  '{',  '}',  0,    0,    'A',  'S',
+    'D',  'F',  'G',  'H', 'J', 'K', 'L', ':', '"',  '~',  0,    '|',  'Z',  'X',  'C',  'V',
+    'B',  'N',  'M',  '<', '>', '?', 0,   '*', 0,    ' ',  0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,   0,   0,   0,   0,   0,    0,    0,    0,    0,    0,    0,    0,
+    0x1B, 0,    0,    0,   0,   0,   0,   0,   0,    0,    0,    0x0E, 0x1C, 0,    0,    0,
+    0,    0,    0,    0,   0,   '?', 0,   0,   0,    0,    0,    0,    0,    0,    0,    0,
+    0,    0,    0,    0,   0,   0,   0,   0,   0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
+    0x26, 0x27, 0x28, 0,   0,   0,   0,   0,   0,    0,    0,    0x2C,
+};
 
 struct keyboard_cmd_state {
     bool waiting_ack;
@@ -53,14 +68,83 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         return;
     }
 
-    /* temp solution until can pass all scancode to threads */
-    terminal_handle_keyboard(scancode);
+    char out = 0;
+
+    if (scancode == 0xE0)
+        out = keyboard_scancode(scancode, io_in8(0x60), 0);
+    else if (scancode == 0xE1)
+        out = keyboard_scancode(scancode, io_in8(0x60), io_in8(0x60));
+    else
+        out = keyboard_scancode(scancode, 0, 0);
+
+    char *c;
+    switch ((uint8_t)out) {
+    case CHARACTER_ENTER: c = "\n"; break;
+    case CHARACTER_BACK: c = "\b"; break;
+    case KEY_BUTTON_UP: c = "\x1b[A"; break;
+    case KEY_BUTTON_DOWN: c = "\x1b[B"; break;
+    case KEY_BUTTON_LEFT: c = "\x1b[D"; break;
+    case KEY_BUTTON_RIGHT: c = "\x1b[C"; break;
+    default:
+        if (ctrled) out &= 0x1f;
+        c    = (char *)malloc(2 * sizeof(char));
+        c[0] = out;
+        c[1] = '\0';
+        terminal_pty_writer((uint8_t *)c);
+        free(c);
+        goto end;
+    }
+    terminal_pty_writer((uint8_t *)c);
+end:
     send_eoi();
 }
 
+uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode_2) {
+    if (scancode == 0xE0) {
+        switch (scancode_1) {
+        case 0x48: return KEY_BUTTON_UP;
+        case 0x50: return KEY_BUTTON_DOWN;
+        case 0x4b: return KEY_BUTTON_LEFT;
+        case 0x4d: return KEY_BUTTON_RIGHT;
+        default: return 0;
+        }
+    }
+    if (shifted == 1 && scancode & 0x80) {
+        if ((scancode & 0x7F) == 42) {
+            shifted = 0;
+            return 0;
+        }
+    }
+
+    if (ctrled == 1 && scancode & 0x80) {
+        if ((scancode & 0x7F) == 0x1d) {
+            ctrled = false;
+            return 0;
+        }
+    }
+
+    if (scancode < sizeof(character_table) && !(scancode & 0x80)) {
+        char character =
+            (shifted || capsLocked) ? shifted_character_table[scancode] : character_table[scancode];
+
+        if (character != 0) { // Normal char
+            return character;
+        }
+
+        switch (scancode) {
+        case SCANCODE_ENTER: return CHARACTER_ENTER;
+        case SCANCODE_BACK: return CHARACTER_BACK;
+        case SCANCODE_SHIFT: shifted = true; break;
+        case 0x1d: ctrled = true; break;
+        case SCANCODE_CAPS: capsLocked = !capsLocked; break;
+        }
+    }
+
+    return 0;
+}
+
 int kernel_getch() {
-    char               ch;
-    extern atom_queue *temp_keyboard_buffer;
+    char ch;
     while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
         __asm__ volatile("pause");
     }

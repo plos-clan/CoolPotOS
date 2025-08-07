@@ -62,10 +62,6 @@
 #define O_TMPFILE   020200000
 #define O_NDELAY    O_NONBLOCK
 
-#define POLLIN  0x001 /* There is data to read.  */
-#define POLLPRI 0x002 /* There is urgent data to read.  */
-#define POLLOUT 0x004 /* Writing now will not block.  */
-
 #include "ctype.h"
 #include "list.h"
 

@@ -2,6 +2,7 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "poll.h"
 #include "vfs.h"
 
 int        tmpfs_id       = 0;
