@@ -27,8 +27,8 @@ lock_queue *pgb_queue = NULL;
 
 pcb_t kernel_group;
 
-int now_pid = 0;
-int now_tid = 0;
+_Atomic volatile size_t now_pid = 0;
+_Atomic volatile size_t now_tid = 0;
 
 _Noreturn void process_exit() {
     uint64_t rax = 0;
@@ -318,15 +318,21 @@ void kill_thread0(tcb_t task) {
     remove_task(task);
 }
 
-pcb_t found_pcb(int pid) {
+pcb_t found_pcb(size_t pid) {
+    pcb_t ret = NULL;
+    spin_lock(pgb_queue->lock);
     queue_foreach(pgb_queue, node) {
         pcb_t pcb = (pcb_t)node->data;
-        if (pcb->pid == pid) { return pcb; }
+        if (pcb->pid == pid) {
+            ret = pcb;
+            break;
+        }
     }
-    return NULL;
+    spin_unlock(pgb_queue->lock);
+    return ret;
 }
 
-tcb_t found_thread(pcb_t pcb, int tid) {
+tcb_t found_thread(pcb_t pcb, size_t tid) {
     if (pcb == NULL) return NULL;
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t thread = (tcb_t)node->data;
@@ -335,8 +341,8 @@ tcb_t found_thread(pcb_t pcb, int tid) {
     return NULL;
 }
 
-int waitpid(int pid, int *pid_ret) {
-    if (pid == -1) {
+int waitpid(size_t pid, int *pid_ret) {
+    if (pid == (size_t)-1) {
         bool is_sti                = are_interrupts_enabled();
         get_current_task()->status = WAIT;
         open_interrupt;

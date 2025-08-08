@@ -25,7 +25,7 @@
 #endif
 
 #ifndef SERIAL_BAUD_RATE
-#    define SERIAL_BAUD_RATE 9600
+#    define SERIAL_BAUD_RATE 38400
 #endif
 
 #ifndef SERIAL_DATA_BITS

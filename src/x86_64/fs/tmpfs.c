@@ -145,6 +145,10 @@ void tmpfs_close(void *file) {
     f->ready        = true;
 }
 
+void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot, size_t flags) {
+    return general_map(tmpfs_read, file, (uint64_t)addr, offset, size, prot, flags);
+}
+
 static struct vfs_callback tmpfs_callbacks = {
     .mount   = tmpfs_mount,
     .unmount = (void *)empty,
@@ -160,7 +164,7 @@ static struct vfs_callback tmpfs_callbacks = {
     .delete  = tmpfs_delete,
     .rename  = tmpfs_rename,
     .poll    = tmpfs_poll,
-    .map     = (void *)empty, // tmpfs 不支持内存映射
+    .map     = tmpfs_map,
 };
 
 void tmpfs_setup() {

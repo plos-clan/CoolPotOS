@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "io.h"
 #include "isr.h"
+#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
@@ -13,7 +14,6 @@ uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode
 extern tcb_t        kernel_head_task;
 extern lock_queue  *pgb_queue;
 struct keyboard_buf kb_fifo;
-extern atom_queue  *temp_keyboard_buffer;
 
 bool ctrled     = false;
 bool shifted    = false;
@@ -90,11 +90,11 @@ __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
         c    = (char *)malloc(2 * sizeof(char));
         c[0] = out;
         c[1] = '\0';
-        terminal_pty_writer((uint8_t *)c);
+        keyboard_tmp_writer((uint8_t *)c);
         free(c);
         goto end;
     }
-    terminal_pty_writer((uint8_t *)c);
+    keyboard_tmp_writer((uint8_t *)c);
 end:
     send_eoi();
 }
@@ -141,14 +141,6 @@ uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode
     }
 
     return 0;
-}
-
-int kernel_getch() {
-    char ch;
-    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
-        __asm__ volatile("pause");
-    }
-    return ch;
 }
 
 void wait_ps2_write() {

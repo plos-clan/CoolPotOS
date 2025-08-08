@@ -139,3 +139,6 @@ tty_t *alloc_default_tty();
 void   free_tty(tty_t *tty);
 void   build_tty_device();
 tty_t *get_default_tty();
+
+int  kernel_getch();
+void keyboard_tmp_writer(const uint8_t *data);

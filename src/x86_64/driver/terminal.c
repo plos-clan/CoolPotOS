@@ -47,13 +47,6 @@ void terminal_puts(const char *msg) {
     }
 }
 
-void terminal_pty_writer(const uint8_t *data) {
-    while (*data != '\0') {
-        atom_push(temp_keyboard_buffer, *data);
-        data++;
-    }
-}
-
 float get_terminal_font_size() {
     return 16.0f * ((float)framebuffer->width / 1920);
 }
@@ -101,7 +94,6 @@ void init_terminal() {
     terminal_init(&display, size, malloc, free);
     // terminal_set_crnl_mapping(true);
     terminal_set_scroll_speed(3);
-    terminal_set_pty_writer(terminal_pty_writer);
     terminal_set_auto_flush(false);
 
     TerminalPalette palette = {
