@@ -233,8 +233,9 @@ syscall_(write) {
     uint8_t        *buffer = (uint8_t *)arg1;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
-    int ret = vfs_write(handle->node, buffer, handle->offset, arg2);
-    if (handle->node->size != (uint64_t)-1) handle->offset += arg2;
+    size_t ret = vfs_write(handle->node, buffer, handle->offset, arg2);
+    if (ret == (size_t)VFS_STATUS_FAILED) return SYSCALL_FAULT_(EIO);
+    if (handle->node->size != (uint64_t)-1) handle->offset += ret;
     return ret;
 }
 
@@ -245,8 +246,9 @@ syscall_(read) {
     uint8_t        *buffer = (uint8_t *)arg1;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
-    int ret = vfs_read(handle->node, buffer, handle->offset, arg2);
-    if (handle->node->size != (uint64_t)-1) handle->offset += arg2;
+    size_t ret = vfs_read(handle->node, buffer, handle->offset, arg2);
+    if (ret == (size_t)VFS_STATUS_FAILED) return SYSCALL_FAULT_(EIO);
+    if (handle->node->size != (uint64_t)-1) { handle->offset += ret; }
     return ret;
 }
 
@@ -525,8 +527,10 @@ syscall_(writev) {
     ssize_t         total  = 0;
     for (int i = 0; i < iovcnt; i++) {
         int status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
-        if (handle->node->size != (uint64_t)-1) handle->offset += iov[i].iov_len;
-        if (status == VFS_STATUS_FAILED) return total;
+        if (handle->node->size != (uint64_t)-1) {
+            if (status == VFS_STATUS_FAILED) return total;
+            handle->offset += status;
+        }
         total += iov[i].iov_len;
     }
     return total;
@@ -545,11 +549,11 @@ syscall_(readv) {
     }
     uint8_t *buf    = (uint8_t *)malloc(buf_len);
     size_t   status = vfs_read(handle->node, buf, handle->offset, buf_len);
-    if (handle->node->size != (uint64_t)-1) handle->offset += buf_len;
     if (status == (size_t)VFS_STATUS_FAILED) {
         free(buf);
         return SYSCALL_FAULT_(EIO);
     }
+    if (handle->node->size != (uint64_t)-1) handle->offset += status;
     size_t copied = 0;
     for (size_t i = 0; i < iovcnt; i++) {
         size_t len = iov[i].iov_len;
@@ -1450,6 +1454,23 @@ syscall_(ftruncate) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(setpgid) {
+    size_t pid     = arg0;
+    size_t pgid    = arg1;
+    pcb_t  process = pid == 0 ? get_current_task()->parent_group : found_pcb(pid);
+    if (process == NULL || process->status == DEATH) { return SYSCALL_FAULT_(ESRCH); }
+    if (pgid == 0) { pgid = process->pgid; }
+    process->pgid = pgid;
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(getpgid) {
+    size_t pid     = arg0;
+    pcb_t  process = pid == 0 ? get_current_task()->parent_group : found_pcb(pid);
+    if (process == NULL || process->status == DEATH) { return SYSCALL_FAULT_(ESRCH); }
+    return process->pgid;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1520,6 +1541,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_PWRITE]      = syscall_pwrite,
     [SYSCALL_MOUNT]       = syscall_mount,
     [SYSCALL_FTRUNCATE]   = syscall_ftruncate,
+    [SYSCALL_SETPGID]     = syscall_setpgid,
+    [SYScall_GETPGID]     = syscall_getpgid,
 };
 // clang-format on
 

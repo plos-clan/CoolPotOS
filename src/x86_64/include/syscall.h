@@ -111,6 +111,8 @@
 #define SYSCALL_RMDIR       84
 #define SYSCALL_UNLINK      87
 #define SYSCALL_GETUID      102
+#define SYSCALL_SETPGID     109
+#define SYScall_GETPGID     121
 #define SYSCALL_SIGSUSPEND  130
 #define SYSCALL_SIGALTSTACK 131
 #define SYSCALL_PRCTL       157

@@ -64,5 +64,3 @@ void mouse_setup();
 
 void wait_ps2_write();
 void wait_ps2_read();
-
-int kernel_getch();

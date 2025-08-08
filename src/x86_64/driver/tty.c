@@ -21,6 +21,8 @@ int            tty_mode          = KD_TEXT;
 int            tty_kbmode        = K_XLATE;
 struct vt_mode current_vt_mode   = {0};
 
+extern atom_queue *temp_keyboard_buffer;
+
 extern bool open_flush; // terminal.c
 
 static void tty_kernel_print(tty_t *tty, const char *msg) {
@@ -46,6 +48,22 @@ static void tty_kernel_putc(tty_t *tty, int c) {
     } else
         terminal_process_byte(c);
     spin_unlock(tty_lock);
+}
+
+void keyboard_tmp_writer(const uint8_t *data) {
+    
+    while (*data != '\0') {
+        atom_push(temp_keyboard_buffer, *data);
+        data++;
+    }
+}
+
+int kernel_getch() {
+    char ch;
+    while ((ch = atom_pop(temp_keyboard_buffer)) == -1) {
+        __asm__ volatile("pause");
+    }
+    return ch;
 }
 
 tty_t *alloc_default_tty() {
