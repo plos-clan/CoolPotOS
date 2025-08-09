@@ -166,6 +166,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
     new_pcb->file_open   = queue_copy(current_pcb->file_open, file_copy);
     new_pcb->queue_index = queue_enqueue(pgb_queue, new_pcb);
     new_pcb->vfork       = is_vfork;
+    new_pcb->child_pcb   = queue_init();
+    new_pcb->child_index = queue_enqueue(current_pcb->child_pcb, new_pcb);
 
     tcb_t parent_task = get_current_task();
 

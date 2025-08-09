@@ -109,6 +109,7 @@ struct process_control_block {
     lock_queue       *ipc_queue;   // 进程消息队列
     lock_queue       *file_open;   // 文件句柄占用队列
     lock_queue       *virt_queue;  // 虚拟页分配队列
+    lock_queue       *child_pcb;   // 子进程列表
     page_directory_t *page_dir;    // 进程页表
     char            **envp;        // 环境变量指针
     size_t            envc;        // 环境变量数量
@@ -121,6 +122,7 @@ struct process_control_block {
     size_t            elf_size;    // 可执行文件大小
     uint64_t          load_start;  // 加载起始地址
     bool              vfork;       // 是否是 vfork 创建的进程
+    size_t            child_index; // 子进程队列索引
 };
 
 struct thread_control_block {

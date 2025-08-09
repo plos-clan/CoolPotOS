@@ -689,7 +689,7 @@ _Noreturn void shell_setup() {
     }
     {
         int   argc    = 2;
-        char *argv[2] = {"exec", "/usr/bin/bash"};
+        char *argv[2] = {"exec", "/bin/sh"};
         exec(argc, argv);
     }
     /***************** debug *******************/

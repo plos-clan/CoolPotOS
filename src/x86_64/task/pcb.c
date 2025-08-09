@@ -241,6 +241,7 @@ void kill_proc(pcb_t pcb, int exit_code) {
             kill_thread(tcb);
         }
     }
+    queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
     add_death_proc(pcb);
 }
 
@@ -406,6 +407,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
+    new_pgb->child_pcb   = queue_init();
     new_pgb->vfork       = false;
     new_pgb->cwd         = malloc(1024);
     new_pgb->envp        = NULL;
@@ -414,7 +416,8 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
     new_pgb->mmap_start = USER_MMAP_START;
     spin_unlock(pgb_queue->lock);
-    new_pgb->status = START;
+    new_pgb->status      = START;
+    new_pgb->child_index = queue_enqueue(new_pgb->parent_task->child_pcb, new_pgb);
     return new_pgb;
 }
 
@@ -546,9 +549,11 @@ void init_pcb() {
     kernel_group->parent_task = kernel_group;
     kernel_group->task_level  = TASK_KERNEL_LEVEL;
     kernel_group->virt_queue  = queue_init();
+    kernel_group->child_pcb   = queue_init();
     kernel_group->cwd         = malloc(1024);
     memset(kernel_group->cwd, 0, 1024);
-    kernel_group->cwd[0] = '/';
+    kernel_group->cwd[0]      = '/';
+    kernel_group->child_index = 0;
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;
