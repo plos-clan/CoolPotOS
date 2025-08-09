@@ -263,6 +263,7 @@ syscall_(waitpid) {
     if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ECHILD);
 wait:
     int ret_pid;
+    if (get_current_task()->parent_group->child_pcb->size == 0) return -1;
     int status0 = waitpid(pid, &ret_pid);
     if (status) *status = status0;
     return ret_pid;

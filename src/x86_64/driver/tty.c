@@ -51,7 +51,7 @@ static void tty_kernel_putc(tty_t *tty, int c) {
 }
 
 void keyboard_tmp_writer(const uint8_t *data) {
-    
+
     while (*data != '\0') {
         atom_push(temp_keyboard_buffer, *data);
         data++;
@@ -213,7 +213,7 @@ static int tty_ioctl(vdisk *device, size_t req, void *arg) {
         break;
     case TIOCGPGRP:
         int *pid = (int *)arg;
-        *pid     = get_current_task()->tid;
+        *pid     = get_current_task()->parent_group->pgid;
         break;
     case TCSETS:
     case TCSETSF:
