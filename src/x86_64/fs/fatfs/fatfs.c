@@ -90,18 +90,27 @@ void fatfs_open(void *parent, const char *name, vfs_node_t node) {
             res = f_readdir(fp, &fno);
             // 为空时表示所有项目读取完毕，跳出
             if (res != FR_OK || fno.fname[0] == 0) break;
+            bool has_equre = false;
+            list_foreach(node->child, child_node0) {
+                vfs_node_t e_child = child_node0->data;
+                if (strcmp(e_child->name, fno.fname) == 0) {
+                    has_equre = true;
+                    break;
+                }
+            }
+            if (has_equre) continue;
             vfs_node_t child_node = vfs_child_append(node, fno.fname, NULL);
             child_node->type      = ((fno.fattrib & AM_DIR) != 0) ? file_dir : file_none;
             child_node->inode     = ino++;
             child_node->size      = fno.fsize;
         }
-        node->inode = ino++;
+        if (node->inode == 0) node->inode = ino++;
         node->blksz = PAGE_SIZE;
     } else {
-        node->type  = file_none;
-        fp          = malloc(sizeof(FIL));
-        res         = f_open(fp, new_path, FA_READ | FA_WRITE);
-        node->inode = ino++;
+        node->type = file_none;
+        fp         = malloc(sizeof(FIL));
+        res        = f_open(fp, new_path, FA_READ | FA_WRITE);
+        if (node->inode == 0) node->inode = ino++;
         node->size  = f_size((FIL *)fp);
         node->blksz = PAGE_SIZE;
     }

@@ -246,6 +246,9 @@ syscall_(read) {
     uint8_t        *buffer = (uint8_t *)arg1;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
+    if (handle->node->size != (uint64_t)-1) {
+        if (handle->offset > handle->node->size) return EOK;
+    }
     size_t ret = vfs_read(handle->node, buffer, handle->offset, arg2);
     if (ret == (size_t)VFS_STATUS_FAILED) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) { handle->offset += ret; }
@@ -547,8 +550,11 @@ syscall_(readv) {
     for (size_t i = 0; i < iovcnt; i++) {
         buf_len += iov[i].iov_len;
     }
-    uint8_t *buf    = (uint8_t *)malloc(buf_len);
-    size_t   status = vfs_read(handle->node, buf, handle->offset, buf_len);
+    uint8_t *buf = (uint8_t *)malloc(buf_len);
+    if (handle->node->size != (uint64_t)-1) {
+        if (handle->offset > handle->node->size) return EOK;
+    }
+    size_t status = vfs_read(handle->node, buf, handle->offset, buf_len);
     if (status == (size_t)VFS_STATUS_FAILED) {
         free(buf);
         return SYSCALL_FAULT_(EIO);
