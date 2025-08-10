@@ -232,6 +232,8 @@ void ioapic_enable(uint8_t vector);
 
 void local_apic_init(bool is_print);
 
+void ap_local_apic_init();
+
 void setup_facp(acpi_facp_t *facp);
 
 void hpet_init(Hpet *hpetInfo);

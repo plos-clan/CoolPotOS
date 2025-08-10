@@ -11,6 +11,7 @@
 bool     x2apic_mode;
 uint64_t lapic_address;
 uint64_t ioapic_address;
+uint64_t calibrated_timer_initial;
 
 void disable_pic() {
     io_out8(0x21, 0xff);
@@ -53,6 +54,23 @@ uint64_t lapic_id() {
     return x2apic_mode ? phy_id : (phy_id >> 24);
 }
 
+void ap_local_apic_init() {
+    uint64_t data  = rdmsr(0x1b);
+    data          |= 1UL << 11;
+    if (x2apic_mode) { data |= 1UL << 10; }
+    wrmsr(0x1b, data);
+
+    lapic_timer_stop();
+
+    lapic_write(LAPIC_REG_TIMER, timer);
+    lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
+    lapic_write(LAPIC_REG_TIMER_DIV, 11);
+    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
+
+    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
+    lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
+}
+
 void local_apic_init(bool is_print) {
     x2apic_mode = x2apic_mode_supported();
 
@@ -66,15 +84,14 @@ void local_apic_init(bool is_print) {
     lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
-    //lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
+    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
 
     uint64_t b = elapsed();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t)0));
     for (;;)
         if (elapsed() - b >= 1000000) break;
-    uint64_t lapic_timer = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
-    uint64_t calibrated_timer_initial =
-        (uint64_t)((uint64_t)(lapic_timer * 1000) / LAPIC_TIMER_SPEED);
+    uint64_t lapic_timer     = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
+    calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / LAPIC_TIMER_SPEED);
     if (is_print)
         kinfo("Calibrated LAPIC timer: %d ticks per second.", calibrated_timer_initial);
     else

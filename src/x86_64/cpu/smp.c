@@ -98,9 +98,11 @@ extern void halt_service();
 
 _Noreturn void apu_entry() {
     spin_lock(apu_lock);
+    extern uint64_t double_fault_page;
+    __asm__ volatile("mov %0, %%cr3" : : "r"(double_fault_page));
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
-    local_apic_init(false);
+    ap_local_apic_init();
     float_processor_setup();
 
     tcb_t apu_idle = (tcb_t)malloc(STACK_SIZE);
