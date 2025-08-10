@@ -61,7 +61,10 @@ __attribute__((naked)) void save_registers() {
                      "iretq\n\t");
 }
 
+//#include "klog.h"
+
 USED registers_t *timer_handle(registers_t *reg) {
+    //logkf("Timer interrupt: %d\n", lapic_id());
     scheduler(reg);
     send_eoi();
     return reg;
