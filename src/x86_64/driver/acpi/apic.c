@@ -54,6 +54,15 @@ uint64_t lapic_id() {
     return x2apic_mode ? phy_id : (phy_id >> 24);
 }
 
+void enable_lvt_timer(uint8_t vector, bool periodic) {
+    uint32_t value = vector;
+    if (periodic) {
+        value |= LAPIC_TIMER_PERIODIC; // 周期模式
+    }
+    value &= ~LAPIC_TIMER_MASKED; // 取消屏蔽（启用）
+    lapic_write(LAPIC_REG_TIMER, value);
+}
+
 void ap_local_apic_init() {
     uint64_t data  = rdmsr(0x1b);
     data          |= 1UL << 11;
@@ -69,6 +78,8 @@ void ap_local_apic_init() {
 
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
+
+    enable_lvt_timer(timer, true);
 }
 
 void local_apic_init(bool is_print) {
@@ -98,6 +109,7 @@ void local_apic_init(bool is_print) {
         logkf("Calibrated LAPIC timer: %d ticks per second.\n", calibrated_timer_initial);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
+    enable_lvt_timer(timer, true);
     if (is_print)
         kinfo("Setup local %s.", x2apic_mode ? "x2APIC" : "APIC");
     else

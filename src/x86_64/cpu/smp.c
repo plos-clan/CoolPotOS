@@ -102,6 +102,7 @@ _Noreturn void apu_entry() {
     __asm__ volatile("mov %0, %%cr3" : : "r"(double_fault_page));
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
+    //local_apic_init(false);
     ap_local_apic_init();
     float_processor_setup();
 
