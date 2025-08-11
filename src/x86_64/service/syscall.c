@@ -236,6 +236,7 @@ syscall_(write) {
     size_t ret = vfs_write(handle->node, buffer, handle->offset, arg2);
     if (ret == (size_t)VFS_STATUS_FAILED) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) handle->offset += ret;
+    vfs_update(handle->node);
     return ret;
 }
 
@@ -247,7 +248,7 @@ syscall_(read) {
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
     if (handle->node->size != (uint64_t)-1) {
-        if (handle->offset > handle->node->size) return EOK;
+        if (handle->offset >= handle->node->size) return EOK;
     }
     size_t ret = vfs_read(handle->node, buffer, handle->offset, arg2);
     if (ret == (size_t)VFS_STATUS_FAILED) return SYSCALL_FAULT_(EIO);
@@ -1291,17 +1292,21 @@ syscall_(pipe) {
 syscall_(unlink) {
     char *name = (char *)arg0;
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
-    vfs_node_t node = vfs_open(name);
+    char      *npath = vfs_cwd_path_build(name);
+    vfs_node_t node  = vfs_open(npath);
     if (node == NULL) return SYSCALL_FAULT_(ENOENT);
     if (node->type != file_none && node->type != file_symlink) {
         vfs_close(node);
         return SYSCALL_FAULT_(ENOTDIR);
     }
+    size_t ret;
     if (node->refcount > 0) {
         node->refcount--;
         return SYSCALL_SUCCESS;
     } else
-        return vfs_delete(node) == VFS_STATUS_SUCCESS ? SYSCALL_SUCCESS : SYSCALL_FAULT_(ENOENT);
+        ret = vfs_delete(node) == VFS_STATUS_SUCCESS ? SYSCALL_SUCCESS : SYSCALL_FAULT_(ENOENT);
+    free(npath);
+    return ret;
 }
 
 syscall_(rmdir) {
