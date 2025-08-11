@@ -226,7 +226,6 @@ void kill_proc(pcb_t pcb, int exit_code) {
         kerror("Cannot kill System process.");
         return;
     }
-    pcb->status       = DEATH;
     ipc_message_t msg = malloc(sizeof(struct ipc_message));
     msg->pid          = pcb->pid;
     msg->type         = IPC_MSG_TYPE_EPID;
@@ -243,6 +242,7 @@ void kill_proc(pcb_t pcb, int exit_code) {
     }
     queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
     add_death_proc(pcb);
+    pcb->status = DEATH;
 }
 
 void kill_proc0(pcb_t pcb) {
