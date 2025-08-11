@@ -9,9 +9,10 @@
 #define LAPIC_REG_TIMER_CURCNT  0x390
 #define LAPIC_REG_TIMER_INITCNT 0x380
 #define LAPIC_REG_TIMER         0x320
-#define LAPIC_REG_TIMER         0x320
 #define LAPIC_REG_SPURIOUS      0xf0
 #define LAPIC_REG_TIMER_DIV     0x3e0
+#define LAPIC_TIMER_PERIODIC    (1 << 17)
+#define LAPIC_TIMER_MASKED      (1 << 16)
 
 #define APIC_ICR_LOW  0x300
 #define APIC_ICR_HIGH 0x310
