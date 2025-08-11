@@ -663,6 +663,7 @@ syscall_(exit_group) {
     int   exit_code    = arg0;
     pcb_t exit_process = get_current_task()->parent_group;
     logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
+    close_interrupt;
     kill_proc(exit_process, exit_code);
     open_interrupt;
     scheduler_yield();
@@ -979,7 +980,12 @@ syscall_(lseek) {
         }
         break;
     case SEEK_END: handle->offset = handle->node->size - real_offset; break;
-
+    case SEEK_DATA:
+        if (offset >= handle->node->size) return SYSCALL_FAULT_(ENXIO);
+        break;
+    case SEEK_HOLE:
+        if (offset >= handle->node->size) return SYSCALL_FAULT_(ENXIO);
+        return handle->node->size;
     default: return SYSCALL_FAULT_(ENXIO);
     }
 
@@ -1412,19 +1418,24 @@ syscall_(copy_file_range) {
     fd_file_handle *src_handle = queue_get(get_current_task()->parent_group->file_open, fd_in);
     fd_file_handle *dst_handle = queue_get(get_current_task()->parent_group->file_open, fd_out);
     if (src_handle == NULL || dst_handle == NULL) { return SYSCALL_FAULT_(EBADF); }
+    if (dst_handle->offset >= dst_handle->node->size && dst_handle->node->size > 0)
+        return SYSCALL_SUCCESS;
     uint64_t src_offset = off_in ? *off_in : src_handle->offset;
     uint64_t dst_offset = off_out ? *off_out : dst_handle->offset;
+
     uint64_t length     = src_handle->node->size > len ? len : src_handle->node->size;
     uint8_t *buffer     = (uint8_t *)malloc(length);
     size_t   copy_total = 0;
-    if (vfs_read(src_handle->node, buffer, length, src_offset) == (size_t)VFS_STATUS_FAILED) {
+    if (vfs_read(src_handle->node, buffer, src_offset, length) == (size_t)VFS_STATUS_FAILED) {
         goto errno_;
     }
-    if ((copy_total = vfs_write(dst_handle->node, buffer, length, dst_offset)) ==
+    if ((copy_total = vfs_write(dst_handle->node, buffer, dst_offset, length)) ==
         (size_t)VFS_STATUS_FAILED) {
         goto errno_;
     }
+    vfs_update(dst_handle->node);
     free(buffer);
+    dst_handle->offset += copy_total;
     return copy_total;
 errno_:
     free(buffer);
