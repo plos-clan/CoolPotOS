@@ -3,27 +3,27 @@
 #include "poll.h"
 #include "vdisk.h"
 
-size_t null_read(int id, uint8_t *addr, size_t offset, size_t size) {
+size_t null_read(int id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(addr);
-    UNUSED(offset);
+    UNUSED(lba);
     UNUSED(size);
     return 0;
 }
 
-size_t null_write(int id, uint8_t *addr, size_t offset, size_t size) {
+size_t null_write(int id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(addr);
-    UNUSED(offset);
+    UNUSED(lba);
     UNUSED(size);
     return size;
 }
 
-size_t zero_read(int id, uint8_t *addr, size_t offset, size_t size) {
+size_t zero_read(int id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
-    UNUSED(offset);
+    UNUSED(lba);
     memset(addr, 0, size);
-    return 0;
+    return size;
 }
 
 int zero_poll(size_t events) {
