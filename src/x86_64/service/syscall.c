@@ -257,13 +257,13 @@ syscall_(read) {
 }
 
 syscall_(waitpid) {
-    int      pid     = arg0;
+    pid_t    pid     = arg0;
     int     *status  = (int *)arg1;
     uint64_t options = arg2;
     if (pid == -1) goto wait;
     if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ECHILD);
 wait:
-    int ret_pid;
+    pid_t ret_pid;
     if (get_current_task()->parent_group->child_pcb->size == 0) return -1;
     int status0 = waitpid(pid, &ret_pid);
     if (status) *status = status0;
@@ -730,7 +730,7 @@ syscall_(set_tid_address) {
 }
 
 syscall_(sched_getaffinity) {
-    int    pid      = (int)arg0;
+    pid_t  pid      = (int)arg0;
     size_t set_size = (size_t)arg1;
     return SYSCALL_FAULT_(ENOSYS);
 }
@@ -957,7 +957,10 @@ syscall_(mkdir) {
     char    *name = (char *)arg0;
     uint64_t mode = arg1;
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
-    return vfs_mkdir(name) == VFS_STATUS_FAILED ? -1 : 0;
+    char  *npath = vfs_cwd_path_build(name);
+    size_t ret   = vfs_mkdir(npath) == VFS_STATUS_FAILED ? -1 : 0;
+    free(npath);
+    return ret;
 }
 
 syscall_(lseek) {
@@ -1408,7 +1411,7 @@ syscall_(openat) {
 }
 
 syscall_(getuid) {
-    return get_current_task()->parent_group->user->uid;
+    return get_current_user()->uid;
 }
 
 syscall_(copy_file_range) {
@@ -1458,18 +1461,27 @@ syscall_(pwrite) {
 }
 
 syscall_(mount) {
-    char      *dev_name = (char *)arg0;
-    char      *dir_name = (char *)arg1;
-    char      *type     = (char *)arg2;
-    uint64_t   flags    = arg3;
-    void      *data     = (void *)arg4;
-    vfs_node_t dir      = vfs_open((const char *)dir_name);
-    if (!dir) { return SYSCALL_FAULT_(ENOENT); }
-
-    if (vfs_mount((const char *)dev_name, dir) == VFS_STATUS_FAILED) {
+    char      *dev_name  = (char *)arg0;
+    char      *dir_name  = (char *)arg1;
+    char      *type      = (char *)arg2;
+    uint64_t   flags     = arg3;
+    void      *data      = (void *)arg4;
+    char      *ndev_name = vfs_cwd_path_build(dev_name);
+    char      *ndir_name = vfs_cwd_path_build(dir_name);
+    vfs_node_t dir       = vfs_open((const char *)ndir_name);
+    if (!dir) {
+        free(ndir_name);
+        free(ndev_name);
         return SYSCALL_FAULT_(ENOENT);
     }
 
+    if (vfs_mount((const char *)ndev_name, dir) == VFS_STATUS_FAILED) {
+        free(ndir_name);
+        free(ndev_name);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+    free(ndir_name);
+    free(ndev_name);
     return SYSCALL_SUCCESS;
 }
 
@@ -1478,9 +1490,9 @@ syscall_(ftruncate) {
 }
 
 syscall_(setpgid) {
-    size_t pid     = arg0;
-    size_t pgid    = arg1;
-    pcb_t  process = pid == 0 ? get_current_task()->parent_group : found_pcb(pid);
+    pid_t pid     = arg0;
+    pid_t pgid    = arg1;
+    pcb_t process = pid == 0 ? get_current_task()->parent_group : found_pcb(pid);
     if (process == NULL || process->status == DEATH) { return SYSCALL_FAULT_(ESRCH); }
     if (pgid == 0) { pgid = process->pgid; }
     process->pgid = pgid;
@@ -1492,6 +1504,71 @@ syscall_(getpgid) {
     pcb_t  process = pid == 0 ? get_current_task()->parent_group : found_pcb(pid);
     if (process == NULL || process->status == DEATH) { return SYSCALL_FAULT_(ESRCH); }
     return process->pgid;
+}
+
+syscall_(geteuid) {
+    return get_current_task()->parent_group->user->uid;
+}
+
+syscall_(setuid) {
+    int uid = arg0;
+    if (uid > 65535) return SYSCALL_FAULT_(EINVAL);
+    if (get_current_task()->parent_group->user->uid == 0) return SYSCALL_FAULT_(EACCES);
+    get_current_task()->parent_group->user->uid = uid;
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(setgid) {
+    // TODO GID设置不支持
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(getegid) {
+    //TODO EGID获取不支持
+    return 0;
+}
+
+syscall_(getgroups) {
+    int  count    = arg0;
+    int *gid_list = (int *)arg1;
+    if (count > 0) {
+        gid_list[0] = 0;
+        return 1;
+    }
+    return 0;
+}
+
+syscall_(rename) {
+    char *oldpath = (char *)arg0;
+    char *newpath = (char *)arg1;
+    if (!oldpath || !newpath) return SYSCALL_FAULT_(EINVAL);
+    if (check_user_overflow((uint64_t)oldpath, strlen(oldpath))) { return SYSCALL_FAULT_(EFAULT); }
+    if (check_user_overflow((uint64_t)newpath, strlen(newpath))) { return SYSCALL_FAULT_(EFAULT); }
+    char      *noldpath = vfs_cwd_path_build(oldpath);
+    char      *nnewpath = vfs_cwd_path_build(newpath);
+    vfs_node_t oldnode  = vfs_open(noldpath);
+    if (!oldnode) {
+        free(noldpath);
+        free(nnewpath);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+    vfs_node_t newnode = vfs_open(nnewpath);
+    if (newnode) { vfs_delete(newnode); }
+    size_t     ret        = vfs_rename(oldnode, nnewpath) == VFS_STATUS_SUCCESS ? SYSCALL_SUCCESS
+                                                                                : SYSCALL_FAULT_(ENOENT);
+    char      *parent     = get_parent_path(nnewpath);
+    vfs_node_t parent_dir = vfs_open(parent);
+    if (!parent_dir) {
+        free(parent);
+        ret = SYSCALL_FAULT_(ENOENT);
+        goto end_rename;
+    }
+    vfs_close(parent_dir); // 更新父目录的信息
+    free(parent);
+end_rename:
+    free(noldpath);
+    free(nnewpath);
+    return ret;
 }
 
 // clang-format off
@@ -1566,6 +1643,12 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FTRUNCATE]   = syscall_ftruncate,
     [SYSCALL_SETPGID]     = syscall_setpgid,
     [SYScall_GETPGID]     = syscall_getpgid,
+    [SYSCALL_GETEUID]     = syscall_geteuid,
+    [SYSCALL_SETUID]      = syscall_setuid,
+    [SYSCALL_SETGID]      = syscall_setgid,
+    [SYSCALL_GETEGID]     = syscall_getegid,
+    [SYSCALL_GETGROUPS]   = syscall_getgroups,
+    [SYSCALL_RENAME]      = syscall_rename,
 };
 // clang-format on
 

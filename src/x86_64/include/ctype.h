@@ -12,6 +12,8 @@ typedef int             wchar_t;
 
 typedef void (*free_t)(void *ptr);
 
+typedef int pid_t;
+
 #define loop while (true)
 
 #define __attr(...) __attribute__((__VA_ARGS__))

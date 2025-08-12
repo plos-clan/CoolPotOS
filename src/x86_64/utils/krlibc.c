@@ -14,6 +14,10 @@ void close_interrupt_native() {
     __asm__ volatile("cli" ::: "memory");
 }
 
+void open_interrupt_native() {
+    __asm__ volatile("sti" ::: "memory");
+}
+
 int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;
     const char *b = b_;
@@ -24,6 +28,26 @@ int memcmp(const void *a_, const void *b_, size_t size) {
     return 0;
 }
 
+__attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
+    __asm__ volatile("mov   %rdi, %rax\n\t" // 返回值 = dest
+                     "mov   %eax, %r8d\n\t"
+                     "neg   %r8d\n\t"
+                     "and   $0x7, %r8d\n\t" // 对齐到8字节边界
+                     "cmp   %r8, %rdx\n\t"
+                     "cmovb %rdx, %r8\n\t" // 如果 n < 对齐字节数，就只复制 n
+                     "mov   %r8, %rcx\n\t"
+                     "rep movsb\n\t" // 复制对齐前的字节
+                     "sub   %r8, %rdx\n\t"
+                     "mov   %rdx, %rcx\n\t"
+                     "shr   $0x3, %rcx\n\t"
+                     "rep movsq\n\t" // 按8字节复制
+                     "and   $0x7, %rdx\n\t"
+                     "mov   %rdx, %rcx\n\t"
+                     "rep movsb\n\t" // 复制剩余字节
+                     "ret\n\t");
+}
+
+/*
 void *memcpy(void *dest, const void *src, size_t n) {
     char       *d = (char *)dest;
     const char *s = (const char *)src;
@@ -60,7 +84,7 @@ void *memcpy(void *dest, const void *src, size_t n) {
     }
 
     return ret;
-}
+}*/
 
 void *memset(void *dst, int val, size_t size) {
     unsigned char *d = dst;
@@ -477,4 +501,24 @@ void free_envp(char **envp) {
         free(envp[i]);
     }
     free(envp);
+}
+
+char *get_parent_path(const char *path) {
+    if (!path || !*path) return strdup(".");
+
+    char *copy = strdup(path);
+    if (!copy) return NULL;
+
+    char *last_slash = strrchr(copy, '/');
+
+    if (last_slash && last_slash != copy) {
+        *last_slash = '\0';
+    } else if (last_slash == copy) {
+        copy[1] = '\0';
+    } else {
+        free(copy);
+        return strdup(".");
+    }
+
+    return copy;
 }

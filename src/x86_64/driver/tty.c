@@ -21,6 +21,7 @@ int            tty_mode          = KD_TEXT;
 int            tty_kbmode        = K_XLATE;
 struct vt_mode current_vt_mode   = {0};
 
+extern lock_queue *pgb_queue;
 extern atom_queue *temp_keyboard_buffer;
 
 extern bool open_flush; // terminal.c
@@ -51,7 +52,14 @@ static void tty_kernel_putc(tty_t *tty, int c) {
 }
 
 void keyboard_tmp_writer(const uint8_t *data) {
-
+    if (data[0] == 3) {
+        do {
+            pcb_t process = found_pcb(get_current_user()->fgproc);
+            if (process == NULL) { break; }
+            if (process->task_level == TASK_KERNEL_LEVEL || process->status == DEATH) break;
+            kill_proc(process, 128 + SIGINT);
+        } while (true);
+    }
     while (*data != '\0') {
         atom_push(temp_keyboard_buffer, *data);
         data++;
@@ -77,6 +85,7 @@ tty_t *alloc_default_tty() {
     tty->termios.c_iflag = BRKINT | ICRNL | INPCK | ISTRIP | IXON;
     tty->termios.c_oflag = OPOST;
     tty->termios.c_cflag = CS8 | CREAD | CLOCAL;
+    tty->is_sigterm      = false;
 
     // Initialize other control characters to 0
     for (int i = 16; i < NCCS; i++) {
@@ -212,8 +221,9 @@ static int tty_ioctl(vdisk *device, size_t req, void *arg) {
         termios->c_line = get_current_task()->parent_group->tty->termios.c_line;
         break;
     case TIOCGPGRP:
-        int *pid = (int *)arg;
-        *pid     = get_current_task()->parent_group->pgid;
+        pid_t *pid                                        = (pid_t *)arg;
+        *pid                                              = get_current_user()->fgproc;
+        get_current_task()->parent_group->tty->is_sigterm = true;
         break;
     case TCSETS:
     case TCSETSF:
@@ -272,8 +282,8 @@ static int tty_ioctl(vdisk *device, size_t req, void *arg) {
         break;
     }
     case VT_OPENQRY: *(int *)arg = 1; return 0;
-    case TIOCSCTTY:
-    case TIOCSPGRP: break;
+    case TIOCSCTTY: break;
+    case TIOCSPGRP: get_current_user()->fgproc = get_current_task()->parent_group->pid; break;
     default: return -ENOTTY;
     }
     return EOK;
@@ -348,9 +358,10 @@ void init_tty() {
     defualt_tty->termios.c_cc[VWERASE]  = 23; // Ctrl-W
     defualt_tty->termios.c_cc[VLNEXT]   = 22; // Ctrl-V
 
-    defualt_tty->print   = tty_kernel_print;
-    defualt_tty->putchar = tty_kernel_putc;
-    queue                = malloc(sizeof(mpmc_queue_t));
+    defualt_tty->is_sigterm = false;
+    defualt_tty->print      = tty_kernel_print;
+    defualt_tty->putchar    = tty_kernel_putc;
+    queue                   = malloc(sizeof(mpmc_queue_t));
     if (init(queue, 1024, sizeof(uint32_t), FAIL) != SUCCESS) {
         kerror("Cannot enable mpmc buffer\n");
         free(queue);

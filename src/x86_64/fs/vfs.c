@@ -49,7 +49,7 @@ static inline void do_open(vfs_node_t file) {
 
 static inline void do_update(vfs_node_t file) {
     // assert(file->fsid != 0 || file->type != file_none);
-    if (file->type == file_none || file->handle == NULL) do_open(file);
+    if (file->type == file_none || file->handle == NULL || file->type == file_dir) do_open(file);
     // assert(file->type != file_none);
 }
 

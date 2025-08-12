@@ -132,6 +132,7 @@ typedef struct tty_virtual_device {
     uint64_t volatile *video_ram; // 显存基址
     uint64_t           width, height;
     termios_t          termios;
+    bool               is_sigterm; // 是否为前台进程组终端
 } tty_t;
 
 void   init_tty();

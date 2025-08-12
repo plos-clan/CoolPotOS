@@ -7,7 +7,6 @@
 #include "elf_util.h"
 #include "fsgsbase.h"
 #include "heap.h"
-#include "hhdm.h"
 #include "ipc.h"
 #include "klog.h"
 #include "pcb.h"
@@ -15,8 +14,8 @@
 #include "sprintf.h"
 #include "vfs.h"
 
-extern int         now_tid;
-extern int         now_pid;
+extern pid_t       now_tid;
+extern pid_t       now_pid;
 extern lock_queue *pgb_queue;
 
 uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid,

@@ -116,6 +116,10 @@ void local_apic_init(bool is_print) {
         logkf("Setup local %s.\n", x2apic_mode ? "x2APIC" : "APIC");
 }
 
+__IRQHANDLER static void empty_interrupt_handle_apic(interrupt_frame_t *frame) {
+    send_eoi();
+}
+
 void io_apic_init() {
     ioapic_address = (uint64_t)phys_to_virt(ioapic_address);
     ioapic_add((uint8_t)timer, 0);
@@ -125,6 +129,8 @@ void io_apic_init() {
     ioapic_add((uint8_t)ide_primary, 14);
     ioapic_add((uint8_t)ide_secondary, 15);
 
+    register_interrupt_handler(ide_primary, empty_interrupt_handle_apic, 0, 0x8E);
+    register_interrupt_handler(ide_secondary, empty_interrupt_handle_apic, 0, 0x8E);
     kinfo("Setup I/O apic.", ioapic_address);
 }
 

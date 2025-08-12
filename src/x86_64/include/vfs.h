@@ -146,6 +146,7 @@ struct vfs_node {           // vfs节点
     uint64_t   flags;       // 文件标志
     list_t     child;       // 子节点
     vfs_node_t root;        // 根目录
+    bool       visited;     // 是否与具体文件系统同步
 };
 
 struct fd {

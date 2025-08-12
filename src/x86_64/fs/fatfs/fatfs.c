@@ -1,3 +1,4 @@
+#define ALL_IMPLEMENTATION
 #include "errno.h"
 #include "fatfs/ff.h"
 #include "kprint.h"
@@ -196,12 +197,55 @@ int fatfs_stat(void *handle, vfs_node_t node) {
     if (res != FR_OK) return -1;
     if (fno.fattrib & AM_DIR) {
         node->type = file_dir;
+        DIR *fp    = malloc(sizeof(DIR));
+        res        = f_opendir(fp, f->path);
+        list_foreach(node->child, child_node0) {
+            vfs_node_t e_child = child_node0->data;
+            e_child->visited   = false;
+        }
+
+        for (;;) {
+            // 读取目录下的内容，再读会自动读下一个文件
+            res = f_readdir(fp, &fno);
+            // 为空时表示所有项目读取完毕，跳出
+            if (res != FR_OK || fno.fname[0] == 0) break;
+            vfs_node_t exist = NULL;
+            list_foreach(node->child, child_node0) {
+                vfs_node_t e_child = child_node0->data;
+                if (strcmp(e_child->name, fno.fname) == 0) {
+                    exist = e_child;
+                    break;
+                }
+            }
+            if (exist) {
+                exist->visited = true;
+                continue;
+            }
+            vfs_node_t child_node = vfs_child_append(node, fno.fname, NULL);
+            child_node->type      = ((fno.fattrib & AM_DIR) != 0) ? file_dir : file_none;
+            child_node->inode     = ino++;
+            child_node->size      = fno.fsize;
+            child_node->visited   = true;
+        }
+
+        do {
+            vfs_node_t exist = NULL;
+            list_foreach(node->child, child_node0) {
+                vfs_node_t e_child = child_node0->data;
+                if (!e_child->visited) {
+                    exist = e_child;
+                    break;
+                }
+            }
+            if (exist == NULL) break;
+            list_delete(node->child, exist);
+            vfs_free(exist);
+        } while (true);
     } else {
         node->type = file_none;
         node->size = fno.fsize;
         // node->createtime = fno.ftime
     }
-
     return 0;
 }
 
