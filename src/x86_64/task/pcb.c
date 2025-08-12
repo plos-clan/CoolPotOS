@@ -27,8 +27,8 @@ lock_queue *pgb_queue = NULL;
 
 pcb_t kernel_group;
 
-_Atomic volatile size_t now_pid = 0;
-_Atomic volatile size_t now_tid = 0;
+_Atomic volatile pid_t now_pid = 0;
+_Atomic volatile pid_t now_tid = 0;
 
 _Noreturn void process_exit() {
     uint64_t rax = 0;
@@ -242,6 +242,7 @@ void kill_proc(pcb_t pcb, int exit_code) {
     }
     queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
     add_death_proc(pcb);
+    if (get_current_user()->fgproc == pcb->pid) { get_current_user()->fgproc = 0; }
     pcb->status = DEATH;
 }
 
@@ -319,7 +320,7 @@ void kill_thread0(tcb_t task) {
     remove_task(task);
 }
 
-pcb_t found_pcb(size_t pid) {
+pcb_t found_pcb(pid_t pid) {
     pcb_t ret = NULL;
     spin_lock(pgb_queue->lock);
     queue_foreach(pgb_queue, node) {
@@ -333,7 +334,7 @@ pcb_t found_pcb(size_t pid) {
     return ret;
 }
 
-tcb_t found_thread(pcb_t pcb, size_t tid) {
+tcb_t found_thread(pcb_t pcb, pid_t tid) {
     if (pcb == NULL) return NULL;
     queue_foreach(pcb->pcb_queue, node) {
         tcb_t thread = (tcb_t)node->data;
@@ -342,8 +343,8 @@ tcb_t found_thread(pcb_t pcb, size_t tid) {
     return NULL;
 }
 
-int waitpid(size_t pid, int *pid_ret) {
-    if (pid == (size_t)-1) {
+int waitpid(pid_t pid, pid_t *pid_ret) {
+    if (pid == -1) {
         bool is_sti                = are_interrupts_enabled();
         get_current_task()->status = WAIT;
         open_interrupt;
@@ -412,6 +413,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->cwd         = malloc(1024);
     new_pgb->envp        = NULL;
     new_pgb->envc        = 0;
+    new_pgb->pgid        = 0;
     memset(new_pgb->cwd, 0, 1024);
     strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
     new_pgb->mmap_start = USER_MMAP_START;
@@ -551,9 +553,11 @@ void init_pcb() {
     kernel_group->virt_queue  = queue_init();
     kernel_group->child_pcb   = queue_init();
     kernel_group->cwd         = malloc(1024);
+    kernel_group->pgid        = 0;
     memset(kernel_group->cwd, 0, 1024);
     kernel_group->cwd[0]      = '/';
     kernel_group->child_index = 0;
+    get_kernel_user()->fgproc = kernel_group->pid;
 
     kernel_head_task               = (tcb_t)malloc(STACK_SIZE);
     kernel_head_task->parent_group = kernel_group;

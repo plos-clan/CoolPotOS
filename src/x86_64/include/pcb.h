@@ -99,8 +99,8 @@ typedef struct {
 struct process_control_block {
     char              name[50];    // 进程名
     uint8_t           task_level;  // 进程权限等级
-    size_t            pid;         // 进程ID
-    size_t            pgid;        // 进程组ID
+    pid_t             pid;         // 进程ID
+    pid_t             pgid;        // 进程组ID
     char             *cmdline;     // 命令行参数
     char             *cwd;         // 工作目录路径
     lock_queue       *pcb_queue;   // 线程队列
@@ -237,7 +237,7 @@ void kill_thread(tcb_t tcb);
  * @param pid 进程ID
  * @return == NULL ? 未找到进程 : 进程指针
  */
-pcb_t found_pcb(size_t pid);
+pcb_t found_pcb(pid_t pid);
 
 /**
  * 从指定进程内查找线程
@@ -245,7 +245,7 @@ pcb_t found_pcb(size_t pid);
  * @param tid 该进程内的线程id
  * @return == NULL ? 未找到线程 : 线程指针
  */
-tcb_t found_thread(pcb_t pcb, size_t tid);
+tcb_t found_thread(pcb_t pcb, pid_t tid);
 
 /**
  * 等待指定PID进程执行完毕
@@ -253,7 +253,7 @@ tcb_t found_thread(pcb_t pcb, size_t tid);
  * @param pid_ret 设置实际监听的进程 PID
  * @return == -25565 ? 未找到线程 : 退出代码
  */
-int waitpid(size_t pid, int *pid_ret);
+int waitpid(pid_t pid, pid_t *pid_ret);
 
 /**
  * syscall_prctl 系统调用实现

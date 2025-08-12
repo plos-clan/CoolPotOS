@@ -63,6 +63,7 @@
 static inline void empty() {}
 
 void close_interrupt_native();
+void open_interrupt_native();
 
 void not_null_assets(void *ptr, const char *message); // error_handle.c defined
 
@@ -115,6 +116,8 @@ int cmd_parse(const char *cmd_str, char **argv, char token);
 char **copy_envp(char **envp);
 
 void free_envp(char **envp);
+
+char *get_parent_path(const char *path);
 
 size_t envp_length(char **envp);
 

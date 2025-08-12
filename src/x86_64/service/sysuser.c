@@ -7,6 +7,7 @@
 
 ucb_t kernel_user   = NULL;
 int   user_id_index = 0;
+ucb_t current_user  = NULL;
 
 int    user_envc = 0;
 char **user_envp;
@@ -52,6 +53,10 @@ int add_env(const char *kv) {
     return 0;
 }
 
+ucb_t get_current_user() {
+    return current_user;
+}
+
 int del_env(const char *key) {
     if (!key) return -1;
     size_t key_len = strlen(key);
@@ -78,28 +83,6 @@ int del_env(const char *key) {
     return -1;
 }
 
-/*
-void user_setup() {
-    kernel_user = (ucb_t)malloc(sizeof(struct user_control_block));
-    if (kernel_user == NULL) {
-        kerror("Kernel user malloc failed.");
-        loop __asm__ volatile("hlt");
-    }
-    user_envp = malloc(sizeof(char *) * 10);
-    strcpy(kernel_user->name, "Kernel");
-    kernel_user->uid              = user_id_index++;
-    kernel_user->permission_level = Kernel;
-    kernel_user->envc             = user_envc;
-    kernel_user->envp             = user_envp;
-    kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
-    //add_env("PATH=/boot:/limine");
-    add_env("HOME=/root");
-    add_env("HOSTTYPE=x86_64");
-    char buf[20];
-    sprintf(buf, "USER=%s", kernel_user->name);
-    add_env(buf);
-}
-*/
 void user_setup() {
     kernel_user = (ucb_t)malloc(sizeof(struct user_control_block));
     if (kernel_user == NULL) {
@@ -107,6 +90,7 @@ void user_setup() {
         loop __asm__ volatile("hlt");
     }
     strcpy(kernel_user->name, "Kernel");
+    kernel_user->uid = user_id_index++;
     kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
 
     add_env("USER=root");
@@ -115,8 +99,9 @@ void user_setup() {
     add_env("HOSTTYPE=x86_64");
     add_env("TERM=vt100");
 
-    kernel_user->uid              = user_id_index++;
     kernel_user->permission_level = Kernel;
     kernel_user->envc             = user_envc;
     kernel_user->envp             = user_envp;
+    kernel_user->fgproc           = 0;
+    current_user                  = kernel_user;
 }

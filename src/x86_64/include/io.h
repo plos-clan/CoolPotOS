@@ -4,7 +4,7 @@
 #include "krlibc.h"
 
 #define close_interrupt close_interrupt_native()
-#define open_interrupt  __asm__ volatile("sti" ::: "memory")
+#define open_interrupt  open_interrupt_native()
 
 static inline uint8_t io_in8(uint16_t port) {
     uint8_t data;

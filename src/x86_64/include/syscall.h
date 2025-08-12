@@ -107,11 +107,17 @@
 #define SYSCALL_FTRUNCATE   77
 #define SYSCALL_GETCWD      79
 #define SYSCALL_CHDIR       80
+#define SYSCALL_RENAME      82
 #define SYSCALL_MKDIR       83
 #define SYSCALL_RMDIR       84
 #define SYSCALL_UNLINK      87
 #define SYSCALL_GETUID      102
+#define SYSCALL_SETUID      105
+#define SYSCALL_SETGID      106
+#define SYSCALL_GETEUID     107
+#define SYSCALL_GETEGID     108
 #define SYSCALL_SETPGID     109
+#define SYSCALL_GETGROUPS   115
 #define SYScall_GETPGID     121
 #define SYSCALL_SIGSUSPEND  130
 #define SYSCALL_SIGALTSTACK 131
