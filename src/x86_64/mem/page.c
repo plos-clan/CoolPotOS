@@ -58,7 +58,7 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                 spin_unlock(current_proc->virt_queue->lock);
                 logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
                 logkf("Type: %s\n", error_msg);
-                kill_proc(get_current_task()->parent_group, -1);
+                kill_proc(get_current_task()->parent_group, -1, true);
                 terminal_open_flush();
                 enable_scheduler();
                 update_terminal();

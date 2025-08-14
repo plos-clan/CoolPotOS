@@ -264,11 +264,23 @@ syscall_(waitpid) {
     int     *status  = (int *)arg1;
     uint64_t options = arg2;
     if (pid == -1) goto wait;
-    if (found_pcb(pid) == NULL) return SYSCALL_FAULT_(ECHILD);
+    pcb_t wait_p = found_pcb(pid);
+    if (wait_p == NULL) return SYSCALL_FAULT_(ECHILD);
+
+    if (wait_p->status == ZOMBIE) {
+        kill_proc(wait_p, 0, false);
+        get_current_task()->parent_group->waitpid_ = true;
+        return pid;
+    }
 wait:
     pid_t ret_pid;
-    if (get_current_task()->parent_group->child_pcb->size == 0) return -1;
+    if (get_current_task()->parent_group->child_pcb->size == 0 &&
+        get_current_task()->parent_group->waitpid_)
+        return -1;
     int status0 = waitpid(pid, &ret_pid);
+    if (get_current_task()->parent_group->child_pcb->size == 0) {
+        get_current_task()->parent_group->waitpid_ = true;
+    }
     if (status) *status = status0;
     return ret_pid;
 }
@@ -668,7 +680,7 @@ syscall_(exit_group) {
     pcb_t exit_process = get_current_task()->parent_group;
     logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
     close_interrupt;
-    kill_proc(exit_process, exit_code);
+    kill_proc(exit_process, exit_code, true);
     open_interrupt;
     scheduler_yield();
     cpu_hlt;
@@ -1685,7 +1697,7 @@ syscall_(cp_cpuinfo) {
     if (x2apic_mode_supported()) cpuinfo->flags |= CPUINFO_X2APIC;
     if (cpuid_has_sse()) cpuinfo->flags |= CPUINFO_SSE;
     if (cpu_has_rdtsc()) cpuinfo->flags |= CPUINFO_RDTSC;
-    
+
     return SYSCALL_SUCCESS;
 }
 

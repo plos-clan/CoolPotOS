@@ -42,3 +42,14 @@ ipc_message_t ipc_recv_wait(uint8_t type) {
     } while (message == NULL);
     return message;
 }
+
+ipc_message_t ipc_recv_wait2(uint8_t type0, uint8_t type1) {
+    ipc_message_t message = NULL;
+    do {
+        __asm__ volatile("pause");
+        scheduler_yield();
+        message = (ipc_message_t)ipc_recv(type0);
+        if (message == NULL) { message = (ipc_message_t)ipc_recv(type1); }
+    } while (message == NULL);
+    return message;
+}

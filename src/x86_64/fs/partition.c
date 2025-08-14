@@ -94,7 +94,7 @@ bool parser_block_device(vfs_node_t device, vdisk disk, size_t vdisk_id) {
             free(dptes);
             free(gpt);
         } else {
-            logkf("MBR detected on %s.\n", disk.drive_name);
+            kinfo("MBR Partition(%s).", disk.drive_name);
         }
     }
     free(mbr);

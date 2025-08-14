@@ -43,7 +43,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
         logkf("Current process PID: %d:%s (%s) CPU%d\n", get_current_task()->tid,
               get_current_task()->name, get_current_task()->parent_group->name, current_cpu->id);
         if (get_current_task()->parent_group->task_level == TASK_APPLICATION_LEVEL)
-            kill_proc(get_current_task()->parent_group, -1);
+            kill_proc(get_current_task()->parent_group, -1, true);
         spin_unlock(error_lock);
         terminal_open_flush();
         enable_scheduler();

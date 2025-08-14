@@ -6,6 +6,7 @@
 #define IPC_MSG_TYPE_MOUSE    3 // 鼠标输入
 #define IPC_MSG_TYPE_TIMER    4 // 时钟计数
 #define IPC_MSG_TYPE_EPID     5 // 子进程退出信号
+#define IPC_MSG_TYPE_EXEC     6 // execve 调用信号
 
 #include "ctype.h"
 #include "lock_queue.h"
@@ -40,6 +41,8 @@ ipc_message_t ipc_recv(uint8_t type);
  * @return 消息
  */
 ipc_message_t ipc_recv_wait(uint8_t type);
+
+ipc_message_t ipc_recv_wait2(uint8_t type0, uint8_t type1);
 
 /**
  * 释放所有指定类型的消息

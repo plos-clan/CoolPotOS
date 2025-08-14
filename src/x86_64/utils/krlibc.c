@@ -46,27 +46,69 @@ __attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
                      "rep movsb\n\t" // 复制剩余字节
                      "ret\n\t");
 }
+void *memset(void *dest, int c, size_t n) {
+    unsigned char *s = dest;
+    size_t         k;
+    
+    if (!n) return dest;
+    s[0]     = c;
+    s[n - 1] = c;
+    if (n <= 2) return dest;
+    s[1]     = c;
+    s[2]     = c;
+    s[n - 2] = c;
+    s[n - 3] = c;
+    if (n <= 6) return dest;
+    s[3]     = c;
+    s[n - 4] = c;
+    if (n <= 8) return dest;
 
-void *memset(void *dst, int val, size_t size) {
-    unsigned char *d = dst;
-    unsigned char  v = (unsigned char)val;
+    k  = -(uintptr_t)s & 3;
+    s += k;
+    n -= k;
+    n &= -4;
 
-    while (size && ((size_t)d & 7)) {
-        *d++ = v;
-        size--;
+#ifdef __GNUC__
+    typedef uint32_t __attribute__((__may_alias__)) u32;
+    typedef uint64_t __attribute__((__may_alias__)) u64;
+
+    u32 c32 = ((u32)-1) / 255 * (unsigned char)c;
+
+    *(u32 *)(s + 0)     = c32;
+    *(u32 *)(s + n - 4) = c32;
+    if (n <= 8) return dest;
+    *(u32 *)(s + 4)      = c32;
+    *(u32 *)(s + 8)      = c32;
+    *(u32 *)(s + n - 12) = c32;
+    *(u32 *)(s + n - 8)  = c32;
+    if (n <= 24) return dest;
+    *(u32 *)(s + 12)     = c32;
+    *(u32 *)(s + 16)     = c32;
+    *(u32 *)(s + 20)     = c32;
+    *(u32 *)(s + 24)     = c32;
+    *(u32 *)(s + n - 28) = c32;
+    *(u32 *)(s + n - 24) = c32;
+    *(u32 *)(s + n - 20) = c32;
+    *(u32 *)(s + n - 16) = c32;
+
+    k  = 24 + ((uintptr_t)s & 4);
+    s += k;
+    n -= k;
+
+    u64 c64 = c32 | ((u64)c32 << 32);
+    for (; n >= 32; n -= 32, s += 32) {
+        *(u64 *)(s + 0)  = c64;
+        *(u64 *)(s + 8)  = c64;
+        *(u64 *)(s + 16) = c64;
+        *(u64 *)(s + 24) = c64;
     }
+#else
+    /* Pure C fallback with no aliasing violations. */
+    for (; n; n--, s++)
+        *s = c;
+#endif
 
-    size_t v8 = v * 0x0101010101010101ULL;
-    while (size >= 8) {
-        *(size_t *)d  = v8;
-        d            += 8;
-        size         -= 8;
-    }
-
-    while (size--)
-        *d++ = v;
-
-    return dst;
+    return dest;
 }
 
 void *memmove(void *dest, const void *src, size_t n) {
