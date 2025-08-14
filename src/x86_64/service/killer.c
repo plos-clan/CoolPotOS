@@ -46,7 +46,7 @@ _Noreturn void killer_service() {
         spin_unlock(pgb_queue->lock);
         if (death_proc != NULL) {
             logkf("Process %s has no thread, kill it.\n", death_proc->name);
-            kill_proc(death_proc, 0);
+            kill_proc(death_proc, 0, true);
         }
         if (death_proc_queue->size == 0) {
             __asm__ volatile("pause" ::: "memory");

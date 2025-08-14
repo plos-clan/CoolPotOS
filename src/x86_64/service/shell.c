@@ -254,7 +254,7 @@ static void pkill(int argc, char **argv) {
         printk("\033[31mpkill: Cannot find process [%d]\033[0m\n", pid);
         return;
     }
-    kill_proc(pcb, 135);
+    kill_proc(pcb, 135, false);
     printk("\033[32mProcess %d killed.\033[0m\n", pid);
 }
 
@@ -327,16 +327,16 @@ static void lmod(int argc, char **argv) {
     }
 }
 
-static void exec(int argc, char **argv) {
+static bool exec(int argc, char **argv) {
     if (argc == 1) {
         printk("\033[31mexec: no module name.\033[0m\n");
-        return;
+        return false;
     }
 
     vfs_node_t file = vfs_open(argv[1]);
     if (file == NULL) {
         printk("\033[31mCannot find file [%s]\033[0m\n", argv[1]);
-        return;
+        return false;
     }
 
     uint8_t *data = malloc(file->size);
@@ -344,7 +344,7 @@ static void exec(int argc, char **argv) {
     if (vfs_read(file, data, 0, file->size) == (size_t)VFS_STATUS_FAILED) {
         printk("\033[31mFailed to read file [%s]\033[0m\n", file->name);
         free(data);
-        return;
+        return false;
     }
 
     page_directory_t *up         = clone_page_directory(get_kernel_pagedir(), false);
@@ -352,7 +352,7 @@ static void exec(int argc, char **argv) {
     void             *main       = load_executor_elf(data, up, 0, &load_start);
     if (main == NULL) {
         printk("\033[31mCannot load elf file.\033[0m\n");
-        return;
+        return false;
     }
 
     char *name        = file->name;
@@ -384,6 +384,7 @@ static void exec(int argc, char **argv) {
     get_current_task()->status = WAIT;
     waitpid(user_task->pid, &status);
     get_current_task()->status = RUNNING;
+    return true;
 }
 
 static void read(int argc, char **argv) {
@@ -688,9 +689,10 @@ _Noreturn void shell_setup() {
         mount(argc, argv);
     }
     {
-        int   argc    = 2;
-        char *argv[2] = {"exec", "/bin/sh"};
-        exec(argc, argv);
+        int   argc         = 2;
+        char *argv_bash[2] = {"exec", "/bin/bash"};
+        char *argv_sh[2]   = {"exec", "/bin/sh"};
+        exec(argc, argv_bash) || exec(argc, argv_sh);
     }
     /***************** debug *******************/
 

@@ -57,7 +57,7 @@ void keyboard_tmp_writer(const uint8_t *data) {
             pcb_t process = found_pcb(get_current_user()->fgproc);
             if (process == NULL) { break; }
             if (process->task_level == TASK_KERNEL_LEVEL || process->status == DEATH) break;
-            kill_proc(process, 128 + SIGINT);
+            kill_proc(process, 128 + SIGINT, true);
         } while (true);
     }
     while (*data != '\0') {

@@ -220,7 +220,7 @@ void switch_to_user_mode(uint64_t func) {
                      : "memory");
 }
 
-void kill_proc(pcb_t pcb, int exit_code) {
+void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
     if (pcb == NULL) return;
     if (pcb->pid == kernel_group->pid) {
         kerror("Cannot kill System process.");
@@ -240,10 +240,15 @@ void kill_proc(pcb_t pcb, int exit_code) {
             kill_thread(tcb);
         }
     }
-    queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
-    add_death_proc(pcb);
     if (get_current_user()->fgproc == pcb->pid) { get_current_user()->fgproc = 0; }
-    pcb->status = DEATH;
+
+    if (is_zombie) {
+        pcb->status = ZOMBIE;
+    } else {
+        queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
+        add_death_proc(pcb);
+        pcb->status = DEATH;
+    }
 }
 
 void kill_proc0(pcb_t pcb) {
@@ -414,6 +419,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->envp        = NULL;
     new_pgb->envc        = 0;
     new_pgb->pgid        = 0;
+    new_pgb->waitpid_    = false;
     memset(new_pgb->cwd, 0, 1024);
     strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
     new_pgb->mmap_start = USER_MMAP_START;

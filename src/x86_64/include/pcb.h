@@ -88,6 +88,7 @@ typedef enum {
     START   = 4, // 准备调度
     FUTEX   = 5, // 被挂起(无法被调度, 线程状态为等待唤醒)
     OUT     = 6, // 已被处死(无法被调度)
+    ZOMBIE  = 7, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
 } TaskStatus;
 
 typedef struct {
@@ -110,6 +111,7 @@ struct process_control_block {
     lock_queue       *file_open;   // 文件句柄占用队列
     lock_queue       *virt_queue;  // 虚拟页分配队列
     lock_queue       *child_pcb;   // 子进程列表
+    bool              waitpid_;    // waitpid标志 (子进程列表为0时自动设置为true)
     page_directory_t *page_dir;    // 进程页表
     char            **envp;        // 环境变量指针
     size_t            envc;        // 环境变量数量
@@ -228,8 +230,9 @@ void  kill_all_proc();
  * 结束指定线程
  * @param task 进程控制块
  * @param exit_code 退出代码
+ * @param is_zombie 是否保留为僵尸进程
  */
-void kill_proc(pcb_t task, int exit_code);
+void kill_proc(pcb_t task, int exit_code, bool is_zombie);
 void kill_thread(tcb_t tcb);
 
 /**

@@ -226,13 +226,54 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
     enable_scheduler();
     open_interrupt;
 
+    if (!is_vfork) return new_pcb->pid;
+    while (true) {
+        ipc_message_t msg = ipc_recv_wait2(IPC_MSG_TYPE_EXEC, IPC_MSG_TYPE_EPID);
+        if (msg->pid == new_pcb->pid) {
+            free(msg);
+            return new_pcb->pid;
+        }
+        ipc_send(current_pcb->parent_task, msg);
+    }
+
+    int npid = new_pcb->pid;
+    do {
+        ipc_message_t msg = ipc_recv_wait(IPC_MSG_TYPE_EXEC);
+        if (npid == msg->pid) {
+            free(msg);
+            return npid;
+        }
+        ipc_send(current_pcb->parent_task, msg);
+    } while (true);
+
+    /*
+    if (!is_vfork) return new_pcb->pid;
+    int npid = new_pcb->pid;
+    do {
+        ipc_message_t msg = ipc_recv_wait(IPC_MSG_TYPE_EXEC);
+        if (npid == msg->pid) {
+            free(msg);
+            return npid;
+        }
+        ipc_send(current_pcb->parent_task, msg);
+    } while (true);
+     */
+
+    /*
     if (is_vfork) {
         int npid = new_pcb->pid;
-        int status;
-        waitpid(npid, &status);
+        do {
+            ipc_message_t msg = ipc_recv_wait(IPC_MSG_TYPE_EXEC);
+            if (npid == msg->pid) {
+                free(msg);
+                break;
+            }
+            ipc_send(current_pcb->parent_task, msg);
+        } while (true);
     }
 
     return new_pcb->pid;
+     */
 }
 
 uint64_t process_execve(char *path, char **argv, char **envp) {
@@ -300,7 +341,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
 
     if (process->vfork) {
         ipc_message_t message = calloc(1, sizeof(struct ipc_message));
-        message->type         = IPC_MSG_TYPE_EPID;
+        message->type         = IPC_MSG_TYPE_EXEC;
         message->pid          = process->pid;
         ipc_send(process->parent_task, message);
     }
