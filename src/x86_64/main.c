@@ -140,7 +140,6 @@ void kmain() {
     zero_setup();
     killer_setup();
     setup_syscall(true);
-    xhci_setup();
     partition_init();
     kinfo("Kernel load Done!");
 

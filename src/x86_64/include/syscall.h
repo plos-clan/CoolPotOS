@@ -5,7 +5,7 @@
 #define MSR_LSTAR        0xC0000082 // LSTAR MSR寄存器
 #define MSR_SYSCALL_MASK 0xC0000084
 
-#define MAX_SYSCALLS         450
+#define MAX_SYSCALLS         550
 #define SYSCALL_SUCCESS      EOK
 #define SYSCALL_FAULT        ((uint64_t)-(ENOSYS))
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
@@ -145,6 +145,10 @@
 #define SYSCALL_STATX       332
 #define SYSCALL_FACCESSAT2  439
 
+// CoolPotOS 平台特有系统调用号定义
+#define SYSCALL_MEMINFO 500
+#define SYSCALL_CPUINFO 501
+
 #include "ctype.h"
 #include "krlibc.h"
 #include "poll.h"
@@ -280,7 +284,27 @@ struct statx {
                                          /* 0x100 */
 };
 
+struct cpos_meminfo {
+    uint64_t used;      // 已用内存
+    uint64_t available; // 未使用内存
+    uint64_t commit;    // 进程已递交
+    uint64_t reserved;  // 保留内存
+    uint64_t all_size;  // 机器总内存
+};
+
+struct cpos_cpuinfo {
+    char     vendor[16];     // CPU厂商
+    char     model_name[64]; // CPU型号
+    uint64_t virt_bits;      // 虚拟地址位数
+    uint64_t phys_bits;      // 物理地址位数
+    uint64_t cores;          // CPU核心数
+    uint64_t flags;          // 特性位
+};
+
 typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
                               struct syscall_regs *);
 
 void setup_syscall(bool is_print);
+
+syscall_(cp_meminfo);
+syscall_(cp_cpuinfo);

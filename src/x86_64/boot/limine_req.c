@@ -38,7 +38,7 @@ LIMINE_REQUEST struct limine_smp_request smp_request = {
     .id       = LIMINE_SMP_REQUEST,
     .revision = 0,
     .response = NULL,
-    .flags    = 1U,
+    .flags    = LIMINE_SMP_X2APIC,
 };
 
 LIMINE_REQUEST struct limine_rsdp_request rsdp_request = {.id = LIMINE_RSDP_REQUEST, .revision = 0};
@@ -87,7 +87,7 @@ uint64_t get_memory_size() {
 }
 
 bool x2apic_mode_supported() {
-    return (smp_request.response->flags & 1U) != 0;
+    return !!(smp_request.response->flags & LIMINE_SMP_X2APIC);
 }
 
 struct limine_smp_response *get_smp_info() {
