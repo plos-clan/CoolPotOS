@@ -16,6 +16,10 @@ uint64_t calibrated_timer_initial;
 void disable_pic() {
     io_out8(0x21, 0xff);
     io_out8(0xa1, 0xff);
+    io_out8(0x20, 0x20);
+    io_out8(0xa0, 0x20);
+    io_out8(0x22, 0x70);
+    io_out8(0x23, 0x01);
 }
 
 static void ioapic_write(uint32_t reg, uint32_t value) {
@@ -36,7 +40,7 @@ void ioapic_add(uint8_t vector, uint32_t irq) {
     ioapic_write(ioredtbl + 1, (uint32_t)(redirect >> 32));
 }
 
-static void lapic_write(uint32_t reg, uint64_t value) {
+static void lapic_write(uint32_t reg, uint32_t value) {
     if (x2apic_mode) {
         wrmsr(0x800 + (reg >> 4), value);
         return;
@@ -44,7 +48,7 @@ static void lapic_write(uint32_t reg, uint64_t value) {
     mmio_write32((uint32_t *)((uint64_t)lapic_address + reg), value);
 }
 
-uint64_t lapic_read(uint32_t reg) {
+uint32_t lapic_read(uint32_t reg) {
     if (x2apic_mode) { return rdmsr(0x800 + (reg >> 4)); }
     return mmio_read32((uint32_t *)((uint64_t)lapic_address + reg));
 }
@@ -54,32 +58,20 @@ uint64_t lapic_id() {
     return x2apic_mode ? phy_id : (phy_id >> 24);
 }
 
-void enable_lvt_timer(uint8_t vector, bool periodic) {
-    uint32_t value = vector;
-    if (periodic) {
-        value |= LAPIC_TIMER_PERIODIC; // 周期模式
-    }
-    value &= ~LAPIC_TIMER_MASKED; // 取消屏蔽（启用）
-    lapic_write(LAPIC_REG_TIMER, value);
-}
-
 void ap_local_apic_init() {
-    uint64_t data  = rdmsr(0x1b);
-    data          |= 1UL << 11;
-    if (x2apic_mode) { data |= 1UL << 10; }
-    wrmsr(0x1b, data);
+    uint64_t value  = rdmsr(0x1b);
+    value          |= (1UL << 11);
+    if (x2apic_mode) value |= (1UL << 10);
+    wrmsr(0x1b, value);
 
     lapic_timer_stop();
 
-    lapic_write(LAPIC_REG_TIMER, timer);
-    lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
+    lapic_write(LAPIC_REG_SPURIOUS, 0xff | (1 << 8));
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
-    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
+    lapic_write(LAPIC_REG_TIMER, timer);
 
-    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
+    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | (1 << 17));
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
-
-    enable_lvt_timer(timer, true);
 }
 
 void local_apic_init(bool is_print) {
@@ -92,10 +84,9 @@ void local_apic_init(bool is_print) {
 
     lapic_timer_stop();
 
-    lapic_write(LAPIC_REG_TIMER, timer);
     lapic_write(LAPIC_REG_SPURIOUS, 0xff | 1 << 8);
     lapic_write(LAPIC_REG_TIMER_DIV, 11);
-    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) & ~(uint32_t)(0x1000));
+    lapic_write(LAPIC_REG_TIMER, timer);
 
     uint64_t b = elapsed();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t)0));
@@ -103,31 +94,30 @@ void local_apic_init(bool is_print) {
         if (elapsed() - b >= 1000000) break;
     uint64_t lapic_timer     = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / LAPIC_TIMER_SPEED);
-    if (is_print)
-        kinfo("Calibrated LAPIC timer: %d ticks per second.", calibrated_timer_initial);
-    else
-        logkf("Calibrated LAPIC timer: %d ticks per second.\n", calibrated_timer_initial);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
-    enable_lvt_timer(timer, true);
-    if (is_print)
-        kinfo("Setup local %s.", x2apic_mode ? "x2APIC" : "APIC");
-    else
-        logkf("Setup local %s.\n", x2apic_mode ? "x2APIC" : "APIC");
+
+    kinfo("Calibrated LAPIC timer: %d ticks per second.", calibrated_timer_initial);
+    kinfo("Setup local %s.", x2apic_mode ? "x2APIC" : "APIC");
 }
 
 __IRQHANDLER static void empty_interrupt_handle_apic(interrupt_frame_t *frame) {
     send_eoi();
 }
 
+static void ioapic_redirect_irq(uint8_t vector, uint32_t irq) {
+    ioapic_add(vector, irq);
+    ioapic_enable(vector);
+}
+
 void io_apic_init() {
     ioapic_address = (uint64_t)phys_to_virt(ioapic_address);
-    ioapic_add((uint8_t)timer, 0);
-    ioapic_add((uint8_t)keyboard, 1);
-    ioapic_add((uint8_t)sb16, 5);
-    ioapic_add((uint8_t)mouse, 12);
-    ioapic_add((uint8_t)ide_primary, 14);
-    ioapic_add((uint8_t)ide_secondary, 15);
+    ioapic_redirect_irq((uint8_t)timer, 0);
+    ioapic_redirect_irq((uint8_t)keyboard, 1);
+    ioapic_redirect_irq((uint8_t)sb16, 5);
+    ioapic_redirect_irq((uint8_t)mouse, 12);
+    ioapic_redirect_irq((uint8_t)ide_primary, 14);
+    ioapic_redirect_irq((uint8_t)ide_secondary, 15);
 
     register_interrupt_handler(ide_primary, empty_interrupt_handle_apic, 0, 0x8E);
     register_interrupt_handler(ide_secondary, empty_interrupt_handle_apic, 0, 0x8E);
@@ -171,6 +161,7 @@ void apic_setup(MADT *madt) {
             MadtIOApic *ioapic = (MadtIOApic *)((uint64_t)(&madt->entries) + current);
             logkf("ioapic : %p\n", ioapic);
             ioapic_address = ioapic->address;
+            break;
         }
         current += (uint64_t)header->length;
     }

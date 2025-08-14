@@ -1,4 +1,6 @@
 #include "syscall.h"
+#include "boot.h"
+#include "cpuid.h"
 #include "errno.h"
 #include "frame.h"
 #include "fsgsbase.h"
@@ -8,6 +10,7 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "memstats.h"
 #include "page.h"
 #include "pcb.h"
 #include "pipefs.h"
@@ -1649,8 +1652,42 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETEGID]     = syscall_getegid,
     [SYSCALL_GETGROUPS]   = syscall_getgroups,
     [SYSCALL_RENAME]      = syscall_rename,
+
+    [SYSCALL_MEMINFO]     = syscall_cp_meminfo,
+    [SYSCALL_CPUINFO]     = syscall_cp_cpuinfo,
 };
 // clang-format on
+
+syscall_(cp_meminfo) {
+    struct cpos_meminfo *meminfo = (struct cpos_meminfo *)arg0;
+    if (meminfo == NULL) return SYSCALL_FAULT_(EINVAL);
+    meminfo->all_size  = get_all_memory();
+    meminfo->available = get_available_memory();
+    meminfo->commit    = get_commit_memory();
+    meminfo->reserved  = get_reserved_memory();
+    meminfo->used      = get_used_memory();
+    return SYSCALL_SUCCESS;
+}
+
+syscall_(cp_cpuinfo) {
+    extern uint64_t cpu_count;
+
+    struct cpos_cpuinfo *cpuinfo = (struct cpos_cpuinfo *)arg0;
+    if (cpuinfo == NULL) return SYSCALL_FAULT_(EINVAL);
+    cpu_t cpu = get_cpu_info();
+    strcpy(cpuinfo->vendor, cpu.vendor);
+    strcpy(cpuinfo->model_name, cpu.model_name);
+    cpuinfo->phys_bits = cpu.phys_bits;
+    cpuinfo->virt_bits = cpu.virt_bits;
+    cpuinfo->cores     = cpu_count;
+
+    cpuinfo->flags = 0;
+    if (x2apic_mode_supported()) cpuinfo->flags |= CPUINFO_X2APIC;
+    if (cpuid_has_sse()) cpuinfo->flags |= CPUINFO_SSE;
+    if (cpu_has_rdtsc()) cpuinfo->flags |= CPUINFO_RDTSC;
+    
+    return SYSCALL_SUCCESS;
+}
 
 USED void syscall_handler(struct syscall_regs *regs,
                           struct syscall_regs *user_regs) { // syscall 指令处理
