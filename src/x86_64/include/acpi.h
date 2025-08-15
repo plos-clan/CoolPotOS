@@ -83,6 +83,14 @@ struct madt_local_apic {
     uint32_t           flags;
 };
 
+struct madt_interrupt_source {
+    struct madt_hander h;
+    uint8_t            bus_source; /* typically 0 = ISA */
+    uint8_t            irq_source; /* ISA IRQ */
+    uint32_t           gsi;        /* mapped GSI */
+    uint16_t           flags;      /* polarity/trigger */
+} __attribute__((packed));
+
 typedef struct {
     struct ACPISDTHeader h;
     uint8_t              definition_block;
@@ -203,12 +211,13 @@ typedef struct {
     uint32_t reserved;
 } __attribute__((packed)) MCFG_ENTRY;
 
-typedef struct generic_address GenericAddress;
-typedef struct hpet            Hpet;
-typedef struct madt_hander     MadtHeader;
-typedef struct madt_io_apic    MadtIOApic;
-typedef struct madt_local_apic MadtLocalApic;
-typedef struct facp_table      acpi_facp_t;
+typedef struct generic_address       GenericAddress;
+typedef struct hpet                  Hpet;
+typedef struct madt_hander           MadtHeader;
+typedef struct madt_io_apic          MadtIOApic;
+typedef struct madt_interrupt_source MadtInterruptSource;
+typedef struct madt_local_apic       MadtLocalApic;
+typedef struct facp_table            acpi_facp_t;
 
 void acpi_setup();
 
@@ -229,9 +238,9 @@ void send_ipi(uint32_t apic_id, uint32_t command);
 
 void ioapic_add(uint8_t vector, uint32_t irq);
 
-void ioapic_enable(uint8_t vector);
+void ioapic_enable(uint8_t vector, uint32_t irq);
 
-void local_apic_init(bool is_print);
+void local_apic_init();
 
 void ap_local_apic_init();
 

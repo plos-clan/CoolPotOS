@@ -24,6 +24,9 @@
 #define PIEFS_REGISTER_ID     3                        // 管道文件系统注册ID
 #define LAPIC_TIMER_SPEED     100                      // LAPIC定时器速度(单位: Hz)
 #define PIPE_BUFF             8192                     // 管道缓冲区大小
+#define MAX_IOAPICS           8                        // IOAPIC最大支持数(物理机会存在多个IOAPIC)
+#define MAX_ISO               64                       // 最大支持中断源数
+#define IRQ_BASE_VECTOR       32                       // IRQ起始映射中断向量
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")

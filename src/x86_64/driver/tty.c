@@ -142,10 +142,9 @@ static size_t stdin_read(int drive, uint8_t *buffer, size_t number, size_t lba) 
                     i--;
                 }
                 continue;
-            } else {
-                buffer[i] = get_current_task()->parent_group->tty->termios.c_cc[VERASE];
-                continue;
             }
+            buffer[i] = get_current_task()->parent_group->tty->termios.c_cc[VERASE];
+            continue;
         }
         if (get_current_task()->parent_group->tty->termios.c_lflag & ECHO) printk("%c", c);
         if (c == '\n' || c == '\r') {
