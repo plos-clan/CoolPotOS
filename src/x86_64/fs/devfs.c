@@ -43,6 +43,7 @@ static int devfs_stat(void *handle, vfs_node_t node) {
                      ? (uint64_t)-1
                      : disk_size((int)(uint64_t)node->handle);
     node->realsize = vdisk_ctl[(uint64_t)node->handle].sector_size;
+    node->fsid     = devfs_id;
     return VFS_STATUS_SUCCESS;
 }
 
@@ -53,6 +54,7 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     node->size = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM
                      ? (uint64_t)-1
                      : disk_size((int)(uint64_t)node->handle);
+    node->fsid = devfs_id;
 }
 
 size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
