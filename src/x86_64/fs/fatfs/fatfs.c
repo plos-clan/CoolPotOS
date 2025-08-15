@@ -169,9 +169,23 @@ int fatfs_mount(const char *src, vfs_node_t node) {
         res = f_readdir(h, &fno);
         // 为空时表示所有项目读取完毕，跳出
         if (res != FR_OK || fno.fname[0] == 0) break;
-        vfs_node_t child_node = vfs_child_append(node, (const char *)fno.fname, NULL);
+        vfs_node_t exist = NULL;
+        list_foreach(node->child, child_node0) {
+            vfs_node_t e_child = child_node0->data;
+            if (strcmp(e_child->name, fno.fname) == 0) {
+                exist = e_child;
+                break;
+            }
+        }
+        if (exist) {
+            exist->visited = true;
+            continue;
+        }
+        vfs_node_t child_node = vfs_child_append(node, fno.fname, NULL);
         child_node->type      = ((fno.fattrib & AM_DIR) != 0) ? file_dir : file_none;
         child_node->inode     = ino++;
+        child_node->size      = fno.fsize;
+        child_node->visited   = true;
     }
     // node->inode  = ino++;
     node->handle = f;
