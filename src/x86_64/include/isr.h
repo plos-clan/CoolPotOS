@@ -1,9 +1,10 @@
 #pragma once
 
 #include "ctype.h"
+#include "krlibc.h"
 
 enum InterruptIndex {
-    timer = 32,
+    timer = IRQ_BASE_VECTOR,
     keyboard,
     mouse,
     hpet_timer,
