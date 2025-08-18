@@ -348,6 +348,7 @@ tcb_t found_thread(pcb_t pcb, pid_t tid) {
     return NULL;
 }
 
+#if 0
 int waitpid(pid_t pid, pid_t *pid_ret) {
     if (pid == -1) {
         bool is_sti                = are_interrupts_enabled();
@@ -357,14 +358,17 @@ int waitpid(pid_t pid, pid_t *pid_ret) {
         ipc_message_t mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
         int           exit_code =
             (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
-        *pid_ret = mesg->pid;
+        pid = *pid_ret = mesg->pid;
         free(mesg);
         change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
         if (!is_sti) close_interrupt;
         get_current_task()->status = RUNNING;
+
+        pcb_t wait_p = found_pcb(pid);
+        if (wait_p->status == ZOMBIE) kill_proc(wait_p, exit_code, false);
         return exit_code;
     }
-    if (found_pcb(pid) == NULL) return -25565;
+    //if (found_pcb(pid) == NULL) return -25565;
     ipc_message_t mesg;
     bool          is_sti       = are_interrupts_enabled();
     get_current_task()->status = WAIT;
@@ -380,10 +384,40 @@ int waitpid(pid_t pid, pid_t *pid_ret) {
             change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
             if (!is_sti) close_interrupt;
             get_current_task()->status = RUNNING;
+
+            pcb_t wait_p = found_pcb(pid);
+            if (wait_p->status == ZOMBIE) kill_proc(wait_p, exit_code, false);
             return exit_code;
         }
         ipc_send(get_current_task()->parent_group, mesg);
     }
+}
+#endif
+
+int waitpid(pid_t pid, pid_t *pid_ret) {
+    get_current_task()->status = WAIT;
+    bool is_sti                = are_interrupts_enabled();
+    open_interrupt;
+
+    ipc_message_t mesg;
+    int           exit_code;
+    while (1) {
+        change_entity_weight(get_current_task(), NICE_TO_PRIO(10));
+        mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
+        change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
+        exit_code =
+            (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
+        if (pid == -1 || pid == mesg->pid) break;
+        ipc_send(get_current_task()->parent_group, mesg);
+    }
+    pcb_t wait_p = found_pcb(mesg->pid);
+    if (wait_p->status == ZOMBIE) kill_proc(wait_p, exit_code, false);
+    *pid_ret = mesg->pid;
+    free(mesg);
+
+    if (!is_sti) close_interrupt;
+    get_current_task()->status = RUNNING;
+    return exit_code;
 }
 
 void kill_all_proc() {
@@ -419,7 +453,6 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->envp        = NULL;
     new_pgb->envc        = 0;
     new_pgb->pgid        = 0;
-    new_pgb->waitpid_    = false;
     memset(new_pgb->cwd, 0, 1024);
     strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
     new_pgb->mmap_start = USER_MMAP_START;

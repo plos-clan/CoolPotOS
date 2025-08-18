@@ -93,11 +93,13 @@ void user_setup() {
     kernel_user->uid = user_id_index++;
     kinfo("User system setup (%s uid:%d).", kernel_user->name, kernel_user->uid);
 
-    add_env("USER=root");
-    add_env("HOME=/root");
+    //add_env("USER=root");
     add_env("PWD=/");
-    add_env("HOSTTYPE=x86_64");
-    add_env("TERM=vt100");
+    add_env("HOME=/root");
+    add_env("TERM=linux");
+
+    //add_env("HOSTTYPE=x86_64");
+    //add_env("TERM=vt100");
 
     kernel_user->permission_level = Kernel;
     kernel_user->envc             = user_envc;

@@ -111,7 +111,6 @@ struct process_control_block {
     lock_queue       *file_open;   // 文件句柄占用队列
     lock_queue       *virt_queue;  // 虚拟页分配队列
     lock_queue       *child_pcb;   // 子进程列表
-    bool              waitpid_;    // waitpid标志 (子进程列表为0时自动设置为true)
     page_directory_t *page_dir;    // 进程页表
     char            **envp;        // 环境变量指针
     size_t            envc;        // 环境变量数量
