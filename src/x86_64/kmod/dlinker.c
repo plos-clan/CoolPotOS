@@ -1,8 +1,19 @@
 #include "dlinker.h"
+#include "elf_util.h"
+#include "hhdm.h"
 #include "klog.h"
-#include "kprint.h"
-#include "krlibc.h"
+#include "limine.h"
+#include "page.h"
 #include "sprintf.h"
+#include "stdarg.h"
+
+uint64_t kernel_modules_load_offset = 0;
+
+extern dlfunc_t __ksymtab_start[]; // .ksymtab section
+extern dlfunc_t __ksymtab_end[];
+size_t          dlfunc_count = 0;
+
+char fmt_buf[4096];
 
 void *resolve_symbol(Elf64_Sym *symtab, uint32_t sym_idx) {
     return (void *)symtab[sym_idx].st_value;
@@ -22,33 +33,51 @@ bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab,
         if (func != NULL) {
             *target_addr = (uint64_t)func->addr;
         } else {
-            kwarn("Failed relocating %s at %p", sym_name, rela->r_offset + offset);
-            return false;
+            logkf("Failed relocating %s at %p\n", sym_name, rela->r_offset + offset);
         }
     }
     return true;
 }
 
-void *find_symbol_address(const char *symbol_name, Elf64_Sym *symtab, char *strtab, size_t symtabsz,
-                          Elf64_Ehdr *ehdr, uint64_t offset) {
-    if (symbol_name == NULL || symtab == NULL || strtab == NULL) return NULL;
+void *find_symbol_address(const char *symbol_name, Elf64_Ehdr *ehdr, uint64_t offset) {
+    if (symbol_name == NULL || ehdr == NULL) return NULL;
+
+    Elf64_Sym *symtab = NULL;
+    char      *strtab = NULL;
+
+    Elf64_Shdr *shdrs    = (Elf64_Shdr *)((char *)ehdr + ehdr->e_shoff);
+    char       *shstrtab = (char *)ehdr + shdrs[ehdr->e_shstrndx].sh_offset;
+
+    size_t symtabsz = 0;
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdrs[i].sh_type == SHT_SYMTAB) {
+            symtab   = (Elf64_Sym *)((char *)ehdr + shdrs[i].sh_offset);
+            symtabsz = shdrs[i].sh_size;
+            strtab   = (char *)ehdr + shdrs[shdrs[i].sh_link].sh_offset;
+            break;
+        }
+    }
+
+    size_t num_symbols = symtabsz / sizeof(Elf64_Sym);
 
     for (size_t i = 0; i < symtabsz; i++) {
         Elf64_Sym *sym      = &symtab[i];
         char      *sym_name = &strtab[sym->st_name];
         if (strcmp(symbol_name, sym_name) == 0) {
             if (sym->st_shndx == SHN_UNDEF) {
-                kwarn("Symbol %s is undefined.\n", sym_name);
+                logkf("Symbol %s is undefined.\n", sym_name);
                 return NULL;
             }
             void *addr = (void *)sym->st_value + offset;
             return addr;
         }
     }
+    logkf("Cannot find symbol %s in ELF file.\n", symbol_name);
     return NULL;
 }
 
-dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
+dlinit_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
     Elf64_Dyn *dyn_entry = NULL;
     for (size_t i = 0; i < ehdr->e_phnum; i++) {
         if (phdrs[i].p_type == PT_DYNAMIC) {
@@ -71,17 +100,17 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
 
     while (dyn_entry->d_tag != DT_NULL) {
         switch (dyn_entry->d_tag) {
-        case DT_SYMTAB:;
+        case DT_SYMTAB:
             uint64_t symtab_addr = dyn_entry->d_un.d_ptr + offset;
             symtab               = (Elf64_Sym *)symtab_addr;
             break;
         case DT_STRTAB: strtab = (char *)dyn_entry->d_un.d_ptr + offset; break;
-        case DT_RELA:;
+        case DT_RELA:
             uint64_t rel_addr = dyn_entry->d_un.d_ptr + offset;
             rel               = (Elf64_Rela *)rel_addr;
             break;
         case DT_RELASZ: relsz = dyn_entry->d_un.d_val; break;
-        case DT_JMPREL:;
+        case DT_JMPREL:
             uint64_t jmprel_addr = dyn_entry->d_un.d_ptr + offset;
             jmprel               = (Elf64_Rela *)jmprel_addr;
             break;
@@ -99,59 +128,137 @@ dlmain_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
         uint32_t    type       = ELF64_R_TYPE(r->r_info);
 
         if (type == R_X86_64_GLOB_DAT || type == R_X86_64_JUMP_SLOT) {
-            *reloc_addr = (uint64_t)resolve_symbol(symtab, sym_idx);
+            *reloc_addr = (uint64_t)resolve_symbol(symtab, sym_idx) + offset;
         } else if (type == R_X86_64_RELATIVE) {
-            *reloc_addr = (uint64_t)((char *)ehdr + r->r_addend);
+            *reloc_addr = (uint64_t)(offset + r->r_addend);
+        } else if (type == R_X86_64_64) {
+            *reloc_addr = (uint64_t)resolve_symbol(symtab, sym_idx) + r->r_addend + offset;
         }
     }
-    if (!handle_relocations(jmprel, symtab, strtab, jmprel_sz, offset)) { return NULL; }
-
-    void *entry = find_symbol_address("dlmain", symtab, strtab, symtabsz, ehdr, offset);
-    if (entry == NULL) {
-        kwarn("Cannot find dynamic library main function.");
+    if (!handle_relocations(jmprel, symtab, strtab, jmprel_sz, offset)) {
+        logkf("Failed to handle relocations.\n");
         return NULL;
     }
 
-    dlmain_t dlmain_func = (dlmain_t)entry;
-    return dlmain_func;
+    void *entry = find_symbol_address("dlmain", ehdr, offset);
+
+    dlinit_t dlinit_func = (dlinit_t)entry;
+    return dlinit_func;
 }
 
 void dlinker_load(cp_module_t *module) {
     if (module == NULL) return;
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)module->data;
-    if (!elf_test_head(ehdr)) {
-        kwarn("No elf file.");
-        return;
-    }
 
     Elf64_Phdr phdr[12];
     if (ehdr->e_phnum > sizeof(phdr) / sizeof(phdr[0]) || ehdr->e_phnum < 1) {
-        kwarn("ELF file has wrong number of program headers");
+        logkf("ELF file has wrong number of program headers");
         return;
     }
 
     if (ehdr->e_type != ET_DYN) {
-        kwarn("ELF file is not a dynamic library.");
+        logkf("ELF file is not a dynamic library.\n");
         return;
     }
+
+    uint64_t load_size = 0;
 
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
-    if (!mmap_phdr_segment(ehdr, phdrs, get_kernel_pagedir(), false, 0, NULL)) {
-        kwarn("Cannot mmap elf segment.");
+    if (!mmap_phdr_segment(ehdr, phdrs, get_current_directory(), false,
+                           KERNEL_MODULES_SPACE_START + kernel_modules_load_offset, NULL,
+                           &load_size)) {
+        logkf("Cannot mmap elf segment.\n");
         return;
     }
 
-    dlmain_t dlmain = load_dynamic(phdrs, ehdr, 0);
-    if (dlmain == NULL) {
-        kwarn("Cannot load dynamic section.");
+    dlinit_t dlinit =
+        load_dynamic(phdrs, ehdr, KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
+    if (dlinit == NULL) {
+        logkf("cannot load dynamic section.\n");
         return;
     }
-    int ret = dlmain();
-    kinfo("Kernel model load done! Return code:%d.", ret);
+
+    logkf("Loaded module %s at %#018lx\n", module->module_name,
+          KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
+
+    int ret = dlinit();
+
+    (void)ret;
+
+    kernel_modules_load_offset += (load_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+}
+
+dlfunc_t *find_func(const char *name) {
+    for (size_t i = 0; i < dlfunc_count; i++) {
+        dlfunc_t *entry = &__ksymtab_start[i];
+        if (strcmp(entry->name, name) == 0) { return entry; }
+    }
+    return NULL;
+}
+
+void find_kernel_symbol() {
+    dlfunc_count = __ksymtab_end - __ksymtab_start;
+    // for (size_t i = 0; i < dlfunc_count; i++) {
+    //     dlfunc_t *entry = &__ksymtab_start[i];
+    // }
 }
 
 void dlinker_init() {
     find_kernel_symbol();
-    kinfo("Dynamic linker initialized.");
+}
+
+cp_module_t module_ls[256];
+int         module_count = 0;
+
+LIMINE_REQUEST struct limine_module_request module = {.id = LIMINE_MODULE_REQUEST, .revision = 0};
+LIMINE_REQUEST struct limine_kernel_file_request kfile = {.id       = LIMINE_KERNEL_FILE_REQUEST,
+                                                          .response = 0};
+
+void extract_name(const char *input, char *output, size_t output_size) {
+    const char *name = strrchr(input, '/');
+    if (!name) { return; }
+    name++;
+    const char *dot = strchr(name, '.');
+    if (dot) {
+        size_t len = dot - name;
+        if (len >= output_size) { len = output_size - 1; }
+        strncpy(output, name, len);
+        output[len] = '\0';
+    } else {
+        strncpy(output, name, output_size - 1);
+        output[output_size - 1] = '\0';
+    }
+}
+
+cp_module_t *get_module(const char *module_name) {
+    for (int i = 0; i < module_count; i++) {
+        if (module_ls[i].is_use && strcmp(module_ls[i].module_name, module_name) == 0) {
+            return &module_ls[i];
+        }
+    }
+    return NULL;
+}
+
+void module_setup() {
+    if (module.response == NULL || module.response->module_count == 0) { return; }
+
+    struct limine_file *kernel = kfile.response->kernel_file;
+    strcpy(module_ls[module_count].module_name, "Kernel");
+    module_ls[module_count].path   = kernel->path;
+    module_ls[module_count].data   = kernel->address;
+    module_ls[module_count].size   = kernel->size;
+    module_ls[module_count].is_use = true;
+    module_count++;
+
+    for (size_t i = 0; i < module.response->module_count; i++) {
+        struct limine_file *file = module.response->modules[i];
+        extract_name(file->path, module_ls[module_count].module_name, sizeof(char) * 20);
+        module_ls[module_count].path   = file->path;
+        module_ls[module_count].data   = file->address;
+        module_ls[module_count].size   = file->size;
+        module_ls[module_count].is_use = true;
+        logkf("Module %s %s\n", module_ls[module_count].module_name, file->path);
+        module_count++;
+    }
 }

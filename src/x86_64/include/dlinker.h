@@ -1,13 +1,16 @@
 #pragma once
 
+#include "krlibc.h"
+#include "module.h"
+
+#define KERNEL_MODULES_SPACE_START 0xffffffffb0000000
+#define KERNEL_MODULES_SPACE_END   0xffffffffc0000000
+
 #define EXPORT_SYMBOL(name)                                                                        \
     __attribute__((used, section(".ksymtab"))) static const dlfunc_t __ksym_##name = {             \
         #name, (void *)name}
 
-#include "elf_util.h"
-#include "module.h"
-
-typedef int (*dlmain_t)(void);
+typedef int (*dlinit_t)(void);
 
 typedef struct {
     char *name;
@@ -25,3 +28,5 @@ dlfunc_t *find_func(const char *name);
 void find_kernel_symbol();
 
 void dlinker_init();
+
+void module_setup();

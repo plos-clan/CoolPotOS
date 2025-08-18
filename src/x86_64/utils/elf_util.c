@@ -51,7 +51,7 @@ void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool
 }
 
 bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *directory,
-                       bool is_user, uint64_t offset, uint64_t *load_start) {
+                       bool is_user, uint64_t offset, uint64_t *load_start, uint64_t *load_size) {
     size_t i = 0;
     while (i < ehdr->e_phnum && phdrs[i].p_type != PT_LOAD) {
         i++;
@@ -59,11 +59,19 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *di
 
     if (i == ehdr->e_phnum) { return false; }
 
+    uint64_t load_min = 0xffffffffffffffff;
+    uint64_t load_max = 0x0000000000000000;
+
     for (i = 0; i < ehdr->e_phnum; i++) {
         if (phdrs[i].p_type == PT_LOAD) {
             load_segment(&phdrs[i], (void *)ehdr, directory, is_user, offset, load_start);
+            if (phdrs[i].p_vaddr + offset + phdrs[i].p_memsz > load_max)
+                load_max = phdrs[i].p_vaddr + offset + phdrs[i].p_memsz;
+            if (phdrs[i].p_vaddr + offset < load_min) load_min = phdrs[i].p_vaddr + offset;
         }
     }
+
+    if (load_size) { *load_size = load_max - load_min; }
 
     return true;
 }
@@ -82,7 +90,7 @@ elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offse
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
     switch_process_page_directory(dir);
-    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start)) { return NULL; }
+    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, NULL)) { return NULL; }
     switch_process_page_directory(cur);
     return (elf_start)ehdr->e_entry;
 }

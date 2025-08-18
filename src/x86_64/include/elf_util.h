@@ -29,7 +29,7 @@ elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offse
  * @return 映射是否成功
  */
 bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *directory,
-                       bool is_user, uint64_t offset, uint64_t *load_start);
+                       bool is_user, uint64_t offset, uint64_t *load_start, uint64_t *load_size);
 
 /**
  * 校验ELF文件头
