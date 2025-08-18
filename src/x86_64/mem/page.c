@@ -471,3 +471,31 @@ void page_setup() {
     register_interrupt_handler(14, (void *)page_fault_handle, 0, 0x8E);
     current_directory = &kernel_page_dir;
 }
+static void page_map_ranges_help(uint64_t *directory, uint64_t virtual_address,
+                     uint64_t physical_address, uint64_t page_count, uint64_t flags, uint64_t offset, uint64_t level) {
+    uint64_t next_index =  virtual_address >> offset;
+    uint64_t* pmlt_entry = (uint64_t*)(directory[next_index] & 0x000fffffffff000);
+    if (level) {
+        page_map_ranges_help(pmlt_entry, virtual_address, physical_address, page_count, flags, offset - 9, level - 1);
+    }
+    else {
+        flags |= (offset != 12 ? 1ul << 7 : 0);
+        for (uint64_t i = 0; i < page_count; ++i) {
+            directory[next_index] = 0;
+            directory[next_index] |= (physical_address << offset) | flags;
+        }
+    }
+}
+void page_map_ranges(uint64_t *directory, uint64_t virtual_address,
+                     uint64_t physical_address, uint64_t page_count, uint64_t flags,
+                     PagingMode mode) {
+    //  48-39 39-30 30-21 21-12 12-0
+    //  pml5t pml4t pml3t pml2t pml1t
+    //  pml4e pml3e pml2e pml1e page
+    /*
+     * CR3 -> pml5e -> pml5t (48)
+     * pml5t -> 512 pml4e(39)
+     */
+    page_map_ranges_help(directory, virtual_address, physical_address, page_count, flags, 39, 4 - (uint64_t)mode);
+}
+
