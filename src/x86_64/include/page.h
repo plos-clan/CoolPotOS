@@ -89,7 +89,7 @@ typedef enum{
     P4K = 1,
 } PagingMode;
 
-void page_map_ranges(page_directory_t* directory, uint64_t virtual_address, uint64_t physical_address,uint64_t page_count, uint64_t flags, PagingMode mode);
+void page_map_ranges(uint64_t* directory, uint64_t virtual_address, uint64_t physical_address,uint64_t page_count, uint64_t flags, PagingMode mode);
 
 /**
  * 映射一组物理地址 (对应的虚拟地址用hhdm计算)
