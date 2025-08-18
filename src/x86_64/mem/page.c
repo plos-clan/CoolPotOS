@@ -474,7 +474,7 @@ void page_setup() {
 
 static void page_map_ranges_help(uint64_t *directory, uint64_t virtual_address,
                      uint64_t physical_address, uint64_t page_count, uint64_t flags, uint64_t offset, uint64_t level) {
-    uint64_t next_index =  virtual_address >> 12;
+    uint64_t next_index =  virtual_address >> offset;
     uint64_t* pmlt_entry = (uint64_t*)(directory[next_index] & 0x000fffffffff000);
     if (!(directory[next_index] & PTE_PRESENT) ) {
         if (!pmlt_entry) {
