@@ -83,11 +83,12 @@ void page_map_to_1G(page_directory_t *directory, uint64_t addr, uint64_t frame, 
  */
 void page_map_to_2M(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
 
-enum PagingMode {
+typedef enum{
     P1G = 3,
     P2M = 2,
-    P4K = 1
-};
+    P4K = 1,
+} PagingMode;
+
 void page_map_ranges(page_directory_t* directory, uint64_t virtual_address, uint64_t physical_address,uint64_t page_count, uint64_t flags, PagingMode mode);
 
 /**
