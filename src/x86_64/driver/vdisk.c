@@ -1,5 +1,10 @@
 #include "vdisk.h"
 #include "devfs.h"
+#include "frame.h"
+#include "hhdm.h"
+#include "krlibc.h"
+#include "page.h"
+#include "vbuffer.h"
 
 vdisk vdisk_ctl[26];
 
@@ -49,16 +54,26 @@ void *device_mmap(int drive, void *addr, uint64_t len) {
 
 size_t rw_vdisk(int drive, size_t lba, uint8_t *buffer, size_t number, int read) {
     int indx = drive;
-    if (indx >= 26) { return 0; }
-    if (vdisk_ctl[indx].flag > 0) {
-        if (read) {
-            return vdisk_ctl[indx].read(drive, buffer, number, lba);
-        } else {
-            return vdisk_ctl[indx].write(drive, buffer, number, lba);
-        }
+    if (indx >= 26) return 0;
+    if (vdisk_ctl[indx].flag == 0) return 0;
+
+    size_t   sector_size = vdisk_ctl[indx].sector_size;
+    size_t   total_size  = number * sector_size;
+    size_t   page_size   = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+    uint64_t phys        = alloc_frames(page_size);
+    page_map_range(get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys,
+                   page_size * PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE);
+    uint8_t *kbuf = driver_phys_to_virt(phys);
+    size_t   ret  = 0;
+    if (read) {
+        ret = vdisk_ctl[indx].read(drive, kbuf, number, lba);
+        memcpy(buffer, kbuf, total_size);
     } else {
-        return 0;
+        memcpy(kbuf, buffer, total_size);
+        ret = vdisk_ctl[indx].write(drive, kbuf, number, lba);
     }
+    unmap_page_range(get_current_directory(), (uint64_t)kbuf, page_size * PAGE_SIZE);
+    return ret;
 }
 
 size_t vdisk_read(size_t lba, size_t number, void *buffer, int drive) {

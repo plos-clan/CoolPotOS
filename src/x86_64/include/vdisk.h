@@ -10,6 +10,8 @@ typedef enum {
 } vdisk_flag_t;
 
 typedef struct vdisk_device {
+    size_t (*read_vbuf)(int drive, struct vecbuf *buffer, size_t number, size_t lba);
+    size_t (*write_vbuf)(int drive, struct vecbuf *buffer, size_t number, size_t lba);
     size_t (*read)(int drive, uint8_t *buffer, size_t number, size_t lba);
     size_t (*write)(int drive, uint8_t *buffer, size_t number, size_t lba);
     int (*ioctl)(struct vdisk_device *device, size_t req, void *handle);

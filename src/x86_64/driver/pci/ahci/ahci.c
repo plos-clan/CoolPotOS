@@ -338,6 +338,8 @@ void ahci_setup() {
         sata.ioctl       = (void *)empty;
         sata.poll        = (void *)empty;
         sata.map         = (void *)empty;
+        sata.read_vbuf   = NULL;
+        sata.write_vbuf  = NULL;
         strcpy(sata.drive_name, name_buf);
         int id        = regist_vdisk(sata);
         hbaDevice[id] = hbadev;

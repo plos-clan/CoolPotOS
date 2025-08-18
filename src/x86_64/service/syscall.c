@@ -263,24 +263,13 @@ syscall_(waitpid) {
     pid_t    pid     = arg0;
     int     *status  = (int *)arg1;
     uint64_t options = arg2;
+    if (get_current_task()->parent_group->child_pcb->size == 0) return SYSCALL_FAULT_(ECHILD);
     if (pid == -1) goto wait;
     pcb_t wait_p = found_pcb(pid);
     if (wait_p == NULL) return SYSCALL_FAULT_(ECHILD);
-
-    if (wait_p->status == ZOMBIE) {
-        kill_proc(wait_p, 0, false);
-        get_current_task()->parent_group->waitpid_ = true;
-        return pid;
-    }
 wait:
     pid_t ret_pid;
-    if (get_current_task()->parent_group->child_pcb->size == 0 &&
-        get_current_task()->parent_group->waitpid_)
-        return -1;
-    int status0 = waitpid(pid, &ret_pid);
-    if (get_current_task()->parent_group->child_pcb->size == 0) {
-        get_current_task()->parent_group->waitpid_ = true;
-    }
+    int   status0 = waitpid(pid, &ret_pid);
     if (status) *status = status0;
     return ret_pid;
 }
@@ -680,7 +669,8 @@ syscall_(exit_group) {
     pcb_t exit_process = get_current_task()->parent_group;
     logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
     close_interrupt;
-    kill_proc(exit_process, exit_code, true);
+    kill_proc(exit_process, exit_code,
+              true); // 子进程调用，is_zombie = true，不能在child_pcb中删除当前进程
     open_interrupt;
     scheduler_yield();
     cpu_hlt;

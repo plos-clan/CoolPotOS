@@ -75,20 +75,8 @@ size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
     }
 read:
 
-    sectors_to_do = padding_up_to_sector_size / sector_size;
-    size_t page_size =
-        (padding_up_to_sector_size / PAGE_SIZE) == 0 ? 1 : (padding_up_to_sector_size / PAGE_SIZE);
-    uint64_t phys = alloc_frames(page_size);
-
-    page_map_range(get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys,
-                   page_size * PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE);
-    uint8_t *buffer0 = driver_phys_to_virt(phys);
-
-    memset(buffer0, 0, size);
-
-    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, buffer0, dev_id);
-    memcpy(addr, buffer0, size);
-    unmap_page_range(get_current_directory(), (uint64_t)buffer0, page_size * PAGE_SIZE);
+    sectors_to_do    = padding_up_to_sector_size / sector_size;
+    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, addr, dev_id);
     return read_size;
 }
 
@@ -109,20 +97,11 @@ size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
 write:
     sectors_to_do = padding_up_to_sector_size / sector_size;
 
-    size_t page_size =
-        (padding_up_to_sector_size / PAGE_SIZE) == 0 ? 1 : (padding_up_to_sector_size / PAGE_SIZE);
-    uint64_t phys = alloc_frames(page_size);
-    page_map_range(get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys,
-                   page_size * PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE);
-    uint8_t *buffer0 = driver_phys_to_virt(phys);
-
     if (padding_up_to_sector_size == size) {
     } else {
-        vdisk_read(offset / sector_size, sectors_to_do, buffer0, dev_id);
+        vdisk_read(offset / sector_size, sectors_to_do, addr, dev_id);
     }
-    memcpy(buffer0, addr, size);
-    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, buffer0, dev_id);
-    unmap_page_range(get_current_directory(), (uint64_t)buffer0, page_size * PAGE_SIZE);
+    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, addr, dev_id);
     return ret_size;
 }
 
