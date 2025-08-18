@@ -476,15 +476,15 @@ static void page_map_ranges_help(uint64_t *directory, uint64_t virtual_address,
                      uint64_t physical_address, uint64_t page_count, uint64_t flags, uint64_t offset, uint64_t level) {
     uint64_t next_index =  virtual_address >> offset;
     uint64_t* pmlt_entry = (uint64_t*)(directory[next_index] & 0x000fffffffff000);
-    if (!(directory[next_index] & PTE_PRESENT) ) {
-        if (!pmlt_entry) {
-            pmlt_entry = (uint64_t*)phys_to_virt(alloc_frames(1));
-            directory[next_index] = (uint64_t)virt_to_phys((uint64_t)pmlt_entry) << 12 | PTE_PRESENT | flags;
-        }else {
-            directory[next_index] |= PTE_PRESENT;
-        }
-    }
     if (level) {
+        if (!(directory[next_index] & PTE_PRESENT) ) {
+            if (!pmlt_entry) {
+                pmlt_entry = (uint64_t*)phys_to_virt(alloc_frames(1));
+                directory[next_index] = (uint64_t)virt_to_phys((uint64_t)pmlt_entry) << 12 | PTE_PRESENT | flags;
+            } else {
+                directory[next_index] |= PTE_PRESENT;
+            }
+        }
         page_map_ranges_help(pmlt_entry, virtual_address, physical_address, page_count, flags, offset - 9, level - 1);
     }
     else {
