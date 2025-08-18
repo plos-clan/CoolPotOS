@@ -479,7 +479,7 @@ static void page_map_ranges_help(uint64_t *directory, uint64_t virtual_address,
     if (!(directory[next_index] & PTE_PRESENT) ) {
         if (!pmlt_entry) {
             pmlt_entry = (uint64_t*)phys_to_virt(alloc_frames(1));
-            directory[next_index] = (uint64_t)virt_to_phys(pmlt_entry) << 12 | PTE_PRESENT | flags;
+            directory[next_index] = (uint64_t)virt_to_phys((uint64_t)pmlt_entry) << 12 | PTE_PRESENT | flags;
         }else {
             directory[next_index] |= PTE_PRESENT;
         }
