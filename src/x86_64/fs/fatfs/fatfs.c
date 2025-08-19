@@ -267,8 +267,9 @@ int fatfs_delete(file_t parent, vfs_node_t node) {
     file_t file = node->handle;
 
     FRESULT res = f_unlink(file->path);
-    if (res != FR_OK) return -1;
-    return 0;
+    if (res == FR_DENIED) return -ENOTEMPTY;
+    if (res != FR_OK) return -ENOENT;
+    return VFS_STATUS_SUCCESS;
 }
 
 int fatfs_rename(file_t file, const char *new) {

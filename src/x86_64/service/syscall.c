@@ -1320,17 +1320,23 @@ syscall_(unlink) {
 syscall_(rmdir) {
     char *name = (char *)arg0;
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
-    vfs_node_t node = vfs_open(name);
+    char      *n_name = vfs_cwd_path_build(name);
+    vfs_node_t node   = vfs_open(n_name);
     if (node == NULL) return SYSCALL_FAULT_(ENOENT);
     if (node->type != file_dir) {
         vfs_close(node);
+        free(n_name);
         return SYSCALL_FAULT_(ENOTDIR);
     }
+    size_t ret;
     if (node->refcount > 0) {
         node->refcount--;
-        return SYSCALL_SUCCESS;
-    } else
-        return vfs_delete(node) == VFS_STATUS_SUCCESS ? SYSCALL_SUCCESS : SYSCALL_FAULT_(ENOENT);
+        ret = SYSCALL_SUCCESS;
+    } else {
+        ret = vfs_delete(node);
+    }
+    free(n_name);
+    return ret;
 }
 
 syscall_(unlinkat) {
