@@ -136,7 +136,7 @@ int vfs_mkfile(const char *name) {
 int vfs_delete(vfs_node_t node) {
     if (node == rootdir) return VFS_STATUS_FAILED;
     int res = callbackof(node, delete)(node->parent->handle, node);
-    if (res < 0) return VFS_STATUS_FAILED;
+    if (res < 0) return res;
     list_delete(node->parent->child, node);
     node->handle = NULL;
     vfs_free(node);

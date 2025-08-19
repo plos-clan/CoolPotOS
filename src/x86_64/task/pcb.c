@@ -226,24 +226,26 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
         kerror("Cannot kill System process.");
         return;
     }
-    ipc_message_t msg = malloc(sizeof(struct ipc_message));
-    msg->pid          = pcb->pid;
-    msg->type         = IPC_MSG_TYPE_EPID;
-    msg->data[0]      = exit_code & 0xFF;
-    msg->data[1]      = (exit_code >> 8) & 0xFF;
-    msg->data[2]      = (exit_code >> 16) & 0xFF;
-    msg->data[3]      = (exit_code >> 24) & 0xFF;
-    ipc_send(pcb->parent_task, msg);
-    if (pcb->pcb_queue->size > 0) {
-        queue_foreach(pcb->pcb_queue, node) {
-            tcb_t tcb = (tcb_t)node->data;
-            kill_thread(tcb);
-        }
-    }
+
     if (get_current_user()->fgproc == pcb->pid) { get_current_user()->fgproc = 0; }
 
     if (is_zombie) {
-        pcb->status = ZOMBIE;
+        if (pcb->pcb_queue->size > 0) {
+            queue_foreach(pcb->pcb_queue, node) {
+                tcb_t tcb = (tcb_t)node->data;
+                kill_thread(tcb);
+            }
+        }
+
+        pcb->status       = ZOMBIE;
+        ipc_message_t msg = malloc(sizeof(struct ipc_message));
+        msg->pid          = pcb->pid;
+        msg->type         = IPC_MSG_TYPE_EPID;
+        msg->data[0]      = exit_code & 0xFF;
+        msg->data[1]      = (exit_code >> 8) & 0xFF;
+        msg->data[2]      = (exit_code >> 16) & 0xFF;
+        msg->data[3]      = (exit_code >> 24) & 0xFF;
+        ipc_send(pcb->parent_task, msg);
     } else {
         queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
         add_death_proc(pcb);
