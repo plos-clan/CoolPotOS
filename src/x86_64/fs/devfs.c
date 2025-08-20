@@ -4,6 +4,7 @@
  */
 #define ALL_IMPLEMENTATION
 #include "devfs.h"
+#include "errno.h"
 #include "frame.h"
 #include "hhdm.h"
 #include "kprint.h"
@@ -19,7 +20,7 @@ int                devfs_id   = 0;
 static vfs_node_t  devfs_root = NULL;
 static rbtree_sp_t dev_rbtree;
 
-static int devfs_mount(const char *handle, vfs_node_t node) {
+static errno_t devfs_mount(const char *handle, vfs_node_t node) {
     if (handle != DEVFS_REGISTER_ID) return VFS_STATUS_FAILED;
     if (devfs_root) {
         kerror("Device file system has been mounted.");
@@ -30,12 +31,12 @@ static int devfs_mount(const char *handle, vfs_node_t node) {
     return VFS_STATUS_SUCCESS;
 }
 
-static int devfs_mkdir(void *handle, const char *name, vfs_node_t node) {
+static errno_t devfs_mkdir(void *handle, const char *name, vfs_node_t node) {
     node->fsid = 0;
-    return 0;
+    return EOK;
 }
 
-static int devfs_stat(void *handle, vfs_node_t node) {
+static errno_t devfs_stat(void *handle, vfs_node_t node) {
     if (node->type == file_dir) return VFS_STATUS_SUCCESS;
     node->handle = rbtree_sp_get(dev_rbtree, node->name);
     node->type = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM ? file_stream : file_block;
@@ -105,7 +106,7 @@ write:
     return ret_size;
 }
 
-static int devfs_ioctl(void *file, size_t req, void *arg) {
+static errno_t devfs_ioctl(void *file, size_t req, void *arg) {
     int dev_id = (int)(uint64_t)file;
     if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
     return vdisk_ctl[dev_id].ioctl(&vdisk_ctl[dev_id], req, arg);
@@ -124,7 +125,7 @@ static vfs_node_t devfs_dup(vfs_node_t node) {
     return new_node;
 }
 
-static int devfs_poll(void *file, size_t events) {
+static errno_t devfs_poll(void *file, size_t events) {
     int dev_id = (int)(uint64_t)file;
     if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
     if (vdisk_ctl[dev_id].poll != (void *)empty) {

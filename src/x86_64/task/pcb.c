@@ -12,6 +12,7 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "lazyalloc.h"
 #include "lock.h"
 #include "scheduler.h"
 #include "smp.h"
@@ -264,21 +265,7 @@ void kill_proc0(pcb_t pcb) {
         free(handle);
     }
 
-    if (pcb->virt_queue->size > 0) {
-    refree_virt:
-        mm_virtual_page_t *virt_page = NULL;
-
-        queue_foreach(pcb->virt_queue, node) {
-            mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
-            virt_page                = vpage;
-            break;
-        }
-        if (virt_page != NULL) {
-            queue_remove_at(pcb->virt_queue, virt_page->index);
-            free(virt_page);
-            goto refree_virt;
-        }
-    }
+    lazy_free(pcb);
 
     queue_destroy(pcb->file_open);
     queue_destroy(pcb->ipc_queue);

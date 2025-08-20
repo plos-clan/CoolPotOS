@@ -37,7 +37,6 @@
 #include "tmpfs.h"
 #include "vdisk.h"
 #include "vfs.h"
-#include "xhci.h"
 
 // 编译器判断
 #if defined(__clang__)

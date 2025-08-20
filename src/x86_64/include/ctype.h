@@ -13,6 +13,7 @@ typedef int             wchar_t;
 typedef void (*free_t)(void *ptr);
 
 typedef int pid_t;
+typedef int errno_t;
 
 #define loop while (true)
 

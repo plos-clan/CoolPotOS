@@ -199,6 +199,7 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     reg->cs     = target->context0.cs;
 }
 
+// 仅作 gdb 调试信息输出用, 不参与内核逻辑实现
 USED volatile int is_debug = 0;
 void              for_each_rb_tree();
 

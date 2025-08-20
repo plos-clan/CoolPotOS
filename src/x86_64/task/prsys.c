@@ -9,6 +9,7 @@
 #include "heap.h"
 #include "ipc.h"
 #include "klog.h"
+#include "lazyalloc.h"
 #include "pcb.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -111,18 +112,6 @@ int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uin
     default: return -1;
     }
     return SYSCALL_SUCCESS;
-}
-
-static void *virt_copy(void *ptr) {
-    if (ptr == NULL) return NULL;
-    mm_virtual_page_t *src_page = (mm_virtual_page_t *)ptr;
-    mm_virtual_page_t *new_page = (mm_virtual_page_t *)malloc(sizeof(mm_virtual_page_t));
-    new_page->start             = src_page->start;
-    new_page->flags             = src_page->flags;
-    new_page->count             = src_page->count;
-    new_page->pte_flags         = src_page->pte_flags;
-    new_page->index             = src_page->index;
-    return new_page;
 }
 
 extern fd_file_handle *fd_dup(fd_file_handle *src);

@@ -1,5 +1,6 @@
 #include "memstats.h"
 #include "frame.h"
+#include "lazyalloc.h"
 #include "lock_queue.h"
 #include "page.h"
 #include "pcb.h"

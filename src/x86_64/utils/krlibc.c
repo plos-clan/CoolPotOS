@@ -46,10 +46,12 @@ __attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
                      "rep movsb\n\t" // 复制剩余字节
                      "ret\n\t");
 }
+
+// musllibc 高速优化 memset 实现
 void *memset(void *dest, int c, size_t n) {
     unsigned char *s = dest;
     size_t         k;
-    
+
     if (!n) return dest;
     s[0]     = c;
     s[n - 1] = c;

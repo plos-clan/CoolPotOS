@@ -7,6 +7,7 @@
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "lazyalloc.h"
 #include "lock.h"
 #include "pcb.h"
 #include "smp.h"
@@ -40,22 +41,9 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
 
     if (get_current_task() != NULL) {
         pcb_t current_proc = get_current_task()->parent_group;
-
-        // 应用程序懒分配机制
         if (current_proc->task_level == TASK_APPLICATION_LEVEL) {
-            mm_virtual_page_t *virt_page = NULL;
-            spin_lock(current_proc->virt_queue->lock);
-            queue_foreach(current_proc->virt_queue, node) {
-                mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
-                if (faulting_address >= vpage->start &&
-                    faulting_address < vpage->start + vpage->count * PAGE_SIZE) {
-                    virt_page = vpage;
-                    break;
-                }
-            }
-
-            if (virt_page == NULL) {
-                spin_unlock(current_proc->virt_queue->lock);
+            errno_t status = lazy_tryalloc(current_proc, faulting_address);
+            if (status != EOK) {
                 logkf("Page fault virtual address 0x%x %p\n", faulting_address, frame->rip);
                 logkf("Type: %s\n", error_msg);
                 kill_proc(get_current_task()->parent_group, -1, true);
@@ -65,42 +53,6 @@ __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t er
                 open_interrupt;
                 cpu_hlt;
             } else {
-                size_t   fault_index = (faulting_address - virt_page->start) / PAGE_SIZE;
-                uint64_t page_addr   = virt_page->start + fault_index * PAGE_SIZE;
-
-                uint64_t phys = alloc_frames(1);
-                page_map_to(get_current_directory(), page_addr, phys, virt_page->pte_flags);
-                memset((void *)page_addr, 0, PAGE_SIZE);
-
-                uint64_t range_start = virt_page->start;
-                // uint64_t range_end = range_start + virt_page->count * PAGE_SIZE;
-
-                mm_virtual_page_t *left  = NULL;
-                mm_virtual_page_t *right = NULL;
-
-                spin_unlock(current_proc->virt_queue->lock);
-
-                // 左侧未分配部分
-                if (fault_index > 0) {
-                    left            = malloc(sizeof(mm_virtual_page_t));
-                    left->start     = range_start;
-                    left->count     = fault_index;
-                    left->pte_flags = virt_page->pte_flags;
-                    left->index     = queue_enqueue(current_proc->virt_queue, left);
-                }
-
-                // 右侧未分配部分
-                if (fault_index + 1 < virt_page->count) {
-                    right            = malloc(sizeof(mm_virtual_page_t));
-                    right->start     = range_start + (fault_index + 1) * PAGE_SIZE;
-                    right->count     = virt_page->count - fault_index - 1;
-                    right->pte_flags = virt_page->pte_flags;
-                    right->index     = queue_enqueue(current_proc->virt_queue, right);
-                }
-
-                // 移除原始 mm_virtual_page
-                queue_remove_at(current_proc->virt_queue, virt_page->index);
-                free(virt_page);
                 terminal_open_flush();
                 enable_scheduler();
                 open_interrupt;
@@ -473,31 +425,32 @@ void page_setup() {
 }
 
 static void page_map_ranges_help(uint64_t *directory, uint64_t virtual_address,
-                     uint64_t physical_address, uint64_t page_count, uint64_t flags, uint64_t offset, uint64_t level) {
-    uint64_t next_index =  virtual_address >> offset;
-    uint64_t* pmlt_entry = (uint64_t*)(directory[next_index] & 0x000fffffffff000);
+                                 uint64_t physical_address, uint64_t page_count, uint64_t flags,
+                                 uint64_t offset, uint64_t level) {
+    uint64_t  next_index = virtual_address >> offset;
+    uint64_t *pmlt_entry = (uint64_t *)(directory[next_index] & 0x000fffffffff000);
     if (level) {
-        if (!(directory[next_index] & PTE_PRESENT) ) {
+        if (!(directory[next_index] & PTE_PRESENT)) {
             if (!pmlt_entry) {
-                pmlt_entry = (uint64_t*)phys_to_virt(alloc_frames(1));
-                directory[next_index] = (uint64_t)virt_to_phys((uint64_t)pmlt_entry) << 12 | PTE_PRESENT | flags;
+                pmlt_entry = (uint64_t *)phys_to_virt(alloc_frames(1));
+                directory[next_index] =
+                    (uint64_t)virt_to_phys((uint64_t)pmlt_entry) << 12 | PTE_PRESENT | flags;
             } else {
                 directory[next_index] |= PTE_PRESENT;
             }
         }
-        page_map_ranges_help(pmlt_entry, virtual_address, physical_address, page_count, flags, offset - 9, level - 1);
-    }
-    else {
+        page_map_ranges_help(pmlt_entry, virtual_address, physical_address, page_count, flags,
+                             offset - 9, level - 1);
+    } else {
         flags |= (offset != 12 ? PTE_HUGE : 0);
         for (uint64_t i = 0; i < page_count; ++i) {
-            directory[next_index] = 0;
+            directory[next_index]  = 0;
             directory[next_index] |= (physical_address << offset) | flags;
         }
     }
 }
-void page_map_ranges(uint64_t *directory, uint64_t virtual_address,
-                     uint64_t physical_address, uint64_t page_count, uint64_t flags,
-                     PagingMode mode) {
+void page_map_ranges(uint64_t *directory, uint64_t virtual_address, uint64_t physical_address,
+                     uint64_t page_count, uint64_t flags, PagingMode mode) {
     //  48-39 39-30 30-21 21-12 12-0
     //  pml5t pml4t pml3t pml2t pml1t
     //  pml4e pml3e pml2e pml1e page
@@ -505,6 +458,6 @@ void page_map_ranges(uint64_t *directory, uint64_t virtual_address,
      * CR3 -> pml5e -> pml5t (48)
      * pml5t -> 512 pml4e(39)
      */
-    page_map_ranges_help(directory, virtual_address, physical_address, page_count, flags, 39, 4 - (uint64_t)mode);
+    page_map_ranges_help(directory, virtual_address, physical_address, page_count, flags, 39,
+                         4 - (uint64_t)mode);
 }
-
