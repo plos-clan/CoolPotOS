@@ -41,15 +41,6 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
-// 懒分配
-typedef struct mm_virtual_page {
-    uint64_t start;
-    uint64_t count;
-    uint64_t flags;
-    uint64_t pte_flags;
-    size_t   index;
-} mm_virtual_page_t;
-
 /**
  * 获取内核用页表
  * @return 页表指针
@@ -83,13 +74,14 @@ void page_map_to_1G(page_directory_t *directory, uint64_t addr, uint64_t frame, 
  */
 void page_map_to_2M(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
 
-typedef enum{
+typedef enum {
     P1G = 3,
     P2M = 2,
     P4K = 1,
 } PagingMode;
 
-void page_map_ranges(uint64_t* directory, uint64_t virtual_address, uint64_t physical_address,uint64_t page_count, uint64_t flags, PagingMode mode);
+void page_map_ranges(uint64_t *directory, uint64_t virtual_address, uint64_t physical_address,
+                     uint64_t page_count, uint64_t flags, PagingMode mode);
 
 /**
  * 映射一组物理地址 (对应的虚拟地址用hhdm计算)

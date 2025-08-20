@@ -64,7 +64,7 @@ static vfs_node_t vfs_child_find(vfs_node_t parent, const char *name) {
     return list_first(parent->child, data, streq(name, ((vfs_node_t)data)->name));
 }
 
-int vfs_mkdir(const char *name) {
+errno_t vfs_mkdir(const char *name) {
     if (name[0] != '/') return VFS_STATUS_FAILED;
     char      *path     = strdup(name + 1);
     char      *save_ptr = path;
@@ -98,7 +98,7 @@ int vfs_mkdir(const char *name) {
     return VFS_STATUS_SUCCESS;
 }
 
-int vfs_mkfile(const char *name) {
+errno_t vfs_mkfile(const char *name) {
     if (name[0] != '/') return VFS_STATUS_FAILED;
 
     // 分离路径和文件名
@@ -133,9 +133,9 @@ int vfs_mkfile(const char *name) {
     return VFS_STATUS_SUCCESS;
 }
 
-int vfs_delete(vfs_node_t node) {
+errno_t vfs_delete(vfs_node_t node) {
     if (node == rootdir) return VFS_STATUS_FAILED;
-    int res = callbackof(node, delete)(node->parent->handle, node);
+    errno_t res = callbackof(node, delete)(node->parent->handle, node);
     if (res < 0) return res;
     list_delete(node->parent->child, node);
     node->handle = NULL;
@@ -143,7 +143,7 @@ int vfs_delete(vfs_node_t node) {
     return VFS_STATUS_SUCCESS;
 }
 
-int vfs_rename(vfs_node_t node, const char *new) {
+errno_t vfs_rename(vfs_node_t node, const char *new) {
     return callbackof(node, rename)(node->handle, new);
 }
 
@@ -253,7 +253,7 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     return node;
 }
 
-int vfs_close(vfs_node_t node) {
+errno_t vfs_close(vfs_node_t node) {
     if (node == NULL) return VFS_STATUS_FAILED;
     if (node == rootdir) return VFS_STATUS_SUCCESS;
     if (node->handle == NULL) return 0;
@@ -279,7 +279,7 @@ void vfs_free_child(vfs_node_t vfs) {
     list_free_with(vfs->child, (void (*)(void *))vfs_free);
 }
 
-int vfs_mount(const char *src, vfs_node_t node) {
+errno_t vfs_mount(const char *src, vfs_node_t node) {
     if (node == NULL) return VFS_STATUS_FAILED;
     if (node->type != file_dir) return VFS_STATUS_FAILED;
     for (int i = 1; i < fs_nextid; i++) {
@@ -306,20 +306,20 @@ size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
     return callbackof(file, write)(file->handle, addr, offset, size);
 }
 
-int vfs_ioctl(vfs_node_t device, size_t options, void *arg) {
+errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg) {
     if (device == NULL) return VFS_STATUS_FAILED;
     do_update(device);
     if (device->type == file_dir) return VFS_STATUS_FAILED;
     return callbackof(device, ioctl)(device->handle, options, arg);
 }
 
-int vfs_poll(vfs_node_t node, size_t event) {
+errno_t vfs_poll(vfs_node_t node, size_t event) {
     do_update(node);
     if (node->type & file_dir) return -1;
     return callbackof(node, poll)(node->handle, event);
 }
 
-int vfs_unmount(const char *path) {
+errno_t vfs_unmount(const char *path) {
     vfs_node_t node = vfs_open(path);
     if (node == NULL) return VFS_STATUS_FAILED;
     if (node->type != file_dir) return VFS_STATUS_FAILED;
