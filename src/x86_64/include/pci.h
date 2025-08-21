@@ -73,8 +73,19 @@ uint32_t pci_read(uint32_t b, uint32_t d, uint32_t f, uint32_t s, uint32_t offse
 
 void pci_write(uint32_t b, uint32_t d, uint32_t f, uint32_t s, uint32_t offset, uint32_t value);
 
+/**
+ * 根据指定的发行商ID和设备ID查找PCI设备
+ * @param vendor_id 发行商ID
+ * @param device_id 设备ID
+ * @return 返回找到的设备, NULL为
+ */
 pci_device_t *pci_find_vid_did(uint16_t vendor_id, uint16_t device_id);
 
+/**
+ * 根据指定 class code查找PCI设备
+ * @param class_code class code
+ * @return 返回找到的设备, NULL为未找到
+ */
 pci_device_t *pci_find_class(uint32_t class_code);
 
 uint32_t pci_enumerate_capability_list(pci_device_t *pci_dev, uint32_t cap_type);

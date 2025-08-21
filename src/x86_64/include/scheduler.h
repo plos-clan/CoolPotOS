@@ -69,7 +69,7 @@ void disable_scheduler();
 void scheduler_nano_sleep(uint64_t nano);
 
 /**
- * 主动触发调度器
+ * 主动触发调度器, 让出当前CPU核心的时间片
  */
 void scheduler_yield();
 

@@ -103,6 +103,7 @@ function arch_x86_64()
     add_requires("pl_readline", {debug = is_mode("debug")})
     add_requires("cp_shell")
     add_requires("os-terminal", {debug = is_mode("debug")})
+    includes("module/extfs")
 
     target("kernel")
         set_arch("x86_64")
@@ -153,7 +154,11 @@ function arch_x86_64()
             import("core.project.project")
 
             local iso_dir = "$(builddir)/iso_dir"
+            local kmod_dir = "$(builddir)/kmod"
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            -- KernelModule copy
+            os.cp(project.target("extfs"):targetfile(), iso_dir.."/extfs.km")
+
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
 
