@@ -159,16 +159,75 @@ struct fd {
 extern struct vfs_callback vfs_empty_callback;
 extern vfs_node_t          rootdir;
 
-errno_t    vfs_mkdir(const char *name);                           // 创建文件夹节点
-errno_t    vfs_mkfile(const char *name);                          // 创建文件节点
-int        vfs_regist(const char *name, vfs_callback_t callback); // 注册文件系统
+/**
+ * 创建目录节点
+ * @param name 绝对路径
+ * @return 非0代表创建失败
+ */
+errno_t vfs_mkdir(const char *name);
+
+/**
+ * 创建文件节点
+ * @param name 绝对路径
+ * @return 非0代表创建失败
+ */
+errno_t vfs_mkfile(const char *name);
+
+/**
+ * 注册文件系统回调指针
+ * - 注意: 所有的回调函数都必须实现不得为NULL, 否则会注册失败.
+ * (如果不需要某个回调函数, 用一个空实现替代即可)
+ * @param name 文件系统名
+ * @param callback 回调指针
+ * @return 文件系统id
+ */
+int vfs_regist(const char *name, vfs_callback_t callback);
+
+/**
+ * 向父节点添加一个子节点
+ * @param parent 父节点
+ * @param name 子节点名称
+ * @param handle 节点句柄
+ * @return 子节点
+ */
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
-errno_t    vfs_close(vfs_node_t node); // 关闭已打开的节点
-void       vfs_free(vfs_node_t vfs);
-void       vfs_update(vfs_node_t node);
-vfs_node_t vfs_open(const char *str); // 打开一个节点
-errno_t    vfs_ioctl(vfs_node_t device, size_t options, void *arg);
+
+/**
+ * 关闭一个已打开的 vfs 节点
+ * @param node
+ * @return 非0 代表错误返回
+ */
+errno_t vfs_close(vfs_node_t node);
+
+/**
+ * 释放一个 vfs 节点
+ * @param vfs 节点
+ */
+void vfs_free(vfs_node_t vfs);
+
+/**
+ * 更新 vfs 节点的状态
+ * @param node 节点
+ */
+void vfs_update(vfs_node_t node);
+
+/**
+ * 打开一个节点
+ * @param str 路径(绝对路径)
+ * @return 为NULL代表打开失败
+ */
+vfs_node_t vfs_open(const char *str);
+
+/**
+ * 向一个节点发送 I/O 控制命令
+ * @param device 节点设备
+ * @param options 操作码
+ * @param arg 参数
+ * @return 非0代表操作失败
+ */
+errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg);
+
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
 errno_t    vfs_delete(vfs_node_t node);
@@ -179,11 +238,34 @@ void      *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, 
 size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
-                  uint64_t flags, uint64_t offset);     // 文件映射
-errno_t    vfs_mount(const char *src, vfs_node_t node); // 挂载指定设备至指定节点
-errno_t    vfs_unmount(const char *path);               // 卸载指定设备的挂载点
-vfs_node_t get_rootdir();                               // 获取根节点
-char      *vfs_get_fullpath(vfs_node_t node);
-char      *at_resolve_pathname(int dirfd, char *pathname);
-char      *vfs_cwd_path_build(char *src); // 构建当前工作目录的路径
-bool       vfs_init();
+                  uint64_t flags, uint64_t offset); // 文件映射
+
+/**
+ * 挂载一个文件系统到指定节点
+  * 挂载后，src 代表设备的路径，node 代表挂载点
+  * 挂载点必须是一个目录
+  *
+ * @param src 设备路径
+ * @param node 挂载点
+ * @return 非0代表挂载失败
+ */
+errno_t vfs_mount(const char *src, vfs_node_t node);
+
+/**
+ * 卸载一个挂载点
+ * - 注意: 一些内核常驻挂载点不会被此函数卸载, 如 devfs/tmpfs 等
+ * @param path 挂载点路径
+ * @return 非0代表写在失败
+ */
+errno_t vfs_unmount(const char *path);
+
+/**
+ * 获取根目录节点
+ * @return 根目录节点
+ */
+vfs_node_t get_rootdir();
+
+char *vfs_get_fullpath(vfs_node_t node);
+char *at_resolve_pathname(int dirfd, char *pathname);
+char *vfs_cwd_path_build(char *src); // 构建当前工作目录的路径
+bool  vfs_init();

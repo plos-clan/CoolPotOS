@@ -28,8 +28,8 @@ size_t disk_size(int drive);
 int    vdisk_init();
 
 /**
- * 注册一个硬盘设备
- * @param vd 硬盘设备
+ * 注册一个设备 (会被自动映射进 devfs)
+ * @param vd 设备
  * @return 注册编号
  */
 int    regist_vdisk(vdisk vd);

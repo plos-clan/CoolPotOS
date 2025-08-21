@@ -89,7 +89,6 @@ void kmain() {
     init_frame();
     page_setup();
     init_heap();
-    module_setup();
     init_terminal();
 
     printk("CoolPotOS %s (git:%s) (%s %s) (%s %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
@@ -98,6 +97,7 @@ void kmain() {
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     kinfo("DMI: %s %s, BIOS %s %s", smbios_sys_manufacturer(), smbios_sys_product_name(),
           smbios_bios_version(), smbios_bios_release_date());
+    module_setup();
     error_setup();
     float_processor_setup();
     fsgsbase_init();
@@ -140,6 +140,7 @@ void kmain() {
     killer_setup();
     setup_syscall(true);
     partition_init();
+    load_all_kernel_module();
     kinfo("Kernel load Done!");
 
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);

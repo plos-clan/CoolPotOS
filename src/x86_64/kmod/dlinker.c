@@ -1,11 +1,10 @@
 #include "dlinker.h"
 #include "elf_util.h"
-#include "hhdm.h"
 #include "klog.h"
+#include "kprint.h"
 #include "limine.h"
 #include "page.h"
 #include "sprintf.h"
-#include "stdarg.h"
 
 uint64_t kernel_modules_load_offset = 0;
 
@@ -34,6 +33,7 @@ bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab,
             *target_addr = (uint64_t)func->addr;
         } else {
             logkf("Failed relocating %s at %p\n", sym_name, rela->r_offset + offset);
+            return false;
         }
     }
     return true;
@@ -179,7 +179,7 @@ void dlinker_load(cp_module_t *module) {
         return;
     }
 
-    logkf("Loaded module %s at %#018lx\n", module->module_name,
+    kinfo("Loaded module %s at %#018lx", module->module_name,
           KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
 
     int ret = dlinit();
@@ -199,66 +199,11 @@ dlfunc_t *find_func(const char *name) {
 
 void find_kernel_symbol() {
     dlfunc_count = __ksymtab_end - __ksymtab_start;
-    // for (size_t i = 0; i < dlfunc_count; i++) {
-    //     dlfunc_t *entry = &__ksymtab_start[i];
-    // }
+    for (size_t i = 0; i < dlfunc_count; i++) {
+        dlfunc_t *entry = &__ksymtab_start[i];
+    }
 }
 
 void dlinker_init() {
     find_kernel_symbol();
-}
-
-cp_module_t module_ls[256];
-int         module_count = 0;
-
-LIMINE_REQUEST struct limine_module_request module = {.id = LIMINE_MODULE_REQUEST, .revision = 0};
-LIMINE_REQUEST struct limine_kernel_file_request kfile = {.id       = LIMINE_KERNEL_FILE_REQUEST,
-                                                          .response = 0};
-
-void extract_name(const char *input, char *output, size_t output_size) {
-    const char *name = strrchr(input, '/');
-    if (!name) { return; }
-    name++;
-    const char *dot = strchr(name, '.');
-    if (dot) {
-        size_t len = dot - name;
-        if (len >= output_size) { len = output_size - 1; }
-        strncpy(output, name, len);
-        output[len] = '\0';
-    } else {
-        strncpy(output, name, output_size - 1);
-        output[output_size - 1] = '\0';
-    }
-}
-
-cp_module_t *get_module(const char *module_name) {
-    for (int i = 0; i < module_count; i++) {
-        if (module_ls[i].is_use && strcmp(module_ls[i].module_name, module_name) == 0) {
-            return &module_ls[i];
-        }
-    }
-    return NULL;
-}
-
-void module_setup() {
-    if (module.response == NULL || module.response->module_count == 0) { return; }
-
-    struct limine_file *kernel = kfile.response->kernel_file;
-    strcpy(module_ls[module_count].module_name, "Kernel");
-    module_ls[module_count].path   = kernel->path;
-    module_ls[module_count].data   = kernel->address;
-    module_ls[module_count].size   = kernel->size;
-    module_ls[module_count].is_use = true;
-    module_count++;
-
-    for (size_t i = 0; i < module.response->module_count; i++) {
-        struct limine_file *file = module.response->modules[i];
-        extract_name(file->path, module_ls[module_count].module_name, sizeof(char) * 20);
-        module_ls[module_count].path   = file->path;
-        module_ls[module_count].data   = file->address;
-        module_ls[module_count].size   = file->size;
-        module_ls[module_count].is_use = true;
-        logkf("Module %s %s\n", module_ls[module_count].module_name, file->path);
-        module_count++;
-    }
 }

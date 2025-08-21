@@ -10,6 +10,10 @@
     __attribute__((used, section(".ksymtab"))) static const dlfunc_t __ksym_##name = {             \
         #name, (void *)name}
 
+#define EXPORT_SYMBOL_F(func_name, name)                                                           \
+    __attribute__((used, section(".ksymtab"))) static const dlfunc_t __ksym_##name = {             \
+        #func_name, (void *)name}
+
 typedef int (*dlinit_t)(void);
 
 typedef struct {
@@ -30,3 +34,5 @@ void find_kernel_symbol();
 void dlinker_init();
 
 void module_setup();
+
+void load_all_kernel_module();

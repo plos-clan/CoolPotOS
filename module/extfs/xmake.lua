@@ -1,0 +1,10 @@
+
+target("extfs")
+    set_kind("shared")
+    set_basename("extfs")
+    add_files("*.c")
+    add_includedirs("$(projectdir)/module/all_include", {public = true})
+    add_includedirs("$(projectdir)/module/extfs", {public = true})
+    set_targetdir("$(builddir)/kmod")
+    add_cflags("-fPIC")
+    add_ldflags("-nostdlib")

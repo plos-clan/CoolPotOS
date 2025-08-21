@@ -163,6 +163,17 @@ void *memchr(const void *src, int c, size_t n) {
     return n ? (void *)s : 0;
 }
 
+size_t strnlen(const char *str, size_t maxlen) {
+    if (str == NULL) { return 0; }
+
+    const char *p = str;
+    while (maxlen-- > 0 && *p) {
+        p++;
+    }
+
+    return (size_t)(p - str);
+}
+
 size_t strlen(const char *str) {
     const char *s = str;
     while (*s) {
