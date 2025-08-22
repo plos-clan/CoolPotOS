@@ -2,13 +2,13 @@ name: CI Workflow
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
     paths-ignore:
       - 'readme'
       - '.gitignore'
       - 'README.md'
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
     paths-ignore:
       - 'readme'
       - '.gitignore'
@@ -85,6 +85,7 @@ jobs:
       - name: Build CoolPotOS-x86_64
         run: |
           xmake f -y --arch=x86_64
+          xmake build extfs
           xmake build iso
           xmake build img
 

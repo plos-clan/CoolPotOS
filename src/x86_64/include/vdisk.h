@@ -22,7 +22,7 @@ typedef struct vdisk_device {
     size_t       sector_size; // 扇区大小
     vdisk_flag_t type;
     char         drive_name[50];
-} vdisk; // 块设备
+} vdisk; // 块设备/流设备
 
 size_t disk_size(int drive);
 int    vdisk_init();
