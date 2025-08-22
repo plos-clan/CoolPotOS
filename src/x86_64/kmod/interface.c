@@ -102,6 +102,7 @@ EXPORT_SYMBOL(calloc);
 EXPORT_SYMBOL(free);
 
 // krlibc functions
+EXPORT_SYMBOL(memcmp);
 EXPORT_SYMBOL(memset);
 EXPORT_SYMBOL(memcpy);
 EXPORT_SYMBOL(strlen);
