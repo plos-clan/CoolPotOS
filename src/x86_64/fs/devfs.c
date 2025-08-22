@@ -142,22 +142,29 @@ static void *devfs_map(void *file, void *addr, size_t offset, size_t size, size_
     return NULL;
 }
 
+static int dummy() {
+    return -ENOSYS;
+}
+
 static struct vfs_callback devfs_callbacks = {
-    .mount   = devfs_mount,
-    .unmount = (void *)empty,
-    .mkdir   = devfs_mkdir,
-    .close   = (void *)empty,
-    .stat    = devfs_stat,
-    .open    = devfs_open,
-    .read    = devfs_read,
-    .write   = devfs_write,
-    .mkfile  = (void *)empty,
-    .ioctl   = devfs_ioctl,
-    .dup     = devfs_dup,
-    .delete  = (void *)empty,
-    .rename  = (void *)empty,
-    .poll    = devfs_poll,
-    .map     = devfs_map,
+    .mount    = devfs_mount,
+    .unmount  = (void *)empty,
+    .mkdir    = devfs_mkdir,
+    .close    = (void *)empty,
+    .stat     = devfs_stat,
+    .open     = devfs_open,
+    .read     = devfs_read,
+    .write    = devfs_write,
+    .readlink = (vfs_readlink_t)dummy,
+    .mkfile   = (void *)empty,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .ioctl    = devfs_ioctl,
+    .dup      = devfs_dup,
+    .delete   = (void *)empty,
+    .rename   = (void *)empty,
+    .poll     = devfs_poll,
+    .map      = devfs_map,
 };
 
 void devfs_setup() {

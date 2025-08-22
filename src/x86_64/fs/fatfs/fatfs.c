@@ -309,22 +309,29 @@ vfs_node_t fatfs_dup(vfs_node_t node) {
     return copy;
 }
 
+static int dummy() {
+    return -ENOSYS;
+}
+
 static struct vfs_callback fatfs_callbacks = {
-    .mount   = fatfs_mount,
-    .unmount = fatfs_unmount,
-    .open    = fatfs_open,
-    .close   = (vfs_close_t)fatfs_close,
-    .read    = (vfs_read_t)fatfs_readfile,
-    .write   = (vfs_write_t)fatfs_writefile,
-    .mkdir   = fatfs_mkdir,
-    .mkfile  = fatfs_mkfile,
-    .delete  = (vfs_del_t)fatfs_delete,
-    .rename  = (vfs_rename_t)fatfs_rename,
-    .map     = (vfs_mapfile_t)fatfs_map,
-    .stat    = fatfs_stat,
-    .ioctl   = fatfs_ioctl,
-    .poll    = fatfs_poll,
-    .dup     = fatfs_dup,
+    .mount    = fatfs_mount,
+    .unmount  = fatfs_unmount,
+    .open     = fatfs_open,
+    .close    = (vfs_close_t)fatfs_close,
+    .read     = (vfs_read_t)fatfs_readfile,
+    .write    = (vfs_write_t)fatfs_writefile,
+    .readlink = (vfs_readlink_t)dummy,
+    .mkdir    = fatfs_mkdir,
+    .mkfile   = fatfs_mkfile,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .delete   = (vfs_del_t)fatfs_delete,
+    .rename   = (vfs_rename_t)fatfs_rename,
+    .map      = (vfs_mapfile_t)fatfs_map,
+    .stat     = fatfs_stat,
+    .ioctl    = fatfs_ioctl,
+    .poll     = fatfs_poll,
+    .dup      = fatfs_dup,
 };
 
 void fatfs_init() {

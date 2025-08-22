@@ -1,4 +1,5 @@
 #include "iso9660.h"
+#include "errno.h"
 #include "klog.h"
 #include "krlibc.h"
 
@@ -327,8 +328,8 @@ void iso9660_open(void *parent, const char *name, vfs_node_t node) {
     l9660_dir   *c_dir  = (l9660_dir *)malloc(sizeof(l9660_dir));
     l9660_file  *c_file = (l9660_file *)malloc(sizeof(l9660_file));
     l9660_status status;
-    file_t new = (file_t)malloc(sizeof(struct file));
-    status     = l9660_openat(c_file, p_dir, name);
+    file_t       new = (file_t)malloc(sizeof(struct file));
+    status           = l9660_openat(c_file, p_dir, name);
 
     if (status != L9660_OK) {
         status = l9660_opendirat(c_dir, p_dir, name);
@@ -402,22 +403,29 @@ int iso9660_stat(void *handle, vfs_node_t node) {
     return 0;
 }
 
+static int dummy() {
+    return -ENOSYS;
+}
+
 static struct vfs_callback iso_callbacks = {
-    .mount   = iso9660_mount,
-    .unmount = iso9660_unmount,
-    .open    = iso9660_open,
-    .close   = (vfs_close_t)iso9660_close,
-    .read    = (vfs_read_t)iso9660_readfile,
-    .write   = (vfs_write_t)iso9660_writefile,
-    .mkdir   = iso9660_mkdir,
-    .mkfile  = iso9660_mkfile,
-    .stat    = iso9660_stat,
-    .ioctl   = (void *)empty,
-    .dup     = (void *)empty, //TODO 未实现
-    .delete  = (void *)empty, // 只读文件系统
-    .rename  = (void *)empty, // 只读文件系统
-    .poll    = (void *)empty, // 只读文件系统
-    .map     = (void *)empty, //TODO 未实现
+    .mount    = iso9660_mount,
+    .unmount  = iso9660_unmount,
+    .open     = iso9660_open,
+    .close    = (vfs_close_t)iso9660_close,
+    .read     = (vfs_read_t)iso9660_readfile,
+    .write    = (vfs_write_t)iso9660_writefile,
+    .readlink = (vfs_readlink_t)dummy,
+    .mkdir    = iso9660_mkdir,
+    .mkfile   = iso9660_mkfile,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .stat     = iso9660_stat,
+    .ioctl    = (void *)empty,
+    .dup      = (void *)empty, //TODO 未实现
+    .delete   = (void *)empty, // 只读文件系统
+    .rename   = (void *)empty, // 只读文件系统
+    .poll     = (void *)empty, // 只读文件系统
+    .map      = (void *)empty, //TODO 未实现
 };
 
 void iso9660_regist() {

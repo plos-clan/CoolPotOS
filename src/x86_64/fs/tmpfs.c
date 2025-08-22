@@ -1,4 +1,5 @@
 #include "tmpfs.h"
+#include "errno.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -149,22 +150,29 @@ void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
     return general_map(tmpfs_read, file, (uint64_t)addr, offset, size, prot, flags);
 }
 
+static int dummy() {
+    return -ENOSYS;
+}
+
 static struct vfs_callback tmpfs_callbacks = {
-    .mount   = tmpfs_mount,
-    .unmount = (void *)empty,
-    .mkdir   = tmpfs_mkdir,
-    .close   = tmpfs_close,
-    .stat    = tmpfs_stat,
-    .open    = tmpfs_open,
-    .read    = tmpfs_read,
-    .write   = tmpfs_write,
-    .mkfile  = tmpfs_mkfile,
-    .ioctl   = (void *)empty,
-    .dup     = tmpfs_dup,
-    .delete  = tmpfs_delete,
-    .rename  = tmpfs_rename,
-    .poll    = tmpfs_poll,
-    .map     = tmpfs_map,
+    .mount    = tmpfs_mount,
+    .unmount  = (void *)empty,
+    .mkdir    = tmpfs_mkdir,
+    .close    = tmpfs_close,
+    .stat     = tmpfs_stat,
+    .open     = tmpfs_open,
+    .read     = tmpfs_read,
+    .write    = tmpfs_write,
+    .readlink = (vfs_readlink_t)dummy,
+    .mkfile   = tmpfs_mkfile,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .ioctl    = (void *)empty,
+    .dup      = tmpfs_dup,
+    .delete   = tmpfs_delete,
+    .rename   = tmpfs_rename,
+    .poll     = tmpfs_poll,
+    .map      = tmpfs_map,
 };
 
 void tmpfs_setup() {
