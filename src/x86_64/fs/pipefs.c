@@ -227,6 +227,10 @@ int pipefs_mount(const char *handle, vfs_node_t node) {
     return VFS_STATUS_SUCCESS;
 }
 
+static int dummy() {
+    return -ENOSYS;
+}
+
 static struct vfs_callback pipefs_callbacks = {
     .mount   = pipefs_mount,
     .unmount = (vfs_unmount_t)empty,
@@ -234,8 +238,11 @@ static struct vfs_callback pipefs_callbacks = {
     .close   = (vfs_close_t)pipefs_close,
     .read    = pipefs_read,
     .write   = pipefs_write,
+    .readlink = (vfs_readlink_t)dummy,
     .mkdir   = (vfs_mk_t)empty,
     .mkfile  = (vfs_mk_t)empty,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
     .delete  = (vfs_del_t)empty,
     .rename  = (vfs_rename_t)empty,
     .map     = (vfs_mapfile_t)empty,

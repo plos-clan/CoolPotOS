@@ -4,6 +4,7 @@
  */
 #define ALL_IMPLEMENTATION
 #include "modfs.h"
+#include "errno.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "module.h"
@@ -75,22 +76,29 @@ static vfs_node_t modfs_dup(vfs_node_t node) {
     return new_node;
 }
 
+static int dummy() {
+    return -ENOSYS;
+}
+
 static struct vfs_callback modfs_callbacks = {
-    .mount   = modfs_mount,
-    .unmount = (void *)empty,
-    .mkdir   = modfs_mkdir,
-    .close   = (void *)empty,
-    .stat    = modfs_stat,
-    .open    = modfs_open,
-    .read    = modfs_read,
-    .write   = modfs_write,
-    .mkfile  = (void *)empty,
-    .ioctl   = (void *)empty,
-    .dup     = modfs_dup,
-    .delete  = (void *)empty,
-    .rename  = (void *)empty,
-    .poll    = (void *)empty,
-    .map     = (void *)empty,
+    .mount    = modfs_mount,
+    .unmount  = (void *)empty,
+    .mkdir    = modfs_mkdir,
+    .close    = (void *)empty,
+    .stat     = modfs_stat,
+    .open     = modfs_open,
+    .read     = modfs_read,
+    .write    = modfs_write,
+    .readlink = (vfs_readlink_t)dummy,
+    .mkfile   = (void *)empty,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .ioctl    = (void *)empty,
+    .dup      = modfs_dup,
+    .delete   = (void *)empty,
+    .rename   = (void *)empty,
+    .poll     = (void *)empty,
+    .map      = (void *)empty,
 };
 
 void modfs_setup() {

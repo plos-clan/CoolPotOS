@@ -61,7 +61,7 @@ void *find_symbol_address(const char *symbol_name, Elf64_Ehdr *ehdr, uint64_t of
 
     size_t num_symbols = symtabsz / sizeof(Elf64_Sym);
 
-    for (size_t i = 0; i < symtabsz; i++) {
+    for (size_t i = 0; i < num_symbols; i++) {
         Elf64_Sym *sym      = &symtab[i];
         char      *sym_name = &strtab[sym->st_name];
         if (strcmp(symbol_name, sym_name) == 0) {
@@ -141,6 +141,7 @@ dlinit_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
     }
 
     void *entry = find_symbol_address("dlmain", ehdr, offset);
+    if (entry == NULL) { entry = find_symbol_address("_dlmain", ehdr, offset); }
 
     dlinit_t dlinit_func = (dlinit_t)entry;
     return dlinit_func;
@@ -175,8 +176,11 @@ void dlinker_load(cp_module_t *module) {
     dlinit_t dlinit =
         load_dynamic(phdrs, ehdr, KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
     if (dlinit == NULL) {
-        logkf("cannot load dynamic section.\n");
-        return;
+        dlinit = (dlinit_t)ehdr->e_entry;
+        if (dlinit == NULL) {
+            logkf("Cannot find dlinit function.\n");
+            return;
+        }
     }
 
     kinfo("Loaded module %s at %#018lx", module->module_name,

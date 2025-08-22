@@ -57,6 +57,7 @@ EXPORT_SYMBOL(vfs_free);
 EXPORT_SYMBOL(get_rootdir);
 EXPORT_SYMBOL(vfs_mount);
 EXPORT_SYMBOL(vfs_unmount);
+EXPORT_SYMBOL(vfs_get_fullpath);
 
 /**
  * Interrupt and Clock Subsystem Interface
@@ -105,6 +106,7 @@ EXPORT_SYMBOL(free);
 EXPORT_SYMBOL(memcmp);
 EXPORT_SYMBOL(memset);
 EXPORT_SYMBOL(memcpy);
+EXPORT_SYMBOL(strdup);
 EXPORT_SYMBOL(strlen);
 EXPORT_SYMBOL(strnlen);
 EXPORT_SYMBOL(strcpy);
