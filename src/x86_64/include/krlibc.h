@@ -3,30 +3,32 @@
 /**
  * 定义CP_Kernel内核的各种属性
  */
-#define KERNEL_NAME           "CP_Kernel-x86_64-0.3.5" // 内核编号
-#define MAX_CPU               256                      // 最大支持CPU核心数 256
-#define KERNEL_HEAP_START     0xffff900000000000       // 内核堆起始地址
-#define KERNEL_HEAP_SIZE      0x6400000                // 内核堆大小 100MB
-#define STACK_SIZE            32768                    // 栈大小(byte)
-#define KERNEL_ST_SZ          131072                   // 增强栈大小 128k
-#define BIG_USER_STACK        999424                   // 用户栈大小，要对齐到页
-#define MAX_WAIT_INDEX        1000000                  // 阻塞最大循环数
-#define KERNEL_AREA_MEM       0xf000000000000000       // 内核地址空间起始
-#define DRIVER_AREA_MEM       0xffffb00000000000       // 驱动恒等映射空间偏移
-#define USER_MMAP_START       0x0000400000000000UL     // 用户堆映射起始地址
-#define MAX_SIGNALS           64                       // 最大支持信号个数
-#define EHDR_START_ADDR       0x0000300000000000       // ELF头起始地址
-#define INTERPRETER_EHDR_ADDR 0x0000200000000000       // 链接器ELF头起始地址
-#define INTERPRETER_BASE_ADDR 0x0000100000000000       // 链接器基址起始地址
-#define DEVFS_REGISTER_ID     0                        // 设备文件系统注册ID
-#define MODFS_REGISTER_ID     1                        // 模块文件系统注册ID
-#define TMPFS_REGISTER_ID     2                        // 临时文件系统注册ID
-#define PIEFS_REGISTER_ID     3                        // 管道文件系统注册ID
-#define LAPIC_TIMER_SPEED     100                      // LAPIC定时器速度(单位: Hz)
-#define PIPE_BUFF             8192                     // 管道缓冲区大小
-#define MAX_IOAPICS           8                        // IOAPIC最大支持数(物理机会存在多个IOAPIC)
-#define MAX_ISO               64                       // 最大支持中断源数
-#define IRQ_BASE_VECTOR       32                       // IRQ起始映射中断向量
+#define KERNEL_NAME            "CP_Kernel-x86_64-0.3.6" // 内核编号
+#define MAX_CPU                256                      // 最大支持CPU核心数 256
+#define KERNEL_HEAP_START      0xffff900000000000       // 内核堆起始地址
+#define KERNEL_HEAP_SIZE       0x6400000                // 内核堆大小 100MB
+#define STACK_SIZE             32768                    // 栈大小(byte)
+#define KERNEL_ST_SZ           131072                   // 增强栈大小 128k
+#define BIG_USER_STACK         999424                   // 用户栈大小，要对齐到页
+#define MAX_WAIT_INDEX         1000000                  // 阻塞最大循环数
+#define KERNEL_AREA_MEM        0xf000000000000000       // 内核地址空间起始
+#define DRIVER_AREA_MEM        0xffffb00000000000       // 驱动恒等映射空间偏移
+#define USER_MMAP_START        0x0000400000000000UL     // 用户堆映射起始地址
+#define MAX_SIGNALS            64                       // 最大支持信号个数
+#define EHDR_START_ADDR        0x0000300000000000       // ELF头起始地址
+#define INTERPRETER_EHDR_ADDR  0x0000200000000000       // 链接器ELF头起始地址
+#define INTERPRETER_BASE_ADDR  0x0000100000000000       // 链接器基址起始地址
+#define DEVFS_REGISTER_ID      0                        // 设备文件系统注册ID
+#define MODFS_REGISTER_ID      1                        // 模块文件系统注册ID
+#define TMPFS_REGISTER_ID      2                        // 临时文件系统注册ID
+#define PIEFS_REGISTER_ID      3                        // 管道文件系统注册ID
+#define LAPIC_TIMER_SPEED      100                      // LAPIC定时器速度(单位: Hz)
+#define PIPE_BUFF              8192                     // 管道缓冲区大小
+#define MAX_IOAPICS            8                        // IOAPIC最大支持数(物理机会存在多个IOAPIC)
+#define MAX_ISO                64                       // 最大支持中断源数
+#define IRQ_BASE_VECTOR        32                       // IRQ起始映射中断向量
+#define KERNEL_MOD_SPACE_START 0xffffffffb0000000       // 内核模块加载起始地址
+#define KERNEL_MOD_SPACE_END   0xffffffffc0000000       // 内核模块加载结束地址
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")

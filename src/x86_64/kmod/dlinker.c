@@ -51,7 +51,7 @@ void *find_symbol_address(const char *symbol_name, Elf64_Ehdr *ehdr, uint64_t of
     size_t symtabsz = 0;
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdrs[i].sh_type == SHT_SYMTAB) {
+        if (shdrs[i].sh_type == SHT_SYMTAB || shdrs[i].sh_type == SHT_DYNSYM) {
             symtab   = (Elf64_Sym *)((char *)ehdr + shdrs[i].sh_offset);
             symtabsz = shdrs[i].sh_size;
             strtab   = (char *)ehdr + shdrs[shdrs[i].sh_link].sh_offset;
@@ -167,14 +167,13 @@ void dlinker_load(cp_module_t *module) {
 
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     if (!mmap_phdr_segment(ehdr, phdrs, get_current_directory(), false,
-                           KERNEL_MODULES_SPACE_START + kernel_modules_load_offset, NULL,
-                           &load_size)) {
+                           KERNEL_MOD_SPACE_START + kernel_modules_load_offset, NULL, &load_size)) {
         logkf("Cannot mmap elf segment.\n");
         return;
     }
 
     dlinit_t dlinit =
-        load_dynamic(phdrs, ehdr, KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
+        load_dynamic(phdrs, ehdr, KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
     if (dlinit == NULL) {
         dlinit = (dlinit_t)ehdr->e_entry;
         if (dlinit == NULL) {
@@ -184,7 +183,7 @@ void dlinker_load(cp_module_t *module) {
     }
 
     kinfo("Loaded module %s at %#018lx", module->module_name,
-          KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
+          KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
 
     int ret = dlinit();
 
