@@ -467,7 +467,7 @@ static void sys_info() {
     printk(logo[3]); printk(info[3], cpu.model_name); printk("\n");
     printk(logo[4]); printk(info[4], pci_type, get_pci_num()); printk("\n");
     printk(logo[5]); printk(info[5], framebuffer->width, framebuffer->height); printk("\n");
-    printk(logo[6]); printk(info[6], get_date_time()); printk("\n");
+    printk(logo[6]); printk(info[6], get_date_time()); printk("\n");   // 标记一下，get_date_time调用了malloc，没有调用free
     printk(logo[7]); printk(info[7]); printk("\n");
     printk(logo[8]); printk(info[8], KERNEL_NAME); printk("\n");
     printk(logo[9]); printk(info[9], memory_used, unit, memory_total); printk("\n");
@@ -662,7 +662,7 @@ static void plreadln_flush(void) {}
 
 _Noreturn void shell_setup() {
     char *user_name = get_current_task()->parent_group->user->name;
-
+    char *date      = get_date_time();
     printk("\033[1mWelcome to CoolPotOS (\033[1;32m%s\033[0m\033[1m)!\033[0m\n"
            " * \033[1mSourceCode:\033[0m        https://github.com/plos-clan/CoolPotOS\n"
            " * \033[1mWebsite:\033[0m           https://cpos.plos-clan.org\n"
@@ -670,7 +670,8 @@ _Noreturn void shell_setup() {
            "  \033[1mTasks:\033[0m              \033[1;33m%d\033[0m\n"
            "  \033[1mLogged:\033[0m             \033[1;35m%s\033[0m\n"
            "\033[1mMIT License 2024-2025 plos-clan\033[0m\n",
-           KERNEL_NAME, get_date_time(), get_all_task(), user_name);
+           KERNEL_NAME, date, get_all_task(), user_name);
+    free(date);
 
     char     prompt[128];
     uint8_t *argv[MAX_ARG_NR];
@@ -695,6 +696,8 @@ _Noreturn void shell_setup() {
         exec(argc, argv_bash) || exec(argc, argv_sh);
     }
     /***************** debug *******************/
+
+    get_current_task()->parent_group->tty->termios.c_lflag |= ECHO;
 
     loop {
         char *template = "\033[01;32m%s\033[0m@\033[01;32mlocalhost: \033[34m%s>\033[0m ";
