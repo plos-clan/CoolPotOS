@@ -304,7 +304,6 @@ void kill_thread(tcb_t task) {
 }
 
 void kill_thread0(tcb_t task) {
-    if (task->time_buf != NULL) free(task->time_buf);
     task->status              = OUT;
     page_directory_t *src_dir = get_current_directory();
     switch_process_page_directory(task->parent_group->page_dir);
@@ -597,7 +596,6 @@ void init_pcb() {
     kernel_head_task->user_stack_top  = kernel_head_task->user_stack;
     kernel_head_task->context0.rflags = get_rflags();
     kernel_head_task->cpu_timer       = nano_time();
-    kernel_head_task->time_buf        = alloc_timer();
     kernel_head_task->cpu_id          = lapic_id();
     kernel_head_task->status          = RUNNING;
     kernel_head_task->task_level      = TASK_IDLE_LEVEL;

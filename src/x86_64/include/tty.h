@@ -128,6 +128,7 @@ typedef struct termios {
 typedef struct tty_virtual_device {
     void (*print)(struct tty_virtual_device *res, const char *string);
     void (*putchar)(struct tty_virtual_device *res, int c);
+    void (*flush)(struct tty_virtual_device *res);
 
     uint64_t volatile *video_ram; // 显存基址
     uint64_t           width, height;

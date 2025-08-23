@@ -116,7 +116,6 @@ _Noreturn void apu_entry() {
     apu_idle->user_stack                            = apu_idle->kernel_stack;
     apu_idle->context0.rflags                       = get_rflags() | 0x200;
     apu_idle->cpu_timer                             = nano_time();
-    apu_idle->time_buf                              = alloc_timer();
     apu_idle->cpu_id                                = current_cpu->id;
     apu_idle->status                                = RUNNING;
     char name[50];

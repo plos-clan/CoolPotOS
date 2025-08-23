@@ -241,7 +241,7 @@ int fatfs_stat(void *handle, vfs_node_t node) {
             child_node->size      = fno.fsize;
             child_node->visited   = true;
         }
-
+        free(fp);
         do {
             vfs_node_t exist = NULL;
             list_foreach(node->child, child_node0) {

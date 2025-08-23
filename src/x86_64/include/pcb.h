@@ -139,7 +139,6 @@ struct thread_control_block {
     uint64_t      cpu_clock;       // CPU 调度时间片
     uint64_t      cpu_timer;       // CPU 占用时间
     uint64_t      cpu_id;          // 由哪个CPU负责该线程运行
-    timer_t      *time_buf;        // 计时器句柄
     TaskContext   context0;        // 线程上下文
     fpu_context_t fpu_context;     // 浮点寄存器上下文
     bool          fpu_flags;       // 浮点启用标志

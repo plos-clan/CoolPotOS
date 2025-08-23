@@ -90,7 +90,7 @@ void kmain() {
     page_setup();
     init_heap();
     init_terminal();
-
+    init_tty();
     printk("CoolPotOS %s (git:%s) (%s %s) (%s %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
            COMPILER_NAME, COMPILER_VERSION, get_bootloader_name(), get_bootloader_version());
     init_cpuid();
@@ -119,7 +119,7 @@ void kmain() {
 
     vdisk_init();
     devfs_setup();
-    init_tty();
+    build_tty_device();
     modfs_setup();
     pci_init();
     ide_setup();

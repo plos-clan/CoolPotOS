@@ -4,8 +4,8 @@
 #include "keyboard.h"
 #include "klog.h"
 #include "krlibc.h"
+#include "limine.h"
 #include "lock.h"
-#include "timer.h"
 
 atom_queue *output_buffer;
 bool        open_flush = false;
@@ -36,15 +36,11 @@ void terminal_close_flush() {
 }
 
 void terminal_putc(char ch) {
-    atom_push(output_buffer, ch);
+    terminal_process_byte(ch);
 }
 
 void terminal_puts(const char *msg) {
-    while (*msg != '\0') {
-        if (*msg == '\n') { atom_push(output_buffer, '\r'); }
-        atom_push(output_buffer, *msg);
-        msg++;
-    }
+    terminal_process(msg);
 }
 
 float get_terminal_font_size() {
@@ -72,6 +68,7 @@ size_t get_terminal_col(size_t width) {
 }
 
 void init_terminal() {
+
     TerminalDisplay display = {.width            = framebuffer->width,
                                .height           = framebuffer->height,
                                .buffer           = framebuffer->address,

@@ -5,6 +5,7 @@
 #include "os_terminal.h"
 #include "pcb.h"
 #include "sprintf.h"
+#include "tty.h"
 
 spin_t print_lock;
 
@@ -36,18 +37,13 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     strcat(buf, buf + 11);
     strcat(buf, "\033[0m");
 
-    if (get_current_task() != NULL)
-        get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
-    else {
-        for (size_t i = 0; buf[i] != '\0'; i++) {
-            if (buf[i] == '\n') terminal_process_byte('\r');
-            terminal_process_byte(buf[i]);
-            //            if (buf[i] == '\n') logk("\r");
-            //            logkf("%c",buf[i]);
-        }
-    }
+    tty_t *tty_dev =
+        get_current_task() == NULL ? get_default_tty() : get_current_task()->parent_group->tty;
+
+    tty_dev->print(tty_dev, buf);
+
     extern bool open_flush;
-    if (!open_flush) terminal_flush();
+    if (!open_flush) tty_dev->flush(tty_dev);
     spin_unlock(print_lock);
 }
 
@@ -65,9 +61,10 @@ void cp_printf(const char *fmt, ...) {
     strcat(buf, buf + 11);
     strcat(buf, "\033[0m");
 
-    if (get_current_task() != NULL)
-        get_current_task()->parent_group->tty->print(get_current_task()->parent_group->tty, buf);
-    else
-        terminal_process(buf);
+    tty_t *tty_dev =
+        get_current_task() == NULL ? get_default_tty() : get_current_task()->parent_group->tty;
+
+    tty_dev->print(tty_dev, buf);
+
     spin_unlock(print_lock);
 }

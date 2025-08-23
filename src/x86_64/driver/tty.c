@@ -26,16 +26,20 @@ extern atom_queue *temp_keyboard_buffer;
 
 extern bool open_flush; // terminal.c
 
+static void tty_kernel_flush(tty_t *tty) {
+    terminal_flush();
+}
+
 static void tty_kernel_print(tty_t *tty, const char *msg) {
     spin_lock(tty_lock);
     for (size_t i = 0; msg[i] != '\0'; i++) {
         char c = msg[i];
         if (c == '\n') {
-            terminal_process_byte('\r');
-            terminal_process_byte('\n');
-            terminal_flush();
-        } else
-            terminal_process_byte(c);
+            terminal_puts("\r\n");
+            tty->flush(tty);
+        } else {
+            terminal_putc(c);
+        }
     }
     spin_unlock(tty_lock);
 }
@@ -43,11 +47,11 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
 static void tty_kernel_putc(tty_t *tty, int c) {
     spin_lock(tty_lock);
     if (c == '\n') {
-        terminal_process_byte('\r');
-        terminal_process_byte('\n');
-        terminal_flush();
-    } else
-        terminal_process_byte(c);
+        terminal_puts("\r\n");
+        tty->flush(tty);
+    } else {
+        terminal_putc(c);
+    }
     spin_unlock(tty_lock);
 }
 
@@ -81,6 +85,7 @@ tty_t *alloc_default_tty() {
     tty->width           = framebuffer->width;
     tty->print           = tty_kernel_print;
     tty->putchar         = tty_kernel_putc;
+    tty->flush           = tty_kernel_flush;
     tty->termios.c_lflag = ECHO | ICANON | IEXTEN | ISIG;
     tty->termios.c_iflag = BRKINT | ICRNL | INPCK | ISTRIP | IXON;
     tty->termios.c_oflag = OPOST;
@@ -360,13 +365,11 @@ void init_tty() {
     defualt_tty->is_sigterm = false;
     defualt_tty->print      = tty_kernel_print;
     defualt_tty->putchar    = tty_kernel_putc;
+    defualt_tty->flush      = tty_kernel_flush;
     queue                   = malloc(sizeof(mpmc_queue_t));
     if (init(queue, 1024, sizeof(uint32_t), FAIL) != SUCCESS) {
-        kerror("Cannot enable mpmc buffer\n");
         free(queue);
         queue = NULL;
     }
     temp_stdin_buffer = create_atom_queue(2048);
-    build_tty_device();
-    kinfo("Default tty device init done.");
 }
