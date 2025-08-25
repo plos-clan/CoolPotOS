@@ -361,6 +361,10 @@ static struct vfs_callback callbacks = {
 };
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
-    ext_fsid = vfs_regist("ext", &callbacks);
+    ext_fsid = vfs_regist("extfs", &callbacks);
+    if (ext_fsid == -1) {
+        printk("Cannot register extfs file system.\n");
+        return -EFAULT;
+    }
     return EOK;
 }

@@ -478,13 +478,11 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->cpu_id     = current_cpu->id;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
-    *(--stack_top)            = (uint64_t)_start;
-    *(--stack_top)            = (uint64_t)process_exit;
     *(--stack_top)            = (uint64_t)switch_to_user_mode;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
-    new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~0xF);                       // 栈16字节对齐
+    new_task->context0.rsp    = (uint64_t)stack_top;
+    new_task->kernel_stack    = (uint64_t)stack_top;
 
     new_task->user_stack =
         page_alloc_random(pcb->page_dir, BIG_USER_STACK, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
@@ -526,22 +524,25 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->mem_usage  = get_all_memusage();
     new_task->cpu_id     = current_cpu->id;
     memcpy(new_task->name, name, strlen(name) + 1);
-    uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
-    *(--stack_top)            = (uint64_t)args;
-    *(--stack_top)            = (uint64_t)process_exit;
-    *(--stack_top)            = (uint64_t)_start;
-    new_task->context0.rflags = 0x202;
+    uint64_t *stack_top = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
+    *(--stack_top)      = (uint64_t)process_exit;
+
+    new_task->context0.rsp   = (uint64_t)stack_top;
+    new_task->user_stack_top = (uint64_t)stack_top;
+    new_task->kernel_stack   = (uint64_t)stack_top;
+
+    // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
+    new_task->user_stack = new_task->kernel_stack;
+
     new_task->context0.rip    = (uint64_t)_start;
-    new_task->context0.rsp = (uint64_t)new_task + STACK_SIZE - sizeof(uint64_t) * 3; // 设置上下文
-    new_task->kernel_stack = (new_task->context0.rsp &= ~(uint64_t)0xF);             // 栈16字节对齐
-    new_task->user_stack =
-        new_task->kernel_stack; // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
-    new_task->user_stack_top = new_task->user_stack;
-    new_task->context0.cs    = 0x8;
-    new_task->context0.ss    = 0x10;
-    new_task->context0.es    = 0x10;
-    new_task->context0.ds    = 0x10;
-    new_task->status         = CREATE;
+    new_task->context0.rdi    = (uint64_t)args; // first argument in rdi
+    new_task->context0.rflags = 0x202;
+
+    new_task->context0.cs = 0x8;
+    new_task->context0.ss = 0x10;
+    new_task->context0.es = 0x10;
+    new_task->context0.ds = 0x10;
+    new_task->status      = CREATE;
 
     new_task->fs_base = (uint64_t)new_task;
 
