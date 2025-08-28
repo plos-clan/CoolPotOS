@@ -94,17 +94,20 @@ typedef void *(*vfs_mapfile_t)(void *file, void *addr, size_t offset, size_t siz
                                size_t flags);
 
 enum {
-    file_none     = 0x0UL,    // 未获取信息
+    file_none     = 0x1UL,    // 未获取信息
     file_dir      = 0x2UL,    // 文件夹
     file_block    = 0x4UL,    // 块设备，如硬盘
     file_stream   = 0x8UL,    // 流式设备，如终端
-    file_symlink  = 0x16UL,   // 符号链接
-    file_fbdev    = 0x32UL,   // 帧缓冲设备
-    file_keyboard = 0x64UL,   // 键盘设备
-    file_mouse    = 0x128UL,  // 鼠标设备
-    file_pipe     = 0x256UL,  // 管道设备
-    file_socket   = 0x512UL,  // 套接字设备
-    file_epoll    = 0x1024UL, // epoll 设备
+    file_symlink  = 0x10UL,   // 符号链接
+    file_fbdev    = 0x20UL,   // 帧缓冲设备
+    file_keyboard = 0x40UL,   // 键盘设备
+    file_mouse    = 0x80UL,   // 鼠标设备
+    file_pipe     = 0x100UL,  // 管道设备
+    file_socket   = 0x200UL,  // 套接字设备
+    file_epoll    = 0x400UL,  // epoll 设备
+    file_ptmx     = 0x800UL,  // ptmx 设备
+    file_pts      = 0x1000UL, // pts 设备
+    file_proxy    = 0x2000UL, // 代理节点
 };
 
 typedef struct vfs_callback { // VFS回调函数
@@ -187,6 +190,22 @@ errno_t vfs_mkfile(const char *name);
  * @return 文件系统id
  */
 int vfs_regist(const char *name, vfs_callback_t callback);
+
+/**
+ * 创建 link 文件
+ * @param name 被链接文件
+ * @param target_name 创建的link文件名
+ * @return 是否成功创建
+ */
+errno_t vfs_link(const char *name, const char *target_name);
+
+/**
+ * 创建一个符号链接文件
+ * @param name 被链接文件
+ * @param target_name 创建的链接文件
+ * @return 是否成功创建
+ */
+errno_t vfs_symlink(const char *name, const char *target_name);
 
 /**
  * 向父节点添加一个子节点

@@ -115,3 +115,4 @@ EXPORT_SYMBOL(strcmp);
 EXPORT_SYMBOL(strncmp);
 EXPORT_SYMBOL(sprintf);
 EXPORT_SYMBOL(snprintf);
+EXPORT_SYMBOL(strrchr);

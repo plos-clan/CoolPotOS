@@ -48,9 +48,9 @@ static inline void do_open(vfs_node_t file) {
 }
 
 static inline void do_update(vfs_node_t file) {
-    // assert(file->fsid != 0 || file->type != file_none);
-    if (file->type == file_none || file->handle == NULL || file->type == file_dir) do_open(file);
-    // assert(file->type != file_none);
+    if (file->type & file_none || file->handle == NULL || file->type & file_dir ||
+        file->type & file_symlink)
+        do_open(file);
 }
 
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle) {
@@ -69,33 +69,141 @@ errno_t vfs_mkdir(const char *name) {
     char      *path     = strdup(name + 1);
     char      *save_ptr = path;
     vfs_node_t current  = rootdir;
-
-    for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
-        if (streq(buf, ".")) {
-            continue; // 当前目录，不需要操作
-        } else if (streq(buf, "..")) {
-            if (current->parent) { current = current->parent; }
-            continue;
-        }
-
-        vfs_node_t child = vfs_child_find(current, buf);
-        if (child == NULL) {
-            // 创建新目录
-            child       = vfs_node_alloc(current, buf);
-            child->type = file_dir;
-            callbackof(current, mkdir)(current->handle, buf, child);
-        } else {
-            do_update(child);
-            if (child->type != file_dir) {
-                free(path);
-                return VFS_STATUS_FAILED;
+    for (const char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
+        const vfs_node_t father = current;
+        if (streq(buf, ".")) continue;
+        if (streq(buf, "..")) {
+            if (current->parent && current->type & file_dir) {
+                current = current->parent;
+                goto upd;
+            } else {
+                goto err;
             }
         }
-        current = child;
+        current = vfs_child_find(current, buf);
+
+    upd:
+        if (current == NULL) {
+            current       = vfs_node_alloc(father, buf);
+            current->type = file_dir;
+            callbackof(father, mkdir)(father->handle, buf, current);
+            do_update(current);
+        } else {
+            do_update(current);
+            if (!(current->type & file_dir)) goto err;
+        }
     }
 
     free(path);
-    return VFS_STATUS_SUCCESS;
+    return EOK;
+
+err:
+    free(path);
+    return VFS_STATUS_FAILED;
+}
+
+errno_t vfs_link(const char *name, const char *target_name) {
+    vfs_node_t current = rootdir;
+    char      *path    = strdup(name + 1);
+
+    char *save_ptr = path;
+    char *filename = path + strlen(path);
+
+    while (*--filename != '/' && filename != path) {}
+    if (filename != path) {
+        *filename++ = '\0';
+    } else {
+        goto create;
+    }
+
+    if (strlen(path) == 0) {
+        free(path);
+        return -ENOENT;
+    }
+    for (const char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
+        if (streq(buf, ".")) continue;
+        if (streq(buf, "..")) {
+            if (!current->parent || !(current->type & file_dir)) goto err;
+            current = current->parent;
+            continue;
+        }
+        vfs_node_t new_current = vfs_child_find(current, buf);
+        if (new_current == NULL) {
+            new_current       = vfs_node_alloc(current, buf);
+            new_current->type = file_dir;
+            callbackof(current, mkdir)(current->handle, buf, new_current);
+        }
+        current = new_current;
+        do_update(current);
+
+        if (!(current->type & file_dir)) goto err;
+    }
+
+create:
+    vfs_node_t node = vfs_child_append(current, filename, NULL);
+    node->type      = file_none;
+    callbackof(current, link)(current->handle, target_name, node);
+    node->linkto = vfs_open(target_name);
+
+    free(path);
+
+    return EOK;
+
+err:
+    free(path);
+    return VFS_STATUS_FAILED;
+}
+
+errno_t vfs_symlink(const char *name, const char *target_name) {
+    vfs_node_t current = rootdir;
+    char      *path    = strdup(name + 1);
+
+    char *save_ptr = path;
+    char *filename = path + strlen(path);
+
+    while (*--filename != '/' && filename != path) {}
+    if (filename != path) {
+        *filename++ = '\0';
+    } else {
+        goto create;
+    }
+
+    if (strlen(path) == 0) {
+        free(path);
+        return -1;
+    }
+    for (const char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
+        if (streq(buf, ".")) continue;
+        if (streq(buf, "..")) {
+            if (!current->parent || !(current->type & file_dir)) goto err;
+            current = current->parent;
+            continue;
+        }
+        vfs_node_t new_current = vfs_child_find(current, buf);
+        if (new_current == NULL) {
+            new_current       = vfs_node_alloc(current, buf);
+            new_current->type = file_dir;
+            callbackof(current, mkdir)(current->handle, buf, new_current);
+        }
+        current = new_current;
+        do_update(current);
+
+        if (!(current->type & file_dir)) goto err;
+    }
+
+create:
+    vfs_node_t node = vfs_child_append(current, filename, NULL);
+    node->type      = file_symlink;
+    callbackof(current, symlink)(current->handle, target_name, node);
+    node->linkto = vfs_open(target_name);
+
+    free(path);
+
+    return EOK;
+
+err:
+    free(path);
+    return -EIO;
 }
 
 errno_t vfs_mkfile(const char *name) {
@@ -183,18 +291,48 @@ vfs_node_t vfs_open(const char *str) {
             continue;
         }
 
-        vfs_node_t next = vfs_child_find(current, buf);
-        if (next == NULL) {
-            free(path);
-            return NULL;
-        }
+        current = vfs_child_find(current, buf);
+        if (current == NULL) { goto err; }
 
-        do_update(next);
-        current = next;
+        do_update(current);
+        if (current->type & file_symlink) {
+            if (!current->parent || !current->linkto) { goto err; }
+
+            current->type = file_symlink | file_proxy;
+
+            vfs_node_t target = current->linkto;
+            if (!target) goto err;
+
+            target->refcount++;
+            current = target;
+
+            //            current->type  |= target->type;
+            //            current->size   = target->size;
+            //            current->blksz  = target->blksz;
+            //
+            //            current->fsid   = target->fsid;
+            //            current->handle = target->handle;
+            //            current->root   = target->root;
+            //            current->mode   = target->mode;
+            //
+            //            if (target->type & file_dir) {
+            //                list_foreach(target->child, i) {
+            //                    vfs_node_t child_node = (vfs_node_t)i->data;
+            //                    if (!vfs_child_find(current, child_node->name)) {
+            //                        list_prepend(current->child, child_node);
+            //                        child_node->refcount++;
+            //                    }
+            //                }
+            //            }
+            continue;
+        }
     }
 
     free(path);
     return current;
+err:
+    free(path);
+    return NULL;
 }
 
 void vfs_update(vfs_node_t node) {
@@ -249,6 +387,7 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     node->refcount = 0;
     node->blksz    = PAGE_SIZE;
     node->mode     = 0777;
+    node->linkto   = NULL;
     if (parent) list_prepend(parent->child, node);
     return node;
 }
@@ -446,7 +585,7 @@ bool vfs_init() {
         ((void **)&vfs_empty_callback)[i] = (void *)empty_func;
     }
 
-    rootdir       = vfs_node_alloc(NULL, NULL);
+    rootdir       = vfs_node_alloc(NULL, "/");
     rootdir->type = file_dir;
     kinfo("Virtual File System initialize.");
     return true;

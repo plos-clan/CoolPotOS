@@ -1,15 +1,22 @@
 #include "terminal.h"
 #include "atom_queue.h"
+#include "flanterm/flanterm.h"
+#include "flanterm/flanterm_backends/fb.h"
 #include "gop.h"
 #include "keyboard.h"
 #include "klog.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "lock.h"
+
+// #define FLANTERM_ENABLE 0
 
 atom_queue *output_buffer;
 bool        open_flush = false;
 spin_t      terminal_lock;
+
+#ifdef FLANTERM_ENABLE
+struct flanterm_context *fl_context = NULL;
+#endif
 
 // temporary alternative to handle unsupported keys
 atom_queue *temp_keyboard_buffer;
@@ -36,11 +43,19 @@ void terminal_close_flush() {
 }
 
 void terminal_putc(char ch) {
+#ifdef FLANTERM_ENABLE
+    flanterm_putchar(fl_context, ch);
+#else
     terminal_process_byte(ch);
+#endif
 }
 
 void terminal_puts(const char *msg) {
+#ifdef FLANTERM_ENABLE
+    flanterm_write(fl_context, msg, strlen(msg));
+#else
     terminal_process(msg);
+#endif
 }
 
 float get_terminal_font_size() {
@@ -69,6 +84,14 @@ size_t get_terminal_col(size_t width) {
 
 void init_terminal() {
 
+#ifdef FLANTERM_ENABLE
+    fl_context = flanterm_fb_init(NULL, NULL, framebuffer->address, framebuffer->width,
+                                  framebuffer->height, framebuffer->pitch,
+                                  framebuffer->red_mask_size, framebuffer->red_mask_shift,
+                                  framebuffer->green_mask_size, framebuffer->green_mask_shift,
+                                  framebuffer->blue_mask_size, framebuffer->blue_mask_shift, NULL,
+                                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0);
+#else
     TerminalDisplay display = {.width            = framebuffer->width,
                                .height           = framebuffer->height,
                                .buffer           = framebuffer->address,
@@ -102,7 +125,7 @@ void init_terminal() {
                         0xb2ffff, 0xffffff}
     };
     terminal_set_custom_color_scheme(&palette);
-
+#endif
     output_buffer        = create_atom_queue(2048);
     temp_keyboard_buffer = create_atom_queue(256);
 }

@@ -110,7 +110,9 @@
 #define SYSCALL_RENAME      82
 #define SYSCALL_MKDIR       83
 #define SYSCALL_RMDIR       84
+#define SYSCALL_LINK        86
 #define SYSCALL_UNLINK      87
+#define SYSCALL_SYMLINK     88
 #define SYSCALL_GETUID      102
 #define SYSCALL_SETUID      105
 #define SYSCALL_SETGID      106

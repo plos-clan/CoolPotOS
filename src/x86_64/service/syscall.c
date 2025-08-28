@@ -1500,6 +1500,24 @@ end_rename:
     return ret;
 }
 
+syscall_(symlink) {
+    char *name = (char *)arg0;
+    char *new  = (char *)arg1;
+    if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
+    errno_t ret = vfs_symlink(name, new);
+
+    return ret;
+}
+
+syscall_(link) {
+    char *name = (char *)arg0;
+    char *new  = (char *)arg1;
+    if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
+    errno_t ret = vfs_link(name, new);
+
+    return ret;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1578,6 +1596,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETEGID]     = syscall_getegid,
     [SYSCALL_GETGROUPS]   = syscall_getgroups,
     [SYSCALL_RENAME]      = syscall_rename,
+    [SYSCALL_SYMLINK]     = syscall_symlink,
+    [SYSCALL_LINK]        = syscall_link,
 
     [SYSCALL_MEMINFO]     = syscall_cp_meminfo,
     [SYSCALL_CPUINFO]     = syscall_cp_cpuinfo,

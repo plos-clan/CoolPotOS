@@ -3,6 +3,7 @@
 #include <fs_subsystem.h>
 #include <lock.h>
 #include <lwext4/blockdev/vfs_dev.h>
+#include <string.h>
 #include <util.h>
 
 static int ext_fsid = 0;
@@ -83,7 +84,17 @@ void ext_open(void *parent, const char *name, vfs_node_t node) {
     char *path           = vfs_get_fullpath(node);
     if (node->type & file_dir) {
         handle->dir = malloc(sizeof(ext4_dir));
-        ext4_dir_open(handle->dir, (const char *)path);
+        if (ext4_dir_open(handle->dir, (const char *)path) != EOK) {
+            goto symlink;
+
+            char buf[1024];
+            strcpy(buf, path);
+            char  *s    = strrchr(buf, '/');
+            size_t rcnt = 0;
+            ext4_readlink(path, s + 1, 1024 - (s - buf) - 1, &rcnt);
+            (s + 1)[rcnt] = '\0';
+            if (ext4_dir_open(handle->dir, buf) != EOK) return;
+        }
 
         const ext4_direntry *entry;
         while ((entry = ext4_dir_entry_next(handle->dir))) {
@@ -112,6 +123,7 @@ void ext_open(void *parent, const char *name, vfs_node_t node) {
 
         ext4_dir_entry_rewind(handle->dir);
     } else if (node->type & file_symlink) {
+    symlink:
         char  *path = vfs_get_fullpath(node);
         char  *buf  = malloc(1024);
         size_t rcnt = 0;
@@ -125,6 +137,7 @@ void ext_open(void *parent, const char *name, vfs_node_t node) {
             snprintf(p, 256, "/%s", buf);
         else
             snprintf(p, 256, "%s/%s", parent_path, buf);
+        free(buf);
         free(parent_path);
         node->linkto = vfs_open(p);
         spin_lock(rwlock);
