@@ -304,22 +304,23 @@ package("os-terminal")
     })
     
     on_install(function (package)
-        local font_config = package:config("font")
+        if package:debug() then
+            os.setenv("CARGO_PROFILE_RELEASE_DEBUG", "true")
+        end
 
+        local font_config = package:config("font")
         if font_config == "en" then
             os.setenv("FONT_PATH", "../fonts/SourceCodePro.otf")
         elseif font_config == "en-zh" then
             os.setenv("FONT_PATH", "../fonts/FiraCodeNotoSans.ttf")
         end
 
-        os.exec(("cargo build %s %s"):format(
-            package:debug() and "" or "--release",
+        os.exec(("cargo build --release %s"):format(
             font_config ~= "none" and "--features embedded-font" or ""
         ))
 
-        os.cp(("target/%s-unknown-none/%s/libos_terminal.a"):format(
-            package:config("arch"),
-            package:debug() and "debug" or "release"),
+        os.cp(("target/%s-unknown-none/release/libos_terminal.a"):format(
+            package:config("arch")),
             package:installdir("lib"))
 
         os.exec("cbindgen --output %s/os_terminal.h", package:installdir("include"))
