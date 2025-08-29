@@ -2,23 +2,20 @@
  * Device Virtual File System
  * 设备虚拟文件系统
  */
-#define ALL_IMPLEMENTATION
 #include "devfs.h"
 #include "errno.h"
-#include "frame.h"
-#include "hhdm.h"
 #include "kprint.h"
 #include "krlibc.h"
-#include "page.h"
-#include "rbtree-strptr.h"
+#include "sprintf.h"
 #include "vdisk.h"
 #include "vfs.h"
 
 extern vdisk vdisk_ctl[26]; // vdisk.c
 
-int                devfs_id   = 0;
-static vfs_node_t  devfs_root = NULL;
-static rbtree_sp_t dev_rbtree;
+int               devfs_id    = 0;
+static int        devfs_inode = 2;
+static vfs_node_t devfs_root  = NULL;
+device_handle_t   root_handle = NULL;
 
 static errno_t devfs_mount(const char *handle, vfs_node_t node) {
     if (handle != DEVFS_REGISTER_ID) return VFS_STATUS_FAILED;
@@ -26,73 +23,115 @@ static errno_t devfs_mount(const char *handle, vfs_node_t node) {
         kerror("Device file system has been mounted.");
         return VFS_STATUS_FAILED;
     }
-    node->fsid = devfs_id;
-    devfs_root = node;
+    root_handle         = calloc(1, sizeof(struct device_handle));
+    root_handle->device = NULL;
+    root_handle->is_dir = true;
+    llist_init_head(&root_handle->child);
+
+    node->fsid   = devfs_id;
+    node->handle = root_handle;
+    devfs_root   = node;
     return VFS_STATUS_SUCCESS;
 }
 
 static errno_t devfs_mkdir(void *handle, const char *name, vfs_node_t node) {
-    node->fsid = 0;
+    if (handle == NULL) return VFS_STATUS_FAILED;
+    device_handle_t dev_t = handle;
+    device_handle_t new   = calloc(1, sizeof(struct device_handle));
+    new->name             = strdup(name);
+    new->is_dir           = true;
+    new->device           = NULL;
+    llist_init_head(&new->child);
+
+    llist_append(&dev_t->child, &new->child);
+    node->handle = new;
+    node->fsid   = 0;
     return EOK;
 }
 
 static errno_t devfs_stat(void *handle, vfs_node_t node) {
     if (node->type == file_dir) return VFS_STATUS_SUCCESS;
-    node->handle = rbtree_sp_get(dev_rbtree, node->name);
-    node->type = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM ? file_stream : file_block;
-    node->size = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM
-                     ? (uint64_t)-1
-                     : disk_size((int)(uint64_t)node->handle);
-    node->realsize = vdisk_ctl[(uint64_t)node->handle].sector_size;
+    if (handle == NULL) return VFS_STATUS_FAILED;
+    device_handle_t dev_t = handle;
+
+    node->handle = dev_t;
+    node->type   = dev_t->device->type == VDISK_STREAM ? file_stream : file_block;
+    node->size =
+        dev_t->device->type == VDISK_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
+    node->realsize = dev_t->device->sector_size;
     node->fsid     = devfs_id;
     return VFS_STATUS_SUCCESS;
 }
 
 static void devfs_open(void *parent, const char *name, vfs_node_t node) {
+    if (node == devfs_root) {
+        node->handle = root_handle;
+        node->type   = file_dir;
+        return;
+    }
     if (node->type == file_dir) return;
-    node->handle = rbtree_sp_get(dev_rbtree, name);
-    node->type = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM ? file_stream : file_block;
-    node->size = vdisk_ctl[(uint64_t)node->handle].type == VDISK_STREAM
-                     ? (uint64_t)-1
-                     : disk_size((int)(uint64_t)node->handle);
+    if (parent == NULL) return;
+
+    device_handle_t dir_t = parent;
+    device_handle_t pos, nxt;
+
+    device_handle_t dev_t = NULL;
+    llist_for_each(pos, nxt, &dir_t->child, child) {
+        if (strcmp(pos->name, name) == 0) { dev_t = pos; }
+    }
+    if (dev_t == NULL) {
+        node->handle = NULL;
+        return;
+    }
+
+    node->handle = dev_t;
+    node->type   = dev_t->device->type == VDISK_STREAM ? file_stream : file_block;
+    node->size =
+        dev_t->device->type == VDISK_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
     node->fsid = devfs_id;
 }
 
 size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
-    int    dev_id = (int)(uint64_t)file;
+    device_handle_t handle = file;
+    if (handle->is_dir) return VFS_STATUS_FAILED;
+    vdisk *deivce = handle->device;
+
     size_t sector_size;
     size_t sectors_to_do;
-    if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
-    sector_size                      = vdisk_ctl[dev_id].sector_size;
+    if (deivce->flag == 0) return VFS_STATUS_FAILED;
+    sector_size                      = deivce->sector_size;
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
 
-    if (vdisk_ctl[dev_id].type == VDISK_STREAM) goto read;
-    if (offset > vdisk_ctl[dev_id].size) return VFS_STATUS_SUCCESS;
-    if (vdisk_ctl[dev_id].size < offset + padding_up_to_sector_size) {
+    if (deivce->type == VDISK_STREAM) goto read;
+    if (offset > deivce->size) return VFS_STATUS_SUCCESS;
+    if (deivce->size < offset + padding_up_to_sector_size) {
         // 计算需要读取的扇区数
-        padding_up_to_sector_size = vdisk_ctl[dev_id].size - offset;
+        padding_up_to_sector_size = deivce->size - offset;
         if (size > padding_up_to_sector_size) { size = padding_up_to_sector_size; }
     }
 read:
 
     sectors_to_do    = padding_up_to_sector_size / sector_size;
-    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, addr, dev_id);
+    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
     return read_size;
 }
 
 size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
-    int    dev_id = (int)(uint64_t)file;
+    device_handle_t handle = file;
+    if (handle->is_dir) return VFS_STATUS_FAILED;
+    vdisk *deivce = handle->device;
+
     size_t sector_size;
     size_t sectors_to_do;
-    if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
-    sector_size                      = vdisk_ctl[dev_id].sector_size;
+    if (deivce->flag == 0) return VFS_STATUS_FAILED;
+    sector_size                      = deivce->sector_size;
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
-    if (vdisk_ctl[dev_id].type == VDISK_STREAM) goto write;
-    if (offset > vdisk_ctl[dev_id].size) return VFS_STATUS_SUCCESS;
-    if (vdisk_ctl[dev_id].size < offset + padding_up_to_sector_size) {
-        padding_up_to_sector_size = vdisk_ctl[dev_id].size - offset;
+    if (deivce->type == VDISK_STREAM) goto write;
+    if (offset > deivce->size) return VFS_STATUS_SUCCESS;
+    if (deivce->size < offset + padding_up_to_sector_size) {
+        padding_up_to_sector_size = deivce->size - offset;
         if (size > padding_up_to_sector_size) { size = padding_up_to_sector_size; }
     }
 write:
@@ -100,16 +139,16 @@ write:
 
     if (padding_up_to_sector_size == size) {
     } else {
-        vdisk_read(offset / sector_size, sectors_to_do, addr, dev_id);
+        vdisk_read(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
     }
-    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, addr, dev_id);
+    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
     return ret_size;
 }
 
 static errno_t devfs_ioctl(void *file, size_t req, void *arg) {
-    int dev_id = (int)(uint64_t)file;
-    if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
-    return vdisk_ctl[dev_id].ioctl(&vdisk_ctl[dev_id], req, arg);
+    device_handle_t handle = file;
+    if (handle->device->flag == 0) return VFS_STATUS_FAILED;
+    return handle->device->ioctl(handle->device, req, arg);
 }
 
 static vfs_node_t devfs_dup(vfs_node_t node) {
@@ -126,19 +165,19 @@ static vfs_node_t devfs_dup(vfs_node_t node) {
 }
 
 static errno_t devfs_poll(void *file, size_t events) {
-    int dev_id = (int)(uint64_t)file;
-    if (vdisk_ctl[dev_id].flag == 0) return VFS_STATUS_FAILED;
-    if (vdisk_ctl[dev_id].poll != (void *)empty) {
-        return vdisk_ctl[dev_id].poll(events);
+    device_handle_t handle = file;
+    if (handle->device->flag == 0) return VFS_STATUS_FAILED;
+    if (handle->device->poll != (void *)empty) {
+        return handle->device->poll(events);
     } else
         return VFS_STATUS_SUCCESS;
 }
 
 static void *devfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
                        size_t flags) {
-    int dev_id = (int)(uint64_t)file;
-    if (vdisk_ctl[dev_id].flag == 0) return NULL;
-    if (vdisk_ctl[dev_id].map) { return vdisk_ctl[dev_id].map(dev_id, addr, size); }
+    device_handle_t handle = file;
+    if (handle->device->flag == 0) return NULL;
+    if (handle->device->map) { return handle->device->map(handle->device->vdiskid, addr, size); }
     return NULL;
 }
 
@@ -177,12 +216,49 @@ void devfs_setup() {
     }
     if (vfs_mount(DEVFS_REGISTER_ID, dev) == VFS_STATUS_FAILED) {
         kerror("Cannot mount device file system.");
+        return;
     }
+    vfs_mkdir("/dev/ptx");
 }
 
-void devfs_regist_dev(int drive_id) {
-    if (have_vdisk(drive_id)) {
-        vfs_child_append(devfs_root, vdisk_ctl[drive_id].drive_name, NULL);
-        rbtree_sp_insert(dev_rbtree, vdisk_ctl[drive_id].drive_name, (void *)(uint64_t)drive_id);
+errno_t devfs_register(const char *path, size_t id) {
+    vdisk *device = &vdisk_ctl[id];
+    char  *buf    = NULL;
+    if (path != NULL) {
+        buf = malloc(strlen(path) + 6);
+        sprintf(buf, "/dev/%s", path);
+    } else {
+        buf = malloc(5);
+        strcpy(buf, "/dev");
     }
+
+    vfs_node_t node = vfs_open(buf);
+    if (node == NULL) {
+        free(buf);
+        return ENOENT;
+    }
+
+    device_handle_t parent = node->handle;
+    if (parent == NULL) {
+        vfs_close(node);
+        free(buf);
+        return ENODEV;
+    }
+
+    if (!parent->is_dir) {
+        vfs_close(node);
+        free(buf);
+        return ENOTDIR;
+    }
+
+    device_handle_t handle = calloc(1, sizeof(struct device_handle));
+    not_null_assets(handle, "device handle is null.");
+    handle->is_dir = false;
+    handle->device = device;
+    handle->name   = strdup(device->drive_name);
+    vfs_child_append(node, device->drive_name, handle);
+    llist_append(&parent->child, &handle->child);
+    vfs_close(node);
+    free(buf);
+    return EOK;
 }

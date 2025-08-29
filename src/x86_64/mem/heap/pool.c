@@ -143,6 +143,7 @@ void mpool_free(mpool_t pool, void *ptr) {
     pool->alloced_size -= blk_size(ptr);
 
     ptr = blk_trymerge(ptr, (blk_detach_t)_detach, pool);
+    not_null_assets(ptr, "Double free ERROR\n");
     do_free(pool, ptr);
 }
 

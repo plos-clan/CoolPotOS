@@ -27,7 +27,7 @@ extern atom_queue *temp_keyboard_buffer;
 extern bool open_flush; // terminal.c
 
 static void tty_kernel_flush(tty_t *tty) {
-    terminal_flush();
+    _terminal_flush();
 }
 
 static void tty_kernel_print(tty_t *tty, const char *msg) {
@@ -41,6 +41,7 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
             terminal_putc(c);
         }
     }
+    if (!(tty->termios.c_lflag & ICANON)) _terminal_flush();
     spin_unlock(tty_lock);
 }
 
@@ -52,6 +53,7 @@ static void tty_kernel_putc(tty_t *tty, int c) {
     } else {
         terminal_putc(c);
     }
+    if (!(tty->termios.c_lflag & ICANON)) _terminal_flush();
     spin_unlock(tty_lock);
 }
 
@@ -177,7 +179,7 @@ static size_t stdout_write(int drive, uint8_t *buffer, size_t number, size_t lba
     for (size_t i = 0; i < number; i++) {
         tty->putchar(tty, buffer[i]);
     }
-    terminal_flush();
+    _terminal_flush();
     return number;
 }
 

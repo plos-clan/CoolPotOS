@@ -22,7 +22,8 @@ typedef struct vdisk_device {
     size_t       sector_size; // 扇区大小
     vdisk_flag_t type;
     char         drive_name[50];
-} vdisk; // 块设备/流设备
+    size_t       vdiskid; // 设备号
+} vdisk;                  // 块设备/流设备
 
 size_t disk_size(int drive);
 int    vdisk_init();
@@ -32,8 +33,9 @@ int    vdisk_init();
  * @param vd 设备
  * @return 注册编号
  */
-int    regist_vdisk(vdisk vd);
-bool   have_vdisk(int drive);
-size_t vdisk_read(size_t lba, size_t number, void *buffer, int drive);
-size_t vdisk_write(size_t lba, size_t number, const void *buffer, int drive);
-void  *device_mmap(int drive, void *addr, uint64_t len);
+int     regist_vdisk(vdisk vd);
+errno_t devfs_register(const char *path, size_t id);
+bool    have_vdisk(int drive);
+size_t  vdisk_read(size_t lba, size_t number, void *buffer, int drive);
+size_t  vdisk_write(size_t lba, size_t number, const void *buffer, int drive);
+void   *device_mmap(int drive, void *addr, uint64_t len);

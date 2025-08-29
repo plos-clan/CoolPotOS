@@ -29,6 +29,7 @@
 #define IRQ_BASE_VECTOR        32                       // IRQ起始映射中断向量
 #define KERNEL_MOD_SPACE_START 0xffffffffb0000000       // 内核模块加载起始地址
 #define KERNEL_MOD_SPACE_END   0xffffffffc0000000       // 内核模块加载结束地址
+#define MAX_DEIVCE             256                      // 最大设备列表支持
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")

@@ -30,8 +30,16 @@ void update_terminal() {
         need_flush = true;
         terminal_process_byte(ch);
     }
-    if (need_flush) { terminal_flush(); }
+    if (need_flush) { _terminal_flush(); }
     spin_unlock(terminal_lock);
+}
+
+void _terminal_flush() {
+#ifdef FLANTERM_ENABLE
+    flanterm_flush(fl_context);
+#else
+    terminal_flush();
+#endif
 }
 
 void terminal_open_flush() {

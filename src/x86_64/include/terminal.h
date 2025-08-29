@@ -7,6 +7,7 @@
 #define TERMINAL_EMBEDDED_FONT
 #include "os_terminal.h"
 
+void   _terminal_flush();
 void   init_terminal();
 void   update_terminal();
 void   terminal_putc(char c);

@@ -1,18 +1,23 @@
 #include "vdisk.h"
-#include "devfs.h"
+#include "errno.h"
 #include "frame.h"
 #include "hhdm.h"
+#include "kprint.h"
 #include "krlibc.h"
 #include "page.h"
 #include "vbuffer.h"
 
-vdisk vdisk_ctl[26];
+vdisk vdisk_ctl[MAX_DEIVCE];
 
 int regist_vdisk(vdisk vd) {
-    for (int i = 0; i < 26; i++) {
+    for (int i = 0; i < MAX_DEIVCE; i++) {
         if (!vdisk_ctl[i].flag) {
-            vdisk_ctl[i] = vd;
-            devfs_regist_dev(i);
+            vdisk_ctl[i]         = vd;
+            vdisk_ctl[i].vdiskid = i;
+            errno_t ret;
+            if ((ret = devfs_register(NULL, i)) != EOK) {
+                kerror("Registers (%s)device error: %d", vd.drive_name, ret);
+            }
             return i;
         }
     }
@@ -21,7 +26,7 @@ int regist_vdisk(vdisk vd) {
 
 bool have_vdisk(int drive) {
     int indx = drive;
-    if (indx >= 26) { return false; }
+    if (indx >= MAX_DEIVCE) { return false; }
     if (vdisk_ctl[indx].flag > 0) {
         return true;
     } else {
@@ -54,7 +59,7 @@ void *device_mmap(int drive, void *addr, uint64_t len) {
 
 size_t rw_vdisk(int drive, size_t lba, uint8_t *buffer, size_t number, int read) {
     int indx = drive;
-    if (indx >= 26) return 0;
+    if (indx >= MAX_DEIVCE) return 0;
     if (vdisk_ctl[indx].flag == 0) return 0;
 
     size_t   sector_size = vdisk_ctl[indx].sector_size;
@@ -108,7 +113,7 @@ size_t vdisk_write(size_t lba, size_t number, const void *buffer, int drive) {
 }
 
 int vdisk_init() {
-    for (size_t i = 0; i < 26; i++) {
+    for (size_t i = 0; i < MAX_DEIVCE; i++) {
         vdisk_ctl[i].flag = 0; // 设置为未使用
     }
     return 0;

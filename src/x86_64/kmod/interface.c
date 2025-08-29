@@ -85,6 +85,7 @@ EXPORT_SYMBOL(ipc_recv_wait);
 /**
  * 驱动子系统接口导出
  */
+EXPORT_SYMBOL(devfs_register);
 EXPORT_SYMBOL(regist_vdisk);
 EXPORT_SYMBOL(driver_phys_to_virt);
 EXPORT_SYMBOL(vdisk_read);
