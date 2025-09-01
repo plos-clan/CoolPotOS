@@ -88,7 +88,8 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     node->type   = dev_t->device->type == VDISK_STREAM ? file_stream : file_block;
     node->size =
         dev_t->device->type == VDISK_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
-    node->fsid = devfs_id;
+    node->fsid     = devfs_id;
+    node->refcount = 1;
 }
 
 size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
