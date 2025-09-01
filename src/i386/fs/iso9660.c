@@ -327,8 +327,8 @@ void iso9660_open(void *parent, const char *name, vfs_node_t node) {
     l9660_dir   *c_dir  = (l9660_dir *)kmalloc(sizeof(l9660_dir));
     l9660_file  *c_file = (l9660_file *)kmalloc(sizeof(l9660_file));
     l9660_status status;
-    file_t new = (file_t)kmalloc(sizeof(struct file));
-    status     = l9660_openat(c_file, p_dir, name);
+    file_t       new = (file_t)kmalloc(sizeof(struct file));
+    status           = l9660_openat(c_file, p_dir, name);
 
     if (status != L9660_OK) {
         status = l9660_opendirat(c_dir, p_dir, name);
