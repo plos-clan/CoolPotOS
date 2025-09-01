@@ -61,7 +61,7 @@ void kernel_error(const char *msg, uint64_t code, interrupt_frame_t *frame) {
 }
 
 void not_null_assets(void *ptr, const char *message) {
-    if (ptr == NULL) {
+    if (unlikely(ptr == NULL)) {
         close_interrupt;
         disable_scheduler();
         interrupt_frame_t frame = get_current_registers();

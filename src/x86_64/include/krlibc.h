@@ -37,6 +37,8 @@
     do {                                                                                           \
         (void)(expr);                                                                              \
     } while (0)
+
+//中断处理函数属性修饰
 #define __IRQHANDLER __attribute__((interrupt))
 
 #define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
@@ -58,6 +60,12 @@
         uint64_t __mptr = ((uint64_t)(ptr));                                                       \
         (type *)((char *)__mptr - offsetof(type, member));                                         \
     })
+
+// 分支预测优化: x 很可能为假
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
+// 分支预测优化: x 很可能为真
+#define likely(x) __builtin_expect(!!(x), 1)
 
 #define ABS(x)    ((x) > 0 ? (x) : -(x))
 #define MAX(x, y) ((x > y) ? (x) : (y))
