@@ -396,9 +396,8 @@ errno_t vfs_close(vfs_node_t node) {
     if (node == NULL) return VFS_STATUS_FAILED;
     if (node == rootdir) return VFS_STATUS_SUCCESS;
     if (node->handle == NULL) return 0;
-    if (node->refcount > 0) {
-        node->refcount--;
-    } else {
+    node->refcount--;
+    if (node->refcount == 0) {
         callbackof(node, close)(node->handle);
         node->handle = NULL;
     }

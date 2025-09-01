@@ -192,16 +192,17 @@ void switch_to_user_mode(uint64_t func) {
         rsp = build_user_stack(get_current_task(), rsp, func, 0, NULL, 0);
     }
 
-    vfs_node_t      stdio  = vfs_open("/dev/stdio");
-    fd_file_handle *stdout = (fd_file_handle *)malloc(sizeof(fd_file_handle));
-    stdout->node           = stdio;
-    stdout->offset         = 0;
-    fd_file_handle *stdin  = (fd_file_handle *)malloc(sizeof(fd_file_handle));
-    stdin->node            = stdio;
-    stdin->offset          = 0;
-    fd_file_handle *stderr = (fd_file_handle *)malloc(sizeof(fd_file_handle));
-    stderr->node           = stdio;
-    stderr->offset         = 0;
+    vfs_node_t stdio        = vfs_open("/dev/stdio");
+    stdio->refcount        += 3;
+    fd_file_handle *stdout  = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    stdout->node            = stdio;
+    stdout->offset          = 0;
+    fd_file_handle *stdin   = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    stdin->node             = stdio;
+    stdin->offset           = 0;
+    fd_file_handle *stderr  = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    stderr->node            = stdio;
+    stderr->offset          = 0;
     stdin->fd  = queue_enqueue(get_current_task()->parent_group->file_open, stdin);  // stdin
     stdout->fd = queue_enqueue(get_current_task()->parent_group->file_open, stdout); // stdout
     stderr->fd = queue_enqueue(get_current_task()->parent_group->file_open, stderr); // stderr
