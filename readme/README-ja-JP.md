@@ -4,11 +4,12 @@
 <h1 align="center">CoolPotOS</h1>
 <h3>シンプルなトイオペレーティングシステム</h3>
 
-<img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub issues" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
+![GitHub Repo stars](https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square)
+![GitHub License](https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square)
+![Hardware](https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plos-clan/CoolPotOS)
 </div>
 
 ---
@@ -47,19 +48,19 @@ Languages
 - cbindgen (x86_64のみ、`cargo install cbindgen`でインストール)
 - oib (x86_64およびイメージ構築のみ、`cargo install oib`でインストール)
 
-最初にサブモジュールをフェッチする必要があります：
+### Options
+
+以下のコマンドを使用して、ターゲットアーキテクチャを設定できます（デフォルトは`x86_64`）：
 
 ```bash
-git submodule update --init --recursive
+xmake f -y --arch=i686
 ```
 
-### Available Commands
+### Commands
 
-- `xmake run run32` - i386バージョンをビルドして実行。
-- `xmake run run64` - x86_64バージョン（ISO）をビルドして実行。
-- `xmake build iso32` - CoolPotOS i386用のISOイメージをビルド。
-- `xmake build iso64` - CoolPotOS x86_64用のISOイメージをビルド。
-- `xmake build img64` - CoolPotOS x86_64用のブート可能なディスクイメージをビルド。
+- `xmake run` - **ISO**イメージをビルドして実行します。
+- `xmake build iso` - 起動可能なISOイメージをビルドします。
+- `xmake build img` - 起動可能なディスクイメージをビルドします (x86_64のみ)。
 
 ## Development
 
