@@ -271,12 +271,12 @@ vfs_node_t vfs_do_search(vfs_node_t dir, const char *name) {
 }
 
 vfs_node_t vfs_open(const char *str) {
-    if (str == NULL) return NULL;
-    if (str[0] != '/') return NULL;
+    if (unlikely(str == NULL)) return NULL;
+    if (unlikely(str[0] != '/')) return NULL;
     if (str[1] == '\0') return rootdir; // 根目录
 
     char *path = strdup(str + 1);
-    if (path == NULL) return NULL;
+    if (unlikely(path == NULL)) return NULL;
 
     char      *save_ptr = path;
     vfs_node_t current  = rootdir;
@@ -305,25 +305,6 @@ vfs_node_t vfs_open(const char *str) {
 
             target->refcount++;
             current = target;
-
-            //            current->type  |= target->type;
-            //            current->size   = target->size;
-            //            current->blksz  = target->blksz;
-            //
-            //            current->fsid   = target->fsid;
-            //            current->handle = target->handle;
-            //            current->root   = target->root;
-            //            current->mode   = target->mode;
-            //
-            //            if (target->type & file_dir) {
-            //                list_foreach(target->child, i) {
-            //                    vfs_node_t child_node = (vfs_node_t)i->data;
-            //                    if (!vfs_child_find(current, child_node->name)) {
-            //                        list_prepend(current->child, child_node);
-            //                        child_node->refcount++;
-            //                    }
-            //                }
-            //            }
             continue;
         }
     }
@@ -369,15 +350,15 @@ vfs_node_t get_rootdir() {
 
 void *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags,
               uint64_t offset) {
-    if (node == NULL) return NULL;
-    if (node->type == file_dir) return NULL;
+    if (unlikely(node == NULL)) return NULL;
+    if (unlikely(node->type == file_dir)) return NULL;
     return callbackof(node, map)(node->handle, (void *)addr, offset, len, prot, flags);
 }
 
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     vfs_node_t node = malloc(sizeof(struct vfs_node));
     not_null_assets(node, "vfs alloc null");
-    if (node == NULL) return NULL;
+    if (unlikely(node == NULL)) return NULL;
     memset(node, 0, sizeof(struct vfs_node));
     node->parent   = parent;
     node->name     = name ? strdup(name) : NULL;
@@ -393,15 +374,18 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
 }
 
 errno_t vfs_close(vfs_node_t node) {
-    if (node == NULL) return VFS_STATUS_FAILED;
+    if (unlikely(node == NULL)) return VFS_STATUS_FAILED;
     if (node == rootdir) return VFS_STATUS_SUCCESS;
-    if (node->handle == NULL) return 0;
-    node->refcount--;
-    if (node->refcount == 0) {
-        callbackof(node, close)(node->handle);
-        node->handle = NULL;
+    if (unlikely(node->handle == NULL))
+        return VFS_STATUS_SUCCESS;
+    else {
+        node->refcount--;
+        if (node->refcount == 0) {
+            callbackof(node, close)(node->handle);
+            node->handle = NULL;
+        }
+        return VFS_STATUS_SUCCESS;
     }
-    return VFS_STATUS_SUCCESS;
 }
 
 void vfs_free(vfs_node_t vfs) {

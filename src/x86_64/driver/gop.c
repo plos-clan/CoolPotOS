@@ -117,8 +117,7 @@ int gop_ioctl(vdisk *device, size_t req, void *arg) {
 }
 
 void gop_dev_setup() {
-    framebuffers =
-        malloc(sizeof(struct limine_framebuffer *) * get_framebuffer_response()->framebuffer_count);
+    framebuffers = malloc(sizeof(struct limine_framebuffer *) * MAX_DEIVCE);
     for (uint64_t i = 0; i < get_framebuffer_response()->framebuffer_count; i++) {
         vdisk fbdev;
         fbdev.type = VDISK_STREAM;
