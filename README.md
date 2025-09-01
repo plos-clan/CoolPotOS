@@ -14,8 +14,6 @@
 
 ---
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plos-clan/CoolPotOS)
-
 Languages
 : *English*
 | [简体中文](readme/README-zh-CN.md)

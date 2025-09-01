@@ -4,25 +4,26 @@
 <h1 align="center">CoolPotOS</h1>
 <h3>一个简单的玩具操作系统</h3>
 
-<img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub issues" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
+![GitHub Repo stars](https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square)
+![GitHub License](https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square)
+![Hardware](https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plos-clan/CoolPotOS)
 </div>
 
 ---
 
-## 翻译
-
-- [English](/README.md)
-- *简体中文*
-- [Français](/readme/README-fr-FR.md)
-- [日本語](/readme/README-ja-JP.md)
+Languages
+: [English](../README.md)
+| *简体中文*
+| [Français](README-fr-FR.md)
+| [日本語](/readme/README-ja-JP.md)
 
 ## 介绍
 
-这是一个在 [ia32](https://en.wikipedia.org/wiki/IA-32) 或 [amd64](https://en.wikipedia.org/wiki/X86-64) 架构上运行的简单操作系统。
+这是一个在 [ia32](https://en.wikipedia.org/wiki/IA-32)
+或 [amd64](https://en.wikipedia.org/wiki/X86-64) 架构上运行的简单操作系统。
 
 ## 模块
 
@@ -32,8 +33,6 @@
 - `EEVDF` 来自 xiaoyi1212 [plos-clan/EEVDF](https://github.com/plos-clan/EEVDF)
 
 ## 构建并运行
-
-### 环境
 
 您需要安装这些软件：
 

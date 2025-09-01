@@ -4,11 +4,12 @@
 <h1 align="center">CoolPotOS</h1>
 <h3>Un système d'exploitation jouet simple.</h3>
 
-<img alt="Licence GitHub" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Dernière version GitHub" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Étoiles du dépôt GitHub" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Problèmes GitHub" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Matériel" src="https://img.shields.io/badge/Matériel-i386_x64-blue?style=flat-square"/>
+![GitHub Repo stars](https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square)
+![GitHub License](https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square)
+![Hardware](https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plos-clan/CoolPotOS)
 </div>
 
 ---
@@ -47,23 +48,23 @@ Vous devez installer les outils suivants sur votre ordinateur :
 - cbindgen (uniquement pour x86_64, utilisez `cargo install cbindgen`)
 - oib (uniquement pour x86_64 et la création d'image, utilisez `cargo install oib`)
 
-Récupérez d'abord les sous-modules :
+### Options
+
+Vous pouvez utiliser la commande pour définir l'architecture cible (`x86_64` par défaut) :
 
 ```bash
-git submodule update --init --recursive
+xmake f -y --arch=i686
 ```
 
-### Commandes disponibles
+### Commandes
 
-- `xmake run run32` - Compiler et exécuter la version i386.
-- `xmake run run64` - Compiler et exécuter la version x86_64 (ISO).
-- `xmake build iso32` - Créer une image ISO pour CoolPotOS i386.
-- `xmake build iso64` - Créer une image ISO pour CoolPotOS x86_64.
-- `xmake build img64` - Créer une image de disque amorçable pour CoolPotOS x86_64.
+- `xmake run` - Construit et exécute l'image **ISO**.
+- `xmake build iso` - Construit une image ISO amorçable.
+- `xmake build img` - Construit une image disque amorçable (x86_64 uniquement).
 
 ## Développement
 
-Vous pouvez générer un fichier `compile_commands.json` avec :
+Vous pouvez générer un fichier `compile_commands.json` avec:
 
 ```bash
 xmake project -k compile_commands
