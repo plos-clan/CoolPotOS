@@ -4,11 +4,12 @@
 <h1 align="center">CoolPotOS</h1>
 <h3>A simple toy operating system.</h3>
 
-<img alt="GitHub License" src="https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="GitHub issues" src="https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square"/>
-<img alt="Hardware" src="https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square"/>
+![GitHub Repo stars](https://img.shields.io/github/stars/plos-clan/CoolPotOS?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/plos-clan/CoolPotOS?style=flat-square)
+![GitHub License](https://img.shields.io/github/license/plos-clan/CoolPotOS?style=flat-square)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/plos-clan/CoolPotOS?style=flat-square)
+![Hardware](https://img.shields.io/badge/Hardware-i386_x64-blue?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/plos-clan/CoolPotOS)
 </div>
 
 ---
@@ -51,7 +52,7 @@ You need to install them on your computer:
 
 ### Options
 
-You can use the command to set the target architecture (`x86_64` defuault):
+You can use the command to set the target architecture (`x86_64` default):
 
 ```bash
 xmake f -y --arch=i686
