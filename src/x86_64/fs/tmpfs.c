@@ -11,7 +11,7 @@ vfs_node_t tmpfs_root_vfs = NULL;
 
 static tmpfs_file_t *tmpfs_root;
 
-int tmpfs_mount(const char *handle, vfs_node_t node) {
+errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
     if (handle != (void *)TMPFS_REGISTER_ID) return VFS_STATUS_FAILED;
     node->fsid         = tmpfs_id;
     tmpfs_root_vfs     = node;
@@ -31,10 +31,11 @@ void tmpfs_open(void *parent, const char *name, vfs_node_t node) {
         if (strcmp(p->children[i]->name, name) == 0) {
             tmpfs_file_t *file = p->children[i];
             if (!file->ready) goto failed;
-            file->ready  = false;
-            node->handle = file;
-            node->fsid   = tmpfs_id;
-            node->type   = file->is_dir ? file_dir : file_none;
+            file->ready    = false;
+            node->handle   = file;
+            node->fsid     = tmpfs_id;
+            node->type     = file->is_dir ? file_dir : file_none;
+            node->refcount = 1;
             return;
         }
     }
@@ -65,7 +66,7 @@ size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
     return size;
 }
 
-int tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
+errno_t tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     tmpfs_file_t *p = (tmpfs_file_t *)parent;
     if (p->child_count >= 64) return VFS_STATUS_FAILED;
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
@@ -74,19 +75,19 @@ int tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     f->parent                     = p;
     f->ready                      = true;
     p->children[p->child_count++] = f;
-    node->handle                  = f;
+    // node->handle                  = f;
     return VFS_STATUS_SUCCESS;
 }
 
-int tmpfs_mkdir(void *parent, const char *name, vfs_node_t node) {
+errno_t tmpfs_mkdir(void *parent, const char *name, vfs_node_t node) {
     return tmpfs_mk(parent, name, node, true);
 }
 
-int tmpfs_mkfile(void *parent, const char *name, vfs_node_t node) {
+errno_t tmpfs_mkfile(void *parent, const char *name, vfs_node_t node) {
     return tmpfs_mk(parent, name, node, false);
 }
 
-int tmpfs_stat(void *file, vfs_node_t node) {
+errno_t tmpfs_stat(void *file, vfs_node_t node) {
     tmpfs_file_t *file0 = (tmpfs_file_t *)file;
     if (file0 == NULL) return VFS_STATUS_FAILED;
     node->type = file0->is_dir ? file_dir : file_none;
@@ -94,7 +95,7 @@ int tmpfs_stat(void *file, vfs_node_t node) {
     return VFS_STATUS_SUCCESS;
 }
 
-int tmpfs_delete(void *parent, vfs_node_t node) {
+errno_t tmpfs_delete(void *parent, vfs_node_t node) {
     tmpfs_file_t *p = (tmpfs_file_t *)parent;
     tmpfs_file_t *f = (tmpfs_file_t *)node->handle;
     for (size_t i = 0; i < p->child_count; i++) {
@@ -104,16 +105,16 @@ int tmpfs_delete(void *parent, vfs_node_t node) {
             p->child_count--;
             free(f->data);
             free(f);
-            return 0;
+            return EOK;
         }
     }
-    return -1;
+    return -ENOENT;
 }
 
-int tmpfs_rename(void *current, const char *new_name) {
+errno_t tmpfs_rename(void *current, const char *new_name) {
     tmpfs_file_t *f = (tmpfs_file_t *)current;
     strncpy(f->name, new_name, sizeof(f->name));
-    return 0;
+    return EOK;
 }
 
 vfs_node_t tmpfs_dup(vfs_node_t node) {
