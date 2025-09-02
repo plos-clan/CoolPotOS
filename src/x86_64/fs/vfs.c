@@ -235,7 +235,7 @@ errno_t vfs_mkfile(const char *name) {
 
     // 创建文件
     vfs_node_t node = vfs_child_append(parent, filename, NULL);
-    node->type      = file_block;
+    node->type      = file_none;
     callbackof(parent, mkfile)(parent->handle, filename, node);
     free(fullpath);
     return VFS_STATUS_SUCCESS;
@@ -425,7 +425,9 @@ size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
     if (file == NULL || addr == NULL) return VFS_STATUS_FAILED;
     do_update(file);
     if (file->type == file_dir) return VFS_STATUS_FAILED;
-    return callbackof(file, write)(file->handle, addr, offset, size);
+    size_t ret = callbackof(file, write)(file->handle, addr, offset, size);
+    do_update(file);
+    return ret;
 }
 
 errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg) {

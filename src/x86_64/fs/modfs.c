@@ -48,6 +48,7 @@ static void modfs_open(void *parent, const char *name, vfs_node_t node) {
     node->handle     = mod;
     node->type       = file_block;
     node->size       = mod->size;
+    node->refcount   = 1;
 }
 
 static size_t modfs_read(void *file, void *addr, size_t offset, size_t size) {
