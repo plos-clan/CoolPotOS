@@ -143,9 +143,6 @@ struct thread_control_block {
     fpu_context_t fpu_context;     // 浮点寄存器上下文
     bool          fpu_flags;       // 浮点启用标志
     uint64_t      main;            // 入口函数地址
-    uint64_t      kernel_stack;    // 内核栈
-    uint64_t      user_stack;      // 用户栈
-    uint64_t      user_stack_top;  // 用户栈顶部地址
     uint64_t      mem_usage;       // 内存利用率
     uint64_t      affinity_mask;   // 线程亲和性掩码
     altstack_t    alt_stack;       // 信号备用栈
@@ -155,6 +152,11 @@ struct thread_control_block {
     uint64_t          fs_base;       // fs段基址
     uint64_t          gs_base;       // gs段基址
     uint64_t          fs, gs;
+    uint64_t          kernel_stack;   // 内核栈
+    uint64_t          user_stack;     // 用户栈
+    uint64_t          user_stack_top; // 用户栈顶部地址
+    uint64_t          syscall_stack;  // 系统调用栈
+    uint64_t          signal_stack;   // 信号栈
 
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引

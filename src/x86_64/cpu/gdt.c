@@ -45,9 +45,9 @@ void gdt_setup() {
 
     uint32_t   boot_id  = get_smp_info()->bsp_lapic_id;
     smp_cpu_t *boot_cpu = &smp_cpus[boot_id];
-    wrmsr(0xC0000100, 0);
-    wrmsr(0xC0000101, (uint64_t)boot_cpu);
-    wrmsr(0xC0000102, (uint64_t)boot_cpu);
+    wrmsr(IA32_FS_BASE, 0);
+    wrmsr(IA32_GS_BASE, (uint64_t)boot_cpu);
+    wrmsr(IA32_KERNEL_GS_BASE, (uint64_t)boot_cpu);
     current_cpu->id = boot_id;
 
     tss_setup();

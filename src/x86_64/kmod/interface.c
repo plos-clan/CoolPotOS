@@ -58,6 +58,7 @@ EXPORT_SYMBOL(get_rootdir);
 EXPORT_SYMBOL(vfs_mount);
 EXPORT_SYMBOL(vfs_unmount);
 EXPORT_SYMBOL(vfs_get_fullpath);
+EXPORT_SYMBOL(is_virtual_fs);
 
 /**
  * Interrupt and Clock Subsystem Interface

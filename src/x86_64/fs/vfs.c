@@ -243,11 +243,7 @@ errno_t vfs_mkfile(const char *name) {
 
 errno_t vfs_delete(vfs_node_t node) {
     if (node == rootdir) return VFS_STATUS_FAILED;
-    errno_t res = callbackof(node, delete)(node->parent->handle, node);
-    if (res < 0) return res;
-    list_delete(node->parent->child, node);
-    node->handle = NULL;
-    vfs_free(node);
+    node->type |= file_delete;
     return VFS_STATUS_SUCCESS;
 }
 
@@ -381,11 +377,25 @@ errno_t vfs_close(vfs_node_t node) {
     else {
         node->refcount--;
         if (node->refcount == 0) {
-            callbackof(node, close)(node->handle);
-            node->handle = NULL;
+            if (node->type & file_delete) {
+                errno_t res = callbackof(node, delete)(node->parent->handle, node);
+                if (res < 0) return res;
+                list_delete(node->parent->child, node);
+                node->handle = NULL;
+                vfs_free(node);
+            } else {
+                callbackof(node, close)(node->handle);
+                node->handle = NULL;
+            }
         }
         return VFS_STATUS_SUCCESS;
     }
+}
+
+bool is_virtual_fs(const char *src) {
+    return src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
+           ((uint64_t)src) == TMPFS_REGISTER_ID || ((uint64_t)src) == PIEFS_REGISTER_ID ||
+           ((uint64_t)src) == NETFS_REGISTER_ID;
 }
 
 void vfs_free(vfs_node_t vfs) {

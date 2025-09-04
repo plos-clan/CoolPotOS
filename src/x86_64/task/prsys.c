@@ -72,6 +72,13 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->fs            = parent_task->fs;
     new_task->fs_base       = parent_task->fs_base;
 
+    void *signal_stack  = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    void *syscall_stack = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    memset((void *)(signal_stack - STACK_SIZE), 0, STACK_SIZE);
+    memset((void *)(syscall_stack - STACK_SIZE), 0, STACK_SIZE);
+    new_task->signal_stack  = (uint64_t)signal_stack;
+    new_task->syscall_stack = (uint64_t)syscall_stack;
+
     new_task->parent_group = parent_task->parent_group;
     new_task->group_index  = lock_queue_enqueue(parent_task->parent_group->pcb_queue, new_task);
     spin_unlock(parent_task->parent_group->pcb_queue->lock);
@@ -210,6 +217,13 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
 
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
+
+    void *signal_stack  = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    void *syscall_stack = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    memset((void *)(signal_stack - STACK_SIZE), 0, STACK_SIZE);
+    memset((void *)(syscall_stack - STACK_SIZE), 0, STACK_SIZE);
+    new_task->signal_stack  = (uint64_t)signal_stack;
+    new_task->syscall_stack = (uint64_t)syscall_stack;
 
     add_task(new_task);
     enable_scheduler();

@@ -108,6 +108,7 @@ enum {
     file_ptmx     = 0x800UL,  // ptmx 设备
     file_pts      = 0x1000UL, // pts 设备
     file_proxy    = 0x2000UL, // 代理节点
+    file_delete   = 0x4000UL, // 删除标记 (仅在删除时使用)
 };
 
 typedef struct vfs_callback { // VFS回调函数
@@ -251,6 +252,8 @@ vfs_node_t vfs_open(const char *str);
  * @return 非0代表操作失败
  */
 errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg);
+
+bool is_virtual_fs(const char *src);
 
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);

@@ -149,6 +149,12 @@ void change_proccess(registers_t *reg, tcb_t current_task0, tcb_t target) {
     __asm__ __volatile__("movq %0, %%fs\n\t" ::"r"(target->fs));
     write_fsbase(target->fs_base);
 
+    __asm__ __volatile__("movq %0, %%gs\n\t" ::"r"(target->gs));
+    write_gsbase(target->gs_base);
+
+    current_cpu->syscall_stack        = target->syscall_stack;
+    current_cpu->signal_syscall_stack = target->signal_stack;
+
     save_fpu_context(&current_task0->fpu_context);
     restore_fpu_context(&target->fpu_context);
 

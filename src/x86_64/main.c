@@ -6,6 +6,7 @@
 #include "description_table.h"
 #include "devfs.h"
 #include "dlinker.h"
+#include "e1000.h"
 #include "eevdf.h"
 #include "frame.h"
 #include "fsgsbase.h"
@@ -19,7 +20,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "modfs.h"
-#include "module.h"
+#include "network.h"
 #include "page.h"
 #include "partition.h"
 #include "pcb.h"
@@ -127,7 +128,7 @@ void kmain() {
     ahci_setup();
     sb16_init();
 
-    // rtl8169_setup();
+    e1000_setup();
     pcnet_setup();
     init_iic();
     disable_scheduler();
@@ -140,6 +141,7 @@ void kmain() {
     killer_setup();
     setup_syscall(true);
     partition_init();
+    netfs_setup();
     load_all_kernel_module();
     kinfo("Kernel load Done!");
 

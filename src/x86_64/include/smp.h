@@ -12,6 +12,10 @@
 #include "pcb.h"
 
 typedef struct smp_cpu {
+    uint64_t            syscall_stack;        // 系统调用栈顶地址
+    uint64_t            syscall_stack_user;   // 用户态下系统调用栈缓存
+    uint64_t            signal_syscall_stack; // 信号栈顶地址
+    uint64_t            call_in_signal;       // 是否在信号处理过程中
     bool                ready;
     uint32_t            id;
     uint64_t            lapic_id;

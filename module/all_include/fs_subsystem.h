@@ -115,6 +115,7 @@ size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  /
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
                   uint64_t flags, uint64_t offset);
+bool  is_virtual_fs(const char *src); // 判断挂载是否是虚拟文件系统ID
 vfs_node_t get_rootdir();
 errno_t    vfs_unmount(const char *path);
 errno_t    vfs_mount(const char *src, vfs_node_t node);

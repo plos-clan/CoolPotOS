@@ -112,6 +112,8 @@ _Noreturn void apu_entry() {
     apu_idle->tid        = now_tid++;
     apu_idle->cpu_clock  = 0;
     set_kernel_stack(get_rsp());
+    apu_idle->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    apu_idle->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     apu_idle->kernel_stack = apu_idle->context0.rsp = get_rsp();
     apu_idle->user_stack                            = apu_idle->kernel_stack;
     apu_idle->context0.rflags                       = get_rflags() | 0x200;
@@ -121,9 +123,12 @@ _Noreturn void apu_entry() {
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", current_cpu->id);
     memcpy(apu_idle->name, name, strlen(name));
-    apu_idle->name[strlen(name)] = '\0';
-    current_cpu->idle_pcb        = apu_idle;
-    current_cpu->ready           = true;
+    apu_idle->name[strlen(name)]      = '\0';
+    current_cpu->idle_pcb             = apu_idle;
+    current_cpu->ready                = true;
+    current_cpu->signal_syscall_stack = apu_idle->signal_stack;
+    current_cpu->syscall_stack        = apu_idle->syscall_stack;
+    current_cpu->call_in_signal       = 0;
     change_current_tcb(apu_idle);
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
@@ -178,7 +183,10 @@ void smp_setup() {
         __asm__ volatile("pause" ::: "memory");
     }
 
-    current_cpu->idle_pcb = kernel_head_task;
+    current_cpu->idle_pcb             = kernel_head_task;
+    current_cpu->signal_syscall_stack = kernel_head_task->signal_stack;
+    current_cpu->syscall_stack        = kernel_head_task->syscall_stack;
+    current_cpu->call_in_signal       = 0;
     kernel_head_task->queue_index =
         queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, kernel_head_task);
     if (kernel_head_task->queue_index == (size_t)-1) {
