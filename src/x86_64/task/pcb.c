@@ -194,13 +194,13 @@ void switch_to_user_mode(uint64_t func) {
 
     vfs_node_t stdio        = vfs_open("/dev/stdio");
     stdio->refcount        += 3;
-    fd_file_handle *stdout  = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    fd_file_handle *stdout  = (fd_file_handle *)calloc(1, sizeof(fd_file_handle));
     stdout->node            = stdio;
     stdout->offset          = 0;
-    fd_file_handle *stdin   = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    fd_file_handle *stdin   = (fd_file_handle *)calloc(1, sizeof(fd_file_handle));
     stdin->node             = stdio;
     stdin->offset           = 0;
-    fd_file_handle *stderr  = (fd_file_handle *)malloc(sizeof(fd_file_handle));
+    fd_file_handle *stderr  = (fd_file_handle *)calloc(1, sizeof(fd_file_handle));
     stderr->node            = stdio;
     stderr->offset          = 0;
     stdin->fd  = queue_enqueue(get_current_task()->parent_group->file_open, stdin);  // stdin
@@ -305,7 +305,9 @@ void kill_thread(tcb_t task) {
 }
 
 void kill_thread0(tcb_t task) {
-    task->status              = OUT;
+    task->status = OUT;
+    free((void *)(task->syscall_stack - STACK_SIZE));
+    free((void *)(task->signal_stack - STACK_SIZE));
     page_directory_t *src_dir = get_current_directory();
     switch_process_page_directory(task->parent_group->page_dir);
     int *tid_addr = (int *)task->tid_address;
@@ -484,6 +486,8 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
     new_task->context0.rsp    = (uint64_t)stack_top;
     new_task->kernel_stack    = (uint64_t)stack_top;
+    new_task->signal_stack    = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    new_task->syscall_stack   = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
 
     new_task->user_stack =
         page_alloc_random(pcb->page_dir, BIG_USER_STACK, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
@@ -531,6 +535,8 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->context0.rsp   = (uint64_t)stack_top;
     new_task->user_stack_top = (uint64_t)stack_top;
     new_task->kernel_stack   = (uint64_t)stack_top;
+    new_task->signal_stack   = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    new_task->syscall_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
 
     // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
     new_task->user_stack = new_task->kernel_stack;
@@ -596,6 +602,8 @@ void init_pcb() {
     kernel_head_task->kernel_stack = kernel_head_task->context0.rsp = get_rsp();
     kernel_head_task->user_stack      = kernel_head_task->kernel_stack;
     kernel_head_task->user_stack_top  = kernel_head_task->user_stack;
+    kernel_head_task->signal_stack    = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    kernel_head_task->syscall_stack   = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     kernel_head_task->context0.rflags = get_rflags();
     kernel_head_task->cpu_timer       = nano_time();
     kernel_head_task->cpu_id          = lapic_id();

@@ -2,8 +2,8 @@
 #include "boot.h"
 #include "cpuid.h"
 #include "errno.h"
-#include "frame.h"
 #include "fsgsbase.h"
+#include "heap.h"
 #include "hhdm.h"
 #include "io.h"
 #include "isr.h"
@@ -11,7 +11,9 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "lazyalloc.h"
+#include "lock_queue.h"
 #include "memstats.h"
+#include "network.h"
 #include "page.h"
 #include "pcb.h"
 #include "pipefs.h"
@@ -41,6 +43,17 @@ __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
                      "cli\n\t"
                      "cld\n\t"
+                     "swapgs\n\t"
+                     "mov QWORD PTR gs:0x08, rsp\n\t"
+                     "cmp QWORD PTR gs:0x18, 0\n\t"
+                     "je normal\n\t"
+                     "signal:\n\t" //信号处理
+                     "mov rsp, QWORD PTR gs:0x10\n\t"
+                     "jmp next\n\t"
+                     "normal:\n\t" // 默认处理
+                     "mov rsp, QWORD PTR gs:0x0 \n\t"
+                     "jmp next\n\t"
+                     "next:\n\t"
                      "sub rsp, 0x38\n\t"
                      "push rax\n\t"
                      "mov rax, es\n\t"
@@ -61,22 +74,10 @@ __attribute__((naked)) void asm_syscall_handle() {
                      "push r13\n\t"
                      "push r14\n\t"
                      "push r15\n\t"
-                     "mov r15, rsp\n\t"
-                     "call get_kernel_stack\n\t"
-                     "sub rax, 0xc0\n\t"
-                     "mov rsp, rax\n\t"
                      "mov rdi, rsp\n\t"
-                     "mov rsi, r15\n\t"
-                     "mov rdx, 0xc0\n\t"
-                     "call memcpy\n\t"
-                     "mov rdi, rsp\n\t"
-                     "mov rsi, r15\n\t"
+                     "mov rsi, QWORD PTR gs:0x8\n\t"
+                     "swapgs\n\t"
                      "call syscall_handler\n\t"
-                     "mov rdi, r15\n\t"
-                     "mov rsi, rsp\n\t"
-                     "mov rdx, 0xc0\n\t"
-                     "call memcpy\n\t"
-                     "mov rsp, rax\n\t"
                      "pop r15\n\t"
                      "pop r14\n\t"
                      "pop r13\n\t"
@@ -97,7 +98,11 @@ __attribute__((naked)) void asm_syscall_handle() {
                      "mov es, rax\n\t"
                      "pop rax\n\t"
                      "add rsp, 0x38\n\t"
-                     "sysretq\n\t");
+                     "swapgs\n\t"
+                     "mov rsp, QWORD PTR gs:0x8\n\t"
+                     "swapgs\n\t"
+                     "sysretq\n\t" ::
+                         : "memory");
 }
 
 __attribute__((naked)) void asm_syscall_entry() {
@@ -202,7 +207,7 @@ syscall_(open) {
         return SYSCALL_FAULT_(ENOENT);
     }
 next:
-    fd_file_handle *fd_handle = malloc(sizeof(fd_file_handle));
+    fd_file_handle *fd_handle = calloc(1, sizeof(fd_file_handle));
     not_null_assets(fd_handle, "sys_open: null alloc fd");
     fd_handle->offset = flags & O_APPEND ? node->size : 0;
     fd_handle->node   = node;
@@ -1519,6 +1524,13 @@ syscall_(link) {
     return ret;
 }
 
+syscall_(socket) {
+    int domain = arg0;
+    int type   = arg1;
+    int proto  = arg2;
+    return syscall_net_socket(domain, type, proto);
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = syscall_exit,
@@ -1599,6 +1611,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_RENAME]      = syscall_rename,
     [SYSCALL_SYMLINK]     = syscall_symlink,
     [SYSCALL_LINK]        = syscall_link,
+    [SYSCALL_SOCKET]      = syscall_socket,
 
     [SYSCALL_MEMINFO]     = syscall_cp_meminfo,
     [SYSCALL_CPUINFO]     = syscall_cp_cpuinfo,
@@ -1636,15 +1649,14 @@ syscall_(cp_cpuinfo) {
     return SYSCALL_SUCCESS;
 }
 
-USED void syscall_handler(struct syscall_regs *regs,
-                          struct syscall_regs *user_regs) { // syscall 指令处理
+USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理
     regs->rip    = regs->rcx;
     regs->rflags = regs->r11;
     regs->cs     = (0x20 | 0x3);
     regs->ss     = (0x18 | 0x3);
     regs->ds     = (0x18 | 0x3);
     regs->es     = (0x18 | 0x3);
-    regs->rsp    = (uint64_t)(user_regs + 1);
+    regs->rsp    = user_regs;
 
     tcb_t thread = get_current_task();
     write_fsbase((uint64_t)thread);
@@ -1671,7 +1683,6 @@ USED void syscall_handler(struct syscall_regs *regs,
     thread->context0.rbp    = regs->rbp;
 
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
-    // logkf("syscall start: %d P(%s) id:%d\n", syscall_id, thread->name, thread->pid);
     if (likely(syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL)) {
         open_interrupt;
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
@@ -1679,7 +1690,6 @@ USED void syscall_handler(struct syscall_regs *regs,
         close_interrupt;
     } else
         regs->rax = SYSCALL_FAULT;
-    // logkf("SYScall: %d RET:%d\n", syscall_id, regs->rax);
     write_fsbase(thread->fs_base);
 }
 

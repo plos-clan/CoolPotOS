@@ -328,8 +328,8 @@ void iso9660_open(void *parent, const char *name, vfs_node_t node) {
     l9660_dir   *c_dir  = (l9660_dir *)malloc(sizeof(l9660_dir));
     l9660_file  *c_file = (l9660_file *)malloc(sizeof(l9660_file));
     l9660_status status;
-    file_t       new = (file_t)malloc(sizeof(struct file));
-    status           = l9660_openat(c_file, p_dir, name);
+    file_t new = (file_t)malloc(sizeof(struct file));
+    status     = l9660_openat(c_file, p_dir, name);
 
     if (status != L9660_OK) {
         status = l9660_opendirat(c_dir, p_dir, name);
@@ -361,9 +361,7 @@ void iso9660_close(file_t handle) {
 }
 
 int iso9660_mount(const char *src, vfs_node_t node) {
-    if (src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
-        ((uint64_t)src) == TMPFS_REGISTER_ID || ((uint64_t)src) == PIEFS_REGISTER_ID)
-        return VFS_STATUS_FAILED;
+    if (is_virtual_fs(src)) return VFS_STATUS_FAILED;
     vfs_node_t device = vfs_open(src);
     if (device == NULL || device->type == file_dir) { return VFS_STATUS_FAILED; }
     l9660_fs    *fs     = (l9660_fs *)malloc(sizeof(l9660_fs));

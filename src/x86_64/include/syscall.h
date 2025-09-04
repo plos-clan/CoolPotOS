@@ -96,6 +96,7 @@
 #define SYSCALL_DUP2        33
 #define SYSCALL_NANO_SLEEP  35
 #define SYSCALL_GETPID      39
+#define SYSCALL_SOCKET      41
 #define SYSCALL_CLONE       56
 #define SYSCALL_FORK        57
 #define SYSCALL_VFORK       58
