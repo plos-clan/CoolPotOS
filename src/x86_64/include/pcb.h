@@ -127,6 +127,11 @@ struct process_control_block {
 };
 
 struct thread_control_block {
+    uint64_t            syscall_stack;        // 系统调用栈顶地址
+    uint64_t            syscall_stack_user;   // 用户态下系统调用栈缓存
+    uint64_t            signal_stack; // 信号栈顶地址
+    uint64_t            call_in_signal;       // 是否在信号处理过程
+
     pcb_t      parent_group; // 父进程
     uint8_t    task_level;   // 线程权限等级
     size_t     tid;          // 线程 TID
@@ -155,8 +160,6 @@ struct thread_control_block {
     uint64_t          kernel_stack;   // 内核栈
     uint64_t          user_stack;     // 用户栈
     uint64_t          user_stack_top; // 用户栈顶部地址
-    uint64_t          syscall_stack;  // 系统调用栈
-    uint64_t          signal_stack;   // 信号栈
 
     size_t queue_index; // 调度队列索引
     size_t group_index; // 进程队列索引
