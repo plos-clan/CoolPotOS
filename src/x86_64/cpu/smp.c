@@ -126,9 +126,6 @@ _Noreturn void apu_entry() {
     apu_idle->name[strlen(name)]      = '\0';
     current_cpu->idle_pcb             = apu_idle;
     current_cpu->ready                = true;
-    current_cpu->signal_syscall_stack = apu_idle->signal_stack;
-    current_cpu->syscall_stack        = apu_idle->syscall_stack;
-    current_cpu->call_in_signal       = 0;
     change_current_tcb(apu_idle);
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
@@ -184,9 +181,6 @@ void smp_setup() {
     }
 
     current_cpu->idle_pcb             = kernel_head_task;
-    current_cpu->signal_syscall_stack = kernel_head_task->signal_stack;
-    current_cpu->syscall_stack        = kernel_head_task->syscall_stack;
-    current_cpu->call_in_signal       = 0;
     kernel_head_task->queue_index =
         queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, kernel_head_task);
     if (kernel_head_task->queue_index == (size_t)-1) {
