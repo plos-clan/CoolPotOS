@@ -85,6 +85,7 @@ jobs:
       - name: Build CoolPotOS-x86_64
         run: |
           xmake f -y --arch=x86_64
+          xmake build e1000
           xmake build extfs
           xmake build iso
           xmake build img

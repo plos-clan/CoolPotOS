@@ -104,6 +104,7 @@ function arch_x86_64()
     add_requires("cp_shell")
     add_requires("os-terminal", {debug = is_mode("debug")})
     includes("module/extfs")
+    includes("module/e1000")
 
     target("kernel")
         set_arch("x86_64")
@@ -158,6 +159,7 @@ function arch_x86_64()
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
             -- KernelModule copy
             os.cp(project.target("extfs"):targetfile(), iso_dir.."/extfs.km")
+            os.cp(project.target("e1000"):targetfile(), iso_dir.."/e1000.km")
 
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
@@ -235,7 +237,7 @@ function arch_x86_64()
                 --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
                 "-audiodev", "sdl,id=audio0",
                 "-device", "sb16,audiodev=audio0",
-                "-net","nic,model=pcnet","-net","user",
+                "-netdev","user,id=net0","-device","e1000,netdev=net0",
                 "-drive", "if=pflash,format=raw,file=assets/ovmf-code.fd",
                 --"-drive", "file=disk.img,format=raw,if=ide,index=0",
                 "-cdrom", config.builddir().."/CoolPotOS.iso",

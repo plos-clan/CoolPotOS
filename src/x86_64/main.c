@@ -6,7 +6,6 @@
 #include "description_table.h"
 #include "devfs.h"
 #include "dlinker.h"
-#include "e1000.h"
 #include "eevdf.h"
 #include "frame.h"
 #include "fsgsbase.h"
@@ -128,7 +127,6 @@ void kmain() {
     ahci_setup();
     sb16_init();
 
-    e1000_setup();
     pcnet_setup();
     init_iic();
     disable_scheduler();
