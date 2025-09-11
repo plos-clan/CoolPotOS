@@ -46,6 +46,12 @@ void switch_process_page_directory(page_directory_t *dir);
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
 void              free_page_directory(page_directory_t *dir);
 
+void    *phys_to_virt(uint64_t phys_addr);
+void    *virt_to_phys(uint64_t virt_addr);
+uint64_t page_virt_to_phys(uint64_t va);
+void    *driver_phys_to_virt(uint64_t phys_addr);
+void    *driver_virt_to_phys(uint64_t virt_addr);
+
 uint64_t get_reserved_memory();
 uint64_t get_all_memory();
 uint64_t get_used_memory();

@@ -40,6 +40,11 @@ EXPORT_SYMBOL(get_reserved_memory);
 EXPORT_SYMBOL(get_all_memory);
 EXPORT_SYMBOL(clone_page_directory);
 EXPORT_SYMBOL(free_page_directory);
+EXPORT_SYMBOL(phys_to_virt);
+EXPORT_SYMBOL(virt_to_phys);
+EXPORT_SYMBOL(page_virt_to_phys);
+EXPORT_SYMBOL(driver_phys_to_virt);
+EXPORT_SYMBOL(driver_virt_to_phys);
 
 /**
  * FileSystem Subsystem Interface
@@ -88,7 +93,6 @@ EXPORT_SYMBOL(ipc_recv_wait);
  */
 EXPORT_SYMBOL(devfs_register);
 EXPORT_SYMBOL(regist_vdisk);
-EXPORT_SYMBOL(driver_phys_to_virt);
 EXPORT_SYMBOL(vdisk_read);
 EXPORT_SYMBOL(vdisk_write);
 EXPORT_SYMBOL(pci_find_vid_did);
