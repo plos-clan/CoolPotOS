@@ -5,6 +5,7 @@
  * 有关于接口的使用说明, 详见其预定义的头文件注释
  */
 #include "cpustats.h"
+#include "device.h"
 #include "dlinker.h"
 #include "frame.h"
 #include "heap.h"
@@ -15,11 +16,11 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "memstats.h"
+#include "network.h"
 #include "page.h"
 #include "pcb.h"
 #include "pci.h"
 #include "sprintf.h"
-#include "vdisk.h"
 #include "vfs.h"
 
 /**
@@ -45,6 +46,7 @@ EXPORT_SYMBOL(virt_to_phys);
 EXPORT_SYMBOL(page_virt_to_phys);
 EXPORT_SYMBOL(driver_phys_to_virt);
 EXPORT_SYMBOL(driver_virt_to_phys);
+EXPORT_SYMBOL(unmap_page_range);
 
 /**
  * FileSystem Subsystem Interface
@@ -92,11 +94,16 @@ EXPORT_SYMBOL(ipc_recv_wait);
  * 驱动子系统接口导出
  */
 EXPORT_SYMBOL(devfs_register);
-EXPORT_SYMBOL(regist_vdisk);
-EXPORT_SYMBOL(vdisk_read);
-EXPORT_SYMBOL(vdisk_write);
+EXPORT_SYMBOL(regist_device);
+EXPORT_SYMBOL(device_read);
+EXPORT_SYMBOL(device_write);
 EXPORT_SYMBOL(pci_find_vid_did);
 EXPORT_SYMBOL(pci_find_class);
+
+/**
+ * 网络子系统接口导出
+ */
+EXPORT_SYMBOL(regist_netdev);
 
 // kernel logger functions
 EXPORT_SYMBOL(logkf);

@@ -1,5 +1,6 @@
 #include "tty.h"
 #include "atom_queue.h"
+#include "device.h"
 #include "gop.h"
 #include "ioctl.h"
 #include "keyboard.h"
@@ -10,7 +11,6 @@
 #include "mpmc_queue.h"
 #include "pcb.h"
 #include "terminal.h"
-#include "vdisk.h"
 
 tty_t         *defualt_tty = NULL;
 mpmc_queue_t  *queue;
@@ -183,7 +183,7 @@ static size_t stdout_write(int drive, uint8_t *buffer, size_t number, size_t lba
     return number;
 }
 
-static int tty_ioctl(vdisk *device, size_t req, void *arg) {
+static int tty_ioctl(device_t *device, size_t req, void *arg) {
     switch (req) {
     case TIOCGWINSZ:
         struct winsize *ws = (struct winsize *)arg;
@@ -306,8 +306,8 @@ static int tty_poll(size_t events) {
 }
 
 void build_tty_device() {
-    vdisk stdio;
-    stdio.type = VDISK_STREAM;
+    device_t stdio;
+    stdio.type = DEVICE_STREAM;
     strcpy(stdio.drive_name, "stdio");
     stdio.flag        = 1;
     stdio.sector_size = 1;
@@ -317,10 +317,10 @@ void build_tty_device() {
     stdio.ioctl       = tty_ioctl;
     stdio.poll        = tty_poll;
     stdio.map         = (void *)empty;
-    regist_vdisk(stdio);
+    regist_device(stdio);
 
-    vdisk ttydev;
-    ttydev.type = VDISK_STREAM;
+    device_t ttydev;
+    ttydev.type = DEVICE_STREAM;
     strcpy(ttydev.drive_name, "tty");
     ttydev.flag        = 1;
     ttydev.sector_size = 1;
@@ -330,7 +330,7 @@ void build_tty_device() {
     ttydev.ioctl       = tty_ioctl;
     ttydev.poll        = tty_poll;
     ttydev.map         = (void *)empty;
-    regist_vdisk(ttydev);
+    regist_device(ttydev);
 }
 
 void init_tty() {

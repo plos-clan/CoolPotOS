@@ -3,6 +3,7 @@
  * Copyright by xingji-studio 2025
  */
 #include "nvme.h"
+#include "device.h"
 #include "heap.h"
 #include "hhdm.h"
 #include "klog.h"
@@ -12,7 +13,6 @@
 #include "pci.h"
 #include "sprintf.h"
 #include "timer.h"
-#include "vdisk.h"
 
 void           *NVME_DMA_MEMORY = 0;
 NVME_NAMESPACE *nvme_device[10];
@@ -329,8 +329,8 @@ void nvme_setup() {
             ns->MXRS = -1;
         }
 
-        vdisk disk;
-        disk.type = VDISK_BLOCK;
+        device_t disk;
+        disk.type = DEVICE_BLOCK;
         char name[10];
         sprintf(name, "nvme%d", nsid);
         strcpy(disk.drive_name, name);
@@ -339,7 +339,7 @@ void nvme_setup() {
         disk.ioctl = (void *)empty;
         disk.poll  = (void *)empty;
 
-        int c          = regist_vdisk(disk);
+        int c          = regist_device(disk);
         nvme_device[c] = ns;
         printk("Nvme disk find (%s)\n", disk.drive_name);
     }

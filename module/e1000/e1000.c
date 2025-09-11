@@ -201,11 +201,107 @@ int e1000_init(void *mmio_base) {
     // Disable interrupts (polling mode)
     e1000_write32(dev, E1000_IMC, 0xFFFFFFFF);
 
-    // Store device and register with network framework
     e1000_devices[e1000_device_count++] = dev;
-    // regist_netdev(dev, dev->mac, dev->mtu, e1000_send, e1000_receive);
+    regist_netdev(dev, dev->mac, dev->mtu, e1000_send, e1000_receive);
 
     return 0;
+}
+
+bool e1000_has_packets(e1000_device_t *dev) {
+    uint16_t next_rx = (dev->rx_tail + 1) % E1000_NUM_RX_DESC;
+    return (dev->rx_descs[next_rx].status & E1000_RXD_STAT_DD) != 0;
+}
+
+errno_t e1000_send(void *dev_desc, void *data, uint32_t len) {
+    e1000_device_t *dev = (e1000_device_t *)dev_desc;
+
+    if (len > E1000_MTU || len == 0) { return -1; }
+
+    // Check if we have a free TX descriptor
+    uint16_t next_tail = (dev->tx_tail + 1) % E1000_NUM_TX_DESC;
+    if (next_tail == dev->tx_head) {
+        // TX queue full
+        return -1;
+    }
+
+    // Allocate buffer for packet
+    uint64_t phy_      = alloc_frames(len / PAGE_SIZE + 1);
+    void    *tx_buffer = driver_phys_to_virt(phy_);
+    page_map_range(get_current_directory(), (uint64_t)tx_buffer, phy_, len, KERNEL_PTE_FLAGS);
+    if (!tx_buffer) { return -1; }
+
+    // Copy data to buffer
+    memcpy(tx_buffer, data, len);
+
+    // Setup TX descriptor
+    dev->tx_descs[dev->tx_tail].buffer_addr = (uint64_t)virt_to_phys(phy_);
+    dev->tx_descs[dev->tx_tail].length      = len;
+    dev->tx_descs[dev->tx_tail].cmd    = E1000_TXD_CMD_EOP | E1000_TXD_CMD_IFCS | E1000_TXD_CMD_RS;
+    dev->tx_descs[dev->tx_tail].status = 0;
+
+    // Store buffer pointer for later cleanup
+    dev->tx_buffers[dev->tx_tail] = tx_buffer;
+
+    // Update tail pointer
+    dev->tx_tail = next_tail;
+    e1000_write32(dev, E1000_TDT, dev->tx_tail);
+
+    // Poll for completion
+    while (!(dev->tx_descs[dev->tx_head].status & E1000_TXD_STAT_DD)) {
+        // Wait for transmission to complete
+    }
+
+    // Clean up completed descriptors
+    while (dev->tx_head != dev->tx_tail) {
+        if (dev->tx_descs[dev->tx_head].status & E1000_TXD_STAT_DD) {
+            if (dev->tx_buffers[dev->tx_head]) {
+                unmap_page_range(get_current_directory(), (uint64_t)dev->tx_buffers[dev->tx_head],
+                                 len);
+                dev->tx_buffers[dev->tx_head] = NULL;
+            }
+            dev->tx_descs[dev->tx_head].status = 0;
+            dev->tx_head                       = (dev->tx_head + 1) % E1000_NUM_TX_DESC;
+        } else {
+            break;
+        }
+    }
+
+    return len;
+}
+
+// Receive packet (polling mode)
+errno_t e1000_receive(void *dev_desc, void *buffer, uint32_t buffer_size) {
+    e1000_device_t *dev = (e1000_device_t *)dev_desc;
+
+    uint16_t              next_rx = (dev->rx_tail + 1) % E1000_NUM_RX_DESC;
+    struct e1000_rx_desc *desc    = &dev->rx_descs[next_rx];
+
+    bool have_data = !!(desc->status & E1000_RXD_STAT_DD);
+
+    if (!have_data) {
+        // No packet available
+        return 0;
+    }
+
+    if (desc->errors & (E1000_RXD_ERR_CE | E1000_RXD_ERR_SE | E1000_RXD_ERR_SEQ |
+                        E1000_RXD_ERR_CXE | E1000_RXD_ERR_RXE)) {
+        // Packet has errors, discard it
+        goto cleanup;
+    }
+
+    uint32_t packet_len = desc->length;
+    if (packet_len > buffer_size) { packet_len = buffer_size; }
+
+    // Copy packet data to user buffer
+    memcpy(buffer, driver_phys_to_virt(desc->buffer_addr), packet_len);
+
+cleanup:
+    // Recycle the descriptor
+    desc->status = 0;
+    dev->rx_tail = next_rx;
+    e1000_write32(dev, E1000_RDT, dev->rx_tail);
+
+    return have_data ? packet_len : 0;
 }
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {

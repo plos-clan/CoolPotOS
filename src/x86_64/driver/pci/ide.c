@@ -1,4 +1,5 @@
 #include "ide.h"
+#include "device.h"
 #include "io.h"
 #include "isr.h"
 #include "kprint.h"
@@ -6,7 +7,6 @@
 #include "pci.h"
 #include "sprintf.h"
 #include "timer.h"
-#include "vdisk.h"
 
 #define klog(...)                                                                                  \
     do {                                                                                           \
@@ -540,7 +540,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
 
             count++;
         }
-    vdisk vd;
+    device_t vd;
     for (int i = 0; i < 4; i++)
         if (ide_devices[i].Reserved == 1) {
             kinfo("IDE %d Found %s Drive %dMB - %s", i, ide_devices[i].Type ? "ATAPI" : "ATA",
@@ -558,9 +558,9 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
             vd.sector_size = vd.flag == 2 ? 2048 : 512;
             vd.ioctl       = (void *)empty;
             vd.poll        = (void *)empty;
-            vd.type        = VDISK_BLOCK;
+            vd.type        = DEVICE_BLOCK;
 
-            int c            = regist_vdisk(vd);
+            int c            = regist_device(vd);
             drive_mapping[c] = i;
         }
 }
