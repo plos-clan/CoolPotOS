@@ -1,6 +1,7 @@
 #include "gop.h"
 #include "boot.h"
 #include "ctype.h"
+#include "device.h"
 #include "errno.h"
 #include "heap.h"
 #include "hhdm.h"
@@ -9,7 +10,6 @@
 #include "page.h"
 #include "sprintf.h"
 #include "terminal.h"
-#include "vdisk.h"
 
 struct limine_framebuffer  *framebuffer  = NULL;
 struct limine_framebuffer **framebuffers = NULL;
@@ -49,7 +49,7 @@ void *gop_map(int drive, void *addr, uint64_t len) {
     return (void *)addr;
 }
 
-int gop_ioctl(vdisk *device, size_t req, void *arg) {
+int gop_ioctl(device_t *device, size_t req, void *arg) {
     switch (req) {
     case FBIOGET_FSCREENINFO:
         struct fb_fix_screeninfo *fb_fix = (struct fb_fix_screeninfo *)arg;
@@ -119,8 +119,8 @@ int gop_ioctl(vdisk *device, size_t req, void *arg) {
 void gop_dev_setup() {
     framebuffers = malloc(sizeof(struct limine_framebuffer *) * MAX_DEIVCE);
     for (uint64_t i = 0; i < get_framebuffer_response()->framebuffer_count; i++) {
-        vdisk fbdev;
-        fbdev.type = VDISK_STREAM;
+        device_t fbdev;
+        fbdev.type = DEVICE_FB;
         char name[16];
         sprintf(name, "fb%lu", i);
         strcpy(fbdev.drive_name, name);
@@ -129,7 +129,7 @@ void gop_dev_setup() {
         fbdev.sector_size = 4;
         fbdev.map         = gop_map;
         fbdev.ioctl       = gop_ioctl;
-        int id            = regist_vdisk(fbdev);
+        int id            = regist_device(fbdev);
         framebuffers[id]  = get_framebuffer_response()->framebuffers[i];
     }
 }

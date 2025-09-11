@@ -1,6 +1,6 @@
+#include "device.h"
 #include "krlibc.h"
 #include "timer.h"
-#include "vdisk.h"
 
 static size_t urandom_read(int drive, uint8_t *buffer, size_t number, size_t lba) {
     for (size_t i = 0; i < number; i++) {
@@ -11,8 +11,8 @@ static size_t urandom_read(int drive, uint8_t *buffer, size_t number, size_t lba
 }
 
 void setup_urandom() {
-    vdisk urandom;
-    urandom.type        = VDISK_STREAM;
+    device_t urandom;
+    urandom.type        = DEVICE_STREAM;
     urandom.size        = 1;
     urandom.map         = (void *)empty;
     urandom.read        = urandom_read;
@@ -22,5 +22,5 @@ void setup_urandom() {
     urandom.flag        = 1;
     urandom.sector_size = 1;
     strcpy(urandom.drive_name, "urandom");
-    regist_vdisk(urandom);
+    regist_device(urandom);
 }

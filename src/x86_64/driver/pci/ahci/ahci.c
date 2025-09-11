@@ -2,6 +2,7 @@
  * CoolPotOS VBuffer AHCI Driver
  */
 #include "ahci.h"
+#include "device.h"
 #include "frame.h"
 #include "heap.h"
 #include "hhdm.h"
@@ -10,7 +11,6 @@
 #include "page.h"
 #include "pci.h"
 #include "sprintf.h"
-#include "vdisk.h"
 
 void              *op_buffer;
 static uint32_t    cdb_size[] = {SCSI_CDB12, SCSI_CDB16, 0, 0};
@@ -328,10 +328,10 @@ void ahci_setup() {
 
         char name_buf[20];
         sprintf(name_buf, "sata%d", i);
-        vdisk sata;
+        device_t sata;
         sata.size        = hbadev->max_lba * hbadev->block_size;
         sata.sector_size = hbadev->block_size;
-        sata.type        = VDISK_BLOCK;
+        sata.type        = DEVICE_BLOCK;
         sata.read        = ahci_read;
         sata.write       = ahci_write;
         sata.flag        = 1;
@@ -341,7 +341,7 @@ void ahci_setup() {
         sata.read_vbuf   = NULL;
         sata.write_vbuf  = NULL;
         strcpy(sata.drive_name, name_buf);
-        int id        = regist_vdisk(sata);
+        int id        = regist_device(sata);
         hbaDevice[id] = hbadev;
         kinfo("sata%d: blk_size=%d, blk=0..%d, %s", i, hbadev->block_size, hbadev->max_lba,
               hbadev->model);

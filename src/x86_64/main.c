@@ -5,6 +5,7 @@
 #include "cpustats.h"
 #include "description_table.h"
 #include "devfs.h"
+#include "device.h"
 #include "dlinker.h"
 #include "eevdf.h"
 #include "frame.h"
@@ -35,7 +36,6 @@
 #include "terminal.h"
 #include "timer.h"
 #include "tmpfs.h"
-#include "vdisk.h"
 #include "vfs.h"
 
 // 编译器判断
@@ -117,7 +117,7 @@ void kmain() {
     pipefs_setup();
     fatfs_init();
 
-    vdisk_init();
+    device_manager_init();
     devfs_setup();
     build_tty_device();
     modfs_setup();

@@ -1,4 +1,5 @@
 #include "partition.h"
+#include "device.h"
 #include "errno.h"
 #include "heap.h"
 #include "ioctl.h"
@@ -6,23 +7,22 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "sprintf.h"
-#include "vdisk.h"
 #include "vfs.h"
 
-extern vdisk vdisk_ctl[26];
+extern device_t device_ctl[26];
 partition_t  partitions[MAX_PARTITIONS_NUM];
 size_t       partition_num = 0;
 partition_t *device_lists[MAX_PARTITIONS_NUM];
 
 size_t partition_read(int part, uint8_t *buf, size_t number, size_t lba) {
     partition_t *partition = device_lists[part];
-    return vdisk_ctl[partition->vdisk_id].read(partition->vdisk_id, buf, number,
+    return device_ctl[partition->vdisk_id].read(partition->vdisk_id, buf, number,
                                                partition->starting_lba + lba);
 }
 
 size_t partition_write(int part, uint8_t *buf, size_t number, uint64_t lba) {
     partition_t *partition = device_lists[part];
-    return vdisk_ctl[partition->vdisk_id].write(partition->vdisk_id, buf, number,
+    return device_ctl[partition->vdisk_id].write(partition->vdisk_id, buf, number,
                                                 partition->starting_lba + lba);
 }
 
@@ -46,7 +46,7 @@ bool is_partition_used(struct GPT_DPTE *entry) {
     return false;
 }
 
-bool parser_block_device(vfs_node_t device, vdisk disk, size_t vdisk_id) {
+bool parser_block_device(vfs_node_t device, device_t disk, size_t vdisk_id) {
     uint8_t *mbr = malloc(disk.sector_size);
     if (vfs_read(device, mbr, 0, disk.sector_size) == (size_t)VFS_STATUS_FAILED) return false;
     if (mbr[0x1FE] == 0x55 && mbr[0x1FF] == 0xAA) {
@@ -112,7 +112,7 @@ int extract_partition_index(const char *name) {
     return atoi(suffix);
 }
 
-int partition_ioctl(vdisk *device, size_t req, void *arg) {
+int partition_ioctl(device_t *device, size_t req, void *arg) {
     int device_id = extract_partition_index(device->drive_name);
     if (device_id == -1) return -ENODEV;
     partition_t partition = partitions[device_id];
@@ -143,15 +143,15 @@ int partition_ioctl(vdisk *device, size_t req, void *arg) {
 
 void partition_init() {
     for (size_t i = 0; i < 26; i++) {
-        if (vdisk_ctl[i].flag >= 1 && vdisk_ctl[i].type == VDISK_BLOCK) {
+        if (device_ctl[i].flag >= 1 && device_ctl[i].type == DEVICE_BLOCK) {
             char buf[50];
-            sprintf(buf, "/dev/%s", vdisk_ctl[i].drive_name);
+            sprintf(buf, "/dev/%s", device_ctl[i].drive_name);
             vfs_node_t device = vfs_open(buf);
             if (device == NULL) {
-                logkf("Partition init failed, device %s not found.\n", vdisk_ctl[i].drive_name);
+                logkf("Partition init failed, device %s not found.\n", device_ctl[i].drive_name);
                 continue;
             }
-            if (parser_block_device(device, vdisk_ctl[i], i)) {}
+            if (parser_block_device(device, device_ctl[i], i)) {}
         }
     }
 
@@ -159,10 +159,10 @@ void partition_init() {
 
     for (size_t j = 0; j < partition_num; j++) {
         partition_t partition = partitions[j];
-        vdisk       part;
+        device_t       part;
         part.sector_size = partition.sector_size;
         part.flag        = 1;
-        part.type        = VDISK_BLOCK;
+        part.type        = DEVICE_BLOCK;
         part.read        = partition_read;
         part.write       = partition_write;
         part.ioctl       = partition_ioctl;
@@ -170,7 +170,7 @@ void partition_init() {
         char buf[20];
         sprintf(buf, "part%zu", j);
         strcpy(part.drive_name, buf);
-        int id           = regist_vdisk(part);
+        int id           = regist_device(part);
         device_lists[id] = &partitions[j];
     }
 }

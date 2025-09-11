@@ -3,14 +3,14 @@
  * 设备虚拟文件系统
  */
 #include "devfs.h"
+#include "device.h"
 #include "errno.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "sprintf.h"
-#include "vdisk.h"
 #include "vfs.h"
 
-extern vdisk vdisk_ctl[26]; // vdisk.c
+extern device_t device_ctl[26]; // vdisk.c
 
 int               devfs_id    = 0;
 static int        devfs_inode = 2;
@@ -55,9 +55,9 @@ static errno_t devfs_stat(void *handle, vfs_node_t node) {
     device_handle_t dev_t = handle;
 
     node->handle = dev_t;
-    node->type   = dev_t->device->type == VDISK_STREAM ? file_stream : file_block;
+    node->type   = dev_t->device->type == DEVICE_STREAM ? file_stream : file_block;
     node->size =
-        dev_t->device->type == VDISK_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
+        dev_t->device->type == DEVICE_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
     node->realsize = dev_t->device->sector_size;
     node->fsid     = devfs_id;
     return VFS_STATUS_SUCCESS;
@@ -85,9 +85,9 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     }
 
     node->handle = dev_t;
-    node->type   = dev_t->device->type == VDISK_STREAM ? file_stream : file_block;
+    node->type   = dev_t->device->type == DEVICE_STREAM ? file_stream : file_block;
     node->size =
-        dev_t->device->type == VDISK_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
+        dev_t->device->type == DEVICE_STREAM ? (uint64_t)-1 : disk_size(dev_t->device->vdiskid);
     node->fsid     = devfs_id;
     node->refcount = 1;
 }
@@ -95,7 +95,7 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
 size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
     device_handle_t handle = file;
     if (handle->is_dir) return VFS_STATUS_FAILED;
-    vdisk *deivce = handle->device;
+    device_t *deivce = handle->device;
 
     size_t sector_size;
     size_t sectors_to_do;
@@ -104,7 +104,7 @@ size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
 
-    if (deivce->type == VDISK_STREAM) goto read;
+    if (deivce->type == DEVICE_STREAM) goto read;
     if (offset > deivce->size) return VFS_STATUS_SUCCESS;
     if (deivce->size < offset + padding_up_to_sector_size) {
         // 计算需要读取的扇区数
@@ -114,14 +114,14 @@ size_t devfs_read(void *file, void *addr, size_t offset, size_t size) {
 read:
 
     sectors_to_do    = padding_up_to_sector_size / sector_size;
-    size_t read_size = vdisk_read(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
+    size_t read_size = device_read(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
     return read_size;
 }
 
 size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
     device_handle_t handle = file;
     if (handle->is_dir) return VFS_STATUS_FAILED;
-    vdisk *deivce = handle->device;
+    device_t *deivce = handle->device;
 
     size_t sector_size;
     size_t sectors_to_do;
@@ -129,7 +129,7 @@ size_t devfs_write(void *file, const void *addr, size_t offset, size_t size) {
     sector_size                      = deivce->sector_size;
     size_t padding_up_to_sector_size = PADDING_UP(size, sector_size);
     offset                           = PADDING_UP(offset, sector_size);
-    if (deivce->type == VDISK_STREAM) goto write;
+    if (deivce->type == DEVICE_STREAM) goto write;
     if (offset > deivce->size) return VFS_STATUS_SUCCESS;
     if (deivce->size < offset + padding_up_to_sector_size) {
         padding_up_to_sector_size = deivce->size - offset;
@@ -140,9 +140,9 @@ write:
 
     if (padding_up_to_sector_size == size) {
     } else {
-        vdisk_read(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
+        device_read(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
     }
-    size_t ret_size = vdisk_write(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
+    size_t ret_size = device_write(offset / sector_size, sectors_to_do, addr, deivce->vdiskid);
     return ret_size;
 }
 
@@ -223,7 +223,7 @@ void devfs_setup() {
 }
 
 errno_t devfs_register(const char *path, size_t id) {
-    vdisk *device = &vdisk_ctl[id];
+    device_t *device = &device_ctl[id];
     char  *buf    = NULL;
     if (path != NULL) {
         buf = malloc(strlen(path) + 6);

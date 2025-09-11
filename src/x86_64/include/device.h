@@ -5,37 +5,38 @@
 #include "ctype.h"
 
 typedef enum {
-    VDISK_BLOCK,
-    VDISK_STREAM,
-} vdisk_flag_t;
+    DEVICE_BLOCK,
+    DEVICE_STREAM,
+    DEVICE_FB,
+} device_flag_t;
 
-typedef struct vdisk_device {
+typedef struct _device {
     size_t (*read_vbuf)(int drive, struct vecbuf *buffer, size_t number, size_t lba);
     size_t (*write_vbuf)(int drive, struct vecbuf *buffer, size_t number, size_t lba);
     size_t (*read)(int drive, uint8_t *buffer, size_t number, size_t lba);
     size_t (*write)(int drive, uint8_t *buffer, size_t number, size_t lba);
-    int (*ioctl)(struct vdisk_device *device, size_t req, void *handle);
+    int (*ioctl)(struct _device *device, size_t req, void *handle);
     int (*poll)(size_t events);
     void *(*map)(int drive, void *addr, uint64_t len);
-    int          flag;
-    size_t       size;        // 大小
-    size_t       sector_size; // 扇区大小
-    vdisk_flag_t type;
-    char         drive_name[50];
-    size_t       vdiskid; // 设备号
-} vdisk;                  // 块设备/流设备
+    int           flag;
+    size_t        size;        // 大小
+    size_t        sector_size; // 扇区大小
+    device_flag_t type;
+    char          drive_name[50];
+    size_t        vdiskid; // 设备号
+} device_t;                // 设备句柄
 
 size_t disk_size(int drive);
-int    vdisk_init();
+int    device_manager_init();
 
 /**
  * 注册一个设备 (会被自动映射进 devfs)
  * @param vd 设备
  * @return 注册编号
  */
-int     regist_vdisk(vdisk vd);
+int     regist_device(device_t vd);
 errno_t devfs_register(const char *path, size_t id);
 bool    have_vdisk(int drive);
-size_t  vdisk_read(size_t lba, size_t number, void *buffer, int drive);
-size_t  vdisk_write(size_t lba, size_t number, const void *buffer, int drive);
+size_t  device_read(size_t lba, size_t number, void *buffer, int drive);
+size_t  device_write(size_t lba, size_t number, const void *buffer, int drive);
 void   *device_mmap(int drive, void *addr, uint64_t len);
