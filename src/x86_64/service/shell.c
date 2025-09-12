@@ -5,19 +5,18 @@
 #include "elf_util.h"
 #include "gop.h"
 #include "heap.h"
-#include "keyboard.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "memstats.h"
 #include "module.h"
-#include "os_terminal.h"
 #include "pcb.h"
 #include "pci.h"
 #include "pl_readline.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
+#include "terminal.h"
 #include "timer.h"
 #include "vfs.h"
 
@@ -658,7 +657,9 @@ static void handle_tab(char *buf, pl_readline_words_t words) {
     }
 }
 
-static void plreadln_flush(void) {}
+static void plreadln_flush(void) {
+    //_terminal_flush();
+}
 
 _Noreturn void shell_setup() {
     char *user_name = get_current_task()->parent_group->user->name;

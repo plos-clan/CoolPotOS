@@ -284,7 +284,7 @@ NVME_CONTROLLER *nvme_driver_init(uint64_t bar0, uint64_t bar_size) {
     identify = (NVME_IDENTIFY_CONTROLLER *)driver_phys_to_virt((uint64_t)identify);
     page_map_range(get_current_directory(), (uint64_t)identify, phy0, PAGE_SIZE, KERNEL_PTE_FLAGS);
 
-    memset(identify, 0, 0x1000);
+    memset(identify, 0, PAGE_SIZE);
 
     NVME_SUBMISSION_QUEUE_ENTRY sqe;
     memset(&sqe, 0, sizeof(NVME_SUBMISSION_QUEUE_ENTRY));
@@ -306,14 +306,11 @@ NVME_CONTROLLER *nvme_driver_init(uint64_t bar0, uint64_t bar_size) {
     buf[sizeof(identify->SERN)] = 0;
     char *serialN               = LeadingWhitespace(buf, buf + sizeof(identify->SERN));
     memcpy(ctrl->SER, serialN, strlen(serialN));
-    // kdebug(serialN);
-    // LINEFEED();
+
     memcpy(buf, identify->MODN, sizeof(identify->MODN));
     buf[sizeof(identify->MODN)] = 0;
     serialN                     = LeadingWhitespace(buf, buf + sizeof(identify->MODN));
     memcpy(ctrl->MOD, serialN, strlen(serialN));
-    // kdebug(serialN);
-    // LINEFEED();
 
     ctrl->NSC    = identify->NNAM;
     uint8_t mdts = identify->MDTS;
@@ -469,7 +466,10 @@ NVME_CONTROLLER *nvme_driver_init(uint64_t bar0, uint64_t bar_size) {
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
     pci_device_t *device = pci_find_class(0x10802);
     if (device == NULL) { return -ENODEV; }
-    NVME_CONTROLLER *nvme = nvme_driver_init(device->bars[0].address, device->bars[0].size);
+    uint64_t virt_bar = (uint64_t)driver_phys_to_virt(device->bars[0].address);
+    page_map_range(get_current_directory(), virt_bar, device->bars[0].address, device->bars[0].size,
+                   KERNEL_PTE_FLAGS);
+    NVME_CONTROLLER *nvme = nvme_driver_init(virt_bar, device->bars[0].size);
     if (!nvme) return -EIO;
     return EOK;
 }
