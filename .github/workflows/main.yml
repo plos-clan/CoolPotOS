@@ -87,6 +87,7 @@ jobs:
           xmake f -y --arch=x86_64
           xmake build e1000
           xmake build extfs
+          xmake build nvme
           xmake build iso
           xmake build img
 

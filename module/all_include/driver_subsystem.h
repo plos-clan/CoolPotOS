@@ -6,8 +6,9 @@ typedef errno_t (*netdev_send_t)(void *dev, void *data, uint32_t len);
 typedef errno_t (*netdev_recv_t)(void *dev, void *data, uint32_t len);
 
 typedef enum {
-    VDISK_BLOCK,
-    VDISK_STREAM,
+    DEVICE_BLOCK,
+    DEVICE_STREAM,
+    DEVICE_FB,
 } device_flag_t;
 
 typedef struct _device {
