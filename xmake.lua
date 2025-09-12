@@ -105,6 +105,7 @@ function arch_x86_64()
     add_requires("os-terminal", {debug = is_mode("debug")})
     includes("module/extfs")
     includes("module/e1000")
+    includes("module/nvme")
 
     target("kernel")
         set_arch("x86_64")
@@ -160,6 +161,7 @@ function arch_x86_64()
             -- KernelModule copy
             os.cp(project.target("extfs"):targetfile(), iso_dir.."/extfs.km")
             os.cp(project.target("e1000"):targetfile(), iso_dir.."/e1000.km")
+            os.cp(project.target("nvme"):targetfile(), iso_dir.."/nvme.km")
 
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")

@@ -123,7 +123,6 @@ void kmain() {
     modfs_setup();
     pci_init();
     ide_setup();
-    // nvme_setup();
     ahci_setup();
     sb16_init();
 
