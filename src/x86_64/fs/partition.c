@@ -10,20 +10,20 @@
 #include "vfs.h"
 
 extern device_t device_ctl[26];
-partition_t  partitions[MAX_PARTITIONS_NUM];
-size_t       partition_num = 0;
-partition_t *device_lists[MAX_PARTITIONS_NUM];
+partition_t     partitions[MAX_PARTITIONS_NUM];
+size_t          partition_num = 0;
+partition_t    *device_lists[MAX_PARTITIONS_NUM];
 
 size_t partition_read(int part, uint8_t *buf, size_t number, size_t lba) {
     partition_t *partition = device_lists[part];
     return device_ctl[partition->vdisk_id].read(partition->vdisk_id, buf, number,
-                                               partition->starting_lba + lba);
+                                                partition->starting_lba + lba);
 }
 
 size_t partition_write(int part, uint8_t *buf, size_t number, uint64_t lba) {
     partition_t *partition = device_lists[part];
     return device_ctl[partition->vdisk_id].write(partition->vdisk_id, buf, number,
-                                                partition->starting_lba + lba);
+                                                 partition->starting_lba + lba);
 }
 
 void format_guid(const uint8_t guid[16], char out[37]) {
@@ -94,9 +94,28 @@ bool parser_block_device(vfs_node_t device, device_t disk, size_t vdisk_id) {
             free(dptes);
             free(gpt);
         } else {
-            kinfo("MBR Partition(%s).", disk.drive_name);
+            struct MBR_DPT *boot_sector = (struct MBR_DPT *)mbr;
+            if (boot_sector->bs_trail_sig != 0xAA55) { goto end; }
+            for (int j = 0; j < MBR_MAX_PARTITION_NUM; j++) {
+                if (boot_sector->dpte[j].start_lba == 0 || boot_sector->dpte[j].sectors_limit == 0)
+                    continue;
+                size_t       starting_lba = boot_sector->dpte[j].start_lba;
+                size_t       ending_lba   = boot_sector->dpte[j].sectors_limit;
+                partition_t *partition    = &partitions[partition_num];
+                partition->vdisk_id       = vdisk_id;
+                partition->starting_lba   = starting_lba;
+                partition->ending_lba     = ending_lba;
+                partition->type           = MBR;
+                partition->sector_size    = disk.sector_size;
+                partition->is_used        = true;
+
+                kinfo("MBR Partition(%s) %d lba=%llu..%llu %s", disk.drive_name, j, starting_lba,
+                      ending_lba, (boot_sector->dpte[j].flags & 0x80) != 0 ? "bootable" : "");
+                partition_num++;
+            }
         }
     }
+end:
     free(mbr);
     return true;
 }
@@ -159,7 +178,7 @@ void partition_init() {
 
     for (size_t j = 0; j < partition_num; j++) {
         partition_t partition = partitions[j];
-        device_t       part;
+        device_t    part;
         part.sector_size = partition.sector_size;
         part.flag        = 1;
         part.type        = DEVICE_BLOCK;

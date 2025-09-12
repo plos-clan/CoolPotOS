@@ -1,7 +1,8 @@
 #pragma once
 
-#define GPT_HEADER_SIGNATURE "EFI PART"
-#define MAX_PARTITIONS_NUM   128
+#define GPT_HEADER_SIGNATURE  "EFI PART"
+#define MAX_PARTITIONS_NUM    128
+#define MBR_MAX_PARTITION_NUM 4
 
 #define PARTITION_TYPE_GPT     0xC12A7328
 #define PARTITION_TYPE_MBR     0xEBD0A0A2
@@ -33,6 +34,25 @@ struct GPT_DPTE {
     uint64_t ending_lba;                // Ending LBA of the partition
     uint64_t attributes;                // Partition attributes
     uint16_t partition_name[36];        // Partition name (UTF-16LE, null-terminated)
+} __attribute__((packed));
+
+struct MBR_DPTE {
+    uint8_t  flags;
+    uint8_t  start_head;
+    uint16_t start_sector : 6,  // 0~5
+        start_cylinder    : 10; // 6~15
+    uint8_t  type;
+    uint8_t  end_head;
+    uint16_t end_sector : 6,  // 0~5
+        end_cylinder    : 10; // 6~15
+    uint32_t start_lba;
+    uint32_t sectors_limit;
+} __attribute__((packed));
+
+struct MBR_DPT {
+    uint8_t         bs_reserved[446];
+    struct MBR_DPTE dpte[4];
+    uint16_t        bs_trail_sig;
 } __attribute__((packed));
 
 typedef struct partition {
