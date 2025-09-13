@@ -684,6 +684,7 @@ _Noreturn void shell_setup() {
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
+#if 0
     /***************** debug *******************/
     {
         int   argc    = 3;
@@ -697,6 +698,7 @@ _Noreturn void shell_setup() {
         exec(argc, argv_bash) || exec(argc, argv_sh);
     }
     /***************** debug *******************/
+#endif
 
     get_current_task()->parent_group->tty->termios.c_lflag |= ECHO;
 
