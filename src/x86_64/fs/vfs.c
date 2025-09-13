@@ -236,9 +236,9 @@ errno_t vfs_mkfile(const char *name) {
     // 创建文件
     vfs_node_t node = vfs_child_append(parent, filename, NULL);
     node->type      = file_none;
-    callbackof(parent, mkfile)(parent->handle, filename, node);
+    errno_t status  = callbackof(parent, mkfile)(parent->handle, filename, node);
     free(fullpath);
-    return VFS_STATUS_SUCCESS;
+    return status;
 }
 
 errno_t vfs_delete(vfs_node_t node) {
@@ -395,7 +395,7 @@ errno_t vfs_close(vfs_node_t node) {
 bool is_virtual_fs(const char *src) {
     return src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
            ((uint64_t)src) == TMPFS_REGISTER_ID || ((uint64_t)src) == PIEFS_REGISTER_ID ||
-           ((uint64_t)src) == NETFS_REGISTER_ID;
+           ((uint64_t)src) == NETFS_REGISTER_ID || ((uint64_t)src) == CPFS_REGISTER_ID;
 }
 
 void vfs_free(vfs_node_t vfs) {

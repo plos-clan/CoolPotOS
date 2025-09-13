@@ -1,6 +1,7 @@
 #include "acpi.h"
 #include "ahci.h"
 #include "boot.h"
+#include "cpio.h"
 #include "cpuid.h"
 #include "cpustats.h"
 #include "description_table.h"
@@ -113,6 +114,7 @@ void kmain() {
     calibrate_tsc_with_hpet();
     vfs_init();
     tmpfs_setup();
+
     iso9660_regist();
     pipefs_setup();
     fatfs_init();
@@ -137,9 +139,10 @@ void kmain() {
     zero_setup();
     killer_setup();
     setup_syscall(true);
-    partition_init();
     netfs_setup();
     load_all_kernel_module();
+    partition_init();
+    cpio_init();
     kinfo("Kernel load Done!");
 
     pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);

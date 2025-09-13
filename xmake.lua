@@ -175,6 +175,7 @@ function arch_x86_64()
             os.cp(limine_src.."/limine-bios-cd.bin", limine_dir.."/limine-bios-cd.bin")
             os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
             os.cp("assets/background.jpg", iso_dir.."/background.jpg")
+            os.cp("assets/initramfs.img", iso_dir.."/initramfs.img")
 
             local shell = target:pkg("cp_shell")
             os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
