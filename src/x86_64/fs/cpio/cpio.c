@@ -1,7 +1,6 @@
 #include "cpio.h"
 #include "cpfs.h"
 #include "errno.h"
-#include "iso9660.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "module.h"
@@ -26,7 +25,8 @@ void cpio_init(void) {
     }
 
     struct cpio_newc_header_t hdr;
-    size_t                    offset = 0;
+    size_t                    offset       = 0;
+    size_t                    file_num_all = 0;
     while (true) {
         memcpy(&hdr, init_ramfs->data + offset, sizeof(hdr));
         offset += sizeof(hdr);
@@ -42,13 +42,6 @@ void cpio_init(void) {
         memcpy(filedata, init_ramfs->data + offset, filesize);
         offset = (offset + filesize + 3) & ~3;
 
-        /*
-        logkf("%.*s\n", (int)sizeof(hdr.c_magic), hdr.c_magic);
-        logkf("%.*s\n", (int)sizeof(hdr.c_mode), hdr.c_mode);
-        logkf("%.*s\n", (int)(namesize - 1), filename);
-        logkf("%.*s\n", (int)filesize, filedata);
-        */
-
         if (!strcmp(filename, "/TRAILER!!!")) {
             free(filedata);
             break;
@@ -58,6 +51,7 @@ void cpio_init(void) {
             continue;
         }
 
+        file_num_all++;
         if (read_num(hdr.c_mode, 8) & 040000) {
             errno_t status = vfs_mkdir(filename);
             if (status != EOK) {
@@ -84,4 +78,5 @@ void cpio_init(void) {
         }
         free(filedata);
     }
+    kinfo("Loaded initramfs size:%llu files:%llu", init_ramfs->size, file_num_all);
 }

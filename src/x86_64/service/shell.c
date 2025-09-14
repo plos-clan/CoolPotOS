@@ -684,6 +684,15 @@ _Noreturn void shell_setup() {
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 
+    {
+        int   argc = 3;
+        //char *argv_sh[2]   = {"exec", "/bin/sh"};
+        char *argv_sh[3]   = {"exec", "/bin/busybox", "sh"};
+        char *argv_bash[2] = {"exec", "/bin/bash"};
+        exec(argc, argv_bash);
+        exec(argc, argv_sh);
+    }
+
 #if 0
     /***************** debug *******************/
     {
