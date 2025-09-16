@@ -51,8 +51,7 @@ extern "C"
 #include <ext4_blockdev.h>
 #include <misc/tree.h>
 
-#include <stddef.h>
-#include <stdint.h>
+#include "cp_kernel.h"
 
 	/*
 	 * Types of blocks.

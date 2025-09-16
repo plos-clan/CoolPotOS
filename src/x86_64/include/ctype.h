@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "types/stdbool.h"
+#include "types/stddef.h"
+#include "types/stdint.h"
 
 typedef __INTPTR_TYPE__ ssize_t;
 typedef __INTPTR_TYPE__ ptrdiff_t;

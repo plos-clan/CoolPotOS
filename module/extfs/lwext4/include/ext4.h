@@ -43,8 +43,7 @@ extern "C"
 {
 #endif
 
-#include <stdint.h>
-#include <stddef.h>
+#include "cp_kernel.h"
 
 #include <ext4_config.h>
 #include <ext4_types.h>

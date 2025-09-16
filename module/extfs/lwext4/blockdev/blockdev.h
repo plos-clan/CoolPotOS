@@ -29,11 +29,10 @@
 #ifndef BLOCKDEV_H_
 #define BLOCKDEV_H_
 
-#include <ext4_config.h>
 #include <ext4_blockdev.h>
+#include <ext4_config.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "cp_kernel.h"
 
 /**@brief   File blockdev get.*/
 struct ext4_blockdev *ext4_blockdev_get(void);

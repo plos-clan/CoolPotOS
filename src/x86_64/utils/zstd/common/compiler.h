@@ -259,7 +259,7 @@
 
 # elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 /* C11 support */
-#  include <stdalign.h>
+#  include "types/stdalign.h"
 #  define ZSTD_ALIGNOF(T) alignof(T)
 
 # else
@@ -277,8 +277,8 @@
 /* Not all platforms that support msan provide sanitizers/msan_interface.h.
  * We therefore declare the functions we need ourselves, rather than trying to
  * include the header file... */
-#include <stddef.h>  /* size_t */
-#define ZSTD_DEPS_NEED_STDINT
+#include "ctype.h"  /* size_t */
+#define ZSTD_DEPS_NEED_STDIN
 #include "zstd_deps.h"  /* intptr_t */
 
 /* Make memory region fully initialized (without changing its contents). */
@@ -298,7 +298,7 @@ intptr_t __msan_test_shadow(const volatile void *x, size_t size);
 /* Not all platforms that support asan provide sanitizers/asan_interface.h.
  * We therefore declare the functions we need ourselves, rather than trying to
  * include the header file... */
-#include <stddef.h>  /* size_t */
+#include "types/stddef.h"  /* size_t */
 
 /**
  * Marks a memory region (<c>[addr, addr+size)</c>) as unaddressable.
