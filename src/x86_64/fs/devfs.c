@@ -27,6 +27,7 @@ static errno_t devfs_mount(const char *handle, vfs_node_t node) {
     root_handle->device = NULL;
     root_handle->is_dir = true;
     llist_init_head(&root_handle->child);
+    llist_init_head(&root_handle->curr);
 
     node->fsid   = devfs_id;
     node->handle = root_handle;
@@ -42,8 +43,9 @@ static errno_t devfs_mkdir(void *handle, const char *name, vfs_node_t node) {
     new->is_dir           = true;
     new->device           = NULL;
     llist_init_head(&new->child);
+    llist_init_head(&new->curr);
 
-    llist_append(&dev_t->child, &new->child);
+    llist_append(&dev_t->child, &new->curr);
     node->handle = new;
     node->fsid   = 0;
     return EOK;
@@ -76,7 +78,7 @@ static void devfs_open(void *parent, const char *name, vfs_node_t node) {
     device_handle_t pos, nxt;
 
     device_handle_t dev_t = NULL;
-    llist_for_each(pos, nxt, &dir_t->child, child) {
+    llist_for_each(pos, nxt, &dir_t->child, curr) {
         if (strcmp(pos->name, name) == 0) { dev_t = pos; }
     }
     if (dev_t == NULL) {
@@ -224,7 +226,7 @@ void devfs_setup() {
 
 errno_t devfs_register(const char *path, size_t id) {
     device_t *device = &device_ctl[id];
-    char  *buf    = NULL;
+    char     *buf    = NULL;
     if (path != NULL) {
         buf = malloc(strlen(path) + 6);
         sprintf(buf, "/dev/%s", path);
@@ -258,7 +260,7 @@ errno_t devfs_register(const char *path, size_t id) {
     handle->device = device;
     handle->name   = strdup(device->drive_name);
     vfs_child_append(node, device->drive_name, handle);
-    llist_append(&parent->child, &handle->child);
+    llist_append(&parent->child, &handle->curr);
     vfs_close(node);
     free(buf);
     return EOK;

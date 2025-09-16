@@ -1,5 +1,15 @@
 #pragma once
 
+typedef enum {
+    COMPRESSION_NONE,
+    COMPRESSION_GZIP,
+    COMPRESSION_LZMA,
+    COMPRESSION_LZ4,
+    COMPRESSION_ZSTD,
+    COMPRESSION_XZ,
+    COMPRESSION_UNKNOWN
+} compression_type_t;
+
 struct cpio_newc_header_t {
     char c_magic[6];
     char c_ino[8];

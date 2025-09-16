@@ -21,20 +21,21 @@ errno_t cpfs_mount(const char *handle, vfs_node_t node) {
     cpfs_root->parent      = NULL;
     cpfs_root->child_count = 0;
     cpfs_root->ready       = true;
-    node->handle           = cpfs_root;
+    llist_init_head(&cpfs_root->child_node);
+    llist_init_head(&cpfs_root->curr_node);
+    node->handle = cpfs_root;
     return VFS_STATUS_SUCCESS;
 }
 
 void cpfs_open(void *parent, const char *name, vfs_node_t node) {
     cpfs_file_t *p = (cpfs_file_t *)parent;
-    for (size_t i = 0; i < p->child_count; i++) {
-        if (strcmp(p->children[i]->name, name) == 0) {
-            cpfs_file_t *file = p->children[i];
-            if (!file->ready) goto failed;
-            file->ready    = false;
-            node->handle   = file;
+    cpfs_file_t *pos, *nxt;
+    llist_for_each(pos, nxt, &p->child_node, curr_node) {
+        if (strcmp(pos->name, name) == 0) {
+            pos->ready     = false;
+            node->handle   = pos;
             node->fsid     = cpfs_id;
-            node->type     = file->is_dir ? file_dir : file_none;
+            node->type     = pos->is_dir ? file_dir : file_none;
             node->refcount = 1;
             return;
         }
@@ -68,14 +69,14 @@ size_t cpfs_write(void *file, const void *addr, size_t offset, size_t size) {
 
 errno_t cpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     cpfs_file_t *p = (cpfs_file_t *)parent;
-    if (p->child_count >= CPFS_MAX_FILE) return VFS_STATUS_FAILED;
     cpfs_file_t *f = calloc(1, sizeof(cpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
-    f->is_dir                     = is_dir;
-    f->parent                     = p;
-    f->ready                      = true;
-    p->children[p->child_count++] = f;
-    // node->handle                  = f;
+    f->is_dir = is_dir;
+    f->parent = p;
+    f->ready  = true;
+    llist_init_head(&f->child_node);
+    llist_init_head(&f->curr_node);
+    llist_append(&p->child_node, &f->curr_node);
     return VFS_STATUS_SUCCESS;
 }
 
