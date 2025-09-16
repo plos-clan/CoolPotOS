@@ -30,9 +30,7 @@
 #    error "Do not use flanterm_private.h. Use interfaces defined in flanterm.h only."
 #endif
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "ctype.h"
 
 #ifdef __cplusplus
 extern "C" {

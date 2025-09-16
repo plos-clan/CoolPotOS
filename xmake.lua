@@ -118,8 +118,8 @@ function arch_x86_64()
         add_ldflags("-target x86_64-freestanding")
 
         add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
-        add_cflags("-mno-red-zone", "-msoft-float", "-flto")
-        add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld")
+        add_cflags("-mno-red-zone", "-msoft-float", "-flto", "-nostdinc", "-nostdlib", "-fPIC")
+        add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld", "-nostdinc")
         --add_cflags("-Wno-unused-parameter","-Wno-unused-variable","-Wno-unused-value")
 
         --add_cflags("-fsanitize=undefined")

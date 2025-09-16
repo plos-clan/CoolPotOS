@@ -30,7 +30,7 @@ int g_ZSTD_threading_useless_symbol;
 
 /* ===  Dependencies  === */
 #include <process.h>
-#include <errno.h>
+#include "errno.h"
 
 
 /* ===  Implementation  === */
