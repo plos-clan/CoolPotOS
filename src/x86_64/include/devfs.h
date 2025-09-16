@@ -7,9 +7,10 @@
 typedef struct device_handle *device_handle_t;
 
 struct device_handle {
-    device_t              *device; // 设备句柄
+    device_t           *device; // 设备句柄
     char               *name;   // 节点名
     bool                is_dir; // 是否为目录
+    struct llist_header curr;   // 当前节点
     struct llist_header child;  // 子节点链表
 };
 

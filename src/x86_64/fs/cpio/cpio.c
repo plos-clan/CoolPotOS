@@ -6,6 +6,39 @@
 #include "module.h"
 #include "sprintf.h"
 #include "vfs.h"
+#include "zstd/zstd.h"
+
+compression_type_t get_compression_type(const void *data, size_t size) {
+    if (size < 4) {
+        return COMPRESSION_UNKNOWN; // 数据太小，无法判断
+    }
+    const unsigned char *bytes = (const unsigned char *)data;
+    if (bytes[0] == 0x1F && bytes[1] == 0x8B) { return COMPRESSION_GZIP; }
+
+    if (size >= 6 && bytes[0] == 0xFD && bytes[1] == 0x37 && bytes[2] == 0x7A && bytes[3] == 0x58 &&
+        bytes[4] == 0x5A && bytes[5] == 0x00) {
+        return COMPRESSION_XZ;
+    }
+
+    if (bytes[0] == 0x18 && bytes[1] == 0x4D && bytes[2] == 0x22 && bytes[3] == 0x04) {
+        return COMPRESSION_LZ4;
+    }
+
+    if (bytes[0] == 0x28 && bytes[1] == 0xB5 && bytes[2] == 0x2F && bytes[3] == 0xFD) {
+        return COMPRESSION_ZSTD;
+    }
+
+    if (bytes[0] == 0x5D && bytes[1] == 0x00 && bytes[2] == 0x00 && bytes[3] == 0x80) {
+        return COMPRESSION_LZMA;
+    }
+
+    if (strncmp((const char *)bytes, "070701", 6) == 0 ||
+        strncmp((const char *)bytes, "070707", 6) == 0) {
+        return COMPRESSION_NONE;
+    }
+
+    return COMPRESSION_UNKNOWN;
+}
 
 static size_t read_num(const char *str, size_t count) {
     size_t val = 0;
@@ -24,22 +57,48 @@ void cpio_init(void) {
         return;
     }
 
+    compression_type_t type    = get_compression_type(init_ramfs->data, init_ramfs->size);
+    uint8_t           *data_d  = NULL;
+    size_t             size_d  = 0;
+    bool               is_free = false;
+
+    char *compress_type;
+    switch (type) {
+    case COMPRESSION_NONE:
+        data_d        = init_ramfs->data;
+        size_d        = init_ramfs->size;
+        is_free       = false;
+        compress_type = "cpio";
+        break;
+    case COMPRESSION_ZSTD:
+        size_t dict_size = ZSTD_getFrameContentSize(init_ramfs->data, init_ramfs->size);
+        void  *dict_data = malloc(dict_size);
+        ZSTD_decompress(dict_data, dict_size, init_ramfs->data, init_ramfs->size);
+        data_d        = dict_data;
+        size_d        = dict_size;
+        is_free       = true;
+        compress_type = "zstd";
+        break;
+    default: kerror("Cannot load initramfs, unknown format."); return;
+    }
+
+next:
     struct cpio_newc_header_t hdr;
     size_t                    offset       = 0;
     size_t                    file_num_all = 0;
     while (true) {
-        memcpy(&hdr, init_ramfs->data + offset, sizeof(hdr));
+        memcpy(&hdr, data_d + offset, sizeof(hdr));
         offset += sizeof(hdr);
 
         size_t namesize = read_num(hdr.c_namesize, 8);
         char   filename[namesize + 1];
         filename[0] = '/';
-        memcpy(filename + 1, init_ramfs->data + offset, namesize);
+        memcpy(filename + 1, data_d + offset, namesize);
         offset = (offset + namesize + 3) & ~3;
 
         size_t         filesize = read_num(hdr.c_filesize, 8);
         unsigned char *filedata = malloc(filesize);
-        memcpy(filedata, init_ramfs->data + offset, filesize);
+        memcpy(filedata, data_d + offset, filesize);
         offset = (offset + filesize + 3) & ~3;
 
         if (!strcmp(filename, "/TRAILER!!!")) {
@@ -52,7 +111,8 @@ void cpio_init(void) {
         }
 
         file_num_all++;
-        if (read_num(hdr.c_mode, 8) & 040000) {
+        size_t mode = read_num(hdr.c_mode, 8);
+        if (mode & 040000) {
             errno_t status = vfs_mkdir(filename);
             if (status != EOK) {
                 kerror("Cannot build initramfs directory(%s), error code: %d", filename, status);
@@ -78,5 +138,8 @@ void cpio_init(void) {
         }
         free(filedata);
     }
-    kinfo("Loaded initramfs size:%llu files:%llu", init_ramfs->size, file_num_all);
+    if (is_free) free(data_d);
+
+    kinfo("Loaded initramfs size:%llu files:%llu compress: %s", init_ramfs->size, file_num_all,
+          compress_type);
 }
