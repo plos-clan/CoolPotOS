@@ -32,10 +32,11 @@ void cpfs_open(void *parent, const char *name, vfs_node_t node) {
     cpfs_file_t *pos, *nxt;
     llist_for_each(pos, nxt, &p->child_node, curr_node) {
         if (strcmp(pos->name, name) == 0) {
-            pos->ready     = false;
-            node->handle   = pos;
-            node->fsid     = cpfs_id;
-            node->type     = pos->is_dir ? file_dir : file_none;
+            pos->ready   = false;
+            node->handle = pos;
+            node->fsid   = cpfs_id;
+            node->type   = pos->is_dir ? file_dir : file_none;
+            if (pos->is_symlink) node->type |= file_symlink;
             node->refcount = 1;
             return;
         }
@@ -71,9 +72,11 @@ errno_t cpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     cpfs_file_t *p = (cpfs_file_t *)parent;
     cpfs_file_t *f = calloc(1, sizeof(cpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
-    f->is_dir = is_dir;
-    f->parent = p;
-    f->ready  = true;
+    f->is_dir     = is_dir;
+    f->is_symlink = false;
+    f->parent     = p;
+    f->ready      = true;
+    f->linkto     = NULL;
     llist_init_head(&f->child_node);
     llist_init_head(&f->curr_node);
     llist_append(&p->child_node, &f->curr_node);
@@ -152,6 +155,21 @@ void *cpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot, 
     return general_map(cpfs_read, file, (uint64_t)addr, offset, size, prot, flags);
 }
 
+errno_t cpfs_symlink(void *parent, const char *name, vfs_node_t node) {
+    cpfs_file_t *p = parent;
+    cpfs_file_t *f = calloc(1, sizeof(cpfs_file_t));
+    strncpy(f->name, name, sizeof(f->name));
+    f->is_dir     = false;
+    f->is_symlink = true;
+    f->parent     = p;
+    f->ready      = true;
+    llist_init_head(&f->child_node);
+    llist_init_head(&f->curr_node);
+    llist_append(&p->child_node, &f->curr_node);
+    node->handle = f;
+    return EOK;
+}
+
 static int dummy() {
     return -ENOSYS;
 }
@@ -168,7 +186,7 @@ static struct vfs_callback cpfs_callbacks = {
     .readlink = (vfs_readlink_t)dummy,
     .mkfile   = cpfs_mkfile,
     .link     = (vfs_mk_t)dummy,
-    .symlink  = (vfs_mk_t)dummy,
+    .symlink  = cpfs_symlink,
     .ioctl    = (void *)empty,
     .dup      = cpfs_dup,
     .delete   = cpfs_delete,
