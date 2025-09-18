@@ -302,7 +302,9 @@ resche:;
 
 void remove_sched_entity(struct rb_root *root, struct sched_entity *se) {
     rb_erase(&se->run_node, root);
-    if (eevdf_sched->current == se) eevdf_sched->current = NULL;
+    struct sched_entity *current = eevdf_sched->current;
+    if (current == se) eevdf_sched->current = NULL;
+    eevdf_sched->current = pick_eevdf();
     update_min_vruntime();
 }
 
@@ -333,6 +335,7 @@ void add_eevdf_entity(tcb_t new_task, smp_cpu_t *cpu) {
 void remove_eevdf_entity(tcb_t thread, smp_cpu_t *cpu) {
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
     remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity);
+    free(entity);
     eevdf_sched->task_count--;
 }
 

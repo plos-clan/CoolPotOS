@@ -94,7 +94,7 @@ errno_t cpfs_mkfile(void *parent, const char *name, vfs_node_t node) {
 errno_t cpfs_stat(void *file, vfs_node_t node) {
     cpfs_file_t *file0 = (cpfs_file_t *)file;
     if (file0 == NULL) return VFS_STATUS_FAILED;
-    node->type = file0->is_dir ? file_dir : file_none;
+    node->type = file0->is_symlink ? file_symlink : (file0->is_dir ? file_dir : file_none);
     node->size = file0->is_dir ? 0 : file0->size;
     return VFS_STATUS_SUCCESS;
 }
