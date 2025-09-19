@@ -101,7 +101,6 @@ end
 
 function arch_x86_64()
     add_requires("pl_readline", {debug = is_mode("debug")})
-    add_requires("cp_shell")
     add_requires("os-terminal", {debug = is_mode("debug")})
     includes("module/extfs")
     includes("module/e1000")
@@ -149,7 +148,7 @@ function arch_x86_64()
     target("iso")
         set_kind("phony")
         add_deps("kernel")
-        add_packages("limine", "cp_shell")
+        add_packages("limine")
         set_default(false)
 
         on_build(function (target)
@@ -177,10 +176,6 @@ function arch_x86_64()
             os.cp("assets/background.jpg", iso_dir.."/background.jpg")
             os.cp("assets/initramfs.img", iso_dir.."/initramfs.img")
 
-            local shell = target:pkg("cp_shell")
-            os.cp(shell:installdir().."/bin/shell", iso_dir.."/shell.elf")
-            --os.cp("assets/shell.elf", iso_dir.."/shell.elf")
-
             local iso_file = "$(builddir)/CoolPotOS.iso"
             os.run("xorriso -as mkisofs "..
                 "-R -r -J -b limine/limine-bios-cd.bin "..
@@ -198,7 +193,7 @@ function arch_x86_64()
     target("img")
         set_kind("phony")
         add_deps("kernel")
-        add_packages("limine", "cp_shell")
+        add_packages("limine")
         set_default(false)
 
         on_build(function (target)
@@ -209,12 +204,9 @@ function arch_x86_64()
             local limine_src = target:pkg("limine"):installdir()
             local limine_src = limine_src.."/share/limine"
 
-            local shell = target:pkg("cp_shell")
-            local shell_bin = shell:installdir().."/bin/shell"
-
-            os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf -f %s:shell.elf "..
+            os.run("oib -f %s:cpkrnl64.elf -f %s:limine.conf "..
                 "-f %s:readme.txt -f %s:efi/boot/bootx64.efi -o %s",
-                kernel:targetfile(), "assets/limine.conf", shell_bin,
+                kernel:targetfile(), "assets/limine.conf",
                 "assets/readme.txt", limine_src.."/BOOTX64.EFI", img_file)
 
             print("Disk image created at: %s", img_file)
@@ -254,14 +246,6 @@ function arch_x86_64()
         end)
     target_end()
 end
-
---- CoolPotOS Shell
-package("cp_shell")
-    set_urls("https://github.com/plos-clan/cp_shell.git")
-
-    on_install(function (package)
-        import("package.tools.xmake").install(package)
-    end)
 
 --- Thirdparty Definitions ---
 package("limine")
