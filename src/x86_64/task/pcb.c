@@ -481,6 +481,8 @@ int create_user_thread(void (*_start)(void), char *name, pcb_t pcb) {
     new_task->cpu_id     = current_cpu->id;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top       = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
+    *(--stack_top)            = 0;
+    *(--stack_top)            = 0;
     *(--stack_top)            = (uint64_t)switch_to_user_mode;
     new_task->context0.rflags = 0x202;
     new_task->context0.rip    = (uint64_t)switch_to_user_mode;
@@ -530,6 +532,8 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     new_task->cpu_id     = current_cpu->id;
     memcpy(new_task->name, name, strlen(name) + 1);
     uint64_t *stack_top = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
+    *(--stack_top)      = 0;
+    *(--stack_top)      = 0;
     *(--stack_top)      = (uint64_t)process_exit;
 
     new_task->context0.rsp   = (uint64_t)stack_top;
@@ -609,6 +613,9 @@ void init_pcb() {
     kernel_head_task->cpu_id          = lapic_id();
     kernel_head_task->status          = RUNNING;
     kernel_head_task->task_level      = TASK_IDLE_LEVEL;
+    kernel_head_task->fs_base         = read_fsbase();
+    kernel_head_task->gs_base         = read_gsbase();
+    kernel_head_task->fs = kernel_head_task->gs = 0;
 
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", lapic_id());

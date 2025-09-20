@@ -1,14 +1,19 @@
 #include "frame.h"
 #include "boot.h"
+#include "buddy.h"
 #include "hhdm.h"
-#include "io.h"
 #include "klog.h"
 #include "page.h"
+
+#define ENABLE_BUDDY 1
 
 FrameAllocator frame_allocator;
 uint64_t       memory_size = 0;
 
 void init_frame() {
+#ifdef ENABLE_BUDDY
+    init_frame_buddy();
+#else
     struct limine_memmap_response *memory_map = get_memory_map();
     memory_size                               = get_memory_size();
 
@@ -66,27 +71,39 @@ void init_frame() {
     frame_allocator.usable_frames = origin_frames - bitmap_frame_count;
 
     logkf("Available memory: %lld MiB\n", (origin_frames / 256));
+#endif
 }
 
 void free_frames(uint64_t addr, size_t count) {
+#ifdef ENABLE_BUDDY
+    buddy_free_pages(addr, count);
+#else
     if (addr == 0 || count == 0) return;
     size_t frame_index = addr / 4096;
     if (frame_index == 0) return;
     Bitmap *bitmap = &frame_allocator.bitmap;
     bitmap_set_range(bitmap, frame_index, frame_index + count, true);
+#endif
     frame_allocator.usable_frames += count;
 }
 
 void free_frame(uint64_t addr) {
+#ifdef ENABLE_BUDDY
+    buddy_free_pages(addr, 1);
+#else
     if (addr == 0) return;
     size_t frame_index = addr / 4096;
     if (frame_index == 0) return;
     Bitmap *bitmap = &frame_allocator.bitmap;
     bitmap_set(bitmap, frame_index, true);
+#endif
     frame_allocator.usable_frames++;
 }
 
 void free_frames_2M(uint64_t addr) {
+#ifdef ENABLE_BUDDY
+    buddy_free_frames_2M(addr);
+#else
     if (addr == 0) return;
     size_t frame_index = addr / 4096;
     if (frame_index == 0) return;
@@ -94,10 +111,14 @@ void free_frames_2M(uint64_t addr) {
     for (size_t i = 0; i < 512; i++) {
         bitmap_set(bitmap, frame_index + i, true);
     }
+#endif
     frame_allocator.usable_frames += 512;
 }
 
 void free_frames_1G(uint64_t addr) {
+#ifdef ENABLE_BUDDY
+    buddy_free_frames_1G(addr);
+#else
     if (addr == 0) return;
     size_t frame_index = addr / 4096;
     if (frame_index == 0) return;
@@ -105,10 +126,15 @@ void free_frames_1G(uint64_t addr) {
     for (size_t i = 0; i < 262144; i++) {
         bitmap_set(bitmap, frame_index + i, true);
     }
+#endif
     frame_allocator.usable_frames += 262144;
 }
 
 uint64_t alloc_frames(size_t count) {
+#ifdef ENABLE_BUDDY
+    frame_allocator.usable_frames -= count;
+    return buddy_alloc_pages(count);
+#else
     Bitmap *bitmap      = &frame_allocator.bitmap;
     size_t  frame_index = bitmap_find_range(bitmap, count, true);
 
@@ -117,9 +143,13 @@ uint64_t alloc_frames(size_t count) {
     frame_allocator.usable_frames -= count;
 
     return frame_index * 4096;
+#endif
 }
 
 uint64_t alloc_frames_2M(size_t count) {
+#ifdef ENABLE_BUDDY
+    return buddy_alloc_frames_2M(count);
+#else
     Bitmap *bitmap         = &frame_allocator.bitmap;
     size_t  frames_per_2mb = 512;
     size_t  total_frames   = count * frames_per_2mb;
@@ -135,9 +165,13 @@ uint64_t alloc_frames_2M(size_t count) {
     }
 
     return 0;
+#endif
 }
 
 uint64_t alloc_frames_1G(size_t count) {
+#ifdef ENABLE_BUDDY
+    return buddy_alloc_frames_1G(count);
+#else
     Bitmap *bitmap         = &frame_allocator.bitmap;
     size_t  frames_per_1gb = 262144;
     size_t  total_frames   = count * frames_per_1gb;
@@ -153,4 +187,5 @@ uint64_t alloc_frames_1G(size_t count) {
     }
 
     return 0;
+#endif
 }
