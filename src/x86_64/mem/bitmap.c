@@ -46,35 +46,40 @@ void bitmap_set_range(Bitmap *bitmap, size_t start, size_t end, bool value) {
     }
 }
 
-size_t bitmap_find_range(const Bitmap *bitmap, size_t length, bool value) {
+size_t bitmap_find_range(const Bitmap *map, size_t length, bool value) {
     size_t  count = 0, start_index = 0;
-    uint8_t byte_match = value ? (uint8_t)-1 : 0;
+    uint8_t full_byte = value ? 0xFF : 0x00;
 
-    for (size_t byte_idx = 0; byte_idx < bitmap->length / 8; byte_idx++) {
-        size_t byte = bitmap->buffer[byte_idx];
+    size_t byte_len = (map->length + 7) / 8;
 
-        if (byte == !byte_match) {
-            count = 0;
-        } else if (byte == byte_match) {
-            if (length < 8) { return byte_idx * 8; }
-            if (count == 0) { start_index = byte_idx * 8; }
+    for (size_t byte_idx = 0; byte_idx < byte_len; byte_idx++) {
+        uint8_t byte = map->buffer[byte_idx];
+
+        if (byte == full_byte) {
+            // 整字节匹配
+            if (count == 0) start_index = byte_idx * 8;
             count += 8;
-            if (count >= length) { return start_index; }
+            if (count >= length) return start_index;
+        } else if (byte == (uint8_t)~full_byte) {
+            // 完全不匹配
+            count = 0;
         } else {
+            // 部分匹配 → 逐位检查
             for (size_t bit = 0; bit < 8; bit++) {
+                size_t idx = byte_idx * 8 + bit;
+                if (idx >= map->length) break;
+
                 bool bit_value = (byte >> bit) & 1;
                 if (bit_value == value) {
-                    if (count == 0) { start_index = byte_idx * 8 + bit; }
+                    if (count == 0) start_index = idx;
                     count++;
-                    if (count == length) { return start_index; }
+                    if (count >= length) return start_index;
                 } else {
                     count = 0;
                 }
             }
         }
     }
-
-    return (size_t)-1;
 }
 
 bool bitmap_range_all(const Bitmap *bitmap, size_t start, size_t end, bool value) {

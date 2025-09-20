@@ -166,7 +166,7 @@ function arch_x86_64()
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
 
             local limine_dir = iso_dir.."/limine"
-            os.cp("assets/limine.conf", limine_dir.."/limine.conf")
+            os.cp("assets/limine.conf", iso_dir.."/limine.conf")
 
             local limine_src = target:pkg("limine"):installdir()
             local limine_src = limine_src.."/share/limine"

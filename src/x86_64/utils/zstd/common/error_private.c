@@ -12,21 +12,20 @@
 
 #include "error_private.h"
 
-const char* ERR_getErrorString(ERR_enum code)
-{
+const char *ERR_getErrorString(ERR_enum code) {
 #ifdef ZSTD_STRIP_ERROR_STRINGS
     (void)code;
     return "Error strings stripped";
 #else
-    static const char* const notErrorCode = "Unspecified error code";
-    switch( code )
-    {
+    static const char *const notErrorCode = "Unspecified error code";
+    switch (code) {
     case PREFIX(no_error): return "No error detected";
-    case PREFIX(GENERIC):  return "Error (generic)";
+    case PREFIX(GENERIC): return "Error (generic)";
     case PREFIX(prefix_unknown): return "Unknown frame descriptor";
     case PREFIX(version_unsupported): return "Version not supported";
     case PREFIX(frameParameter_unsupported): return "Unsupported frame parameter";
-    case PREFIX(frameParameter_windowTooLarge): return "Frame requires too much memory for decoding";
+    case PREFIX(frameParameter_windowTooLarge):
+        return "Frame requires too much memory for decoding";
     case PREFIX(corruption_detected): return "Corrupted block detected";
     case PREFIX(checksum_wrong): return "Restored data doesn't match checksum";
     case PREFIX(parameter_unsupported): return "Unsupported parameter";
@@ -43,7 +42,8 @@ const char* ERR_getErrorString(ERR_enum code)
     case PREFIX(dictionaryCreation_failed): return "Cannot create Dictionary from provided samples";
     case PREFIX(dstSize_tooSmall): return "Destination buffer is too small";
     case PREFIX(srcSize_wrong): return "Src size is incorrect";
-    case PREFIX(dstBuffer_null): return "Operation on NULL destination buffer";
+    case PREFIX(dstBuffer_null):
+        return "Operation on NULL destination buffer";
         /* following error codes are not stable and may be removed or changed in a future version */
     case PREFIX(frameIndex_tooLarge): return "Frame index is too large";
     case PREFIX(seekableIO): return "An I/O error occurred when reading/seeking";

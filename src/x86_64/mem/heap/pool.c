@@ -21,7 +21,6 @@ bool mpool_init(mpool_t pool, void *ptr, size_t size) {
     pool->ptr          = ptr;
     pool->size         = size;
     pool->alloced_size = 0;
-    pool->cb_reqmem    = NULL;
     pool->cb_delmem    = NULL;
     pool->large_blk    = NULL;
 #pragma unroll

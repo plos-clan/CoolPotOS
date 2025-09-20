@@ -31,15 +31,72 @@ static void alloc_exit(bool is_sti) {
     if (is_sti) open_interrupt;
 }
 
+const static size_t start_magic = 0xF3EACFC1CCEBFAD7;
+const static size_t end_magic   = 0xA2BAD9BE14335FE2;
+
+static size_t get_true_size(size_t data_size) {
+    return sizeof(size_t) + sizeof(start_magic) + data_size + sizeof(end_magic);
+}
+
+static void *set_magic(void *ptr, size_t data_size, bool fill_mem) {
+    void *size_ptr, *start_magic_ptr, *data_ptr, *end_magic_ptr;
+    size_ptr        = ptr;
+    start_magic_ptr = size_ptr + sizeof(size_t);
+    data_ptr        = start_magic_ptr + sizeof(start_magic);
+    end_magic_ptr   = data_ptr + data_size;
+
+    if (fill_mem) memset(ptr, 0xFF, get_true_size(data_size));
+    *(size_t *)size_ptr        = data_size;
+    *(size_t *)start_magic_ptr = start_magic;
+    *(size_t *)end_magic_ptr   = end_magic;
+    return data_ptr;
+}
+
+void *check_magic(void *ptr, bool fill_mem) {
+    void *size_ptr, *start_magic_ptr, *data_ptr, *end_magic_ptr;
+    data_ptr         = ptr;
+    start_magic_ptr  = data_ptr - sizeof(start_magic);
+    size_ptr         = start_magic_ptr - sizeof(size_t);
+    size_t data_size = *(size_t *)size_ptr;
+    end_magic_ptr    = data_ptr + data_size;
+
+    if (*(size_t *)start_magic_ptr != start_magic) {
+        logkf("\nMemory checkout error START\n");
+        close_interrupt;
+        cpu_hlt;
+    }
+    if (*(size_t *)end_magic_ptr != end_magic) {
+        logkf("\nMemory checkout error END\n");
+        close_interrupt;
+        cpu_hlt;
+    }
+    if (fill_mem) memset(size_ptr, 0xff, get_true_size(data_size));
+    return size_ptr;
+}
+
 void *malloc(size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_alloc(&pool, size);
+
+    size             = (size + 7) & ~7;
+    size_t true_size = get_true_size(size);
+    void  *ptr       = mpool_alloc(&pool, true_size);
+    if (!ptr) {
+        logkf("\nkernel malloc null\n");
+        close_interrupt;
+        cpu_hlt;
+    }
+    ptr = set_magic(ptr, size, true);
+
     alloc_exit(is_sti);
     return ptr;
 }
 
 void free(void *ptr) {
+    if (!ptr) return;
     bool is_sti = alloc_enter();
+
+    ptr = check_magic(ptr, true);
+
     mpool_free(&pool, ptr);
     alloc_exit(is_sti);
 }
@@ -60,9 +117,16 @@ void *calloc(size_t n, size_t size) {
 
 void *realloc(void *ptr, size_t newsize) {
     const bool is_sti = alloc_enter();
-    void      *n_ptr  = mpool_realloc(&pool, ptr, newsize);
+
+    if (ptr != NULL) ptr = check_magic(ptr, false);
+    newsize          = (newsize + 7) & ~7;
+    size_t true_size = get_true_size(newsize);
+
+    ptr = mpool_realloc(&pool, ptr, true_size);
+    ptr = set_magic(ptr, newsize, false);
+
     alloc_exit(is_sti);
-    return n_ptr;
+    return ptr;
 }
 
 void *reallocarray(void *ptr, size_t n, size_t size) {
@@ -71,7 +135,10 @@ void *reallocarray(void *ptr, size_t n, size_t size) {
 
 void *aligned_alloc(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, align);
+    size              = (size + 7) & ~7;
+    size_t true_size  = get_true_size(size);
+    void  *ptr        = mpool_aligned_alloc(&pool, true_size, align);
+    ptr               = set_magic(ptr, size, true);
     alloc_exit(is_sti);
     return ptr;
 }

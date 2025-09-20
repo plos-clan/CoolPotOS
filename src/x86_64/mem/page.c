@@ -189,13 +189,15 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
             return source_table;
         }
 
-        uint64_t      frame          = alloc_frames(1);
+        uint64_t frame = alloc_frames(1);
+        not_null_assets((void *)frame, "copy page error");
         page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
         memcpy(new_page_table, source_table->entries, PAGE_SIZE);
         return new_page_table;
     }
 
-    uint64_t      phy_frame = alloc_frames(1);
+    uint64_t phy_frame = alloc_frames(1);
+    not_null_assets((void *)phy_frame, "copy page error");
     page_table_t *new_table = phys_to_virt(phy_frame);
     for (uint64_t i = 0; i < (all_copy ? 512 : (level == 4 ? 256 : 512)); i++) {
         if (source_table->entries[i].value & PTE_HUGE) {
