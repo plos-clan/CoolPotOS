@@ -29,10 +29,11 @@
 
 - heap/: 内核堆分配器实现, 由 `copi143` 编写的 `plalloc` 分配器.
 - lazyalloc.c: 懒分配器实现.
-- frame.c: 物理页框分配器实现.
+- frame.c: 物理页框分配器上层抽象接口.
 - memstats.c: 内存统计实现.
 - page.c: 页表管理相关实现.
-- bitmap.c: 位图实现, 页框分配器使用位图来管理物理内存.
+- bitmap.c: 位图分配策略的实现.
+- buddy.c: 伙伴分配策略的实现.(CP_Kernel 3.7 后的默认物理页框分配策略)
 - hhdm.c: 有关于高半部映射的内存偏移获取以及一些虚实地址转换.
 
 ## Interrupt and Clock Subsystem (中断与时钟子系统)
@@ -77,6 +78,8 @@
 - pipe.c: 管道实现, 提供进程间通信的管道机制.
 - modfs.c: 模块文件系统实现, 提供内核模块的加载与管理功能.
 - partition.c: 分区管理实现, 提供对磁盘分区的识别与操作功能, 并将识别到的分区作为虚拟块设备挂载到 `devfs`.
+- cpio/cpfs.c: `initramfs` 挂载虚拟文件系统处理层
+- cpio/cpio.c: `initramfs` 挂载器实现.
 
 ## Services and Modules (服务与模块)
 
