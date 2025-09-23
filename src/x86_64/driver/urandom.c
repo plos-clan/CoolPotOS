@@ -22,5 +22,5 @@ void setup_urandom() {
     urandom.flag        = 1;
     urandom.sector_size = 1;
     strcpy(urandom.drive_name, "urandom");
-    regist_device(urandom);
+    regist_device(NULL, urandom);
 }

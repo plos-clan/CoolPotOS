@@ -2,6 +2,7 @@
 #include "heap.h"
 #include "krlibc.h"
 #include "lock.h"
+#include "pcb.h"
 
 lock_queue *queue_init() {
     lock_queue *q = malloc(sizeof(lock_queue));

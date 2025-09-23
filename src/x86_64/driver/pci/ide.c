@@ -560,7 +560,7 @@ void ide_initialize(uint32_t BAR0, uint32_t BAR1, uint32_t BAR2, uint32_t BAR3, 
             vd.poll        = (void *)empty;
             vd.type        = DEVICE_BLOCK;
 
-            int c            = regist_device(vd);
+            int c            = regist_device(NULL, vd);
             drive_mapping[c] = i;
         }
 }

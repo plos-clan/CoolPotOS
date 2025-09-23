@@ -34,16 +34,19 @@ static void alloc_exit(bool is_sti) {
 const static size_t start_magic = 0xF3EACFC1CCEBFAD7;
 const static size_t end_magic   = 0xA2BAD9BE14335FE2;
 
+size_t alloc_mem_size = 0;
+
 static size_t get_true_size(size_t data_size) {
     return sizeof(size_t) + sizeof(start_magic) + data_size + sizeof(end_magic);
 }
 
 static void *set_magic(void *ptr, size_t data_size, bool fill_mem) {
     void *size_ptr, *start_magic_ptr, *data_ptr, *end_magic_ptr;
-    size_ptr        = ptr;
-    start_magic_ptr = size_ptr + sizeof(size_t);
-    data_ptr        = start_magic_ptr + sizeof(start_magic);
-    end_magic_ptr   = data_ptr + data_size;
+    size_ptr         = ptr;
+    start_magic_ptr  = size_ptr + sizeof(size_t);
+    data_ptr         = start_magic_ptr + sizeof(start_magic);
+    end_magic_ptr    = data_ptr + data_size;
+    alloc_mem_size  += data_size;
 
     if (fill_mem) memset(ptr, 0xFF, get_true_size(data_size));
     *(size_t *)size_ptr        = data_size;
@@ -54,12 +57,12 @@ static void *set_magic(void *ptr, size_t data_size, bool fill_mem) {
 
 void *check_magic(void *ptr, bool fill_mem) {
     void *size_ptr, *start_magic_ptr, *data_ptr, *end_magic_ptr;
-    data_ptr         = ptr;
-    start_magic_ptr  = data_ptr - sizeof(start_magic);
-    size_ptr         = start_magic_ptr - sizeof(size_t);
-    size_t data_size = *(size_t *)size_ptr;
-    end_magic_ptr    = data_ptr + data_size;
-
+    data_ptr          = ptr;
+    start_magic_ptr   = data_ptr - sizeof(start_magic);
+    size_ptr          = start_magic_ptr - sizeof(size_t);
+    size_t data_size  = *(size_t *)size_ptr;
+    end_magic_ptr     = data_ptr + data_size;
+    alloc_mem_size   -= data_size;
     if (*(size_t *)start_magic_ptr != start_magic) {
         logkf("\nMemory checkout error START\n");
         close_interrupt;

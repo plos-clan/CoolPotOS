@@ -100,6 +100,8 @@
 #define VT_AUTO    0x00 // 自动切换模式
 #define VT_PROCESS 0x01 // 进程控制模式
 
+#define B38400 0x1000
+
 #include "ctype.h"
 #include "lock_queue.h"
 
@@ -135,6 +137,13 @@ typedef struct tty_virtual_device {
     termios_t          termios;
     bool               is_sigterm; // 是否为前台进程组终端
 } tty_t;
+
+struct winsize {
+    unsigned short ws_row;
+    unsigned short ws_col;
+    unsigned short ws_xpixel;
+    unsigned short ws_ypixel;
+};
 
 void   init_tty();
 tty_t *alloc_default_tty();

@@ -317,7 +317,7 @@ void build_tty_device() {
     stdio.ioctl       = tty_ioctl;
     stdio.poll        = tty_poll;
     stdio.map         = (void *)empty;
-    regist_device(stdio);
+    regist_device(NULL, stdio);
 
     device_t ttydev;
     ttydev.type = DEVICE_STREAM;
@@ -330,7 +330,7 @@ void build_tty_device() {
     ttydev.ioctl       = tty_ioctl;
     ttydev.poll        = tty_poll;
     ttydev.map         = (void *)empty;
-    regist_device(ttydev);
+    regist_device(NULL, ttydev);
 }
 
 void init_tty() {

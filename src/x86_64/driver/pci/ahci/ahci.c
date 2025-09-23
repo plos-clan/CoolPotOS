@@ -341,7 +341,7 @@ void ahci_setup() {
         sata.read_vbuf   = NULL;
         sata.write_vbuf  = NULL;
         strcpy(sata.drive_name, name_buf);
-        int id        = regist_device(sata);
+        int id        = regist_device(NULL, sata);
         hbaDevice[id] = hbadev;
         kinfo("sata%d: blk_size=%d, blk=0..%d, %s", i, hbadev->block_size, hbadev->max_lba,
               hbadev->model);

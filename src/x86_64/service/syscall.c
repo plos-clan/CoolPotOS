@@ -183,7 +183,6 @@ syscall_(exit) {
     logkf("Thread %s exit with code %d.\n", exit_thread->name, exit_code);
     kill_thread(exit_thread);
     open_interrupt;
-    scheduler_yield();
     cpu_hlt;
     return SYSCALL_SUCCESS;
 }
@@ -605,7 +604,7 @@ syscall_(exit_group) {
     kill_proc(exit_process, exit_code,
               true); // 子进程调用，is_zombie = true，不能在child_pcb中删除当前进程
     open_interrupt;
-    scheduler_yield();
+    //scheduler_yield();
     cpu_hlt;
 }
 

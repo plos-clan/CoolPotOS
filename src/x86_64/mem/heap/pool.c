@@ -58,7 +58,8 @@ static bool mpool_reqmem(mpool_t pool, size_t size) {
 
     void *mem = pool->cb_reqmem(pool->ptr + pool->size, memsize);
     if (mem == NULL) return false;
-    if (mem != pool->ptr) {
+    //if (mem != pool->ptr) {
+    if (mem != pool->ptr + pool->size) {
         if (pool->cb_delmem) pool->cb_delmem(mem, memsize);
         return false;
     }
