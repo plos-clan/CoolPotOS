@@ -28,6 +28,7 @@
 #include "pci.h"
 #include "pcnet.h"
 #include "power.h"
+#include "pty.h"
 #include "sb16.h"
 #include "shell.h"
 #include "smbios.h"
@@ -137,6 +138,7 @@ void kmain() {
     gop_dev_setup();
     setup_urandom();
     zero_setup();
+    pty_init();
     killer_setup();
     setup_syscall(true);
     netfs_setup();

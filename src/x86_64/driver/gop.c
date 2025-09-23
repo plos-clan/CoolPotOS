@@ -10,6 +10,7 @@
 #include "page.h"
 #include "sprintf.h"
 #include "terminal.h"
+#include "tty.h"
 
 struct limine_framebuffer  *framebuffer  = NULL;
 struct limine_framebuffer **framebuffers = NULL;
@@ -129,7 +130,7 @@ void gop_dev_setup() {
         fbdev.sector_size = 4;
         fbdev.map         = gop_map;
         fbdev.ioctl       = gop_ioctl;
-        int id            = regist_device(fbdev);
+        int id            = regist_device(NULL, fbdev);
         framebuffers[id]  = get_framebuffer_response()->framebuffers[i];
     }
 }

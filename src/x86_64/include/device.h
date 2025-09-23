@@ -32,9 +32,10 @@ int    device_manager_init();
 /**
  * 注册一个设备 (会被自动映射进 devfs)
  * @param vd 设备
+ * @param path 注册路径(为NULL注册进 /dev 根)
  * @return 注册编号
  */
-int     regist_device(device_t vd);
+int     regist_device(const char *path, device_t vd);
 errno_t devfs_register(const char *path, size_t id);
 bool    have_vdisk(int drive);
 size_t  device_read(size_t lba, size_t number, void *buffer, int drive);

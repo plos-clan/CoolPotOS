@@ -189,7 +189,7 @@ void partition_init() {
         char buf[20];
         sprintf(buf, "part%zu", j);
         strcpy(part.drive_name, buf);
-        int id           = regist_device(part);
+        int id           = regist_device(NULL, part);
         device_lists[id] = &partitions[j];
     }
 }

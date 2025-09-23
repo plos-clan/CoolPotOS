@@ -327,6 +327,7 @@ fd_file_handle *fd_dup(fd_file_handle *src) {
     new->node       = src->node;
     new->offset     = src->offset;
     new->flags      = src->flags;
+    new->fd         = src->fd;
     vfs_node_t node = new->node;
     if (node->type == file_pipe) {
         pipe_specific_t *spec = node->handle;
@@ -372,24 +373,24 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
 errno_t vfs_close(vfs_node_t node) {
     if (unlikely(node == NULL)) return VFS_STATUS_FAILED;
     if (node == rootdir) return VFS_STATUS_SUCCESS;
-    if (unlikely(node->handle == NULL))
-        return VFS_STATUS_SUCCESS;
-    else {
-        node->refcount--;
-        if (node->refcount == 0) {
-            if (node->type & file_delete) {
-                errno_t res = callbackof(node, delete)(node->parent->handle, node);
-                if (res < 0) return res;
-                list_delete(node->parent->child, node);
-                node->handle = NULL;
-                vfs_free(node);
-            } else {
-                callbackof(node, close)(node->handle);
-                node->handle = NULL;
-            }
-        }
-        return VFS_STATUS_SUCCESS;
+    if (unlikely(node->handle == NULL)) return VFS_STATUS_SUCCESS;
+
+    node->refcount--;
+
+    if (node->type & file_proxy) return VFS_STATUS_SUCCESS;
+    if (node->type & file_dir) return VFS_STATUS_SUCCESS;
+    if (node->refcount != 0) return VFS_STATUS_SUCCESS;
+    if (node->type & file_delete) {
+        errno_t res = callbackof(node, delete)(node->parent->handle, node);
+        if (res < 0) return res;
+        list_delete(node->parent->child, node);
+        node->handle = NULL;
+        vfs_free(node);
+    } else {
+        callbackof(node, close)(node->handle);
+        node->handle = NULL;
     }
+    return VFS_STATUS_SUCCESS;
 }
 
 bool is_virtual_fs(const char *src) {

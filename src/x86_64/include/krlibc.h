@@ -3,7 +3,7 @@
 /**
  * 定义CP_Kernel内核的各种属性
  */
-#define KERNEL_NAME            "CP_Kernel-x86_64-0.3.7" // 内核编号
+#define KERNEL_NAME            "CP_Kernel-x86_64-0.3.8" // 内核编号
 #define MAX_CPU                256                      // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START      0xffff900000000000       // 内核堆起始地址
 #define KERNEL_HEAP_SIZE       0x6400000                // 内核堆大小 100MB
@@ -32,6 +32,7 @@
 #define KERNEL_MOD_SPACE_START 0xffffffffb0000000       // 内核模块加载起始地址
 #define KERNEL_MOD_SPACE_END   0xffffffffc0000000       // 内核模块加载结束地址
 #define MAX_DEIVCE             256                      // 最大设备列表支持
+#define MAX_PTY_DEVICE         32768                    // PTY 最大设备数支持
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")

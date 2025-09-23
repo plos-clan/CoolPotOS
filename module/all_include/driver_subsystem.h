@@ -69,7 +69,7 @@ void regist_netdev(void *desc, uint8_t *mac, uint32_t mtu, netdev_send_t send, n
 errno_t netdev_send(netdev_t *dev, void *data, uint32_t len);
 errno_t netdev_recv(netdev_t *dev, void *data, uint32_t len);
 
-int    regist_device(device_t vd);
+int    regist_device(const char *path, device_t vd);
 void  *driver_phys_to_virt(uint64_t phys_addr);
 size_t device_read(size_t lba, size_t number, void *buffer, int drive);
 size_t device_write(size_t lba, size_t number, const void *buffer, int drive);

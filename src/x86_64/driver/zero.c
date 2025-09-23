@@ -52,7 +52,7 @@ void zero_setup() {
     null_device.poll       = zero_poll;
     null_device.ioctl      = zero_ioctl;
     strcpy(null_device.drive_name, "null");
-    regist_device(null_device);
+    regist_device(NULL, null_device);
 
     device_t zero_device;
     zero_device.size       = 0;
@@ -65,5 +65,5 @@ void zero_setup() {
     zero_device.poll       = zero_poll;
     zero_device.ioctl      = zero_ioctl;
     strcpy(zero_device.drive_name, "zero");
-    regist_device(zero_device);
+    regist_device(NULL, zero_device);
 }

@@ -9,13 +9,13 @@
 
 device_t device_ctl[MAX_DEIVCE];
 
-int regist_device(device_t vd) {
+int regist_device(const char *path, device_t vd) {
     for (int i = 0; i < MAX_DEIVCE; i++) {
         if (!device_ctl[i].flag) {
             device_ctl[i]         = vd;
             device_ctl[i].vdiskid = i;
             errno_t ret;
-            if ((ret = devfs_register(NULL, i)) != EOK) {
+            if ((ret = devfs_register(path, i)) != EOK) {
                 kerror("Registers (%s)device error: %d", vd.drive_name, ret);
             }
             return i;
