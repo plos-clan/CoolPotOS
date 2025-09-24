@@ -64,6 +64,7 @@
 
 #include "ctype.h"
 #include "list.h"
+#include "llist.h"
 
 typedef struct vfs_node *vfs_node_t;
 
@@ -132,6 +133,12 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_rename_t rename;      // 重命名文件或文件夹
 } *vfs_callback_t;
 
+typedef struct vfs_filesystem {
+    vfs_callback_t      callback;
+    char                name[10];
+    struct llist_header node;
+} *vfs_filesystem_t;
+
 struct vfs_node {           // vfs节点
     vfs_node_t parent;      // 父目录
     vfs_node_t linkto;      // 符号链接指向的节点
@@ -167,6 +174,7 @@ struct fd {
 
 extern struct vfs_callback vfs_empty_callback;
 extern vfs_node_t          rootdir;
+extern struct llist_header fs_metadata_list;
 
 /**
  * 创建目录节点
@@ -252,6 +260,15 @@ vfs_node_t vfs_open(const char *str);
  * @return 非0代表操作失败
  */
 errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg);
+
+/**
+ * 读取一个符号链接文件
+ * @param node 文件节点
+ * @param buf 缓冲区
+ * @param bufsize
+ * @return
+ */
+size_t vfs_readlink(vfs_node_t node, char *buf, size_t bufsize);
 
 bool is_virtual_fs(const char *src);
 

@@ -170,13 +170,37 @@ errno_t cpfs_symlink(void *parent, const char *name, vfs_node_t node) {
     return EOK;
 }
 
+static void free_child_node(cpfs_file_t *parent, cpfs_file_t *dir) {
+    if (dir->is_dir) {
+        do {
+            cpfs_file_t *tmp = NULL;
+            cpfs_file_t *pos, *n;
+            llist_for_each(pos, n, &dir->child_node, curr_node) {
+                tmp = pos;
+            }
+            if (tmp == NULL) break;
+            free_child_node(dir, tmp);
+            free(dir);
+        } while (true);
+        return;
+    }
+    llist_delete(&dir->curr_node);
+    free(dir->data);
+    free(dir);
+}
+
+void cpfs_unmount(void *root) {
+    cpfs_file_t *handle = root;
+    free_child_node(NULL, handle);
+}
+
 static int dummy() {
     return -ENOSYS;
 }
 
 static struct vfs_callback cpfs_callbacks = {
     .mount    = cpfs_mount,
-    .unmount  = (void *)empty,
+    .unmount  = cpfs_unmount,
     .mkdir    = cpfs_mkdir,
     .close    = cpfs_close,
     .stat     = cpfs_stat,

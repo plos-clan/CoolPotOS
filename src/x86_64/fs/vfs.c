@@ -10,6 +10,7 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "list.h"
+#include "llist.h"
 #include "pcb.h"
 #include "pipefs.h"
 
@@ -17,11 +18,15 @@ vfs_node_t rootdir = NULL;
 
 static void empty_func() {}
 
-struct vfs_callback vfs_empty_callback;
+struct vfs_callback   vfs_empty_callback;
+struct vfs_filesystem vfs_empty_filesystem;
 
 vfs_callback_t fs_callbacks[256] = {
     [0] = &vfs_empty_callback,
 };
+
+struct llist_header fs_metadata_list;
+
 static int fs_nextid = 1;
 
 #define callbackof(node, _name_) (fs_callbacks[(node)->fsid]->_name_)
@@ -256,9 +261,14 @@ int vfs_regist(const char *name, vfs_callback_t callback) {
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         if (((void **)callback)[i] == NULL) return VFS_STATUS_FAILED;
     }
-    int id = fs_nextid++;
-
+    int id           = fs_nextid++;
     fs_callbacks[id] = callback;
+
+    vfs_filesystem_t filesystem = malloc(sizeof(struct vfs_filesystem));
+    filesystem->callback        = callback;
+    strcpy(filesystem->name, name);
+    llist_init_head(&filesystem->node);
+    llist_append(&fs_metadata_list, &filesystem->node);
     return id;
 }
 
@@ -477,6 +487,11 @@ errno_t vfs_unmount(const char *path) {
     return VFS_STATUS_FAILED;
 }
 
+size_t vfs_readlink(vfs_node_t node, char *buf, size_t bufsize) {
+    size_t ret = callbackof(node, readlink)(node, buf, 0, bufsize);
+    return ret;
+}
+
 void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
                   uint64_t flags, uint64_t offset) {
     pcb_t current_task        = get_current_task()->parent_group;
@@ -580,7 +595,7 @@ bool vfs_init() {
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         ((void **)&vfs_empty_callback)[i] = (void *)empty_func;
     }
-
+    llist_init_head(&fs_metadata_list);
     rootdir       = vfs_node_alloc(NULL, "/");
     rootdir->type = file_dir;
     kinfo("Virtual File System initialize.");
