@@ -11,7 +11,45 @@
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 #define FD_SETSIZE           1024
 
-#define syscall_(name)                                                                             \
+// 一个非常取巧的宏魔法, 可以简化 syscall 函数的定义
+#define __EXPAND_PARAMS(...) __VA_ARGS__
+#define __CONCAT_IMPL(a, b)  a##b
+#define __CONCAT(a, b)       __CONCAT_IMPL(a, b)
+
+#define __ARGS_COUNT_IMPL(_0, _1, _2, _3, _4, _5, _6, N, ...) N
+
+#define __ARGS_COUNT(...) __EXPAND_PARAMS(__ARGS_COUNT_IMPL(__VA_ARGS__, 6, 5, 4, 3, 2, 1, 0))
+
+#define __SYSCALL_IMPL_0(NAME)                                                                     \
+    uint64_t syscall_##NAME(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,            \
+                            uint64_t arg4, uint64_t arg5, struct syscall_regs *regs)
+
+#define __SYSCALL_IMPL_1(NAME, P1)                                                                 \
+    uint64_t syscall_##NAME(P1, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4,        \
+                            uint64_t arg5, struct syscall_regs *regs)
+
+#define __SYSCALL_IMPL_2(NAME, P1, P2)                                                             \
+    uint64_t syscall_##NAME(P1, P2, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,    \
+                            struct syscall_regs *regs)
+
+#define __SYSCALL_IMPL_3(NAME, P1, P2, P3)                                                         \
+    uint64_t syscall_##NAME(P1, P2, P3, uint64_t arg3, uint64_t arg4, uint64_t arg5,               \
+                            struct syscall_regs *regs)
+
+#define __SYSCALL_IMPL_4(NAME, P1, P2, P3, P4)                                                     \
+    uint64_t syscall_##NAME(P1, P2, P3, P4, uint64_t arg4, uint64_t arg5, struct syscall_regs *regs)
+
+#define __SYSCALL_IMPL_5(NAME, P1, P2, P3, P4, P5)                                                 \
+    uint64_t syscall_##NAME(P1, P2, P3, P4, P5, uint64_t arg5, struct syscall_regs *regs)
+
+#define __SYSCALL_IMPL_6(NAME, P1, P2, P3, P4, P5, P6)                                             \
+    uint64_t syscall_##NAME(P1, P2, P3, P4, P5, P6, struct syscall_regs *regs)
+
+#define __SYSCALL_DISPATCH(N, NAME, ...) __CONCAT(__SYSCALL_IMPL_, N)(NAME, ##__VA_ARGS__)
+
+#define syscall_(NAME, ...) __SYSCALL_DISPATCH(__ARGS_COUNT(0, ##__VA_ARGS__), NAME, ##__VA_ARGS__)
+
+#define syscall_def_(name)                                                                         \
     uint64_t syscall_##name(                                                                       \
         uint64_t arg0 __attribute__((unused)), uint64_t arg1 __attribute__((unused)),              \
         uint64_t arg2 __attribute__((unused)), uint64_t arg3 __attribute__((unused)),              \
@@ -114,12 +152,16 @@
 #define SYSCALL_LINK        86
 #define SYSCALL_UNLINK      87
 #define SYSCALL_SYMLINK     88
+#define SYSCALL_READLINK    89
+#define SYSCALL_SYSINFO     99
 #define SYSCALL_GETUID      102
+#define SYSCALL_GETGID      104
 #define SYSCALL_SETUID      105
 #define SYSCALL_SETGID      106
 #define SYSCALL_GETEUID     107
 #define SYSCALL_GETEGID     108
 #define SYSCALL_SETPGID     109
+#define SYSCALL_GETPPID     110
 #define SYSCALL_GETGROUPS   115
 #define SYScall_GETPGID     121
 #define SYSCALL_SIGSUSPEND  130
@@ -128,6 +170,7 @@
 #define SYSCALL_ARCH_PRCTL  158
 #define SYSCALL_G_AFFINITY  160
 #define SYSCALL_MOUNT       165
+#define SYSCALL_UMOUNT2     166
 #define SYSCALL_REBOOT      169
 #define SYSCALL_GET_TID     186
 #define SYSCALL_FUTEX       202
@@ -146,6 +189,7 @@
 #define SYSCALL_PIPE2       293
 #define SYSCALL_CP_F_RANGE  326
 #define SYSCALL_STATX       332
+#define SYSCALL_FSOPEN      430
 #define SYSCALL_FACCESSAT2  439
 
 // CoolPotOS 平台特有系统调用号定义
@@ -285,6 +329,23 @@ struct statx {
     /* 0xa0 */
     uint64_t               __spare3[12]; /* Spare space for future expansion */
                                          /* 0x100 */
+};
+
+struct sysinfo {
+    int64_t  uptime;    /* Seconds since boot */
+    uint64_t loads[3];  /* 1, 5, and 15 minute load averages */
+    uint64_t totalram;  /* Total usable main memory size */
+    uint64_t freeram;   /* Available memory size */
+    uint64_t sharedram; /* Amount of shared memory */
+    uint64_t bufferram; /* Memory used by buffers */
+    uint64_t totalswap; /* Total swap space size */
+    uint64_t freeswap;  /* swap space still available */
+    uint16_t procs;     /* Number of current processes */
+    uint16_t pad;       /* Explicit padding for m68k */
+    uint64_t totalhigh; /* Total high memory size */
+    uint64_t freehigh;  /* Available high memory size */
+    uint32_t mem_unit;  /* Memory unit size in bytes */
+    char     _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
 };
 
 struct cpos_meminfo {

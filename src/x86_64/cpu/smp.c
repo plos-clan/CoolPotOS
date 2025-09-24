@@ -120,12 +120,15 @@ _Noreturn void apu_entry() {
     apu_idle->cpu_timer                             = nano_time();
     apu_idle->cpu_id                                = current_cpu->id;
     apu_idle->status                                = RUNNING;
+    apu_idle->fs = apu_idle->gs = 0;
+    apu_idle->fs_base           = read_fsbase();
+    apu_idle->gs_base           = read_gsbase();
     char name[50];
     sprintf(name, "CP_IDLE_CPU%u", current_cpu->id);
     memcpy(apu_idle->name, name, strlen(name));
-    apu_idle->name[strlen(name)]      = '\0';
-    current_cpu->idle_pcb             = apu_idle;
-    current_cpu->ready                = true;
+    apu_idle->name[strlen(name)] = '\0';
+    current_cpu->idle_pcb        = apu_idle;
+    current_cpu->ready           = true;
     change_current_tcb(apu_idle);
     apu_idle->parent_group = kernel_group;
     apu_idle->group_index  = queue_enqueue(kernel_group->pcb_queue, apu_idle);
@@ -144,8 +147,6 @@ _Noreturn void apu_entry() {
     init_ap_idle(current_cpu, apu_idle);
 
     setup_syscall(false);
-
-    create_kernel_thread((void *)halt_service, NULL, "free service", kernel_group, lapic_id());
 
     open_interrupt;
     loop __asm__ volatile("hlt");
@@ -180,7 +181,7 @@ void smp_setup() {
         __asm__ volatile("pause" ::: "memory");
     }
 
-    current_cpu->idle_pcb             = kernel_head_task;
+    current_cpu->idle_pcb = kernel_head_task;
     kernel_head_task->queue_index =
         queue_enqueue(((smp_cpu_t *)read_kgsbase())->scheduler_queue, kernel_head_task);
     if (kernel_head_task->queue_index == (size_t)-1) {
@@ -203,7 +204,5 @@ void smp_setup() {
     insert_sched_entity(((struct eevdf_t *)current_cpu->sched_handle)->root, idle_entity);
     eevdf_sched->current = idle_entity;
     open_interrupt;
-
-    create_kernel_thread((void *)halt_service, NULL, "free_service", kernel_group, lapic_id());
     kinfo("%d processors have been enabled.", cpu_count);
 }

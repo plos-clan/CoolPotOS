@@ -290,6 +290,26 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     close_interrupt;
     disable_scheduler();
 
+    uint8_t *pcb_buffer = malloc(node->size);
+    not_null_assets(pcb_buffer, "process_execve: pcb_buffer alloc null.");
+    vfs_read(node, pcb_buffer, 0, node->size);
+
+    if (strncmp(pcb_buffer, "#!", 2) == 0) {
+        int    interpreter_argc;
+        char **interpreter_argv;
+        char   interpreter_buffer[1024];
+        *strchr(pcb_buffer, '\n') = '\0';
+        strcpy(interpreter_buffer, pcb_buffer);
+        strcat(interpreter_buffer, " ");
+        strcat(interpreter_buffer, path);
+        interpreter_argc = cmd_parse(interpreter_buffer, &interpreter_argv, ' ');
+
+        free(pcb_buffer);
+        vfs_close(node);
+        free(norm_path);
+        return process_execve(interpreter_argv[0], interpreter_argv, envp);
+    }
+
     char cmdline[PAGE_SIZE];
     memset(cmdline, 0, sizeof(cmdline));
     char *cmdline_ptr = cmdline;
@@ -317,9 +337,6 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     page_directory_t *old_page_dir = process->page_dir;
     switch_process_page_directory(clone_page_directory(get_kernel_pagedir(), false));
 
-    uint8_t *pcb_buffer = malloc(node->size);
-    not_null_assets(pcb_buffer, "process_execve: pcb_buffer alloc null.");
-    vfs_read(node, pcb_buffer, 0, node->size);
     uint64_t e_entry    = 0;
     uint64_t load_start = 0;
     e_entry = (uint64_t)load_executor_elf(pcb_buffer, get_current_directory(), 0, &load_start);

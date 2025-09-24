@@ -236,5 +236,5 @@ void init_frame_bitmap() {
     frame_allocator.origin_frames = origin_frames;
     frame_allocator.usable_frames = origin_frames - bitmap_frame_count;
 
-    logkf("Available memory: %lld MiB\n", (origin_frames / 256));
+    logkf("Available memory: %lld MiB bitmap_sz: %llu\n", (origin_frames / 256), bitmap_size);
 }

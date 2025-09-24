@@ -233,10 +233,12 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
 
     if (is_zombie) {
         if (pcb->pcb_queue->size > 0) {
+            spin_lock(pcb->pcb_queue->lock);
             queue_foreach(pcb->pcb_queue, node) {
                 tcb_t tcb = (tcb_t)node->data;
                 kill_thread(tcb);
             }
+            spin_unlock(pcb->pcb_queue->lock);
         }
 
         pcb->status       = ZOMBIE;
@@ -250,12 +252,23 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
         ipc_send(pcb->parent_task, msg);
     } else {
         queue_remove_at(pcb->parent_task->child_pcb, pcb->child_index);
-        add_death_proc(pcb);
         pcb->status = DEATH;
+        kill_proc0(pcb);
     }
 }
 
 void kill_proc0(pcb_t pcb) {
+    do {
+        tcb_t thread = NULL;
+        queue_foreach(pcb->pcb_queue, thread0) {
+            thread = thread0->data;
+        }
+        if (thread == NULL) break;
+        queue_remove_at(pcb->pcb_queue, thread->group_index);
+        kill_thread0(thread);
+        free(thread);
+    } while (true);
+
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue, pcb->queue_index);
 
@@ -297,11 +310,7 @@ void kill_thread(tcb_t task) {
         futex_wake((void *)page_virt_to_phys(task->tid_address), 1);
         switch_process_page_directory(directory);
     }
-
-    smp_cpu_t *cpu    = get_cpu_smp(task->cpu_id);
-    task->death_index = lock_queue_enqueue(cpu->death_queue, task);
     futex_free(task);
-    spin_unlock(cpu->death_queue->lock);
 }
 
 void kill_thread0(tcb_t task) {
@@ -338,52 +347,6 @@ tcb_t found_thread(pcb_t pcb, pid_t tid) {
     }
     return NULL;
 }
-
-#if 0
-int waitpid(pid_t pid, pid_t *pid_ret) {
-    if (pid == -1) {
-        bool is_sti                = are_interrupts_enabled();
-        get_current_task()->status = WAIT;
-        open_interrupt;
-        change_entity_weight(get_current_task(), NICE_TO_PRIO(10));
-        ipc_message_t mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
-        int           exit_code =
-            (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
-        pid = *pid_ret = mesg->pid;
-        free(mesg);
-        change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
-        if (!is_sti) close_interrupt;
-        get_current_task()->status = RUNNING;
-
-        pcb_t wait_p = found_pcb(pid);
-        if (wait_p->status == ZOMBIE) kill_proc(wait_p, exit_code, false);
-        return exit_code;
-    }
-    //if (found_pcb(pid) == NULL) return -25565;
-    ipc_message_t mesg;
-    bool          is_sti       = are_interrupts_enabled();
-    get_current_task()->status = WAIT;
-    open_interrupt;
-    change_entity_weight(get_current_task(), NICE_TO_PRIO(10));
-    loop {
-        mesg = ipc_recv_wait(IPC_MSG_TYPE_EPID);
-        if (pid == mesg->pid) {
-            int exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |
-                            mesg->data[0];
-            *pid_ret = mesg->pid;
-            free(mesg);
-            change_entity_weight(get_current_task(), NICE_TO_PRIO(0));
-            if (!is_sti) close_interrupt;
-            get_current_task()->status = RUNNING;
-
-            pcb_t wait_p = found_pcb(pid);
-            if (wait_p->status == ZOMBIE) kill_proc(wait_p, exit_code, false);
-            return exit_code;
-        }
-        ipc_send(get_current_task()->parent_group, mesg);
-    }
-}
-#endif
 
 int waitpid(pid_t pid, pid_t *pid_ret) {
     get_current_task()->status = WAIT;

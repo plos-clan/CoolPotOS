@@ -60,6 +60,8 @@
 #    define GIT_VERSION "unknown"
 #endif
 
+#define INITRAMFS_START 1
+
 void kmain();
 
 extern void  error_setup();    // error_handle.c
@@ -80,6 +82,20 @@ _Noreturn void cp_reset() {
     printk("Rebooting %s...\n", KERNEL_NAME);
     power_reset();
     loop;
+}
+
+static void kernel_watchdog() {
+    kwarn("PID 1 process has exited, user session is missing.");
+    kwarn("Should the kernel be restarted?");
+    printk("Reboot kernel(Y/n): ");
+    _terminal_flush();
+    do {
+        char c = kernel_getch();
+        printk("%c\n", c);
+        _terminal_flush();
+        if (c == '\n' || c == 'y') { cp_reset(); }
+        if (c == 'n') break;
+    } while (true);
 }
 
 void kmain() {
@@ -144,15 +160,37 @@ void kmain() {
     netfs_setup();
     load_all_kernel_module();
     partition_init();
+#ifdef INITRAMFS_START
     cpio_init();
+#endif
     kinfo("Kernel load Done!");
 
-    pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
-    create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group, SIZE_MAX);
+    // pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
+    // create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group, SIZE_MAX);
 
     open_interrupt;
     enable_scheduler();
-    change_bsp_weight();
 
+#ifdef INITRAMFS_START
+#    if 0
+    int   argc   = 3;
+    char *argv[] = {"/init", NULL};
+    exec(argc, argv);
+#    else
+    {
+        int   argc         = 3;
+        char *argv_init[2] = {"exec", "/sbin/init"};
+        char *argv_sh[3]   = {"exec", "/bin/busybox", "sh"};
+        char *argv_bash[2] = {"exec", "/bin/bash"};
+        //exec(argc, argv_init);
+        exec(argc, argv_bash);
+        exec(argc, argv_sh);
+    }
+#    endif
+
+#endif
+    kernel_watchdog();
+
+    change_bsp_weight();
     loop __asm__ volatile("hlt");
 }

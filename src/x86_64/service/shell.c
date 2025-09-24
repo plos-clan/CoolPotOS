@@ -288,7 +288,7 @@ static void echo(int argc, char **argv) {
     }
 }
 
-static void mount(int argc, char **argv) {
+void mount(int argc, char **argv) {
     if (argc < 3) {
         printk("mount: Too few parameters.\n");
         return;
@@ -326,7 +326,7 @@ static void lmod(int argc, char **argv) {
     }
 }
 
-static bool exec(int argc, char **argv) {
+bool exec(int argc, char **argv) {
     if (argc == 1) {
         printk("\033[31mexec: no module name.\033[0m\n");
         return false;
