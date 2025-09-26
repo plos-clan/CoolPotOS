@@ -76,6 +76,10 @@ Then your editor knows how to find the source files and derives syntax highlight
 
 This project is licensed under [MIT License](LICENSE).
 
+## Documentation
+
+For detailed technical documentation, please visit [docs/README.md](docs/README.md).
+
 ## Feature
 
 ### AMD64

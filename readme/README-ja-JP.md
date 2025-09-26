@@ -76,6 +76,10 @@ xmake project -k compile_commands
 
 このプロジェクトは[MITライセンス](LICENSE)の下でライセンスされています。
 
+## ドキュメント
+
+詳細な技術ドキュメントについては、[docs/README.md](docs/README.md)を参照してください。
+
 ## Feature
 
 ### AMD64
