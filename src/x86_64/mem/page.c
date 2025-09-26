@@ -120,44 +120,50 @@ bool page_table_get_flags(page_directory_t *directory, uint64_t addr, uint64_t *
     return true;
 }
 
-bool page_table_update_flags(page_directory_t *directory, uint64_t addr, uint64_t new_flags) {
-    page_table_t *pml4     = directory->table;
-    uint64_t      l4_index = (((addr >> 39)) & 0x1FF);
-    uint64_t      l3_index = (((addr >> 30)) & 0x1FF);
-    uint64_t      l2_index = (((addr >> 21)) & 0x1FF);
-    uint64_t      l1_index = (((addr >> 12)) & 0x1FF);
+uint64_t get_arch_page_table_flags(uint64_t flags) {
+    uint64_t result = PTE_PRESENT;
 
-    if (!(pml4->entries[l4_index].value & PTE_PRESENT)) return false;
-    if (pml4->entries[l4_index].value & PTE_HUGE) {
-        uint64_t phys                 = pml4->entries[l4_index].value & PAGE_MASK;
-        pml4->entries[l4_index].value = phys | (new_flags & 0xFFF);
-        return true;
+    if ((flags & PTE_WRITEABLE) != 0) { result |= PTE_WRITEABLE; }
+
+    if ((flags & PTE_USER) != 0) { result |= PTE_USER; }
+
+    if ((flags & PTE_U_ACCESSED) != 0) { result |= (PTE_DIS_CACHE | PTE_PWT); }
+    return result;
+}
+
+uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
+    uint64_t indexs[4];
+    for (uint64_t i = 0; i < 4; i++) {
+        indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
     }
 
-    page_table_t *pdpt = (page_table_t *)(pml4->entries[l4_index].value & PAGE_MASK);
-    if (!(pdpt->entries[l3_index].value & PTE_PRESENT)) return false;
-    if (pdpt->entries[l3_index].value & PTE_HUGE) {
-        uint64_t phys                 = pdpt->entries[l3_index].value & PAGE_MASK;
-        pdpt->entries[l3_index].value = phys | (new_flags & 0xFFF);
-        return true;
+    for (uint64_t i = 0; i < 4 - 1; i++) {
+        uint64_t index = indexs[i];
+        uint64_t addr  = pgdir[index];
+        if (ARCH_PT_IS_LARGE(addr)) {
+            pgdir[index] &= ~PAGE_CALC_PAGE_TABLE_MASK(4);
+            pgdir[index] |= flags;
+        }
+        if (!ARCH_PT_IS_TABLE(addr)) { return 0; }
+        pgdir = (uint64_t *)phys_to_virt(addr & (~PAGE_CALC_PAGE_TABLE_MASK(4)));
     }
 
-    page_table_t *pd = (page_table_t *)(pdpt->entries[l3_index].value & PAGE_MASK);
-    if (!(pd->entries[l2_index].value & PTE_PRESENT)) return false;
-    if (pd->entries[l2_index].value & PTE_HUGE) {
-        uint64_t phys               = pd->entries[l2_index].value & PAGE_MASK;
-        pd->entries[l2_index].value = phys | (new_flags & 0xFFF);
-        return true;
+    uint64_t index = indexs[4 - 1];
+
+    pgdir[index] &= ~PAGE_CALC_PAGE_TABLE_MASK(4);
+    pgdir[index] |= flags;
+
+    flush_tlb(vaddr);
+    return 0;
+}
+
+uint64_t map_change_attribute_range(struct page_directory *directory, uint64_t vaddr, uint64_t len,
+                                    uint64_t flags) {
+    uint64_t *pgdir = (uint64_t *)directory->table->entries;
+    for (uint64_t va = vaddr; va < vaddr + len; va += PAGE_SIZE) {
+        map_change_attribute(pgdir, va, get_arch_page_table_flags(flags));
     }
-
-    page_table_t *pt = (page_table_t *)(pd->entries[l2_index].value & PAGE_MASK);
-    if (!(pt->entries[l1_index].value & PTE_PRESENT)) return false;
-
-    uint64_t phys               = pt->entries[l1_index].value & PAGE_MASK;
-    pt->entries[l1_index].value = phys | (new_flags & 0xFFF);
-
-    __asm__ volatile("invlpg (%0)" ::"r"(addr) : "memory");
-    return true;
+    return 0;
 }
 
 page_table_t *page_table_create(page_table_entry_t *entry) {

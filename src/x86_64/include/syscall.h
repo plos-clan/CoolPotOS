@@ -130,6 +130,7 @@
 #define SYSCALL_SELECT      23
 #define SYSCALL_YIELD       24
 #define SYSCALL_MREMAP      25
+#define SYSCALL_MINCORE     27
 #define SYSCALL_DUP         32
 #define SYSCALL_DUP2        33
 #define SYSCALL_NANO_SLEEP  35

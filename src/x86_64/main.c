@@ -120,6 +120,7 @@ void kmain() {
     float_processor_setup();
     fsgsbase_init();
     dlinker_init();
+    vfs_init();
     user_setup();
     smbios_setup();
     acpi_setup();
@@ -129,7 +130,6 @@ void kmain() {
     kinfo("RTC time %s", date);
     free(date);
     calibrate_tsc_with_hpet();
-    vfs_init();
     tmpfs_setup();
 
     iso9660_regist();

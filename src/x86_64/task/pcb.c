@@ -8,7 +8,6 @@
 #include "hhdm.h"
 #include "io.h"
 #include "ipc.h"
-#include "killer.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
