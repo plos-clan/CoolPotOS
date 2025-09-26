@@ -74,8 +74,8 @@
 #include "signal.h"
 #include "syscall.h"
 #include "sysuser.h"
-#include "timer.h"
 #include "tty.h"
+#include "vma.h"
 
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;
@@ -112,6 +112,7 @@ struct process_control_block {
     lock_queue       *virt_queue;  // 虚拟页分配队列
     lock_queue       *child_pcb;   // 子进程列表
     page_directory_t *page_dir;    // 进程页表
+    vma_manager_t     vma_manager; // VMA 分配管理器
     char            **envp;        // 环境变量指针
     size_t            envc;        // 环境变量数量
     ucb_t             user;        // 用户会话
@@ -127,10 +128,10 @@ struct process_control_block {
 };
 
 struct thread_control_block {
-    uint64_t            syscall_stack;        // 系统调用栈顶地址
-    uint64_t            syscall_stack_user;   // 用户态下系统调用栈缓存
-    uint64_t            signal_stack; // 信号栈顶地址
-    uint64_t            call_in_signal;       // 是否在信号处理过程
+    uint64_t syscall_stack;      // 系统调用栈顶地址
+    uint64_t syscall_stack_user; // 用户态下系统调用栈缓存
+    uint64_t signal_stack;       // 信号栈顶地址
+    uint64_t call_in_signal;     // 是否在信号处理过程
 
     pcb_t      parent_group; // 父进程
     uint8_t    task_level;   // 线程权限等级

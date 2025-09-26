@@ -21,6 +21,7 @@
 #include "pcb.h"
 #include "pci.h"
 #include "sprintf.h"
+#include "timer.h"
 #include "vfs.h"
 
 /**

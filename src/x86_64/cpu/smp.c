@@ -13,6 +13,7 @@
 #include "pcb.h"
 #include "sprintf.h"
 #include "syscall.h"
+#include "timer.h"
 
 extern struct idt_register idt_pointer;      // idt.c
 extern tcb_t               kernel_head_task; // scheduler.c

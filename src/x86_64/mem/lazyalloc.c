@@ -24,9 +24,9 @@ errno_t lazy_tryalloc(pcb_t pcb, uint64_t address) {
             break;
         }
     }
+    spin_unlock(pcb->virt_queue->lock);
 
     if (virt_page == NULL) {
-        spin_unlock(pcb->virt_queue->lock);
         return -1;
     } else {
         size_t   fault_index = (address - virt_page->start) / PAGE_SIZE;
@@ -41,8 +41,6 @@ errno_t lazy_tryalloc(pcb_t pcb, uint64_t address) {
 
         mm_virtual_page_t *left  = NULL;
         mm_virtual_page_t *right = NULL;
-
-        spin_unlock(pcb->virt_queue->lock);
 
         // 左侧未分配部分
         if (fault_index > 0) {

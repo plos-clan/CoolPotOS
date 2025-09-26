@@ -9,6 +9,7 @@
 #include "pcb.h"
 #include "signal.h"
 #include "smp.h"
+#include "timer.h"
 
 tcb_t         kernel_head_task = NULL;
 volatile bool is_scheduler     = false;
