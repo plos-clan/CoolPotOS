@@ -1457,14 +1457,8 @@ syscall_(getuid) {
     return get_current_user()->uid;
 }
 
-syscall_(copy_file_range) {
-    int       fd_in   = arg0;
-    uint64_t *off_in  = (uint64_t *)arg1;
-    int       fd_out  = arg2;
-    uint64_t *off_out = (uint64_t *)arg3;
-    size_t    len     = arg4;
-    uint64_t  flags   = arg5;
-
+syscall_(copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
+         uint64_t flags) {
     if (flags != 0) { return SYSCALL_FAULT_(EINVAL); }
     fd_file_handle *src_handle = queue_get(get_current_task()->parent_group->file_open, fd_in);
     fd_file_handle *dst_handle = queue_get(get_current_task()->parent_group->file_open, fd_out);
@@ -1503,28 +1497,32 @@ syscall_(pwrite, int fd, uint8_t *buffer) {
     return syscall_write(fd, buffer, arg2, 0, 0, 0, regs);
 }
 
-syscall_(mount) {
-    char      *dev_name  = (char *)arg0;
-    char      *dir_name  = (char *)arg1;
-    char      *type      = (char *)arg2;
-    uint64_t   flags     = arg3;
-    void      *data      = (void *)arg4;
-    char      *ndev_name = vfs_cwd_path_build(dev_name);
+syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data) {
+    if (dir_name == NULL || type == NULL) return SYSCALL_FAULT_(EINVAL);
+
     char      *ndir_name = vfs_cwd_path_build(dir_name);
     vfs_node_t dir       = vfs_open((const char *)ndir_name);
     if (!dir) {
         free(ndir_name);
-        free(ndev_name);
         return SYSCALL_FAULT_(ENOENT);
     }
+    char            *ndev_name;
+    vfs_filesystem_t filesystem = get_filesystem(type);
+    if (filesystem == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (filesystem->id != 0) {
+        ndev_name = (char *)filesystem->id;
+        goto mount;
+    }
 
+    ndev_name = vfs_cwd_path_build(dev_name);
+mount:
     if (vfs_mount((const char *)ndev_name, dir) == VFS_STATUS_FAILED) {
         free(ndir_name);
         free(ndev_name);
         return SYSCALL_FAULT_(ENOENT);
     }
     free(ndir_name);
-    free(ndev_name);
+    if (filesystem->id == 0) free(ndev_name);
     return SYSCALL_SUCCESS;
 }
 
@@ -1898,11 +1896,13 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
     if (likely(syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL)) {
         open_interrupt;
+        //logkf("syscall(%llu): call\n", syscall_id);
         regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
+        //logkf("syscall(%llu): call\n", syscall_id);
         close_interrupt;
     } else {
-        if (likely(regs->rax != 12)) logkf("Syscall(%d) cannot implemented.\n", regs->rax);
+        if (unlikely(syscall_id != 12)) logkf("Syscall(%d) cannot implemented.\n", syscall_id);
         regs->rax = SYSCALL_FAULT;
     }
 

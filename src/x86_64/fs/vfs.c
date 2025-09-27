@@ -7,6 +7,7 @@
 
 #include "vfs.h"
 #include "errno.h"
+#include "iso9660.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "list.h"
@@ -56,6 +57,15 @@ static inline void do_update(vfs_node_t file) {
     if (file->type & file_none || file->handle == NULL || file->type & file_dir ||
         file->type & file_symlink)
         do_open(file);
+}
+
+vfs_filesystem_t get_filesystem(char *type) {
+    vfs_filesystem_t filesystem = NULL;
+    vfs_filesystem_t pos, n;
+    llist_for_each(pos, n, &fs_metadata_list, node) {
+        if (strcmp(pos->name, type) == 0) { filesystem = pos; }
+    }
+    return filesystem;
 }
 
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle) {
@@ -256,7 +266,7 @@ errno_t vfs_rename(vfs_node_t node, const char *new) {
     return callbackof(node, rename)(node->handle, new);
 }
 
-int vfs_regist(const char *name, vfs_callback_t callback) {
+int vfs_regist(const char *name, vfs_callback_t callback, int register_id) {
     if (callback == NULL) return VFS_STATUS_FAILED;
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         if (((void **)callback)[i] == NULL) return VFS_STATUS_FAILED;
@@ -266,6 +276,7 @@ int vfs_regist(const char *name, vfs_callback_t callback) {
 
     vfs_filesystem_t filesystem = malloc(sizeof(struct vfs_filesystem));
     filesystem->callback        = callback;
+    filesystem->id              = register_id;
     strcpy(filesystem->name, name);
     llist_init_head(&filesystem->node);
     llist_append(&fs_metadata_list, &filesystem->node);
@@ -406,7 +417,8 @@ errno_t vfs_close(vfs_node_t node) {
 bool is_virtual_fs(const char *src) {
     return src == DEVFS_REGISTER_ID || ((uint64_t)src) == MODFS_REGISTER_ID ||
            ((uint64_t)src) == TMPFS_REGISTER_ID || ((uint64_t)src) == PIEFS_REGISTER_ID ||
-           ((uint64_t)src) == NETFS_REGISTER_ID || ((uint64_t)src) == CPFS_REGISTER_ID;
+           ((uint64_t)src) == NETFS_REGISTER_ID || ((uint64_t)src) == CPFS_REGISTER_ID ||
+           ((uint64_t)src) == PROC_REGISTER_ID;
 }
 
 void vfs_free(vfs_node_t vfs) {

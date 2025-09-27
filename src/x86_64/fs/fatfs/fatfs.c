@@ -333,6 +333,6 @@ static struct vfs_callback fatfs_callbacks = {
 };
 
 void fatfs_init() {
-    fatfs_id = vfs_regist("fatfs", &fatfs_callbacks);
+    fatfs_id = vfs_regist("fatfs", &fatfs_callbacks, 0);
     if (fatfs_id == VFS_STATUS_FAILED) { kerror("Failed to register fat filesystem\n"); }
 }

@@ -210,7 +210,7 @@ static struct vfs_callback devfs_callbacks = {
 };
 
 void devfs_setup() {
-    devfs_id = vfs_regist("devfs", &devfs_callbacks);
+    devfs_id = vfs_regist("devfs", &devfs_callbacks, DEVFS_REGISTER_ID);
     vfs_mkdir("/dev");
     vfs_node_t dev = vfs_open("/dev");
     if (dev == NULL) {

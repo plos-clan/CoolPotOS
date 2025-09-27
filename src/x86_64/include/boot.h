@@ -3,6 +3,7 @@
 #include "ctype.h"
 #include "limine.h"
 
+char                               *get_kernel_cmdline();
 const char                         *get_bootloader_name();
 const char                         *get_bootloader_version();
 uint64_t                            boot_physical_memory_offset();

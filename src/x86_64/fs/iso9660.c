@@ -328,8 +328,8 @@ void iso9660_open(void *parent, const char *name, vfs_node_t node) {
     l9660_dir   *c_dir  = (l9660_dir *)malloc(sizeof(l9660_dir));
     l9660_file  *c_file = (l9660_file *)malloc(sizeof(l9660_file));
     l9660_status status;
-    file_t new = (file_t)malloc(sizeof(struct file));
-    status     = l9660_openat(c_file, p_dir, name);
+    file_t       new = (file_t)malloc(sizeof(struct file));
+    status           = l9660_openat(c_file, p_dir, name);
 
     if (status != L9660_OK) {
         status = l9660_opendirat(c_dir, p_dir, name);
@@ -427,5 +427,5 @@ static struct vfs_callback iso_callbacks = {
 };
 
 void iso9660_regist() {
-    iso9660_id = vfs_regist("iso9660", &iso_callbacks);
+    iso9660_id = vfs_regist("iso9660", &iso_callbacks, 0);
 }

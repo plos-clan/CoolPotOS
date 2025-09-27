@@ -7,6 +7,7 @@
 #include "lock.h"
 #include "lock_queue.h"
 #include "pcb.h"
+#include "procfs.h"
 #include "signal.h"
 #include "smp.h"
 #include "timer.h"
@@ -95,7 +96,6 @@ int add_task(tcb_t new_task) {
     spin_unlock(cpu0->scheduler_queue->lock);
 
     if (new_task->queue_index == (size_t)-1) { return -1; }
-
     spin_unlock(scheduler_lock);
     return new_task->queue_index;
 }

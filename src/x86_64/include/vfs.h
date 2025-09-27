@@ -78,7 +78,7 @@ typedef void (*vfs_resize_t)(void *current, uint64_t size);
 // 读写一个文件
 typedef size_t (*vfs_write_t)(void *file, const void *addr, size_t offset, size_t size);
 typedef size_t (*vfs_read_t)(void *file, void *addr, size_t offset, size_t size);
-typedef size_t (*vfs_readlink_t)(vfs_node_t *node, void *addr, size_t offset, size_t size);
+typedef size_t (*vfs_readlink_t)(vfs_node_t node, void *addr, size_t offset, size_t size);
 
 typedef errno_t (*vfs_stat_t)(void *file, vfs_node_t node);
 
@@ -136,6 +136,7 @@ typedef struct vfs_callback { // VFS回调函数
 typedef struct vfs_filesystem {
     vfs_callback_t      callback;
     char                name[10];
+    int                 id;
     struct llist_header node;
 } *vfs_filesystem_t;
 
@@ -196,9 +197,10 @@ errno_t vfs_mkfile(const char *name);
  * (如果不需要某个回调函数, 用一个空实现替代即可)
  * @param name 文件系统名
  * @param callback 回调指针
+ * @param register_id 文件系统挂载id (非虚拟文件系统填0)
  * @return 文件系统id
  */
-int vfs_regist(const char *name, vfs_callback_t callback);
+int vfs_regist(const char *name, vfs_callback_t callback, int register_id);
 
 /**
  * 创建 link 文件
@@ -269,6 +271,13 @@ errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg);
  * @return
  */
 size_t vfs_readlink(vfs_node_t node, char *buf, size_t bufsize);
+
+/**
+ * 根据类型获取文件系统句柄
+ * @param type 类型
+ * @return 句柄(NULL为找不到)
+ */
+vfs_filesystem_t get_filesystem(char *type);
 
 bool is_virtual_fs(const char *src);
 

@@ -36,6 +36,7 @@ void cpfs_open(void *parent, const char *name, vfs_node_t node) {
             node->handle = pos;
             node->fsid   = cpfs_id;
             node->type   = pos->is_dir ? file_dir : file_none;
+            node->size   = pos->is_dir ? 0 : pos->size;
             if (pos->is_symlink) node->type |= file_symlink;
             node->refcount = 1;
             return;
@@ -220,5 +221,5 @@ static struct vfs_callback cpfs_callbacks = {
 };
 
 void cpfs_setup() {
-    cpfs_id = vfs_regist("cpfs", &cpfs_callbacks);
+    cpfs_id = vfs_regist("cpfs", &cpfs_callbacks, CPFS_REGISTER_ID);
 }

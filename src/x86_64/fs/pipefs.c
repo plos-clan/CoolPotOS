@@ -253,14 +253,5 @@ static struct vfs_callback pipefs_callbacks = {
 };
 
 void pipefs_setup() {
-    pipefs_id = vfs_regist("pipefs", &pipefs_callbacks);
-    vfs_mkdir("/pipe");
-    vfs_node_t dev = vfs_open("/pipe");
-    if (dev == NULL) {
-        kerror("'pipe' handle is null.");
-        return;
-    }
-    if (vfs_mount((const char *)PIEFS_REGISTER_ID, dev) == VFS_STATUS_FAILED) {
-        kerror("Cannot mount pipe file system.");
-    }
+    pipefs_id = vfs_regist("pipefs", &pipefs_callbacks, PIEFS_REGISTER_ID);
 }
