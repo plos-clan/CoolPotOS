@@ -13,6 +13,7 @@
 #include "krlibc.h"
 #include "lazyalloc.h"
 #include "lock.h"
+#include "procfs.h"
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
@@ -271,6 +272,8 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->pcb_queue);
     queue_remove_at(pgb_queue, pcb->queue_index);
 
+    procfs_update_task_list();
+
     loop {
         fd_file_handle *handle = (fd_file_handle *)queue_dequeue(pcb->file_open);
         if (handle == NULL) break;
@@ -412,6 +415,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     spin_unlock(pgb_queue->lock);
     new_pgb->status      = START;
     new_pgb->child_index = queue_enqueue(new_pgb->parent_task->child_pcb, new_pgb);
+    procfs_update_task_list();
     return new_pgb;
 }
 

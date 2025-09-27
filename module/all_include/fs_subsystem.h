@@ -104,7 +104,7 @@ struct vfs_node {           // vfs节点
 
 errno_t    vfs_mkdir(const char *name);
 errno_t    vfs_mkfile(const char *name);
-int        vfs_regist(const char *name, vfs_callback_t callback);
+int        vfs_regist(const char *name, vfs_callback_t callback, int register_id);
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
 errno_t    vfs_close(vfs_node_t node);

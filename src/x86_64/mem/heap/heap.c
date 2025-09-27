@@ -7,6 +7,8 @@
 #include "page.h"
 #include "scheduler.h"
 
+// #define HEAP_CHECK 1
+
 /* 内核堆扩容措施 */
 void *heap_alloc(void *ptr, size_t size);
 
@@ -80,6 +82,7 @@ void *check_magic(void *ptr, bool fill_mem) {
 void *malloc(size_t size) {
     const bool is_sti = alloc_enter();
 
+#ifdef HEAP_CHECK
     size             = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
     void  *ptr       = mpool_alloc(&pool, true_size);
@@ -89,6 +92,9 @@ void *malloc(size_t size) {
         cpu_hlt;
     }
     ptr = set_magic(ptr, size, true);
+#else
+    void *ptr = mpool_alloc(&pool, size);
+#endif
 
     alloc_exit(is_sti);
     return ptr;
@@ -97,9 +103,9 @@ void *malloc(size_t size) {
 void free(void *ptr) {
     if (!ptr) return;
     bool is_sti = alloc_enter();
-
+#ifdef HEAP_CHECK
     ptr = check_magic(ptr, true);
-
+#endif
     mpool_free(&pool, ptr);
     alloc_exit(is_sti);
 }
@@ -120,14 +126,16 @@ void *calloc(size_t n, size_t size) {
 
 void *realloc(void *ptr, size_t newsize) {
     const bool is_sti = alloc_enter();
-
+#ifdef HEAP_CHECK
     if (ptr != NULL) ptr = check_magic(ptr, false);
     newsize          = (newsize + 7) & ~7;
     size_t true_size = get_true_size(newsize);
 
     ptr = mpool_realloc(&pool, ptr, true_size);
     ptr = set_magic(ptr, newsize, false);
-
+#else
+    ptr = mpool_realloc(&pool, ptr, newsize);
+#endif
     alloc_exit(is_sti);
     return ptr;
 }
@@ -138,10 +146,14 @@ void *reallocarray(void *ptr, size_t n, size_t size) {
 
 void *aligned_alloc(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
-    size              = (size + 7) & ~7;
-    size_t true_size  = get_true_size(size);
-    void  *ptr        = mpool_aligned_alloc(&pool, true_size, align);
-    ptr               = set_magic(ptr, size, true);
+#ifdef HEAP_CHECK
+    size             = (size + 7) & ~7;
+    size_t true_size = get_true_size(size);
+    void  *ptr       = mpool_aligned_alloc(&pool, true_size, align);
+    ptr              = set_magic(ptr, size, true);
+#else
+    void *ptr = mpool_aligned_alloc(&pool, size, align);
+#endif
     alloc_exit(is_sti);
     return ptr;
 }

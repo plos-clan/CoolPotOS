@@ -519,8 +519,8 @@ static struct vfs_callback pts_callbacks = {
 };
 
 static void setup_ptmx_device() {
-    ptmx_fsid      = vfs_regist("ptyfs_master", &ptmx_callbacks);
-    pts_fsid       = vfs_regist("ptyfs_slave", &pts_callbacks);
+    ptmx_fsid      = vfs_regist("ptyfs_master", &ptmx_callbacks, 0);
+    pts_fsid       = vfs_regist("ptyfs_slave", &pts_callbacks, 0);
     ptmx_list_head = malloc(sizeof(struct llist_header));
     llist_init_head(ptmx_list_head);
     if (ptmx_fsid == VFS_STATUS_FAILED) {

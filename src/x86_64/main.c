@@ -28,6 +28,7 @@
 #include "pci.h"
 #include "pcnet.h"
 #include "power.h"
+#include "procfs.h"
 #include "pty.h"
 #include "sb16.h"
 #include "shell.h"
@@ -160,6 +161,7 @@ void kmain() {
     netfs_setup();
     load_all_kernel_module();
     partition_init();
+    procfs_setup();
 #ifdef INITRAMFS_START
     cpio_init();
 #endif
@@ -174,16 +176,18 @@ void kmain() {
 #ifdef INITRAMFS_START
 #    if 0
     int   argc   = 3;
-    char *argv[] = {"/init", NULL};
+    char *argv[] = {"exec", "/init", NULL};
     exec(argc, argv);
 #    else
     {
-        int   argc         = 3;
-        char *argv_init[2] = {"exec", "/sbin/init"};
+        int argc = 3;
+        // char *argv_init[2] = {"exec", "/bin/sh"};
+        // char *argv_mount[] = {"exec", "/bin/busybox", "mount", "-t", "proc", "proc", "/proc", NULL};
+
         char *argv_sh[3]   = {"exec", "/bin/busybox", "sh"};
         char *argv_bash[2] = {"exec", "/bin/bash"};
-        //exec(argc, argv_init);
-        exec(argc, argv_bash);
+        // exec(sizeof(argv_mount), argv_mount);
+        //exec(argc, argv_bash);
         exec(argc, argv_sh);
     }
 #    endif

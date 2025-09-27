@@ -30,6 +30,10 @@ static int modfs_mount(const char *handle, vfs_node_t node) {
     }
     node->fsid = modfs_id;
     modfs_root = node;
+    for (int i = 0; i < module_count; i++) {
+        vfs_child_append(modfs_root, module_ls[i].module_name, NULL);
+        rbtree_sp_insert(mod_rbtree, module_ls[i].module_name, (void *)&module_ls[i]);
+    }
     return VFS_STATUS_SUCCESS;
 }
 
@@ -56,7 +60,7 @@ static size_t modfs_read(void *file, void *addr, size_t offset, size_t size) {
     cp_module_t *mod = (cp_module_t *)file;
     if (offset > mod->size) { return VFS_STATUS_FAILED; }
     void *buffer = mod->data + offset;
-    memcpy(addr, buffer, (mod->size - offset) > size ? size : mod->size - offset);
+    memcpy(addr, buffer, (size + offset) > mod->size ? size : mod->size - offset);
     return size;
 }
 
@@ -103,20 +107,5 @@ static struct vfs_callback modfs_callbacks = {
 };
 
 void modfs_setup() {
-    modfs_id = vfs_regist("modfs", &modfs_callbacks);
-    vfs_mkdir("/mod");
-    vfs_node_t mod = vfs_open("/mod");
-    if (mod == NULL) {
-        kerror("'mod' handle is null.");
-        return;
-    }
-    if (vfs_mount((const char *)MODFS_REGISTER_ID, mod) == VFS_STATUS_FAILED) {
-        kerror("Cannot mount module file system.");
-        return;
-    }
-
-    for (int i = 0; i < module_count; i++) {
-        vfs_child_append(modfs_root, module_ls[i].module_name, NULL);
-        rbtree_sp_insert(mod_rbtree, module_ls[i].module_name, (void *)&module_ls[i]);
-    }
+    modfs_id = vfs_regist("modfs", &modfs_callbacks, MODFS_REGISTER_ID);
 }

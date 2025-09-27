@@ -24,6 +24,7 @@
 #define PIEFS_REGISTER_ID      3                        // 管道文件系统注册ID
 #define NETFS_REGISTER_ID      4                        // 网络文件系统注册ID
 #define CPFS_REGISTER_ID       5                        // CPIO文件系统注册ID
+#define PROC_REGISTER_ID       6                        // 进程信息文件系统注册ID
 #define LAPIC_TIMER_SPEED      100                      // LAPIC定时器速度(单位: Hz)
 #define PIPE_BUFF              8192                     // 管道缓冲区大小
 #define MAX_IOAPICS            8                        // IOAPIC最大支持数(物理机会存在多个IOAPIC)

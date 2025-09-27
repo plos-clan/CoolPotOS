@@ -46,6 +46,14 @@ LIMINE_REQUEST struct limine_rsdp_request rsdp_request = {.id = LIMINE_RSDP_REQU
 LIMINE_REQUEST struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
 
+LIMINE_REQUEST struct limine_executable_cmdline_request cmdline_request = {
+    .id = LIMINE_EXECUTABLE_CMDLINE_REQUEST,
+};
+
+char *get_kernel_cmdline() {
+    return cmdline_request.response->cmdline;
+}
+
 const char *get_bootloader_name() {
     struct limine_bootloader_info_response *limine_bootloader_request = info_request.response;
 

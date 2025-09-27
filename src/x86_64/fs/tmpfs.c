@@ -177,14 +177,6 @@ static struct vfs_callback tmpfs_callbacks = {
 };
 
 void tmpfs_setup() {
-    tmpfs_id = vfs_regist("tmpfs", &tmpfs_callbacks);
-    vfs_mkdir("/tmp");
-    vfs_node_t dev = vfs_open("/tmp");
-    if (dev == NULL) {
-        kerror("'tmp' handle is null.");
-        return;
-    }
-    if (vfs_mount((const char *)TMPFS_REGISTER_ID, dev) == VFS_STATUS_FAILED) {
-        kerror("Cannot mount temp file system.");
-    }
+    tmpfs_id = vfs_regist("tmpfs", &tmpfs_callbacks, TMPFS_REGISTER_ID);
+    if (tmpfs_id == VFS_STATUS_FAILED) { kerror("tmpfs register error"); }
 }
