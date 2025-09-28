@@ -1,8 +1,8 @@
 #pragma once
 
 #include "elf.h"
-#include "module.h"
 #include "page.h"
+#include "pcb.h"
 #include "vfs.h"
 
 typedef void (*elf_start)(void);
@@ -16,7 +16,7 @@ typedef void (*elf_start)(void);
  * @return == NULL ? 无法识别或正确加载ELF : ELF入口函数
  */
 elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
-                            uint64_t *load_start);
+                            uint64_t *load_start, pcb_t process);
 
 /**
  * 映射ELF文件的程序头段

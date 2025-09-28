@@ -410,12 +410,15 @@ syscall_(stat, char *fn, struct stat *buf) {
     if (unlikely(fn == NULL || buf == NULL)) return SYSCALL_FAULT_(EINVAL);
     char      *path = vfs_cwd_path_build(fn);
     vfs_node_t node = vfs_open(path);
-    if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
+    if (node == NULL) {
+        free(path);
+        return SYSCALL_FAULT_(ENOENT);
+    }
     buf->st_gid   = (int)node->group;
     buf->st_uid   = (int)node->owner;
     buf->st_ino   = node->inode;
     buf->st_size  = (long long int)node->size;
-    buf->st_mode  = node->type | (node->type == file_symlink  ? S_IFLNK
+    buf->st_mode  = node->mode | (node->type == file_symlink  ? S_IFLNK
                                   : node->type == file_dir    ? S_IFDIR
                                   : node->type == file_block  ? S_IFBLK
                                   : node->type == file_socket ? S_IFSOCK
@@ -1271,6 +1274,8 @@ syscall_(pipe) {
     extern int        pipefd_id;
     extern int        pipefs_id;
 
+    if (pipefs_root == NULL) return SYSCALL_FAULT_(ENOSYS);
+
     char buf[16];
     sprintf(buf, "pipe%d", pipefd_id++);
 
@@ -1735,6 +1740,11 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
     return SYSCALL_SUCCESS;
 }
 
+syscall_(pivot_root, char *new_root, char *put_old) {
+
+    return SYSCALL_SUCCESS;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = (syscall_t)syscall_exit,
@@ -1823,6 +1833,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FSOPEN]      = (syscall_t)syscall_fsopen,
     [SYSCALL_GETPPID]     = (syscall_t)syscall_getppid,
     [SYSCALL_MINCORE]     = (syscall_t)syscall_mincore,
+    [SYSCALL_PIVOT_ROOT]  = (syscall_t)syscall_pivot_root,
 
     [SYSCALL_MEMINFO]     = (syscall_t)syscall_cp_meminfo,
     [SYSCALL_CPUINFO]     = (syscall_t)syscall_cp_cpuinfo,

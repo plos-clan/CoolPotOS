@@ -35,7 +35,15 @@ int    device_manager_init();
  * @param path 注册路径(为NULL注册进 /dev 根)
  * @return 注册编号
  */
-int     regist_device(const char *path, device_t vd);
+int regist_device(const char *path, device_t vd);
+
+/**
+ * 根据指定设备id查找设备
+ * @param id 设备id
+ * @return 为 NULL 则找不到设备
+ */
+device_t *get_device(size_t id);
+
 errno_t devfs_register(const char *path, size_t id);
 bool    have_vdisk(int drive);
 size_t  device_read(size_t lba, size_t number, void *buffer, int drive);

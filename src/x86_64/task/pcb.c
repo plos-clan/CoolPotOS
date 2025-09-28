@@ -179,11 +179,27 @@ void switch_to_user_mode(uint64_t func) {
         linker_main =
             load_interpreter_elf(get_current_task()->parent_group->elf_file,
                                  get_current_directory(), &linker_start, &link_data, &link_size);
+
         if (linker_main == NULL) {
             kerror("Cannot load libc module.");
             process_exit();
         }
         linker_main = linker_main + linker_start;
+
+        // VMA 标记
+        vma_t *ld_so_vma = vma_alloc();
+
+        ld_so_vma->vm_start  = linker_start;
+        ld_so_vma->vm_end    = linker_start + link_size;
+        ld_so_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
+
+        ld_so_vma->vm_type = VMA_TYPE_ANON;
+        ld_so_vma->vm_name = strdup("[libc]");
+
+        vma_t *region = vma_find_intersection(&get_current_task()->parent_group->vma_manager,
+                                              linker_start, linker_start + link_size);
+        if (!region) { vma_insert(&get_current_task()->parent_group->vma_manager, ld_so_vma); }
+        // 如未实现 VMA 可以直接去掉这段代码
 
         logkf("Linker main: %p | Program main: %p\n", linker_main, func);
         rsp = build_user_stack(get_current_task(), rsp, func, linker_start, link_data, link_size);

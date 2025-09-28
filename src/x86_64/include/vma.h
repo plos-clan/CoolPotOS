@@ -26,6 +26,7 @@ typedef struct vma {
     int           vm_fd;     // 文件描述符（文件映射用）
     int64_t       vm_offset; // 文件偏移量
     int           shm_id;    // 共享内存ID
+    char         *vm_name;   // VMA 名称
     struct vma   *vm_next;   // 链表下一个节点
     struct vma   *vm_prev;   // 链表前一个节点
 } vma_t;

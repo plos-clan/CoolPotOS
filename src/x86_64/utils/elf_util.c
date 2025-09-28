@@ -83,14 +83,27 @@ bool is_dynamic(Elf64_Ehdr *ehdr) {
 }
 
 elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
-                            uint64_t *load_start) {
+                            uint64_t *load_start, pcb_t process) {
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
     if (!elf_test_head(ehdr)) { return NULL; }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
     switch_process_page_directory(dir);
-    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, NULL)) { return NULL; }
+    size_t load_size = 0;
+    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, &load_size)) { return NULL; }
+    // VMA
+    if (process != NULL) {
+        vma_t *ld_so_vma = vma_alloc();
+
+        ld_so_vma->vm_start  = *load_start;
+        ld_so_vma->vm_end    = *load_start + load_size;
+        ld_so_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
+
+        ld_so_vma->vm_type = VMA_TYPE_ANON;
+        ld_so_vma->vm_name = strdup(process->name);
+        vma_insert(&process->vma_manager, ld_so_vma);
+    }
     switch_process_page_directory(cur);
     return (elf_start)ehdr->e_entry;
 }
@@ -119,7 +132,7 @@ elf_start load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *l
         *link_size = 0;
         return NULL;
     }
-    elf_start start = load_executor_elf(inter_ehdr, dir, INTERPRETER_BASE_ADDR, load_start);
+    elf_start start = load_executor_elf(inter_ehdr, dir, INTERPRETER_BASE_ADDR, load_start, NULL);
     *link_data      = (uint8_t *)inter_ehdr;
     *link_size      = inter_file->size;
     vfs_close(inter_file);

@@ -48,6 +48,11 @@ void *device_mmap(int drive, void *addr, uint64_t len) {
     return NULL;
 }
 
+device_t *get_device(size_t id) {
+    if (device_ctl[id].flag == 0) return NULL;
+    return &device_ctl[id];
+}
+
 size_t rw_device(int drive, size_t lba, uint8_t *buffer, size_t number, int read) {
     int indx = drive;
     if (indx >= MAX_DEIVCE) return 0;

@@ -3,9 +3,9 @@
 #include "kprint.h"
 #include "list.h"
 
-vfs_node_t pipefs_root;
-int        pipefs_id = 0;
-int        pipefd_id = 0;
+vfs_node_t pipefs_root = NULL;
+int        pipefs_id   = 0;
+int        pipefd_id   = 0;
 
 void wake_blocked_tasks(task_block_list_t *head) {
     task_block_list_t *current = head->next;
