@@ -116,6 +116,7 @@ void kmain() {
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     kinfo("DMI: %s %s, BIOS %s %s", smbios_sys_manufacturer(), smbios_sys_product_name(),
           smbios_bios_version(), smbios_bios_release_date());
+    kinfo("kernel cmdline: %s", get_kernel_cmdline());
     module_setup();
     error_setup();
     float_processor_setup();
@@ -159,9 +160,9 @@ void kmain() {
     killer_setup();
     setup_syscall(true);
     netfs_setup();
+    procfs_setup();
     load_all_kernel_module();
     partition_init();
-    procfs_setup();
 #ifdef INITRAMFS_START
     cpio_init();
 #endif
@@ -173,7 +174,11 @@ void kmain() {
     open_interrupt;
     enable_scheduler();
 
+    int   argc   = 3;
+    char *argv[] = {"exec", "/bin/sh", "/init", NULL};
+    exec(argc, argv);
 #ifdef INITRAMFS_START
+
 #    if 0
     int   argc   = 3;
     char *argv[] = {"exec", "/init", NULL};
@@ -191,7 +196,13 @@ void kmain() {
         exec(argc, argv_sh);
     }
 #    endif
-
+#else
+#    if 0
+    char *argv[3] = {"mount", "/dev/part1", "/"};
+    mount(3, argv);
+    char *argv_bash[2] = {"exec", "/bin/bash"};
+    exec(3, argv_bash);
+#    endif
 #endif
     kernel_watchdog();
 

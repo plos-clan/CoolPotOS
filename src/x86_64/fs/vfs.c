@@ -33,16 +33,38 @@ static int fs_nextid = 1;
 #define callbackof(node, _name_) (fs_callbacks[(node)->fsid]->_name_)
 
 static inline char *pathtok(char **sp) {
-    char *s = *sp, *e = *sp;
-    if (*s == '\0') return NULL;
-    for (; *e != '\0' && *e != '/'; e++) {}
-    if (*e == '/') {
-        *e  = '\0';
-        *sp = e + 1;
-    } else {
-        *sp = e;
+    char *s = *sp;
+    char *e = *sp;
+
+    // 跳过所有连续的斜杠
+    while (*e == '/') {
+        e++;
     }
-    return s;
+
+    // 如果已经到达字符串末尾，返回 NULL
+    if (*e == '\0') {
+        *sp = e; // 更新指针到字符串末尾
+        return NULL;
+    }
+
+    s = e; // 设置令牌起始位置（第一个非斜杠字符）
+
+    // 查找下一个斜杠或字符串结尾
+    while (*e != '\0' && *e != '/') {
+        e++;
+    }
+
+    // 保存下一个令牌的起始位置
+    char *next = e;
+    if (*e == '/') {
+        next++; // 跳过斜杠指向下一个字符
+    }
+
+    // 终止当前令牌
+    if (*e != '\0') { *e = '\0'; }
+
+    *sp = next; // 更新指针到下一个令牌位置
+    return s;   // 返回当前令牌
 }
 
 static inline void do_open(vfs_node_t file) {

@@ -339,7 +339,8 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
 
     uint64_t e_entry    = 0;
     uint64_t load_start = 0;
-    e_entry = (uint64_t)load_executor_elf(pcb_buffer, get_current_directory(), 0, &load_start);
+    e_entry =
+        (uint64_t)load_executor_elf(pcb_buffer, get_current_directory(), 0, &load_start, process);
 
     if (e_entry == 0) {
         vfs_close(node);

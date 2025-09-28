@@ -13,7 +13,10 @@ vma_t *vma_alloc(void) {
 }
 
 void vma_free(vma_t *vma) {
-    if (vma) { free(vma); }
+    if (vma) {
+        if (vma->vm_name) free(vma->vm_name);
+        free(vma);
+    }
 }
 
 vma_t *vma_find(vma_manager_t *mgr, unsigned long addr) {

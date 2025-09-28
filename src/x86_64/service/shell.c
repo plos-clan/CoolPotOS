@@ -348,7 +348,7 @@ bool exec(int argc, char **argv) {
 
     page_directory_t *up         = clone_page_directory(get_kernel_pagedir(), false);
     uint64_t          load_start = UINT64_MAX;
-    void             *main       = load_executor_elf(data, up, 0, &load_start);
+    void             *main       = load_executor_elf(data, up, 0, &load_start, NULL);
     if (main == NULL) {
         printk("\033[31mCannot load elf file.\033[0m\n");
         return false;

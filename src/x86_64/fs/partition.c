@@ -186,8 +186,9 @@ void partition_init() {
         part.write       = partition_write;
         part.ioctl       = partition_ioctl;
         part.size = (partition.ending_lba - partition.starting_lba + 1) * partition.sector_size;
-        char buf[20];
-        sprintf(buf, "part%zu", j);
+        device_t *src_dev = get_device(partition.vdisk_id);
+        char      buf[20];
+        sprintf(buf, "%sp%zu", src_dev->drive_name, j);
         strcpy(part.drive_name, buf);
         int id           = regist_device(NULL, part);
         device_lists[id] = &partitions[j];
