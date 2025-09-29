@@ -388,6 +388,11 @@ vfs_node_t get_rootdir() {
     return rootdir;
 }
 
+void set_rootdir(vfs_node_t node) {
+    rootdir         = node;
+    rootdir->parent = NULL;
+}
+
 void *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags,
               uint64_t offset) {
     if (unlikely(node == NULL)) return NULL;
@@ -461,8 +466,9 @@ errno_t vfs_mount(const char *src, vfs_node_t node) {
     if (node->type != file_dir) return VFS_STATUS_FAILED;
     for (int i = 1; i < fs_nextid; i++) {
         if (fs_callbacks[i]->mount(src, node) == 0) {
-            node->fsid = i;
-            node->root = node;
+            node->fsid     = i;
+            node->root     = node;
+            node->is_mount = true;
             return VFS_STATUS_SUCCESS;
         }
     }
@@ -509,11 +515,11 @@ errno_t vfs_unmount(const char *path) {
         if (cur->root == cur) {
             vfs_free_child(cur);
             callbackof(cur, unmount)(cur->handle);
-            cur->fsid   = node->fsid; // 交给上级
-            cur->root   = node->root;
-            cur->handle = NULL;
-            cur->child  = NULL;
-            // cur->type   = file_none;
+            cur->fsid     = node->fsid; // 交给上级
+            cur->root     = node->root;
+            cur->handle   = NULL;
+            cur->child    = NULL;
+            cur->is_mount = false;
             if (cur->fsid) do_update(cur);
             return VFS_STATUS_SUCCESS;
         }

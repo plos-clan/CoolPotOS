@@ -113,6 +113,7 @@ struct process_control_block {
     lock_queue       *child_pcb;   // 子进程列表
     page_directory_t *page_dir;    // 进程页表
     vma_manager_t     vma_manager; // VMA 分配管理器
+    vfs_node_t        procfs_node; // 进程私有 procfs 文件句柄
     char            **envp;        // 环境变量指针
     size_t            envc;        // 环境变量数量
     ucb_t             user;        // 用户会话

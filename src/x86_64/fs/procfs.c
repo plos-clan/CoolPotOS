@@ -9,6 +9,7 @@
 #include "vfs.h"
 
 static int procfs_id     = 0;
+static int proc_self_id  = 0;
 vfs_node_t procfs_root   = NULL;
 spin_t     procfs_oplock = SPIN_INIT;
 
@@ -22,6 +23,10 @@ const char filesystems_content[] = //"nodev\tsysfs\n"
 
 static int dummy() {
     return 0;
+}
+
+static int udummy() {
+    return VFS_STATUS_FAILED;
 }
 
 const char *get_vma_permissions(vma_t *vma) {
@@ -86,6 +91,8 @@ char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
     return buf;
 }
 
+extern lock_queue *pgb_queue;
+
 errno_t procfs_mount(const char *src, vfs_node_t node) {
     if (src != (void *)PROC_REGISTER_ID) return VFS_STATUS_FAILED;
     procfs_root = node;
@@ -93,32 +100,10 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     procfs_root->fsid = procfs_id;
 
     vfs_node_t procfs_self = vfs_node_alloc(procfs_root, "self");
-    procfs_self->type      = file_dir;
+    procfs_self->type      = file_symlink;
     procfs_self->mode      = 0644;
-
-    vfs_node_t self_environ            = vfs_node_alloc(procfs_self, "environ");
-    self_environ->type                 = file_none;
-    self_environ->mode                 = 0700;
-    proc_handle_t *self_environ_handle = malloc(sizeof(proc_handle_t));
-    self_environ->handle               = self_environ_handle;
-    self_environ_handle->task          = NULL;
-    sprintf(self_environ_handle->name, "self/environ");
-
-    vfs_node_t self_maps            = vfs_node_alloc(procfs_self, "maps");
-    self_maps->type                 = file_none;
-    self_maps->mode                 = 0700;
-    proc_handle_t *self_maps_handle = malloc(sizeof(proc_handle_t));
-    self_maps->handle               = self_maps_handle;
-    self_maps_handle->task          = NULL;
-    sprintf(self_maps_handle->name, "self/maps");
-
-    vfs_node_t self_cmdline            = vfs_node_alloc(procfs_self, "cmdline");
-    self_cmdline->type                 = file_none;
-    self_cmdline->mode                 = 0700;
-    proc_handle_t *self_cmdline_handle = malloc(sizeof(proc_handle_t));
-    self_cmdline->handle               = self_cmdline_handle;
-    self_cmdline_handle->task          = NULL;
-    sprintf(self_cmdline_handle->name, "self/cmdline");
+    procfs_self->linkto    = NULL;
+    procfs_self->fsid      = proc_self_id;
 
     vfs_node_t cmdline    = vfs_node_alloc(procfs_root, "cmdline");
     cmdline->type         = file_none;
@@ -135,6 +120,10 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     filesystems->handle               = filesystems_handle;
     filesystems_handle->task          = NULL;
     sprintf(filesystems_handle->name, "filesystems");
+
+    queue_foreach(pgb_queue, node) {
+        procfs_on_new_task(node->data);
+    }
 
     return VFS_STATUS_SUCCESS;
 }
@@ -177,30 +166,12 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
         len = (len + 1) > size ? size : len + 1;
         memcpy(addr, get_kernel_cmdline(), len);
         return len;
-    } else if (!strcmp(handle->name, "self/maps")) {
-        size_t content_len = 0;
-        char  *content     = proc_gen_maps_file(get_current_task()->parent_group, &content_len);
-        if (offset >= content_len) {
-            free(content);
-            return 0;
-        }
-        content_len    = MIN(content_len, offset + size);
-        size_t to_copy = MIN(content_len, size);
-        memcpy(addr, content + offset, to_copy);
-        free(content);
-        ((char *)addr)[to_copy] = '\0';
-        return to_copy;
-    } else if (!strcmp(handle->name, "self/cmdline")) {
-        ssize_t len = strlen(get_current_task()->parent_group->cmdline);
-        if (len == 0) return 0;
-        len = (len + 1) > size ? size : len + 1;
-        memcpy(addr, get_current_task()->parent_group->cmdline, len);
-        return len;
     } else if (!strcmp(handle->name, "proc_cmdline")) {
-        ssize_t len = strlen(task->cmdline);
+        char   *cmdline = task->cmdline ? task->cmdline : "no_cmdline";
+        ssize_t len     = strlen(cmdline);
         if (len == 0) return 0;
         len = (len + 1) > size ? size : len + 1;
-        memcpy(addr, task->cmdline, len);
+        memcpy(addr, cmdline, len);
         return len;
     } else if (!strcmp(handle->name, "proc_maps")) {
         size_t content_len = 0;
@@ -234,15 +205,8 @@ errno_t procfs_stat(void *file, vfs_node_t node) {
         node->size = strlen(filesystems_content);
     else if (!strcmp(handle->name, "cmdline"))
         node->size = strlen(get_kernel_cmdline());
-    else if (!strcmp(handle->name, "self/maps")) {
-        size_t content_len = 0;
-        char  *content     = proc_gen_maps_file(get_current_task()->parent_group, &content_len);
-        free(content);
-        node->size = content_len;
-    } else if (!strcmp(handle->name, "proc_cmdline"))
-        node->size = strlen(handle->task->cmdline);
-    else if (!strcmp(handle->name, "self/cmdline"))
-        node->size = strlen(get_current_task()->parent_group->cmdline);
+    else if (!strcmp(handle->name, "proc_cmdline"))
+        node->size = strlen(handle->task->cmdline ? handle->task->cmdline : "null");
     else if (!strcmp(handle->name, "proc_maps")) {
         size_t content_len = 0;
         char  *content     = proc_gen_maps_file(handle->task, &content_len);
@@ -251,6 +215,77 @@ errno_t procfs_stat(void *file, vfs_node_t node) {
     } else if (!strcmp(handle->name, "dri_name"))
         node->size = strlen("cpkernel_drm");
 }
+
+void procfs_self_open(void *parent, const char *name, vfs_node_t node) {
+    logkf("procfs: self open node: %p\n", get_current_task()->parent_group->procfs_node);
+    procfs_self_handle_t *handle = malloc(sizeof(procfs_self_handle_t));
+    handle->self                 = node;
+    node->linkto                 = get_current_task()->parent_group->procfs_node;
+    node->handle                 = handle;
+    vfs_node_t new_self_node     = vfs_node_alloc(node->parent, "self");
+    new_self_node->type          = file_symlink;
+    new_self_node->mode          = 0644;
+    new_self_node->fsid          = proc_self_id;
+    list_delete(node->parent->child, node);
+}
+
+void procfs_self_close(void *current) {
+    procfs_self_handle_t *handle  = current;
+    handle->self->type           |= file_delete;
+    free(handle);
+}
+
+size_t procfs_self_read(void *fd, void *addr, size_t offset, size_t size) {
+    procfs_self_handle_t *handle = fd;
+    return procfs_read(handle->self->linkto->handle, addr, offset, size);
+}
+
+size_t procfs_self_write(void *fd, const void *addr, size_t offset, size_t size) {
+    procfs_self_handle_t *handle = fd;
+    return procfs_write(handle->self->linkto->handle, addr, offset, size);
+}
+
+size_t procfs_self_readlink(vfs_node_t file, void *addr, size_t offset, size_t size) {
+    procfs_self_handle_t *handle = file->handle;
+    if (offset >= strlen(handle->self->linkto->name)) return 0;
+    logkf("procfs: readlink offset:%llu size:%llu", offset, size);
+    char   *ptr = handle->self->linkto->name + offset;
+    ssize_t len = strlen(ptr);
+    len         = MIN(len, (ssize_t)size);
+    memcpy(addr, ptr, len);
+    return len;
+}
+
+errno_t procfs_self_stat(void *file, vfs_node_t node) {
+    procfs_self_handle_t *handle  = file;
+    node->type                   |= file_symlink;
+    node->size                    = strlen(handle->self->linkto->name);
+}
+
+void procfs_self_free_handle(procfs_self_handle_t *handle) {
+    free(handle);
+}
+
+static struct vfs_callback procfs_self_callbacks = {
+    .open     = procfs_self_open,
+    .close    = procfs_self_close,
+    .read     = procfs_self_read,
+    .write    = procfs_self_write,
+    .readlink = procfs_self_readlink,
+    .mkdir    = (vfs_mk_t)dummy,
+    .mkfile   = (vfs_mk_t)dummy,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .delete   = (vfs_del_t)dummy,
+    .rename   = (vfs_rename_t)dummy,
+    .stat     = procfs_self_stat,
+    .ioctl    = (vfs_ioctl_t)dummy,
+    .map      = (vfs_mapfile_t)dummy,
+    .poll     = (vfs_poll_t)dummy,
+    .mount    = (vfs_mount_t)udummy,
+    .unmount  = (vfs_unmount_t)dummy,
+    .dup      = (vfs_dup_t)dummy,
+};
 
 static struct vfs_callback procfs_callbacks = {
     .mount    = procfs_mount,
@@ -274,30 +309,34 @@ static struct vfs_callback procfs_callbacks = {
 };
 
 void procfs_setup() {
-    procfs_id = vfs_regist("proc", &procfs_callbacks, PROC_REGISTER_ID);
-    if (procfs_id == VFS_STATUS_FAILED) { kerror("procfs register error"); }
+    procfs_id    = vfs_regist("proc", &procfs_callbacks, PROC_REGISTER_ID);
+    proc_self_id = vfs_regist("proc_self", &procfs_self_callbacks, PROC_REGISTER_ID);
+    if (procfs_id == VFS_STATUS_FAILED || proc_self_id == VFS_STATUS_FAILED) {
+        kerror("procfs register error");
+    }
 }
 
 void procfs_on_new_task(pcb_t task) {
     if (procfs_root == NULL) return;
-    spin_lock(procfs_oplock);
 
     char name[MAX_PID_NAME_LEN];
     sprintf(name, "%d", task->pid);
 
-    char fname[6 + MAX_PID_NAME_LEN];
-    sprintf(fname, "/proc/%d", task->pid);
+    char *root_path = vfs_get_fullpath(procfs_root);
+    char  fname[strlen(root_path) + 1 + MAX_PID_NAME_LEN];
+    sprintf(fname, "%s/%d", root_path, task->pid);
     vfs_node_t pro = vfs_open(fname);
+    free(root_path);
     if (pro != NULL) {
         vfs_close(pro);
-        spin_unlock(procfs_oplock);
         return;
     }
 
-    vfs_node_t node = vfs_child_append(procfs_root, name, NULL);
-    node->type      = file_dir;
-    node->mode      = 0644;
-    node->fsid      = procfs_id;
+    vfs_node_t node   = vfs_child_append(procfs_root, name, NULL);
+    node->type        = file_dir;
+    node->mode        = 0644;
+    node->fsid        = procfs_id;
+    task->procfs_node = node;
 
     vfs_node_t cmdline    = vfs_child_append(node, "cmdline", NULL);
     cmdline->type         = file_none;
@@ -316,16 +355,16 @@ void procfs_on_new_task(pcb_t task) {
     mmaps->handle           = handle_m;
     handle_m->task          = task;
     sprintf(handle_m->name, "proc_maps");
-
-    spin_unlock(procfs_oplock);
 }
 
 void procfs_on_exit_task(pcb_t task) {
     if (procfs_root == NULL) return;
     spin_lock(procfs_oplock);
 
-    char name[6 + MAX_PID_NAME_LEN];
-    sprintf(name, "/proc/%d", task->pid);
+    char *root_path = vfs_get_fullpath(procfs_root);
+    char  name[strlen(root_path) + 1 + MAX_PID_NAME_LEN];
+    sprintf(name, "%s/%d", root_path, task->pid);
+    free(root_path);
 
     vfs_node_t node = vfs_open(name);
     if (node && node->parent) {
@@ -334,34 +373,4 @@ void procfs_on_exit_task(pcb_t task) {
     }
 
     spin_unlock(procfs_oplock);
-}
-
-extern lock_queue *pgb_queue;
-
-void procfs_update_task_list() {
-    if (procfs_root == NULL) return;
-    do {
-        vfs_node_t proc_node = NULL;
-        list_foreach(procfs_root->child, node) {
-            vfs_node_t pnode = node->data;
-            if (pnode->handle != NULL) {
-                proc_handle_t *handle = pnode->handle;
-                if (handle->task == NULL) continue;
-                proc_node = pnode;
-                break;
-            }
-        }
-        if (proc_node == NULL) break;
-        proc_handle_t *handle = proc_node->handle;
-        if (handle->task->status == DEATH) {
-            if (proc_node && proc_node->parent) {
-                list_delete(proc_node->parent->child, proc_node);
-                vfs_free(proc_node);
-            }
-        }
-    } while (true);
-    queue_foreach(pgb_queue, node) {
-        pcb_t process = node->data;
-        procfs_on_new_task(process);
-    }
 }

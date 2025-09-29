@@ -8,9 +8,9 @@
 #include "fsgsbase.h"
 #include "heap.h"
 #include "ipc.h"
-#include "klog.h"
 #include "lazyalloc.h"
 #include "pcb.h"
+#include "procfs.h"
 #include "smp.h"
 #include "sprintf.h"
 #include "vfs.h"
@@ -228,6 +228,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
     add_task(new_task);
     enable_scheduler();
     open_interrupt;
+    procfs_on_new_task(new_pcb);
 
     if (!is_vfork) return new_pcb->pid;
     while (true) {
@@ -248,35 +249,6 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
         }
         ipc_send(current_pcb->parent_task, msg);
     } while (true);
-
-    /*
-    if (!is_vfork) return new_pcb->pid;
-    int npid = new_pcb->pid;
-    do {
-        ipc_message_t msg = ipc_recv_wait(IPC_MSG_TYPE_EXEC);
-        if (npid == msg->pid) {
-            free(msg);
-            return npid;
-        }
-        ipc_send(current_pcb->parent_task, msg);
-    } while (true);
-     */
-
-    /*
-    if (is_vfork) {
-        int npid = new_pcb->pid;
-        do {
-            ipc_message_t msg = ipc_recv_wait(IPC_MSG_TYPE_EXEC);
-            if (npid == msg->pid) {
-                free(msg);
-                break;
-            }
-            ipc_send(current_pcb->parent_task, msg);
-        } while (true);
-    }
-
-    return new_pcb->pid;
-     */
 }
 
 uint64_t process_execve(char *path, char **argv, char **envp) {

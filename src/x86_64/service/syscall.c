@@ -1741,8 +1741,29 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
 }
 
 syscall_(pivot_root, char *new_root, char *put_old) {
-
+    //TODO 未经测试和验证的实现
+    vfs_node_t nroot = vfs_open(new_root);
+    if (nroot == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (!nroot->is_mount) {
+        vfs_close(nroot);
+        goto error_pr;
+    }
+    vfs_node_t oroot = vfs_open(put_old);
+    if (oroot == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (!(oroot->type & file_dir)) goto error_pr;
+    if (list_length(oroot->child) > 0) goto error_pr;
+    if (oroot->root != nroot) goto error_pr;
+    vfs_node_t src_root = get_rootdir();
+    set_rootdir(nroot);
+    oroot->handle = src_root->handle;
+    oroot->child  = src_root->child;
     return SYSCALL_SUCCESS;
+error_pr:
+    return SYSCALL_FAULT_(EINVAL);
+}
+
+syscall_(chroot) {
+    return SYSCALL_FAULT_(ENOSYS);
 }
 
 // clang-format off
@@ -1834,6 +1855,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETPPID]     = (syscall_t)syscall_getppid,
     [SYSCALL_MINCORE]     = (syscall_t)syscall_mincore,
     [SYSCALL_PIVOT_ROOT]  = (syscall_t)syscall_pivot_root,
+    [SYSCALL_CHROOT]      = (syscall_t)syscall_chroot,
 
     [SYSCALL_MEMINFO]     = (syscall_t)syscall_cp_meminfo,
     [SYSCALL_CPUINFO]     = (syscall_t)syscall_cp_cpuinfo,
