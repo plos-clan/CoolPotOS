@@ -100,6 +100,7 @@ struct vfs_node {           // vfs节点
     list_t     child;       // 子节点
     vfs_node_t root;        // 根目录
     bool       visited;     // 是否与具体文件系统同步
+    bool       is_mount;    // 是否是挂载点
 };
 
 errno_t    vfs_mkdir(const char *name);

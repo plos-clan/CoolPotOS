@@ -12,6 +12,10 @@ typedef struct proc_handle {
     pcb_t      task;
 } proc_handle_t;
 
+typedef struct procfs_self_handle {
+    vfs_node_t self;
+} procfs_self_handle_t;
+
 void procfs_update_task_list();
 void procfs_on_new_task(pcb_t task);
 void procfs_on_exit_task(pcb_t task);

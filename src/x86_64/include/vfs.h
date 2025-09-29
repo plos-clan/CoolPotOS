@@ -164,6 +164,7 @@ struct vfs_node {           // vfs节点
     list_t     child;       // 子节点
     vfs_node_t root;        // 根目录
     bool       visited;     // 是否与具体文件系统同步
+    bool       is_mount;    // 是否是挂载点
 };
 
 struct fd {
@@ -317,6 +318,7 @@ errno_t vfs_unmount(const char *path);
  * @return 根目录节点
  */
 vfs_node_t get_rootdir();
+void       set_rootdir(vfs_node_t node);
 
 char *vfs_get_fullpath(vfs_node_t node);
 char *at_resolve_pathname(int dirfd, char *pathname);
