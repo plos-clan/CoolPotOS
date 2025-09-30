@@ -48,3 +48,36 @@ uint64_t get_commit_memory() {
     spin_unlock(pgb_queue->lock);
     return commit_memory;
 }
+
+uint64_t mem_parse_size(uint8_t *s) {
+    if (s == NULL) { return UINT64_MAX; }
+
+    uint8_t *p     = s;
+    uint64_t value = 0;
+
+    while (isdigit((uint8_t)*p)) {
+        int digit = *p - '0';
+        value     = value * 10 + digit;
+        p++;
+    }
+    if (*p == '\0') { return value; }
+    char suffix = *p;
+
+    if (suffix >= 'a' && suffix <= 'z') { suffix -= ('a' - 'A'); }
+
+    switch (suffix) {
+    case 'K':
+        value *= KILO_FACTOR; // 乘以 1024 (2^10)
+        break;
+    case 'M':
+        value *= MEGA_FACTOR; // 乘以 1048576 (2^20)
+        break;
+    case 'G':
+        value *= GIGA_FACTOR; // 乘以 1073741824 (2^30)
+        break;
+    default: return value;
+    }
+    if (*(p + 1) != '\0') { return UINT64_MAX; }
+
+    return value;
+}

@@ -376,9 +376,6 @@ bool exec(int argc, char **argv) {
 
     free(result);
 
-    int    pgb_id      = user_task->pid;
-    size_t queue_index = user_task->queue_index;
-    logkf("User application %s : %d : index: %d loaded.\n", name, pgb_id, queue_index);
     int status;
     get_current_task()->status = WAIT;
     waitpid(user_task->pid, &status);

@@ -1,6 +1,9 @@
 #include "frame.h"
 #include "boot.h"
+#include "bootargs.h"
 #include "buddy.h"
+#include "memstats.h"
+#include "page.h"
 
 #define ENABLE_BUDDY 1
 
@@ -8,10 +11,19 @@ FrameAllocator frame_allocator;
 uint64_t       memory_size = 0;
 
 void init_frame() {
+    char    *mem_str     = boot_get_cmdline_param("mem");
+    uint64_t memory_size = 0;
+
+    if (strcmp(mem_str, "default") != 0) {
+        memory_size = mem_parse_size(mem_str);
+        memory_size =
+            memory_size == UINT64_MAX ? get_memory_size() : PADDING_DOWN(memory_size, PAGE_SIZE);
+    } else
+        memory_size = get_memory_size();
 #ifdef ENABLE_BUDDY
-    init_frame_buddy();
+    init_frame_buddy(memory_size);
 #else
-    init_frame_bitmap();
+    init_frame_bitmap(memory_size);
 #endif
 }
 

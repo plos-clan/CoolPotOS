@@ -11,6 +11,7 @@
 #include "mpmc_queue.h"
 #include "pcb.h"
 #include "terminal.h"
+#include "bootargs.h"
 
 tty_t         *defualt_tty = NULL;
 mpmc_queue_t  *queue;
@@ -183,7 +184,7 @@ static size_t stdout_write(int drive, uint8_t *buffer, size_t number, size_t lba
     return number;
 }
 
-static int tty_ioctl(device_t *device, size_t req, void *arg) {
+static errno_t tty_ioctl(device_t *device, size_t req, void *arg) {
     switch (req) {
     case TIOCGWINSZ:
         struct winsize *ws = (struct winsize *)arg;
@@ -295,7 +296,7 @@ static int tty_ioctl(device_t *device, size_t req, void *arg) {
     return EOK;
 }
 
-static int tty_poll(size_t events) {
+static errno_t tty_poll(size_t events) {
     ssize_t            revents = 0;
     // if (events & EPOLLERR || events & EPOLLPRI) return 0;
     extern atom_queue *temp_keyboard_buffer;
@@ -374,4 +375,6 @@ void init_tty() {
         queue = NULL;
     }
     temp_stdin_buffer = create_atom_queue(2048);
+
+    build_tty_device();
 }

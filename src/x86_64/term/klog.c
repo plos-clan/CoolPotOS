@@ -1,8 +1,8 @@
 #include "klog.h"
-#include "krlibc.h"
+#include "kmesg.h"
 #include "serial.h"
 #include "sprintf.h"
-#include <stdarg.h>
+#include "types/stdarg.h"
 
 //#define HARDWARE
 
@@ -22,4 +22,5 @@ void logkf(char *fmt, ...) {
     stbsp_vsprintf(buf, fmt, args);
     va_end(args);
     logk(buf);
+    kmsg_write(buf);
 }

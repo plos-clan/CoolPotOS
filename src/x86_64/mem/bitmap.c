@@ -179,9 +179,8 @@ uint64_t bitmap_alloc_frames_1G(size_t count) {
     return 0;
 }
 
-void init_frame_bitmap() {
+void init_frame_bitmap(uint64_t memory_size) {
     struct limine_memmap_response *memory_map = get_memory_map();
-    memory_size                               = get_memory_size();
 
     extern uint64_t reserved_memory;
     extern uint64_t bad_memory;

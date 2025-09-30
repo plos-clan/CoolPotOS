@@ -16,7 +16,7 @@ typedef struct buddy_frame {
     size_t   region_id;
 } buddy_frame_t;
 
-void     init_frame_buddy(void);
+void     init_frame_buddy(uint64_t memory_size);
 size_t   buddy_alloc_pages(size_t n_pages);
 void     buddy_free_pages(size_t phys_addr, size_t n_pages);
 uint64_t buddy_alloc_frames_2M(size_t count);

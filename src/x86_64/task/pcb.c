@@ -160,6 +160,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     free(argvps);
     free(link_data);
     free(build_cmdline);
+    cmd_free(argv, argc);
 
     return tmp_stack;
 }
@@ -172,7 +173,7 @@ void switch_to_user_mode(uint64_t func) {
 
     elf_start main_func = (elf_start)func;
     if (is_dynamic(get_current_task()->parent_group->elf_file)) {
-        logkf("Dynamic %s\n", get_current_task()->name);
+        logkf("task: Dynamic %s\n", get_current_task()->name);
         uint64_t  linker_start = UINT64_MAX;
         elf_start linker_main;
         uint8_t  *link_data = NULL;
@@ -184,9 +185,12 @@ void switch_to_user_mode(uint64_t func) {
 
         if (linker_main == NULL) {
             kerror("Cannot load libc module.");
-            process_exit();
+            close_interrupt;
+            kill_proc(get_current_task()->parent_group, -1, true);
+            open_interrupt;
+            cpu_hlt;
         }
-        linker_main = linker_main + linker_start;
+        linker_main = (elf_start)((uint64_t)linker_main + linker_start);
 
         // VMA 标记
         vma_t *ld_so_vma = vma_alloc();
@@ -203,7 +207,7 @@ void switch_to_user_mode(uint64_t func) {
         if (!region) { vma_insert(&get_current_task()->parent_group->vma_manager, ld_so_vma); }
         // 如未实现 VMA 可以直接去掉这段代码
 
-        logkf("Linker main: %p | Program main: %p\n", linker_main, func);
+        logkf("task: linker main: %p - program main: %p\n", linker_main, func);
         rsp = build_user_stack(get_current_task(), rsp, func, linker_start, link_data, link_size);
         main_func = linker_main;
     } else {
@@ -310,7 +314,7 @@ void kill_proc0(pcb_t pcb) {
     free_tty(pcb->tty);
     free(pcb->elf_file);
     if (pcb->envp) free_envp(pcb->envp);
-    logkf("Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pid,
+    logkf("task: Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pid,
           pcb->vfork ? "true" : "false");
     if (!pcb->vfork) free_page_directory(pcb->page_dir);
     free(pcb);

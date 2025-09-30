@@ -1,6 +1,7 @@
 #include "acpi.h"
 #include "ahci.h"
 #include "boot.h"
+#include "bootargs.h"
 #include "cpio.h"
 #include "cpuid.h"
 #include "cpustats.h"
@@ -18,6 +19,7 @@
 #include "iic/iic_core.h"
 #include "keyboard.h"
 #include "killer.h"
+#include "kmesg.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "modfs.h"
@@ -100,6 +102,7 @@ static void kernel_watchdog() {
 }
 
 void kmain() {
+    size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
     gdt_setup();
     idt_setup();
     init_gop();
@@ -109,14 +112,17 @@ void kmain() {
     page_setup();
     init_heap();
     init_terminal();
+    device_manager_init();
+    build_kmesg_device();
     init_tty();
+    init_tty_serial();
     printk("CoolPotOS %s (git:%s) (%s %s) (%s %s) on an x86_64\n", KERNEL_NAME, GIT_VERSION,
            COMPILER_NAME, COMPILER_VERSION, get_bootloader_name(), get_bootloader_version());
     init_cpuid();
     kinfo("Video: 0x%p - %d x %d", framebuffer->address, framebuffer->width, framebuffer->height);
     kinfo("DMI: %s %s, BIOS %s %s", smbios_sys_manufacturer(), smbios_sys_product_name(),
           smbios_bios_version(), smbios_bios_release_date());
-    kinfo("kernel cmdline: %s", get_kernel_cmdline());
+    kinfo("kernel cmdline: %s count:%llu", get_kernel_cmdline(), boot_argc);
     module_setup();
     error_setup();
     float_processor_setup();
@@ -138,9 +144,7 @@ void kmain() {
     pipefs_setup();
     fatfs_init();
 
-    device_manager_init();
     devfs_setup();
-    build_tty_device();
     modfs_setup();
     pci_init();
     ide_setup();

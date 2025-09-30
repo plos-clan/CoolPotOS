@@ -357,6 +357,24 @@ char *strdup(const char *str) {
     return ret - (len + 1);
 }
 
+char *strndup(const char *s, size_t n) {
+    if (s == NULL) { return NULL; }
+
+    size_t actual_len = strlen(s);
+    if (n < actual_len) { actual_len = n; }
+    char *new_str = (char *)malloc(actual_len + 1);
+    if (new_str == NULL) { return NULL; }
+
+    size_t i;
+    for (i = 0; i < actual_len; i++) {
+        new_str[i] = s[i];
+    }
+
+    new_str[actual_len] = '\0';
+
+    return new_str;
+}
+
 char *strncpy(char *dest, const char *src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != '\0'; i++) {
@@ -416,27 +434,37 @@ char *pathacat(char *p1, char *p2) {
 }
 
 int cmd_parse(const char *cmd_str, char **argv, char token) {
-    int arg_idx = 0;
-
-    while (arg_idx < 50) {
-        argv[arg_idx] = 0;
-        arg_idx++;
-    }
-    char *next = (char *)cmd_str;
-    int   argc = 0;
+    int         argc = 0;
+    const char *next = cmd_str;
 
     while (*next) {
         while (*next == token)
             next++;
-        if (*next == 0) break;
-        argv[argc] = next;
+        if (*next == '\0') break;
+        const char *start = next;
         while (*next && *next != token)
             next++;
-        if (*next) { *next++ = 0; }
-        if (argc > 50) return -1;
+        size_t len = next - start;
+        argv[argc] = (char *)malloc(len + 1);
+        if (!argv[argc]) {
+            for (int i = 0; i < argc; i++)
+                free(argv[i]);
+            return -1;
+        }
+        memcpy(argv[argc], start, len);
+        argv[argc][len] = '\0';
+
         argc++;
+        if (argc >= 50) break;
     }
+    argv[argc] = NULL;
     return argc;
+}
+
+void cmd_free(char **argv, int argc) {
+    for (int i = 0; i < argc; i++) {
+        free(argv[i]);
+    }
 }
 
 char *normalize_path(const char *path) {

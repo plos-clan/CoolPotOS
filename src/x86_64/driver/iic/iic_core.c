@@ -11,10 +11,10 @@
 void init_iic(void) {
     pci_device_t *IIC_masterController = (pci_device_t *)(pci_find_class(0x0C800000));
     if (IIC_masterController == NULL) {
-        logkf((char *)("Cannot find IIC Master Controller.\n"));
+        logkf((char *)("iic: Cannot find IIC Master Controller.\n"));
         return;
     } else {
-        logkf((char *)("Find IIC Master Controller.\n"));
+        logkf((char *)("iic: Find IIC Master Controller.\n"));
         IIC_Master *iic_master      = 0;
         uint32_t    address         = Get_iic_masterAddress(IIC_masterController);
         iic_master->Control         = address;

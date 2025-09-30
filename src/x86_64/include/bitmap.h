@@ -34,4 +34,4 @@ uint64_t bitmap_alloc_frames_2M(size_t count);
 
 uint64_t bitmap_alloc_frames_1G(size_t count);
 
-void init_frame_bitmap();
+void init_frame_bitmap(uint64_t memory_size);

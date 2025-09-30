@@ -18,13 +18,6 @@
 #define EHDR_START_ADDR        0x0000300000000000       // ELF头起始地址
 #define INTERPRETER_EHDR_ADDR  0x0000200000000000       // 链接器ELF头起始地址
 #define INTERPRETER_BASE_ADDR  0x0000100000000000       // 链接器基址起始地址
-#define DEVFS_REGISTER_ID      0                        // 设备文件系统注册ID
-#define MODFS_REGISTER_ID      1                        // 模块文件系统注册ID
-#define TMPFS_REGISTER_ID      2                        // 临时文件系统注册ID
-#define PIEFS_REGISTER_ID      3                        // 管道文件系统注册ID
-#define NETFS_REGISTER_ID      4                        // 网络文件系统注册ID
-#define CPFS_REGISTER_ID       5                        // CPIO文件系统注册ID
-#define PROC_REGISTER_ID       6                        // 进程信息文件系统注册ID
 #define LAPIC_TIMER_SPEED      100                      // LAPIC定时器速度(单位: Hz)
 #define PIPE_BUFF              8192                     // 管道缓冲区大小
 #define MAX_IOAPICS            8                        // IOAPIC最大支持数(物理机会存在多个IOAPIC)
@@ -34,12 +27,14 @@
 #define KERNEL_MOD_SPACE_END   0xffffffffc0000000       // 内核模块加载结束地址
 #define MAX_DEIVCE             256                      // 最大设备列表支持
 #define MAX_PTY_DEVICE         32768                    // PTY 最大设备数支持
+#define MAX_PARAMS             32                       // 内核最大参数支持
+#define KMSG_SIZE              (1 << 17)                // 内核日志环形缓冲区大小 (128k)
 
 // 常用工具宏
 #define cpu_hlt loop __asm__("hlt")
-#define UNUSED(expr)                                                                               \
+#define UNUSED(...)                                                                                \
     do {                                                                                           \
-        (void)(expr);                                                                              \
+        (void)(0, ##__VA_ARGS__);                                                                  \
     } while (0)
 
 //中断处理函数属性修饰
@@ -111,6 +106,8 @@ int64_t strtol(const char *str, char **endptr, int base);
 
 char *strdup(const char *str);
 
+char *strndup(const char *str, size_t len);
+
 char *strchrnul(const char *s, int c);
 
 int isspace(int c);
@@ -131,7 +128,8 @@ int fls(unsigned int x);
 
 char *pathacat(char *p1, char *p2);
 
-int cmd_parse(const char *cmd_str, char **argv, char token);
+int  cmd_parse(const char *cmd_str, char **argv, char token);
+void cmd_free(char **argv, int argc);
 
 char **copy_envp(char **envp);
 

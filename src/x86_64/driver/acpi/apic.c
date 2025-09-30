@@ -207,7 +207,7 @@ void apic_setup(MADT *madt) {
             found_isos[c].irq_source = iso->irq_source;
             found_isos[c].gsi        = iso->gsi;
             found_isos[c].flags      = iso->flags;
-            logkf("Found Interrupt Source Bus: %d, IRQ Source: %d, GSI: %d, Flags: 0x%x\n\r",
+            logkf("apic: Found Interrupt Source Bus: %d, IRQ Source: %d, GSI: %d, Flags: 0x%x\n\r",
                   iso->bus_source, iso->irq_source, iso->gsi, iso->flags);
         }
         current += (uint64_t)header->length;
