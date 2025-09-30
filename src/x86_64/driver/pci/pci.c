@@ -322,7 +322,8 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
         pci_device->vendor_id  = vendor_id;
         pci_device->device_id  = device_id;
 
-        logkf("Found PCIe device: %#08lx name: %s\n", pci_device->class_code, pci_device->name);
+        logkf("pci: Found PCIe device: %#08lx name: %s\n", pci_device->class_code,
+              pci_device->name);
 
         uint32_t capability_point =
             pci_device->op->read(pci_device->bus, pci_device->slot, pci_device->func,
@@ -447,7 +448,7 @@ void pci_scan_device_legacy(uint32_t bus, uint32_t equipment, uint32_t f) {
     device->slot       = equipment;
     device->func       = f;
 
-    logkf("Found PCI device: %#08lx name: %s\n", device->class_code, device->name);
+    logkf("pci: Found PCI device: %#08lx name: %s\n", device->class_code, device->name);
 
     for (int i = 0; i < 6; i++) {
         int      offset  = 0x10 + i * 4;

@@ -174,6 +174,16 @@ struct fd {
     bool   writeable;
 };
 
+enum {
+    DEVFS_REGISTER_ID = 0, // 设备文件系统注册ID
+    MODFS_REGISTER_ID = 1, // 模块文件系统注册ID
+    TMPFS_REGISTER_ID = 2, // 临时文件系统注册ID
+    PIEFS_REGISTER_ID = 3, // 管道文件系统注册ID
+    NETFS_REGISTER_ID = 4, // 网络文件系统注册ID
+    CPFS_REGISTER_ID  = 5, // CPIO文件系统注册ID
+    PROC_REGISTER_ID  = 6, // 进程信息文件系统注册ID
+};
+
 extern struct vfs_callback vfs_empty_callback;
 extern vfs_node_t          rootdir;
 extern struct llist_header fs_metadata_list;

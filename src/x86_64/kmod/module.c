@@ -53,7 +53,7 @@ void module_setup() {
         module_ls[module_count].size = file->size;
         strcpy(module_ls[module_count].raw_name, file->path);
         module_ls[module_count].is_use = true;
-        logkf("Module %s %s\n", module_ls[module_count].module_name, file->path);
+        logkf("kmod: Module %s %s\n", module_ls[module_count].module_name, file->path);
         module_count++;
     }
 }
@@ -65,13 +65,11 @@ static bool ends_with_km(const char *str) {
 }
 
 void load_all_kernel_module() {
-    logkf("Loading all kernel modules...\n");
     for (size_t i = 0; i < module_count; i++) {
         if (module_ls[i].is_use) {
-            logkf("Module %s is_use: %d raw: %s\n", module_ls[i].module_name, module_ls[i].is_use,
-                  module_ls[i].raw_name);
             if (ends_with_km(module_ls[i].raw_name)) {
-                logkf("Loading kernel module: %s\n", module_ls[i].module_name);
+                logkf("kmod: loading module %s raw: %s\n", module_ls[i].module_name,
+                      module_ls[i].raw_name);
                 cp_module_t *mod = get_module(module_ls[i].module_name);
                 if (mod) { dlinker_load(mod); }
             }

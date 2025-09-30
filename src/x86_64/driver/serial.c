@@ -1,7 +1,44 @@
 #include "serial.h"
+#include "device.h"
+#include "errno.h"
 #include "klog.h"
+#include "sprintf.h"
+#include "tty.h"
 
-static bool s_port[4] = {false, false, false, false};
+extern device_t device_ctl[26]; // vdisk.c
+
+static bool     s_port[4]    = {false, false, false, false};
+static uint16_t com_ports[4] = {SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4};
+
+static size_t extract_number_serial(const char *str) {
+    size_t len = strlen(str);
+
+    if (len <= 4) { return -1; }
+
+    size_t start_index = len;
+
+    for (size_t i = len - 1; i >= 0; i--) {
+        if (isdigit((unsigned char)str[i])) {
+            start_index = i;
+        } else {
+            break;
+        }
+
+        if (i == 0) break;
+    }
+    if (start_index < 4 || start_index >= len) { return -1; }
+
+    int         result = 0;
+    const char *p      = str + start_index;
+
+    while (isdigit((unsigned char)*p)) {
+        int digit = *p - '0';
+        result    = result * 10 + digit;
+        p++;
+    }
+
+    return result;
+}
 
 static uint8_t serial_calculate_lcr(void) {
     uint8_t lcr = 0;
@@ -80,8 +117,7 @@ static void init_serial_port(uint16_t port) {
 }
 
 int init_serial() {
-    uint16_t com_ports[4] = {SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4};
-    int      valid_ports  = 0;
+    int valid_ports = 0;
 
     for (int i = 0; i < 4; i++) {
         if (serial_exists(com_ports[i])) {
@@ -111,4 +147,54 @@ void write_serial0(uint16_t port, char a) {
     while ((io_in8(port + 5) & 0x20) == 0)
         ;
     io_out8(port, a);
+}
+
+static errno_t serial_ioctl(device_t *device, size_t req, void *arg) {
+    return EOK;
+}
+
+static errno_t serial_poll(size_t events) {
+    ssize_t revents = 0;
+    if (events & EPOLLIN) revents |= EPOLLIN;
+    if (events & EPOLLOUT) revents |= EPOLLOUT;
+    return revents;
+}
+
+static size_t serial_read(int drive, uint8_t *buffer, size_t number, size_t lba) {
+    device_t *device = &device_ctl[drive];
+    int       id     = extract_number_serial(device->drive_name);
+    for (size_t i = 0; i < number; ++i) {
+        buffer[i] = read_serial(com_ports[id]);
+    }
+    return number;
+}
+
+static size_t serial_write(int drive, uint8_t *buffer, size_t number, size_t lba) {
+    device_t *device = &device_ctl[drive];
+    int       id     = extract_number_serial(device->drive_name);
+    for (size_t i = 0; i < number; ++i) {
+        write_serial0(com_ports[id], buffer[i]);
+    }
+    return number;
+}
+
+void init_tty_serial() {
+    for (int i = 0; i < 4; ++i) {
+        device_t ttyS;
+        ttyS.type = DEVICE_STREAM;
+        char name[7];
+        sprintf(name, "ttyS%d", i);
+        strcpy(ttyS.drive_name, name);
+        ttyS.flag        = 1;
+        ttyS.sector_size = 1;
+        ttyS.size        = 1;
+        ttyS.read        = serial_read;
+        ttyS.write       = serial_write;
+        ttyS.ioctl       = serial_ioctl;
+        ttyS.poll        = serial_poll;
+        ttyS.map         = (void *)empty;
+        ttyS.read_vbuf   = NULL;
+        ttyS.write_vbuf  = NULL;
+        regist_device(NULL, ttyS);
+    }
 }

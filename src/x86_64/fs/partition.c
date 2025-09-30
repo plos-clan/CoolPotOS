@@ -167,7 +167,8 @@ void partition_init() {
             sprintf(buf, "/dev/%s", device_ctl[i].drive_name);
             vfs_node_t device = vfs_open(buf);
             if (device == NULL) {
-                logkf("Partition init failed, device %s not found.\n", device_ctl[i].drive_name);
+                logkf("part: Partition init failed, device %s not found.\n",
+                      device_ctl[i].drive_name);
                 continue;
             }
             if (parser_block_device(device, device_ctl[i], i)) {}

@@ -129,16 +129,20 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
 }
 
 void procfs_open(void *parent, const char *name, vfs_node_t node) {
-    logkf("procfs: open file(%s) node_name: %s\n", name, node->name);
+    UNUSED(parent, name, node);
 }
 
-void procfs_close(void *current) {}
+void procfs_close(void *current) {
+    UNUSED(current);
+}
 
 size_t procfs_readlink(vfs_node_t node, void *addr, size_t offset, size_t size) {
+    UNUSED(node, addr, offset, size);
     return 0;
 }
 
 size_t procfs_write(void *file, const void *addr, size_t offset, size_t size) {
+    UNUSED(file, addr, offset, size);
     return size;
 }
 
@@ -217,7 +221,6 @@ errno_t procfs_stat(void *file, vfs_node_t node) {
 }
 
 void procfs_self_open(void *parent, const char *name, vfs_node_t node) {
-    logkf("procfs: self open node: %p\n", get_current_task()->parent_group->procfs_node);
     procfs_self_handle_t *handle = malloc(sizeof(procfs_self_handle_t));
     handle->self                 = node;
     node->linkto                 = get_current_task()->parent_group->procfs_node;

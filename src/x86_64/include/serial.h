@@ -45,3 +45,5 @@ char read_serial(uint16_t port);
 void write_serial(char ch);
 
 void write_serial0(uint16_t port, char a);
+
+void init_tty_serial();

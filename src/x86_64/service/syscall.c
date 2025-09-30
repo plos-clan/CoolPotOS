@@ -183,7 +183,7 @@ static inline void enable_syscall() {
 
 syscall_(exit, int exit_code) {
     tcb_t exit_thread = get_current_task();
-    logkf("Thread %s exit with code %d.\n", exit_thread->name, exit_code);
+    logkf("sys_exit: Thread %s exit with code %d.\n", exit_thread->name, exit_code);
     kill_thread(exit_thread);
     open_interrupt;
     cpu_hlt;
@@ -195,7 +195,7 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
 
     char *normalized_path = vfs_cwd_path_build(path0);
 
-    logkf("syscall open: %s\n", normalized_path);
+    logkf("sys_open: open %s\n", normalized_path);
 
     vfs_node_t node = vfs_open(normalized_path);
     if (node == NULL) {
@@ -223,7 +223,7 @@ next:
     fd_handle->fd = index;
     spin_unlock(get_current_task()->parent_group->file_open->lock);
     if (index == -1) {
-        logkf("syscall open: %s failed.\n", normalized_path);
+        logkf("sys_open: open %s failed.\n", normalized_path);
         vfs_close(node);
         free(fd_handle);
         free(normalized_path);
@@ -372,9 +372,6 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
             if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
         }
 
-        // page_map_range_to_random(process->page_dir, start_addr, aligned_len, pt_flags);
-        // memset((void *)start_addr, 0, aligned_len);
-
         lazy_infoalloc(process, start_addr, aligned_len, pt_flags, flags);
         spin_unlock(mm_op_lock);
 
@@ -469,7 +466,7 @@ syscall_(uname, struct utsname *utsname) {
     char machine[] = "x86_64";
     char version[] = "0.0.1";
     memcpy(utsname->sysname, sysname, sizeof(sysname));
-    memcpy(utsname->nodename, get_current_task()->parent_group->user->name, 50);
+    memcpy(utsname->nodename, "localhost", 50);
     memcpy(utsname->release, KERNEL_NAME, sizeof(KERNEL_NAME));
     memcpy(utsname->version, version, sizeof(version));
     memcpy(utsname->machine, machine, sizeof(machine));
@@ -713,7 +710,7 @@ syscall_(chdir, char *s) {
 
 syscall_(exit_group, int exit_code) {
     pcb_t exit_process = get_current_task()->parent_group;
-    logkf("Process %s exit with code %d.\n", exit_process->name, exit_code);
+    logkf("task: Process %s exit with code %d.\n", exit_process->name, exit_code);
     close_interrupt;
     kill_proc(exit_process, exit_code,
               true); // 子进程调用，is_zombie = true，不能在child_pcb中删除当前进程

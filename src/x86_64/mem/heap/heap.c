@@ -198,18 +198,18 @@ void *pvalloc(size_t size) {
 void *heap_alloc(void *ptr, size_t size) {
     if (ptr == NULL) {
         uint64_t ptr0 = page_alloc_random(get_kernel_pagedir(), size, KERNEL_PTE_FLAGS);
-        not_null_assets((void *)ptr0, "Out of memory in kernel heap");
+        not_null_assets((void *)ptr0, "kernel_heap: Out of memory in kernel heap");
         return (void *)ptr0;
     }
     if ((uint64_t)ptr > DRIVER_AREA_MEM)
-        not_null_assets(NULL, "Out of memory in heap virtual area");
+        not_null_assets(NULL, "kernel_heap: Out of memory in heap virtual area");
     page_map_range_to_random(get_kernel_pagedir(), (uint64_t)ptr, size, KERNEL_PTE_FLAGS);
     return ptr;
 }
 
 void init_heap() {
     uint64_t base_addr = KERNEL_HEAP_START;
-    logkf("init heap at %p\n", base_addr);
+    logkf("kernel_heap: init heap at %p - size: %llu\n", base_addr, KERNEL_HEAP_SIZE);
     page_map_range_to_random(get_kernel_pagedir(), base_addr, KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
     mpool_init(&pool, (void *)base_addr, KERNEL_HEAP_SIZE);
     switch_cp_kernel_page_directory();

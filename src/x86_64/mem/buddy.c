@@ -278,9 +278,8 @@ void buddy_free_frames_1G(uint64_t addr) {
     free_frames_blocksize(ORDER_1G, addr);
 }
 
-void init_frame_buddy(void) {
-    struct limine_memmap_response *memory_map  = get_memory_map();
-    uint64_t                       memory_size = get_memory_size();
+void init_frame_buddy(uint64_t memory_size) {
+    struct limine_memmap_response *memory_map = get_memory_map();
 
     if (!memory_map) return;
 

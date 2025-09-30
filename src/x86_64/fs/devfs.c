@@ -17,6 +17,48 @@ static int        devfs_inode = 2;
 static vfs_node_t devfs_root  = NULL;
 device_handle_t   root_handle = NULL;
 
+static errno_t devfs_register0(const char *path, size_t id) {
+    device_t *device = &device_ctl[id];
+    char     *buf    = NULL;
+    if (path != NULL) {
+        buf = malloc(strlen(path) + 6);
+        sprintf(buf, "/dev/%s", path);
+    } else {
+        buf = malloc(5);
+        strcpy(buf, "/dev");
+    }
+
+    vfs_node_t node = vfs_open(buf);
+    if (node == NULL) {
+        free(buf);
+        return ENOENT;
+    }
+
+    device_handle_t parent = node->handle;
+    if (parent == NULL) {
+        vfs_close(node);
+        free(buf);
+        return ENODEV;
+    }
+
+    if (!parent->is_dir) {
+        vfs_close(node);
+        free(buf);
+        return ENOTDIR;
+    }
+
+    device_handle_t handle = calloc(1, sizeof(struct device_handle));
+    not_null_assets(handle, "device handle is null.");
+    handle->is_dir = false;
+    handle->device = device;
+    handle->name   = strdup(device->drive_name);
+    vfs_child_append(node, device->drive_name, handle);
+    llist_append(&parent->child, &handle->curr);
+    vfs_close(node);
+    free(buf);
+    return EOK;
+}
+
 static errno_t devfs_mount(const char *handle, vfs_node_t node) {
     if (handle != DEVFS_REGISTER_ID) return VFS_STATUS_FAILED;
     if (devfs_root) {
@@ -32,6 +74,12 @@ static errno_t devfs_mount(const char *handle, vfs_node_t node) {
     node->fsid   = devfs_id;
     node->handle = root_handle;
     devfs_root   = node;
+
+    for (size_t i = 0; i < MAX_DEIVCE; i++) {
+        device_t *device = &device_ctl[i];
+        devfs_register0(device->path, i);
+    }
+
     return VFS_STATUS_SUCCESS;
 }
 
@@ -227,41 +275,7 @@ void devfs_setup() {
 errno_t devfs_register(const char *path, size_t id) {
     device_t *device = &device_ctl[id];
     char     *buf    = NULL;
-    if (path != NULL) {
-        buf = malloc(strlen(path) + 6);
-        sprintf(buf, "/dev/%s", path);
-    } else {
-        buf = malloc(5);
-        strcpy(buf, "/dev");
-    }
-
-    vfs_node_t node = vfs_open(buf);
-    if (node == NULL) {
-        free(buf);
-        return ENOENT;
-    }
-
-    device_handle_t parent = node->handle;
-    if (parent == NULL) {
-        vfs_close(node);
-        free(buf);
-        return ENODEV;
-    }
-
-    if (!parent->is_dir) {
-        vfs_close(node);
-        free(buf);
-        return ENOTDIR;
-    }
-
-    device_handle_t handle = calloc(1, sizeof(struct device_handle));
-    not_null_assets(handle, "device handle is null.");
-    handle->is_dir = false;
-    handle->device = device;
-    handle->name   = strdup(device->drive_name);
-    vfs_child_append(node, device->drive_name, handle);
-    llist_append(&parent->child, &handle->curr);
-    vfs_close(node);
-    free(buf);
-    return EOK;
+    device->path     = strdup(path);
+    if (devfs_root == NULL) { return EOK; }
+    return devfs_register0(device->path, id);
 }

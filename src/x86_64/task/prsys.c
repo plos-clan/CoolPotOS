@@ -267,19 +267,20 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     vfs_read(node, pcb_buffer, 0, node->size);
 
     if (strncmp(pcb_buffer, "#!", 2) == 0) {
-        int    interpreter_argc;
-        char **interpreter_argv;
-        char   interpreter_buffer[1024];
+        int   interpreter_argc;
+        char *interpreter_argv[50];
+        char  interpreter_buffer[1024];
         *strchr(pcb_buffer, '\n') = '\0';
         strcpy(interpreter_buffer, pcb_buffer);
         strcat(interpreter_buffer, " ");
         strcat(interpreter_buffer, path);
-        interpreter_argc = cmd_parse(interpreter_buffer, &interpreter_argv, ' ');
+        interpreter_argc = cmd_parse(interpreter_buffer, interpreter_argv, ' ');
 
         free(pcb_buffer);
         vfs_close(node);
         free(norm_path);
         return process_execve(interpreter_argv[0], interpreter_argv, envp);
+        //TODO cmd_parse 无合理释放的区域, 会造成内存泄漏, 等待修复
     }
 
     char cmdline[PAGE_SIZE];
