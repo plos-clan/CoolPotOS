@@ -101,11 +101,13 @@ struct vfs_node {           // vfs节点
     vfs_node_t root;        // 根目录
     bool       visited;     // 是否与具体文件系统同步
     bool       is_mount;    // 是否是挂载点
+    uint64_t   dev;         // 设备号
+    uint64_t   rdev;        // 真实设备号
 };
 
 errno_t    vfs_mkdir(const char *name);
 errno_t    vfs_mkfile(const char *name);
-int        vfs_regist(const char *name, vfs_callback_t callback, int register_id);
+int        vfs_regist(const char *name, vfs_callback_t callback, int register_id, uint64_t magic);
 vfs_node_t vfs_child_append(vfs_node_t parent, const char *name, void *handle);
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name);
 errno_t    vfs_close(vfs_node_t node);
