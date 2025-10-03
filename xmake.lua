@@ -31,15 +31,17 @@ function arch_i686()
         add_ldflags("-target x86-freestanding")
 
         add_linkdirs("libs/i386")
-        add_includedirs("src/i386/include")
-        add_files("src/i386/**.asm", "src/i386/**.c")
+        add_includedirs("src/arch/i386/include")
+        add_includedirs("src/include")
+        add_includedirs("src/include/types")
+        add_files("src/arch/i386/**.asm", "src/arch/i386/**.c")
 
         add_links("os_terminal")
         add_links("elf_parse")
         add_links("alloc")
 
         add_asflags("-f", "elf32")
-        add_ldflags("-T", "src/i386/linker.ld")
+        add_ldflags("-T", "src/arch/i386/linker.ld")
         add_cflags("-mno-mmx", "-mno-sse", "-mno-sse2")
     target_end()
 
@@ -58,7 +60,7 @@ function arch_i686()
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl32.elf")
 
             local limine_dir = iso_dir.."/limine"
-            os.cp("assets/limine.conf", limine_dir.."/limine.conf")
+            os.cp("assets/limine.conf", iso_dir.."/limine.conf")
 
             local limine_src = target:pkg("limine"):installdir()
             local limine_src = limine_src.."/share/limine"
@@ -105,6 +107,7 @@ function arch_x86_64()
     includes("module/extfs")
     includes("module/e1000")
     includes("module/nvme")
+    --includes("module/lwip")
 
     target("kernel")
         set_arch("x86_64")
@@ -118,7 +121,7 @@ function arch_x86_64()
 
         add_cflags("-mno-80387", "-mno-mmx", "-mno-sse", "-mno-sse2")
         add_cflags("-mno-red-zone", "-msoft-float", "-flto", "-nostdinc", "-nostdlib", "-fPIC")
-        add_ldflags("-T src/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld", "-nostdinc")
+        add_ldflags("-T src/arch/x86_64/linker.ld", "-nostdlib", "-fuse-ld=lld", "-nostdinc")
         --add_cflags("-Wno-unused-parameter","-Wno-unused-variable","-Wno-unused-value")
 
         --add_cflags("-fsanitize=undefined")
@@ -138,11 +141,13 @@ function arch_x86_64()
         --add_links("ubscan")
         -- add_linkdirs("libs/x86_64")
 
-        add_files("src/x86_64/**.c")
+        add_files("src/arch/x86_64/**.c")
+        add_files("src/fs/**.c")
         add_includedirs("libs/x86_64")
-        add_includedirs("src/x86_64/include")
-        add_includedirs("src/x86_64/include/types")
-        add_includedirs("src/x86_64/include/iic")
+        add_includedirs("src/arch/x86_64/include")
+        add_includedirs("src/include/types")
+        add_includedirs("src/arch/x86_64/include/iic")
+        add_includedirs("src/include")
     target_end()
 
     target("iso")
