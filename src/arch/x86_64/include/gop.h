@@ -15,7 +15,7 @@
 #define FB_VISUAL_STATIC_PSEUDOCOLOR 5 /* Pseudo color readonly */
 #define FB_VISUAL_FOURCC             6 /* Visual identified by a V4L2 FOURCC */
 
-#include "ctype.h"
+#include "cptype.h"
 #include "limine.h"
 
 extern struct limine_framebuffer *framebuffer;

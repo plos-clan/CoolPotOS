@@ -29,7 +29,7 @@
 #define EPOLL_CTL_DEL 2
 #define EPOLL_CTL_MOD 3
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 struct pollfd {
     int   fd;

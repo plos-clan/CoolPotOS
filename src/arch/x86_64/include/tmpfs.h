@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct tmpfs_file {
     bool               is_dir;

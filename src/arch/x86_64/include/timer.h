@@ -19,7 +19,7 @@
 #define DAY    (24 * HOUR)
 #define YEAR   (365 * DAY)
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "isr.h"
 
 typedef struct timer {

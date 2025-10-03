@@ -499,9 +499,10 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
     return total;
 }
 
-syscall_(readv, int fd, struct iovec *iov, int iovcnt) {
+syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     if (unlikely(fd < 0 || iov == NULL)) return SYSCALL_FAULT_(EINVAL);
-    if (iovcnt == 0) return SYSCALL_SUCCESS;
+    if (iovcnt0 == 0) return SYSCALL_SUCCESS;
+    size_t          iovcnt  = iovcnt0;
     fd_file_handle *handle  = queue_get(get_current_task()->parent_group->file_open, fd);
     size_t          buf_len = 0;
     for (size_t i = 0; i < iovcnt; i++) {
@@ -1130,9 +1131,9 @@ syscall_(pselect6) {
     struct timeval timeoutConv;
     if (timeout) {
         timeoutConv = (struct timeval){.tv_sec  = timeout->tv_sec,
-                                       .tv_usec = (timeout->tv_nsec + 1000) / 1000};
+                                       .tv_usec = (long)(timeout->tv_nsec + 1000l) / 1000};
     } else {
-        timeoutConv = (struct timeval){.tv_sec = (uint64_t)-1, .tv_usec = (uint64_t)-1};
+        timeoutConv = (struct timeval){.tv_sec = (long)-1, .tv_usec = (long)-1};
     }
 
     size_t ret = syscall_select(nfds, (uint64_t)(uint8_t *)readfds, (uint64_t)(uint8_t *)writefds,
@@ -1141,12 +1142,7 @@ syscall_(pselect6) {
     return ret;
 }
 
-syscall_(reboot) {
-    int      magic1 = arg0;
-    int      magic2 = arg1;
-    uint32_t cmd    = arg2;
-    void    *arg    = (void *)arg3;
-
+syscall_(reboot, unsigned int magic1, unsigned int magic2, uint32_t cmd, void *arg) {
     extern void cp_shutdown();
     extern void cp_reset();
 
@@ -1517,8 +1513,13 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
         old_root->name = dir->name;
         dir->name      = nb;
         list_append(old_root->parent->child, dir);
+
         list_delete(old_root->parent->child, old_root);
         list_delete(dir->parent->child, dir);
+
+        vfs_node_t parent = dir->parent;
+        dir->parent       = old_root->parent;
+        old_root->parent  = parent;
 
         vfs_close(old_root);
         vfs_close(dir);

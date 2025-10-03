@@ -130,12 +130,19 @@ void ptmx_device_open(void *file, const char *name, vfs_node_t node) {
     new_node->fsid      = ptmx_fsid;
     new_node->handle    = NULL;
 
-    vfs_node_t pts_node = vfs_open("/dev/pts");
+    extern vfs_node_t devfs_root;
+    char             *devfs_path = vfs_get_fullpath(devfs_root);
+    char             *new_path   = malloc(strlen(devfs_path) + 10);
+    sprintf(new_path, "%s/pts", devfs_path);
+    vfs_node_t pts_node = vfs_open(new_path);
     pts_node->fsid      = pts_fsid;
     char nm[4];
     sprintf(nm, "%d", handle->id);
     vfs_node_t pty_slave_node = vfs_node_alloc(pts_node, nm);
     pty_slave_node->fsid      = pts_fsid;
+
+    free(new_path);
+    free(devfs_path);
 }
 
 void ptmx_device_close(void *handle0) {

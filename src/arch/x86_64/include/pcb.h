@@ -65,7 +65,7 @@
 #define CLONE_NEWNET       0x40000000 /* New network namespace */
 #define CLONE_IO           0x80000000 /* Clone io context */
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "fpu.h"
 #include "isr.h"
 #include "lock_queue.h"
@@ -136,7 +136,7 @@ struct thread_control_block {
 
     pcb_t      parent_group; // 父进程
     uint8_t    task_level;   // 线程权限等级
-    size_t     tid;          // 线程 TID
+    pid_t      tid;          // 线程 TID
     TaskStatus status;       // 线程状态
     char       name[50];     // 线程名
 

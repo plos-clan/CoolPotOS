@@ -41,7 +41,7 @@
 
 #define eevdf_sched ((struct eevdf_t *)current_cpu->sched_handle)
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "fsgsbase.h"
 #include "lock_queue.h"
 #include "rbtree.h"

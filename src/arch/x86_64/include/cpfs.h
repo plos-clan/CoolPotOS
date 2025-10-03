@@ -2,7 +2,7 @@
 
 #define CPFS_MAX_FILE 256
 
-#include "ctype.h"
+#include "cptype.h"
 #include "llist.h"
 
 typedef struct cpfs_file {

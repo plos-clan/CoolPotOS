@@ -8,7 +8,7 @@
 #define IPC_MSG_TYPE_EPID     5 // 子进程退出信号
 #define IPC_MSG_TYPE_EXEC     6 // execve 调用信号
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "lock_queue.h"
 #include "pcb.h"
 

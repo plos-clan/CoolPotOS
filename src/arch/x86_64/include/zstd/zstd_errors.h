@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /*===== dependency =====*/
-#include "ctype.h" /* size_t */
+#include "cptype.h" /* size_t */
 
 /* =====   ZSTDERRORLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDERRORLIB_VISIBILITY

@@ -8,7 +8,7 @@
 #define MEGA_FACTOR (1UL << MEGA_SHIFT) // 1048576
 #define GIGA_FACTOR (1UL << GIGA_SHIFT) // 1073741824
 
-#include "ctype.h"
+#include "cptype.h"
 
 /* 硬件保留的内存 包括显存/设备MMIO/ACPI缓存等 */
 uint64_t get_reserved_memory();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 /**
  * The header file for the MPMC ring buffer
  * The data structure and function declarations live here

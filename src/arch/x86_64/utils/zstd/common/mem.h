@@ -19,7 +19,7 @@ extern "C" {
 *  Dependencies
 ******************************************/
 #include "compiler.h"
-#include "ctype.h" /* size_t, ptrdiff_t */
+#include "cptype.h" /* size_t, ptrdiff_t */
 #include "debug.h"
 #include "zstd_deps.h"
 
@@ -45,7 +45,7 @@ extern "C" {
 *****************************************************************/
 #if !defined(__VMS) && (defined(__cplusplus) ||                                                    \
                         (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */))
-#    include "ctype.h" /* intptr_t */
+#    include "cptype.h" /* intptr_t */
 typedef uint8_t  BYTE;
 typedef uint8_t  U8;
 typedef int8_t   S8;

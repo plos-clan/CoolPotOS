@@ -1,6 +1,6 @@
 #include "gop.h"
 #include "boot.h"
-#include "ctype.h"
+#include "cptype.h"
 #include "device.h"
 #include "errno.h"
 #include "heap.h"

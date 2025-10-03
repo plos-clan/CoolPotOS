@@ -1,7 +1,11 @@
 #include "elf_util.h"
+#include "elf.h"
 #include "frame.h"
 #include "klog.h"
 #include "krlibc.h"
+#include "page.h"
+#include "vfs.h"
+#include "vma.h"
 
 bool elf_test_head(Elf64_Ehdr *ehdr) {
     if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
@@ -84,7 +88,7 @@ bool is_dynamic(Elf64_Ehdr *ehdr) {
 
 elf_start load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
                             uint64_t *load_start, pcb_t process) {
-
+    if (data == NULL) return NULL;
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
     if (!elf_test_head(ehdr)) { return NULL; }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
@@ -132,9 +136,10 @@ elf_start load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *l
         *link_size = 0;
         return NULL;
     }
-    elf_start start = load_executor_elf(inter_ehdr, dir, INTERPRETER_BASE_ADDR, load_start, NULL);
-    *link_data      = (uint8_t *)inter_ehdr;
-    *link_size      = inter_file->size;
+    elf_start start =
+        load_executor_elf((uint8_t *)inter_ehdr, dir, INTERPRETER_BASE_ADDR, load_start, NULL);
+    *link_data = (uint8_t *)inter_ehdr;
+    *link_size = inter_file->size;
     vfs_close(inter_file);
     return start;
 }

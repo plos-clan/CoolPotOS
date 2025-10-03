@@ -4,7 +4,7 @@
 // GPL-3.0 License
 
 #pragma once
-#include "ctype.h"
+#include "cptype.h"
 
 /* 入口点结构 */
 struct EntryPoint64 {

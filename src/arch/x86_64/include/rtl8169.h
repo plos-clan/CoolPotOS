@@ -3,7 +3,7 @@
 #define TX_DESC_COUNT 4
 #define RX_DESC_COUNT 4
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     uint32_t MAC[2];     // 0x00 - 0x07: MAC 地址 (前 6 字节有效)

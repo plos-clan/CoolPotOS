@@ -62,9 +62,9 @@
 #define O_TMPFILE   020200000
 #define O_NDELAY    O_NONBLOCK
 
-#include "../../../include/ctype.h"
-#include "list.h"
-#include "llist.h"
+#include "../arch/x86_64/include/list.h"
+#include "../arch/x86_64/include/llist.h"
+#include "cptype.h"
 
 typedef struct vfs_node *vfs_node_t;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 /**
  * @brief 播放声音

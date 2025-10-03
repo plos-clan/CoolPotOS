@@ -70,7 +70,7 @@
 #define MAX(x, y) ((x > y) ? (x) : (y))
 #define MIN(x, y) ((x < y) ? (x) : (y))
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "types/limits.h"
 
 static inline void empty() {}

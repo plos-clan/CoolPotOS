@@ -13,16 +13,12 @@
 #include "smp.h"
 #include "terminal.h"
 
-spin_t page_lock;
+static spin_t page_lock = SPIN_INIT;
 
-page_directory_t  kernel_page_dir;
-page_directory_t *current_directory = NULL;
+static page_directory_t  kernel_page_dir;
+static page_directory_t *current_directory = NULL;
 
 uint64_t double_fault_page = 0;
-
-static bool is_huge_page(page_table_entry_t *entry) {
-    return (((uint64_t)entry->value) & PTE_HUGE) != 0;
-}
 
 __IRQHANDLER static void page_fault_handle(interrupt_frame_t *frame, uint64_t error_code) {
     close_interrupt;

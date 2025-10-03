@@ -7,7 +7,7 @@
 
 #define INVALID_INDEX ((size_t)-1)
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct buddy_frame {
     uint32_t order;

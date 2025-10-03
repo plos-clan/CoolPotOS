@@ -2,7 +2,7 @@
 
 #define LOAD_FACTOR_THRESHOLD 0.75
 
-#include "ctype.h"
+#include "cptype.h"
 #include "lock.h"
 
 typedef struct map_entry {

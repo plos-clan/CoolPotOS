@@ -6,7 +6,7 @@
 
 #define current_cpu ((smp_cpu_t *)read_kgsbase())
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 extern uint64_t (*read_fsbase)();
 extern void (*write_fsbase)(uint64_t value);

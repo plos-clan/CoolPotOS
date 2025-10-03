@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "pcb.h"
 
 typedef struct mm_virtual_page {

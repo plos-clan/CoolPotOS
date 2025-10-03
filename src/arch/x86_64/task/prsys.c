@@ -9,6 +9,7 @@
 #include "heap.h"
 #include "ipc.h"
 #include "lazyalloc.h"
+#include "lock.h"
 #include "pcb.h"
 #include "procfs.h"
 #include "smp.h"
@@ -101,6 +102,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
 }
 
 int process_control(int option, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
+    UNUSED(arg3, arg4, arg5);
     switch (option) {
     case PR_SET_NAME:
         if (arg2 == 0) return -1;

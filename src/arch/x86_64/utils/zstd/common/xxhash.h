@@ -324,7 +324,7 @@ XXH_PUBLIC_API unsigned XXH_versionNumber(void);
 /* ****************************
 *  Common basic types
 ******************************/
-#include "ctype.h" /* size_t */
+#include "cptype.h" /* size_t */
 typedef enum {
     XXH_OK = 0,
     XXH_ERROR
@@ -343,7 +343,7 @@ typedef uint32_t XXH32_hash_t;
 
 #elif !defined(__VMS) && (defined(__cplusplus) ||                                                  \
                           (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */))
-#    include "ctype.h"
+#    include "cptype.h"
 typedef uint32_t XXH32_hash_t;
 
 #else
@@ -640,7 +640,7 @@ C23   : https://en.cppreference.com/w/c/language/attributes/fallthrough
 typedef uint64_t XXH64_hash_t;
 #    elif !defined(__VMS) && (defined(__cplusplus) || (defined(__STDC_VERSION__) &&                \
                                                        (__STDC_VERSION__ >= 199901L) /* C99 */))
-#        include "ctype.h"
+#        include "cptype.h"
 typedef uint64_t XXH64_hash_t;
 #    else
 #        include "types/limits.h"
@@ -1550,7 +1550,7 @@ static void *XXH_memcpy(void *dest, const void *src, size_t size) {
 ***************************************/
 #if !defined(__VMS) && (defined(__cplusplus) ||                                                    \
                         (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */))
-#    include "ctype.h"
+#    include "cptype.h"
 typedef uint8_t xxh_u8;
 #else
 typedef unsigned char xxh_u8;

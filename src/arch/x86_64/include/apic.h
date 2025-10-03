@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct ioapic_info {
     uint8_t   id;

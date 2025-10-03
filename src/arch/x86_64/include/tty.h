@@ -102,7 +102,7 @@
 
 #define B38400 0x1000
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "lock_queue.h"
 
 struct vt_state {

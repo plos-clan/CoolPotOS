@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "krlibc.h"
 #include "tty.h"
 

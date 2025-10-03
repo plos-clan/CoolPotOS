@@ -40,7 +40,7 @@
 #    define ALWAYS_INLINE inline
 #endif
 
-#include "ctype.h"
+#include "cptype.h"
 
 #define FLANTERM_IN_FLANTERM
 

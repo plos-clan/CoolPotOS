@@ -2,7 +2,7 @@
 
 #define BITS_PER_WORD (sizeof(uint32_t) * 8)
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     uint32_t *bitmap;     // 位图数组

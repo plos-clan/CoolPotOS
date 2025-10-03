@@ -28,7 +28,7 @@
 #define PCI_RCMD_BUS_MASTER   (1 << 2)
 
 #include "acpi.h"
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     uint64_t address;

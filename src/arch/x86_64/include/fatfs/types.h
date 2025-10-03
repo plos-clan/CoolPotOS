@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ctype.h"
+#include "../cptype.h"
 
 typedef uint16_t u16;
 typedef uint32_t u32;

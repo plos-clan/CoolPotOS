@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 extern uint64_t physical_memory_offset;
 
