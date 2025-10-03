@@ -1,5 +1,5 @@
 #pragma once
-#include "ctype.h"
+#include "cptype.h"
 #include "kprint.h"
 #include "krlibc.h"
 

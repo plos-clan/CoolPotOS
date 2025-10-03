@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-#include "ctype.h"
+#include "cptype.h"
 
 /* weak symbol support
  * For now, enable conservatively:

@@ -104,6 +104,7 @@ void fatfs_open(void *parent, const char *name, vfs_node_t node) {
             child_node->type      = ((fno.fattrib & AM_DIR) != 0) ? file_dir : file_none;
             child_node->inode     = ino++;
             child_node->size      = fno.fsize;
+            child_node->dev       = child_node->root->dev;
         }
         if (node->inode == 0) node->inode = ino++;
         node->blksz = PAGE_SIZE;
@@ -115,7 +116,7 @@ void fatfs_open(void *parent, const char *name, vfs_node_t node) {
         node->size  = f_size((FIL *)fp);
         node->blksz = PAGE_SIZE;
     }
-
+    node->dev    = node->root->dev;
     new->handle  = fp;
     new->path    = new_path;
     node->handle = new;
@@ -137,14 +138,15 @@ bool fatfs_close(file_t handle) {
     return true;
 }
 
-int fatfs_mount(const char *src, vfs_node_t node) {
+errno_t fatfs_mount(const char *src, vfs_node_t node) {
     // if (node == rootdir) return -1; // 不支持fatfs作为rootfs
     if (is_virtual_fs(src)) return VFS_STATUS_FAILED;
 
     int drive                   = alloc_number();
     drive_number_mapping[drive] = vfs_open(src);
-    node->dev                   = drive_number_mapping[drive]->rdev;
-    char *path                  = malloc(3);
+    if (drive_number_mapping[drive] == NULL) return VFS_STATUS_FAILED;
+    node->dev  = drive_number_mapping[drive]->rdev;
+    char *path = malloc(3);
     sprintf(path, "%d:", drive);
     FRESULT r = f_mount(&volume[drive], path, 1);
     if (r != FR_OK) {
@@ -160,6 +162,7 @@ int fatfs_mount(const char *src, vfs_node_t node) {
     f->handle   = h;
     node->fsid  = fatfs_id;
     node->inode = 1;
+    node->root  = node;
 
     FILINFO fno;
     FRESULT res;
@@ -185,6 +188,7 @@ int fatfs_mount(const char *src, vfs_node_t node) {
         child_node->inode     = ino++;
         child_node->size      = fno.fsize;
         child_node->visited   = true;
+        child_node->dev       = child_node->root->dev;
     }
     // node->inode  = ino++;
     node->handle = f;
@@ -208,6 +212,7 @@ int fatfs_stat(void *handle, vfs_node_t node) {
     FILINFO fno;
     FRESULT res = f_stat(f->path, &fno);
     if (res != FR_OK) return -1;
+    node->dev = node->root->dev;
     if (fno.fattrib & AM_DIR) {
         node->type = file_dir;
         DIR *fp    = malloc(sizeof(DIR));
@@ -239,6 +244,7 @@ int fatfs_stat(void *handle, vfs_node_t node) {
             child_node->inode     = ino++;
             child_node->size      = fno.fsize;
             child_node->visited   = true;
+            child_node->dev       = child_node->root->dev;
         }
         free(fp);
         do {
@@ -305,6 +311,7 @@ vfs_node_t fatfs_dup(vfs_node_t node) {
     copy->child       = node->child;
     copy->realsize    = node->realsize;
     copy->inode       = node->inode;
+    copy->dev         = node->dev;
     return copy;
 }
 

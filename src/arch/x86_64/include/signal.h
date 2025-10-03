@@ -51,7 +51,7 @@
 #define SIG_DFL ((sighandler_t)0) // 默认的信号处理程序（信号句柄）
 #define SIG_IGN ((sighandler_t)1) // 忽略信号的处理程序
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "errno.h"
 #include "krlibc.h"
 #include "scheduler.h"

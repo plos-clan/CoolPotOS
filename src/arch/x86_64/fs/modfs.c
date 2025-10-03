@@ -107,5 +107,5 @@ static struct vfs_callback modfs_callbacks = {
 };
 
 void modfs_setup() {
-    modfs_id = vfs_regist("modfs", &modfs_callbacks, MODFS_REGISTER_ID,  0x858458f6);
+    modfs_id = vfs_regist("modfs", &modfs_callbacks, MODFS_REGISTER_ID, 0x858458f6);
 }

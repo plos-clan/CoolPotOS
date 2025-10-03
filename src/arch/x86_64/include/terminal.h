@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 #include "heap.h"
 #include "limine.h"
 

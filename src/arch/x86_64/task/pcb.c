@@ -1,4 +1,5 @@
 #include "pcb.h"
+#include "cptype.h"
 #include "description_table.h"
 #include "eevdf.h"
 #include "elf.h"
@@ -13,6 +14,7 @@
 #include "krlibc.h"
 #include "lazyalloc.h"
 #include "lock.h"
+#include "lock_queue.h"
 #include "procfs.h"
 #include "scheduler.h"
 #include "smp.h"
@@ -50,12 +52,12 @@ static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
 static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, uint64_t link_start,
                                  uint8_t *link_data, size_t link_size) {
     uint64_t env_i  = 0;
-    uint64_t argv_i = 0;
+    int      argv_i = 0;
 
-    ucb_t user = task->parent_group->user;
-    char *argv[50];
-    char *build_cmdline = strdup(task->parent_group->cmdline);
-    int   argc          = cmd_parse(build_cmdline, argv, ' ');
+    const ucb_t user = task->parent_group->user;
+    char       *argv[50];
+    char       *build_cmdline = strdup(task->parent_group->cmdline);
+    const int   argc          = cmd_parse(build_cmdline, argv, ' ');
 
     char **envp = task->parent_group->envp ? task->parent_group->envp : user->envp;
 
@@ -77,11 +79,9 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
         }
     }
 
-    if (argv != NULL) {
-        for (argv_i = 0; argv_i < argc; argv_i++) {
-            tmp_stack = push_slice(tmp_stack, (uint8_t *)argv[argv_i], strlen(argv[argv_i]) + 1);
-            argvps[argv_i] = tmp_stack;
-        }
+    for (argv_i = 0; argv_i < argc; argv_i++) {
+        tmp_stack      = push_slice(tmp_stack, (uint8_t *)argv[argv_i], strlen(argv[argv_i]) + 1);
+        argvps[argv_i] = tmp_stack;
     }
 
     uint64_t total_length = 2 * sizeof(uint64_t) + 7 * 2 * sizeof(uint64_t) +
@@ -167,7 +167,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
 
 void switch_to_user_mode(uint64_t func) {
     close_interrupt;
-    uint64_t rsp                        = (uint64_t)get_current_task()->user_stack_top;
+    uint64_t rsp                        = get_current_task()->user_stack_top;
     get_current_task()->context0.rflags = 0 << 12 | 0b10 | 1 << 9;
     func                                = get_current_task()->main;
 
@@ -175,9 +175,9 @@ void switch_to_user_mode(uint64_t func) {
     if (is_dynamic(get_current_task()->parent_group->elf_file)) {
         logkf("task: Dynamic %s\n", get_current_task()->name);
         uint64_t  linker_start = UINT64_MAX;
-        elf_start linker_main;
-        uint8_t  *link_data = NULL;
-        size_t    link_size = 0;
+        elf_start linker_main  = NULL;
+        uint8_t  *link_data    = NULL;
+        size_t    link_size    = 0;
 
         linker_main =
             load_interpreter_elf(get_current_task()->parent_group->elf_file,
@@ -190,7 +190,9 @@ void switch_to_user_mode(uint64_t func) {
             open_interrupt;
             cpu_hlt;
         }
-        linker_main = (elf_start)((uint64_t)linker_main + linker_start);
+
+        uintptr_t lm_offset = (uintptr_t)linker_main + linker_start;
+        linker_main         = (elf_start)lm_offset;
 
         // VMA 标记
         vma_t *ld_so_vma = vma_alloc();
@@ -214,7 +216,11 @@ void switch_to_user_mode(uint64_t func) {
         rsp = build_user_stack(get_current_task(), rsp, func, 0, NULL, 0);
     }
 
-    vfs_node_t stdio        = vfs_open("/dev/stdio");
+    extern vfs_node_t devfs_root;
+    char             *devfs_path = vfs_get_fullpath(devfs_root);
+    char             *new_path   = malloc(strlen(devfs_path) + 10);
+    sprintf(new_path, "%s/stdio", devfs_path);
+    vfs_node_t stdio        = vfs_open(new_path);
     stdio->refcount        += 3;
     fd_file_handle *stdout  = (fd_file_handle *)calloc(1, sizeof(fd_file_handle));
     stdout->node            = stdio;
@@ -228,6 +234,9 @@ void switch_to_user_mode(uint64_t func) {
     stdin->fd  = queue_enqueue(get_current_task()->parent_group->file_open, stdin);  // stdin
     stdout->fd = queue_enqueue(get_current_task()->parent_group->file_open, stdout); // stdout
     stderr->fd = queue_enqueue(get_current_task()->parent_group->file_open, stderr); // stderr
+
+    free(devfs_path);
+    free(new_path);
 
     __asm__ volatile("mov %0, %%es\n"
                      "mov %0, %%ds\n"

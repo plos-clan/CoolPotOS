@@ -6,7 +6,7 @@
 #define SA_TI_MASK       0xFFFB
 #define GET_SEL(cs, rpl) ((cs & SA_RPL_MASK & SA_TI_MASK) | (rpl))
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 struct idt_register {
     uint16_t size;

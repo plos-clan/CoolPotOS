@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 typedef struct {
     uint8_t fxsave_area[512] __attribute__((aligned(16)));

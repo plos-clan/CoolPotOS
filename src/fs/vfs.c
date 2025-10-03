@@ -5,7 +5,7 @@
  */
 #define ALL_IMPLEMENTATION
 
-#include "vfs.h"
+#include "../include/vfs.h"
 #include "errno.h"
 #include "iso9660.h"
 #include "kprint.h"
@@ -545,6 +545,7 @@ size_t vfs_readlink(vfs_node_t node, char *buf, size_t bufsize) {
 
 void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
                   uint64_t flags, uint64_t offset) {
+    UNUSED(flags);
     pcb_t current_task        = get_current_task()->parent_group;
     current_task->mmap_start += (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 

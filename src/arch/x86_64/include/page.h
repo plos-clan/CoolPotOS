@@ -62,7 +62,7 @@
     (((vaddr) >> (PT_OFFSET_BASE + (4 - (level)) * PT_OFFSET_PER_LEVEL)) &                         \
      (((uint64_t)1 << PT_OFFSET_PER_LEVEL) - 1))
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 typedef struct page_table_entry {
     uint64_t value;

@@ -15,7 +15,7 @@ extern "C" {
 #    define ZSTD_H_235446
 
 /* ======   Dependency   ======*/
-#    include "ctype.h"
+#    include "cptype.h"
 #    include "types/limits.h"
 
 /* =====   ZSTDLIB_API : control library symbols visibility   ===== */

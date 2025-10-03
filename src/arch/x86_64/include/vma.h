@@ -8,7 +8,7 @@
 #define VMA_ANON   0x10
 #define VMA_SHM    0x20
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 // VMA类型
 typedef enum {

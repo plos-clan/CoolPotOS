@@ -32,7 +32,7 @@
 #    error "Flanterm must be compiled as C99 or newer."
 #endif
 
-#include "ctype.h"
+#include "cptype.h"
 
 #define FLANTERM_IN_FLANTERM
 

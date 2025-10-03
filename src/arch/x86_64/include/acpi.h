@@ -17,7 +17,7 @@
 #define APIC_ICR_LOW  0x300
 #define APIC_ICR_HIGH 0x310
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 
 typedef struct {
     uint8_t  addressid;

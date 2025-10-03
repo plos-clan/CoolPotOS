@@ -1,15 +1,10 @@
 #include "iso9660.h"
 #include "errno.h"
-#include "klog.h"
 #include "krlibc.h"
 
 #define l9660_seekdir(dir, pos) (l9660_seek(&(dir)->file, L9660_SEEK_SET, (pos)))
 #define l9660_telldir(dir)      (l9660_tell(&(dir)->file))
 #define get_root_dir(vfs)       ((l9660_fs_status_t *)(vfs->cache))->root_dir
-
-#define SEEK_END L9660_SEEK_END
-#define SEEK_SET L9660_SEEK_SET
-#define SEEK_CUR L9660_SEEK_CUR
 
 #define DENT_EXISTS      (1 << 0)
 #define DENT_ISDIR       (1 << 1)

@@ -251,7 +251,7 @@
     ((len) >= (int)sizeof(struct nlmsghdr) && (nlh)->nlmsg_len >= sizeof(struct nlmsghdr) &&       \
      (nlh)->nlmsg_len <= (len))
 
-#include "ctype.h"
+#include "cptype.h"
 #include "lock.h"
 #include "syscall.h"
 #include "vfs.h"

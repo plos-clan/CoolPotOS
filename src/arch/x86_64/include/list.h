@@ -1,7 +1,7 @@
 #ifndef PL_LIST_H
 #define PL_LIST_H
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "heap.h"
 
 #pragma GCC system_header

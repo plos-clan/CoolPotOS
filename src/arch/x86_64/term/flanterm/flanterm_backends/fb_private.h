@@ -30,7 +30,7 @@
 #    error "Do not use fb_private.h. Use interfaces defined in fb.h only."
 #endif
 
-#include "ctype.h"
+#include "cptype.h"
 
 #ifdef __cplusplus
 extern "C" {

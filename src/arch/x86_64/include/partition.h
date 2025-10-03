@@ -8,7 +8,7 @@
 #define PARTITION_TYPE_MBR     0xEBD0A0A2
 #define PARTITION_TYPE_UNKNOWN 0xFFFFFFFF
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct GPT_DPT {
     char     signature[8];                // 签名，必须是 "EFI PART"

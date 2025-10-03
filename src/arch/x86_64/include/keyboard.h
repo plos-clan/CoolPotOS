@@ -24,7 +24,7 @@
 #define CHARACTER_ENTER '\n'
 #define CHARACTER_BACK  '\b'
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef enum mouse_type {
     Standard   = 0,

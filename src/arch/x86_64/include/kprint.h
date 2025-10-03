@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../include/ctype.h"
+#include "cptype.h"
 #include "types/stdarg.h"
 
 #define BLACK   0 // 黑

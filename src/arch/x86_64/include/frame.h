@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bitmap.h"
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     Bitmap bitmap;

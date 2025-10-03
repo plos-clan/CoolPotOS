@@ -161,10 +161,11 @@ char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
 }
 
 char *proc_gen_mounts(size_t *context_len) {
-    char *mount_info = "dev /dev devfs rw,nosuid,relatime,mode=755,inode64 0 0\n"
-                       "proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0\n"
-                       "tmpfs /tmp tmpfs rw,nosuid,size=8040232k,nr_inodes=1048576,nodev,inode64,usrquota 0 0";
-    *context_len     = strlen(mount_info);
+    char *mount_info =
+        "dev /dev devfs rw,nosuid,relatime,mode=755,inode64 0 0\n"
+        "proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0\n"
+        "tmpfs /tmp tmpfs rw,nosuid,size=8040232k,nr_inodes=1048576,nodev,inode64,usrquota 0 0";
+    *context_len = strlen(mount_info);
     return strdup(mount_info);
 }
 

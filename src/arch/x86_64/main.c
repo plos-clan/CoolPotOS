@@ -1,3 +1,4 @@
+#include "../../include/vfs.h"
 #include "acpi.h"
 #include "ahci.h"
 #include "boot.h"
@@ -41,7 +42,6 @@
 #include "terminal.h"
 #include "timer.h"
 #include "tmpfs.h"
-#include "vfs.h"
 
 // 编译器判断
 #if defined(__clang__)

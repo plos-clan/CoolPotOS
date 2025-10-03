@@ -26,7 +26,7 @@
 #ifndef FLANTERM_H
 #define FLANTERM_H 1
 
-#include "ctype.h"
+#include "cptype.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -5,7 +5,7 @@
 #define CPUINFO_MMX    (1ULL << 4)
 #define CPUINFO_SSE    (1ULL << 5)
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     char        *vendor;

@@ -12,10 +12,10 @@
 
 extern device_t device_ctl[26]; // vdisk.c
 
-int               devfs_id    = 0;
-static int        devfs_inode = 2;
-static vfs_node_t devfs_root  = NULL;
-device_handle_t   root_handle = NULL;
+int             devfs_id    = 0;
+static int      devfs_inode = 2;
+vfs_node_t      devfs_root  = NULL;
+device_handle_t root_handle = NULL;
 
 static errno_t devfs_register0(const char *path, size_t id) {
     device_t *device = &device_ctl[id];

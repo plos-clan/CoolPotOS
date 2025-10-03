@@ -2,7 +2,8 @@
 
 #define SECTORS_ONCE 8
 
-#include "ctype.h"
+#include "cptype.h"
+#include "vbuffer.h"
 
 typedef enum {
     DEVICE_BLOCK,

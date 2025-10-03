@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 #include "frame.h"
 #include "hhdm.h"
 #include "pcb.h"

@@ -150,7 +150,7 @@
         __wcounter__;                                                                              \
     })
 
-#include "ctype.h"
+#include "cptype.h"
 #include "vbuffer.h"
 
 typedef uint32_t hba_reg_t;
