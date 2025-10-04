@@ -2,7 +2,7 @@
 
 #define QUEUE_IMPLEMENTATION
 
-#include "ctype.h"
+#include "cptype.h"
 #include "krlibc.h"
 #include "queue.h"
 

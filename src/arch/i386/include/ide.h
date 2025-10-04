@@ -72,7 +72,7 @@
 #define ATA_READ  0x00
 #define ATA_WRITE 0x01
 
-#include "ctype.h"
+#include "cptype.h"
 #include "isr.h"
 
 void    ide_init();

@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /*======  Dependencies  ======*/
-#include "ctype.h" /* size_t */
+#include "cptype.h" /* size_t */
 
 /* =====   ZDICTLIB_API : control library symbols visibility   ===== */
 #ifndef ZDICTLIB_VISIBILITY

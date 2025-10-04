@@ -17,7 +17,7 @@
 #define SOCKET_TCP_CLOSE_WAIT   10
 #define SOCKET_TCP_LAST_ACK     11
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct TCPPesudoHeader {
     uint32_t srcIP;

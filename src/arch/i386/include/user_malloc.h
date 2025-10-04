@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 #include "pcb.h"
 
 void *user_realloc(pcb_t *pcb, void *cp, size_t nbytes);

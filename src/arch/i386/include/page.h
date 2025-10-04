@@ -5,7 +5,7 @@
 #define INDEX_FROM_BIT(a)  (a / (8 * 4))
 #define OFFSET_FROM_BIT(a) (a % (8 * 4))
 
-#include "ctype.h"
+#include "cptype.h"
 #include "multiboot.h"
 
 typedef struct page {

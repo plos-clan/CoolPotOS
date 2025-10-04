@@ -1,7 +1,7 @@
 #pragma once
 
+#include "cptype.h"
 #include "crc.h"
-#include "ctype.h"
 #include "io.h"
 #include "klog.h"
 #include "pci.h"

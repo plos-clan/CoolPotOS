@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 #include "multiboot.h"
 
 typedef struct video_area {

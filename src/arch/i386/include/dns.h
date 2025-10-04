@@ -29,7 +29,7 @@
 #define DNS_PORT      53
 #define DNS_SERVER_IP 0x08080808
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct DNS_Header {
     uint16_t ID;

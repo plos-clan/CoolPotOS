@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     unsigned short di, si, bp, sp, bx, dx, cx, ax;

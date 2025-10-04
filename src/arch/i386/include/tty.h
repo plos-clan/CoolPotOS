@@ -5,7 +5,7 @@
 #define TTY_OST_OUTPUT 8  // 基于os_terminal的虚拟终端内核日志输出
 #define TTY_LOG_OUTPUT 16 // 后台内核日志
 
-#include "ctype.h"
+#include "cptype.h"
 #include "fifo8.h"
 
 typedef enum {

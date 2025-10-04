@@ -1,4 +1,4 @@
-#include "ctype.h"
+#include "cptype.h"
 #include "klog.h"
 #include "multiboot.h"
 #include "video.h"

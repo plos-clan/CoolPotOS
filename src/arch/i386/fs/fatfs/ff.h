@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#include "ctype.h"
+#include "cptype.h"
 #include "ffconf.h"
 
 #if FF_DEFINED != FFCONF_DEF

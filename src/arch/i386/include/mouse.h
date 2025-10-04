@@ -9,7 +9,7 @@
 #define MOUSE_ROLL_DOWN 2
 #define MOUSE_ROLL_NONE 0in
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     uint8_t buf[3], phase;

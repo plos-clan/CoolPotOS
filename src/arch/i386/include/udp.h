@@ -2,7 +2,7 @@
 
 #define UDP_PROTOCOL 17
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct UDPMessage {
     uint16_t srcPort;

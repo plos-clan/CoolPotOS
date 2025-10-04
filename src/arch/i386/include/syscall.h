@@ -107,7 +107,7 @@
 #define __syscall(id, ...)                                                                         \
     __syscall_concat(__syscall, __syscall_argn(__VA_ARGS__))(id, ##__VA_ARGS__)
 
-#include "ctype.h"
+#include "cptype.h"
 #include "vfs.h"
 
 typedef uint32_t (*syscall_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);

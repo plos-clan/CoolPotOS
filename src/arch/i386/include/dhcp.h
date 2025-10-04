@@ -29,7 +29,7 @@
 
 #define DHCP_MAGIC_COOKIE 0x63825363
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct DHCPMessage {
     uint8_t  opcode;

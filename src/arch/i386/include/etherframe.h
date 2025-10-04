@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct EthernetFrame_head {
     uint8_t  dest_mac[6];
