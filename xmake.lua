@@ -9,12 +9,13 @@ add_requires("limine v9.x-binary", {system = false})
 option("arch")
     set_default("x86_64")
     set_showmenu(true)
-    set_values("x86_64", "i686")
+    set_values("x86_64", "i686", "riscv64")
     set_description("The target architecture of CoolPotOS.")
 option_end()
 
 if is_config("arch", "i686") then arch_i686()
-elseif is_config("arch", "x86_64") then arch_x86_64() end
+elseif is_config("arch", "x86_64") then arch_x86_64()
+elseif is_config("arch", "riscv64") then arch_riscv64() end
 
 function arch_i686()
     add_requires("zig")
@@ -256,15 +257,103 @@ function arch_x86_64()
     target_end()
 end
 
+function arch_riscv64()
+    -- 确保 limine 包被配置为 riscv64
+    add_requires("limine v9.x-binary", {
+        system = false,
+        configs = {arch = "riscv64"}
+    })
+
+    target("kernel")
+        set_arch("riscv64")
+        set_kind("binary")
+        set_toolchains("clang")
+        set_default(false)
+
+        add_cflags("-target riscv64-unknown-elf")
+        add_ldflags("-target riscv64-unknown-elf")
+        -- RISC-V 相关的编译选项...
+
+        add_files("src/arch/riscv64/**.c")
+        --add_files("src/term/**.c")
+        add_files("src/util/**.c")
+        add_includedirs("src/arch/riscv64/include")
+        add_includedirs("src/include/types")
+        add_includedirs("src/include")
+    target_end()
+
+    target("iso")
+        set_kind("phony")
+        add_deps("kernel")
+        add_packages("limine")
+        set_default(false)
+
+        on_build(function (target)
+            import("core.project.project")
+
+            local iso_dir = "$(builddir)/iso_dir"
+            os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            local kernel = project.target("kernel")
+            os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf") -- RISC-V 64-bit kernel
+
+            local limine_dir = iso_dir.."/limine"
+            os.cp("assets/limine.conf", iso_dir.."/limine.conf")
+
+            local limine_src = target:pkg("limine"):installdir()
+            local limine_src = limine_src.."/share/limine"
+
+            -- 关键：拷贝 RISC-V 相关的引导文件
+            os.cp(limine_src.."/limine-efi-riscv64.bin", limine_dir.."/limine-efi-riscv64.bin")
+
+            -- 由于 RISC-V 引导主要通过 UEFI，BIOS 文件通常不适用，但你可能需要一个通用 UEFI 文件
+            os.cp("assets/background.jpg", iso_dir.."/background.jpg")
+
+            local iso_file = "$(builddir)/CoolPotOS.iso"
+
+            -- 关键：使用 RISC-V 的 UEFI 文件作为启动文件
+            os.run("xorriso -as mkisofs "..
+                "-R -r -J "..
+                "--efi-boot limine/limine-efi-riscv64.bin "..
+                "-efi-boot-part --efi-boot-image --protective-msdos-label "..
+                "%s -o %s", iso_dir, iso_file)
+
+            print("ISO image created at: %s", iso_file)
+        end)
+    target_end()
+
+    target("run")
+        set_kind("phony")
+        add_deps("iso")
+        set_default(true)
+
+        on_run(function (target)
+            import("core.project.config")
+            local flags = {
+                "-M", "virt", "-cpu", "rv64", "-smp", "4",
+                "-serial", "stdio", "-m","2048M",
+                -- RISC-V 需要 OpenSBI 作为固件
+                "-bios", "/usr/share/opensbi/lp64/generic/firmware/fw_dynamic.bin",
+                "-kernel", config.builddir().."/CoolPotOS.iso",
+                "--no-reboot",
+                -- 其他 RISC-V QEMU 选项
+            }
+            -- 关键：使用 qemu-system-riscv64
+            os.execv("qemu-system-riscv64", flags)
+        end)
+    target_end()
+end
+
 --- Thirdparty Definitions ---
 package("limine")
     set_kind("binary")
     set_urls("https://github.com/limine-bootloader/limine.git")
-    
+
     on_install(function (package)
         local prefix = "PREFIX="..package:installdir()
-        import("package.tools.make").make(package)
-        import("package.tools.make").make(package, {"install", prefix})
+        local arch = package:config("arch")
+
+        import("package.tools.make").make(package, {"ARCH="..arch})
+        import("package.tools.make").make(package, {"install", prefix, "ARCH="..arch})
     end)
 package_end()
 

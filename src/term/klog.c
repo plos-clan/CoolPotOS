@@ -1,15 +1,16 @@
 #include "klog.h"
 #include "kmesg.h"
-#include "serial.h"
 #include "sprintf.h"
 #include "types/stdarg.h"
 
-//#define HARDWARE
+#if defined(__x86_64__)
+#    include "serial.h"
+#endif
 
 void logk(const char *str) {
     while (*str) {
         char ch = *str++;
-#ifndef HARDWARE
+#if defined(__x86_64__)
         write_serial(ch);
 #endif
     }
