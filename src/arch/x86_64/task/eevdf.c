@@ -1,6 +1,9 @@
 /**
  * CP_Kernel 精简版 EEVDF 最小虚拟截止时间优先调度
  */
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+
 #include "eevdf.h"
 #include "cpustats.h"
 #include "klog.h"
@@ -379,3 +382,5 @@ USED void for_each_rb_tree() {
     rb_traverse_with_callback(((struct eevdf_t *)current_cpu->sched_handle)->root, cb);
     logkf("\r\n");
 }
+
+#pragma GCC pop_options

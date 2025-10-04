@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../arch/x86_64/include/heap.h"
+#include "../arch/x86_64/include/limine.h"
 #include "cptype.h"
-#include "heap.h"
-#include "limine.h"
 
 #define TERMINAL_EMBEDDED_FONT
 #include "os_terminal.h"
