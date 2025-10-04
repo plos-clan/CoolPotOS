@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 void *load_font(const char *path);
 void  ttf_putchar(uint32_t *vram, void *info0, char c, int cx, int cy, int *width, int *height,

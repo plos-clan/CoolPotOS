@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 void dlogf(char *fmt, ...); // 驱动信息输出
 

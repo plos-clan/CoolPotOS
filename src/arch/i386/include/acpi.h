@@ -5,7 +5,7 @@
 #define ACPI_TABLE_RSDT ((void *)rsdt)
 #define ACPI_TABLE_FACP ((void *)facp)
 
-#include "ctype.h"
+#include "cptype.h"
 
 #pragma pack(push, 1)
 typedef struct {

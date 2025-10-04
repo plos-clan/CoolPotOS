@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef enum ElfParseResult_Tag {
     EntryPoint,

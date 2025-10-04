@@ -24,7 +24,7 @@
 #define HBA_PORT_IPM_ACTIVE  1
 #define HBA_PORT_DET_PRESENT 3
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef enum {
     FIS_TYPE_REG_H2D   = 0x27, // Register FIS - host to device

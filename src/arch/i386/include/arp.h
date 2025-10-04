@@ -4,7 +4,7 @@
 #define MAX_ARP_TABLE 256
 #define ARP_WAITTIME  1
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct ARPMessage {
     uint16_t hardwareType;

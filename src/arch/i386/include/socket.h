@@ -4,7 +4,7 @@
 #define SOCKET_ALLOC   -1
 #define SOCKET_FREE    0
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct Socket {
     // 函数格式

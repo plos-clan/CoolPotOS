@@ -108,7 +108,7 @@
 
 #endif
 
-#include "ctype.h"
+#include "cptype.h"
 #include <stdarg.h>
 
 static inline void bzero(void *_s, size_t _n) {

@@ -101,7 +101,7 @@
 #ifndef ZSTD_DEPS_STDINT
 #    define ZSTD_DEPS_STDINT
 
-#    include "ctype.h"
+#    include "cptype.h"
 
 #endif /* ZSTD_DEPS_STDINT */
 #endif /* ZSTD_DEPS_NEED_STDINT */

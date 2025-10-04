@@ -4,7 +4,7 @@
 #define L9660_SEEK_SET 0
 #define L9660_SEEK_CUR +1
 
-#include "ctype.h"
+#include "cptype.h"
 #include "vfs.h"
 
 typedef enum {

@@ -4,7 +4,7 @@
 #define TASK_SYSTEM_SERVICE_LEVEL 1
 #define TASK_APPLICATION_LEVEL    2
 
-#include "ctype.h"
+#include "cptype.h"
 #include "elf.h"
 #include "page.h"
 #include "syscall.h"

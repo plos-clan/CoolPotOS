@@ -14,7 +14,7 @@
 #define CMOS_CUR_YEAR 0x9
 #define CMOS_CUR_CEN  0x32
 
-#include "ctype.h"
+#include "cptype.h"
 
 char *get_date_time();
 

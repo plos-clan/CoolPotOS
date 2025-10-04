@@ -83,7 +83,7 @@ Build Options
   Disable SIMD optimizations.
 */
 
-#include "ctype.h"
+#include "cptype.h"
 #include "kmalloc.h"
 #include "krlibc.h"
 

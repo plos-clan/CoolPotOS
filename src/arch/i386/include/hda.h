@@ -29,7 +29,7 @@
 
 #define HDA_BUF_SIZE 4096
 
-#include "ctype.h"
+#include "cptype.h"
 
 void     hda_init();
 void     hda_stop();

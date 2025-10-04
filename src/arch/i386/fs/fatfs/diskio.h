@@ -5,7 +5,7 @@
 #ifndef _DISKIO_DEFINED
 #define _DISKIO_DEFINED
 
-#include "ctype.h"
+#include "cptype.h"
 #include "ff.h"
 
 #ifdef __cplusplus

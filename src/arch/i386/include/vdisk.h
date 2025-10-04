@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct {
     void (*Read)(int drive, uint8_t *buffer, uint32_t number, uint32_t lba);

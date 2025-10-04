@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 #include "klog.h"
 #include "kmalloc.h"
 #include "tty.h"

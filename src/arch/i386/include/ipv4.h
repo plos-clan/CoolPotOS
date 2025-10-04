@@ -6,7 +6,7 @@
 #define IP_DF       14
 #define IP_OFFSET   0
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct IPV4Message {
     uint8_t  headerLength : 4;

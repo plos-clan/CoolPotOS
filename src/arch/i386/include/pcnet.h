@@ -34,7 +34,7 @@
 #define IP_DF          14
 #define IP_OFFSET      0
 
-#include "ctype.h"
+#include "cptype.h"
 
 struct InitializationBlock {
     uint16_t mode;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ctype.h"
+#include "cptype.h"
 #include "kmalloc.h"
 
 #pragma GCC system_header

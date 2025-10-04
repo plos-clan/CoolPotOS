@@ -19,7 +19,7 @@
 #define mem_mapping      0
 #define input_output     1
 
-#include "ctype.h"
+#include "cptype.h"
 
 typedef struct pci_device {
     char    *name;

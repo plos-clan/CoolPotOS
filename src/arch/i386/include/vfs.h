@@ -5,7 +5,7 @@
  * Copyright plos-clan by min0911Y & zhouzhihao & copi143
  */
 
-#include "ctype.h"
+#include "cptype.h"
 #include "list.h"
 
 typedef struct vfs_node *vfs_node_t;
