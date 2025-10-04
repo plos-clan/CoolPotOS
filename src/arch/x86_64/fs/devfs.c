@@ -3,7 +3,7 @@
  * 设备虚拟文件系统
  */
 #include "devfs.h"
-#include "../../../include/device.h"
+#include "device.h"
 #include "errno.h"
 #include "kprint.h"
 #include "krlibc.h"

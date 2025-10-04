@@ -1,11 +1,10 @@
-#include "../include/device.h"
+#include "device.h"
 #include "errno.h"
 #include "frame.h"
 #include "hhdm.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "page.h"
-#include "vbuffer.h"
 
 device_t device_ctl[MAX_DEIVCE];
 

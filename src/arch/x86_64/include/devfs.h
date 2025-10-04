@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../../include/device.h"
-#include "../../../include/llist.h"
 #include "cptype.h"
+#include "device.h"
+#include "llist.h"
 
 typedef struct device_handle *device_handle_t;
 

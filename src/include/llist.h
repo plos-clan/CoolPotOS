@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../arch/x86_64/include/krlibc.h"
+#include "krlibc.h"
 
 struct llist_header {
     struct llist_header *prev;

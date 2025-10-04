@@ -1,6 +1,5 @@
-#include "../../../include/llist.h"
-#include "../../../module/all_include/cp_kernel.h"
 #include "errno.h"
+#include "llist.h"
 #include "network.h"
 #include "pcb.h"
 #include "vfs.h"

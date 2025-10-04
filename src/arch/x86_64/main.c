@@ -1,4 +1,5 @@
-#include "../../include/vfs.h"
+#include "kmesg.h"
+#include "kprint.h"
 #include "acpi.h"
 #include "ahci.h"
 #include "boot.h"
@@ -20,8 +21,6 @@
 #include "iic/iic_core.h"
 #include "keyboard.h"
 #include "killer.h"
-#include "kmesg.h"
-#include "kprint.h"
 #include "krlibc.h"
 #include "modfs.h"
 #include "network.h"
@@ -42,6 +41,7 @@
 #include "terminal.h"
 #include "timer.h"
 #include "tmpfs.h"
+#include "vfs.h"
 
 // 编译器判断
 #if defined(__clang__)
