@@ -39,5 +39,5 @@ typedef _Atomic volatile bool spin_t;
 
 #define cpu_relax()                                                                                \
     do {                                                                                           \
-        __asm__ volatile("pause\n" : : : "memory");                                                \
+        __asm__ volatile("\n" : : : "memory");                                                     \
     } while (false);

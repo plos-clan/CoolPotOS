@@ -2,8 +2,8 @@
 
 #define SECTORS_ONCE 8
 
+#include "../arch/x86_64/include/vbuffer.h"
 #include "cptype.h"
-#include "vbuffer.h"
 
 typedef enum {
     DEVICE_BLOCK,
@@ -18,7 +18,7 @@ typedef struct _device {
     size_t (*write)(int drive, uint8_t *buffer, size_t number, size_t lba);
     int (*ioctl)(struct _device *device, size_t req, void *handle);
     int (*poll)(size_t events);
-    void *(*map)(int drive, void *addr, uint64_t len);
+    void *(*map)(int drive, void *addr, size_t len);
     int           flag;
     size_t        size;        // 大小
     size_t        sector_size; // 扇区大小
@@ -50,4 +50,4 @@ errno_t devfs_register(const char *path, size_t id);
 bool    have_vdisk(int drive);
 size_t  device_read(size_t lba, size_t number, void *buffer, int drive);
 size_t  device_write(size_t lba, size_t number, const void *buffer, int drive);
-void   *device_mmap(int drive, void *addr, uint64_t len);
+void   *device_mmap(int drive, void *addr, size_t len);

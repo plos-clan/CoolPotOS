@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../../../include/llist.h"
 #include "cptype.h"
-#include "llist.h"
 
 struct membuf {
     void  *buffer;

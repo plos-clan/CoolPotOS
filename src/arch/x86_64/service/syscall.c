@@ -1508,14 +1508,17 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
         vfs_node_t old_root   = vfs_open(old_root_p);
         free(old_root_p);
         if (old_root == NULL || !old_root->is_mount) return SYSCALL_FAULT_(EINVAL);
-        list_append(dir->parent->child, old_root);
+        if (dir != rootdir) list_append(dir->parent->child, old_root);
         char *nb       = old_root->name;
         old_root->name = dir->name;
         dir->name      = nb;
         list_append(old_root->parent->child, dir);
 
         list_delete(old_root->parent->child, old_root);
-        list_delete(dir->parent->child, dir);
+        if (dir != rootdir)
+            list_delete(dir->parent->child, dir);
+        else
+            rootdir = old_root;
 
         vfs_node_t parent = dir->parent;
         dir->parent       = old_root->parent;

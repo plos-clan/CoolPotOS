@@ -1,4 +1,4 @@
-#include "device.h"
+#include "../include/device.h"
 #include "errno.h"
 #include "krlibc.h"
 #include "poll.h"

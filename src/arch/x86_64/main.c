@@ -197,8 +197,8 @@ void kmain() {
         char *argv_sh[3]   = {"exec", "/bin/busybox", "sh"};
         char *argv_bash[2] = {"exec", "/bin/bash"};
         // exec(sizeof(argv_mount), argv_mount);
-        //exec(argc, argv_bash);
-        exec(argc, argv_sh);
+        exec(argc, argv_bash);
+        //exec(argc, argv_sh);
     }
 #    endif
 #else

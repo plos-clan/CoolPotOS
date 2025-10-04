@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../../../include/lock.h"
 #include "krlibc.h"
-#include "lock.h"
 
 typedef struct LockNode {
     void            *data;
