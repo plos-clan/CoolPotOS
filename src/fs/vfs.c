@@ -5,7 +5,7 @@
  */
 #define ALL_IMPLEMENTATION
 
-#include "../include/vfs.h"
+#include "vfs.h"
 #include "errno.h"
 #include "iso9660.h"
 #include "kprint.h"

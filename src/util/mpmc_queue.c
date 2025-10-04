@@ -1,6 +1,6 @@
 #include "mpmc_queue.h"
-#include "heap.h"
 #include "kprint.h"
+#include "heap.h"
 #include "krlibc.h"
 
 status_code_t get(mpmc_queue_t *queue, queue_entry_t *entry) {

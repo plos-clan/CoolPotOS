@@ -17,7 +17,7 @@ void id_allocator_create(uint32_t max_ids) {
     alloc->max_ids    = max_ids;
     alloc->free_count = max_ids;
     alloc->next_id    = 0;
-    allocator = alloc;
+    allocator         = alloc;
 }
 
 int32_t id_alloc() {
@@ -50,7 +50,7 @@ bool id_free(uint32_t id) {
     uint32_t word_index = id / BITS_PER_WORD;
     uint32_t bit_index  = id % BITS_PER_WORD;
     uint32_t mask       = 1U << bit_index;
- if (allocator->bitmap[word_index] & mask) {
+    if (allocator->bitmap[word_index] & mask) {
         allocator->bitmap[word_index] &= ~mask;
         allocator->free_count++;
         return true;

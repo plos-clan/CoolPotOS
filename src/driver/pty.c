@@ -1,6 +1,6 @@
 #define ALL_IMPLEMENTATION
 
-#include "../include/pty.h"
+#include "pty.h"
 #include "id_alloc.h"
 #include "ioctl.h"
 #include "kprint.h"

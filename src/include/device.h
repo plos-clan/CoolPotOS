@@ -2,8 +2,8 @@
 
 #define SECTORS_ONCE 8
 
-#include "../arch/x86_64/include/vbuffer.h"
 #include "cptype.h"
+#include "vbuffer.h"
 
 typedef enum {
     DEVICE_BLOCK,
