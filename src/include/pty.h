@@ -2,9 +2,9 @@
 
 #define PTY_BUFF_SIZE 4096
 
-#include "errno.h"
+#include "../arch/x86_64/include/errno.h"
+#include "../arch/x86_64/include/tty.h"
 #include "llist.h"
-#include "tty.h"
 #include "vfs.h"
 
 typedef struct pty_handle {

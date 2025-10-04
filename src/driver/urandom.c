@@ -1,4 +1,4 @@
-#include "device.h"
+#include "../include/device.h"
 #include "krlibc.h"
 #include "timer.h"
 

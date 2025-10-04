@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../../../include/lock.h"
 #include "cptype.h"
 #include "krlibc.h"
-#include "lock.h"
 #include "pcb.h"
 #include "vfs.h"
 

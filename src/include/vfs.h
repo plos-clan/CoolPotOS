@@ -63,8 +63,8 @@
 #define O_NDELAY    O_NONBLOCK
 
 #include "../arch/x86_64/include/list.h"
-#include "../arch/x86_64/include/llist.h"
 #include "cptype.h"
+#include "llist.h"
 
 typedef struct vfs_node *vfs_node_t;
 

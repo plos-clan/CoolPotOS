@@ -8,7 +8,7 @@
 #include "krlibc.h"
 #include "lock.h"
 
-// #define FLANTERM_ENABLE 0
+#define FLANTERM_ENABLE 0
 
 atom_queue *output_buffer;
 bool        open_flush = false;

@@ -222,11 +222,11 @@
 #define SYSCALL_MEMINFO 500
 #define SYSCALL_CPUINFO 501
 
+#include "../../../include/time.h"
 #include "cptype.h"
 #include "krlibc.h"
 #include "poll.h"
 #include "signal.h"
-#include "time.h"
 #include "vfs.h"
 
 struct syscall_regs {

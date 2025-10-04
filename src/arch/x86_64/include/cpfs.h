@@ -2,8 +2,8 @@
 
 #define CPFS_MAX_FILE 256
 
+#include "../../../include/llist.h"
 #include "cptype.h"
-#include "llist.h"
 
 typedef struct cpfs_file {
     bool                is_dir;

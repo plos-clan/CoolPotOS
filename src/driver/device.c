@@ -1,4 +1,4 @@
-#include "device.h"
+#include "../include/device.h"
 #include "errno.h"
 #include "frame.h"
 #include "hhdm.h"
@@ -39,7 +39,7 @@ size_t disk_size(int drive) {
     return 0;
 }
 
-void *device_mmap(int drive, void *addr, uint64_t len) {
+void *device_mmap(int drive, void *addr, size_t len) {
     if (have_vdisk(drive)) {
         int indx = drive;
         if (device_ctl[indx].map) { return device_ctl[indx].map(drive, addr, len); }
