@@ -155,8 +155,8 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
     new_pcb->pcb_queue = queue_init();
     new_pcb->ipc_queue = queue_init();
     new_pcb->user      = current_pcb->user;
-    new_pcb->cwd       = malloc(strlen(current_pcb->cwd));
-    strcpy(new_pcb->cwd, current_pcb->cwd);
+    new_pcb->cwd       = current_pcb->cwd;
+    new_pcb->cwd->refcount++;
     new_pcb->parent_task = current_pcb;
     new_pcb->virt_queue  = queue_copy(current_pcb->virt_queue, virt_copy);
     new_pcb->mmap_start  = current_pcb->mmap_start;

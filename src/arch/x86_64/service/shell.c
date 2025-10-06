@@ -674,10 +674,8 @@ _Noreturn void shell_setup() {
     char     prompt[128];
     uint8_t *argv[MAX_ARG_NR];
 
-    shell_process = get_current_task()->parent_group;
-
-    memset(shell_process->cwd, 0, 1024);
-    shell_process->cwd[0] = '/';
+    shell_process      = get_current_task()->parent_group;
+    shell_process->cwd = rootdir;
 
     pl_readline_t pl = pl_readline_init(plreadln_getch, plreadln_putch, plreadln_flush, handle_tab);
 

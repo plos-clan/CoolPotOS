@@ -166,11 +166,11 @@ page_table_t *page_table_create(page_table_entry_t *entry) {
     if (entry->value == (uint64_t)NULL) {
         uint64_t frame      = alloc_frames(1);
         entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
-        page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0x000fffffffff000);
+        page_table_t *table = (page_table_t *)phys_to_virt(entry->value & PTE_FRAME_MASK);
         page_table_clear(table);
         return table;
     }
-    page_table_t *table = (page_table_t *)phys_to_virt(entry->value & 0x000fffffffff000);
+    page_table_t *table = (page_table_t *)phys_to_virt(entry->value & PTE_FRAME_MASK);
     return table;
 }
 
@@ -208,11 +208,11 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
         }
 
         page_table_t *source_page_table_next =
-            phys_to_virt(source_table->entries[i].value & 0x000fffffffff000);
+            phys_to_virt(source_table->entries[i].value & PTE_FRAME_MASK);
         page_table_t *new_page_table = copy_page_table_recursive(
             source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256);
         new_table->entries[i].value = (uint64_t)virt_to_phys((uint64_t)new_page_table) |
-                                      (source_table->entries[i].value & 0xFFFF000000000FFF);
+                                      (source_table->entries[i].value & 0xFF000000000FFF);
     }
     return new_table;
 }
@@ -225,7 +225,7 @@ static void free_page_table_recursive(page_table_t *table, int level) {
     }
 
     for (int i = 0; i < (level == 4 ? 256 : 512); i++) {
-        page_table_t *page_table_next = phys_to_virt(table->entries[i].value & 0x000fffffffff000);
+        page_table_t *page_table_next = phys_to_virt(table->entries[i].value & PTE_FRAME_MASK);
         free_page_table_recursive(page_table_next, level - 1);
     }
     free_frame((uint64_t)virt_to_phys((uint64_t)table));
@@ -256,17 +256,14 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
     uint64_t l1_index = (((vaddr >> 12)) & 0x1FF);
 
     page_table_t *l4_table = directory->table;
-    page_table_t *l3_table =
-        phys_to_virt((&(l4_table->entries[l4_index]))->value & 0x000fffffffff000);
+    page_table_t *l3_table = phys_to_virt((&(l4_table->entries[l4_index]))->value & PTE_FRAME_MASK);
     if (l3_table == NULL) return;
-    page_table_t *l2_table =
-        phys_to_virt((&(l3_table->entries[l3_index]))->value & 0x000fffffffff000);
+    page_table_t *l2_table = phys_to_virt((&(l3_table->entries[l3_index]))->value & PTE_FRAME_MASK);
     if (l2_table == NULL) return;
-    page_table_t *l1_table =
-        phys_to_virt((&(l2_table->entries[l2_index]))->value & 0x000fffffffff000);
+    page_table_t *l1_table = phys_to_virt((&(l2_table->entries[l2_index]))->value & PTE_FRAME_MASK);
     if (l1_table == NULL) return;
 
-    free_frame(l1_table->entries[l1_index].value & 0x000fffffffff000);
+    free_frame(l1_table->entries[l1_index].value & PTE_FRAME_MASK);
     l1_table->entries[l1_index].value = 0;
     flush_tlb(vaddr);
 }
@@ -277,16 +274,16 @@ void unmap_page_2M(page_directory_t *directory, uint64_t vaddr) {
     uint64_t l2_index = (vaddr >> 21) & 0x1FF;
 
     page_table_t *l4_table = directory->table;
-    page_table_t *l3_table = phys_to_virt(l4_table->entries[l4_index].value & 0x000fffffffff000);
+    page_table_t *l3_table = phys_to_virt(l4_table->entries[l4_index].value & PTE_FRAME_MASK);
     if (!l3_table) return;
 
-    page_table_t *l2_table = phys_to_virt(l3_table->entries[l3_index].value & 0x000fffffffff000);
+    page_table_t *l2_table = phys_to_virt(l3_table->entries[l3_index].value & PTE_FRAME_MASK);
     if (!l2_table) return;
 
     uint64_t entry = l2_table->entries[l2_index].value;
 
     if (entry & PTE_HUGE) {
-        free_frames_2M(entry & 0x000fffffffff000); // 清除物理页框
+        free_frames_2M(entry & PTE_FRAME_MASK); // 清除物理页框
         l2_table->entries[l2_index].value = 0;
         flush_tlb(vaddr);
     }
@@ -297,13 +294,13 @@ void unmap_page_1G(page_directory_t *directory, uint64_t vaddr) {
     uint64_t l3_index = (vaddr >> 30) & 0x1FF;
 
     page_table_t *l4_table = directory->table;
-    page_table_t *l3_table = phys_to_virt(l4_table->entries[l4_index].value & 0x000fffffffff000);
+    page_table_t *l3_table = phys_to_virt(l4_table->entries[l4_index].value & PTE_FRAME_MASK);
     if (!l3_table) return;
 
     uint64_t entry = l3_table->entries[l3_index].value;
 
     if (entry & PTE_HUGE) {
-        free_frames_1G(entry & 0x000fffffffff000); // 清除物理页框
+        free_frames_1G(entry & PTE_FRAME_MASK); // 清除物理页框
         l3_table->entries[l3_index].value = 0;
         flush_tlb(vaddr);
     }
@@ -326,7 +323,7 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
     page_table_t *l2_table = page_table_create(&(l3_table->entries[l3_index]));
     page_table_t *l1_table = page_table_create(&(l2_table->entries[l2_index]));
 
-    l1_table->entries[l1_index].value = (frame & 0x000fffffffff000) | flags;
+    l1_table->entries[l1_index].value = (frame & PTE_FRAME_MASK) | flags;
 
     flush_tlb(addr);
 }
@@ -432,7 +429,7 @@ static void page_map_ranges_help(uint64_t *directory, uint64_t virtual_address,
                                  uint64_t physical_address, uint64_t page_count, uint64_t flags,
                                  uint64_t offset, uint64_t level) {
     uint64_t  next_index = virtual_address >> offset;
-    uint64_t *pmlt_entry = (uint64_t *)(directory[next_index] & 0x000fffffffff000);
+    uint64_t *pmlt_entry = (uint64_t *)(directory[next_index] & PTE_FRAME_MASK);
     if (level) {
         if (!(directory[next_index] & PTE_PRESENT)) {
             if (!pmlt_entry) {

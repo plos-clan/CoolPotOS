@@ -1,4 +1,5 @@
 #include "errno.h"
+#include "kprint.h"
 #include "llist.h"
 #include "network.h"
 #include "pcb.h"
@@ -193,6 +194,8 @@ struct vfs_callback netfs_callbacks = {
     .read     = socket_read,
     .write    = socket_write,
     .readlink = (vfs_readlink_t)dummy,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
     .mkdir    = (vfs_mk_t)dummy,
     .mkfile   = (vfs_mk_t)dummy,
     .delete   = (vfs_del_t)dummy,
@@ -226,6 +229,10 @@ static struct vfs_callback accept_callback = {
 };
 
 void netfs_setup() {
+#if 1
     unix_socket_fsid = vfs_regist("sockfs", &netfs_callbacks, NETFS_REGISTER_ID, 0x534F434B);
     unix_accept_fsid = vfs_regist("acceptfs", &accept_callback, NETFS_REGISTER_ID, 0x534F434B);
+    if (unix_socket_fsid == VFS_STATUS_FAILED || unix_accept_fsid == VFS_STATUS_FAILED)
+        kerror("Cannot register netfs. sfs: %d - afs: %d", unix_socket_fsid, unix_accept_fsid);
+#endif
 }

@@ -1,3 +1,4 @@
+#include "kprint.h"
 #include "lock_queue.h"
 #include "network.h"
 #include "pcb.h"
@@ -388,7 +389,10 @@ static struct vfs_callback netlink_callback = {
 void netlink_init() {
     netlink_socket_fsid =
         vfs_regist("netlinksockfs", &netlink_callback, NETFS_REGISTER_ID, 0x534F434B);
-
+    if (netlink_socket_fsid == VFS_STATUS_FAILED) {
+        kerror("Cannot register netlink fs.");
+        return;
+    }
     // Initialize uevent queue
     spin_lock(uevent_queue_lock);
     uevent_queue_head = 0;

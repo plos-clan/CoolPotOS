@@ -319,7 +319,7 @@ void kill_proc0(pcb_t pcb) {
     queue_destroy(pcb->ipc_queue);
     queue_destroy(pcb->virt_queue);
     free(pcb->cmdline);
-    free(pcb->cwd);
+    vfs_close(pcb->cwd);
     free_tty(pcb->tty);
     free(pcb->elf_file);
     if (pcb->envp) free_envp(pcb->envp);
@@ -437,12 +437,11 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
     new_pgb->child_pcb   = queue_init();
     new_pgb->vfork       = false;
-    new_pgb->cwd         = malloc(1024);
-    new_pgb->envp        = NULL;
-    new_pgb->envc        = 0;
-    new_pgb->pgid        = 0;
-    memset(new_pgb->cwd, 0, 1024);
-    strcpy(new_pgb->cwd, new_pgb->parent_task->cwd);
+    new_pgb->cwd         = new_pgb->parent_task->cwd;
+    new_pgb->cwd->refcount++;
+    new_pgb->envp       = NULL;
+    new_pgb->envc       = 0;
+    new_pgb->pgid       = 0;
     new_pgb->mmap_start = USER_MMAP_START;
     spin_unlock(pgb_queue->lock);
     new_pgb->status      = START;
@@ -590,10 +589,8 @@ void init_pcb() {
     kernel_group->task_level  = TASK_KERNEL_LEVEL;
     kernel_group->virt_queue  = queue_init();
     kernel_group->child_pcb   = queue_init();
-    kernel_group->cwd         = malloc(1024);
+    kernel_group->cwd         = rootdir;
     kernel_group->pgid        = 0;
-    memset(kernel_group->cwd, 0, 1024);
-    kernel_group->cwd[0]      = '/';
     kernel_group->child_index = 0;
     get_kernel_user()->fgproc = kernel_group->pid;
 

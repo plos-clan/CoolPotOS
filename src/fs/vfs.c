@@ -633,13 +633,16 @@ char *at_resolve_pathname(int dirfd, char *pathname) {
 char *vfs_cwd_path_build(char *src) {
     char *s = src;
     char *path;
+    char *bpath = NULL;
     if (s[0] == '/') {
         path = strdup(s);
     } else {
-        path = pathacat(get_current_task()->parent_group->cwd, s);
+        bpath = vfs_get_fullpath(get_current_task()->parent_group->cwd);
+        path  = pathacat(bpath, s);
     }
     char *normalized_path = normalize_path(path);
     free(path);
+    free(bpath);
     return normalized_path;
 }
 
