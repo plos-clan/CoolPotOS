@@ -103,7 +103,7 @@ struct process_control_block {
     pid_t             pid;         // 进程ID
     pid_t             pgid;        // 进程组ID
     char             *cmdline;     // 命令行参数
-    char             *cwd;         // 工作目录路径
+    vfs_node_t        cwd;         // 工作目录路径
     lock_queue       *pcb_queue;   // 线程队列
     size_t            queue_index; // 进程队列索引
     size_t            death_index; // 死亡队列索引
@@ -114,6 +114,7 @@ struct process_control_block {
     page_directory_t *page_dir;    // 进程页表
     vma_manager_t     vma_manager; // VMA 分配管理器
     vfs_node_t        procfs_node; // 进程私有 procfs 文件句柄
+    vfs_node_t        proc_root;   // 进程私有根文件节点
     char            **envp;        // 环境变量指针
     size_t            envc;        // 环境变量数量
     ucb_t             user;        // 用户会话
