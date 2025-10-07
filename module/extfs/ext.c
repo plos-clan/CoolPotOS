@@ -378,6 +378,10 @@ static struct vfs_callback callbacks = {
     .dup      = (vfs_dup_t)ext_dup,
 };
 
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    return EOK;
+}
+
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
     ext_fsid = vfs_regist("ext3", &callbacks, 0, 0xef53);
     if (ext_fsid == -1) {

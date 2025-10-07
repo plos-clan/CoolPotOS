@@ -243,7 +243,7 @@ function arch_x86_64()
                 --"-d", "in_asm",
                 --"-d", "in_asm,int",
                 --"-S","-s",
-                --"-device","nec-usb-xhci,id=xhci",
+                --"-device","qemu-xhci",
                 --"-device","usb-storage,bus=xhci.0,drive=usbdisk",
                 "-audiodev", "sdl,id=audio0",
                 "-device", "sb16,audiodev=audio0",

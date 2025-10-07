@@ -1,4 +1,7 @@
-// Copyright (C) 2025  lihanrui2913
+/**
+ * NeoAetherOS XHCI Driver
+ * Copyright (C) 2025 lihanrui2913
+ */
 #include "xhci_hcd.h"
 #include "errno.h"
 #include "int_subsystem.h"
@@ -1261,7 +1264,7 @@ void xhci_device_enumerater(enumerater_arg_t *arg) {
     spin_lock(enumerate_lock);
     usb_hcd_t *hcd = arg->hcd;
     if (hcd) {
-        int ret = 0; //TODO usb_enumerate_device(hcd, arg->port_id, arg->speed);
+        int ret = usb_enumerate_device(hcd, arg->port_id, arg->speed);
         if (ret == 1) {
             printk("XHCI: Device on port %d enumerated successfully\n", arg->port_id);
         } else {
@@ -1379,6 +1382,15 @@ void xhci_shutdown(usb_hcd_t *hcd) {
 
 //oid xhci_hcd_driver_shutdown(pci_device_t *dev) { xhci_shutdown(dev->desc); }
 
+void *mmio_vaddr = NULL;
+pci_device_t *deviceA = NULL;
+
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    usb_hcd_t *xhci_hcd = xhci_init(mmio_vaddr, deviceA);
+    printk("xhci: %s inited - port:%d\n", xhci_hcd->name, xhci_hcd->devices->port);
+    return EOK;
+}
+
 __attribute__((visibility("default"))) int dlmain() {
     pci_device_t *device = pci_find_class(0x000C0330);
     if (device == NULL) {
@@ -1400,10 +1412,9 @@ __attribute__((visibility("default"))) int dlmain() {
         return -1;
     }
 
-    void *mmio_vaddr = (void *)phys_to_virt(mmio_base);
+    mmio_vaddr = (void *)phys_to_virt(mmio_base);
     page_map_range(get_current_directory(), (uint64_t)mmio_vaddr, mmio_base, mmio_size,
                    PTE_PRESENT | PTE_WRITEABLE | PTE_DIS_CACHE);
-    usb_hcd_t *xhci_hcd = xhci_init(mmio_vaddr, device);
-    printk("xhci: %s inited - port:%d\n", xhci_hcd->name, xhci_hcd->devices->port);
+    deviceA = device;
     return EOK;
 }

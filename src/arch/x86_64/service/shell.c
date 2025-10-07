@@ -322,7 +322,7 @@ static void lmod(int argc, char **argv) {
             printk("\033[31mCannot find module [%s]\033[0m\n", argv[1]);
             return;
         }
-        dlinker_load(module);
+        //TODO dlinker_load(NULL,module);
     }
 }
 
