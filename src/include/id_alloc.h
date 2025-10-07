@@ -11,6 +11,6 @@ typedef struct {
     uint32_t  next_id;    // 下一个尝试分配的 ID
 } id_allocator_t;
 
-void id_allocator_create(uint32_t max_ids);
-int32_t id_alloc();
-bool id_free(uint32_t id);
+id_allocator_t *id_allocator_create(uint32_t max_ids);
+int32_t         id_alloc(id_allocator_t *);
+bool            id_free(id_allocator_t *, uint32_t id);

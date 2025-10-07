@@ -1,26 +1,37 @@
 #include "device.h"
 #include "errno.h"
 #include "frame.h"
+#include "heap.h"
 #include "hhdm.h"
+#include "id_alloc.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "page.h"
 
-device_t device_ctl[MAX_DEIVCE];
+device_t        device_ctl[MAX_DEIVCE];
+id_allocator_t *dev_allocator;
 
 int regist_device(const char *path, device_t vd) {
-    for (int i = 0; i < MAX_DEIVCE; i++) {
-        if (!device_ctl[i].flag) {
-            device_ctl[i]         = vd;
-            device_ctl[i].vdiskid = i;
-            errno_t ret;
-            if ((ret = devfs_register(path, i)) != EOK) {
-                kerror("Registers (%s)device error: %d", vd.drive_name, ret);
-            }
-            return i;
-        }
+    int i = id_alloc(dev_allocator);
+    if (i == -1) return -1;
+    device_ctl[i]         = vd;
+    device_ctl[i].vdiskid = i;
+    errno_t ret;
+    if ((ret = devfs_register(path, i)) != EOK) {
+        kerror("Registers (%s)device error: %d", vd.drive_name, ret);
     }
-    return 0;
+    return i;
+}
+
+void delete_device(int vdiskid) {
+    if (vdiskid >= MAX_DEIVCE) return;
+    device_t dev = device_ctl[vdiskid];
+    devfs_delete(dev.path);
+    free(dev.path);
+    id_free(dev_allocator, dev.vdiskid);
+    dev.path    = NULL;
+    dev.flag    = 0;
+    dev.vdiskid = 0;
 }
 
 bool have_vdisk(int drive) {
@@ -111,5 +122,6 @@ int device_manager_init() {
     for (size_t i = 0; i < MAX_DEIVCE; i++) {
         device_ctl[i].flag = 0; // 设置为未使用
     }
+    dev_allocator = id_allocator_create(MAX_DEIVCE);
     return 0;
 }

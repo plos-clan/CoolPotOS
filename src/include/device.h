@@ -40,6 +40,12 @@ int    device_manager_init();
 int regist_device(const char *path, device_t vd);
 
 /**
+ * 卸载一个设备 (devfs也会删除设备节点)
+ * @param vdiskid 设备ID
+ */
+void delete_device(int vdiskid);
+
+/**
  * 根据指定设备id查找设备
  * @param id 设备id
  * @return 为 NULL 则找不到设备
@@ -47,7 +53,9 @@ int regist_device(const char *path, device_t vd);
 device_t *get_device(size_t id);
 
 errno_t devfs_register(const char *path, size_t id);
-bool    have_vdisk(int drive);
-size_t  device_read(size_t lba, size_t number, void *buffer, int drive);
-size_t  device_write(size_t lba, size_t number, const void *buffer, int drive);
-void   *device_mmap(int drive, void *addr, size_t len);
+errno_t devfs_delete(const char *path);
+
+bool   have_vdisk(int drive);
+size_t device_read(size_t lba, size_t number, void *buffer, int drive);
+size_t device_write(size_t lba, size_t number, const void *buffer, int drive);
+void  *device_mmap(int drive, void *addr, size_t len);

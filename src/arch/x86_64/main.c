@@ -1,5 +1,3 @@
-#include "kmesg.h"
-#include "kprint.h"
 #include "acpi.h"
 #include "ahci.h"
 #include "boot.h"
@@ -21,6 +19,8 @@
 #include "iic/iic_core.h"
 #include "keyboard.h"
 #include "killer.h"
+#include "kmesg.h"
+#include "kprint.h"
 #include "krlibc.h"
 #include "modfs.h"
 #include "network.h"
@@ -41,6 +41,7 @@
 #include "terminal.h"
 #include "timer.h"
 #include "tmpfs.h"
+#include "usb.h"
 #include "vfs.h"
 
 // 编译器判断
@@ -166,6 +167,7 @@ void kmain() {
     netfs_setup();
     procfs_setup();
     netlink_init();
+    usb_init();
     load_all_kernel_module();
     partition_init();
 #ifdef INITRAMFS_START
@@ -179,8 +181,10 @@ void kmain() {
     open_interrupt;
     enable_scheduler();
 
-    int   argc   = 3;
-    char *argv[] = {"exec", "/bin/sh", "/init", NULL};
+    //int   argc   = 3;
+    //char *argv[] = {"exec", "/bin/sh", "/init", NULL};
+    int   argc   = 4;
+    char *argv[] = {"exec", "/bin/busybox", "sh", "/init", NULL};
     exec(argc, argv);
 #ifdef INITRAMFS_START
 

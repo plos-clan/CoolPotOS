@@ -2,6 +2,7 @@
  * Device Virtual File System
  * 设备虚拟文件系统
  */
+#define ALL_IMPLEMENTATION
 #include "devfs.h"
 #include "device.h"
 #include "errno.h"
@@ -273,6 +274,25 @@ void devfs_setup() {
         return;
     }
     vfs_mkdir("/dev/ptx");
+}
+
+errno_t devfs_delete(const char *path) {
+    char *buf = NULL;
+    if (path != NULL) {
+        buf = malloc(strlen(path) + 6);
+        sprintf(buf, "/dev/%s", path);
+    } else {
+        buf = malloc(5);
+        strcpy(buf, "/dev");
+    }
+
+    vfs_node_t node = vfs_open(buf);
+    if (node == NULL) {
+        free(buf);
+        return -ENOENT;
+    }
+    list_delete(node->parent->child, node);
+    vfs_free(node);
 }
 
 errno_t devfs_register(const char *path, size_t id) {

@@ -140,6 +140,14 @@ tcb_t pick_next_task();
 void add_eevdf_entity(tcb_t new_task, smp_cpu_t *cpu);
 
 /**
+ * 以指定优先级添加任务
+ * @param new_task 新任务
+ * @param cpu CPU 核心
+ * @param prio 优先级
+ */
+void add_eevdf_entity_prio(tcb_t new_task, smp_cpu_t *cpu, uint64_t prio);
+
+/**
  * 添加一个任务进红黑树(指定优先级)
  * @param new_task 新任务
  * @param prio 优先级

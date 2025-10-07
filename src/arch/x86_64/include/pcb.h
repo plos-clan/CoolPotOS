@@ -189,6 +189,8 @@ void remove_task(tcb_t task);
  */
 int add_task_cpu(tcb_t new_task, size_t cpuid);
 
+int add_task_prio(tcb_t new_task, size_t priority);
+
 void switch_to_user_mode(uint64_t func);
 
 /**
@@ -202,6 +204,18 @@ void switch_to_user_mode(uint64_t func);
  */
 int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pgb_group,
                          size_t cpuid);
+
+/**
+ * 以指定优先级创建内核线程
+ * @param _start
+ * @param args
+ * @param name
+ * @param pcb
+ * @param priority
+ * @return
+ */
+int create_kernel_worker_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pcb,
+    uint64_t priority);
 
 /**
  * 创建用户态线程

@@ -197,7 +197,7 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     proc_handle_t *mounts_h = malloc(sizeof(proc_handle_t));
     mounts->handle          = mounts_h;
     mounts_h->task          = NULL;
-    sprintf(handle->name, "mounts");
+    sprintf(mounts_h->name, "mounts");
 
     vfs_node_t filesystems            = vfs_node_alloc(procfs_root, "filesystems");
     filesystems->type                 = file_none;

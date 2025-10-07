@@ -561,6 +561,62 @@ int create_kernel_thread(int (*_start)(void *arg), void *args, char *name, pcb_t
     return new_task->tid;
 }
 
+int create_kernel_worker_thread(int (*_start)(void *arg), void *args, char *name, pcb_t pcb,
+                                uint64_t priority) {
+    close_interrupt;
+    disable_scheduler();
+    tcb_t new_task = (tcb_t)malloc(KERNEL_ST_SZ);
+    not_null_assets(new_task, "create kernel task null");
+    memset(new_task, 0, sizeof(struct thread_control_block));
+
+    if (pcb == NULL) {
+        new_task->group_index  = queue_enqueue(kernel_group->pcb_queue, new_task);
+        new_task->tid          = now_tid++;
+        new_task->parent_group = kernel_group;
+    } else {
+        queue_enqueue(pcb->pcb_queue, new_task);
+        new_task->tid          = now_tid++;
+        new_task->parent_group = pcb;
+    }
+
+    new_task->task_level = TASK_KERNEL_LEVEL;
+    new_task->cpu_clock  = 0;
+    new_task->cpu_timer  = 0;
+    new_task->mem_usage  = get_all_memusage();
+    new_task->cpu_id     = current_cpu->id;
+    memcpy(new_task->name, name, strlen(name) + 1);
+    uint64_t *stack_top = (uint64_t *)((uint64_t)new_task + STACK_SIZE);
+    *(--stack_top)      = 0;
+    *(--stack_top)      = 0;
+    *(--stack_top)      = (uint64_t)process_exit;
+
+    new_task->context0.rsp   = (uint64_t)stack_top;
+    new_task->user_stack_top = (uint64_t)stack_top;
+    new_task->kernel_stack   = (uint64_t)stack_top;
+    new_task->signal_stack   = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    new_task->syscall_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+
+    // 内核级线程没有用户态的部分, 所以用户栈句柄与内核栈句柄统一
+    new_task->user_stack = new_task->kernel_stack;
+
+    new_task->context0.rip    = (uint64_t)_start;
+    new_task->context0.rdi    = (uint64_t)args; // first argument in rdi
+    new_task->context0.rflags = 0x202;
+
+    new_task->context0.cs = 0x8;
+    new_task->context0.ss = 0x10;
+    new_task->context0.es = 0x10;
+    new_task->context0.ds = 0x10;
+    new_task->status      = CREATE;
+
+    new_task->fs_base = (uint64_t)new_task;
+
+    add_task_prio(new_task, priority);
+    enable_scheduler();
+    open_interrupt;
+    return new_task->tid;
+}
+
 int task_block(tcb_t thread, TaskStatus state, int timeout_ms) {
     UNUSED(timeout_ms);
     thread->status = state;
