@@ -1,3 +1,4 @@
+// Copyright (C) 2025  lihanrui2913
 #include "xhci_hcd.h"
 #include "errno.h"
 #include "int_subsystem.h"
