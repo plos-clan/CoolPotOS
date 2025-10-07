@@ -1,6 +1,8 @@
 #include "dlinker.h"
 #include "klog.h"
 #include "limine.h"
+#include "id_alloc.h"
+#include "heap.h"
 
 cp_module_t module_ls[256];
 size_t      module_count = 0;
@@ -8,6 +10,8 @@ size_t      module_count = 0;
 LIMINE_REQUEST struct limine_module_request module = {.id = LIMINE_MODULE_REQUEST, .revision = 0};
 LIMINE_REQUEST struct limine_kernel_file_request kfile = {.id       = LIMINE_KERNEL_FILE_REQUEST,
                                                           .response = 0};
+id_allocator_t *kmod_allocator = NULL;
+kernel_mode_t *kmods[MAX_KERNEL_MODULE];
 
 void extract_name(const char *input, char *output, size_t output_size) {
     const char *name = strrchr(input, '/');
@@ -64,14 +68,28 @@ static bool ends_with_km(const char *str) {
     return strcmp(str + len - 3, ".km") == 0;
 }
 
+void start_all_kernel_module() {
+    for (size_t i = 0; i < MAX_KERNEL_MODULE; i++) {
+        kernel_mode_t *kmod = kmods[i];
+        if(kmod == NULL) continue;
+        if(kmod->task_entry == NULL) continue;
+        int ret = kmod->task_entry();
+    }
+}
+
 void load_all_kernel_module() {
+    kmod_allocator = id_allocator_create(MAX_KERNEL_MODULE);
     for (size_t i = 0; i < module_count; i++) {
         if (module_ls[i].is_use) {
             if (ends_with_km(module_ls[i].raw_name)) {
                 logkf("kmod: loading module %s raw: %s\n", module_ls[i].module_name,
                       module_ls[i].raw_name);
                 cp_module_t *mod = get_module(module_ls[i].module_name);
-                if (mod) { dlinker_load(mod); }
+                if (mod) {
+                    int id = id_alloc(kmod_allocator);
+                    kmods[id] = calloc(1,sizeof(kernel_mode_t));
+                    dlinker_load(kmods[id],mod);
+                }
             }
         }
     }

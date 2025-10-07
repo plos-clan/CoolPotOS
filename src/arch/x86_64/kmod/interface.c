@@ -123,6 +123,7 @@ EXPORT_SYMBOL(usb_interrupt_transfer);
 EXPORT_SYMBOL(register_usb_driver);
 EXPORT_SYMBOL(usb_register_hcd);
 EXPORT_SYMBOL(usb_unregister_hcd);
+EXPORT_SYMBOL(usb_enumerate_device);
 
 /**
  * 网络子系统接口导出

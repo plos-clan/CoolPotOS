@@ -301,3 +301,4 @@ int  usb_interrupt_transfer(usb_device_t *device, uint8_t endpoint, void *data, 
                             usb_transfer_callback_t callback, void *user_data);
 usb_hcd_t *usb_register_hcd(const char *name, usb_hcd_ops_t *ops, void *regs, void *data);
 void       usb_unregister_hcd(usb_hcd_t *hcd);
+int usb_enumerate_device(usb_hcd_t *hcd, uint8_t port_id, uint8_t speed);

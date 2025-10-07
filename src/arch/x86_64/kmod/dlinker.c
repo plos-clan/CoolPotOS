@@ -77,7 +77,7 @@ void *find_symbol_address(const char *symbol_name, Elf64_Ehdr *ehdr, uint64_t of
     return NULL;
 }
 
-dlinit_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
+dlinit_t load_dynamic(kernel_mode_t *kmod,Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
     Elf64_Dyn *dyn_entry = NULL;
     for (size_t i = 0; i < ehdr->e_phnum; i++) {
         if (phdrs[i].p_type == PT_DYNAMIC) {
@@ -142,12 +142,17 @@ dlinit_t load_dynamic(Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
 
     void *entry = find_symbol_address("dlmain", ehdr, offset);
     if (entry == NULL) { entry = find_symbol_address("_dlmain", ehdr, offset); }
+    kmod->entry = entry;
+
+    void *tentry = find_symbol_address("dlstart", ehdr, offset);
+    if (tentry == NULL) { tentry = find_symbol_address("_dlstart", ehdr, offset); }
+    kmod->task_entry = tentry;
 
     dlinit_t dlinit_func = (dlinit_t)entry;
     return dlinit_func;
 }
 
-void dlinker_load(cp_module_t *module) {
+void dlinker_load(kernel_mode_t *kmod,cp_module_t *module) {
     if (module == NULL) return;
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)module->data;
@@ -173,7 +178,7 @@ void dlinker_load(cp_module_t *module) {
     }
 
     dlinit_t dlinit =
-        load_dynamic(phdrs, ehdr, KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
+        load_dynamic(kmod,phdrs, ehdr, KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
     if (dlinit == NULL) {
         dlinit = (dlinit_t)ehdr->e_entry;
         if (dlinit == NULL) {
@@ -184,7 +189,6 @@ void dlinker_load(cp_module_t *module) {
 
     kinfo("Loaded module %s at %#018lx", module->module_name,
           KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
-
     int ret = dlinit();
 
     (void)ret;

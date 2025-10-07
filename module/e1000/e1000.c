@@ -304,6 +304,10 @@ cleanup:
     return have_data ? packet_len : 0;
 }
 
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    return EOK;
+}
+
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
     pci_device_t *device = pci_find_vid_did(0x8086, 0x100e);
     if (device == NULL) {

@@ -1,6 +1,10 @@
-// Copyright (C) 2025  lihanrui2913
+/**
+ * NeoAetherOS XHCI HID Driver
+ * Copyright (C) 2025  lihanrui2913
+ */
 #include "hid.h"
 #include "proc_subsystem.h"
+#include "errno.h"
 
 static bool ctrlPressed  = false;
 static bool shiftPressed = false;
@@ -475,6 +479,10 @@ usb_driver_t hid_driver = {
     .probe    = hid_probe,
     .remove   = hid_remove,
 };
+
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    return EOK;
+}
 
 __attribute__((visibility("default"))) int dlmain() {
     register_usb_driver(&hid_driver);

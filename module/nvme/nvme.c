@@ -463,6 +463,10 @@ NVME_CONTROLLER *nvme_driver_init(uint64_t bar0, uint64_t bar_size) {
     return ctrl;
 }
 
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    return EOK;
+}
+
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
     pci_device_t *device = pci_find_class(0x10802);
     if (device == NULL) { return -ENODEV; }

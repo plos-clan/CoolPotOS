@@ -174,12 +174,9 @@ void kmain() {
     cpio_init();
 #endif
     kinfo("Kernel load Done!");
-
-    // pcb_t shell_group = create_process_group("Shell Service", NULL, NULL, "", NULL, NULL, 0);
-    // create_kernel_thread((void *)shell_setup, NULL, "KernelShell", shell_group, SIZE_MAX);
-
     open_interrupt;
     enable_scheduler();
+    start_all_kernel_module();
 
     //int   argc   = 3;
     //char *argv[] = {"exec", "/bin/sh", "/init", NULL};
