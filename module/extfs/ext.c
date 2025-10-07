@@ -15,7 +15,10 @@ extern char *vfs_get_fullpath(vfs_node_t);
 int ext_mount(const char *src, vfs_node_t node) {
     spin_lock(rwlock);
 
-    if (is_virtual_fs(src)) return -1;
+    if (is_virtual_fs(src)) {
+        spin_unlock(rwlock);
+        return -1;
+    }
 
     ext4_device_register(vfs_dev_get(), src);
 

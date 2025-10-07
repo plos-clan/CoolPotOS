@@ -88,6 +88,8 @@ jobs:
           xmake build e1000
           xmake build extfs
           xmake build nvme
+          xmake build hid
+          xmake build xhci
           xmake build iso
           xmake build img
 

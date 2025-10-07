@@ -71,3 +71,5 @@ void mouse_setup();
 
 void wait_ps2_write();
 void wait_ps2_read();
+
+uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode_2);

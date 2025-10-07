@@ -335,6 +335,14 @@ void add_eevdf_entity(tcb_t new_task, smp_cpu_t *cpu) {
     eevdf_sched->task_count++;
 }
 
+void add_eevdf_entity_prio(tcb_t new_task, smp_cpu_t *cpu, uint64_t prio) {
+    struct sched_entity *entity = new_entity(new_task, prio, cpu);
+    new_task->sched_handle      = entity;
+    entity->handle              = cpu->sched_handle;
+    insert_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity);
+    eevdf_sched->task_count++;
+}
+
 void remove_eevdf_entity(tcb_t thread, smp_cpu_t *cpu) {
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
     remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity);

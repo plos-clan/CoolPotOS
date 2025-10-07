@@ -10,6 +10,10 @@ typedef size_t          usize;
 typedef ssize_t         isize;
 typedef int             wchar_t;
 
+#define ABS(x)    ((x) > 0 ? (x) : -(x))
+#define MAX(x, y) ((x > y) ? (x) : (y))
+#define MIN(x, y) ((x < y) ? (x) : (y))
+
 typedef int pid_t;
 typedef int errno_t;
 
@@ -32,3 +36,11 @@ int    strcmp(const char *s1, const char *s2);
 int    strncmp(const char *s1, const char *s2, size_t n);
 int    sprintf(char *buf, char const *fmt, ...);
 int    snprintf(char *buf, int count, const char *fmt, ...);
+
+static inline void arch_enable_interrupt() {
+    __asm__ volatile("sti");
+}
+
+static inline void arch_disable_interrupt() {
+    __asm__ volatile("cli");
+}

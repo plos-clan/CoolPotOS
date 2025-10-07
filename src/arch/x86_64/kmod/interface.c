@@ -12,6 +12,7 @@
 #include "hhdm.h"
 #include "ipc.h"
 #include "isr.h"
+#include "keyboard.h"
 #include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -22,7 +23,22 @@
 #include "pci.h"
 #include "sprintf.h"
 #include "timer.h"
+#include "tty.h"
+#include "usb.h"
+#include "usb_enumeration.h"
 #include "vfs.h"
+
+extern pcb_t kernel_group;
+
+pid_t task_create(const char *name, void (*entry)(uint64_t), uint64_t arg, uint64_t priority) {
+    return create_kernel_worker_thread((void *)entry, (void *)arg, name, kernel_group, priority);
+}
+
+uint64_t task_exit(int64_t code) {
+    tcb_t exit_thread = get_current_task();
+    logkf("kmod_thread: Thread %s exit with code %d.\n", exit_thread->name, code);
+    kill_thread(exit_thread);
+}
 
 /**
  * MemoryManager Subsystem Interface
@@ -81,9 +97,8 @@ EXPORT_SYMBOL(nano_time);
  * Process and Scheduling Subsystem Interface
  * 进程与调度子系统接口导出
  */
-EXPORT_SYMBOL(create_process_group);
-EXPORT_SYMBOL(create_kernel_thread);
-EXPORT_SYMBOL(create_user_thread);
+EXPORT_SYMBOL(task_create);
+EXPORT_SYMBOL(task_exit);
 EXPORT_SYMBOL(enable_scheduler);
 EXPORT_SYMBOL(disable_scheduler);
 EXPORT_SYMBOL(scheduler_yield);
@@ -100,6 +115,14 @@ EXPORT_SYMBOL(device_read);
 EXPORT_SYMBOL(device_write);
 EXPORT_SYMBOL(pci_find_vid_did);
 EXPORT_SYMBOL(pci_find_class);
+EXPORT_SYMBOL(delete_device);
+EXPORT_SYMBOL(keyboard_tmp_writer);
+EXPORT_SYMBOL(keyboard_scancode);
+EXPORT_SYMBOL(usb_control_transfer);
+EXPORT_SYMBOL(usb_interrupt_transfer);
+EXPORT_SYMBOL(register_usb_driver);
+EXPORT_SYMBOL(usb_register_hcd);
+EXPORT_SYMBOL(usb_unregister_hcd);
 
 /**
  * 网络子系统接口导出

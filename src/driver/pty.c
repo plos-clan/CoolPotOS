@@ -14,6 +14,7 @@ static int           ptmx_fsid = 0;
 static int           pts_fsid  = 0;
 struct llist_header *ptmx_list_head;
 spin_t               pty_global_lock = SPIN_INIT;
+id_allocator_t      *pty_allocator;
 
 static int dummy() {
     return -ENOSYS;
@@ -44,14 +45,14 @@ int str_to_int(const char *str, int *result) {
 
 int pty_id_decide() {
     spin_lock(pty_global_lock);
-    int ret = id_alloc();
+    int ret = id_alloc(pty_allocator);
     spin_unlock(pty_global_lock);
     return ret;
 }
 
 void pty_id_remove(int index) {
     spin_lock(pty_global_lock);
-    id_free(index);
+    id_free(pty_allocator, index);
     spin_unlock(pty_global_lock);
 }
 
@@ -546,7 +547,7 @@ static void setup_ptmx_device() {
 }
 
 void pty_init() {
-    id_allocator_create(MAX_PTY_DEVICE);
+    pty_allocator = id_allocator_create(MAX_PTY_DEVICE);
     setup_ptmx_device();
     errno_t status = vfs_mkdir("/dev/pts");
     if (status != EOK) {

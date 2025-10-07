@@ -122,6 +122,40 @@ int add_task_cpu(tcb_t new_task, size_t cpuid) {
     return new_task->queue_index;
 }
 
+int add_task_prio(tcb_t new_task, size_t priority) {
+    if (new_task == NULL) return -1;
+    spin_lock(scheduler_lock);
+
+    smp_cpu_t *cpu0  = get_cpu_smp(bsp_processor_id);
+    uint32_t   cpuid = bsp_processor_id;
+
+    for (size_t i = 0; i < cpu_count; i++) {
+        smp_cpu_t *cpu = get_cpu_smp(i);
+        if (cpu == NULL) continue;
+        if (cpu->ready == 1 && cpu->scheduler_queue->size < cpu0->scheduler_queue->size) {
+            cpu0  = cpu;
+            cpuid = i;
+        }
+    }
+
+    if (cpu0 == NULL) {
+        spin_unlock(scheduler_lock);
+        return -1;
+    }
+    close_interrupt;
+    disable_scheduler();
+    add_eevdf_entity_prio(new_task, cpu0,priority);
+    open_interrupt;
+    enable_scheduler();
+    new_task->cpu_id      = cpuid;
+    new_task->queue_index = lock_queue_enqueue(cpu0->scheduler_queue, new_task);
+    spin_unlock(cpu0->scheduler_queue->lock);
+
+    if (new_task->queue_index == (size_t)-1) { return -1; }
+    spin_unlock(scheduler_lock);
+    return new_task->queue_index;
+}
+
 void remove_task(tcb_t task) {
     if (task == NULL) return;
     spin_lock(scheduler_lock);

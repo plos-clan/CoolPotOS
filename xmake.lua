@@ -108,6 +108,8 @@ function arch_x86_64()
     includes("module/extfs")
     includes("module/e1000")
     includes("module/nvme")
+    includes("module/hid")
+    includes("module/xhci")
     --includes("module/lwip")
 
     target("kernel")
@@ -171,6 +173,8 @@ function arch_x86_64()
             os.cp(project.target("extfs"):targetfile(), iso_dir.."/extfs.km")
             os.cp(project.target("e1000"):targetfile(), iso_dir.."/e1000.km")
             os.cp(project.target("nvme"):targetfile(), iso_dir.."/nvme.km")
+            os.cp(project.target("hid"):targetfile(), iso_dir.."/hid.km")
+            os.cp(project.target("xhci"):targetfile(), iso_dir.."/xhci.km")
 
             local kernel = project.target("kernel")
             os.cp(kernel:targetfile(), iso_dir.."/cpkrnl64.elf")
@@ -185,6 +189,7 @@ function arch_x86_64()
             os.cp(limine_src.."/limine-uefi-cd.bin", limine_dir.."/limine-uefi-cd.bin")
             os.cp("assets/background.jpg", iso_dir.."/background.jpg")
             os.cp("assets/initramfs.img", iso_dir.."/initramfs.img")
+            os.cp("assets/rootfs.tar.xz", iso_dir.."/rootfs.tar.xz")
 
             local iso_file = "$(builddir)/CoolPotOS.iso"
             os.run("xorriso -as mkisofs "..

@@ -1,6 +1,4 @@
 #include "keyboard.h"
-#include "atom_queue.h"
-#include "heap.h"
 #include "io.h"
 #include "isr.h"
 #include "klog.h"
@@ -8,8 +6,6 @@
 #include "krlibc.h"
 #include "pcb.h"
 #include "terminal.h"
-
-uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode_2);
 
 extern tcb_t        kernel_head_task;
 extern lock_queue  *pgb_queue;
