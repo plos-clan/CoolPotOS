@@ -48,7 +48,7 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
 }
 
 void cp_printf(const char *fmt, ...) {
-    spin_lock(print_lock);
+    //spin_lock(print_lock);
     char buf[4096] = {0};
     add_color(buf, WHITE, false);
     add_color(buf, BLACK, true);
@@ -63,8 +63,7 @@ void cp_printf(const char *fmt, ...) {
 
     tty_t *tty_dev =
         get_current_task() == NULL ? get_default_tty() : get_current_task()->parent_group->tty;
-
     tty_dev->print(tty_dev, buf);
 
-    spin_unlock(print_lock);
+    //spin_unlock(print_lock);
 }

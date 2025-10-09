@@ -68,6 +68,8 @@ void scheduler_nano_sleep(uint64_t nano) {
  */
 int add_task(tcb_t new_task) {
     if (new_task == NULL) return -1;
+    open_interrupt;
+    enable_scheduler();
     spin_lock(scheduler_lock);
 
     smp_cpu_t *cpu0  = get_cpu_smp(bsp_processor_id);

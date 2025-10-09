@@ -82,8 +82,6 @@ void load_all_kernel_module() {
     for (size_t i = 0; i < module_count; i++) {
         if (module_ls[i].is_use) {
             if (ends_with_km(module_ls[i].raw_name)) {
-                logkf("kmod: loading module %s raw: %s\n", module_ls[i].module_name,
-                      module_ls[i].raw_name);
                 cp_module_t *mod = get_module(module_ls[i].module_name);
                 if (mod) {
                     int id = id_alloc(kmod_allocator);

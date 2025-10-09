@@ -1,8 +1,8 @@
 #include "usb.h"
-#include "../../../module/all_include/cp_kernel.h"
 #include "heap.h"
 #include "kprint.h"
 #include "krlibc.h"
+#include "klog.h"
 
 usb_driver_t *usb_drivers[MAX_USB_DRIVERS_NUM];
 

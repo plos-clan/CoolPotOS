@@ -1,6 +1,7 @@
 #include "usb_enumeration.h"
 #include "heap.h"
 #include "kprint.h"
+#include "klog.h"
 
 // 全局地址分配计数器
 static uint8_t next_device_address = 1;
@@ -46,7 +47,7 @@ static void usb_free_enum_context(usb_enum_context_t *ctx) {
 // 解析配置描述符
 int usb_parse_config_descriptor(usb_device_t *device, uint8_t *buffer, uint32_t length) {
     if (length < sizeof(usb_config_descriptor_t)) {
-        printk("USB: Config descriptor too short\n");
+        logkf("USB: Config descriptor too short\n");
         return -1;
     }
 
