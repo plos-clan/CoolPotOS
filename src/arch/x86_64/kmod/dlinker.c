@@ -189,6 +189,7 @@ void dlinker_load(kernel_mode_t *kmod,cp_module_t *module) {
 
     kinfo("Loaded module %s at %#018lx", module->module_name,
           KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
+    logkf("kmod: loaded module %s at %#018lx\n", module->module_name, KERNEL_MOD_SPACE_START + kernel_modules_load_offset);
     int ret = dlinit();
 
     (void)ret;

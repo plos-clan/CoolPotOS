@@ -486,6 +486,5 @@ __attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
 
 __attribute__((visibility("default"))) int dlmain() {
     register_usb_driver(&hid_driver);
-
-    return 0;
+    return EOK;
 }

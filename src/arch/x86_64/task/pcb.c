@@ -36,8 +36,9 @@ _Atomic volatile pid_t now_tid = 0;
 _Noreturn void process_exit() {
     uint64_t rax = 0;
     __asm__("movq %%rax,%0" ::"r"(rax) :);
-    printk("Kernel thread exit, Code: %d\n", rax);
+    logkf("Kernel thread exit, Code: %d\n", rax);
     kill_thread(get_current_task());
+    open_interrupt;
     loop __asm__ volatile("hlt");
 }
 

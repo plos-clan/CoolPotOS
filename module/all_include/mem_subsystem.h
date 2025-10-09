@@ -19,6 +19,8 @@
 #define PAGE_MASK  (~(PAGE_SIZE - 1))
 #define ENTRY_MASK 0x1FF
 
+#define PADDING_REQ(size, to) ((size + (to) - 1) & ~((to) - 1) / (to))
+
 #include "cp_kernel.h"
 
 typedef struct page_table_entry {

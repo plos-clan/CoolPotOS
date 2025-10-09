@@ -38,10 +38,14 @@ spin_t transfer_lock = SPIN_INIT;
 
 // 分配DMA内存（对齐到64字节）
 static void *xhci_alloc_dma(size_t size, uint64_t *phys_addr) {
-    void *ptr = malloc((size + 63) & ~63);
+    size_t aligned_bytes = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+    size_t required_pages = aligned_bytes / PAGE_SIZE;
+    uint64_t phys = alloc_frames(required_pages);
+    page_map_range_to(get_current_directory(),phys,aligned_bytes,KERNEL_PTE_FLAGS);
+    void *ptr = phys_to_virt(phys);
     if (ptr) {
         memset(ptr, 0, size);
-        if (phys_addr) { *phys_addr = page_virt_to_phys((uint64_t)ptr); }
+        if (phys_addr) { *phys_addr = phys; }
     }
     return ptr;
 }
@@ -70,7 +74,9 @@ xhci_ring_t *xhci_alloc_ring(uint32_t num_trbs) {
 void xhci_free_ring(xhci_ring_t *ring) {
     if (!ring) return;
 
-    if (ring->trbs) { free(ring->trbs); }
+    if (ring->trbs) {
+        unmap_page_range(get_current_directory(),(uint64_t)ring->trbs,ring->size);
+    }
     free(ring);
 }
 
@@ -317,7 +323,10 @@ static int xhci_hcd_init(usb_hcd_t *hcd) {
     if (xhci->num_scratchpads > 0) {
         xhci->scratchpad_array =
             (uint64_t *)xhci_alloc_dma(xhci->num_scratchpads * sizeof(uint64_t), NULL);
-        xhci->scratchpad_buffers = (void **)malloc(xhci->num_scratchpads * sizeof(void *));
+
+        uint64_t scphy = alloc_frames(PADDING_REQ(xhci->num_scratchpads * sizeof(void *),PAGE_SIZE));
+        page_map_range_to(get_current_directory(),scphy,xhci->num_scratchpads * sizeof(void *),KERNEL_PTE_FLAGS);
+        xhci->scratchpad_buffers = (void **)phys_to_virt(scphy);
 
         for (uint32_t i = 0; i < xhci->num_scratchpads; i++) {
             uint64_t phys;
@@ -325,7 +334,7 @@ static int xhci_hcd_init(usb_hcd_t *hcd) {
             xhci->scratchpad_array[i]   = phys;
         }
 
-        xhci->dcbaa[0] = page_virt_to_phys((uint64_t)xhci->scratchpad_array);
+        xhci->dcbaa[0] = (uint64_t)virt_to_phys((uint64_t)xhci->scratchpad_array);
     }
 
     // 设置DCBAA指针
@@ -559,7 +568,7 @@ int xhci_setup_default_endpoint(usb_hcd_t *hcd, usb_device_t *device) {
     return 0;
 }
 
-spin_t xhci_command_lock = {0};
+spin_t xhci_command_lock = SPIN_INIT;
 
 // 启用槽位 - 使用等待机制
 static int xhci_enable_slot(usb_hcd_t *hcd, usb_device_t *device) {
@@ -1026,7 +1035,7 @@ static int xhci_configure_endpoint(usb_hcd_t *hcd, usb_endpoint_t *endpoint) {
     return ret;
 }
 
-spin_t xhci_transfer_lock = {0};
+spin_t xhci_transfer_lock = SPIN_INIT;
 
 // 控制传输 - 使用等待机制
 static int xhci_control_transfer(usb_hcd_t *hcd, usb_transfer_t *transfer,
@@ -1258,7 +1267,7 @@ typedef struct enumerater_arg {
     uint8_t    speed;
 } enumerater_arg_t;
 
-spin_t enumerate_lock = {0};
+spin_t enumerate_lock = SPIN_INIT;
 
 void xhci_device_enumerater(enumerater_arg_t *arg) {
     spin_lock(enumerate_lock);
@@ -1387,7 +1396,7 @@ pci_device_t *deviceA = NULL;
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
     usb_hcd_t *xhci_hcd = xhci_init(mmio_vaddr, deviceA);
-    printk("xhci: %s inited - port:%d\n", xhci_hcd->name, xhci_hcd->devices->port);
+    printk("xhci: %s inited。\n", xhci_hcd->name);
     return EOK;
 }
 
