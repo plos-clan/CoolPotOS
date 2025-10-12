@@ -1,12 +1,12 @@
 #include "memstats.h"
 #include "frame.h"
 #include "lazyalloc.h"
-#include "lock_queue.h"
+#include "cow_arraylist.h"
 #include "page.h"
 #include "pcb.h"
 
 extern FrameAllocator frame_allocator;
-extern lock_queue    *pgb_queue;
+extern cow_arraylist   *pgb_queue;
 
 uint64_t reserved_memory = 0;
 uint64_t bad_memory      = 0;
@@ -34,9 +34,8 @@ uint64_t get_bad_memory() {
 
 uint64_t get_commit_memory() {
     uint64_t commit_memory = 0;
-    spin_lock(pgb_queue->lock);
-    queue_foreach(pgb_queue, node) {
-        pcb_t process = (pcb_t)node->data;
+    pcb_t process = NULL;
+    cow_foreach(pgb_queue, process) {
         if (process->status == DEATH || process->status == OUT) continue;
         spin_lock(process->virt_queue->lock);
         queue_foreach(process->virt_queue, node0) {
@@ -45,7 +44,6 @@ uint64_t get_commit_memory() {
         }
         spin_unlock(process->virt_queue->lock);
     }
-    spin_unlock(pgb_queue->lock);
     return commit_memory;
 }
 

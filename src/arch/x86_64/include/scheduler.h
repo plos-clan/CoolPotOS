@@ -70,6 +70,12 @@ void enable_scheduler();
 void disable_scheduler();
 
 /**
+ * 获取全局调度器状态
+ * @return 是否启用
+ */
+bool is_scheduling();
+
+/**
  * 调度器优化性休眠
  * @param nano
  */

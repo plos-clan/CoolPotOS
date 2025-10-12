@@ -76,6 +76,7 @@
 #include "sysuser.h"
 #include "tty.h"
 #include "vma.h"
+#include "cow_arraylist.h"
 
 typedef struct thread_control_block  *tcb_t;
 typedef struct process_control_block *pcb_t;

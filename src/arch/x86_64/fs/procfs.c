@@ -1,6 +1,7 @@
 #define ALL_IMPLEMENTATION
 #include "procfs.h"
 #include "boot.h"
+#include "cow_arraylist.h"
 #include "errno.h"
 #include "klog.h"
 #include "kprint.h"
@@ -169,7 +170,7 @@ char *proc_gen_mounts(size_t *context_len) {
     return strdup(mount_info);
 }
 
-extern lock_queue *pgb_queue;
+extern cow_arraylist *pgb_queue;
 
 errno_t procfs_mount(const char *src, vfs_node_t node) {
     if (src != (void *)PROC_REGISTER_ID) return VFS_STATUS_FAILED;
@@ -207,8 +208,9 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     filesystems_handle->task          = NULL;
     sprintf(filesystems_handle->name, "filesystems");
 
-    queue_foreach(pgb_queue, node) {
-        procfs_on_new_task(node->data);
+    pcb_t Inode = NULL;
+    cow_foreach(pgb_queue, Inode) {
+        procfs_on_new_task(Inode);
     }
 
     return VFS_STATUS_SUCCESS;

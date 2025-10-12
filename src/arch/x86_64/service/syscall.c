@@ -26,10 +26,11 @@
 #include "time.h"
 #include "timer.h"
 #include "vfs.h"
+#include "cow_arraylist.h"
 
 spin_t mm_op_lock = SPIN_INIT;
 
-extern lock_queue *pgb_queue;
+extern cow_arraylist *pgb_queue;
 
 USED uint64_t get_kernel_stack() {
     return get_current_task()->kernel_stack;

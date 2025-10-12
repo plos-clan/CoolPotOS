@@ -1,20 +1,17 @@
 #include "tty.h"
 #include "klog.h"
 #include "kprint.h"
-#include "mpmc_queue.h"
 #include "atom_queue.h"
 #include "bootargs.h"
 #include "device.h"
 #include "gop.h"
 #include "ioctl.h"
-#include "keyboard.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "pcb.h"
 #include "terminal.h"
 
 tty_t         *defualt_tty = NULL;
-mpmc_queue_t  *queue;
 spin_t         tty_lock          = SPIN_INIT;
 atom_queue    *temp_stdin_buffer = NULL;
 bool           ioSwitch          = false;
@@ -22,7 +19,6 @@ int            tty_mode          = KD_TEXT;
 int            tty_kbmode        = K_XLATE;
 struct vt_mode current_vt_mode   = {0};
 
-extern lock_queue *pgb_queue;
 extern atom_queue *temp_keyboard_buffer;
 
 extern bool open_flush; // terminal.c
@@ -32,7 +28,14 @@ static void tty_kernel_flush(tty_t *tty) {
 }
 
 static void tty_kernel_print(tty_t *tty, const char *msg) {
-    spin_lock(tty_lock);
+    bool sti = are_interrupts_enabled();
+    bool sche = is_scheduling();
+    open_interrupt;
+    enable_scheduler();
+    while(true) {
+        if(spin_trylock(tty_lock)) break;
+        scheduler_yield();
+    }
     for (size_t i = 0; msg[i] != '\0'; i++) {
         char c = msg[i];
         if (c == '\n') {
@@ -44,10 +47,21 @@ static void tty_kernel_print(tty_t *tty, const char *msg) {
     }
     if (!(tty->termios.c_lflag & ICANON)) _terminal_flush();
     spin_unlock(tty_lock);
+    if(!sti) close_interrupt;
+    if(!sche) disable_scheduler();
 }
 
 static void tty_kernel_putc(tty_t *tty, int c) {
-    spin_lock(tty_lock);
+    bool sti = are_interrupts_enabled();
+    bool sche = is_scheduling();
+    open_interrupt;
+    enable_scheduler();
+
+    while(true) {
+        if(spin_trylock(tty_lock)) break;
+        scheduler_yield();
+    }
+
     if (c == '\n') {
         terminal_puts("\r\n");
         tty->flush(tty);
@@ -56,6 +70,8 @@ static void tty_kernel_putc(tty_t *tty, int c) {
     }
     if (!(tty->termios.c_lflag & ICANON)) _terminal_flush();
     spin_unlock(tty_lock);
+    if(!sti) close_interrupt;
+    if(!sche) disable_scheduler();
 }
 
 void keyboard_tmp_writer(const uint8_t *data) {
@@ -369,11 +385,6 @@ void init_tty() {
     defualt_tty->print      = tty_kernel_print;
     defualt_tty->putchar    = tty_kernel_putc;
     defualt_tty->flush      = tty_kernel_flush;
-    queue                   = malloc(sizeof(mpmc_queue_t));
-    if (init(queue, 1024, sizeof(uint32_t), FAIL) != SUCCESS) {
-        free(queue);
-        queue = NULL;
-    }
     temp_stdin_buffer = create_atom_queue(2048);
 
     build_tty_device();

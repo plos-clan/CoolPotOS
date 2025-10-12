@@ -5,10 +5,9 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "pcb.h"
-#include "terminal.h"
+#include "cow_arraylist.h"
 
 extern tcb_t        kernel_head_task;
-extern lock_queue  *pgb_queue;
 struct keyboard_buf kb_fifo;
 
 bool ctrled     = false;
@@ -80,6 +79,8 @@ struct keyboard_cmd_state {
 
 __IRQHANDLER void keyboard_handler(interrupt_frame_t *frame) {
     uint8_t scancode = io_in8(0x60);
+
+    double a = .5;
 
     if (scancode == 0xfa) {
         key_cmd_state.got_ack = true;

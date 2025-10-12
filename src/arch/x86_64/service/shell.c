@@ -16,14 +16,14 @@
 #include "scheduler.h"
 #include "smp.h"
 #include "sprintf.h"
-#include "terminal.h"
 #include "timer.h"
+#include "cow_arraylist.h"
 #include "vfs.h"
 
 extern void cp_shutdown();
 extern void cp_reset();
 
-extern lock_queue *pgb_queue;
+extern cow_arraylist *pgb_queue;
 extern atom_queue *temp_keyboard_buffer;
 
 static pcb_t    shell_process;
@@ -111,15 +111,16 @@ void ps(int argc, char **argv) {
         return;
     }
     if (argc == 1) {
-        queue_foreach(pgb_queue, thread) {
-            pcb_t longest_name = (pcb_t)thread->data;
+        pcb_t thread = NULL;
+        cow_foreach(pgb_queue, thread) {
+            pcb_t longest_name = (pcb_t)thread;
             if (strlen(longest_name->name) > longest_name_len)
                 longest_name_len = strlen(longest_name->name);
         }
         printk("\033[1;34mGID  %-*s  TaskNum Status  User     Cmdline\033[0m\n", longest_name_len,
                "NAME");
-        queue_foreach(pgb_queue, thread) {
-            pcb_t pgb = (pcb_t)thread->data;
+        cow_foreach(pgb_queue, thread) {
+            pcb_t pgb = (pcb_t)thread;
             printk("\033[35m%-5d\033[0m", pgb->pid);
             printk("\033[1;36m%-*s\033[0m  ", longest_name_len, pgb->name);
             printk("\033[32m%-7d\033[0m ", pgb->pcb_queue->size);

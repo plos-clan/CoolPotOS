@@ -14,7 +14,7 @@
 #include "krlibc.h"
 #include "lazyalloc.h"
 #include "lock.h"
-#include "lock_queue.h"
+#include "cow_arraylist.h"
 #include "procfs.h"
 #include "scheduler.h"
 #include "smp.h"
@@ -26,7 +26,7 @@ extern tcb_t  kernel_head_task;
 spin_t        pcb_lock;
 extern spin_t scheduler_lock;
 
-lock_queue *pgb_queue = NULL;
+cow_arraylist *pgb_queue = NULL;
 
 pcb_t kernel_group;
 
@@ -302,7 +302,7 @@ void kill_proc0(pcb_t pcb) {
     } while (true);
 
     queue_destroy(pcb->pcb_queue);
-    queue_remove_at(pgb_queue, pcb->queue_index);
+    cow_list_remove(pgb_queue, pcb->queue_index);
 
     procfs_on_exit_task(pcb);
     //procfs_update_task_list();
@@ -361,16 +361,13 @@ void kill_thread0(tcb_t task) {
 }
 
 pcb_t found_pcb(pid_t pid) {
-    pcb_t ret = NULL;
-    spin_lock(pgb_queue->lock);
-    queue_foreach(pgb_queue, node) {
-        pcb_t pcb = (pcb_t)node->data;
-        if (pcb->pid == pid) {
-            ret = pcb;
+    pcb_t ret = NULL,pos = NULL;
+    cow_foreach(pgb_queue, pos) {
+        if (pos->pid == pid) {
+            ret = pos;
             break;
         }
     }
-    spin_unlock(pgb_queue->lock);
     return ret;
 }
 
@@ -435,7 +432,7 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->user        = user_handle == NULL ? get_kernel_user() : user_handle;
     new_pgb->page_dir    = directory == NULL ? get_kernel_pagedir() : directory;
     new_pgb->parent_task = get_current_task()->parent_group;
-    new_pgb->queue_index = lock_queue_enqueue(pgb_queue, new_pgb);
+    new_pgb->queue_index = cow_list_add(pgb_queue, new_pgb);
     new_pgb->child_pcb   = queue_init();
     new_pgb->vfork       = false;
     new_pgb->cwd         = new_pgb->parent_task->cwd;
@@ -444,7 +441,6 @@ pcb_t create_process_group(char *name, page_directory_t *directory, ucb_t user_h
     new_pgb->envc       = 0;
     new_pgb->pgid       = 0;
     new_pgb->mmap_start = USER_MMAP_START;
-    spin_unlock(pgb_queue->lock);
     new_pgb->status      = START;
     new_pgb->child_index = queue_enqueue(new_pgb->parent_task->child_pcb, new_pgb);
     //procfs_update_task_list();
@@ -629,14 +625,14 @@ int task_block(tcb_t thread, TaskStatus state, int timeout_ms) {
 void init_pcb() {
     pcb_lock       = SPIN_INIT;
     scheduler_lock = SPIN_INIT;
-    pgb_queue      = queue_init();
+    pgb_queue      = cow_list_create();
 
     kernel_group = malloc(sizeof(struct process_control_block));
     memset(kernel_group, 0, sizeof(struct process_control_block));
     strcpy(kernel_group->name, "System");
     kernel_group->pid         = now_pid++;
     kernel_group->pcb_queue   = queue_init();
-    kernel_group->queue_index = queue_enqueue(pgb_queue, kernel_group);
+    kernel_group->queue_index = cow_list_add(pgb_queue, kernel_group);
     kernel_group->page_dir    = get_kernel_pagedir();
     kernel_group->user        = get_kernel_user();
     kernel_group->tty         = get_default_tty();

@@ -15,10 +15,11 @@
 #include "smp.h"
 #include "sprintf.h"
 #include "vfs.h"
+#include "cow_arraylist.h"
 
 extern pid_t       now_tid;
 extern pid_t       now_pid;
-extern lock_queue *pgb_queue;
+extern cow_arraylist *pgb_queue;
 
 uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid,
                       int *child_tid, uint64_t tls) {
@@ -161,7 +162,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
     new_pcb->virt_queue  = queue_copy(current_pcb->virt_queue, virt_copy);
     new_pcb->mmap_start  = current_pcb->mmap_start;
     new_pcb->file_open   = queue_copy(current_pcb->file_open, file_copy);
-    new_pcb->queue_index = queue_enqueue(pgb_queue, new_pcb);
+    new_pcb->queue_index = cow_list_add(pgb_queue, new_pcb);
     new_pcb->vfork       = is_vfork;
     new_pcb->child_pcb   = queue_init();
     new_pcb->child_index = queue_enqueue(current_pcb->child_pcb, new_pcb);

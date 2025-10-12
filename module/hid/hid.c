@@ -105,6 +105,7 @@ int hid_set_idle(usb_hid_device_t *hid, uint8_t duration) {
 static void hid_interrupt_callback(usb_transfer_t *transfer);
 
 bool hid_transfer_done = false;
+static size_t call_count = 0;
 
 void hid_resubmit_agent(uint64_t arg) {
     usb_hid_device_t *hid = (usb_hid_device_t *)arg;
@@ -112,7 +113,7 @@ void hid_resubmit_agent(uint64_t arg) {
     while (1) {
         // 重新提交传输以继续接收
         if (!hid->transfer_active) { break; }
-
+        call_count++;
         usb_interrupt_transfer(hid->usb_device, hid->interrupt_in_ep, hid->input_buffer,
                                hid->input_buffer_size, hid_interrupt_callback, hid);
 

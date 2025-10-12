@@ -18,7 +18,6 @@
 #include "ide.h"
 #include "iic/iic_core.h"
 #include "keyboard.h"
-#include "killer.h"
 #include "kmesg.h"
 #include "kprint.h"
 #include "krlibc.h"
@@ -162,7 +161,6 @@ void kmain() {
     setup_urandom();
     zero_setup();
     pty_init();
-    killer_setup();
     setup_syscall(true);
     netfs_setup();
     procfs_setup();

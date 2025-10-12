@@ -421,6 +421,7 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     node->type     = file_none;
     node->fsid     = parent ? parent->fsid : 0;
     node->root     = parent ? parent->root : node;
+    node->dev      = parent ? parent->dev : 0;
     node->refcount = 0;
     node->blksz    = PAGE_SIZE;
     node->mode     = 0777;
