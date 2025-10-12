@@ -1,8 +1,9 @@
 #include "dlinker.h"
+#include "errno.h"
+#include "heap.h"
+#include "id_alloc.h"
 #include "klog.h"
 #include "limine.h"
-#include "id_alloc.h"
-#include "heap.h"
 
 cp_module_t module_ls[256];
 size_t      module_count = 0;
@@ -73,7 +74,12 @@ void start_all_kernel_module() {
         kernel_mode_t *kmod = kmods[i];
         if(kmod == NULL) continue;
         if(kmod->task_entry == NULL) continue;
-        int ret = kmod->task_entry();
+        if(kmod->entry_exit_code & ERRNO_MASK) {
+            logkf("kmod: cannot start mod(%s) - exit_code: %d\n",kmod->module->module_name,
+                  kmod->entry_exit_code);
+        }else{
+            int ret = kmod->task_entry();
+        }
     }
 }
 
@@ -87,6 +93,7 @@ void load_all_kernel_module() {
                     int id = id_alloc(kmod_allocator);
                     kmods[id] = calloc(1,sizeof(kernel_mode_t));
                     dlinker_load(kmods[id],mod);
+                    kmods[id]->module = mod;
                 }
             }
         }

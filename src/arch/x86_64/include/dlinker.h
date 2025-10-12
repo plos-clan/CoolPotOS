@@ -22,16 +22,17 @@ typedef struct {
 
 typedef struct kernel_mode {
     cp_module_t *module;
-    dlinit_t entry;
-    dlinit_t task_entry;
-}kernel_mode_t;
+    dlinit_t     entry;
+    dlinit_t     task_entry;
+    int          entry_exit_code;
+} kernel_mode_t;
 
 /**
  * 加载一个内核模块
  * @param kmod 内核模块管理单元
  * @param module 文件句柄
  */
-void dlinker_load(kernel_mode_t *kmod,cp_module_t *module);
+void dlinker_load(kernel_mode_t *kmod, cp_module_t *module);
 
 dlfunc_t *find_func(const char *name);
 
