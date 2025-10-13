@@ -33,7 +33,7 @@ int32_t id_alloc(id_allocator_t *allocator) {
             allocator->bitmap[word_index] |= mask;
             allocator->free_count--;
             allocator->next_id = (id + 1) % allocator->max_ids;
-            return id;
+            return (int32_t)id;
         }
 
         id = (id + 1) % allocator->max_ids;

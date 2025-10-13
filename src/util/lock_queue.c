@@ -2,7 +2,6 @@
 #include "heap.h"
 #include "krlibc.h"
 #include "lock.h"
-#include "pcb.h"
 
 lock_queue *queue_init() {
     lock_queue *q = malloc(sizeof(lock_queue));
@@ -166,10 +165,6 @@ lock_queue *queue_copy(lock_queue *src, void *(*data_copy)(void *)) {
     spin_lock(src->lock);
 
     lock_queue *new_q = queue_init();
-    if (!new_q) {
-        spin_unlock(src->lock);
-        return NULL;
-    }
 
     lock_node *current = src->head;
     while (current != NULL) {

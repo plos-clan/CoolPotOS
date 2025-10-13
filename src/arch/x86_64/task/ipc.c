@@ -9,7 +9,7 @@ void ipc_send(pcb_t process, ipc_message_t message) {
     spin_unlock(process->ipc_queue->lock);
 }
 
-void ipc_free_type(uint8_t type) {
+USED void ipc_free_type(uint8_t type) {
     pcb_t pcb = get_current_task()->parent_group;
     for (size_t i = 0; i < pcb->ipc_queue->size; ++i) {
         ipc_message_t message = (ipc_message_t)queue_dequeue(pcb->ipc_queue);
@@ -38,7 +38,7 @@ ipc_message_t ipc_recv_wait(uint8_t type) {
     do {
         __asm__ volatile("pause");
         scheduler_yield();
-        message = (ipc_message_t)ipc_recv(type);
+        message = ipc_recv(type);
     } while (message == NULL);
     return message;
 }
@@ -48,8 +48,8 @@ ipc_message_t ipc_recv_wait2(uint8_t type0, uint8_t type1) {
     do {
         __asm__ volatile("pause");
         scheduler_yield();
-        message = (ipc_message_t)ipc_recv(type0);
-        if (message == NULL) { message = (ipc_message_t)ipc_recv(type1); }
+        message = ipc_recv(type0);
+        if (message == NULL) { message = ipc_recv(type1); }
     } while (message == NULL);
     return message;
 }

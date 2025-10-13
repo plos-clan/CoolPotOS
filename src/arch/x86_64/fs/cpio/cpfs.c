@@ -104,16 +104,7 @@ errno_t cpfs_stat(void *file, vfs_node_t node) {
 errno_t cpfs_delete(void *parent, vfs_node_t node) {
     cpfs_file_t *p = (cpfs_file_t *)parent;
     cpfs_file_t *f = (cpfs_file_t *)node->handle;
-    for (size_t i = 0; i < p->child_count; i++) {
-        if (p->children[i] == f) {
-            memmove(&p->children[i], &p->children[i + 1],
-                    (p->child_count - i - 1) * sizeof(void *));
-            p->child_count--;
-            free(f->data);
-            free(f);
-            return EOK;
-        }
-    }
+    llist_delete(&f->curr_node);
     return -ENOENT;
 }
 
@@ -144,8 +135,8 @@ int cpfs_poll(void *file, size_t events) {
         if (events & POLLIN) revents |= POLLIN;
         if (events & POLLOUT) revents |= POLLOUT;
         return revents;
-    } else
-        return 0;
+    }
+    return 0;
 }
 
 void cpfs_close(void *file) {
@@ -176,7 +167,8 @@ static void free_child_node(cpfs_file_t *parent, cpfs_file_t *dir) {
     if (dir->is_dir) {
         do {
             cpfs_file_t *tmp = NULL;
-            cpfs_file_t *pos, *n;
+            cpfs_file_t *pos = NULL;
+            cpfs_file_t *n = NULL;
             llist_for_each(pos, n, &dir->child_node, curr_node) {
                 tmp = pos;
             }

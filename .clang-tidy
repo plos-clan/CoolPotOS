@@ -4,6 +4,7 @@ Checks: >
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-avoid-magic-numbers,
   misc-*,
+  -misc-unused-parameters,
   readability-*,
   performance-*,
   portability-*,

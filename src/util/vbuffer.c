@@ -22,7 +22,8 @@ struct vecbuf *vbuf_alloc(struct vecbuf **vec, void *buf, size_t size) {
 }
 
 void vbuf_free(struct vecbuf *vbuf) {
-    struct vecbuf *pos, *n;
+    struct vecbuf *pos = NULL;
+    struct vecbuf *n = NULL;
     llist_for_each(pos, n, &vbuf->components, components) {
         free(pos);
     }

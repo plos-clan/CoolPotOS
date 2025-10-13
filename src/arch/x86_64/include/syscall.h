@@ -10,6 +10,7 @@
 #define SYSCALL_FAULT        ((uint64_t)-(ENOSYS))
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 #define FD_SETSIZE           1024
+#define SENDFILE_BUF_SIZE    4096
 
 // 一个非常取巧的宏魔法, 可以简化 syscall 函数的定义
 #define __EXPAND_PARAMS(...) __VA_ARGS__
@@ -153,6 +154,7 @@
 #define SYSCALL_DUP2        33
 #define SYSCALL_NANO_SLEEP  35
 #define SYSCALL_GETPID      39
+#define SYSCALL_SENDFILE    40
 #define SYSCALL_SOCKET      41
 #define SYSCALL_CONNECT     42
 #define SYSCALL_ACCEPT      43

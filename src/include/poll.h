@@ -39,7 +39,7 @@ struct pollfd {
 
 struct pollfd *select_add(struct pollfd **comp, size_t *compIndex, size_t *complength, int fd,
                           int events);
-bool           select_bitmap(uint8_t *map, int index);
+bool           select_bitmap(const uint8_t *map, int index);
 void           select_bitmap_set(uint8_t *map, int index);
 uint32_t       poll_to_epoll_comp(uint32_t poll_events);
 uint32_t       epoll_to_poll_comp(uint32_t epoll_events);
