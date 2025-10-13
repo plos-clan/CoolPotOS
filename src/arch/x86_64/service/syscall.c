@@ -2,6 +2,7 @@
 
 #include "syscall.h"
 #include "boot.h"
+#include "cow_arraylist.h"
 #include "cpuid.h"
 #include "cpustats.h"
 #include "errno.h"
@@ -26,7 +27,6 @@
 #include "time.h"
 #include "timer.h"
 #include "vfs.h"
-#include "cow_arraylist.h"
 
 spin_t mm_op_lock = SPIN_INIT;
 
@@ -205,7 +205,7 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
         } else
         err:
             free(normalized_path);
-        return SYSCALL_FAULT_(ENOENT);
+    return SYSCALL_FAULT_(ENOENT);
     }
 next:
     fd_file_handle *fd_handle = calloc(1, sizeof(fd_file_handle));
@@ -267,7 +267,7 @@ syscall_(waitpid, pid_t pid, int *status, uint64_t options) {
     pcb_t wait_p = found_pcb(pid);
     if (wait_p == NULL) return SYSCALL_FAULT_(ECHILD);
 wait:
-    pid_t ret_pid;
+    pid_t ret_pid = 0;
     int   status0 = waitpid(pid, &ret_pid);
     if (status) *status = status0;
     return ret_pid;
@@ -286,7 +286,7 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
     pcb_t process = get_current_task()->parent_group;
 
     vma_manager_t *mgr = &process->vma_manager;
-    uint64_t       start_addr;
+    uint64_t       start_addr = 0;
     if (flags & MAP_FIXED) {
         if (!addr) return SYSCALL_FAULT_(EINVAL);
 
@@ -336,7 +336,7 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
     } else {
         vma->vm_type   = VMA_TYPE_FILE;
         vma->vm_fd     = fd;
-        vma->vm_offset = offset;
+        vma->vm_offset = (int64_t)offset;
     }
 
     vma_t *region = vma_find_intersection(mgr, start_addr, start_addr + aligned_len);
@@ -353,37 +353,37 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
     if (!(flags & MAP_ANONYMOUS)) {
         uint64_t ret = (uint64_t)vfs_map(queue_get(process->file_open, fd), start_addr, aligned_len,
                                          prot, flags, offset);
-
         spin_unlock(mm_op_lock);
         return ret;
-    } else {
-        uint64_t pt_flags = PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-
-        if (prot != PROT_NONE) {
-            if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
-            if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
-            if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
-        }
-
-        lazy_infoalloc(process, start_addr, aligned_len, pt_flags, flags);
-        spin_unlock(mm_op_lock);
-
-        return start_addr;
     }
+
+    uint64_t pt_flags = PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
+
+    if (prot != PROT_NONE) {
+        if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
+        if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
+        if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+    }
+
+    lazy_infoalloc(process, start_addr, aligned_len, pt_flags, flags);
+    spin_unlock(mm_op_lock);
+
+    return start_addr;
 
     return addr;
 }
 
-syscall_(signal, int sig) {
+syscall_(signal, int sig, void *handler) {
     if (sig < 0 || sig >= MAX_SIGNALS) return SYSCALL_FAULT_(EINVAL);
-    void *handler = (void *)arg1;
     if (handler == NULL) return SYSCALL_FAULT_(EINVAL);
     logkf("Signal syscall: %p\n", handler);
     register_signal(get_current_task()->parent_group, sig, handler);
     return SYSCALL_SUCCESS;
 }
 
-syscall_(sigret) {}
+syscall_(sigret) {
+    return SYSCALL_SUCCESS;
+}
 
 syscall_(getpid) {
     if (unlikely(arg0 == UINT64_MAX || arg1 == UINT64_MAX || arg2 == UINT64_MAX ||
@@ -414,10 +414,10 @@ syscall_(stat, char *fn, struct stat *buf) {
                                   : node->type == file_socket ? S_IFSOCK
                                   : node->type == file_none   ? S_IFREG
                                   : node->type == file_stream ? S_IFCHR
-                                                              : 0);
+                                                              : S_IFREG);
     buf->st_nlink = 1;
-    buf->st_dev   = node->dev;
-    buf->st_rdev  = node->rdev;
+    buf->st_dev   = (long)node->dev;
+    buf->st_rdev  = (long)node->rdev;
     free(path);
     return SYSCALL_SUCCESS;
 }
@@ -472,15 +472,15 @@ syscall_(nano_sleep, void *time_handle) {
     if (unlikely(time_handle == NULL)) return SYSCALL_FAULT_(EINVAL);
     memcpy(&k_req, time_handle, sizeof(k_req));
     if (unlikely(k_req.tv_nsec >= 1000000000L)) return SYSCALL_FAULT_(EINVAL);
-    uint64_t nsec = (uint64_t)k_req.tv_sec * 1000000000ULL + k_req.tv_nsec;
+    uint64_t nsec = k_req.tv_sec * 1000000000 + k_req.tv_nsec;
     scheduler_nano_sleep(nsec);
     return SYSCALL_SUCCESS;
 }
 
-syscall_(ioctl, int fd, int options) {
-    if (unlikely(fd < 0 || arg2 == 0)) return SYSCALL_FAULT_(EINVAL);
+syscall_(ioctl, int fd, int options, void *arg2) {
+    if (unlikely(fd < 0 || arg2 == NULL)) return SYSCALL_FAULT_(EINVAL);
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
-    int             ret    = vfs_ioctl(handle->node, options, (void *)arg2);
+    int             ret    = vfs_ioctl(handle->node, options, arg2);
     return ret;
 }
 
@@ -488,11 +488,11 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
     if (unlikely(fd < 0 || iov == NULL)) return SYSCALL_FAULT_(EINVAL);
     if (iovcnt == 0) return SYSCALL_SUCCESS;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
-    ssize_t         total  = 0;
+    size_t          total  = 0;
     for (int i = 0; i < iovcnt; i++) {
-        int status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
+        size_t status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
         if (handle->node->size != (uint64_t)-1) {
-            if (status == VFS_STATUS_FAILED) return total;
+            if (status == (size_t)VFS_STATUS_FAILED) return total;
             handle->offset += status;
         }
         total += iov[i].iov_len;
@@ -503,9 +503,11 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
 syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     if (unlikely(fd < 0 || iov == NULL)) return SYSCALL_FAULT_(EINVAL);
     if (iovcnt0 == 0) return SYSCALL_SUCCESS;
-    size_t          iovcnt  = iovcnt0;
-    fd_file_handle *handle  = queue_get(get_current_task()->parent_group->file_open, fd);
-    size_t          buf_len = 0;
+    size_t          iovcnt = iovcnt0;
+    fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
+    if (iovcnt == 0) return 0;
+    if (handle == NULL) return SYSCALL_FAULT_(EBADF);
+    size_t buf_len = 0;
     for (size_t i = 0; i < iovcnt; i++) {
         buf_len += iov[i].iov_len;
     }
@@ -542,9 +544,9 @@ syscall_(munmap, uint64_t addr, size_t size) {
 
     if (check_user_overflow(addr, size)) { return -EFAULT; }
 
-    vma_manager_t *mgr = &get_current_task()->parent_group->vma_manager;
-    vma_t         *vma = mgr->vma_list;
-    vma_t         *next;
+    vma_manager_t *mgr  = &get_current_task()->parent_group->vma_manager;
+    vma_t         *vma  = mgr->vma_list;
+    vma_t         *next = NULL;
 
     uint64_t start = addr;
     uint64_t end   = addr + size;
@@ -740,9 +742,9 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
                 continue;
             }
             int revents =
-                epoll_to_poll_comp(vfs_poll(node, poll_to_epoll_comp(fds_user[i].events)));
+                (int)epoll_to_poll_comp(vfs_poll(node, poll_to_epoll_comp(fds_user[i].events)));
             if (revents > 0) {
-                fds_user[i].revents = revents;
+                fds_user[i].revents = (short)revents;
                 ready++;
             }
             i++;
@@ -813,7 +815,7 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg) {
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
 
     switch (cmd) {
-    case F_GETFD: return !!(handle->node->flags & O_CLOEXEC);
+    case F_GETFD: return (handle->node->flags & O_CLOEXEC) != 0;
     case F_SETFD: return handle->node->flags |= O_CLOEXEC;
     case F_DUPFD_CLOEXEC:
         uint64_t newfd       = syscall_dup(fd, 0, 0, 0, 0, 0, regs);
@@ -825,6 +827,7 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg) {
         uint32_t valid_flags  = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
         handle->node->flags  &= ~valid_flags;
         handle->node->flags  |= arg & valid_flags;
+    default: break;
     }
     return SYSCALL_SUCCESS;
 }
@@ -897,17 +900,12 @@ syscall_(vfork) {
     return process_fork(regs, true, 0);
 }
 
-syscall_(execve) {
-    char  *path = (char *)arg0;
-    char **argv = (char **)arg1;
-    char **envp = (char **)arg2;
+syscall_(execve,char *path,char **argv,char **envp) {
     if (unlikely(path == NULL)) return SYSCALL_FAULT_(EINVAL);
     return process_execve(path, argv, envp);
 }
 
-syscall_(fstat) {
-    int          fd  = (int)arg0;
-    struct stat *buf = (struct stat *)arg1;
+syscall_(fstat,int fd, struct stat *buf) {
     if (unlikely(buf == NULL)) return SYSCALL_FAULT_(EINVAL);
 
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
@@ -934,13 +932,12 @@ syscall_(fstat) {
     return SYSCALL_SUCCESS;
 }
 
-syscall_(clock_gettime) {
+syscall_(clock_gettime, uint64_t arg0, struct timespec *ts) {
     switch (arg0) {
     case 1:
     case 6:
     case 4: {
-        if (arg1 != 0) {
-            struct timespec *ts   = (struct timespec *)arg1;
+        if (ts != NULL) {
             uint64_t         nano = nano_time();
             ts->tv_sec            = nano / 1000000000ULL;
             ts->tv_nsec           = nano % 1000000000ULL;
@@ -949,16 +946,14 @@ syscall_(clock_gettime) {
     }
     case 0: {
         uint64_t timestamp = mktime();
-        if (arg1 != 0) {
-            struct timespec *ts = (struct timespec *)arg1;
+        if (ts != NULL) {
             ts->tv_sec          = timestamp;
             ts->tv_nsec         = 0;
         }
         return SYSCALL_SUCCESS;
     }
     case 7: {
-        if (arg1 != 0) {
-            struct timespec *ts   = (struct timespec *)arg1;
+        if (ts != NULL) {
             uint64_t         nano = sched_clock();
             ts->tv_sec            = nano / 1000000000ULL;
             ts->tv_nsec           = nano % 1000000000ULL;
@@ -975,12 +970,11 @@ syscall_(clock_getres) {
     return SYSCALL_SUCCESS;
 }
 
-syscall_(sigsuspend) {
-    sigset_t *mask = (sigset_t *)arg0;
+syscall_(sigsuspend,const sigset_t *mask) {
     if (mask == NULL) return SYSCALL_FAULT_(EINVAL);
     sigset_t old = get_current_task()->blocked;
 
-    get_current_task()->blocked = *mask;
+    get_current_task()->blocked = (uint64_t)*mask;
     while (!signals_pending_quick(get_current_task())) {
         open_interrupt;
         __asm__("pause");
@@ -990,9 +984,7 @@ syscall_(sigsuspend) {
     return SYSCALL_FAULT_(EINTR);
 }
 
-syscall_(mkdir) {
-    char    *name = (char *)arg0;
-    uint64_t mode = arg1;
+syscall_(mkdir,char *name,uint64_t mode) {
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
     char  *npath = vfs_cwd_path_build(name);
     size_t ret   = vfs_mkdir(npath) == VFS_STATUS_FAILED ? -1 : 0;
@@ -1000,14 +992,11 @@ syscall_(mkdir) {
     return ret;
 }
 
-syscall_(lseek) {
-    int             fd     = (int)arg0;
-    size_t          offset = arg1;
-    size_t          whence = arg2;
+syscall_(lseek,int fd,size_t offset,size_t whence) {
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
 
-    int64_t real_offset = offset;
+    int64_t real_offset = (int64_t)offset;
     if (real_offset < 0 && handle->node->type & file_none && whence != SEEK_CUR)
         return SYSCALL_FAULT_(EBADF);
     switch (whence) {
@@ -1033,12 +1022,8 @@ syscall_(lseek) {
     return handle->offset;
 }
 
-syscall_(select) {
-    int             nfds    = (int)arg0;
-    uint8_t        *read    = (uint8_t *)arg1;
-    uint8_t        *write   = (uint8_t *)arg2;
-    uint8_t        *except  = (uint8_t *)arg3;
-    struct timeval *timeout = (struct timeval *)arg4;
+syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except,
+         struct timeval *timeout) {
     if (read && check_user_overflow((uint64_t)read, sizeof(struct pollfd))) {
         return SYSCALL_FAULT_(EFAULT);
     }
@@ -1111,13 +1096,8 @@ syscall_(select) {
     return verify;
 }
 
-syscall_(pselect6) {
-    uint64_t         nfds          = arg0;
-    fd_set          *readfds       = (fd_set *)arg1;
-    fd_set          *writefds      = (fd_set *)arg2;
-    fd_set          *exceptfds     = (fd_set *)arg3;
-    struct timespec *timeout       = (struct timespec *)arg4;
-    WeirdPselect6   *weirdPselect6 = (WeirdPselect6 *)arg5;
+syscall_(pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+         struct timespec *timeout, WeirdPselect6 *weirdPselect6) {
     if (readfds && check_user_overflow((uint64_t)readfds, sizeof(fd_set) * nfds)) {
         return SYSCALL_FAULT_(EFAULT);
     }
@@ -1130,19 +1110,19 @@ syscall_(pselect6) {
     size_t    sigsetsize = weirdPselect6->ss_len;
     sigset_t *sigmask    = weirdPselect6->ss;
     if (sigsetsize < sizeof(sigset_t)) { return SYSCALL_FAULT_(EINVAL); }
-    sigset_t origmask;
-    if (sigmask) syscall_ssetmask(SIG_SETMASK, sigmask, &origmask);
+    sigset_t origmask = 0;
+    if (sigmask) { syscall_ssetmask(SIG_SETMASK, sigmask, &origmask); }
     struct timeval timeoutConv;
     if (timeout) {
-        timeoutConv = (struct timeval){.tv_sec  = timeout->tv_sec,
+        timeoutConv = (struct timeval){.tv_sec  = (long)timeout->tv_sec,
                                        .tv_usec = (long)(timeout->tv_nsec + 1000l) / 1000};
     } else {
         timeoutConv = (struct timeval){.tv_sec = (long)-1, .tv_usec = (long)-1};
     }
 
-    size_t ret = syscall_select(nfds, (uint64_t)(uint8_t *)readfds, (uint64_t)(uint8_t *)writefds,
-                                (uint64_t)(uint8_t *)exceptfds, (uint64_t)&timeoutConv, 0, 0);
-    if (sigmask) syscall_ssetmask(SIG_SETMASK, &origmask, NULL);
+    size_t ret = syscall_select((uint64_t)nfds, (uint8_t *)readfds, (uint8_t *)writefds,
+                                (uint8_t *)exceptfds, &timeoutConv, 0, 0);
+    if (sigmask) { syscall_ssetmask(SIG_SETMASK, &origmask, NULL); }
     return ret;
 }
 
@@ -1150,7 +1130,7 @@ syscall_(reboot, unsigned int magic1, unsigned int magic2, uint32_t cmd, void *a
     extern void cp_shutdown();
     extern void cp_reset();
 
-    if (magic1 != REBOOT_MAGIC1 || magic2 != REBOOT_MAGIC2) return SYSCALL_FAULT_(EINVAL);
+    if (magic1 != REBOOT_MAGIC1 || magic2 != REBOOT_MAGIC2) { return SYSCALL_FAULT_(EINVAL); }
     switch (cmd) {
     case REBOOT_CMD_RESTART: cp_reset(); break;
     case REBOOT_CMD_CAD_OFF: cp_shutdown(); break;
@@ -1159,35 +1139,38 @@ syscall_(reboot, unsigned int magic1, unsigned int magic2, uint32_t cmd, void *a
     return SYSCALL_SUCCESS;
 }
 
-syscall_(getdents) {
-    int      fd   = arg0;
-    uint64_t buf  = arg1;
-    size_t   size = arg2;
-    if (unlikely(check_user_overflow(buf, size))) { return SYSCALL_FAULT_(EFAULT); }
+syscall_(getdents, int fd, struct dirent *dents, size_t size) {
+    if (unlikely(check_user_overflow((uint64_t)dents, size))) { return SYSCALL_FAULT_(EFAULT); }
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
-    if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
+    if (unlikely(handle == NULL)) { return SYSCALL_FAULT_(EBADF); }
     if (handle->node->type != file_dir) { return SYSCALL_FAULT_(ENOTDIR); }
-    size_t         child_count   = (uint64_t)list_length(handle->node->child);
-    struct dirent *dents         = (struct dirent *)buf;
-    size_t         max_dents_num = size / sizeof(struct dirent);
-    size_t         read_count    = 0;
-    uint64_t       offset        = 0;
+    size_t   child_count   = (uint64_t)list_length(handle->node->child);
+    size_t   max_dents_num = size / sizeof(struct dirent);
+    size_t   read_count    = 0;
+    uint64_t offset        = 0;
     list_foreach(handle->node->child, i) {
-        if (offset < handle->offset) goto next;
-        if (handle->offset >= (child_count * sizeof(struct dirent))) break;
-        if (read_count >= max_dents_num) break;
+        if (offset < handle->offset) { goto next; }
+        if (handle->offset >= (child_count * sizeof(struct dirent))) { break; }
+        if (read_count >= max_dents_num) { break; }
         vfs_node_t child_node      = (vfs_node_t)i->data;
-        dents[read_count].d_ino    = child_node->inode;
-        dents[read_count].d_off    = handle->offset;
+        dents[read_count].d_ino    = (long)child_node->inode;
+        dents[read_count].d_off    = (long)handle->offset;
         dents[read_count].d_reclen = sizeof(struct dirent);
-        if (child_node->type & file_symlink)
+        if (child_node->type & file_symlink) {
             dents[read_count].d_type = DT_LNK;
-        else if (child_node->type & file_none)
+        } else if (child_node->type & file_none) {
             dents[read_count].d_type = DT_REG;
-        else if (child_node->type & file_dir)
+        } else if (child_node->type & file_block) {
+            dents[read_count].d_type = DT_BLK;
+        } else if (child_node->type & file_stream) {
+            dents[read_count].d_type = DT_CHR;
+        } else if (child_node->type & file_socket) {
+            dents[read_count].d_type = DT_SOCK;
+        } else if (child_node->type & file_dir) {
             dents[read_count].d_type = DT_DIR;
-        else
+        } else {
             dents[read_count].d_type = DT_UNKNOWN;
+        }
         strncpy(dents[read_count].d_name, child_node->name, 256);
         handle->offset += sizeof(struct dirent);
         read_count++;
@@ -1197,27 +1180,14 @@ syscall_(getdents) {
     return read_count * sizeof(struct dirent);
 }
 
-syscall_(newfstatat) {
-    int          dirfd    = arg0;
-    char        *pathname = (char *)arg1;
-    struct stat *buf      = (struct stat *)arg2;
-    uint64_t     flags    = arg3;
-
-    char *resolved = at_resolve_pathname(dirfd, (char *)pathname);
-
+syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags) {
+    char *resolved = at_resolve_pathname(dirfd, pathname);
     uint64_t ret = syscall_stat(resolved, buf, 0, 0, 0, 0, 0);
-
     free(resolved);
-
     return ret;
 }
 
-syscall_(statx) {
-    int           dirfd    = arg0;
-    char         *pathname = (char *)arg1;
-    uint64_t      flags    = arg2;
-    uint64_t      mask     = arg3;
-    struct statx *buff     = (struct statx *)arg4;
+syscall_(statx,int dirfd,char *pathname,uint64_t flags, uint64_t mask,struct statx *buff) {
     if (unlikely(!pathname || check_user_overflow((uint64_t)pathname, strlen(pathname)))) {
         return SYSCALL_FAULT_(EFAULT);
     }
@@ -1227,7 +1197,7 @@ syscall_(statx) {
 
     struct stat simple;
     memset(&simple, 0, sizeof(struct stat));
-    uint64_t ret = syscall_newfstatat(dirfd, (uint64_t)pathname, (uint64_t)&simple, flags, 0, 0, 0);
+    uint64_t ret = syscall_newfstatat(dirfd, pathname, &simple, flags, 0, 0, 0);
     if ((int64_t)ret < 0) return ret;
 
     buff->stx_mask            = mask;
@@ -1242,24 +1212,21 @@ syscall_(statx) {
     buff->stx_blocks          = simple.st_blocks;
     buff->stx_attributes_mask = 0;
 
-    buff->stx_atime.tv_sec  = simple.st_atim.tv_sec;
+    buff->stx_atime.tv_sec  = (long)simple.st_atim.tv_sec;
     buff->stx_atime.tv_nsec = simple.st_atim.tv_nsec;
 
-    buff->stx_btime.tv_sec  = simple.st_ctim.tv_sec;
+    buff->stx_btime.tv_sec  = (long)simple.st_ctim.tv_sec;
     buff->stx_btime.tv_nsec = simple.st_ctim.tv_nsec;
 
-    buff->stx_ctime.tv_sec  = simple.st_ctim.tv_sec;
+    buff->stx_ctime.tv_sec  = (long)simple.st_ctim.tv_sec;
     buff->stx_ctime.tv_nsec = simple.st_ctim.tv_nsec;
 
-    buff->stx_mtime.tv_sec  = simple.st_mtim.tv_sec;
+    buff->stx_mtime.tv_sec  = (long)simple.st_mtim.tv_sec;
     buff->stx_mtime.tv_nsec = simple.st_mtim.tv_nsec;
     return SYSCALL_SUCCESS;
 }
 
-syscall_(pipe) {
-    int     *pipefd = (int *)arg0;
-    uint64_t flags  = arg1;
-
+syscall_(pipe,int *pipefd, uint64_t flags) {
     /* fs/pipefs.c */
     extern vfs_node_t pipefs_root;
     extern int        pipefd_id;
@@ -1470,10 +1437,8 @@ syscall_(copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off
     if (vfs_read(src_handle->node, buffer, src_offset, length) == (size_t)VFS_STATUS_FAILED) {
         goto errno_;
     }
-    if ((copy_total = vfs_write(dst_handle->node, buffer, dst_offset, length)) ==
-        (size_t)VFS_STATUS_FAILED) {
-        goto errno_;
-    }
+    copy_total = vfs_write(dst_handle->node, buffer, dst_offset, length);
+    if (copy_total == (size_t)VFS_STATUS_FAILED) { goto errno_; }
     vfs_update(dst_handle->node);
     free(buffer);
     dst_handle->offset += copy_total;
@@ -1559,9 +1524,7 @@ syscall_(ftruncate) {
     return SYSCALL_SUCCESS;
 }
 
-syscall_(setpgid) {
-    pid_t pid     = arg0;
-    pid_t pgid    = arg1;
+syscall_(setpgid, pid_t pid, pid_t pgid) {
     pcb_t process = pid == 0 ? get_current_task()->parent_group : found_pcb(pid);
     if (process == NULL || process->status == DEATH) { return SYSCALL_FAULT_(ESRCH); }
     if (pgid == 0) { pgid = process->pgid; }
@@ -1580,8 +1543,7 @@ syscall_(geteuid) {
     return get_current_task()->parent_group->user->uid;
 }
 
-syscall_(setuid) {
-    int uid = arg0;
+syscall_(setuid, int uid) {
     if (uid > 65535) return SYSCALL_FAULT_(EINVAL);
     if (get_current_task()->parent_group->user->uid == 0) return SYSCALL_FAULT_(EACCES);
     get_current_task()->parent_group->user->uid = uid;
@@ -1598,9 +1560,7 @@ syscall_(getegid) {
     return 0;
 }
 
-syscall_(getgroups) {
-    int  count    = arg0;
-    int *gid_list = (int *)arg1;
+syscall_(getgroups, int count, int *gid_list) {
     if (count > 0) {
         gid_list[0] = 0;
         return 1;
@@ -1608,9 +1568,7 @@ syscall_(getgroups) {
     return 0;
 }
 
-syscall_(rename) {
-    char *oldpath = (char *)arg0;
-    char *newpath = (char *)arg1;
+syscall_(rename, char *oldpath, char *newpath) {
     if (!oldpath || !newpath) return SYSCALL_FAULT_(EINVAL);
     if (check_user_overflow((uint64_t)oldpath, strlen(oldpath))) { return SYSCALL_FAULT_(EFAULT); }
     if (check_user_overflow((uint64_t)newpath, strlen(newpath))) { return SYSCALL_FAULT_(EFAULT); }
@@ -1641,18 +1599,13 @@ end_rename:
     return ret;
 }
 
-syscall_(symlink) {
-    char *name = (char *)arg0;
-    char *new  = (char *)arg1;
+syscall_(symlink, char *name, char *new) {
     if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
     errno_t ret = vfs_symlink(name, new);
-
     return ret;
 }
 
-syscall_(link) {
-    char *name = (char *)arg0;
-    char *new  = (char *)arg1;
+syscall_(link, char *name, char *new) {
     if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
     errno_t ret = vfs_link(name, new);
 
@@ -1686,8 +1639,7 @@ syscall_(readlink) {
     return vfs_readlink(node, buf, (size_t)size);
 }
 
-syscall_(sysinfo) {
-    struct sysinfo *info = (struct sysinfo *)arg0;
+syscall_(sysinfo, struct sysinfo *info) {
     if (check_user_overflow((uint64_t)info, sizeof(struct sysinfo))) return SYSCALL_FAULT_(EFAULT);
     memset(info, 0, sizeof(struct sysinfo));
     info->freeram  = get_available_memory();
@@ -1701,9 +1653,7 @@ syscall_(getgid) {
     return get_current_task()->parent_group->pgid;
 }
 
-syscall_(fsopen) {
-    char    *fsname = (char *)arg0;
-    uint32_t flags  = arg1;
+syscall_(fsopen, char *fsname, uint32_t flags) {
 
     vfs_filesystem_t filesystem = NULL;
     vfs_filesystem_t pos, n;
@@ -1825,6 +1775,55 @@ syscall_(send, int sockfd, void *buff, size_t len, int flags, struct sockaddr_un
     return syscall_net_send(sockfd, buff, len, flags, dest_addr, addrlen);
 }
 
+syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
+    pcb_t           process    = get_current_task()->parent_group;
+    fd_file_handle *out_handle = queue_get(process->file_open, out_fd);
+    fd_file_handle *in_handle  = queue_get(process->file_open, in_fd);
+    if (out_handle == NULL || in_handle == NULL) return SYSCALL_FAULT_(EBADF);
+
+    uint64_t current_offset = offset_ptr == NULL ? in_handle->offset : *offset_ptr;
+    size_t   total_sent     = 0;
+
+    size_t remaining = count;
+
+    char *buffer = (char *)malloc(SENDFILE_BUF_SIZE);
+    if (buffer == NULL) { return SYSCALL_FAULT_(ENOMEM); }
+
+    while (remaining > 0) {
+        size_t bytes_to_read = remaining < SENDFILE_BUF_SIZE ? remaining : SENDFILE_BUF_SIZE;
+        size_t bytes_read;
+        size_t bytes_written;
+        bytes_read = vfs_read(in_handle->node, buffer, current_offset, bytes_to_read);
+        if (bytes_read <= 0) {
+            if (bytes_read == (size_t)VFS_STATUS_FAILED && total_sent == 0) {
+                free(buffer);
+                return SYSCALL_FAULT_(EIO);
+            }
+            break;
+        }
+        bytes_written = vfs_write(out_handle->node, buffer, out_handle->offset, bytes_read);
+        if (bytes_written == (size_t)VFS_STATUS_FAILED) {
+            if (total_sent == 0) {
+                free(buffer);
+                return SYSCALL_FAULT_(EIO);
+            }
+            break;
+        }
+        if (bytes_written < bytes_read) { bytes_read = bytes_written; }
+        current_offset     += bytes_read;
+        out_handle->offset += bytes_read;
+        total_sent         += bytes_read;
+        remaining          -= bytes_read;
+    }
+    free(buffer);
+    if (offset_ptr != NULL) {
+        *offset_ptr = current_offset;
+    } else {
+        in_handle->offset = current_offset;
+    }
+    return total_sent;
+}
+
 // clang-format off
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = (syscall_t)syscall_exit,
@@ -1920,6 +1919,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_LISTEN]      = (syscall_t)syscall_listen,
     [SYSCALL_ACCEPT]      = (syscall_t)syscall_accept,
     [SYSCALL_CONNECT]     = (syscall_t)syscall_connect,
+    [SYSCALL_SENDFILE]    = (syscall_t)syscall_sendfile,
 
     [SYSCALL_MEMINFO]     = (syscall_t)syscall_cp_meminfo,
     [SYSCALL_CPUINFO]     = (syscall_t)syscall_cp_cpuinfo,

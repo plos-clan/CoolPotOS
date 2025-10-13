@@ -29,7 +29,7 @@ cow_arraylist *cow_list_create() {
     list->blocks_capacity = 4;
     list->lock = SPIN_INIT;
     list->blocks = (cow_block **)calloc(list->blocks_capacity, sizeof(cow_block *));
-    if (list->blocks == NULL) {
+    if ((void*)list->blocks == NULL) {
         free(list);
         return NULL;
     }
@@ -42,7 +42,7 @@ void cow_list_destroy(cow_arraylist *list) {
     for (size_t i = 0; i < list->block_count; i++) {
         block_release(list->blocks[i]);
     }
-    free(list->blocks);
+    free((void*)list->blocks);
     free(list);
 }
 
@@ -101,9 +101,9 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
     // 数组扩容措施
     if (new_block_count > list->blocks_capacity) {
         size_t new_capacity = list->blocks_capacity * 2;
-        cow_block **new_blocks_array = (cow_block **)realloc(list->blocks, new_capacity * sizeof(cow_block*));
+        cow_block **new_blocks_array = (cow_block **)realloc((void*)list->blocks, new_capacity * sizeof(cow_block*));
 
-        if (new_blocks_array == NULL) {
+        if ((void*)new_blocks_array == NULL) {
             spin_unlock(list->lock);
             return 0;
         }

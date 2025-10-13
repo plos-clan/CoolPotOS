@@ -3,7 +3,6 @@
 #include "kprint.h"
 #include "krlibc.h"
 #include "sprintf.h"
-#include "tty.h"
 
 ucb_t kernel_user   = NULL;
 int   user_id_index = 0;
@@ -17,9 +16,9 @@ ucb_t get_kernel_user() {
 }
 
 ucb_t create_user(const char *name, UserLevel permission_level) {
-    if (name == NULL) return NULL;
+    if (name == NULL) { return NULL; }
     ucb_t user = (ucb_t)malloc(sizeof(struct user_control_block));
-    if (user == NULL) return NULL;
+    if (user == NULL) { return NULL; }
     strcpy(user->name, name);
     user->uid              = user_id_index++;
     user->permission_level = permission_level;
@@ -42,7 +41,7 @@ int add_env(const char *kv) {
         }
     }
 
-    char **new_envp = realloc(user_envp, sizeof(char *) * (user_envc + 1));
+    char **new_envp = (char **)realloc((void *)user_envp, sizeof(char *) * (user_envc + 1));
     if (!new_envp) return -1;
 
     user_envp            = new_envp;
@@ -70,10 +69,10 @@ int del_env(const char *key) {
             user_envc--;
 
             if (user_envc == 0) {
-                free(user_envp);
+                free((void *)user_envp);
                 user_envp = NULL;
             } else {
-                char **new_envp = realloc(user_envp, sizeof(char *) * user_envc);
+                char **new_envp = (char **)realloc((void *)user_envp, sizeof(char *) * user_envc);
                 if (new_envp) user_envp = new_envp;
             }
             return 0;
@@ -87,7 +86,7 @@ void user_setup() {
     kernel_user = (ucb_t)malloc(sizeof(struct user_control_block));
     if (kernel_user == NULL) {
         kerror("Kernel user malloc failed.");
-        loop __asm__ volatile("hlt");
+        return;
     }
     strcpy(kernel_user->name, "Kernel");
     kernel_user->uid = user_id_index++;

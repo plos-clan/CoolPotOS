@@ -127,7 +127,7 @@ static inline size_t highest_pow2_le(size_t n) {
     return (size_t)1 << (63 - __builtin_clzll(n));
 }
 static inline int ilog2(size_t x) {
-    return (int)(63 - __builtin_clzll(x));
+    return (63 - __builtin_clzll(x));
 }
 
 static void add_free_range(size_t start_frame, size_t count, int region_id) {
@@ -237,7 +237,7 @@ static bool alloc_contiguous_blocks_order(size_t start_block_index, size_t block
         }
     }
 
-    if (out_first_phys) *out_first_phys = (uint64_t)start_frame * PAGE_SIZE;
+    if (out_first_phys != NULL) *out_first_phys = (uint64_t)start_frame * PAGE_SIZE;
     return true;
 }
 
@@ -249,7 +249,6 @@ static uint64_t alloc_frames_blocksize(int order_k, size_t count) {
     if (count > total_blocks) return 0;
 
     for (size_t start = 0; start + count <= total_blocks; start++) {
-        size_t   start_frame = start * block_frames;
         uint64_t phys        = 0;
         if (alloc_contiguous_blocks_order(start, count, order_k, &phys)) { return phys; }
     }

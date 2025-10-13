@@ -1,6 +1,5 @@
 #include "tmpfs.h"
 #include "errno.h"
-#include "klog.h"
 #include "kprint.h"
 #include "krlibc.h"
 #include "poll.h"
@@ -100,7 +99,7 @@ errno_t tmpfs_delete(void *parent, vfs_node_t node) {
     tmpfs_file_t *f = (tmpfs_file_t *)node->handle;
     for (size_t i = 0; i < p->child_count; i++) {
         if (p->children[i] == f) {
-            memmove(&p->children[i], &p->children[i + 1],
+            memmove((void*)&p->children[i], (void*)&p->children[i + 1],
                     (p->child_count - i - 1) * sizeof(void *));
             p->child_count--;
             free(f->data);
@@ -138,8 +137,8 @@ int tmpfs_poll(void *file, size_t events) {
         if (events & POLLIN) revents |= POLLIN;
         if (events & POLLOUT) revents |= POLLOUT;
         return revents;
-    } else
-        return 0;
+    }
+    return 0;
 }
 
 void tmpfs_close(void *file) {
@@ -148,7 +147,7 @@ void tmpfs_close(void *file) {
 }
 
 void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot, size_t flags) {
-    return general_map(tmpfs_read, file, (uint64_t)addr, offset, size, prot, flags);
+    return general_map(tmpfs_read, file, (uint64_t)addr, size, prot, flags, offset);
 }
 
 static int dummy() {
