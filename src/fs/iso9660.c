@@ -284,7 +284,7 @@ int iso9660_readfile(file_t file, void *addr, size_t offset, size_t size) {
         if (read == 0) break;
     }
     if (st != L9660_OK) return VFS_STATUS_FAILED;
-    return VFS_STATUS_SUCCESS;
+    return total_read;
 }
 
 int iso9660_writefile(file_t file, const void *addr, size_t offset, size_t size) {

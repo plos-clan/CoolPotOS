@@ -261,7 +261,6 @@ void scheduler(registers_t *reg) {
     }
 
     tcb_t current = get_current_task();
-    if (is_debug) for_each_rb_tree();
     tcb_t best = pick_next_task();
     if (best == current) return;
     write_fsbase((uint64_t)get_current_task()); // 下面要用内核态的fs，换上

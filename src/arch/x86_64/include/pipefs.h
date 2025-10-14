@@ -12,9 +12,8 @@ typedef struct task_block_list {
 } task_block_list_t;
 
 typedef struct pipe_info {
-    uint32_t read_ptr;
-    uint32_t write_ptr;
-    char     buf[PIPE_BUFF];
+    uint32_t ptr;
+    char    *buf;
     int      assigned;
 
     int write_fds;
