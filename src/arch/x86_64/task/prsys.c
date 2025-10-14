@@ -4,10 +4,12 @@
  * 非常不建议内核态调用这里的函数, 此函数仅供用户态使用
  * 内核态操作进程请使用 pcb.c 中的函数
  */
+#include "cow_arraylist.h"
 #include "elf_util.h"
 #include "fsgsbase.h"
 #include "heap.h"
 #include "ipc.h"
+#include "klog.h"
 #include "lazyalloc.h"
 #include "lock.h"
 #include "pcb.h"
@@ -15,7 +17,6 @@
 #include "smp.h"
 #include "sprintf.h"
 #include "vfs.h"
-#include "cow_arraylist.h"
 
 extern pid_t       now_tid;
 extern pid_t       now_pid;
@@ -148,7 +149,12 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
 
     new_pcb->page_dir =
         is_vfork ? current_pcb->page_dir : clone_page_directory(current_pcb->page_dir, false);
-
+    if(!vma_manager_clone(&current_pcb->vma_manager,&new_pcb->vma_manager)){
+        logkf("task: cannot clone process vma information.\n");
+        free_tty(new_pcb->tty);
+        free(new_pcb);
+        return -ENOMEM;
+    }
     new_pcb->elf_file = malloc(current_pcb->elf_size);
     memcpy(new_pcb->elf_file, current_pcb->elf_file, current_pcb->elf_size);
     new_pcb->elf_size  = current_pcb->elf_size;
@@ -166,6 +172,7 @@ uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_sta
     new_pcb->vfork       = is_vfork;
     new_pcb->child_pcb   = queue_init();
     new_pcb->child_index = queue_enqueue(current_pcb->child_pcb, new_pcb);
+
 
     tcb_t parent_task = get_current_task();
 
@@ -310,6 +317,7 @@ uint64_t process_execve(char *path, char **argv, char **envp) {
     process->envp   = copy_envp(envp);
     process->envc   = envp_length(envp);
 
+    if(!process->vfork) vma_manager_exit_cleanup(&process->vma_manager);
     page_directory_t *old_page_dir = process->page_dir;
     switch_process_page_directory(clone_page_directory(get_kernel_pagedir(), false));
 

@@ -205,7 +205,7 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
         } else
         err:
             free(normalized_path);
-    return SYSCALL_FAULT_(ENOENT);
+        return SYSCALL_FAULT_(ENOENT);
     }
 next:
     fd_file_handle *fd_handle = calloc(1, sizeof(fd_file_handle));
@@ -253,12 +253,21 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
     if (handle->node->size != (uint64_t)-1) {
-        if (handle->offset >= handle->node->size) return EOK;
+        if (handle->offset >= handle->node->size) {
+            if (handle->node->type & file_pipe) { goto pipe; }
+            return EOK;
+        }
     }
+read:;
     size_t ret = vfs_read(handle->node, buffer, handle->offset, size);
     if (ret == (size_t)VFS_STATUS_FAILED) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) { handle->offset += ret; }
     return ret;
+pipe:;
+    while (handle->offset >= handle->node->size) {
+        scheduler_yield();
+    }
+    goto read;
 }
 
 syscall_(waitpid, pid_t pid, int *status, uint64_t options) {
@@ -285,7 +294,7 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
     if (aligned_len == 0) { return SYSCALL_FAULT_(EINVAL); }
     pcb_t process = get_current_task()->parent_group;
 
-    vma_manager_t *mgr = &process->vma_manager;
+    vma_manager_t *mgr        = &process->vma_manager;
     uint64_t       start_addr = 0;
     if (flags & MAP_FIXED) {
         if (!addr) return SYSCALL_FAULT_(EINVAL);
@@ -900,12 +909,12 @@ syscall_(vfork) {
     return process_fork(regs, true, 0);
 }
 
-syscall_(execve,char *path,char **argv,char **envp) {
+syscall_(execve, char *path, char **argv, char **envp) {
     if (unlikely(path == NULL)) return SYSCALL_FAULT_(EINVAL);
     return process_execve(path, argv, envp);
 }
 
-syscall_(fstat,int fd, struct stat *buf) {
+syscall_(fstat, int fd, struct stat *buf) {
     if (unlikely(buf == NULL)) return SYSCALL_FAULT_(EINVAL);
 
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
@@ -938,25 +947,25 @@ syscall_(clock_gettime, uint64_t arg0, struct timespec *ts) {
     case 6:
     case 4: {
         if (ts != NULL) {
-            uint64_t         nano = nano_time();
-            ts->tv_sec            = nano / 1000000000ULL;
-            ts->tv_nsec           = nano % 1000000000ULL;
+            uint64_t nano = nano_time();
+            ts->tv_sec    = nano / 1000000000ULL;
+            ts->tv_nsec   = nano % 1000000000ULL;
         }
         return SYSCALL_SUCCESS;
     }
     case 0: {
         uint64_t timestamp = mktime();
         if (ts != NULL) {
-            ts->tv_sec          = timestamp;
-            ts->tv_nsec         = 0;
+            ts->tv_sec  = timestamp;
+            ts->tv_nsec = 0;
         }
         return SYSCALL_SUCCESS;
     }
     case 7: {
         if (ts != NULL) {
-            uint64_t         nano = sched_clock();
-            ts->tv_sec            = nano / 1000000000ULL;
-            ts->tv_nsec           = nano % 1000000000ULL;
+            uint64_t nano = sched_clock();
+            ts->tv_sec    = nano / 1000000000ULL;
+            ts->tv_nsec   = nano % 1000000000ULL;
         }
         return SYSCALL_SUCCESS;
     }
@@ -970,7 +979,7 @@ syscall_(clock_getres) {
     return SYSCALL_SUCCESS;
 }
 
-syscall_(sigsuspend,const sigset_t *mask) {
+syscall_(sigsuspend, const sigset_t *mask) {
     if (mask == NULL) return SYSCALL_FAULT_(EINVAL);
     sigset_t old = get_current_task()->blocked;
 
@@ -984,7 +993,7 @@ syscall_(sigsuspend,const sigset_t *mask) {
     return SYSCALL_FAULT_(EINTR);
 }
 
-syscall_(mkdir,char *name,uint64_t mode) {
+syscall_(mkdir, char *name, uint64_t mode) {
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
     char  *npath = vfs_cwd_path_build(name);
     size_t ret   = vfs_mkdir(npath) == VFS_STATUS_FAILED ? -1 : 0;
@@ -992,7 +1001,7 @@ syscall_(mkdir,char *name,uint64_t mode) {
     return ret;
 }
 
-syscall_(lseek,int fd,size_t offset,size_t whence) {
+syscall_(lseek, int fd, size_t offset, size_t whence) {
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
 
@@ -1181,13 +1190,13 @@ syscall_(getdents, int fd, struct dirent *dents, size_t size) {
 }
 
 syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags) {
-    char *resolved = at_resolve_pathname(dirfd, pathname);
-    uint64_t ret = syscall_stat(resolved, buf, 0, 0, 0, 0, 0);
+    char    *resolved = at_resolve_pathname(dirfd, pathname);
+    uint64_t ret      = syscall_stat(resolved, buf, 0, 0, 0, 0, 0);
     free(resolved);
     return ret;
 }
 
-syscall_(statx,int dirfd,char *pathname,uint64_t flags, uint64_t mask,struct statx *buff) {
+syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct statx *buff) {
     if (unlikely(!pathname || check_user_overflow((uint64_t)pathname, strlen(pathname)))) {
         return SYSCALL_FAULT_(EFAULT);
     }
@@ -1226,7 +1235,7 @@ syscall_(statx,int dirfd,char *pathname,uint64_t flags, uint64_t mask,struct sta
     return SYSCALL_SUCCESS;
 }
 
-syscall_(pipe,int *pipefd, uint64_t flags) {
+syscall_(pipe, int *pipefd, uint64_t flags) {
     /* fs/pipefs.c */
     extern vfs_node_t pipefs_root;
     extern int        pipefd_id;
@@ -1252,14 +1261,11 @@ syscall_(pipe,int *pipefd, uint64_t flags) {
 
     pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));
     memset(info, 0, sizeof(pipe_info_t));
-    info->read_fds            = 1;
-    info->write_fds           = 1;
-    info->blocking_read.next  = NULL;
-    info->blocking_write.next = NULL;
-    info->lock                = SPIN_INIT;
-    info->read_ptr            = 0;
-    info->write_ptr           = 0;
-    info->assigned            = 0;
+    info->buf       = calloc(1, PIPE_BUFF);
+    info->read_fds  = 1;
+    info->write_fds = 1;
+    info->ptr       = 0;
+    info->lock      = SPIN_INIT;
 
     pipe_specific_t *read_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
     read_spec->write           = false;
@@ -1287,8 +1293,8 @@ syscall_(pipe,int *pipefd, uint64_t flags) {
     handle_out->flags          = flags;
     handle_out->fd             = queue_enqueue(queue, handle_out);
 
-    pipefd[0] = handle_in->fd;
-    pipefd[1] = handle_out->fd;
+    pipefd[0] = (int)handle_in->fd;
+    pipefd[1] = (int)handle_out->fd;
 
     return SYSCALL_SUCCESS;
 }

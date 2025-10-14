@@ -169,6 +169,7 @@ struct sched_entity *new_entity(tcb_t task, uint64_t prio, smp_cpu_t *cpu) {
     entity->on_rq               = true;
     entity->deadline            = 0;
     entity->vruntime            = ((struct eevdf_t *)cpu->sched_handle)->min_vruntime;
+    entity->min_vruntime        = entity->vruntime;
     entity->exec_start          = sched_clock();
     entity->is_yield            = false;
     set_load_weight(entity);
@@ -282,21 +283,20 @@ static int64_t update_curr_se(struct sched_entity *curr) {
 void update_current_task() {
     struct sched_entity *curr = eevdf_sched->current;
     if (!curr) return;
-    bool resche;
-    if (curr->is_yield) {
-        curr->vruntime = curr->deadline;
-        resche         = update_deadline(curr);
-        curr->is_yield = false;
-        goto resche;
-    }
+    bool    resche;
     int64_t delta_exec;
     delta_exec = update_curr_se(curr);
     if (delta_exec <= 0) return;
+    if (curr->is_yield) {
+        struct sched_entity *last =
+            container_of(rb_last(eevdf_sched->root), struct sched_entity, run_node);
+        curr->vruntime = curr->deadline = last->deadline;
+        curr->is_yield = false;
+    }
     curr->vruntime += calc_delta_fair(delta_exec, curr);
     resche          = update_deadline(curr);
-    update_min_vruntime();
 
-resche:;
+    update_min_vruntime();
     if (resche) {
         rb_erase(&curr->run_node, eevdf_sched->root);
         insert_sched_entity(eevdf_sched->root, curr);

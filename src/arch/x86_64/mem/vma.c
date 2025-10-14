@@ -209,3 +209,71 @@ void vma_manager_exit_cleanup(vma_manager_t *mgr) {
     mgr->vm_total = 0;
     mgr->vm_used  = 0;
 }
+
+bool vma_manager_clone(vma_manager_t *src_mgr,vma_manager_t *dst_mgr) {
+    if (!src_mgr) {
+        return false;
+    }
+    if (!dst_mgr) {
+        return false;
+    }
+
+    // 2. 复制管理器的基本信息
+    dst_mgr->vma_list = NULL; // 链表头先设为 NULL
+    dst_mgr->vm_total = src_mgr->vm_total;
+    dst_mgr->vm_used  = 0; // vm_used 将在插入 VMA 时更新
+
+    vma_t *src_vma = src_mgr->vma_list;
+    vma_t *new_vma = NULL;
+
+    // 3. 遍历源 VMA 链表并深拷贝
+    while (src_vma) {
+        // 3.1. 分配新的 VMA 节点
+        new_vma = vma_alloc();
+        if (!new_vma) {
+            // 如果分配失败，必须清理已复制的部分
+            // vma_manager_exit_cleanup 适合清理，但需要保证它能正确处理部分构建的链表
+            // 这里我们使用一个更轻量级的清理，因为 vma_insert 并没有完全依赖 mgr->vm_used
+            // 但是 vma_manager_exit_cleanup 更健壮
+            vma_manager_exit_cleanup(dst_mgr);
+            return false;
+        }
+
+        // 3.2. 复制 VMA 的基本属性
+        // 复制除了指针以外的所有字段
+        new_vma->vm_start  = src_vma->vm_start;
+        new_vma->vm_end    = src_vma->vm_end;
+        new_vma->vm_flags  = src_vma->vm_flags;
+        new_vma->vm_type   = src_vma->vm_type;
+        new_vma->vm_fd     = src_vma->vm_fd;
+        new_vma->vm_offset = src_vma->vm_offset;
+        new_vma->shm_id    = src_vma->shm_id;
+
+        // 链表指针在 vma_alloc 中初始化为 NULL，在 vma_insert 中设置
+
+        // 3.3. 深拷贝 vm_name
+        if (src_vma->vm_name) {
+            size_t name_len = strlen(src_vma->vm_name) + 1;
+            new_vma->vm_name = (char *)malloc(name_len);
+            if (!new_vma->vm_name) {
+                // 如果名称分配失败，清理并退出
+                vma_free(new_vma);
+                vma_manager_exit_cleanup(dst_mgr);
+                return false;
+            }
+            memcpy(new_vma->vm_name, src_vma->vm_name, name_len);
+        } else {
+            new_vma->vm_name = NULL;
+        }
+
+        if (vma_insert(dst_mgr, new_vma) != 0) {
+            // 这不应该发生，除非 vm_start/vm_end 出错
+            vma_free(new_vma);
+            vma_manager_exit_cleanup(dst_mgr);
+            return false;
+        }
+
+        src_vma = src_vma->vm_next;
+    }
+    return true;
+}
