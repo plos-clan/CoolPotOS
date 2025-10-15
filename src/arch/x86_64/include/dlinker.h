@@ -40,8 +40,6 @@ void find_kernel_symbol();
 
 void dlinker_init();
 
-void module_setup();
-
 void load_all_kernel_module();
 
 void start_all_kernel_module();

@@ -111,6 +111,7 @@ void kmain() {
     init_frame();
     page_setup();
     init_heap();
+    module_setup();
     init_terminal();
     device_manager_init();
     build_kmesg_device();
@@ -123,7 +124,6 @@ void kmain() {
     kinfo("DMI: %s %s, BIOS %s %s", smbios_sys_manufacturer(), smbios_sys_product_name(),
           smbios_bios_version(), smbios_bios_release_date());
     kinfo("kernel cmdline: %s count:%llu", get_kernel_cmdline(), boot_argc);
-    module_setup();
     error_setup();
     float_processor_setup();
     fsgsbase_init();

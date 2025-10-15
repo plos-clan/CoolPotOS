@@ -1,12 +1,14 @@
 #include "terminal.h"
 #include "atom_queue.h"
+#include "bootargs.h"
+#include "dlinker.h"
 #include "flanterm/flanterm.h"
 #include "flanterm/flanterm_backends/fb.h"
 #include "gop.h"
-#include "keyboard.h"
 #include "klog.h"
 #include "krlibc.h"
 #include "lock.h"
+#include "psf.h"
 
 #define FLANTERM_ENABLE 0
 
@@ -93,12 +95,39 @@ size_t get_terminal_col(size_t width) {
 void init_terminal() {
 
 #ifdef FLANTERM_ENABLE
-    fl_context = flanterm_fb_init(NULL, NULL, framebuffer->address, framebuffer->width,
-                                  framebuffer->height, framebuffer->pitch,
-                                  framebuffer->red_mask_size, framebuffer->red_mask_shift,
-                                  framebuffer->green_mask_size, framebuffer->green_mask_shift,
-                                  framebuffer->blue_mask_size, framebuffer->blue_mask_shift, NULL,
-                                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0);
+    cp_module_t *font = get_module_raw(boot_get_cmdline_param("font"));
+    if (font != NULL) {
+        psf_file_header_t *header = (psf_file_header_t *)font->data;
+        if (check_psf_magic(header)) {
+            fl_context = flanterm_fb_init(
+                NULL, NULL, framebuffer->address, framebuffer->width, framebuffer->height,
+                framebuffer->pitch, framebuffer->red_mask_size, framebuffer->red_mask_shift,
+                framebuffer->green_mask_size, framebuffer->green_mask_shift,
+                framebuffer->blue_mask_size, framebuffer->blue_mask_shift,
+                NULL,                 // canvas
+                NULL, NULL,           // ansi_colours, ansi_bright_colours
+                NULL, NULL,           // default_bg, default_fg
+                NULL, NULL,           // default_bg_bright, default_fg_bright
+                get_psf_data(header), // font: 字体位图数据
+                header->width,        // font_width: 字体原始宽度
+                header->height,       // font_height: 字体原始高度
+                1,                    // font_spacing: 间距（例如 1 像素）
+                1,                    // font_scale_x: 水平缩放
+                1,                    // font_scale_y: 垂直缩放
+                0,                     // margin: 边缘留白
+                header->num_glyph
+            );
+            logkf("term: loaded psf2 font file, width:%d height:%d byte_per_glyph: %d\n",
+                  header->width, header->height, header->bytes_per_glyph);
+        }
+    } else {
+        fl_context = flanterm_fb_init(
+            NULL, NULL, framebuffer->address, framebuffer->width, framebuffer->height,
+            framebuffer->pitch, framebuffer->red_mask_size, framebuffer->red_mask_shift,
+            framebuffer->green_mask_size, framebuffer->green_mask_shift,
+            framebuffer->blue_mask_size, framebuffer->blue_mask_shift, NULL, NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 256);
+    }
 #else
     TerminalDisplay display = {.width            = framebuffer->width,
                                .height           = framebuffer->height,

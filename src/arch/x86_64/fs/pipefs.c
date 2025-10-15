@@ -149,6 +149,7 @@ static int dummy() {
 errno_t pipefs_stat(void *file, vfs_node_t node) {
     pipe_specific_t *spec = (pipe_specific_t *)file;
     pipe_info_t     *pipe = spec->info;
+    if(pipe == NULL) return EOK;
     node->size = pipe->ptr;
     return EOK;
 }
