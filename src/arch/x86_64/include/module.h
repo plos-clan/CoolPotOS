@@ -11,4 +11,6 @@ typedef struct {
     char     raw_name[64];
 } cp_module_t;
 
+void module_setup();
 cp_module_t *get_module(const char *module_name);
+cp_module_t *get_module_raw(const char *module_name);

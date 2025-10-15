@@ -150,6 +150,7 @@ function arch_x86_64()
         add_files("src/term/**.c")
         add_files("src/util/**.c")
         add_files("src/driver/**.c")
+        add_files("src/mod/**.c")
         add_includedirs("libs/x86_64")
         add_includedirs("src/arch/x86_64/include")
         add_includedirs("src/include/types")
@@ -169,6 +170,7 @@ function arch_x86_64()
             local iso_dir = "$(builddir)/iso_dir"
             local kmod_dir = "$(builddir)/kmod"
             os.cp("assets/readme.txt", iso_dir.."/readme.txt")
+            os.cp("assets/term.psf", iso_dir.."/term.psf")
             -- KernelModule copy
             os.cp(project.target("extfs"):targetfile(), iso_dir.."/extfs.km")
             os.cp(project.target("e1000"):targetfile(), iso_dir.."/e1000.km")

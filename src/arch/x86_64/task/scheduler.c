@@ -1,16 +1,20 @@
 #include "scheduler.h"
 #include "cpustats.h"
-#include "eevdf.h"
 #include "fsgsbase.h"
 #include "klog.h"
 #include "krlibc.h"
 #include "lock.h"
 #include "lock_queue.h"
 #include "pcb.h"
-#include "procfs.h"
 #include "signal.h"
 #include "smp.h"
 #include "timer.h"
+
+#ifdef MUQSS
+#include "muqss.h"
+#else
+#include "eevdf.h"
+#endif
 
 tcb_t         kernel_head_task = NULL;
 volatile bool is_scheduler     = false;
@@ -65,6 +69,16 @@ void scheduler_nano_sleep(uint64_t nano) {
         }
     }
 }
+
+
+// 调度器抽象接口
+
+void add_entity_sched(tcb_t task){
+
+}
+
+//
+
 
 /*
  * CP_Kernel 内核默认任务分配器 - 公平任务核心分配

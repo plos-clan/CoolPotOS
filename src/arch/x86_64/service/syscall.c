@@ -252,6 +252,9 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     if (unlikely(size == 0)) return SYSCALL_SUCCESS;
     fd_file_handle *handle = queue_get(get_current_task()->parent_group->file_open, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
+    if(handle->node->type & file_pipe && handle->node->size == 0 && handle->flags & O_NONBLOCK){
+        return SYSCALL_FAULT_(EWOULDBLOCK);
+    }
     if (handle->node->size != (uint64_t)-1) {
         if (handle->offset >= handle->node->size) {
             if (handle->node->type & file_pipe) { goto pipe; }
@@ -265,6 +268,7 @@ read:;
     return ret;
 pipe:;
     while (handle->offset >= handle->node->size) {
+        vfs_update(handle->node);
         scheduler_yield();
     }
     goto read;
@@ -1235,7 +1239,7 @@ syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct
     return SYSCALL_SUCCESS;
 }
 
-syscall_(pipe, int *pipefd, uint64_t flags) {
+syscall_(pipe2, int *pipefd, uint64_t flags) {
     /* fs/pipefs.c */
     extern vfs_node_t pipefs_root;
     extern int        pipefd_id;
@@ -1297,6 +1301,10 @@ syscall_(pipe, int *pipefd, uint64_t flags) {
     pipefd[1] = (int)handle_out->fd;
 
     return SYSCALL_SUCCESS;
+}
+
+syscall_(pipe, int *pipefd) {
+    return syscall_pipe2(pipefd, 0, 0, 0, 0, 0, regs);
 }
 
 syscall_(unlink) {
@@ -1886,7 +1894,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_NEWFSTATAT]  = (syscall_t)syscall_newfstatat,
     [SYSCALL_LSTAT]       = (syscall_t)syscall_stat,
     [SYSCALL_PIPE]        = (syscall_t)syscall_pipe,
-    [SYSCALL_PIPE2]       = (syscall_t)syscall_pipe,
+    [SYSCALL_PIPE2]       = (syscall_t)syscall_pipe2,
     [SYSCALL_UNLINK]      = (syscall_t)syscall_unlink,
     [SYSCALL_RMDIR]       = (syscall_t)syscall_rmdir,
     [SYSCALL_UNLINKAT]    = (syscall_t)syscall_unlinkat,

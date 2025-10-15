@@ -31,8 +31,19 @@ void extract_name(const char *input, char *output, size_t output_size) {
 }
 
 cp_module_t *get_module(const char *module_name) {
-    for (int i = 0; i < module_count; i++) {
+    if(module_name == NULL) return NULL;
+    for (size_t i = 0; i < module_count; i++) {
         if (module_ls[i].is_use && strcmp(module_ls[i].module_name, module_name) == 0) {
+            return &module_ls[i];
+        }
+    }
+    return NULL;
+}
+
+cp_module_t *get_module_raw(const char *module_name) {
+    if(module_name == NULL) return NULL;
+    for (size_t i = 0; i < module_count; i++) {
+        if (module_ls[i].is_use && strcmp(module_ls[i].raw_name, module_name) == 0) {
             return &module_ls[i];
         }
     }

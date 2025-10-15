@@ -77,7 +77,7 @@ static inline void do_open(vfs_node_t file) {
 
 static inline void do_update(vfs_node_t file) {
     if (file->type & file_none || file->handle == NULL || file->type & file_dir ||
-        file->type & file_symlink)
+        file->type & file_symlink || file->type & file_pipe)
         do_open(file);
 }
 
