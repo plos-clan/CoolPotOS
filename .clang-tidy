@@ -1,0 +1,24 @@
+---
+Checks: >
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-magic-numbers,
+  misc-*,
+  -misc-unused-parameters,
+  readability-*,
+  performance-*,
+  portability-*,
+  bugprone-*,
+  modernize-*,
+  clang-analyzer-*,
+  -readability-braces-around-statements,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-implicit-bool-conversion,
+  -readability-math-missing-parentheses,
+  -readability-uppercase-literal-suffix,
+  -bugprone-reserved-identifier,
+  -bugprone-easily-swappable-parameters,
+  -modernize-use-nullptr,
+
+FormatStyle: none
