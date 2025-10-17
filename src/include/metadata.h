@@ -65,7 +65,7 @@
 #endif
 
 #define KERNEL_NAME                                                                                \
-    (KERNEL_NAME_ "-" KERNEL_ARCH"."KERNEL_ARCH_VERSION "-" KERNEL_VERSION "_(git:" GIT_VERSION ")_{" COMPILER_NAME       \
+    (KERNEL_NAME_ "-" KERNEL_ARCH "-" KERNEL_VERSION"."KERNEL_ARCH_VERSION "_(git:" GIT_VERSION ")_{" COMPILER_NAME       \
                   " " COMPILER_VERSION "}")
 
 #define MAX_CPU                256                      // 最大支持CPU核心数 256

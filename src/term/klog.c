@@ -1,4 +1,4 @@
-#define STB_SPRINTF_IMPLEMENTATION
+
 #include "term/klog.h"
 #include "lib/sprintf.h"
 
