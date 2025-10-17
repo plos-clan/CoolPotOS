@@ -1,1 +1,34 @@
 #pragma once
+
+#include "types/stdint.h"
+#include "types/stddef.h"
+#include "types/stdbool.h"
+
+typedef int pid_t;
+typedef int errno_t;
+
+
+#define __attr(...) __attribute__((__VA_ARGS__))
+#define __wur       __attribute__((warn_unused_result))
+#define _rest       __restrict
+#define __THROW     __attr(nothrow, leaf)
+
+// 函数返回内存地址，调用者获得内存所有权
+#define ownership_returns(type)       __attr(ownership_returns(type))
+// 函数获取内存所有权并释放内存
+#define ownership_takes(type, nparam) __attr(ownership_takes(type, nparam))
+// 函数获取内存所有权
+#define ownership_holds(type, nparam) __attr(ownership_holds(type, nparam))
+
+#ifdef __clang__
+#    define __attr_dealloc(func, nparam) __attr_malloc
+#else
+#    define __attr_dealloc(func, nparam) __attr(warn_unused_result, malloc(func, nparam))
+#endif
+#define __attr_malloc         __attr(warn_unused_result, malloc)
+#define __attr_allocsize(...) __attr(alloc_size(__VA_ARGS__))
+#define __nnull(...)          __attr(nonnull(__VA_ARGS__))
+#define finline               static inline
+
+#define USED           __attr(used)
+#define SECTION(name)  __attr(section(name))

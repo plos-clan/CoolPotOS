@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(elf64-x86-64)
 
-ENTRY(_start)
+ENTRY(kmain)
 
 PHDRS {
     limine_requests PT_LOAD FLAGS(4);
