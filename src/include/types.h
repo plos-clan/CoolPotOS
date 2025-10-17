@@ -7,6 +7,11 @@
 typedef int pid_t;
 typedef int errno_t;
 
+typedef __INTPTR_TYPE__ ssize_t;
+typedef __INTPTR_TYPE__ ptrdiff_t;
+typedef size_t          usize;
+typedef ssize_t         isize;
+typedef int             wchar_t;
 
 #define __attr(...) __attribute__((__VA_ARGS__))
 #define __wur       __attribute__((warn_unused_result))
