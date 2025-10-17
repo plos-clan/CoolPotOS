@@ -76,6 +76,10 @@ Cela permet à votre éditeur de localiser les fichiers sources et d'améliorer 
 
 Ce projet est sous [Licence MIT](LICENSE).
 
+## Documentation
+
+Pour une documentation technique détaillée, veuillez consulter [docs/README.md](docs/README.md).
+
 ## Fonctionnalités
 
 ### AMD64
