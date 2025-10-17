@@ -1,8 +1,19 @@
 #pragma once
 
+#define __IRQHANDLER __attribute__((interrupt))
+
+#define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
+#define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
+#define PADDING_REQ(size, to) ((size + (to) - 1) & ~((to) - 1) / (to))
+
+#define UNUSED(...)                                                                                \
+    do {                                                                                           \
+        (void)(0, ##__VA_ARGS__);                                                                  \
+    } while (0)
+
+#include "metadata.h"
 #include "types.h"
 #include "types/limits.h"
-#include "metadata.h"
 
 void arch_pause();
 void arch_wait_for_interrupt();
@@ -22,5 +33,6 @@ char   *strtok(char *str, const char *delim);
 int64_t strtol(const char *str, char **endptr, int base);
 int     memcmp(const void *a_, const void *b_, size_t size);
 void   *memcpy(void *dest, const void *src, size_t n);
+int     isdigit(int c);
 
 int isspace(int c);

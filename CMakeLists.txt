@@ -11,6 +11,10 @@ set(CMAKE_ASM_COMPILER clang)
 set(CMAKE_LINKER lld)
 set(LIMINE_TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/limine_temp)
 
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose build type: Debug Release RelWithDebInfo MinSizeRel")
+endif ()
+
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
     set(TARGET_ARCH x86_64)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "riscv64")
@@ -82,6 +86,18 @@ add_subdirectory(module/e1000)
 
 add_executable(kernel)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(COMPILE_MODE
+            -g0
+            -O3
+    )
+else()
+    set(COMPILE_MODE
+            -g3
+            -O0
+    )
+endif()
+
 target_compile_options(kernel PRIVATE
         -nostdinc
         -nostdlib
@@ -94,19 +110,20 @@ target_compile_options(kernel PRIVATE
         -flto
 )
 
-file(GLOB X86_64_SOURCES
+file(GLOB_RECURSE X86_64_SOURCES
         "src/arch/x86_64/*.c"
 )
 
-file(GLOB RISCV64_SOURCES
+file(GLOB_RECURSE RISCV64_SOURCES
         "src/arch/riscv64/*.c"
 )
 
-file(GLOB FS_SOURCES "src/fs/*.c")
-file(GLOB UTIL_SOURCES "src/util/*.c")
-file(GLOB TERM_SOURCES "src/term/*.c")
-file(GLOB DRIVER_SOURCES "src/driver/*.c")
-file(GLOB MOD_SOURCES "src/mod/*.c")
+file(GLOB_RECURSE FS_SOURCES "src/fs/*.c")
+file(GLOB_RECURSE UTIL_SOURCES "src/util/*.c")
+file(GLOB_RECURSE TERM_SOURCES "src/term/*.c")
+file(GLOB_RECURSE DRIVER_SOURCES "src/driver/*.c")
+file(GLOB_RECURSE MOD_SOURCES "src/mod/*.c")
+file(GLOB_RECURSE MEM_SOURCES "src/mem/*.c")
 
 if (TARGET_ARCH STREQUAL "x86_64")
 
@@ -114,12 +131,14 @@ if (TARGET_ARCH STREQUAL "x86_64")
             -target x86_64-freestanding
             -mno-80387 -mno-mmx -mno-sse -mno-sse2
             -mno-red-zone -msoft-float
+            ${COMPILE_MODE}
     )
 
     target_link_options(kernel PRIVATE
             -target x86_64-freestanding
             -T ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/x86_64/linker.ld
             -nostdlib
+            -fno-stack-protector
             -fuse-ld=lld
     )
     target_sources(kernel PRIVATE
@@ -129,11 +148,15 @@ if (TARGET_ARCH STREQUAL "x86_64")
             ${DRIVER_SOURCES}
             ${TERM_SOURCES}
             ${MOD_SOURCES}
+            ${MEM_SOURCES}
     )
     target_include_directories(kernel PUBLIC
             src/arch/x86_64/include
             src/include/types
             src/include
+    )
+    target_link_libraries(kernel PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libllvm_x64.a
     )
 
     set_target_properties(kernel PROPERTIES OUTPUT_NAME "cpkrnl_x64.elf")
@@ -142,6 +165,7 @@ elseif (TARGET_ARCH STREQUAL "riscv64")
     target_compile_options(kernel PRIVATE
             -target riscv64-unknown-elf
             -march=rv64gc -mabi=lp64d -mcmodel=medany -mno-relax
+            ${COMPILE_MODE}
     )
     target_link_options(kernel PRIVATE
             -target riscv64-unknown-elf
@@ -156,11 +180,15 @@ elseif (TARGET_ARCH STREQUAL "riscv64")
             ${DRIVER_SOURCES}
             ${TERM_SOURCES}
             ${MOD_SOURCES}
+            ${MEM_SOURCES}
     )
     target_include_directories(kernel PUBLIC
             src/arch/riscv64/include
             src/include/types
             src/include
+    )
+    target_link_libraries(kernel PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgcc_rv64.a
     )
     set_target_properties(kernel PROPERTIES OUTPUT_NAME "cpkrnl_rv64.elf")
 endif ()
@@ -210,9 +238,18 @@ if (TARGET_ARCH STREQUAL "x86_64")
             COMMENT "ISO image created at: ${ISO_FILE}"
     )
 
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(RUN_ARG)
+    else()
+        set(RUN_ARG
+                -s
+                -S
+        )
+    endif()
+
     add_custom_target(run
             DEPENDS iso
-            COMMAND qemu-system-x86_64 -M q35 -cpu Haswell,+x2apic,+avx -smp 4 -serial stdio -m 2048M -audiodev sdl,id=audio0 -device sb16,audiodev=audio0 -netdev user,id=net0 -device e1000,netdev=net0 -drive if=pflash,format=raw,file=${CMAKE_CURRENT_SOURCE_DIR}/assets/ovmf-code_x64.fd -cdrom ${ISO_FILE}
+            COMMAND qemu-system-x86_64 -M q35 -cpu Haswell,+x2apic,+avx -smp 4 -serial stdio -m 2048M -audiodev sdl,id=audio0 -device sb16,audiodev=audio0 -netdev user,id=net0 -device e1000,netdev=net0 -drive if=pflash,format=raw,file=${CMAKE_CURRENT_SOURCE_DIR}/assets/ovmf-code_x64.fd -cdrom ${ISO_FILE} ${RUN_ARG}
             COMMENT "Running QEMU for x86_64 ISO..."
     )
 
