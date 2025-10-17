@@ -315,3 +315,7 @@ int64_t strtol(const char *str, char **endptr, int base) { // NOLINT(*-function-
     if ((void*)endptr != NULL) *endptr = (char *)(any ? s - 1 : str);
     return (int64_t)(acc);
 }
+
+int isdigit(int c) {
+    return (c >= '0' && c <= '9');
+}

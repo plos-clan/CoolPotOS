@@ -1,4 +1,5 @@
 #include "krlibc.h"
+#include "term/klog.h"
 
 void arch_pause() {
     __asm__ volatile("pause");
@@ -26,4 +27,10 @@ __attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
                      "mov   %rdx, %rcx\n\t"
                      "rep movsb\n\t" // 复制剩余字节
                      "ret\n\t");
+}
+
+__attribute__((noreturn)) void __stack_chk_fail(void) {
+    __asm__ volatile("cli");
+    logkf("!!! KERNEL PANIC: Stack smashing detected! System halted.");
+    while(true) arch_wait_for_interrupt();
 }

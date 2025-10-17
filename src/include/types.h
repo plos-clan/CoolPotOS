@@ -32,3 +32,5 @@ typedef int errno_t;
 
 #define USED           __attr(used)
 #define SECTION(name)  __attr(section(name))
+
+#define LIMINE_REQUEST USED SECTION(".limine_requests") static volatile
