@@ -5,3 +5,4 @@
 
 struct limine_framebuffer_response *get_framebuffer_response();
 void gop_clear(struct limine_framebuffer *framebuffer, uint32_t color);
+void init_gop();

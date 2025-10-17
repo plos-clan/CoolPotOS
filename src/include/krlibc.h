@@ -11,6 +11,12 @@
         (void)(0, ##__VA_ARGS__);                                                                  \
     } while (0)
 
+#define container_of(ptr, type, member)                                                            \
+    ({                                                                                             \
+        uint64_t __mptr = ((uint64_t)(ptr));                                                       \
+        (type *)((char *)__mptr - offsetof(type, member));                                         \
+    })
+
 // 分支预测优化: x 很可能为假
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
@@ -47,3 +53,6 @@ void   *memcpy(void *dest, const void *src, size_t n);
 int     isdigit(int c);
 
 int isspace(int c);
+
+int sprintf(char *buf, char const *fmt, ...);
+int snprintf(char *buf, int count, const char *fmt, ...);
