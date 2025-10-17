@@ -67,3 +67,7 @@
 #define KERNEL_NAME                                                                                \
     (KERNEL_NAME_ "-" KERNEL_ARCH"."KERNEL_ARCH_VERSION "-" KERNEL_VERSION "_(git:" GIT_VERSION ")_{" COMPILER_NAME       \
                   " " COMPILER_VERSION "}")
+
+#define MAX_CPU                256                      // 最大支持CPU核心数 256
+#define KERNEL_HEAP_START      0xffff900000000000       // 内核堆起始地址
+#define KERNEL_HEAP_SIZE       0x6400000                // 内核堆大小 100MB

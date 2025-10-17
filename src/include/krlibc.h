@@ -11,12 +11,23 @@
         (void)(0, ##__VA_ARGS__);                                                                  \
     } while (0)
 
+// 分支预测优化: x 很可能为假
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
+// 分支预测优化: x 很可能为真
+#define likely(x) __builtin_expect(!!(x), 1)
+
 #include "metadata.h"
 #include "types.h"
 #include "types/limits.h"
 
 void arch_pause();
 void arch_wait_for_interrupt();
+void arch_close_interrupt();
+void arch_open_interrupt();
+bool arch_check_interrupt();
+
+void not_null_assert(void *ptr,const char *msg);
 
 void   *memset(void *dest, int c, size_t n);
 void   *memmove(void *dest, const void *src, size_t n);

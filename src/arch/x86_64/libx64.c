@@ -32,5 +32,22 @@ __attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
 __attribute__((noreturn)) void __stack_chk_fail(void) {
     __asm__ volatile("cli");
     logkf("!!! KERNEL PANIC: Stack smashing detected! System halted.");
-    while(true) arch_wait_for_interrupt();
+    while (true)
+        arch_wait_for_interrupt();
+}
+
+void arch_close_interrupt() {
+    __asm__ volatile("cli");
+}
+
+void arch_open_interrupt() {
+    __asm__ volatile("sti");
+}
+
+bool arch_check_interrupt(){
+    uint64_t rflags;
+    __asm__ volatile("pushfq\n\t"
+                     "pop %0"
+                     : "=r"(rflags));
+    return (rflags & (1 << 9)) != 0;
 }

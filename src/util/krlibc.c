@@ -319,3 +319,11 @@ int64_t strtol(const char *str, char **endptr, int base) { // NOLINT(*-function-
 int isdigit(int c) {
     return (c >= '0' && c <= '9');
 }
+
+void not_null_assert(void *ptr,const char *msg){
+    if(unlikely(ptr == NULL)){
+        arch_close_interrupt();
+        //TODO msg;
+        arch_wait_for_interrupt();
+    }
+}
