@@ -38,4 +38,6 @@ struct iso_info {
     uint16_t flags;
 };
 
-void apic_init();
+void ap_local_apic_init();
+uint64_t lapic_id();
+void     apic_init();
