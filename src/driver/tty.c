@@ -20,6 +20,14 @@ errno_t register_tty_device(tty_device_t *device){
     return EOK;
 }
 
+errno_t delete_tty_device(tty_device_t *device) {
+    if(device == NULL) return -EINVAL;
+    free(device->private_data);
+    llist_delete(&device->node);
+    free(device);
+    return EOK;
+}
+
 tty_device_t *get_tty_device(const char *name){
     if(name == NULL) return NULL;
     tty_device_t *pos = NULL;
@@ -39,7 +47,7 @@ void init_tty() {
 
 void init_tty_session() {
     tty_device_t *device = get_tty_device(boot_get_cmdline_param("console"));
-    device = device == NULL ? container_of(tty_device_list.next,tty_device_t ,node) : device;
+    device = device == NULL ? container_of(tty_device_list.prev,tty_device_t ,node) : device;
     kernel_session = calloc(1,sizeof(tty_t));
     kernel_session->device = device;
     create_session_terminal(kernel_session);

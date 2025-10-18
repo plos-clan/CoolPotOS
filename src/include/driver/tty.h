@@ -127,8 +127,8 @@ typedef struct tty_virtual_device tty_device_t;
 typedef struct tty_session        tty_t;
 
 typedef struct tty_device_ops {
-    int (*write)(tty_device_t *device, const char *buf, size_t count);
-    ssize_t (*read)(tty_device_t *device, char *buf, size_t count);
+    size_t (*write)(tty_device_t *device, const char *buf, size_t count);
+    size_t (*read)(tty_device_t *device, char *buf, size_t count);
     void (*flush)(tty_device_t *res);
     int (*ioctl)(tty_device_t *device, uint32_t cmd, uint32_t arg);
 } tty_device_ops_t;
@@ -148,7 +148,9 @@ struct tty_graphics_ {
     uint8_t  blue_mask_shift;
 };
 
-struct tty_serial_ {};
+struct tty_serial_ {
+    uint16_t port;
+};
 
 typedef struct tty_virtual_device { //TTY 设备
     enum tty_device_type type;
@@ -193,5 +195,6 @@ extern tty_t *kernel_session;
 
 tty_device_t *alloc_tty_device(enum tty_device_type type);
 errno_t       register_tty_device(tty_device_t *device);
+errno_t       delete_tty_device(tty_device_t *device);
 void          init_tty();
 void          init_tty_session();
