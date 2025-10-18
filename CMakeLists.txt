@@ -112,6 +112,7 @@ target_compile_options(kernel PRIVATE
 
 file(GLOB_RECURSE X86_64_SOURCES
         "src/arch/x86_64/*.c"
+        "src/arch/x86_64/*.S"
 )
 
 file(GLOB_RECURSE RISCV64_SOURCES
@@ -124,6 +125,8 @@ file(GLOB_RECURSE TERM_SOURCES "src/term/*.c")
 file(GLOB_RECURSE DRIVER_SOURCES "src/driver/*.c")
 file(GLOB_RECURSE MOD_SOURCES "src/mod/*.c")
 file(GLOB_RECURSE MEM_SOURCES "src/mem/*.c")
+file(GLOB_RECURSE TASK_SOURCES "src/task/*.c")
+file(GLOB_RECURSE INT_SOURCES "src/int/*.c")
 
 if (TARGET_ARCH STREQUAL "x86_64")
 
@@ -141,6 +144,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
             -fno-stack-protector
             -fuse-ld=lld
     )
+
     target_sources(kernel PRIVATE
             ${X86_64_SOURCES}
             ${FS_SOURCES}
@@ -149,6 +153,8 @@ if (TARGET_ARCH STREQUAL "x86_64")
             ${TERM_SOURCES}
             ${MOD_SOURCES}
             ${MEM_SOURCES}
+            ${TASK_SOURCES}
+            ${INT_SOURCES}
     )
     target_include_directories(kernel PUBLIC
             src/arch/x86_64/include
@@ -181,6 +187,8 @@ elseif (TARGET_ARCH STREQUAL "riscv64")
             ${TERM_SOURCES}
             ${MOD_SOURCES}
             ${MEM_SOURCES}
+            ${TASK_SOURCES}
+            ${INT_SOURCES}
     )
     target_include_directories(kernel PUBLIC
             src/arch/riscv64/include

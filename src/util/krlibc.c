@@ -1,4 +1,5 @@
 #include "krlibc.h"
+#include "mem/heap.h"
 
 #define WT         size_t
 #define WS         (sizeof(WT))
@@ -326,4 +327,46 @@ void not_null_assert(void *ptr,const char *msg){
         //TODO msg;
         arch_wait_for_interrupt();
     }
+}
+
+char *strdup(const char *str) {
+    if (str == NULL) return NULL;
+
+    char *strat = (char *)str;
+    int   len   = 0;
+    while (*str++ != '\0')
+        len++;
+    char *ret = (char *)malloc(len + 1);
+
+    while ((*ret++ = *strat++) != '\0') {}
+
+    return ret - (len + 1);
+}
+
+char *strndup(const char *s, size_t n) {
+    if (s == NULL) { return NULL; }
+
+    size_t actual_len = strlen(s);
+    if (n < actual_len) { actual_len = n; }
+    char *new_str = (char *)malloc(actual_len + 1);
+    if (new_str == NULL) { return NULL; }
+
+    size_t i;
+    for (i = 0; i < actual_len; i++) {
+        new_str[i] = s[i];
+    }
+
+    new_str[actual_len] = '\0';
+
+    return new_str;
+}
+
+
+char *strrchr(const char *s, int c) {
+    char *last = NULL;
+    while (*s) {
+        if (*s == (char)c) { last = (char *)s; }
+        s++;
+    }
+    return (c == '\0') ? (char *)s : last;
 }

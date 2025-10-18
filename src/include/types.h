@@ -4,6 +4,8 @@
 #include "types/stddef.h"
 #include "types/stdbool.h"
 
+typedef void (*free_t)(void *ptr);
+
 typedef int pid_t;
 typedef int errno_t;
 
