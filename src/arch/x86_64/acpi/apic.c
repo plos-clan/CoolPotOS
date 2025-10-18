@@ -7,11 +7,12 @@
 #include "mem/frame.h"
 #include "mem/page.h"
 #include "term/klog.h"
+#include "task/smp.h"
 
 bool     x2apic_mode = false;
 uint64_t lapic_address;
 
-uint64_t calibrated_timer_initial;
+uint64_t calibrated_timer_initial = 0;
 
 static struct ioapic_info found_ioapics[MAX_IOAPICS];
 static struct iso_info    found_isos[MAX_ISO];
@@ -136,7 +137,7 @@ static void apic_handle_ioapic(struct acpi_madt_ioapic *ioapic_madt) {
     ioapic->gsi_base  = ioapic_madt->gsi_base;
     ioapic->irq_count = (ioapic_mmio_read(ioapic->mmio_base, 0x01) & 0x00FF0000) >> 16;
 
-    printk("IOAPIC found: MMIO %p, GSI base %d, IRQs %d\n", (void *)ioapic->mmio_base,
+    kinfo("IOAPIC found: MMIO %p, GSI base %d, IRQs %d", (void *)ioapic->mmio_base,
            ioapic->gsi_base, ioapic->irq_count);
 
     ioapic->id = ioapic_madt->id;
@@ -174,6 +175,22 @@ void local_apic_init() {
     kinfo("Setup local %s.", x2apic_mode ? "x2APIC" : "APIC");
 }
 
+void ap_local_apic_init() {
+    uint64_t value  = rdmsr(0x1b);
+    value          |= (1UL << 11);
+    if (x2apic_mode) value |= (1UL << 10);
+    wrmsr(0x1b, value);
+
+    lapic_timer_stop();
+
+    lapic_write(LAPIC_REG_SPURIOUS, 0xff | (1 << 8));
+    lapic_write(LAPIC_REG_TIMER_DIV, 11);
+    lapic_write(LAPIC_REG_TIMER, timer);
+
+    lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | (1 << 17));
+    lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
+}
+
 void apic_init() {
     struct uacpi_table madt_table;
     uacpi_status       status = uacpi_table_find_by_signature("APIC", &madt_table);
@@ -182,7 +199,7 @@ void apic_init() {
     lapic_address = (uint64_t)phys_to_virt((uint64_t)madt->local_interrupt_controller_address);
     page_map_range(get_kernel_pagedir(), lapic_address, madt->local_interrupt_controller_address,
                    PAGE_SIZE, KERNEL_PTE_FLAGS);
-
+    x2apic_mode = x2apic_mode_supported();
     uint64_t current = 0;
     for (;;) {
         if (current + ((uint32_t)sizeof(struct acpi_madt) - 1) >= madt->hdr.length) { break; }

@@ -1,5 +1,7 @@
 #include "description_table.h"
 #include "term/klog.h"
+#include "task/smp.h"
+#include "apic.h"
 
 gdt_entries_t       gdt_entries;
 struct gdt_register gdt_pointer;
@@ -58,5 +60,7 @@ void tss_setup() {
 }
 
 void set_kernel_stack(uint64_t rsp) {
+    cpu_local_t *cpu = get_cpu_local(lapic_id());
+
     tss0.rsp[0] = rsp;
 }

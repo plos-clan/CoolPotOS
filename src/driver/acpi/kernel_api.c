@@ -27,7 +27,24 @@ void uacpi_kernel_unmap(void *addr, uacpi_size len) {
     unmap_page_range(get_kernel_pagedir(), (uint64_t)addr & ~(PAGE_SIZE - 1), len);
 }
 
-void uacpi_kernel_log(uacpi_log_level, const uacpi_char *str) {
+void uacpi_kernel_log(uacpi_log_level level, const uacpi_char *str) {
+    printk("[");
+    switch (level) {
+    case UACPI_LOG_INFO:
+        color_printk(CYAN, BLACK, "  INFO  ");
+        break;
+    case UACPI_LOG_TRACE:
+    case UACPI_LOG_ERROR:
+        color_printk(RED, BLACK, " FAILED ");
+        break;
+    case UACPI_LOG_WARN:
+        color_printk(YELLOW, BLACK, "  WARN  ");
+        break;
+    case UACPI_LOG_DEBUG:
+        color_printk(BLUE, BLACK, "DEBUG (%s:%d)", __FILE__, __LINE__);
+        break;
+    }
+    printk("]: ");
     printk(str);
 }
 
@@ -42,7 +59,7 @@ uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handl
     return UACPI_STATUS_NOT_FOUND;
 }
 
-void uacpi_kernel_pci_device_close(uacpi_handle) {}
+void uacpi_kernel_pci_device_close(uacpi_handle handle) {}
 
 uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacpi_u8 *value) {
     //    pci_device_t *pci_device = device;
@@ -279,7 +296,7 @@ uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32               irq,
 
 #endif
 
-uacpi_status uacpi_kernel_uninstall_interrupt_handler(uacpi_interrupt_handler,
+uacpi_status uacpi_kernel_uninstall_interrupt_handler(uacpi_interrupt_handler handler,
                                                       uacpi_handle irq_handle) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }

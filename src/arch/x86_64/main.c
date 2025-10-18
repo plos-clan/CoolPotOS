@@ -1,3 +1,4 @@
+#include "apic.h"
 #include "bootarg.h"
 #include "description_table.h"
 #include "driver/acpi.h"
@@ -12,8 +13,10 @@
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
+#include "task/task.h"
 #include "term/klog.h"
-#include "apic.h"
+#include "task/smp.h"
+#include "fsgsbase.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -36,12 +39,16 @@ USED _Noreturn void kmain() {
     init_err_handle();
     generic_interrupt_table_init();
     init_block_device_manager();
+    fsgsbase_init();
     vfs_init();
     intctl_init();
     acpi_init();
     hpet_init();
     apic_init();
+    setup_task();
+    smp_init();
     ksuccess("Kernel load done!");
+    arch_open_interrupt();
     while (true)
         arch_wait_for_interrupt();
 }
