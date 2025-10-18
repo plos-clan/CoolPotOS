@@ -21,4 +21,5 @@ typedef struct {
     HpetTimer timers[];
 } __attribute__((packed)) volatile HpetInfo;
 
+uint64_t elapsed();
 void hpet_init();

@@ -13,6 +13,7 @@
 #include "mem/heap.h"
 #include "mem/page.h"
 #include "term/klog.h"
+#include "apic.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -39,7 +40,7 @@ USED _Noreturn void kmain() {
     intctl_init();
     acpi_init();
     hpet_init();
-
+    apic_init();
     ksuccess("Kernel load done!");
     while (true)
         arch_wait_for_interrupt();
