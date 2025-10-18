@@ -200,12 +200,12 @@ void uacpi_kernel_free_mutex(uacpi_handle lock) {
 
 uacpi_status uacpi_kernel_acquire_mutex(uacpi_handle lock, uacpi_u16 timeout) {
     (void)timeout;
-    if (lock) spin_lock(*(spin_t*)lock);
+    if (lock) spin_lock(*(spin_t *)lock);
     return UACPI_STATUS_OK;
 }
 
 void uacpi_kernel_release_mutex(uacpi_handle lock) {
-    if (lock) spin_unlock(*(spin_t*)lock);
+    if (lock) spin_unlock(*(spin_t *)lock);
 }
 
 uacpi_handle uacpi_kernel_create_event(void) {
@@ -261,7 +261,10 @@ uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32               irq,
     uacpi_irq_handler_arg_t *arg = malloc(sizeof(uacpi_irq_handler_arg_t));
     arg->irq_handler             = irq_handler;
     arg->ctx                     = ctx;
-    //TODO irq_regist_irq(irq + 32, uacpi_irq_handler, irq, arg, &apic_controller, "uacpi_irq_handler");
+#    if defined(__x86_64__) || defined(__amd64__)
+    extern intctl_t apic_controller;
+    irq_regist_irq(irq + 32, uacpi_irq_handler, irq, arg, &apic_controller, "uacpi_irq_handler");
+#    endif
     return UACPI_STATUS_OK;
 }
 
@@ -292,13 +295,13 @@ void uacpi_kernel_free_spinlock(uacpi_handle lock) {
 }
 
 uacpi_cpu_flags uacpi_kernel_lock_spinlock(uacpi_handle lock) {
-    if (lock) spin_lock(*(spin_t*)lock);
+    if (lock) spin_lock(*(spin_t *)lock);
     return 0;
 }
 
 void uacpi_kernel_unlock_spinlock(uacpi_handle lock, uacpi_cpu_flags flags) {
     (void)flags;
-    if (lock) spin_unlock(*(spin_t*)lock);
+    if (lock) spin_unlock(*(spin_t *)lock);
 }
 
 uacpi_status uacpi_kernel_schedule_work(uacpi_work_type type, uacpi_work_handler handler,
