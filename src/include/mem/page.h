@@ -69,4 +69,18 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
  */
 void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size);
 
+/**
+ * 获取当前页表
+ * 注意: 必须在 smp 初始化后使用
+ * @return 当前页表 (为NULL则smp未初始化)
+ */
+page_directory_t *current_directory();
+
+/**
+ * 切换当前页表 (当前进程的页表也会被切换)
+ * @param directory 源页表
+ * @return 被换下来的页表
+ */
+page_directory_t *switch_context_directory(page_directory_t *directory);
+
 void init_page();

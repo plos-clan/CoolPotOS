@@ -60,6 +60,7 @@ static uint32_t ioapic_mmio_read(uintptr_t base, uint32_t reg) {
 }
 
 uint32_t isa_irq_to_gsi(uint8_t isa_irq) {
+    isa_irq -= IRQ_BASE_VECTOR;
     for (size_t i = 0; i < found_iso_count; i++) {
         if (found_isos[i].irq_source == isa_irq) { return found_isos[i].gsi; }
     }
@@ -77,10 +78,10 @@ static struct ioapic_info *find_ioapic(uint32_t gsi) {
 }
 
 void ioapic_add(uint8_t vector, uint32_t irq) {
-    struct ioapic_info *io = find_ioapic(irq);
+    struct ioapic_info *io = find_ioapic(isa_irq_to_gsi(vector));
     if (!io) return;
 
-    uint32_t irq0     = irq - irq;
+    uint32_t irq0     = irq - io->gsi_base;
     uint32_t ioredtbl = 0x10 + irq0 * 2;
     uint64_t redirect = vector | ((uint64_t)lapic_id() << 56);
 
@@ -165,7 +166,7 @@ void local_apic_init() {
     uint64_t b = nano_time();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t)0));
     for (;;)
-        if (nano_time() - b >= 100000000) break;
+        if (nano_time() - b >= 1000000) break;
     uint64_t lapic_timer     = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / LAPIC_TIMER_SPEED);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
@@ -234,8 +235,8 @@ int64_t apic_unmask(uint64_t irq) {
     return 0;
 }
 
-int64_t apic_install(uint64_t irq, uint64_t arg) {
-    ioapic_add(irq, arg);
+int64_t apic_install(uint64_t vector, uint64_t irq) {
+    ioapic_add(vector, irq);
     return 0;
 }
 

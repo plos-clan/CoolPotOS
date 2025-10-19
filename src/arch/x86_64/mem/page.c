@@ -4,11 +4,10 @@
 #include "io.h"
 #include "lock.h"
 #include "krlibc.h"
+#include "task/smp.h"
 
 extern page_directory_t kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
-static page_directory_t *current_directory = NULL;
-
 static spin_t page_lock = SPIN_INIT;
 
 static void page_table_clear(page_table_t *table) {
@@ -111,23 +110,24 @@ page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     return new_directory;
 }
 
-void switch_page_directory(page_directory_t *dir) {
-//    if (current_cpu->ready) {
-//        current_cpu->directory = dir;
-//    } else {
-        current_directory = dir;
-//    }
+void switch_page_directory0(page_directory_t *dir) {
     page_table_t *physical_table = (page_table_t*)virt_to_phys(dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
+}
+
+void switch_page_directory(page_directory_t *dir) {
+    if (arch_current_cpu()) {
+        arch_current_cpu()->directory = dir;
+    }
+    switch_page_directory0(dir);
 }
 
 void arch_page_setup_l2() {
     page_directory_t *new_directory = clone_page_directory(&kernel_page_dir, true);
     kernel_page_dir.table           = new_directory->table;
     free(new_directory);
-    switch_page_directory(&kernel_page_dir);
+    switch_page_directory0(&kernel_page_dir);
     double_fault_page = get_cr3();
-    current_directory = &kernel_page_dir;
 }
 
 void arch_page_setup(){

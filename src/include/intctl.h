@@ -26,7 +26,7 @@ typedef struct intctl {
     int64_t (*send_eoi)(uint64_t irq);
     int64_t (*_mask)(uint64_t irq);
     int64_t (*_unmask)(uint64_t irq);
-    int64_t (*_install)(uint64_t irq, uint64_t arg);
+    int64_t (*_install)(uint64_t vector, uint64_t irq);
 } intctl_t;
 
 typedef struct irq_action {

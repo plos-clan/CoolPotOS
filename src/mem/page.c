@@ -1,6 +1,8 @@
 #include "mem/page.h"
 #include "mem/frame.h"
 #include "lock.h"
+#include "task/smp.h"
+#include "task/task.h"
 
 page_directory_t  kernel_page_dir;
 
@@ -47,6 +49,23 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
         uint64_t var = (uint64_t)addr + i;
         page_map_to(directory, var, alloc_frames(1), flags);
     }
+}
+
+page_directory_t *switch_context_directory(page_directory_t *directory){
+    tcb_t thread = get_current_task();
+    if(thread == NULL) return NULL;
+    arch_close_interrupt();
+    page_directory_t *ret = thread->process->directory;
+    thread->process->directory = directory;
+    switch_page_directory(directory);
+    arch_open_interrupt();
+    return ret;
+}
+
+page_directory_t *current_directory() {
+    cpu_local_t *local = arch_current_cpu();
+    if(local == NULL) return NULL;
+    return local->directory;
 }
 
 void init_page(){
