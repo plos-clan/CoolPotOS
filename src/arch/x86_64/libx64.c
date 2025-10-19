@@ -1,3 +1,4 @@
+#include "exec/elf.h"
 #include "krlibc.h"
 #include "term/klog.h"
 
@@ -50,4 +51,21 @@ bool arch_check_interrupt(){
                      "pop %0"
                      : "=r"(rflags));
     return (rflags & (1 << 9)) != 0;
+}
+
+bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
+    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
+        ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
+        ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr) ||
+        ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
+        return false;
+    }
+
+    switch (ehdr->e_machine) {
+    case EM_X86_64:
+    case EM_386: break;
+    default: return false;
+    }
+
+    return true;
 }
