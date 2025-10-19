@@ -1,0 +1,142 @@
+#include "fs/tmpfs.h"
+#include "errno.h"
+#include "krlibc.h"
+#include "task/poll.h"
+#include "term/klog.h"
+
+int tmpfs_id = 0;
+
+errno_t dummy() {
+    return EOK;
+}
+
+errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
+    node->fsid               = tmpfs_id;
+    tmpfs_file_t *tmpfs_root = (tmpfs_file_t *)malloc(sizeof(tmpfs_file_t));
+    tmpfs_root->type         = tp_file_dir;
+    tmpfs_root->node         = node;
+    tmpfs_root->root         = node;
+    strcpy(tmpfs_root->name, "tmp");
+    node->handle = tmpfs_root;
+    return EOK;
+}
+
+void tmpfs_umount() {}
+
+errno_t tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
+    tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
+    strncpy(f->name, name, sizeof(f->name));
+    f->type      = is_dir ? tp_file_dir : tp_file_file;
+    node->handle = f;
+    f->node      = node;
+    return EOK;
+}
+
+errno_t tmpfs_mkdir(void *parent, const char *name, vfs_node_t node) {
+    return tmpfs_mk(parent, name, node, true);
+}
+
+errno_t tmpfs_mkfile(void *parent, const char *name, vfs_node_t node) {
+    return tmpfs_mk(parent, name, node, false);
+}
+
+size_t tmpfs_read(void *file, void *addr, size_t offset, size_t size) {
+    tmpfs_file_t *f = (tmpfs_file_t *)file;
+    if (offset >= f->size) return 0;
+    size_t actual = (offset + size > f->size) ? (f->size - offset) : size;
+    memcpy(addr, f->data + offset, actual);
+    return actual;
+}
+
+size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
+    tmpfs_file_t *f   = (tmpfs_file_t *)file;
+    size_t        end = offset + size;
+    if (end > f->capacity) {
+        size_t new_cap = end * 2;
+        char  *new_buf = realloc(f->data, new_cap);
+        if (!new_buf) return 0;
+        f->data     = new_buf;
+        f->capacity = new_cap;
+    }
+    memcpy(f->data + offset, addr, size);
+    if (end > f->size) f->size = end;
+    f->node->size = f->size;
+    return size;
+}
+
+errno_t tmpfs_stat(void *file, vfs_node_t node) {
+    tmpfs_file_t *file0 = (tmpfs_file_t *)file;
+    if (file0 == NULL) return -ENOENT;
+    node->type = file0->type == file_dir ? file_dir : file_none;
+    node->size = file0->type == file_dir ? 0 : file0->size;
+    return EOK;
+}
+
+errno_t tmpfs_delete(void *parent, vfs_node_t node) {
+    tmpfs_file_t *f = (tmpfs_file_t *)node->handle;
+    free(f->data);
+    free(f);
+    return EOK;
+}
+
+void tmpfs_open(void *parent, const char *name, vfs_node_t node) {}
+
+errno_t tmpfs_rename(void *current, const char *new_name) {
+    tmpfs_file_t *f = (tmpfs_file_t *)current;
+    strncpy(f->name, new_name, sizeof(f->name));
+    return EOK;
+}
+
+int tmpfs_poll(void *file, size_t events) {
+    tmpfs_file_t *f       = (tmpfs_file_t *)file;
+    int           revents = 0;
+    if (events & POLLIN) revents |= POLLIN;
+    if (events & POLLOUT) revents |= POLLOUT;
+    return revents;
+}
+
+void tmpfs_close(void *file) {}
+
+void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot, size_t flags) {
+    return general_map(tmpfs_read, file, (uint64_t)addr, size, prot, flags, offset);
+}
+
+vfs_node_t tmpfs_dup(vfs_node_t node) {
+    vfs_node_t copy   = vfs_node_alloc(node->parent, node->name);
+    copy->handle      = node->handle;
+    copy->type        = node->type;
+    copy->size        = node->size;
+    copy->linkname    = node->linkname == NULL ? NULL : strdup(node->linkname);
+    copy->flags       = node->flags;
+    copy->permissions = node->permissions;
+    copy->owner       = node->owner;
+    copy->child       = node->child;
+    copy->realsize    = node->realsize;
+    return copy;
+}
+
+static struct vfs_callback tmpfs_callbacks = {
+    .mount    = tmpfs_mount,
+    .unmount  = tmpfs_umount,
+    .mkdir    = tmpfs_mkdir,
+    .close    = tmpfs_close,
+    .stat     = tmpfs_stat,
+    .open     = tmpfs_open,
+    .read     = tmpfs_read,
+    .write    = tmpfs_write,
+    .readlink = (vfs_readlink_t)dummy,
+    .mkfile   = tmpfs_mkfile,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .ioctl    = (vfs_ioctl_t)dummy,
+    .dup      = tmpfs_dup,
+    .delete   = tmpfs_delete,
+    .rename   = tmpfs_rename,
+    .poll     = tmpfs_poll,
+    .map      = tmpfs_map,
+};
+
+void tmpfs_regist() {
+    tmpfs_id = vfs_regist("tmpfs", &tmpfs_callbacks, 0x01021994);
+    if (tmpfs_id & ERRNO_MASK) { kerror("tmpfs register error"); }
+}

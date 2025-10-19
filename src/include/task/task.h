@@ -64,9 +64,11 @@
 #include "arch_context.h"
 #include "cow_arraylist.h"
 #include "driver/tty.h"
+#include "fs/fds.h"
 #include "fs/vfs.h"
 #include "mem/page.h"
 #include "mem/vma.h"
+#include "metadata.h"
 #include "ptrace.h"
 #include "types.h"
 
@@ -96,8 +98,10 @@ struct process_control_block {
     page_directory_t *directory;   // 进程页表
     vma_manager_t     vma_manager; // VMA 内存管理器
 
-    tty_t     *tty; // 进程占用的TTY会话
-    vfs_node_t cwd; // 进程工作目录
+    tty_t     *tty;  // 进程占用的TTY会话
+    vfs_node_t cwd;  // 进程工作目录
+    vfs_node_t exec; // 可执行文件句柄
+    fdt_t     *fdts; // 文件描述符表
 };
 
 struct thread_control_block {
@@ -116,8 +120,8 @@ pid_t alloc_pid();
 pid_t alloc_tid();
 tcb_t get_current_task();
 void  arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs);
-void  arch_context_init(struct arch_context_ *context); // 该函数仅适用于 idle 任务的上下文初始化
-void  arch_context_init_thread(tcb_t thread,void *arg);           // 用于初始化线程上下文
+void  arch_context_init(struct arch_context_ *context);  // 该函数仅适用于 idle 任务的上下文初始化
+void  arch_context_init_thread(tcb_t thread, void *arg); // 用于初始化线程上下文
 pid_t create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, pcb_t process,
                            uint64_t prio);

@@ -7,6 +7,7 @@
 #include "fs/vfs.h"
 #include "errno.h"
 #include "krlibc.h"
+#include "task/task.h"
 #include "term/klog.h"
 
 static void empty_func() {}
@@ -290,7 +291,7 @@ errno_t vfs_rename(vfs_node_t node, const char *new) {
     return callbackof(node, rename)(node->handle, new);
 }
 
-int vfs_regist(const char *name, vfs_callback_t callback, int register_id, uint64_t magic) {
+int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic) {
     if (callback == NULL) return -EINVAL;
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         if (((void **)callback)[i] == NULL) return -EINVAL;
@@ -300,7 +301,6 @@ int vfs_regist(const char *name, vfs_callback_t callback, int register_id, uint6
 
     vfs_filesystem_t filesystem = malloc(sizeof(struct vfs_filesystem));
     filesystem->callback        = callback;
-    filesystem->id              = register_id;
     filesystem->fsid            = id;
     filesystem->magic           = magic;
     strcpy(filesystem->name, name);
@@ -424,15 +424,15 @@ void vfs_free_child(vfs_node_t vfs) {
 }
 
 errno_t vfs_mount(const char *src,const char *type, vfs_node_t node) {
-    if (node == NULL || type) return -EINVAL;
+    if (node == NULL || type == NULL) return -EINVAL;
     if (node->type != file_dir) return -EINVAL;
-    for (int i = 1; i < fs_nextid; i++) {
-        if (fs_callbacks[i]->mount(src, node) == 0) {
-            node->fsid     = i;
-            node->root     = node;
-            node->is_mount = true;
-            return EOK;
-        }
+
+    vfs_filesystem_t fs = get_filesystem((char*)type);
+    if(fs == NULL) return -ENODEV;
+    if(fs->callback->mount(src,node) == 0) {
+        node->fsid     = fs->fsid;
+        node->root     = node;
+        node->is_mount = true;
     }
     return -ENOENT;
 }
@@ -531,6 +531,41 @@ vfs_node_t get_rootdir() {
 void set_rootdir(vfs_node_t node) {
     rootdir         = node;
     rootdir->parent = NULL;
+}
+
+char *vfs_cwd_path_build(char *src) {
+    char *s = src;
+    char *path;
+    char *bpath = NULL;
+    if (s[0] == '/') {
+        path = strdup(s);
+    } else {
+        bpath = vfs_get_fullpath(get_current_task()->process->cwd);
+        path  = pathacat(bpath, s);
+    }
+    char *normalized_path = normalize_path(path);
+    free(path);
+    free(bpath);
+    return normalized_path;
+}
+
+void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
+                  uint64_t flags, uint64_t offset) {
+    UNUSED(flags);
+
+    uint64_t pt_flags = PTE_USER | PTE_WRITEABLE | PTE_PRESENT;
+
+    if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
+    if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
+    if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+
+    page_map_range_to_random(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
+                             (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
+
+    ssize_t ret = read_callback(file, (void *)addr, offset, len);
+    if (ret < 0) return (void *)-ENOMEM;
+
+    return (void *)addr;
 }
 
 bool vfs_init() {

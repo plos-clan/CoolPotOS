@@ -74,7 +74,7 @@ void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size
  * 注意: 必须在 smp 初始化后使用
  * @return 当前页表 (为NULL则smp未初始化)
  */
-page_directory_t *current_directory();
+page_directory_t *get_current_directory();
 
 /**
  * 切换当前页表 (当前进程的页表也会被切换)

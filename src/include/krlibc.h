@@ -56,6 +56,7 @@ char   *strtok(char *str, const char *delim);
 char   *strdup(const char *str);
 char   *strndup(const char *s, size_t n);
 char   *strrchr(const char *s, int c);
+char   *strncpy(char *dest, const char *src, size_t n);
 int64_t strtol(const char *str, char **endptr, int base);
 int     memcmp(const void *a_, const void *b_, size_t size);
 void   *memcpy(void *dest, const void *src, size_t n);
@@ -65,6 +66,15 @@ int isspace(int c);
 
 int atoi(const char *pstr);
 int fls(unsigned int x);
+
+char *normalize_path(const char *path);
+char *pathacat(char *p1, char *p2);
+int   cmd_parse(const char *cmd_str, char **argv, char token);
+void  cmd_free(char **argv, int argc);
+
+size_t envp_length(char **envp);
+char **copy_envp(char **envp);
+void   free_envp(char **envp);
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);

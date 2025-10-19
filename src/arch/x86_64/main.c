@@ -19,7 +19,7 @@
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "hpet.h"
+#include "fs/tmpfs.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -48,6 +48,9 @@ USED _Noreturn void kmain() {
     acpi_init();
     hpet_init();
     apic_init();
+
+    tmpfs_regist();
+
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler,0,NULL,&apic_controller,"sched_handle");
     setup_task();

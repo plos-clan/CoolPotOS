@@ -161,3 +161,10 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
     regs->ds     = next->context.regs.ds;
     regs->cs     = next->context.regs.cs;
 }
+
+_Noreturn void arch_switch_to_user_mode() {
+
+
+
+    while (true) arch_wait_for_interrupt();
+}

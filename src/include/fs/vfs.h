@@ -76,7 +76,6 @@ typedef struct vfs_callback { // VFS回调函数
 typedef struct vfs_filesystem {
     vfs_callback_t      callback;
     char                name[10];
-    int                 id;
     uint16_t            fsid;
     uint64_t            magic;
     struct llist_header node;
@@ -140,7 +139,7 @@ errno_t vfs_mkfile(const char *name);
  * @param magic 文件系统属性类型
  * @return 文件系统id
  */
-int vfs_regist(const char *name, vfs_callback_t callback, int register_id, uint64_t magic);
+int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic);
 
 /**
  * 创建 link 文件
