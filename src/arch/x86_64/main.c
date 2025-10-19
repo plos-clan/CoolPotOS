@@ -47,6 +47,7 @@ USED _Noreturn void kmain() {
     apic_init();
     setup_task();
     smp_init();
+    calibrate_tsc_with_hpet();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
     while (true)

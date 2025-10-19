@@ -4,11 +4,20 @@
 #include "term/klog.h"
 
 __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code){
-    kerror("Page fault at %p",frame->rip);
+    uint64_t faulting_address;
+    __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
+
+    char *error_msg = !(error_code & 0x1) ? "NotPresent"
+                      : error_code & 0x2  ? "WriteError"
+                      : error_code & 0x4  ? "UserMode"
+                      : error_code & 0x8  ? "ReservedBitsSet"
+                      : error_code & 0x10 ? "DecodeAddress"
+                                          : "Unknown";
+    kerror("Page %s fault %p at %p",error_msg,faulting_address,frame->rip);
     arch_close_interrupt();
     arch_wait_for_interrupt();
 }
 
 void init_err_handle(){
-    register_interrupt_handler(9, page_fault_, 0, 0x8E);
+    register_interrupt_handler(14, page_fault_, 0, 0x8E);
 }

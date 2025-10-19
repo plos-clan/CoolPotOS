@@ -22,4 +22,5 @@ typedef struct {
 } __attribute__((packed)) volatile HpetInfo;
 
 uint64_t elapsed();
+void nsleep(uint64_t nano);
 void hpet_init();

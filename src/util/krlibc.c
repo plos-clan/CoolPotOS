@@ -1,5 +1,6 @@
 #include "krlibc.h"
 #include "mem/heap.h"
+#include "term/klog.h"
 
 #define WT         size_t
 #define WS         (sizeof(WT))
@@ -324,7 +325,7 @@ int isdigit(int c) {
 void not_null_assert(void *ptr,const char *msg){
     if(unlikely(ptr == NULL)){
         arch_close_interrupt();
-        //TODO msg;
+        kerror("NullPointerError: %s",msg);
         arch_wait_for_interrupt();
     }
 }
@@ -369,4 +370,28 @@ char *strrchr(const char *s, int c) {
         s++;
     }
     return (c == '\0') ? (char *)s : last;
+}
+
+int atoi(const char *pstr) {
+    int Ret_Integer  = 0;
+    int Integer_sign = 1;
+
+    if (pstr == NULL) { return 0; }
+    while (isspace(*pstr) == 0) {
+        pstr++;
+    }
+    if (*pstr == '-') { Integer_sign = -1; }
+    if (*pstr == '-' || *pstr == '+') { pstr++; }
+    while (*pstr >= '0' && *pstr <= '9') {
+        Ret_Integer = Ret_Integer * 10 + *pstr - '0';
+        pstr++;
+    }
+    Ret_Integer = Integer_sign * Ret_Integer;
+
+    return Ret_Integer;
+}
+
+int fls(unsigned int x) {
+    if (x == 0) return 0;
+    return 32 - __builtin_clz(x);
 }

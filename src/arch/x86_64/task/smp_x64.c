@@ -47,7 +47,6 @@ static void apu_gdt_setup() {
     write_fsbase(0);
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
-    this_cpu->id = this_id;
 
     uint64_t address     = (uint64_t)&(this_cpu->arch_data.tss0);
     uint64_t low_base    = (((address & 0xffffffU)) << 16U);
@@ -64,11 +63,24 @@ static void apu_gdt_setup() {
     __asm__ volatile("ltr %[offset]\n\t" : : [offset] "rm"(0x28U) : "memory");
 }
 
+void arch_bsp_cpu_init(){
+    uint32_t   this_id  = lapic_id();
+    cpu_local_t *this_cpu = get_cpu_local(this_id);
+    write_fsbase(0);
+    write_gsbase((uint64_t)this_cpu);
+    write_kgsbase((uint64_t)this_cpu);
+}
+
+cpu_local_t *arch_current_cpu(){
+    return get_cpu_local(lapic_id());
+}
+
 _Noreturn void arch_ap_cpu_entry(){
     page_table_t *physical_table = (page_table_t*)virt_to_phys(get_kernel_pagedir()->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
     ap_local_apic_init();
+    calibrate_tsc_with_hpet();
     while (true) arch_wait_for_interrupt();
 }
