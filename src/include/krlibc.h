@@ -59,9 +59,12 @@ char   *strrchr(const char *s, int c);
 int64_t strtol(const char *str, char **endptr, int base);
 int     memcmp(const void *a_, const void *b_, size_t size);
 void   *memcpy(void *dest, const void *src, size_t n);
-int     isdigit(int c);
 
+int isdigit(int c);
 int isspace(int c);
+
+int atoi(const char *pstr);
+int fls(unsigned int x);
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);

@@ -9,37 +9,37 @@
 #define KERNEL_NAME_   "CP_Kernel"
 #define KERNEL_VERSION "v0.4"
 
-#define KERNEL_ARCH "UNKNOWN"
+#define KERNEL_ARCH         "UNKNOWN"
 #define KERNEL_ARCH_VERSION "0"
 
 #if defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH "riscv64"
+#    define KERNEL_ARCH         "riscv64"
 #    define KERNEL_ARCH_VERSION "0"
 
 #elif defined(__aarch64__)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH "aarch64"
+#    define KERNEL_ARCH         "aarch64"
 #    define KERNEL_ARCH_VERSION "0"
 
 #elif defined(__loongarch__) || defined(__loongarch64)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH "loongarch"
+#    define KERNEL_ARCH         "loongarch"
 #    define KERNEL_ARCH_VERSION "0"
 
 #elif defined(__x86_64__) || defined(__amd64__)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH "x86_64"
+#    define KERNEL_ARCH         "x86_64"
 #    define KERNEL_ARCH_VERSION "39"
 
 #elif defined(__i386__)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH "i686"
+#    define KERNEL_ARCH         "i686"
 #    define KERNEL_ARCH_VERSION "44"
 
 #endif
@@ -65,9 +65,10 @@
 #endif
 
 #define KERNEL_NAME                                                                                \
-    (KERNEL_NAME_ "-" KERNEL_ARCH "-" KERNEL_VERSION"."KERNEL_ARCH_VERSION "_(git:" GIT_VERSION ")_{" COMPILER_NAME       \
-                  " " COMPILER_VERSION "}")
+    (KERNEL_NAME_ "-" KERNEL_ARCH "-" KERNEL_VERSION "." KERNEL_ARCH_VERSION "_(git:" GIT_VERSION  \
+                  ")_{" COMPILER_NAME " " COMPILER_VERSION "}")
 
-#define MAX_CPU                256                      // 最大支持CPU核心数 256
-#define KERNEL_HEAP_START      0xffff900000000000       // 内核堆起始地址
-#define KERNEL_HEAP_SIZE       0x6400000                // 内核堆大小 100MB
+#define MAX_CPU           256                // 最大支持CPU核心数 256
+#define KERNEL_HEAP_START 0xffff900000000000 // 内核堆起始地址
+#define KERNEL_HEAP_SIZE  0x6400000          // 内核堆大小 100MB
+#define STACK_SIZE        32768              // 栈大小

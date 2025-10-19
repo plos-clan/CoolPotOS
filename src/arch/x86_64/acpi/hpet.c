@@ -22,6 +22,22 @@ uint64_t elapsed() {
     return (uint64_t)((mcv * fms_per_tick) / 1000000U);
 }
 
+void nsleep(uint64_t nano) {
+    uint64_t targetTime = nano_time();
+    uint64_t after      = 0;
+    while (true) {
+        uint64_t n = nano_time();
+        if (n < targetTime) {
+            after      += 0xffffffff - targetTime + n;
+            targetTime  = n;
+        } else {
+            after      += n - targetTime;
+            targetTime  = n;
+        }
+        if (after >= nano) { return; }
+    }
+}
+
 void hpet_init() {
     struct uacpi_table hpet_table;
     uacpi_status       status = uacpi_table_find_by_signature("HPET", &hpet_table);

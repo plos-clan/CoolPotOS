@@ -4,23 +4,28 @@
 #include "task.h"
 
 #if defined(__x86_64__) || defined(__amd64__)
-#include "smp_x64.h"
+#    include "smp_x64.h"
 #endif
 
 typedef struct cpu_local_info {
-    tcb_t             current_task;
-    tcb_t             idle_task;
-    void             *sched_handle;
-    uint32_t          id;
-    page_directory_t *directory;
-    bool              enable;
-    arch_cpu_t        arch_data;
+    tcb_t             current_task; // 当前任务
+    tcb_t             idle_task;    // IDLE任务
+    void             *sched_handle; // 调度器句柄
+    uint32_t          id;           // cpuid
+    page_directory_t *directory;    // 核心当前页表
+    bool              enable;       // 该核心是否启用
+    arch_cpu_t        arch_data;    // 架构私有数据
+    size_t            task_count;   // 任务数量
 } cpu_local_t;
 
 #if defined(__x86_64__) || defined(__amd64__)
 bool x2apic_mode_supported();
 #endif
 
-cpu_local_t *get_cpu_local(size_t id);
+cpu_local_t   *get_min_task_count_cpu();
+cpu_local_t   *get_cpu_local(size_t id);
+uint64_t       get_bsp_cpu_id();
+cpu_local_t   *arch_current_cpu();  // 由架构具体实现
 _Noreturn void arch_ap_cpu_entry(); // 由架构具体实现
-void smp_init();
+void           arch_bsp_cpu_init(); // 由架构具体实现
+void           smp_init();

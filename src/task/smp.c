@@ -30,8 +30,28 @@ cpu_local_t cpu_local_infos[MAX_CPU];
 
 cpu_local_t *get_cpu_local(size_t id) {
     if (id >= MAX_CPU) return NULL;
-    if (!cpu_local_infos[id].enable) return NULL;
-    return &cpu_local_infos[id];
+    for (size_t i = 0; i < cpu_count ;i++) {
+        if (!cpu_local_infos[i].enable) continue;
+        if(cpu_local_infos[i].id == id) return &cpu_local_infos[i];
+    }
+    return NULL;
+}
+
+cpu_local_t *get_min_task_count_cpu() {
+    cpu_local_t *local = NULL;
+    size_t old_count = SIZE_MAX;
+    for (size_t i = 0; i < cpu_count ;i++) {
+        if (!cpu_local_infos[i].enable) continue;
+        if(cpu_local_infos[i].task_count < old_count) {
+            old_count = cpu_local_infos[i].task_count;
+            local = &cpu_local_infos[i];
+        }
+    }
+    return local;
+}
+
+uint64_t get_bsp_cpu_id(){
+    return bsp_cpu_id;
 }
 
 void smp_init() {
@@ -43,21 +63,30 @@ void smp_init() {
 #if defined(__x86_64__) || defined(__amd64__)
         cpu_local_infos[i].id = cpu->lapic_id;
         bsp_cpu_id            = mp_response->bsp_lapic_id;
-        if (cpu->lapic_id == mp_response->bsp_lapic_id) continue;
+        if (cpu->lapic_id == mp_response->bsp_lapic_id){
+            cpu_local_infos[i].enable = true;
+            continue;
+        }
 #endif
 #if defined(__aarch64__)
         cpu_local_infos[i].id = cpu->mpidr;
-        if (cpu->mpidr == mp_request.response->bsp_mpidr) continue;
+        if (cpu->mpidr == mp_request.response->bsp_mpidr){
+            cpu_local_infos[i].enable = true;
+            continue;
+        }
         bsp_cpu_id = mp_request.response->bsp_mpidr;
 #endif
 #if defined(__riscv__)
         cpu_local_infos[i].id = cpu->hartid;
-        if (cpu->hartid == bsp_hartid_request.response->bsp_hartid) continue;
+        if (cpu->hartid == bsp_hartid_request.response->bsp_hartid){
+            cpu_local_infos[i].enable = true;
+            continue;
+        }
         bsp_cpu_id = bsp_hartid_request.response->bsp_hartid;
 #endif
         cpu_local_infos[i].enable = true;
         cpu->goto_address         = (limine_goto_address)arch_ap_cpu_entry;
     }
-
+    arch_bsp_cpu_init();
     kinfo("%d processors have been enabled.", cpu_count);
 }
