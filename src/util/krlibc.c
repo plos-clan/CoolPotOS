@@ -372,6 +372,17 @@ char *strrchr(const char *s, int c) {
     return (c == '\0') ? (char *)s : last;
 }
 
+char *strncpy(char *dest, const char *src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = '\0';
+    }
+    return dest;
+}
+
 int atoi(const char *pstr) {
     int Ret_Integer  = 0;
     int Integer_sign = 1;
@@ -395,3 +406,129 @@ int fls(unsigned int x) {
     if (x == 0) return 0;
     return 32 - __builtin_clz(x);
 }
+
+char *normalize_path(const char *path) {
+    if (!path) return NULL;
+
+    size_t len    = strlen(path);
+    char  *result = malloc(len + 1);
+    if (!result) return NULL;
+
+    char *dup = strdup(path);
+    if (!dup) {
+        free(result);
+        return NULL;
+    }
+
+    strcpy(result, "/");
+    if (strcmp(path, "/") == 0) {
+        free(dup);
+        return result;
+    }
+
+    char *start = dup;
+    if (*start == '/') start++;
+
+    char *token = strtok(start, "/");
+    while (token) {
+        if (strcmp(token, ".") == 0) {
+        } else if (strcmp(token, "..") == 0) {
+            char *last_slash = strrchr(result, '/');
+            if (last_slash != result)
+                *last_slash = '\0';
+            else
+                result[1] = '\0';
+        } else {
+            if (result[strlen(result) - 1] != '/') strcat(result, "/");
+            strcat(result, token);
+        }
+
+        token = strtok(NULL, "/");
+    }
+
+    free(dup);
+    return result;
+}
+
+size_t envp_length(char **envp) {
+    size_t count = 0;
+    while (envp[count] != NULL) {
+        count++;
+    }
+    return count;
+}
+
+char **copy_envp(char **envp) {
+    size_t count = 0;
+    while (envp[count] != NULL) {
+        count++;
+    }
+    char **new_envp = malloc((count + 1) * sizeof(char *));
+    if (!new_envp) return NULL;
+    for (size_t i = 0; i < count; i++) {
+        new_envp[i] = strdup(envp[i]);
+        if (!new_envp[i]) {
+            for (size_t j = 0; j < i; j++) {
+                free(new_envp[j]);
+            }
+            free(new_envp);
+            return NULL;
+        }
+    }
+    new_envp[count] = NULL;
+    return new_envp;
+}
+
+void free_envp(char **envp) {
+    if (!envp) return;
+    for (size_t i = 0; envp[i] != NULL; i++) {
+        free(envp[i]);
+    }
+    free(envp);
+}
+
+char *pathacat(char *p1, char *p2) {
+    char *p = (char *)malloc(strlen(p1) + strlen(p2) + 2);
+    if (p1[strlen(p1) - 1] == '/') {
+        sprintf(p, "%s%s", p1, p2);
+    } else {
+        sprintf(p, "%s/%s", p1, p2);
+    }
+    return p;
+}
+
+int cmd_parse(const char *cmd_str, char **argv, char token) {
+    int         argc = 0;
+    const char *next = cmd_str;
+
+    while (*next) {
+        while (*next == token)
+            next++;
+        if (*next == '\0') break;
+        const char *start = next;
+        while (*next && *next != token)
+            next++;
+        size_t len = next - start;
+        argv[argc] = (char *)malloc(len + 1);
+        if (!argv[argc]) {
+            for (int i = 0; i < argc; i++)
+                free(argv[i]);
+            return -1;
+        }
+        memcpy(argv[argc], start, len);
+        argv[argc][len] = '\0';
+
+        argc++;
+        if (argc >= 50) break;
+    }
+    argv[argc] = NULL;
+    return argc;
+}
+
+void cmd_free(char **argv, int argc) {
+    for (int i = 0; i < argc; i++) {
+        free(argv[i]);
+    }
+}
+
+

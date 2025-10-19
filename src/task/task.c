@@ -35,6 +35,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->parent        = parent == NULL ? kernel_process : parent;
     new_pgb->child_threads = cow_list_create();
     new_pgb->tty           = new_pgb->parent->tty;
+    new_pgb->fdts          = fds_init();
     if (flags & CLONE_VM) {
         new_pgb->directory = clone_page_directory(new_pgb->parent->directory, false);
     } else
@@ -53,7 +54,7 @@ pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, 
     thread->prio     = prio;
     thread->_start   = (uint64_t)func;
     thread->status   = T_CREATE;
-    arch_context_init_thread(thread,arg);
+    arch_context_init_thread(thread, arg);
     add_task_prio(thread, thread->prio);
     return thread->tid;
 }
@@ -71,6 +72,8 @@ void setup_task() {
     kernel_process->directory     = get_kernel_pagedir();
     kernel_process->tty           = kernel_session;
     kernel_process->status        = T_RUNNING;
+    kernel_process->exec          = NULL;
+    kernel_process->fdts          = fds_init();
 
     bsp_idle_thread           = malloc(STACK_SIZE);
     bsp_idle_thread->process  = kernel_process;
