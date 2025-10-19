@@ -20,10 +20,14 @@
 #include "task/task.h"
 #include "term/klog.h"
 #include "fs/tmpfs.h"
+#include "exec/dlinker.h"
+#include "module.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
 LIMINE_REQUEST LIMINE_BASE_REVISION(3);
+
+
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -41,6 +45,7 @@ USED _Noreturn void kmain() {
     idt_setup();
     init_err_handle();
     generic_interrupt_table_init();
+    load_module();
     init_block_device_manager();
     fsgsbase_init();
     vfs_init();
@@ -48,18 +53,18 @@ USED _Noreturn void kmain() {
     acpi_init();
     hpet_init();
     apic_init();
-
     tmpfs_regist();
-
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler,0,NULL,&apic_controller,"sched_handle");
     setup_task();
     smp_init();
     float_processor_setup();
     calibrate_tsc_with_hpet();
+    kmodule_init();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
     enable_scheduler();
+    start_all_kernel_module();
 
     while (true)
         arch_wait_for_interrupt();

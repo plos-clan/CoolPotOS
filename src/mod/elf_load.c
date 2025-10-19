@@ -1,25 +1,8 @@
-#include "elf.h"
-#include "mem/page.h"
-#include "mem/frame.h"
+#include "exec/elf_load.h"
 #include "krlibc.h"
+#include "mem/frame.h"
+#include "mem/page.h"
 #include "task/task.h"
-
-bool elf_test_head(Elf64_Ehdr *ehdr) {
-    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
-        ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
-        ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr) ||
-        ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
-        return false;
-    }
-
-    switch (ehdr->e_machine) {
-    case EM_X86_64:
-    case EM_386: break;
-    default: return false;
-    }
-
-    return true;
-}
 
 void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user,
                   uint64_t offset, uint64_t *load_start) {
@@ -87,7 +70,7 @@ void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
                             uint64_t *load_start, pcb_t process) {
     if (data == NULL) return NULL;
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
-    if (!elf_test_head(ehdr)) { return NULL; }
+    if (!arch_elf_test_head(ehdr)) { return NULL; }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
     switch_context_directory(dir);
