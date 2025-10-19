@@ -1,11 +1,12 @@
-#include "task/smp.h"
-#include "description_table.h"
-#include "io.h"
 #include "apic.h"
+#include "description_table.h"
+#include "fpu.h"
 #include "fsgsbase.h"
-#include "mem/page.h"
-#include "mem/frame.h"
 #include "krlibc.h"
+#include "mem/frame.h"
+#include "mem/page.h"
+#include "task/scheduler.h"
+#include "task/smp.h"
 
 extern struct idt_register idt_pointer;
 
@@ -18,7 +19,7 @@ static __attr(naked) void _setcs_helper() {
 }
 
 static void apu_gdt_setup() {
-    uint32_t   this_id  = lapic_id();
+    uint32_t     this_id  = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
 
     this_cpu->arch_data.gdtEntries[0] = 0x0000000000000000U;
@@ -58,29 +59,42 @@ static void apu_gdt_setup() {
     this_cpu->arch_data.gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
     this_cpu->arch_data.gdtEntries[6] = high_base;
 
-    this_cpu->arch_data.tss0.ist[0] = ((uint64_t)&(this_cpu->arch_data.tss_stack)) + sizeof(tss_stack_t);
+    this_cpu->arch_data.tss0.ist[0] =
+        ((uint64_t)&(this_cpu->arch_data.tss_stack)) + sizeof(tss_stack_t);
 
     __asm__ volatile("ltr %[offset]\n\t" : : [offset] "rm"(0x28U) : "memory");
 }
 
-void arch_bsp_cpu_init(){
-    uint32_t   this_id  = lapic_id();
+void arch_bsp_cpu_init() {
+    uint32_t     this_id  = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
     write_fsbase(0);
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
 }
 
-cpu_local_t *arch_current_cpu(){
+cpu_local_t *arch_current_cpu() {
     return get_cpu_local(lapic_id());
 }
 
-_Noreturn void arch_ap_cpu_entry(){
-    page_table_t *physical_table = (page_table_t*)virt_to_phys(get_kernel_pagedir()->table);
+_Noreturn void arch_ap_cpu_entry() {
+    page_table_t *physical_table = (page_table_t *)virt_to_phys(get_kernel_pagedir()->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
     ap_local_apic_init();
     calibrate_tsc_with_hpet();
-    while (true) arch_wait_for_interrupt();
+
+    extern pcb_t kernel_process;
+    tcb_t        idle_thread = malloc(STACK_SIZE);
+    idle_thread->process     = kernel_process;
+    idle_thread->tid         = alloc_tid();
+    idle_thread->ct_index    = cow_list_add(kernel_process->child_threads, idle_thread);
+    idle_thread->status      = T_RUNNING;
+    set_cpu_idle_task(idle_thread, arch_current_cpu());
+    float_processor_setup();
+    arch_context_init(&idle_thread->context);
+    arch_open_interrupt();
+    while (true)
+        arch_wait_for_interrupt();
 }

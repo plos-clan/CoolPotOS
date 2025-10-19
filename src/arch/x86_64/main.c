@@ -6,17 +6,20 @@
 #include "driver/gop.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
+#include "fpu.h"
 #include "fs/vfs.h"
+#include "fsgsbase.h"
 #include "hpet.h"
 #include "intctl.h"
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
+#include "task/scheduler.h"
+#include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "task/smp.h"
-#include "fsgsbase.h"
+#include "hpet.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -45,11 +48,16 @@ USED _Noreturn void kmain() {
     acpi_init();
     hpet_init();
     apic_init();
+    extern intctl_t apic_controller;
+    irq_regist_irq(timer, scheduler_handler,0,NULL,&apic_controller,"sched_handle");
     setup_task();
     smp_init();
+    float_processor_setup();
     calibrate_tsc_with_hpet();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
+    enable_scheduler();
+
     while (true)
         arch_wait_for_interrupt();
 }

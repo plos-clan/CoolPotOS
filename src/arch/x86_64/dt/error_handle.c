@@ -18,6 +18,13 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
     arch_wait_for_interrupt();
 }
 
+__IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64_t error_code){
+    kerror("general_protection_fault: %x at %p",error_code,frame->rip);
+    arch_close_interrupt();
+    arch_wait_for_interrupt();
+}
+
 void init_err_handle(){
     register_interrupt_handler(14, page_fault_, 0, 0x8E);
+    register_interrupt_handler(13, general_protection_fault, 0, 0x8E);
 }

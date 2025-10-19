@@ -35,6 +35,12 @@ typedef struct page_directory {
 } page_directory_t;
 
 void switch_page_directory(page_directory_t *dir);
+/**
+ * 克隆一个新的页表
+ * @param dir 源页表
+ * @param all_copy 是否拷贝内核部分内存映射
+ * @return 新页表 (需要释放)
+ */
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
 void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
 void unmap_page(page_directory_t *directory, uint64_t vaddr);
@@ -42,3 +48,4 @@ void arch_page_setup();
 
 // 用于构建内核自己的页表, 不再复用引导器提供的页表
 void arch_page_setup_l2();
+void switch_page_directory0(page_directory_t *dir);

@@ -2,9 +2,10 @@
 #include "krlibc.h"
 #include "limine.h"
 #include "term/klog.h"
+#include "task/scheduler.h"
 
 LIMINE_REQUEST struct limine_smp_request mp_request = {
-    .id = LIMINE_SMP_REQUEST,
+    .id       = LIMINE_SMP_REQUEST,
     .revision = 0,
 #if defined(__x86_64__) || defined(__amd64__)
     .flags = LIMINE_SMP_X2APIC,
@@ -30,28 +31,36 @@ cpu_local_t cpu_local_infos[MAX_CPU];
 
 cpu_local_t *get_cpu_local(size_t id) {
     if (id >= MAX_CPU) return NULL;
-    for (size_t i = 0; i < cpu_count ;i++) {
+    for (size_t i = 0; i < cpu_count; i++) {
         if (!cpu_local_infos[i].enable) continue;
-        if(cpu_local_infos[i].id == id) return &cpu_local_infos[i];
+        if (cpu_local_infos[i].id == id) return &cpu_local_infos[i];
     }
     return NULL;
 }
 
 cpu_local_t *get_min_task_count_cpu() {
-    cpu_local_t *local = NULL;
-    size_t old_count = SIZE_MAX;
-    for (size_t i = 0; i < cpu_count ;i++) {
+    cpu_local_t *local     = NULL;
+    size_t       old_count = SIZE_MAX;
+    for (size_t i = 0; i < cpu_count; i++) {
         if (!cpu_local_infos[i].enable) continue;
-        if(cpu_local_infos[i].task_count < old_count) {
+        if (cpu_local_infos[i].task_count < old_count) {
             old_count = cpu_local_infos[i].task_count;
-            local = &cpu_local_infos[i];
+            local     = &cpu_local_infos[i];
         }
     }
     return local;
 }
 
-uint64_t get_bsp_cpu_id(){
+uint64_t get_bsp_cpu_id() {
     return bsp_cpu_id;
+}
+
+static void set_bsp_cpu_info(cpu_local_t *bsp_cpu) {
+    extern tcb_t bsp_idle_thread;
+    bsp_cpu->enable    = true;
+    bsp_cpu->directory = get_kernel_pagedir();
+    bsp_cpu->current_task = bsp_idle_thread;
+    set_cpu_idle_task(bsp_idle_thread,bsp_cpu);
 }
 
 void smp_init() {
@@ -63,23 +72,23 @@ void smp_init() {
 #if defined(__x86_64__) || defined(__amd64__)
         cpu_local_infos[i].id = cpu->lapic_id;
         bsp_cpu_id            = mp_response->bsp_lapic_id;
-        if (cpu->lapic_id == mp_response->bsp_lapic_id){
-            cpu_local_infos[i].enable = true;
+        if (cpu->lapic_id == mp_response->bsp_lapic_id) {
+            set_bsp_cpu_info(&cpu_local_infos[i]);
             continue;
         }
 #endif
 #if defined(__aarch64__)
         cpu_local_infos[i].id = cpu->mpidr;
-        if (cpu->mpidr == mp_request.response->bsp_mpidr){
-            cpu_local_infos[i].enable = true;
+        if (cpu->mpidr == mp_request.response->bsp_mpidr) {
+            set_bsp_cpu_info(&cpu_local_infos[i]);
             continue;
         }
         bsp_cpu_id = mp_request.response->bsp_mpidr;
 #endif
 #if defined(__riscv__)
         cpu_local_infos[i].id = cpu->hartid;
-        if (cpu->hartid == bsp_hartid_request.response->bsp_hartid){
-            cpu_local_infos[i].enable = true;
+        if (cpu->hartid == bsp_hartid_request.response->bsp_hartid) {
+            set_bsp_cpu_info(&cpu_local_infos[i]);
             continue;
         }
         bsp_cpu_id = bsp_hartid_request.response->bsp_hartid;
