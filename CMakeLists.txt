@@ -226,6 +226,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${ISO_DIR}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${ISO_DIR}/limine
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/readme.txt ${ISO_DIR}/readme.txt
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/initramfs.img ${ISO_DIR}/initramfs.img
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/limine.conf ${ISO_DIR}/limine.conf
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/background.jpg ${ISO_DIR}/background.jpg
 

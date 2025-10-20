@@ -3,7 +3,7 @@
 #include "io.h"
 #include "lock.h"
 #include "ptrace.h"
-#include "task/scheduler.h"
+#include "task/task.h"
 #include "task/smp.h"
 #include "term/klog.h"
 #include "timer.h"
@@ -163,8 +163,6 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
 }
 
 _Noreturn void arch_switch_to_user_mode() {
-
-
-
+    pcb_t process = get_current_task()->process;
     while (true) arch_wait_for_interrupt();
 }

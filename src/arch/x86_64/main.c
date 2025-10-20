@@ -24,6 +24,7 @@
 #include "task/task.h"
 #include "term/klog.h"
 #include "driver/power/power.h"
+#include "fs/cpio.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -66,6 +67,7 @@ USED _Noreturn void kmain() {
     calibrate_tsc_with_hpet();
     power_button_init();
     kmodule_init();
+    cpio_init();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
     enable_scheduler();
