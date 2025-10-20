@@ -26,6 +26,7 @@
 #include "task/task.h"
 #include "term/klog.h"
 #include "exec/elf_load.h"
+#include "syscall.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -62,6 +63,7 @@ USED _Noreturn void kmain() {
     irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");
     setup_task();
     smp_init();
+    arch_enable_syscall();
     float_processor_setup();
     calibrate_tsc_with_hpet();
     power_button_init();

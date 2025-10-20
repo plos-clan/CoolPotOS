@@ -83,7 +83,8 @@ typedef enum {
     T_START   = 4, // 准备调度
     T_FUTEX   = 5, // 被挂起(无法被调度, 线程状态为等待唤醒)
     T_OUT     = 6, // 已被处死(无法被调度)
-    T_ZOMBIE  = 7, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
+    T_ZOMBIE =
+        7, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
 } task_status;
 
 struct process_control_block {
@@ -107,15 +108,19 @@ struct process_control_block {
 };
 
 struct thread_control_block {
-    struct arch_context_ context;      // 任务上下文
-    char                *name;         // 线程名
-    pid_t                tid;          // 线程ID
-    pcb_t                process;      // 所属进程
-    uint64_t             prio;         // 任务优先级
-    void                *sched_handle; // 调度器句柄
-    size_t               ct_index;     // 子线程列表索引
-    task_status          status;       // 线程状态
-    uint64_t             _start;       // 线程入口函数
+    uint64_t             syscall_stack;      // 系统调用栈顶地址
+    uint64_t             syscall_stack_user; // 用户态下系统调用栈缓存
+    uint64_t             signal_stack;       // 信号栈顶地址
+    uint64_t             call_in_signal;     // 是否在信号处理过程
+    struct arch_context_ context;            // 任务上下文
+    char                *name;               // 线程名
+    pid_t                tid;                // 线程ID
+    pcb_t                process;            // 所属进程
+    uint64_t             prio;               // 任务优先级
+    void                *sched_handle;       // 调度器句柄
+    size_t               ct_index;           // 子线程列表索引
+    task_status          status;             // 线程状态
+    uint64_t             _start;             // 线程入口函数
 };
 
 pid_t alloc_pid();

@@ -31,13 +31,15 @@ typedef struct file_description {
     vfs_node_t node;
     size_t     offset;
     uint64_t   flags;
+    int        fd;
 } fd_t;
 
-typedef struct file_description_table{
-    fd_t     **fds;        // 文件描述符表
-    size_t     fds_length; // 文件描述符表长度
-}fdt_t;
+typedef struct file_description_table {
+    fd_t **fds;        // 文件描述符表
+    size_t fds_length; // 文件描述符表长度
+} fdt_t;
 
-int find_free_fd(fdt_t *pcb);
-int add_fd(fdt_t *fdt, fd_t *new_fd);
+int    find_free_fd(fdt_t *pcb);
+int    add_fd(fdt_t *fdt, fd_t *new_fd);
+fd_t *get_fd(fdt_t *table,int fd);
 fdt_t *fds_init();

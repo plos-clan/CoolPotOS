@@ -16,7 +16,7 @@ typedef struct cpu_local_info {
     bool              enable;       // 该核心是否启用
     arch_cpu_t        arch_data;    // 架构私有数据
     size_t            task_count;   // 任务数量
-} cpu_local_t;
+}__attribute__((packed)) cpu_local_t;
 
 #if defined(__x86_64__) || defined(__amd64__)
 bool x2apic_mode_supported();

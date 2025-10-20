@@ -49,6 +49,11 @@ int add_fd(fdt_t *fdt, fd_t *new_fd) {
     return fdid;
 }
 
+fd_t *get_fd(fdt_t *table,int fd){
+    if(fd >= table->fds_length) return NULL;
+    return table->fds[fd];
+}
+
 fdt_t *fds_init() {
     fdt_t *fdt = malloc(sizeof(fdt_t));
     fdt->fds_length = FD_INITIAL_CAPACITY;
