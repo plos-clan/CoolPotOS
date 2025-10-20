@@ -1,12 +1,12 @@
-#include <driver/uacpi/kernel_api.h>
-#include <krlibc.h>
-#include <mem/frame.h>
-#include <mem/page.h>
-// #include <drivers/bus/pci.h>
+#include "driver/pci/pci.h"
 #include <driver/acpi.h>
+#include <driver/uacpi/kernel_api.h>
 #include <intctl.h>
+#include <krlibc.h>
 #include <lock.h>
+#include <mem/frame.h>
 #include <mem/heap.h>
+#include <mem/page.h>
 #include <sem.h>
 #include <term/klog.h>
 #include <timer.h>
@@ -30,83 +30,75 @@ void uacpi_kernel_unmap(void *addr, uacpi_size len) {
 void uacpi_kernel_log(uacpi_log_level level, const uacpi_char *str) {
     printk("[");
     switch (level) {
-    case UACPI_LOG_INFO:
-        color_printk(CYAN, BLACK, "  INFO  ");
-        break;
+    case UACPI_LOG_INFO: color_printk(CYAN, BLACK, "  INFO  "); break;
     case UACPI_LOG_TRACE:
-    case UACPI_LOG_ERROR:
-        color_printk(RED, BLACK, " FAILED ");
-        break;
-    case UACPI_LOG_WARN:
-        color_printk(YELLOW, BLACK, "  WARN  ");
-        break;
-    case UACPI_LOG_DEBUG:
-        color_printk(BLUE, BLACK, "DEBUG (%s:%d)", __FILE__, __LINE__);
-        break;
+    case UACPI_LOG_ERROR: color_printk(RED, BLACK, " FAILED "); break;
+    case UACPI_LOG_WARN: color_printk(YELLOW, BLACK, "  WARN  "); break;
+    case UACPI_LOG_DEBUG: color_printk(BLUE, BLACK, "DEBUG (%s:%d)", __FILE__, __LINE__); break;
     }
     printk("]: ");
     printk(str);
 }
 
 uacpi_status uacpi_kernel_pci_device_open(uacpi_pci_address address, uacpi_handle *out_handle) {
-    //    pci_device_t *device = pci_find_bdfs(address.bus, address.device,
-    //                                         address.function, address.segment);
-    //    if (device) {
-    //        *out_handle = (void *)device;
-    //        return UACPI_STATUS_OK;
-    //    }
-
+    pci_device_t *device =
+        pci_find_bdfs(address.bus, address.device, address.function, address.segment);
+    if (device) {
+        *out_handle = (void *)device;
+        return UACPI_STATUS_OK;
+    }
     return UACPI_STATUS_NOT_FOUND;
 }
 
 void uacpi_kernel_pci_device_close(uacpi_handle handle) {}
 
 uacpi_status uacpi_kernel_pci_read8(uacpi_handle device, uacpi_size offset, uacpi_u8 *value) {
-    //    pci_device_t *pci_device = device;
-    //    *value = (uacpi_u8)pci_device->op->read(pci_device->bus, pci_device->slot,
-    //                                            pci_device->func,
-    //                                            pci_device->segment, offset);
+    pci_device_t *pci_device = device;
+    *value = (uacpi_u8)pci_device->op->read(pci_device->bus, pci_device->slot, pci_device->func,
+                                            pci_device->segment, offset);
     return UACPI_STATUS_OK;
 }
+
 uacpi_status uacpi_kernel_pci_read16(uacpi_handle device, uacpi_size offset, uacpi_u16 *value) {
-    //    pci_device_t *pci_device = device;
-    //    *value = (uacpi_u16)pci_device->op->read(pci_device->bus, pci_device->slot,
-    //                                             pci_device->func,
-    //                                             pci_device->segment, offset);
+    pci_device_t *pci_device = device;
+    *value = (uacpi_u16)pci_device->op->read(pci_device->bus, pci_device->slot, pci_device->func,
+                                             pci_device->segment, offset);
     return UACPI_STATUS_OK;
 }
+
 uacpi_status uacpi_kernel_pci_read32(uacpi_handle device, uacpi_size offset, uacpi_u32 *value) {
-    //    pci_device_t *pci_device = device;
-    //    *value = (uacpi_u32)pci_device->op->read(pci_device->bus, pci_device->slot,
-    //                                             pci_device->func,
-    //                                             pci_device->segment, offset);
+    pci_device_t *pci_device = device;
+    *value = (uacpi_u32)pci_device->op->read(pci_device->bus, pci_device->slot, pci_device->func,
+                                             pci_device->segment, offset);
     return UACPI_STATUS_OK;
 }
 
 uacpi_status uacpi_kernel_pci_write8(uacpi_handle device, uacpi_size offset, uacpi_u8 value) {
-    //    pci_device_t *pci_device  = device;
-    //    uint32_t      v           = (uacpi_u32)pci_device->op->read(pci_device->bus, pci_device->slot,
-    //                                                                pci_device->func, pci_device->segment, offset);
-    //    v                        &= ~0xFF;
-    //    v                        |= value;
-    //    pci_device->op->write(pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-    //                          offset, v);
+    pci_device_t *pci_device = device;
+
+    uint32_t v  = (uacpi_u32)pci_device->op->read(pci_device->bus, pci_device->slot,
+                                                  pci_device->func, pci_device->segment, offset);
+    v          &= ~0xFF;
+    v          |= value;
+    pci_device->op->write(pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                          offset, v);
     return UACPI_STATUS_OK;
 }
 uacpi_status uacpi_kernel_pci_write16(uacpi_handle device, uacpi_size offset, uacpi_u16 value) {
-    //    pci_device_t *pci_device  = device;
-    //    uint32_t      v           = (uacpi_u32)pci_device->op->read(pci_device->bus, pci_device->slot,
-    //                                                                pci_device->func, pci_device->segment, offset);
-    //    v                        &= ~0xFFFF;
-    //    v                        |= value;
-    //    pci_device->op->write(pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-    //                          offset, v);
+    pci_device_t *pci_device = device;
+
+    uint32_t v  = (uacpi_u32)pci_device->op->read(pci_device->bus, pci_device->slot,
+                                                  pci_device->func, pci_device->segment, offset);
+    v          &= ~0xFFFF;
+    v          |= value;
+    pci_device->op->write(pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                          offset, v);
     return UACPI_STATUS_OK;
 }
 uacpi_status uacpi_kernel_pci_write32(uacpi_handle device, uacpi_size offset, uacpi_u32 value) {
-    //    pci_device_t *pci_device = device;
-    //    pci_device->op->write(pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-    //                          offset, value);
+    pci_device_t *pci_device = device;
+    pci_device->op->write(pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                          offset, value);
     return UACPI_STATUS_OK;
 }
 
@@ -120,6 +112,7 @@ void uacpi_kernel_io_unmap(uacpi_handle handle) {}
 #if defined(__x86_64__)
 
 #    include "io.h"
+#    include "task/task.h"
 
 uacpi_status uacpi_kernel_io_read8(uacpi_handle base, uacpi_size offset, uacpi_u8 *out_value) {
     *out_value = io_in8((uint64_t)base + offset);
@@ -255,8 +248,7 @@ uacpi_status uacpi_kernel_handle_firmware_request(uacpi_firmware_request *reques
 }
 
 uacpi_thread_id uacpi_kernel_get_thread_id(void) {
-    //TODO return current_task;
-    return NULL;
+    return get_current_task();
 }
 
 #if defined(__x86_64__)
@@ -280,7 +272,8 @@ uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32               irq,
     arg->ctx                     = ctx;
 #    if defined(__x86_64__) || defined(__amd64__)
     extern intctl_t apic_controller;
-    irq_regist_irq(irq + 32, uacpi_irq_handler, irq, arg, &apic_controller, "uacpi_irq_handler");
+    irq_regist_irq(irq + IRQ_BASE_VECTOR, uacpi_irq_handler, irq, arg, &apic_controller,
+                   "uacpi_irq_handler");
 #    endif
     return UACPI_STATUS_OK;
 }
@@ -297,7 +290,7 @@ uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32               irq,
 #endif
 
 uacpi_status uacpi_kernel_uninstall_interrupt_handler(uacpi_interrupt_handler handler,
-                                                      uacpi_handle irq_handle) {
+                                                      uacpi_handle            irq_handle) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 

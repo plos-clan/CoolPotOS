@@ -39,6 +39,19 @@ void arch_close_interrupt();
 void arch_open_interrupt();
 bool arch_check_interrupt();
 
+static inline uint64_t mmio_read64(void *addr) {
+    return *(volatile uint64_t *)addr;
+}
+
+static inline uint32_t mmio_read32(void *addr) {
+    return *(volatile uint32_t *)addr;
+}
+
+static inline void mmio_write32(uint32_t *addr, uint32_t data) {
+    *(volatile uint32_t *)addr = data;
+}
+
+
 void not_null_assert(void *ptr, const char *msg);
 
 void   *memset(void *dest, int c, size_t n);

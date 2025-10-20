@@ -4,6 +4,8 @@
 #include "term/klog.h"
 #include "task/scheduler.h"
 
+volatile bool smp_enable = false;
+
 LIMINE_REQUEST struct limine_smp_request mp_request = {
     .id       = LIMINE_SMP_REQUEST,
     .revision = 0,
@@ -97,5 +99,6 @@ void smp_init() {
         cpu->goto_address         = (limine_goto_address)arch_ap_cpu_entry;
     }
     arch_bsp_cpu_init();
+    smp_enable = true;
     kinfo("%d processors have been enabled.", cpu_count);
 }
