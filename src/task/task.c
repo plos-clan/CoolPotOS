@@ -27,6 +27,14 @@ tcb_t get_current_task() {
     return smp_enable ? arch_current_cpu()->current_task : NULL;
 }
 
+pcb_t found_pcb(pid_t pid){
+    pcb_t process = NULL;
+    cow_foreach(process_list,process){
+        if(process->pid == pid) return process;
+    }
+    return NULL;
+}
+
 pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     pcb_t new_pgb = calloc(1, sizeof(struct process_control_block));
     if (new_pgb == NULL) return -ENOMEM;

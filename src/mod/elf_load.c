@@ -1,8 +1,11 @@
 #include "exec/elf_load.h"
+#include "bootarg.h"
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/page.h"
+#include "task/scheduler.h"
 #include "task/task.h"
+#include "term/klog.h"
 
 void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user,
                   uint64_t offset, uint64_t *load_start) {
@@ -66,8 +69,8 @@ bool is_dynamic(Elf64_Ehdr *ehdr) {
     return true;
 }
 
-void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
-                            uint64_t *load_start, pcb_t process) {
+void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset, uint64_t *load_start,
+                        pcb_t process) {
     if (data == NULL) return NULL;
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
     if (!arch_elf_test_head(ehdr)) { return NULL; }
@@ -89,5 +92,29 @@ void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset,
         vma_insert(&process->vma_manager, ld_so_vma);
     }
     switch_context_directory(cur);
-    return (void*)ehdr->e_entry;
+    return (void *)ehdr->e_entry;
+}
+
+void launch_init_process() {
+    vfs_node_t node = vfs_open(boot_get_cmdline_param("init"));
+    if (node == NULL) {
+        kwarn("Cannot open init file.");
+        return;
+    }
+    char *cmdline = vfs_get_fullpath(node);
+    pid_t init_pid = create_process(cmdline, NULL, CLONE_VM);
+    if (init_pid == -1) {
+        kerror("Cannot create init process\n");
+        return;
+    }
+    pcb_t init_process    = found_pcb(init_pid);
+    init_process->exec    = node;
+    init_process->envp    = malloc(4 * sizeof(char *));
+    init_process->envp[3] = NULL;
+    init_process->envc    = 3;
+    init_process->envp[0] = strdup("PWD=/");
+    init_process->envp[1] = strdup("HOME=/root");
+    init_process->envp[2] = strdup("TERM=linux");
+    init_process->cmdline = cmdline;
+    create_kernel_thread("main", (void *)arch_switch_to_user_mode, NULL, init_process, NICE_TO_PRIO(0));
 }
