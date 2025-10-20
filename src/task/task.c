@@ -13,7 +13,7 @@ tcb_t                  bsp_idle_thread;
 cow_arraylist         *process_list;
 _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
-extern volatile bool smp_enable;
+extern volatile bool   smp_enable;
 
 pid_t alloc_pid() {
     return now_pid++;
@@ -27,10 +27,10 @@ tcb_t get_current_task() {
     return smp_enable ? arch_current_cpu()->current_task : NULL;
 }
 
-pcb_t found_pcb(pid_t pid){
+pcb_t found_pcb(pid_t pid) {
     pcb_t process = NULL;
-    cow_foreach(process_list,process){
-        if(process->pid == pid) return process;
+    cow_foreach(process_list, process) {
+        if (process->pid == pid) return process;
     }
     return NULL;
 }
@@ -56,13 +56,15 @@ pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, 
                            uint64_t prio) {
     tcb_t thread = calloc(1, STACK_SIZE);
     not_null_assert(thread, "create kernel thread null.");
-    thread->name     = strdup(name);
-    thread->tid      = alloc_tid();
-    thread->process  = process == NULL ? kernel_process : process;
-    thread->ct_index = cow_list_add(thread->process->child_threads, thread);
-    thread->prio     = prio;
-    thread->_start   = (uint64_t)func;
-    thread->status   = T_CREATE;
+    thread->name          = strdup(name);
+    thread->tid           = alloc_tid();
+    thread->process       = process == NULL ? kernel_process : process;
+    thread->ct_index      = cow_list_add(thread->process->child_threads, thread);
+    thread->prio          = prio;
+    thread->_start        = (uint64_t)func;
+    thread->status        = T_CREATE;
+    thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     arch_context_init_thread(thread, arg);
     add_task_prio(thread, thread->prio);
     return thread->tid;
@@ -89,6 +91,8 @@ void setup_task() {
     bsp_idle_thread->tid      = alloc_tid();
     bsp_idle_thread->ct_index = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
     bsp_idle_thread->status   = T_RUNNING;
+    bsp_idle_thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    bsp_idle_thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     arch_context_init(&bsp_idle_thread->context);
     kinfo("kernel process(%s) PID: %d ", kernel_process->name, kernel_process->pid);
 }

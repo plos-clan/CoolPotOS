@@ -1,1 +1,111 @@
 #pragma once
+
+#define MSR_EFER         0xC0000080 // EFER MSR寄存器
+#define MSR_STAR         0xC0000081 // STAR MSR寄存器
+#define MSR_LSTAR        0xC0000082 // LSTAR MSR寄存器
+#define MSR_SYSCALL_MASK 0xC0000084
+
+// Linux 兼容层系统调用编号定义
+#define SYSCALL_READ        0
+#define SYSCALL_WRITE       1
+#define SYSCALL_OPEN        2
+#define SYSCALL_CLOSE       3
+#define SYSCALL_STAT        4
+#define SYSCALL_FSTAT       5
+#define SYSCALL_LSTAT       6
+#define SYSCALL_POLL        7
+#define SYSCALL_LSEEK       8
+#define SYSCALL_MMAP        9
+#define SYSCALL_MPROTECT    10
+#define SYSCALL_MUNMAP      11
+/* #define SYSCALL_BRK  12  brk 系统调用不实现*/
+#define SYSCALL_SIGACTION   13
+#define SYSCALL_RT_SIGMASK  14
+#define SYSCALL_SIGRET      15
+#define SYSCALL_IOCTL       16
+#define SYSCALL_PREAD       17
+#define SYSCALL_PWRITE      18
+#define SYSCALL_READV       19
+#define SYSCALL_WRITEV      20
+#define SYSCALL_ACCESS      21
+#define SYSCALL_PIPE        22
+#define SYSCALL_SELECT      23
+#define SYSCALL_YIELD       24
+#define SYSCALL_MREMAP      25
+#define SYSCALL_MINCORE     27
+#define SYSCALL_DUP         32
+#define SYSCALL_DUP2        33
+#define SYSCALL_NANO_SLEEP  35
+#define SYSCALL_GETPID      39
+#define SYSCALL_SENDFILE    40
+#define SYSCALL_SOCKET      41
+#define SYSCALL_CONNECT     42
+#define SYSCALL_ACCEPT      43
+#define SYSCALL_BIND        49
+#define SYSCALL_LISTEN      50
+#define SYSCALL_CLONE       56
+#define SYSCALL_FORK        57
+#define SYSCALL_VFORK       58
+#define SYSCALL_EXECVE      59
+#define SYSCALL_EXIT        60
+#define SYSCALL_WAITPID     61
+#define SYSCALL_UNAME       63
+#define SYSCALL_FCNTL       72
+#define SYSCALL_FTRUNCATE   77
+#define SYSCALL_GETCWD      79
+#define SYSCALL_CHDIR       80
+#define SYSCALL_RENAME      82
+#define SYSCALL_MKDIR       83
+#define SYSCALL_RMDIR       84
+#define SYSCALL_LINK        86
+#define SYSCALL_UNLINK      87
+#define SYSCALL_SYMLINK     88
+#define SYSCALL_READLINK    89
+#define SYSCALL_SYSINFO     99
+#define SYSCALL_GETUID      102
+#define SYSCALL_GETGID      104
+#define SYSCALL_SETUID      105
+#define SYSCALL_SETGID      106
+#define SYSCALL_GETEUID     107
+#define SYSCALL_GETEGID     108
+#define SYSCALL_SETPGID     109
+#define SYSCALL_GETPPID     110
+#define SYSCALL_GETGROUPS   115
+#define SYScall_GETPGID     121
+#define SYSCALL_SIGSUSPEND  130
+#define SYSCALL_SIGALTSTACK 131
+#define SYSCALL_STATFS      137
+#define SYSCALL_PRCTL       157
+#define SYSCALL_ARCH_PRCTL  158
+#define SYSCALL_PIVOT_ROOT  155
+#define SYSCALL_G_AFFINITY  160
+#define SYSCALL_CHROOT      161
+#define SYSCALL_MOUNT       165
+#define SYSCALL_UMOUNT2     166
+#define SYSCALL_REBOOT      169
+#define SYSCALL_GET_TID     186
+#define SYSCALL_FUTEX       202
+#define SYSCALL_GETDENTS64  217
+#define SYSCALL_SETID_ADDR  218
+#define SYSCALL_EXIT_GROUP  231
+#define SYSCALL_C_SETTIME   227
+#define SYSCALL_C_GETTIME   228
+#define SYSCALL_C_GETRES    229
+#define SYSCALL_C_NANOSLEEP 230
+#define SYSCALL_OPENAT      257
+#define SYSCALL_NEWFSTATAT  262
+#define SYSCALL_UNLINKAT    263
+#define SYSCALL_FACCESSAT   269
+#define SYSCALL_PSELECT6    270
+#define SYSCALL_PIPE2       293
+#define SYSCALL_CP_F_RANGE  326
+#define SYSCALL_STATX       332
+#define SYSCALL_FSOPEN      430
+#define SYSCALL_FACCESSAT2  439
+
+#define MAX_SYSCALLS 550
+
+#include "ptrace.h"
+
+typedef uint64_t (*syscall_t)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t,
+                              struct syscall_regs *);

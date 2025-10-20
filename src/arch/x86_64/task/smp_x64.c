@@ -7,6 +7,7 @@
 #include "mem/page.h"
 #include "task/scheduler.h"
 #include "task/smp.h"
+#include "syscall.h"
 
 extern struct idt_register idt_pointer;
 
@@ -94,6 +95,7 @@ _Noreturn void arch_ap_cpu_entry() {
     set_cpu_idle_task(idle_thread, arch_current_cpu());
     float_processor_setup();
     arch_context_init(&idle_thread->context);
+    arch_enable_syscall();
     arch_open_interrupt();
     while (true)
         arch_wait_for_interrupt();

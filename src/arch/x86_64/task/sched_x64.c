@@ -77,8 +77,6 @@ void arch_context_init(struct arch_context_ *context) {
     context->kernel_stack  = get_rsp();
     context->user_stack    = get_rsp();
     context->regs.rflags   = get_rflags();
-    context->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    context->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     set_kernel_stack(get_rsp());
     context->fs_base = read_fsbase();
     context->gs_base = read_gsbase();
@@ -90,8 +88,6 @@ void arch_context_init_thread(tcb_t new_task, void *args) {
     new_task->context.regs.rsp       = (uint64_t)stack_top;
     new_task->context.user_stack_top = (uint64_t)stack_top;
     new_task->context.kernel_stack   = (uint64_t)stack_top;
-    new_task->context.signal_stack   = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    new_task->context.syscall_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     new_task->context.user_stack     = new_task->context.kernel_stack;
 
     new_task->context.regs.rip    = (uint64_t)new_task->_start;
