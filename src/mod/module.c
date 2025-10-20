@@ -27,6 +27,26 @@ void extract_name(const char *input, char *output, size_t output_size) {
     }
 }
 
+module_t *get_module(const char *module_name) {
+    if(module_name == NULL) return NULL;
+    for (size_t i = 0; i < modules_count; i++) {
+        if (strcmp(boot_modules[i].name, module_name) == 0) {
+            return &boot_modules[i];
+        }
+    }
+    return NULL;
+}
+
+module_t *get_module_raw(const char *module_name) {
+    if(module_name == NULL) return NULL;
+    for (size_t i = 0; i < modules_count; i++) {
+        if (strcmp(boot_modules[i].path, module_name) == 0) {
+            return &boot_modules[i];
+        }
+    }
+    return NULL;
+}
+
 void load_module() {
     for (uint64_t i = 0; i < modules_request.response->module_count; i++) {
         boot_modules[i].path = strdup(modules_request.response->modules[i]->path);

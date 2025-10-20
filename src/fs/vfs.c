@@ -433,21 +433,22 @@ errno_t vfs_mount(const char *src,const char *type, vfs_node_t node) {
         node->fsid     = fs->fsid;
         node->root     = node;
         node->is_mount = true;
+        return EOK;
     }
     return -ENOENT;
 }
 
 size_t vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size) {
-    if (file == NULL || addr == NULL) return -EINVAL;
+    if (file == NULL || addr == NULL) return -1;
     do_update(file);
-    if (file->type == file_dir) return -EISDIR;
+    if (file->type == file_dir) return -1;
     return callbackof(file, read)(file->handle, addr, offset, size);
 }
 
 size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
-    if (file == NULL || addr == NULL) return -EINVAL;
+    if (file == NULL || addr == NULL) return -1;
     do_update(file);
-    if (file->type == file_dir) return -EISDIR;
+    if (file->type == file_dir) return -1;
     size_t ret = callbackof(file, write)(file->handle, addr, offset, size);
     do_update(file);
     return ret;

@@ -9,4 +9,6 @@ typedef struct module {
     size_t   size;
 } module_t;
 
+module_t *get_module(const char *module_name);
+module_t *get_module_raw(const char *module_name);
 void load_module();

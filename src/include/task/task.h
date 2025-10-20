@@ -122,7 +122,8 @@ tcb_t get_current_task();
 void  arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs);
 void  arch_context_init(struct arch_context_ *context);  // 该函数仅适用于 idle 任务的上下文初始化
 void  arch_context_init_thread(tcb_t thread, void *arg); // 用于初始化线程上下文
-pid_t create_process(const char *name, pcb_t parent, uint64_t flags);
+_Noreturn void arch_switch_to_user_mode();               // 架构实现切换至用户态
+pid_t          create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, pcb_t process,
                            uint64_t prio);
 void  setup_task();

@@ -23,6 +23,8 @@ void power_off() {
 }
 
 static uacpi_interrupt_ret handle_power_button(uacpi_handle ctx) {
+    kwarn("The kernel is shutting down..");
+    uacpi_kernel_sleep(100);
     power_off();
     return UACPI_INTERRUPT_HANDLED;
 }

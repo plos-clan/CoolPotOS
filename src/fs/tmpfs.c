@@ -67,7 +67,9 @@ size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
 errno_t tmpfs_stat(void *file, vfs_node_t node) {
     tmpfs_file_t *file0 = (tmpfs_file_t *)file;
     if (file0 == NULL) return -ENOENT;
-    node->type = file0->type == file_dir ? file_dir : file_none;
+    node->type = file0->type == tp_file_symlink ? file_symlink
+                 : file0->type == tp_file_dir   ? file_dir
+                                                : file_none;
     node->size = file0->type == file_dir ? 0 : file0->size;
     return EOK;
 }
@@ -115,6 +117,16 @@ vfs_node_t tmpfs_dup(vfs_node_t node) {
     return copy;
 }
 
+errno_t tmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
+    tmpfs_file_t *p = parent;
+    tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
+    strncpy(f->name, name, sizeof(f->name));
+    f->type      = tp_file_symlink;
+    node->handle = f;
+    f->node      = node;
+    return EOK;
+}
+
 static struct vfs_callback tmpfs_callbacks = {
     .mount    = tmpfs_mount,
     .unmount  = tmpfs_umount,
@@ -127,7 +139,7 @@ static struct vfs_callback tmpfs_callbacks = {
     .readlink = (vfs_readlink_t)dummy,
     .mkfile   = tmpfs_mkfile,
     .link     = (vfs_mk_t)dummy,
-    .symlink  = (vfs_mk_t)dummy,
+    .symlink  = tmpfs_symlink,
     .ioctl    = (vfs_ioctl_t)dummy,
     .dup      = tmpfs_dup,
     .delete   = tmpfs_delete,
