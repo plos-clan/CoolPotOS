@@ -4,9 +4,12 @@
 #include "driver/acpi.h"
 #include "driver/blk_device.h"
 #include "driver/gop.h"
+#include "driver/pci/pci.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
+#include "exec/dlinker.h"
 #include "fpu.h"
+#include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "fsgsbase.h"
 #include "hpet.h"
@@ -15,13 +18,12 @@
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
+#include "module.h"
 #include "task/scheduler.h"
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "fs/tmpfs.h"
-#include "exec/dlinker.h"
-#include "module.h"
+#include "driver/power/power.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -53,6 +55,8 @@ USED _Noreturn void kmain() {
     acpi_init();
     hpet_init();
     apic_init();
+    pci_init();
+    acpi_namespace_setup();
     tmpfs_regist();
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler,0,NULL,&apic_controller,"sched_handle");
@@ -60,6 +64,7 @@ USED _Noreturn void kmain() {
     smp_init();
     float_processor_setup();
     calibrate_tsc_with_hpet();
+    power_button_init();
     kmodule_init();
     ksuccess("Kernel load done!");
     arch_open_interrupt();

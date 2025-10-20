@@ -1,11 +1,11 @@
 #include "hpet.h"
 #include "driver/uacpi/acpi.h"
 #include "driver/uacpi/tables.h"
-#include "io.h"
 #include "mem/frame.h"
 #include "mem/page.h"
 #include "term/klog.h"
 #include "timer.h"
+#include "krlibc.h"
 
 HpetInfo       *hpet_addr;
 static uint64_t hpetPeriod   = 0;

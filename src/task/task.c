@@ -13,6 +13,7 @@ tcb_t                  bsp_idle_thread;
 cow_arraylist         *process_list;
 _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
+extern volatile bool smp_enable;
 
 pid_t alloc_pid() {
     return now_pid++;
@@ -23,7 +24,7 @@ pid_t alloc_tid() {
 }
 
 tcb_t get_current_task() {
-    return arch_current_cpu()->current_task;
+    return smp_enable ? arch_current_cpu()->current_task : NULL;
 }
 
 pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {

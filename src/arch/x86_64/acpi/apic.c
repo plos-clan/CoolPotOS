@@ -92,7 +92,7 @@ void ioapic_add(uint8_t vector, uint32_t irq) {
 void ioapic_enable(uint8_t vector) {
     struct ioapic_info *ioapic = find_ioapic(isa_irq_to_gsi(vector));
     if (!ioapic) {
-        printk("Cannot found ioapic for vector %d\n", vector);
+        printk("Cannot found ioapic for vector %d gsi:%d ENABLE\n", vector, isa_irq_to_gsi(vector));
         return;
     }
     uint64_t index = 0x10 + ((isa_irq_to_gsi(vector) - ioapic->gsi_base) * 2);
@@ -106,7 +106,7 @@ void ioapic_enable(uint8_t vector) {
 void ioapic_disable(uint8_t vector) {
     struct ioapic_info *ioapic = find_ioapic(isa_irq_to_gsi(vector));
     if (!ioapic) {
-        printk("Cannot found ioapic for vector %d\n", vector);
+        printk("Cannot found ioapic for vector %d DISABLE\n", vector);
         return;
     }
     uint64_t index = 0x10 + ((isa_irq_to_gsi(vector) - ioapic->gsi_base) * 2);

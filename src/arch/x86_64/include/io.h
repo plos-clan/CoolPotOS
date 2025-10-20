@@ -41,18 +41,6 @@ static inline void io_out32(uint16_t port, uint32_t data) {
     __asm__ volatile("outl %0, %1" : : "a"(data), "Nd"(port));
 }
 
-static inline uint64_t mmio_read64(void *addr) {
-    return *(volatile uint64_t *)addr;
-}
-
-static inline uint32_t mmio_read32(void *addr) {
-    return *(volatile uint32_t *)addr;
-}
-
-static inline void mmio_write32(uint32_t *addr, uint32_t data) {
-    *(volatile uint32_t *)addr = data;
-}
-
 static inline uint64_t get_cr0(void) {
     uint64_t cr0;
     __asm__ volatile("mov %%cr0, %0" : "=r"(cr0));
