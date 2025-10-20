@@ -83,13 +83,13 @@ typedef enum {
     T_START   = 4, // 准备调度
     T_FUTEX   = 5, // 被挂起(无法被调度, 线程状态为等待唤醒)
     T_OUT     = 6, // 已被处死(无法被调度)
-    T_ZOMBIE =
-        7, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
+    T_ZOMBIE  = 7, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
 } task_status;
 
 struct process_control_block {
     pid_t          pid;           // 进程ID
     char          *name;          // 进程名
+    char          *cmdline;       // 命令行完整形参
     pcb_t          parent;        // 父进程
     size_t         pl_index;      // 进程列表索引
     cow_arraylist *child_threads; // 子线程
@@ -102,6 +102,8 @@ struct process_control_block {
     vfs_node_t cwd;  // 进程工作目录
     vfs_node_t exec; // 可执行文件句柄
     fdt_t     *fdts; // 文件描述符表
+    char     **envp; // 进程环境变量
+    size_t     envc; // 进程环境变量长度
 };
 
 struct thread_control_block {
@@ -126,4 +128,5 @@ _Noreturn void arch_switch_to_user_mode();               // 架构实现切换�
 pid_t          create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, pcb_t process,
                            uint64_t prio);
+pcb_t found_pcb(pid_t pid);
 void  setup_task();

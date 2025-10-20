@@ -5,10 +5,12 @@
 #include "driver/blk_device.h"
 #include "driver/gop.h"
 #include "driver/pci/pci.h"
+#include "driver/power/power.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
 #include "exec/dlinker.h"
 #include "fpu.h"
+#include "fs/cpio.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "fsgsbase.h"
@@ -23,14 +25,11 @@
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "driver/power/power.h"
-#include "fs/cpio.h"
+#include "exec/elf_load.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
 LIMINE_REQUEST LIMINE_BASE_REVISION(3);
-
-
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -60,7 +59,7 @@ USED _Noreturn void kmain() {
     acpi_namespace_setup();
     tmpfs_regist();
     extern intctl_t apic_controller;
-    irq_regist_irq(timer, scheduler_handler,0,NULL,&apic_controller,"sched_handle");
+    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");
     setup_task();
     smp_init();
     float_processor_setup();
@@ -72,7 +71,7 @@ USED _Noreturn void kmain() {
     arch_open_interrupt();
     enable_scheduler();
     start_all_kernel_module();
-
+    launch_init_process();
     while (true)
         arch_wait_for_interrupt();
 }

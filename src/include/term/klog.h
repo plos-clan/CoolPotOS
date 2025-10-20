@@ -62,6 +62,7 @@
 #include "types/stdarg.h"
 
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...);
+void unlock_print();
 
 void kmsg_putc(char c);
 void kmsg_write(const char *s);

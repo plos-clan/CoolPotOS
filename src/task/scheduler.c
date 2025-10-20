@@ -44,20 +44,22 @@ tcb_t pick_next_task(uint64_t cpu_id) {
 }
 
 void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
-    if(!scheduler_status) return;
+    if (!scheduler_status) return;
     cpu_local_t *cpu = arch_current_cpu();
-    if(unlikely(cpu == NULL)) return;
+    if (unlikely(cpu == NULL)) return;
     tcb_t current_thread = get_current_task();
-    if(unlikely(current_thread == NULL)) return;
+    if (unlikely(current_thread == NULL)) return;
     tcb_t next_thread = pick_next_task(cpu->id);
 
     extern pcb_t kernel_process;
-    if (next_thread->process->parent == NULL ||
-        next_thread->process->parent->status == T_DEATH ||
+    if (next_thread->process->parent == NULL || next_thread->process->parent->status == T_DEATH ||
         next_thread->process->parent->status == T_OUT) {
         next_thread->process->parent = kernel_process;
     }
 
-    if(current_thread == next_thread) return;
-    arch_task_switch(current_thread,next_thread,regs);
+    if (current_thread == next_thread) return;
+    current_thread->status = T_RUNNING;
+    next_thread->status    = T_START;
+    cpu->current_task      = next_thread;
+    arch_task_switch(current_thread, next_thread, regs);
 }
