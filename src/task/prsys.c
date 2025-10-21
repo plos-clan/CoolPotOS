@@ -12,3 +12,11 @@ syscall_(exit, int exit_code) {
     while (true) arch_wait_for_interrupt();
     return EOK;
 }
+
+syscall_(set_tid_address, int *tidptr) {
+    if (unlikely(tidptr == NULL)) return SYSCALL_FAULT_(EINVAL);
+    tcb_t thread          = get_current_task();
+    thread->tid_address   = (uint64_t)tidptr;
+    thread->tid_directory = get_current_directory();
+    return EOK;
+}
