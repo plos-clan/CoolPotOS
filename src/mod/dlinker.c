@@ -1,9 +1,9 @@
 #include "exec/dlinker.h"
+#include "errno.h"
 #include "lib/sprintf.h"
 #include "limine.h"
 #include "module.h"
 #include "term/klog.h"
-#include "errno.h"
 
 #define EXPORT_SYMBOL(mode, FUNC) dlfunc_register(mode, #FUNC, (void *)(FUNC))
 
@@ -24,66 +24,12 @@ dlfunc_t *find_func(char *name) {
     return NULL;
 }
 
-void *resolve_symbol(Elf64_Sym *symtab, uint32_t sym_idx) {
-    return (void *)symtab[sym_idx].st_value;
-}
-
-bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab, size_t jmprel_sz,
-                        uint64_t offset) {
-    Elf64_Rela *rela_plt   = rela_start;
-    size_t      rela_count = jmprel_sz / sizeof(Elf64_Rela);
-
-    for (size_t i = 0; i < rela_count; i++) {
-        Elf64_Rela *rela        = &rela_plt[i];
-        Elf64_Sym  *sym         = &symtab[ELF64_R_SYM(rela->r_info)];
-        char       *sym_name    = &strtab[sym->st_name];
-        dlfunc_t   *func        = find_func(sym_name);
-        uint64_t   *target_addr = (uint64_t *)(rela->r_offset + offset);
-        if (func != NULL) {
-            *target_addr = (uint64_t)func->addr;
-        } else {
-            printk("Failed relocating %s at %p\n", sym_name, rela->r_offset + offset);
-        }
+dlfunc_t *find_func_mode(kernel_mode_t *mode, char *name) {
+    kernel_mode_t *kmod = mode;
+    for (size_t i = 0; i < kmod->export_count; i++) {
+        dlfunc_t *func = kmod->export_funcs[i];
+        if (strcmp(func->name, name) == 0) return func;
     }
-    return true;
-}
-
-void *find_symbol_address(const char *symbol_name, Elf64_Ehdr *ehdr, uint64_t offset) {
-    if (symbol_name == NULL || ehdr == NULL) return NULL;
-
-    Elf64_Sym *symtab = NULL;
-    char      *strtab = NULL;
-
-    Elf64_Shdr *shdrs    = (Elf64_Shdr *)((char *)ehdr + ehdr->e_shoff);
-    char       *shstrtab = (char *)ehdr + shdrs[ehdr->e_shstrndx].sh_offset;
-
-    size_t symtabsz = 0;
-
-    for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdrs[i].sh_type == SHT_SYMTAB) {
-            symtab   = (Elf64_Sym *)((char *)ehdr + shdrs[i].sh_offset);
-            symtabsz = shdrs[i].sh_size;
-            strtab   = (char *)ehdr + shdrs[shdrs[i].sh_link].sh_offset;
-            break;
-        }
-    }
-
-    size_t num_symbols = symtabsz / sizeof(Elf64_Sym);
-
-    for (size_t i = 0; i < symtabsz; i++) {
-        Elf64_Sym *sym      = &symtab[i];
-        char      *sym_name = &strtab[sym->st_name];
-
-        if (strcmp(symbol_name, sym_name) == 0) {
-            if (sym->st_shndx == SHN_UNDEF) {
-                printk("Symbol %s is undefined.\n", sym_name);
-                return NULL;
-            }
-            void *addr = (void *)(offset + sym->st_value);
-            return addr;
-        }
-    }
-    printk("Cannot find symbol %s in ELF file.\n", symbol_name);
     return NULL;
 }
 
@@ -114,11 +60,72 @@ void dlfunc_register(kernel_mode_t *mode, char *name, void *func) {
         return;
     }
 
-    new_entry->name = name;
+    new_entry->name = strdup(name);
     new_entry->addr = func;
 
     mode->export_funcs[mode->export_count] = new_entry;
     mode->export_count++;
+}
+
+void *resolve_symbol(Elf64_Sym *symtab, uint32_t sym_idx) {
+    return (void *)symtab[sym_idx].st_value;
+}
+
+bool handle_relocations(Elf64_Rela *rela_start, Elf64_Sym *symtab, char *strtab, size_t jmprel_sz,
+                        uint64_t offset) {
+    Elf64_Rela *rela_plt   = rela_start;
+    size_t      rela_count = jmprel_sz / sizeof(Elf64_Rela);
+
+    for (size_t i = 0; i < rela_count; i++) {
+        Elf64_Rela *rela     = &rela_plt[i];
+        Elf64_Sym  *sym      = &symtab[ELF64_R_SYM(rela->r_info)];
+        char       *sym_name = &strtab[sym->st_name];
+        uint64_t    bind     = ELF64_ST_BIND(sym->st_info);
+        if (bind == STB_GLOBAL && sym->st_shndx == SHN_UNDEF) {
+            dlfunc_t *func        = find_func(sym_name);
+            uint64_t *target_addr = (uint64_t *)(rela->r_offset + offset);
+            if (func != NULL) {
+                *target_addr = (uint64_t)func->addr;
+            } else {
+                printk("Failed relocating %s at %p\n", sym_name, rela->r_offset + offset);
+            }
+        }
+    }
+    return true;
+}
+
+void export_symbol(kernel_mode_t *mode, Elf64_Ehdr *ehdr, uint64_t offset) {
+    if (ehdr == NULL) return;
+
+    Elf64_Sym *symtab = NULL;
+    char      *strtab = NULL;
+
+    Elf64_Shdr *shdrs    = (Elf64_Shdr *)((char *)ehdr + ehdr->e_shoff);
+    char       *shstrtab = (char *)ehdr + shdrs[ehdr->e_shstrndx].sh_offset;
+
+    size_t symtabsz = 0;
+
+    for (int i = 0; i < ehdr->e_shnum; i++) {
+        if (shdrs[i].sh_type == SHT_SYMTAB) {
+            symtab   = (Elf64_Sym *)((char *)ehdr + shdrs[i].sh_offset);
+            symtabsz = shdrs[i].sh_size;
+            strtab   = (char *)ehdr + shdrs[shdrs[i].sh_link].sh_offset;
+            break;
+        }
+    }
+
+    size_t num_symbols = symtabsz / sizeof(Elf64_Sym);
+
+    for (size_t i = 0; i < num_symbols; i++) {
+        Elf64_Sym *sym      = &symtab[i];
+        char      *sym_name = &strtab[sym->st_name];
+        uint64_t   bind     = ELF64_ST_BIND(sym->st_info);
+        uint64_t   type     = ELF64_ST_TYPE(sym->st_info);
+        if (sym->st_shndx == SHN_UNDEF) continue;
+        if (type == STT_FUNC && (bind == STB_GLOBAL)) {
+            dlfunc_register(mode, sym_name, (void *)(offset + sym->st_value));
+        }
+    }
 }
 
 dlinit_t load_dynamic(kernel_mode_t *mode, Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, uint64_t offset) {
@@ -219,11 +226,12 @@ dlinit_t load_dynamic(kernel_mode_t *mode, Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, 
         return NULL;
     }
 
-    void *entry      = find_symbol_address("dlmain", ehdr, offset);
-    mode->task_entry = find_symbol_address("dlstart", ehdr, offset);
-
-    dlinit_t dlinit_func = (dlinit_t)entry;
-    return dlinit_func;
+    export_symbol(mode, ehdr, offset);
+    dlfunc_t *dlinit_func = (dlfunc_t *)find_func_mode(mode, "dlmain");
+    if (dlinit_func == NULL) return NULL;
+    dlfunc_t *dlstart = (dlfunc_t *)find_func_mode(mode, "dlstart");
+    if (dlstart != NULL) mode->task_entry = dlstart->addr;
+    return dlinit_func->addr;
 }
 
 void dlinker_load(kernel_mode_t *module) {
@@ -258,7 +266,7 @@ void dlinker_load(kernel_mode_t *module) {
     }
 
     kinfo("Loaded module %s at %#018lx", module->name,
-           KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
+          KERNEL_MODULES_SPACE_START + kernel_modules_load_offset);
 
     module->entry_exit_code     = dlinit();
     kernel_modules_load_offset += (load_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
@@ -287,25 +295,25 @@ extern size_t   modules_count;
 void load_all_kernel_module() {
     for (size_t i = 0; i < modules_count; i++) {
         if (ends_with_km(boot_modules[i].path)) {
-            module_t      *mod    = &boot_modules[i];
+            module_t      *mod  = &boot_modules[i];
             kernel_mode_t *kmod = malloc(sizeof(kernel_mode_t));
             kmod->name          = strdup(mod->name);
             kmod->data          = mod->data;
             kmod->data_len      = mod->size;
             dlinker_load(kmod);
-            kmod->lists_index = cow_list_add(kmod_lists,kmod);
+            kmod->lists_index = cow_list_add(kmod_lists, kmod);
         }
     }
 }
 
 void start_all_kernel_module() {
     kernel_mode_t *kmod;
-    cow_foreach(kmod_lists,kmod){
-        if(kmod->task_entry == NULL) continue;
-        if(kmod->entry_exit_code & ERRNO_MASK) {
-            logkf("kmod: cannot start mod(%s) - exit_code: %d\n",kmod->name,
+    cow_foreach(kmod_lists, kmod) {
+        if (kmod->task_entry == NULL) continue;
+        if (kmod->entry_exit_code & ERRNO_MASK) {
+            logkf("kmod: cannot start mod(%s) - exit_code: %d\n", kmod->name,
                   kmod->entry_exit_code);
-        }else{
+        } else {
             int ret = kmod->task_entry();
         }
     }
