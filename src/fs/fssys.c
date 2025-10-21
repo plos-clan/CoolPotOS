@@ -34,7 +34,7 @@ next:;
     not_null_assert(fd_handle, "sys_open: null alloc fd");
     fd_handle->offset = flags & O_APPEND ? node->size : 0;
     fd_handle->node   = node;
-    int index         = (int)add_fd(get_current_task()->process->fdts, fd_handle);
+    int index         = add_fd(get_current_task()->process->fdts, fd_handle);
     fd_handle->fd     = index;
     if (index == -1) {
         logkf("sys_open: open %s failed.\n", normalized_path);

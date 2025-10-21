@@ -93,8 +93,8 @@ void *malloc(size_t size) {
     void  *ptr       = mpool_alloc(&pool, true_size);
     if (!ptr) {
         logkf("\nkernel malloc null\n");
-        close_interrupt;
-        cpu_hlt;
+        arch_close_interrupt();
+        arch_wait_for_interrupt();
     }
     ptr = set_magic(ptr, size, true);
 #else
