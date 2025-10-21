@@ -45,6 +45,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->child_threads = cow_list_create();
     new_pgb->tty           = new_pgb->parent->tty;
     new_pgb->fdts          = fds_init();
+    new_pgb->ipc_queue     = ipc_queue_init();
     if (flags & CLONE_VM) {
         new_pgb->directory = clone_page_directory(new_pgb->parent->directory, false);
     } else

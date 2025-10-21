@@ -1,4 +1,3 @@
-
 #include "term/klog.h"
 #include "lib/sprintf.h"
 

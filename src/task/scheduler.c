@@ -43,6 +43,10 @@ tcb_t pick_next_task(uint64_t cpu_id) {
     return next_thread;
 }
 
+void scheduler_yield() {
+    //TODO yield impl
+}
+
 void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     if (!scheduler_status) return;
     cpu_local_t *cpu = arch_current_cpu();

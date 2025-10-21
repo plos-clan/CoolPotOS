@@ -193,6 +193,7 @@ typedef struct tty_session { // 一个 TTY 会话
 
 extern tty_t *kernel_session;
 
+tty_device_t *get_tty_device(const char *name);
 tty_device_t *alloc_tty_device(enum tty_device_type type);
 errno_t       register_tty_device(tty_device_t *device);
 errno_t       delete_tty_device(tty_device_t *device);
