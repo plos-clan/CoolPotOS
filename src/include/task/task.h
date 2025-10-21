@@ -115,6 +115,8 @@ struct thread_control_block {
     uint64_t             signal_stack;       // 信号栈顶地址
     uint64_t             call_in_signal;     // 是否在信号处理过程
     struct arch_context_ context;            // 任务上下文
+    uint64_t             tid_address;        //
+    page_directory_t    *tid_directory;      //
     char                *name;               // 线程名
     pid_t                tid;                // 线程ID
     pcb_t                process;            // 所属进程

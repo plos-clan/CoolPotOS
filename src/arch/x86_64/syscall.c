@@ -92,10 +92,34 @@ void arch_enable_syscall() {
     wrmsr(MSR_SYSCALL_MASK, (1 << 9));
 }
 
+syscall_(arch_prctl, uint64_t code, uint64_t addr) {
+    tcb_t thread = get_current_task();
+    switch (code) {
+    case ARCH_SET_FS:
+        thread->context.fs_base = addr;
+        write_fsbase(thread->context.fs_base);
+        break;
+    case ARCH_GET_FS: return thread->context.fs_base;
+    case ARCH_SET_GS:
+        thread->context.gs_base = addr;
+        write_gsbase(thread->context.gs_base);
+        break;
+    case ARCH_GET_GS: return thread->context.gs_base;
+    default: return -EINVAL;
+    }
+    return EOK;
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
-    [SYSCALL_EXIT]  = (syscall_t)syscall_exit,
-    [SYSCALL_OPEN]  = (syscall_t)syscall_open,
-    [SYSCALL_CLOSE] = (syscall_t)syscall_close,
+    [SYSCALL_EXIT]       = (syscall_t)syscall_exit,
+    [SYSCALL_OPEN]       = (syscall_t)syscall_open,
+    [SYSCALL_CLOSE]      = (syscall_t)syscall_close,
+    [SYSCALL_ARCH_PRCTL] = (syscall_t)syscall_arch_prctl,
+    [SYSCALL_SETID_ADDR] = (syscall_t)syscall_set_tid_address,
+    [SYSCALL_WRITE]      = (syscall_t)syscall_write,
+    [SYSCALL_READ]       = (syscall_t)syscall_read,
+    [SYSCALL_WRITEV]     = (syscall_t)syscall_writev,
+    [SYSCALL_READV]      = (syscall_t)syscall_readv,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

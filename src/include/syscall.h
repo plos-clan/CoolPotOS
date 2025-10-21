@@ -49,11 +49,45 @@
 
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 
+#include "types.h"
+
+struct iovec {
+    void  *iov_base;
+    size_t iov_len;
+};
+
+struct timespec {
+    uint64_t tv_sec;
+    uint64_t tv_nsec;
+};
+
+struct stat {
+    long              st_dev;
+    unsigned long     st_ino;
+    unsigned long     st_nlink;
+    int               st_mode;
+    int               st_uid;
+    int               st_gid;
+    long              st_rdev;
+    long long         st_size;
+    long              st_blksize;
+    unsigned long int st_blocks;
+    struct timespec   st_atim;
+    struct timespec   st_mtim;
+    struct timespec   st_ctim;
+    char              _pad[24];
+};
+
 void arch_enable_syscall();
 
 // fs syscall
 syscall_(open, char *path0, uint64_t flags, uint64_t mode);
 syscall_(close, int fd);
+syscall_(write, int fd, uint8_t *buffer, size_t size);
+syscall_(read, int fd, uint8_t *buffer, size_t size);
+syscall_(writev, int fd, struct iovec *iov, int iovcnt);
+syscall_(readv, int fd, struct iovec *iov, int iovcnt0);
 
 // proc syscall
 syscall_(exit, int exit_code);
+syscall_(set_tid_address, int *tidptr);

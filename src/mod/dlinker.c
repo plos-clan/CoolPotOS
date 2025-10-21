@@ -296,7 +296,7 @@ void load_all_kernel_module() {
     for (size_t i = 0; i < modules_count; i++) {
         if (ends_with_km(boot_modules[i].path)) {
             module_t      *mod  = &boot_modules[i];
-            kernel_mode_t *kmod = malloc(sizeof(kernel_mode_t));
+            kernel_mode_t *kmod = calloc(1,sizeof(kernel_mode_t));
             kmod->name          = strdup(mod->name);
             kmod->data          = mod->data;
             kmod->data_len      = mod->size;
@@ -322,6 +322,7 @@ void start_all_kernel_module() {
 void kmodule_init() {
     kmod_lists            = cow_list_create();
     kernel_mode_t *cpkrnl = malloc(sizeof(kernel_mode_t));
+    *cpkrnl = (kernel_mode_t){};
     cpkrnl->name          = strdup("cpkrnl");
     dlfunc_register(cpkrnl, "printk", cp_printk);
     cpkrnl->lists_index = cow_list_add(kmod_lists, cpkrnl);
