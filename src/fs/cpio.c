@@ -137,7 +137,6 @@ next:;
         offset = (offset + namesize + 3) & ~3;
 
         size_t         filesize = read_num(hdr.c_filesize, 8);
-        if(filesize == 0) filesize = 1;
         char *filedata = malloc(filesize);
         memcpy(filedata, data_d + offset, filesize);
         offset = (offset + filesize + 3) & ~3;

@@ -5,6 +5,10 @@ void logk(const char *str) {
     while (*str) {
         char ch = *str++;
         kmsg_putc(ch);
+#if defined(__x86_64__) || defined(__amd64__)
+        extern void write_serial(char a);
+        write_serial(ch);
+#endif
     }
 }
 
