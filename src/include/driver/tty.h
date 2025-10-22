@@ -102,6 +102,7 @@
 
 #define B38400 0x1000
 
+#include "atom_queue.h"
 #include "llist.h"
 #include "types.h"
 
@@ -189,6 +190,7 @@ typedef struct tty_session { // 一个 TTY 会话
     termios_t         termios;
     tty_session_ops_t ops;
     tty_device_t     *device; // 会话所属的TTY设备
+    atom_queue       *queue;  // 输入缓冲队列
 } tty_t;
 
 extern tty_t *kernel_session;

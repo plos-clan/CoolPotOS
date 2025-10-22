@@ -88,28 +88,3 @@ static inline void wrmsr(uint32_t msr, uint64_t value) {
     uint32_t edx = value >> 32;
     __asm__ volatile("wrmsr" : : "c"(msr), "a"(eax), "d"(edx));
 }
-
-USED static uint64_t load(uint64_t *addr) {
-    uint64_t ret = 0;
-    __asm__ volatile("lock xadd %[ret], %[addr];"
-                     : [addr] "+m"(*addr), [ret] "+r"(ret)
-                     :
-                     : "memory");
-    return ret;
-}
-
-USED static void store(uint64_t *addr, uint32_t value) {
-    __asm__ volatile("lock xchg %[value], %[addr];"
-                     : [addr] "+m"(*addr), [value] "+r"(value)
-                     :
-                     : "memory");
-}
-
-USED static bool cas(uint64_t *addr, uint64_t exp, uint64_t upd) {
-    uint8_t ret = 0;
-    __asm__ volatile("lock cmpxchg %[upd], %[addr];"
-                     : [addr] "+m"(*addr), [upd] "+r"(upd), [ret] "+r"(ret)
-                     : "a"(exp)
-                     : "memory");
-    return (bool)ret;
-}
