@@ -130,6 +130,43 @@ uint64_t arch_virt_to_phys(uint64_t va) {
     return pa;
 }
 
+uint64_t get_arch_page_table_flags(uint64_t flags) {
+    uint64_t result = PTE_PRESENT;
+
+    if ((flags & PTE_WRITEABLE) != 0) { result |= PTE_WRITEABLE; }
+
+    if ((flags & PTE_USER) != 0) { result |= PTE_USER; }
+
+    if ((flags & PTE_U_ACCESSED) != 0) { result |= (PTE_DIS_CACHE | PTE_PWT); }
+    return result;
+}
+
+uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
+    uint64_t indexs[4];
+    for (uint64_t i = 0; i < 4; i++) {
+        indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
+    }
+
+    for (uint64_t i = 0; i < 4 - 1; i++) {
+        uint64_t index = indexs[i];
+        uint64_t addr  = pgdir[index];
+        if (ARCH_PT_IS_LARGE(addr)) {
+            pgdir[index] &= ~PAGE_CALC_PAGE_TABLE_MASK(4);
+            pgdir[index] |= flags;
+        }
+        if (!ARCH_PT_IS_TABLE(addr)) { return 0; }
+        pgdir = (uint64_t *)phys_to_virt(addr & (~PAGE_CALC_PAGE_TABLE_MASK(4)));
+    }
+
+    uint64_t index = indexs[4 - 1];
+
+    pgdir[index] &= ~PAGE_CALC_PAGE_TABLE_MASK(4);
+    pgdir[index] |= flags;
+
+    flush_tlb(vaddr);
+    return 0;
+}
+
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     spin_lock(page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));

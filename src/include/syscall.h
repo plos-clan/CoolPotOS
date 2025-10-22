@@ -98,6 +98,7 @@
 #define MS_UNBINDABLE  (1 << 17)
 
 #include "types.h"
+#include "task/poll.h"
 
 struct iovec {
     void  *iov_base;
@@ -153,6 +154,7 @@ syscall_(chdir, char *s);
 syscall_(fcntl, int fd, int cmd, uint64_t arg);
 syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data);
 syscall_(fstat, int fd, struct stat *buf);
+syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -161,6 +163,9 @@ syscall_(getpid);
 syscall_(exit_group, int exit_code);
 syscall_(getuid);
 syscall_(yield);
+syscall_(setpgid, pid_t pid, pid_t pgid);
+syscall_(getpgid);
+syscall_(getppid);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
@@ -168,6 +173,7 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
 syscall_(munmap, uint64_t addr, size_t size);
 syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
          uint64_t new_addr);
+syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot);
 
 // os syscall
 syscall_(uname, struct utsname *utsname);

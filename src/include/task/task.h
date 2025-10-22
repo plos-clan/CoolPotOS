@@ -91,6 +91,7 @@ typedef enum {
 
 struct process_control_block {
     pid_t          pid;           // 进程ID
+    pid_t          pgid;          // 进程组ID
     char          *name;          // 进程名
     char          *cmdline;       // 命令行完整形参
     pcb_t          parent;        // 父进程

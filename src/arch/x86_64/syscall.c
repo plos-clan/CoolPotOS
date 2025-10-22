@@ -139,6 +139,11 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FSTAT]      = (syscall_t)syscall_fstat,
     [SYSCALL_C_GETTIME]  = (syscall_t)syscall_clock_gettime,
     [SYSCALL_C_GETRES]   = (syscall_t)syscall_clock_getres,
+    [SYSCALL_GETPGID]    = (syscall_t)syscall_getpgid,
+    [SYSCALL_SETPGID]    = (syscall_t)syscall_setpgid,
+    [SYSCALL_MPROTECT]   = (syscall_t)syscall_mprotect,
+    [SYSCALL_GETPPID]    = (syscall_t)syscall_getppid,
+    [SYSCALL_POLL]       = (syscall_t)syscall_poll,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

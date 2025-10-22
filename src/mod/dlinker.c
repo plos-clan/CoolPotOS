@@ -279,7 +279,7 @@ static void cp_printk(const char *fmt, ...) {
     stbsp_vsprintf(buf, fmt, args);
     va_end(args);
     tty_t *tty_ = kernel_session;
-    tty_->ops.write(tty_, buf, strlen(buf));
+    tty_->ops.write(tty_, buf, 0, strlen(buf));
     tty_->ops.flush(tty_);
 }
 

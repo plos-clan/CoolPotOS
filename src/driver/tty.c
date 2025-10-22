@@ -188,7 +188,7 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
     return EOK;
 }
 
-size_t stdin_read(tty_t *session, char *buffer, size_t number) {
+size_t stdin_read(tty_t *session, char *buffer,size_t offset, size_t number) {
     bool is_sti = arch_check_interrupt();
     arch_open_interrupt();
 
@@ -198,7 +198,7 @@ size_t stdin_read(tty_t *session, char *buffer, size_t number) {
         if (c == 0x7f) { c = '\b'; }
         if (c == 0x9) { c = '\t'; }
         if (c == '\b') {
-            if (session->termios.c_lflag & ECHO) printk("\b \b");
+            if (session->termios.c_lflag & ECHO) session->ops.write(session,"\b \b",0,3);
             if (session->termios.c_lflag & ICANON) {
                 if (i > 0) {
                     buffer[i--] = '\0';
@@ -213,7 +213,7 @@ size_t stdin_read(tty_t *session, char *buffer, size_t number) {
         if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;
             i++;
-            if (session->termios.c_lflag & ECHO && c == '\r') printk("\n");
+            if (session->termios.c_lflag & ECHO && c == '\r') session->ops.write(session,"\n",0,1);
             break;
         }
         buffer[i] = c;
