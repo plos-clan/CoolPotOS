@@ -29,3 +29,19 @@
 #define EPOLL_CTL_DEL 2
 #define EPOLL_CTL_MOD 3
 
+#include "types.h"
+
+struct pollfd {
+    int   fd;
+    short events;
+    short revents;
+};
+
+
+struct pollfd *select_add(struct pollfd **comp, size_t *compIndex, size_t *complength, int fd,
+                          int events);
+bool           select_bitmap(const uint8_t *map, int index);
+void           select_bitmap_set(uint8_t *map, int index);
+uint32_t       poll_to_epoll_comp(uint32_t poll_events);
+uint32_t       epoll_to_poll_comp(uint32_t epoll_events);
+

@@ -30,6 +30,8 @@
 #include "fs/devtmpfs.h"
 #include "driver/char/ps2_kbd.h"
 #include "driver/input_device.h"
+#include "fs/pipefs.h"
+#include "timer.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -64,8 +66,10 @@ USED _Noreturn void kmain() {
     acpi_namespace_setup();
     tmpfs_regist();
     devtmpfs_regist();
+    pipefs_regist();
 
     ps2_kdb_setup();
+    rtc_setup();
 
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");

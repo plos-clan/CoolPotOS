@@ -1,4 +1,5 @@
 #include "fs/devtmpfs.h"
+#include "driver/tty.h"
 #include "errno.h"
 #include "lib/sprintf.h"
 #include "task/poll.h"
@@ -14,6 +15,17 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
     tmpfs_root->root          = node;
     strcpy(tmpfs_root->name, "tmp");
     node->handle = tmpfs_root;
+
+    extern tty_t *kernel_session;
+    create_device_node(node, "stdout", device_stream, kernel_session,
+                       (void*)kernel_session->ops.ioctl, (void*)kernel_session->ops.read,
+                       (void*)kernel_session->ops.write, (void*)kernel_session->ops.poll, NULL);
+    create_device_node(node, "stderr", device_stream, kernel_session,
+                       (void*)kernel_session->ops.ioctl, (void*)kernel_session->ops.read,
+                       (void*)kernel_session->ops.write, (void*)kernel_session->ops.poll, NULL);
+    create_device_node(node, "stdin", device_stream, kernel_session,
+                       (void*)kernel_session->ops.ioctl, (void*)kernel_session->ops.read,
+                       (void*)kernel_session->ops.write, (void*)kernel_session->ops.poll, NULL);
     return EOK;
 }
 
@@ -160,7 +172,7 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     vfs_node_t node = vfs_open(creat_path);
     if (node == NULL) goto err;
     dtmp_handle_t *fs_handle = node->handle;
-    not_null_assert(fs_handle,"devtmpfs: create device handle null.");
+    not_null_assert(fs_handle, "devtmpfs: create device handle null.");
     fs_handle->dev_type      = type;
     fs_handle->type          = dtp_file_device;
     fs_handle->ioctl_t       = ioctl;
@@ -168,10 +180,13 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     fs_handle->write_t       = write;
     fs_handle->mapfile_t     = map;
     fs_handle->poll_t        = poll;
+    fs_handle->device_handle = handle;
+    logkf("devtmpfs: create device at %s\n\r",creat_path);
     vfs_update(node);
     vfs_close(node);
     return EOK;
 err:;
+    kerror("Cannot create device %s",creat_path);
     free(full_path);
     free(creat_path);
     return -EIO;

@@ -1,5 +1,6 @@
 #include "exec/elf_load.h"
 #include "bootarg.h"
+#include "errno.h"
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/page.h"
@@ -107,6 +108,11 @@ void launch_init_process() {
         kerror("Cannot create init process\n");
         return;
     }
+    vfs_node_t dev = vfs_open("/dev");
+    if(vfs_mount(NULL,"devtmpfs",dev) != EOK) {
+        kerror("Cannot mount devtmpfs");
+        return;
+    }
     pcb_t init_process    = found_pcb(init_pid);
     init_process->exec    = node;
     init_process->envp    = malloc(4 * sizeof(char *));
@@ -116,5 +122,25 @@ void launch_init_process() {
     init_process->envp[1] = strdup("HOME=/root");
     init_process->envp[2] = strdup("TERM=linux");
     init_process->cmdline = cmdline;
+
+    fd_t *stdout = calloc(1,sizeof(fd_t));
+    stdout->node = vfs_open("/dev/stdout");
+    fd_t *stderr = calloc(1,sizeof(fd_t));
+    stderr->node = vfs_open("/dev/stderr");
+    fd_t *stdin = calloc(1,sizeof(fd_t));
+    stdin->node = vfs_open("/dev/stdin");
+
+    if(stdout->node == NULL || stderr->node == NULL || stdin->node == NULL){
+        free(stdout);
+        free(stderr);
+        free(stdin);
+        kerror("Cannot open stdout stderr stdin");
+        return;
+    }
+
+    stdin->fd = add_fd(init_process->fdts,stdin);
+    stdout->fd = add_fd(init_process->fdts,stdout);
+    stderr->fd = add_fd(init_process->fdts,stderr);
+
     create_kernel_thread("main", (void *)arch_switch_to_user_mode, NULL, init_process, NICE_TO_PRIO(0));
 }

@@ -1,10 +1,14 @@
+#define ALL_IMPLEMENTATION
 #include "errno.h"
 #include "fs/fds.h"
 #include "fs/vfs.h"
+#include "fs/pipefs.h"
 #include "syscall.h"
 #include "task/scheduler.h"
 #include "task/task.h"
 #include "term/klog.h"
+#include "task/poll.h"
+#include "timer.h"
 
 syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
     if (unlikely(path0 == NULL)) return SYSCALL_FAULT_(EINVAL);
@@ -189,15 +193,15 @@ fd_t *fd_dup(fd_t *src) {
     new->flags      = src->flags;
     new->fd         = src->fd;
     vfs_node_t node = new->node;
-    //    if (node->type == file_pipe) {
-    //        pipe_specific_t *spec = node->handle;
-    //        pipe_info_t     *pipe = spec->info;
-    //        if (spec->write) {
-    //            pipe->write_fds++;
-    //        } else {
-    //            pipe->read_fds++;
-    //        }
-    //    }
+    if (node->type == file_pipe) {
+        pipe_specific_t *spec = node->handle;
+        pipe_info_t     *pipe = spec->info;
+        if (spec->write) {
+            pipe->write_fds++;
+        } else {
+            pipe->read_fds++;
+        }
+    }
     return new;
 }
 
@@ -293,5 +297,127 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg) {
         handle->node->flags  |= arg & valid_flags;
     default: break;
     }
+    return EOK;
+}
+
+syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data) {
+    if (dir_name == NULL) return SYSCALL_FAULT_(EINVAL);
+
+    char      *ndir_name = vfs_cwd_path_build(dir_name);
+    vfs_node_t dir       = vfs_open((const char *)ndir_name);
+    if (!dir) {
+        free(ndir_name);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+
+    if (flags & MS_MOVE) {
+        if (flags & (MS_REMOUNT | MS_BIND)) {
+            free(ndir_name);
+            return SYSCALL_FAULT_(EINVAL);
+        }
+        char      *old_root_p = vfs_cwd_path_build(dev_name);
+        vfs_node_t old_root   = vfs_open(old_root_p);
+        free(old_root_p);
+        if (old_root == NULL || !old_root->is_mount) return SYSCALL_FAULT_(EINVAL);
+        if (dir != rootdir) list_append(dir->parent->child, old_root);
+        char *nb       = old_root->name;
+        old_root->name = dir->name;
+        dir->name      = nb;
+        list_append(old_root->parent->child, dir);
+
+        list_delete(old_root->parent->child, old_root);
+        if (dir != rootdir)
+            list_delete(dir->parent->child, dir);
+        else
+            rootdir = old_root;
+
+        vfs_node_t parent = dir->parent;
+        dir->parent       = old_root->parent;
+        old_root->parent  = parent;
+
+        vfs_close(old_root);
+        vfs_close(dir);
+        return EOK;
+    }
+
+    if (type == NULL) return SYSCALL_FAULT_(EINVAL);
+
+    char *ndev_name = vfs_cwd_path_build(dev_name);
+mount:
+    if (vfs_mount((const char *)ndev_name,type, dir) != EOK) {
+        free(ndir_name);
+        free(ndev_name);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+    free(ndir_name);
+    free(ndev_name);
+    return EOK;
+}
+
+syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
+    int      ready      = 0;
+    uint64_t start_time = nano_time();
+    bool     sigexit    = false;
+
+    extern vfs_callback_t fs_callbacks[256];
+
+    do {
+        // 检查每个文件描述符
+        for (size_t i = 0; i < get_current_task()->process->fdts->fds_length; i++) {
+            fd_t *handle = get_current_task()->process->fdts->fds[i];
+            vfs_node_t      node   = handle->node;
+            if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
+                if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {
+                    fds_user[i].revents = fds_user[i].events & POLLIN ? POLLIN : POLLOUT;
+                    ready++;
+                }
+                i++;
+                continue;
+            }
+            int revents =
+                (int)epoll_to_poll_comp(vfs_poll(node, poll_to_epoll_comp(fds_user[i].events)));
+            if (revents > 0) {
+                fds_user[i].revents = (short)revents;
+                ready++;
+            }
+        }
+
+        // sigexit = signals_pending_quick(current_task);
+
+        if (ready > 0 || sigexit) break;
+
+        arch_open_interrupt();
+        arch_pause();
+    } while (timeout != 0 && ((int)timeout == -1 || (nano_time() - start_time) < timeout));
+
+    arch_close_interrupt();
+    if (!ready && sigexit) return (size_t)-EINTR;
+    return ready;
+}
+
+syscall_(fstat, int fd, struct stat *buf) {
+    if (unlikely(buf == NULL)) return SYSCALL_FAULT_(EINVAL);
+
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
+    vfs_node_t node = handle->node;
+    buf->st_gid     = (int)node->group;
+    buf->st_uid     = (int)node->owner;
+    buf->st_size    = node->size == (uint64_t)-1 ? 0 : (long long int)node->size;
+    buf->st_mode    = node->type | (node->type == file_symlink  ? S_IFLNK
+                                    : node->type == file_dir    ? S_IFDIR
+                                    : node->type == file_block  ? S_IFBLK
+                                    : node->type == file_socket ? S_IFSOCK
+                                    : node->type == file_none   ? S_IFREG
+                                    : node->type == file_stream ? S_IFCHR
+                                                                : 0);
+    buf->st_nlink   = 1;
+    buf->st_dev     = node->dev;
+    buf->st_rdev    = node->rdev;
+    buf->st_ctim = buf->st_atim = buf->st_ctim = buf->st_mtim = (struct timespec){
+        .tv_sec = node->createtime / 1000000000ULL, .tv_nsec = node->createtime % 1000000000ULL};
+    buf->st_blksize = PAGE_SIZE;
+    buf->st_blocks  = (node->size + PAGE_SIZE - 1) / PAGE_SIZE;
+    buf->st_ino     = node->inode;
     return EOK;
 }
