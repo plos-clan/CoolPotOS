@@ -1,0 +1,30 @@
+#pragma once
+
+#include "mem/heap.h"
+#include "types.h"
+
+typedef struct {
+    uint8_t *buf;
+    uint64_t mask;
+    uint64_t head;
+    uint64_t tail;
+    uint64_t size;
+} atom_queue;
+
+typedef struct {
+    uint8_t *buf;
+    uint64_t mask;
+    uint64_t head;
+    uint64_t tail;
+    uint64_t size;
+} atom_queue_mpmc;
+
+atom_queue_mpmc *create_atom_queue_mpmc(uint64_t size);
+bool             atom_push_mpmc(atom_queue_mpmc *queue, uint8_t data);
+int              atom_pop_mpmc(atom_queue_mpmc *queue);
+void             free_queue_mpmc(atom_queue_mpmc *queue);
+
+atom_queue *create_atom_queue(uint64_t size);
+bool        atom_push(atom_queue *queue, uint8_t data);
+int         atom_pop(atom_queue *queue);
+void        free_queue(atom_queue *queue);

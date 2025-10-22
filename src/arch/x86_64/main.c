@@ -29,6 +29,7 @@
 #include "syscall.h"
 #include "fs/devtmpfs.h"
 #include "driver/char/ps2_kbd.h"
+#include "driver/input_device.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -43,6 +44,7 @@ USED _Noreturn void kmain() {
     init_tty();
     init_gop();
     init_serial();
+    init_input_manager();
     init_tty_session();
     printk("CoolPotOS %s\n", KERNEL_NAME);
     kinfo("kernel cmdline(%llu): %s", boot_argc, get_kernel_cmdline());
