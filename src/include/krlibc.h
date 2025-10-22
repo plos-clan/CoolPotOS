@@ -51,6 +51,10 @@ static inline void mmio_write32(uint32_t *addr, uint32_t data) {
     *(volatile uint32_t *)addr = data;
 }
 
+static inline errno_t dummy() {
+    return 0;
+}
+
 
 void not_null_assert(void *ptr, const char *msg);
 

@@ -1,11 +1,13 @@
 #pragma once
 
 #ifdef PAGE_SIZE
-#undef PAGE_SIZE
+#    undef PAGE_SIZE
 #endif
 
 #define PAGE_SIZE     4096
 #define ARCH_PT_LEVEL 4
+#define PAGE_MASK     (~(PAGE_SIZE - 1))
+#define ENTRY_MASK    0x1FF
 
 #define PTE_PRESENT      (0x1UL << 0)  // 页面是否存在
 #define PTE_WRITEABLE    (0x1UL << 1)  // 页面可写
@@ -34,7 +36,7 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
-void switch_page_directory(page_directory_t *dir);
+void              switch_page_directory(page_directory_t *dir);
 /**
  * 克隆一个新的页表
  * @param dir 源页表

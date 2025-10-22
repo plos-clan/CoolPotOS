@@ -40,6 +40,8 @@ typedef struct file_description_table {
 } fdt_t;
 
 int    find_free_fd(fdt_t *pcb);
+errno_t remove_fd(fdt_t *fdt, int fd);
+errno_t set_fd(fdt_t *table,fd_t *handle,int fd);
 int    add_fd(fdt_t *fdt, fd_t *new_fd);
 fd_t *get_fd(fdt_t *table,int fd);
 fdt_t *fds_init();

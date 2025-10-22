@@ -54,6 +54,28 @@ fd_t *get_fd(fdt_t *table,int fd){
     return table->fds[fd];
 }
 
+errno_t set_fd(fdt_t *table,fd_t *handle,int fd){
+    if(table->fds[fd] != NULL) return -EEXIST;
+    table->fds[fd] = handle;
+    return EOK;
+}
+
+errno_t remove_fd(fdt_t *fdt, int fd) {
+    if (!fdt) {
+        return -ENOENT;
+    }
+    if (fd < 0 || (size_t)fd >= fdt->fds_length) {
+        return -EBADF;
+    }
+    fd_t *fd_to_remove = fdt->fds[fd];
+    if (fd_to_remove == NULL) {
+        return -EBADF;
+    }
+    fdt->fds[fd] = NULL;
+    free(fd_to_remove);
+    return EOK;
+}
+
 fdt_t *fds_init() {
     fdt_t *fdt = malloc(sizeof(fdt_t));
     fdt->fds_length = FD_INITIAL_CAPACITY;

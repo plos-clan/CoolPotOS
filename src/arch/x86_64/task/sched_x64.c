@@ -74,9 +74,9 @@ end:
 }
 
 void arch_context_init(struct arch_context_ *context) {
-    context->kernel_stack  = get_rsp();
-    context->user_stack    = get_rsp();
-    context->regs.rflags   = get_rflags();
+    context->kernel_stack = get_rsp();
+    context->user_stack   = get_rsp();
+    context->regs.rflags  = get_rflags();
     set_kernel_stack(get_rsp());
     context->fs_base = read_fsbase();
     context->gs_base = read_gsbase();
@@ -218,8 +218,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     memset(tmp, 0, 2 * sizeof(uint64_t));
     tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    page_map_range_to_random(task->process->directory, EHDR_START_ADDR,
-                             task->process->exec->size,
+    page_map_range_to_random(task->process->directory, EHDR_START_ADDR, task->process->exec->size,
                              PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
     memcpy((void *)EHDR_START_ADDR, src_data, task->process->exec->size);
 
@@ -317,7 +316,8 @@ _Noreturn void arch_switch_to_user_mode() {
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
     } else
-        build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data, load_start);
+        rsp = build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data,
+                               load_start);
 
     arch_close_interrupt();
     __asm__ volatile("mov %0, %%es\n"

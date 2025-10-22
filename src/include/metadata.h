@@ -68,11 +68,13 @@
     (KERNEL_NAME_ "-" KERNEL_ARCH "-" KERNEL_VERSION "." KERNEL_ARCH_VERSION "_(git:" GIT_VERSION  \
                   ")_{" COMPILER_NAME " " COMPILER_VERSION "}")
 
-#define MAX_CPU               256                // 最大支持CPU核心数 256
-#define KERNEL_HEAP_START     0xffff900000000000 // 内核堆起始地址
-#define KERNEL_HEAP_SIZE      0x6400000          // 内核堆大小 100MB
-#define STACK_SIZE            32768              // 栈大小
-#define BIG_USER_STACK        999424             // 用户栈大小，要对齐到页
-#define EHDR_START_ADDR       0x0000300000000000 // ELF头起始地址
-#define INTERPRETER_EHDR_ADDR 0x0000200000000000 // 链接器ELF头起始地址
-#define INTERPRETER_BASE_ADDR 0x0000100000000000 // 链接器基址起始地址
+#define MAX_CPU               256                  // 最大支持CPU核心数 256
+#define KERNEL_HEAP_START     0xffff900000000000   // 内核堆起始地址
+#define KERNEL_HEAP_SIZE      0x6400000            // 内核堆大小 100MB
+#define STACK_SIZE            32768                // 栈大小
+#define BIG_USER_STACK        999424               // 用户栈大小，要对齐到页
+#define EHDR_START_ADDR       0x0000300000000000   // ELF头起始地址
+#define INTERPRETER_EHDR_ADDR 0x0000200000000000   // 链接器ELF头起始地址
+#define INTERPRETER_BASE_ADDR 0x0000100000000000   // 链接器基址起始地址
+#define USER_MMAP_START       0x0000400000000000UL // 用户堆映射起始地址
+#define KERNEL_AREA_MEM       0xf000000000000000   // 内核地址空间起始

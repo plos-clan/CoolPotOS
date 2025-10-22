@@ -67,6 +67,7 @@
 #include "fs/fds.h"
 #include "fs/vfs.h"
 #include "ipc.h"
+#include "llist_queue.h"
 #include "mem/page.h"
 #include "mem/vma.h"
 #include "metadata.h"
@@ -99,6 +100,7 @@ struct process_control_block {
 
     page_directory_t *directory;   // 进程页表
     vma_manager_t     vma_manager; // VMA 内存管理器
+    list_queue_t     *virt_queue;  // 懒分配器队列
 
     ipc_queue_t *ipc_queue; // 进程消息队列
     tty_t       *tty;       // 进程占用的TTY会话
@@ -107,6 +109,7 @@ struct process_control_block {
     fdt_t       *fdts;      // 文件描述符表
     char       **envp;      // 进程环境变量
     size_t       envc;      // 进程环境变量长度
+    uint64_t     uid;       // 用户会话ID
 };
 
 struct thread_control_block {

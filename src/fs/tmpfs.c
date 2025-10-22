@@ -6,10 +6,6 @@
 
 int tmpfs_id = 0;
 
-errno_t dummy() {
-    return EOK;
-}
-
 errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
     node->fsid               = tmpfs_id;
     tmpfs_file_t *tmpfs_root = (tmpfs_file_t *)malloc(sizeof(tmpfs_file_t));
@@ -21,7 +17,10 @@ errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
     return EOK;
 }
 
-void tmpfs_umount() {}
+void tmpfs_umount(void *root) {
+    tmpfs_file_t *tmpfs_root = root;
+    vfs_free(tmpfs_root->node);
+}
 
 errno_t tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
@@ -42,6 +41,7 @@ errno_t tmpfs_mkfile(void *parent, const char *name, vfs_node_t node) {
 
 size_t tmpfs_read(void *file, void *addr, size_t offset, size_t size) {
     tmpfs_file_t *f = (tmpfs_file_t *)file;
+
     if (offset >= f->size) return 0;
     size_t actual = (offset + size > f->size) ? (f->size - offset) : size;
     memcpy(addr, f->data + offset, actual);
@@ -127,6 +127,17 @@ errno_t tmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
     return EOK;
 }
 
+errno_t tmpfs_free(void *handle){
+    tmpfs_file_t *file = handle;
+    if(file->type != tp_file_file){
+        free(file);
+        return EOK;
+    }
+    if(file->data != NULL) free(file->data);
+    free(file);
+    return EOK;
+}
+
 static struct vfs_callback tmpfs_callbacks = {
     .mount    = tmpfs_mount,
     .unmount  = tmpfs_umount,
@@ -146,6 +157,7 @@ static struct vfs_callback tmpfs_callbacks = {
     .rename   = tmpfs_rename,
     .poll     = tmpfs_poll,
     .map      = tmpfs_map,
+    .free     = tmpfs_free,
 };
 
 void tmpfs_regist() {

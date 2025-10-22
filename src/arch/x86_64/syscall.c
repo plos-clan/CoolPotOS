@@ -120,6 +120,21 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_READ]       = (syscall_t)syscall_read,
     [SYSCALL_WRITEV]     = (syscall_t)syscall_writev,
     [SYSCALL_READV]      = (syscall_t)syscall_readv,
+    [SYSCALL_GETPID]     = (syscall_t)syscall_getpid,
+    [SYSCALL_EXIT_GROUP] = (syscall_t)syscall_exit_group,
+    [SYSCALL_GETUID]     = (syscall_t)syscall_getuid,
+    [SYSCALL_STAT]       = (syscall_t)syscall_stat,
+    [SYSCALL_IOCTL]      = (syscall_t)syscall_ioctl,
+    [SYSCALL_DUP]        = (syscall_t)syscall_dup,
+    [SYSCALL_DUP2]       = (syscall_t)syscall_dup2,
+    [SYSCALL_GETCWD]     = (syscall_t)syscall_getcwd,
+    [SYSCALL_CHDIR]      = (syscall_t)syscall_chdir,
+    [SYSCALL_YIELD]      = (syscall_t)syscall_yield,
+    [SYSCALL_UNAME]      = (syscall_t)syscall_uname,
+    [SYSCALL_MMAP]       = (syscall_t)syscall_mmap,
+    [SYSCALL_MREMAP]     = (syscall_t)syscall_mremap,
+    [SYSCALL_MUNMAP]     = (syscall_t)syscall_munmap,
+    [SYSCALL_FCNTL]      = (syscall_t)syscall_fcntl,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

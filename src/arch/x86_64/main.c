@@ -27,6 +27,8 @@
 #include "term/klog.h"
 #include "exec/elf_load.h"
 #include "syscall.h"
+#include "fs/devtmpfs.h"
+#include "driver/char/ps2_kbd.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -59,6 +61,10 @@ USED _Noreturn void kmain() {
     pci_init();
     acpi_namespace_setup();
     tmpfs_regist();
+    devtmpfs_regist();
+
+    ps2_kdb_setup();
+
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");
     setup_task();
