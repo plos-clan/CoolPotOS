@@ -9,7 +9,7 @@ void terminal_flush(tty_t *session) {
     flanterm_flush(session->terminal);
 }
 
-size_t terminal_write(tty_t *device, const char *buf, size_t count) {
+size_t terminal_write(tty_t *device, const char *buf,size_t offset, size_t count) {
     flanterm_write(device->terminal, buf, count);
     return count;
 }

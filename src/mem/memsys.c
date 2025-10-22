@@ -234,3 +234,21 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
 
     return (uint64_t)-ENOMEM;
 }
+
+syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
+    addr   = addr & (~(PAGE_SIZE - 1));
+    length = (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+
+    if (check_user_overflow(addr, length)) { return SYSCALL_FAULT_(EFAULT); }
+
+    uint64_t pt_flags = PTE_USER;
+
+    if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
+    if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
+    if (prot & PROT_EXEC) pt_flags |= PTE_USER;
+
+    map_change_attribute_range(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
+                               (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
+
+    return EOK;
+}

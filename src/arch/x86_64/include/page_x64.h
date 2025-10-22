@@ -8,6 +8,8 @@
 #define ARCH_PT_LEVEL 4
 #define PAGE_MASK     (~(PAGE_SIZE - 1))
 #define ENTRY_MASK    0x1FF
+#define PT_OFFSET_BASE      12
+#define PT_OFFSET_PER_LEVEL 9
 
 #define PTE_PRESENT      (0x1UL << 0)  // 页面是否存在
 #define PTE_WRITEABLE    (0x1UL << 1)  // 页面可写
@@ -21,6 +23,18 @@
 #define KERNEL_PTE_FLAGS (PTE_PRESENT | PTE_WRITEABLE | PTE_NO_EXECUTE)
 
 #define PTE_FRAME_MASK 0x000ffffffffff000
+
+#define ARCH_PT_TABLE_FLAGS (PTE_PRESENT | PTE_WRITEABLE)
+
+#define ARCH_PT_IS_TABLE(x) (((x) & (PTE_PRESENT | PTE_WRITEABLE)) == (PTE_PRESENT | PTE_WRITEABLE))
+#define ARCH_PT_IS_LARGE(x) (((x) & (PTE_PRESENT | PTE_HUGE)) == (PTE_PRESENT | PTE_HUGE))
+
+#define PAGE_CALC_PAGE_TABLE_SIZE(level)                                                           \
+    ((uint64_t)1 << (PT_OFFSET_BASE + (4 - (level)) * PT_OFFSET_PER_LEVEL))
+#define PAGE_CALC_PAGE_TABLE_MASK(level) (PAGE_CALC_PAGE_TABLE_SIZE(level) - (uint64_t)1)
+#define PAGE_CALC_PAGE_TABLE_INDEX(vaddr, level)                                                   \
+    (((vaddr) >> (PT_OFFSET_BASE + (4 - (level)) * PT_OFFSET_PER_LEVEL)) &                         \
+     (((uint64_t)1 << PT_OFFSET_PER_LEVEL) - 1))
 
 #include "types.h"
 
@@ -44,9 +58,11 @@ void              switch_page_directory(page_directory_t *dir);
  * @return 新页表 (需要释放)
  */
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
-void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
-void unmap_page(page_directory_t *directory, uint64_t vaddr);
-void arch_page_setup();
+void     page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
+void     unmap_page(page_directory_t *directory, uint64_t vaddr);
+uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags);
+uint64_t get_arch_page_table_flags(uint64_t flags);
+void     arch_page_setup();
 
 // 用于构建内核自己的页表, 不再复用引导器提供的页表
 void arch_page_setup_l2();

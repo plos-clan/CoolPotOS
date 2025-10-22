@@ -179,8 +179,8 @@ typedef struct termios {
 } termios_t;
 
 typedef struct tty_session_ops {
-    size_t (*write)(tty_t *device, const char *buf, size_t count);
-    size_t (*read)(tty_t *device, char *buf, size_t count);
+    size_t (*write)(tty_t *device, const char *buf,size_t offset, size_t count);
+    size_t (*read)(tty_t *device, char *buf,size_t offset, size_t count);
     void (*flush)(tty_t *res);
     errno_t (*ioctl)(tty_t *device, size_t cmd, void *arg);
     errno_t (*poll)(tty_t *session,size_t events);

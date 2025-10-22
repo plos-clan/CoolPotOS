@@ -46,3 +46,23 @@ syscall_(yield) {
     scheduler_yield();
     return EOK;
 }
+
+syscall_(setpgid, pid_t pid, pid_t pgid) {
+    pcb_t process = pid == 0 ? get_current_task()->process : found_pcb(pid);
+    if (process == NULL || process->status == T_DEATH) { return SYSCALL_FAULT_(ESRCH); }
+    if (pgid == 0) { pgid = process->pgid; }
+    process->pgid = pgid;
+    return EOK;
+}
+
+syscall_(getpgid) {
+    size_t pid     = arg0;
+    pcb_t  process = pid == 0 ? get_current_task()->process : found_pcb(pid);
+    if (process == NULL || process->status == T_DEATH) { return SYSCALL_FAULT_(ESRCH); }
+    return process->pgid;
+}
+
+syscall_(getppid){
+    pcb_t process = get_current_task()->process;
+    return process->parent->pid;
+}

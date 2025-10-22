@@ -31,7 +31,7 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     strcat(buf, "\033[0m");
 
     tty_t *tty_ = kernel_session;
-    tty_->ops.write(tty_, buf, strlen(buf));
+    tty_->ops.write(tty_, buf, 0, strlen(buf));
     tty_->ops.flush(tty_);
 
     spin_unlock(print_lock);

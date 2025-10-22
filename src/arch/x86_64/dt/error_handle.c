@@ -3,10 +3,21 @@
 #include "ptrace.h"
 #include "task/task.h"
 #include "term/klog.h"
+#include "mem/lazy_alloc.h"
+#include "errno.h"
 
 __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code) {
+    arch_close_interrupt();
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
+    if(likely(get_current_task() != NULL)) {
+        errno_t status = lazy_tryalloc(get_current_task()->process, faulting_address);
+        if (status == EOK) {
+            arch_open_interrupt();
+            return;
+        }
+    }
+
     char *error_msg = !(error_code & 0x1) ? "NotPresent"
                       : error_code & 0x2  ? "WriteError"
                       : error_code & 0x4  ? "UserMode"

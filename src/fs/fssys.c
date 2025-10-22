@@ -1,13 +1,13 @@
 #define ALL_IMPLEMENTATION
 #include "errno.h"
 #include "fs/fds.h"
-#include "fs/vfs.h"
 #include "fs/pipefs.h"
+#include "fs/vfs.h"
 #include "syscall.h"
+#include "task/poll.h"
 #include "task/scheduler.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "task/poll.h"
 #include "timer.h"
 
 syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
@@ -180,7 +180,7 @@ syscall_(stat, char *fn, struct stat *buf) {
 syscall_(ioctl, int fd, int options, void *arg2) {
     if (unlikely(fd < 0 || arg2 == NULL)) return SYSCALL_FAULT_(EINVAL);
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
-    if(handle == NULL) return SYSCALL_FAULT_(EBADF);
+    if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     return vfs_ioctl(handle->node, options, arg2);
 }
 
@@ -344,7 +344,7 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
 
     char *ndev_name = vfs_cwd_path_build(dev_name);
 mount:
-    if (vfs_mount((const char *)ndev_name,type, dir) != EOK) {
+    if (vfs_mount((const char *)ndev_name, type, dir) != EOK) {
         free(ndir_name);
         free(ndev_name);
         return SYSCALL_FAULT_(ENOENT);
@@ -364,8 +364,8 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
     do {
         // 检查每个文件描述符
         for (size_t i = 0; i < get_current_task()->process->fdts->fds_length; i++) {
-            fd_t *handle = get_current_task()->process->fdts->fds[i];
-            vfs_node_t      node   = handle->node;
+            fd_t      *handle = get_current_task()->process->fdts->fds[i];
+            vfs_node_t node   = handle->node;
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
                 if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {
                     fds_user[i].revents = fds_user[i].events & POLLIN ? POLLIN : POLLOUT;

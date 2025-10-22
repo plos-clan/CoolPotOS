@@ -47,6 +47,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->fdts          = fds_init();
     new_pgb->ipc_queue     = ipc_queue_init();
     new_pgb->virt_queue    = create_llist_queue();
+    new_pgb->cwd           = get_rootdir();
     if (flags & CLONE_VM) {
         new_pgb->directory = clone_page_directory(new_pgb->parent->directory, false);
     } else
@@ -89,11 +90,11 @@ void setup_task() {
     kernel_process->virt_queue    = create_llist_queue();
     kernel_process->fdts          = fds_init();
 
-    bsp_idle_thread           = malloc(STACK_SIZE);
-    bsp_idle_thread->process  = kernel_process;
-    bsp_idle_thread->tid      = alloc_tid();
-    bsp_idle_thread->ct_index = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
-    bsp_idle_thread->status   = T_RUNNING;
+    bsp_idle_thread                = malloc(STACK_SIZE);
+    bsp_idle_thread->process       = kernel_process;
+    bsp_idle_thread->tid           = alloc_tid();
+    bsp_idle_thread->ct_index      = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
+    bsp_idle_thread->status        = T_RUNNING;
     bsp_idle_thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     bsp_idle_thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     arch_context_init(&bsp_idle_thread->context);

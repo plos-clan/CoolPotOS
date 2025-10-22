@@ -51,6 +51,15 @@ void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64
     }
 }
 
+uint64_t map_change_attribute_range(page_directory_t *directory, uint64_t vaddr, uint64_t len,
+                                    uint64_t flags) {
+    uint64_t *pgdir = (uint64_t *)directory->table->entries;
+    for (uint64_t va = vaddr; va < vaddr + len; va += PAGE_SIZE) {
+        map_change_attribute(pgdir, va, get_arch_page_table_flags(flags));
+    }
+    return 0;
+}
+
 page_directory_t *switch_context_directory(page_directory_t *directory){
     tcb_t thread = get_current_task();
     if(thread == NULL) return NULL;
