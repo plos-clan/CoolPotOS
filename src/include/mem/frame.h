@@ -10,6 +10,7 @@
 
 #include "limine.h"
 #include "types.h"
+#include "metadata.h"
 
 typedef struct {
     void  *allocator;
@@ -34,3 +35,7 @@ void     free_frames_1G(uint64_t addr);
 uint64_t get_physical_memory_offset();
 void    *phys_to_virt(uint64_t phys_addr);
 uint64_t virt_to_phys(void *virt_addr);
+
+static inline bool check_user_overflow(uint64_t addr, uint64_t size) {
+    return (addr + size) > KERNEL_AREA_MEM;
+}

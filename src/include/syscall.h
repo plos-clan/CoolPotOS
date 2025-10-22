@@ -49,6 +49,36 @@
 
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 
+// stat 文件类型标志
+#define S_IFMT   00170000
+#define S_IFSOCK 0140000
+#define S_IFLNK  0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
+
+// mremap 标志
+#define MREMAP_MAYMOVE   1
+#define MREMAP_FIXED     2
+#define MREMAP_DONTUNMAP 4
+
+// fnctl
+#define F_DUPFD         0
+#define F_GETFD         1
+#define F_SETFD         2
+#define F_GETFL         3
+#define F_SETFL         4
+#define F_SETOWN        8
+#define F_GETOWN        9
+#define F_SETSIG        10
+#define F_GETSIG        11
+#define F_DUPFD_CLOEXEC 1030
+
 #include "types.h"
 
 struct iovec {
@@ -78,6 +108,16 @@ struct stat {
     char              _pad[24];
 };
 
+struct utsname {
+    char sysname[65];
+    char nodename[65];
+    char release[65];
+    char version[65];
+    char machine[65];
+    char domainname[65];
+};
+
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -87,7 +127,28 @@ syscall_(write, int fd, uint8_t *buffer, size_t size);
 syscall_(read, int fd, uint8_t *buffer, size_t size);
 syscall_(writev, int fd, struct iovec *iov, int iovcnt);
 syscall_(readv, int fd, struct iovec *iov, int iovcnt0);
+syscall_(stat, char *fn, struct stat *buf);
+syscall_(ioctl, int fd, int options, void *arg2);
+syscall_(dup2, int fd, int newfd);
+syscall_(dup, int fd);
+syscall_(getcwd, char *buffer, size_t length);
+syscall_(chdir, char *s);
+syscall_(fcntl, int fd, int cmd, uint64_t arg);
 
 // proc syscall
 syscall_(exit, int exit_code);
 syscall_(set_tid_address, int *tidptr);
+syscall_(getpid);
+syscall_(exit_group, int exit_code);
+syscall_(getuid);
+syscall_(yield);
+
+// mem syscall
+syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
+         uint64_t offset);
+syscall_(munmap, uint64_t addr, size_t size) ;
+syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
+         uint64_t new_addr);
+
+    // os syscall
+syscall_(uname, struct utsname *utsname);

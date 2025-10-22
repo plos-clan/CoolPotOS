@@ -32,7 +32,7 @@ typedef vfs_node_t (*vfs_dup_t)(vfs_node_t node);
 typedef errno_t (*vfs_poll_t)(void *file, size_t events);
 typedef void *(*vfs_mapfile_t)(void *file, void *addr, size_t offset, size_t size, size_t prot,
                                size_t flags);
-
+typedef errno_t (*vfs_free_t)(void *handle);
 
 enum {
     file_none     = 0x1UL,    // 未获取信息
@@ -71,6 +71,7 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_mapfile_t  map;       // 映射文件到内存 (仅 devfs 等特殊文件系统实现)
     vfs_del_t delete;         // 删除文件或文件夹
     vfs_rename_t rename;      // 重命名文件或文件夹
+    vfs_free_t     free;      // 释放文件句柄
 } *vfs_callback_t;
 
 typedef struct vfs_filesystem {

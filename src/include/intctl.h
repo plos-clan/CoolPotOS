@@ -19,6 +19,7 @@
 
 enum irq_num_index {
     timer = IRQ_BASE_VECTOR,
+    ps2_kbd,
     power,
 };
 

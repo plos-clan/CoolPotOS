@@ -50,7 +50,7 @@ next:;
 
 syscall_(close, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
-    fd_t *handle = (fd_t *)get_fd(get_current_task()->process->fdts,fd);
+    fd_t *handle = (fd_t *)get_fd(get_current_task()->process->fdts, fd);
     vfs_close(handle->node);
     free(handle);
     return EOK;
@@ -73,7 +73,7 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     if (unlikely(size == 0)) return EOK;
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
-    if(handle->node->type & file_pipe && handle->node->size == 0 && handle->flags & O_NONBLOCK){
+    if (handle->node->type & file_pipe && handle->node->size == 0 && handle->flags & O_NONBLOCK) {
         return SYSCALL_FAULT_(EWOULDBLOCK);
     }
     if (handle->node->size != (uint64_t)-1) {
@@ -98,8 +98,8 @@ pipe:;
 syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
     if (unlikely(fd < 0 || iov == NULL)) return SYSCALL_FAULT_(EINVAL);
     if (iovcnt == 0) return EOK;
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
-    size_t          total  = 0;
+    fd_t  *handle = get_fd(get_current_task()->process->fdts, fd);
+    size_t total  = 0;
     for (int i = 0; i < iovcnt; i++) {
         size_t status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
         if (handle->node->size != (uint64_t)-1) {
@@ -114,8 +114,8 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
 syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     if (unlikely(fd < 0 || iov == NULL)) return SYSCALL_FAULT_(EINVAL);
     if (iovcnt0 == 0) return EOK;
-    size_t          iovcnt = iovcnt0;
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    size_t iovcnt = iovcnt0;
+    fd_t  *handle = get_fd(get_current_task()->process->fdts, fd);
     if (iovcnt == 0) return 0;
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     size_t buf_len = 0;
@@ -147,3 +147,151 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     return status;
 }
 
+syscall_(stat, char *fn, struct stat *buf) {
+    if (unlikely(fn == NULL || buf == NULL)) return SYSCALL_FAULT_(EINVAL);
+    char      *path = vfs_cwd_path_build(fn);
+    vfs_node_t node = vfs_open(path);
+    if (node == NULL) {
+        free(path);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+    buf->st_gid   = (int)node->group;
+    buf->st_uid   = (int)node->owner;
+    buf->st_ino   = node->inode;
+    buf->st_size  = (long long int)node->size;
+    buf->st_mode  = node->mode | (node->type == file_symlink  ? S_IFLNK
+                                  : node->type == file_dir    ? S_IFDIR
+                                  : node->type == file_block  ? S_IFBLK
+                                  : node->type == file_socket ? S_IFSOCK
+                                  : node->type == file_none   ? S_IFREG
+                                  : node->type == file_stream ? S_IFCHR
+                                                              : S_IFREG);
+    buf->st_nlink = 1;
+    buf->st_dev   = (long)node->dev;
+    buf->st_rdev  = (long)node->rdev;
+    free(path);
+    return EOK;
+}
+
+syscall_(ioctl, int fd, int options, void *arg2) {
+    if (unlikely(fd < 0 || arg2 == NULL)) return SYSCALL_FAULT_(EINVAL);
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if(handle == NULL) return SYSCALL_FAULT_(EBADF);
+    return vfs_ioctl(handle->node, options, arg2);
+}
+
+fd_t *fd_dup(fd_t *src) {
+    fd_t *new = (fd_t *)malloc(sizeof(fd_t));
+    not_null_assert(new, "fd_dup out of memory.");
+    src->node->refcount++;
+    new->node       = src->node;
+    new->offset     = src->offset;
+    new->flags      = src->flags;
+    new->fd         = src->fd;
+    vfs_node_t node = new->node;
+    //    if (node->type == file_pipe) {
+    //        pipe_specific_t *spec = node->handle;
+    //        pipe_info_t     *pipe = spec->info;
+    //        if (spec->write) {
+    //            pipe->write_fds++;
+    //        } else {
+    //            pipe->read_fds++;
+    //        }
+    //    }
+    return new;
+}
+
+syscall_(dup2, int fd, int newfd) {
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
+
+    fd_t *old_handle = get_fd(get_current_task()->process->fdts, newfd);
+    if (old_handle != NULL) {
+        remove_fd(get_current_task()->process->fdts, newfd);
+        vfs_close(old_handle->node);
+        free(old_handle);
+    }
+
+    fd_t *new_handle = fd_dup(handle);
+    if (new_handle == NULL) return SYSCALL_FAULT_(ENOMEM);
+    new_handle->fd = newfd;
+    set_fd(get_current_task()->process->fdts, new_handle, newfd);
+    return newfd;
+}
+
+syscall_(dup, int fd) {
+    if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (handle == NULL) return SYSCALL_FAULT_(EBADF);
+    fd_t *new_handle      = fd_dup(handle);
+    return new_handle->fd = add_fd(get_current_task()->process->fdts, new_handle);
+}
+
+syscall_(getcwd, char *buffer, size_t length) {
+    if (unlikely(buffer == NULL)) return SYSCALL_FAULT_(EINVAL);
+    if (unlikely(length == 0)) return EOK;
+    pcb_t  process  = get_current_task()->process;
+    char  *cwd      = vfs_get_fullpath(process->cwd);
+    size_t cwd_leng = strlen(cwd);
+    if (length > cwd_leng) length = cwd_leng;
+    memcpy(buffer, cwd, length);
+    return length;
+}
+
+syscall_(chdir, char *s) {
+    if (unlikely(s == NULL)) return SYSCALL_FAULT_(EINVAL);
+    pcb_t process = get_current_task()->process;
+
+    char *path;
+    char *bpath = NULL;
+    if (s[0] == '/') {
+        path = strdup(s);
+    } else {
+        bpath = vfs_get_fullpath(process->cwd);
+        path  = pathacat(bpath, s);
+    }
+
+    char *normalized_path = normalize_path(path);
+    free(path);
+    free(bpath);
+
+    if (unlikely(normalized_path == NULL)) { return SYSCALL_FAULT_(ENOMEM); }
+
+    vfs_node_t node;
+    if ((node = vfs_open(normalized_path)) == NULL) {
+        free(normalized_path);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+
+    if (node->type == file_dir) {
+        process->cwd = node;
+    } else {
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+
+    free(normalized_path);
+    return EOK;
+}
+
+syscall_(fcntl, int fd, int cmd, uint64_t arg) {
+    if (fd < 0 || cmd < 0) return SYSCALL_FAULT_(EINVAL);
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (handle == NULL) return SYSCALL_FAULT_(EBADF);
+
+    switch (cmd) {
+    case F_GETFD: return (handle->node->flags & O_CLOEXEC) != 0;
+    case F_SETFD: return handle->node->flags |= O_CLOEXEC;
+    case F_DUPFD_CLOEXEC:;
+        uint64_t newfd       = syscall_dup(fd, 0, 0, 0, 0, 0, regs);
+        handle->node->flags |= O_CLOEXEC;
+        return newfd;
+    case F_DUPFD: return syscall_dup(fd, 0, 0, 0, 0, 0, regs);
+    case F_GETFL: return handle->node->flags;
+    case F_SETFL:;
+        uint32_t valid_flags  = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
+        handle->node->flags  &= ~valid_flags;
+        handle->node->flags  |= arg & valid_flags;
+    default: break;
+    }
+    return EOK;
+}

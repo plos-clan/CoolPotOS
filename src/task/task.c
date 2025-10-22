@@ -46,6 +46,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->tty           = new_pgb->parent->tty;
     new_pgb->fdts          = fds_init();
     new_pgb->ipc_queue     = ipc_queue_init();
+    new_pgb->virt_queue    = create_llist_queue();
     if (flags & CLONE_VM) {
         new_pgb->directory = clone_page_directory(new_pgb->parent->directory, false);
     } else
@@ -85,6 +86,7 @@ void setup_task() {
     kernel_process->tty           = kernel_session;
     kernel_process->status        = T_RUNNING;
     kernel_process->exec          = NULL;
+    kernel_process->virt_queue    = create_llist_queue();
     kernel_process->fdts          = fds_init();
 
     bsp_idle_thread           = malloc(STACK_SIZE);

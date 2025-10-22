@@ -414,6 +414,7 @@ void vfs_free(vfs_node_t vfs) {
     if (vfs == NULL) return;
     list_free_with(vfs->child, (void (*)(void *))vfs_free);
     vfs_close(vfs);
+    callbackof(vfs, free)(vfs->handle);
     free(vfs->name);
     free(vfs);
 }
@@ -567,6 +568,13 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
     if (ret < 0) return (void *)-ENOMEM;
 
     return (void *)addr;
+}
+
+void *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags,
+              uint64_t offset) {
+    if (unlikely(node == NULL)) return NULL;
+    if (unlikely(node->type == file_dir)) return NULL;
+    return callbackof(node, map)(node->handle, (void *)addr, offset, len, prot, flags);
 }
 
 bool vfs_init() {

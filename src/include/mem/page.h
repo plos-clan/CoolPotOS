@@ -58,7 +58,7 @@ uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_
  * @param flags 映射标志
  */
 void page_map_range_to_random(page_directory_t *directory, uint64_t addr, uint64_t length,
-                                  uint64_t flags);
+                              uint64_t flags);
 
 /**
  * 解除一段地址映射
@@ -82,5 +82,12 @@ page_directory_t *get_current_directory();
  * @return 被换下来的页表
  */
 page_directory_t *switch_context_directory(page_directory_t *directory);
+
+/**
+ * 根据页表反向解析出物理地址
+ * @param va 虚拟地址
+ * @return 物理地址
+ */
+uint64_t arch_virt_to_phys(uint64_t va);
 
 void init_page();
