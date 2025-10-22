@@ -79,6 +79,24 @@
 #define F_GETSIG        11
 #define F_DUPFD_CLOEXEC 1030
 
+#define MS_RDONLY      1  /* 只读挂载 */
+#define MS_NOSUID      2  /* 忽略 SUID/SGID */
+#define MS_NODEV       4  /* 禁止访问设备文件 */
+#define MS_NOEXEC      8  /* 禁止执行 */
+#define MS_SYNCHRONOUS 16 /* 同步写入 */
+#define MS_REMOUNT     32 /* 重新挂载已挂载点 */
+#define MS_MANDLOCK    64
+#define MS_DIRSYNC     128
+#define MS_NOATIME     1024
+#define MS_NODIRATIME  2048
+#define MS_BIND        4096  /* 绑定挂载 */
+#define MS_MOVE        8192  /* 挂载点移动 */
+#define MS_REC         16384 /* 递归 */
+#define MS_PRIVATE     (1 << 18)
+#define MS_SHARED      (1 << 20)
+#define MS_SLAVE       (1 << 19)
+#define MS_UNBINDABLE  (1 << 17)
+
 #include "types.h"
 
 struct iovec {
@@ -117,7 +135,6 @@ struct utsname {
     char domainname[65];
 };
 
-
 void arch_enable_syscall();
 
 // fs syscall
@@ -134,6 +151,8 @@ syscall_(dup, int fd);
 syscall_(getcwd, char *buffer, size_t length);
 syscall_(chdir, char *s);
 syscall_(fcntl, int fd, int cmd, uint64_t arg);
+syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data);
+syscall_(fstat, int fd, struct stat *buf);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -146,9 +165,11 @@ syscall_(yield);
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
          uint64_t offset);
-syscall_(munmap, uint64_t addr, size_t size) ;
+syscall_(munmap, uint64_t addr, size_t size);
 syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
          uint64_t new_addr);
 
-    // os syscall
+// os syscall
 syscall_(uname, struct utsname *utsname);
+syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
+syscall_(clock_getres);

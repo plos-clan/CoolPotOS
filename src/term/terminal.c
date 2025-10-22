@@ -14,6 +14,20 @@ size_t terminal_write(tty_t *device, const char *buf, size_t count) {
     return count;
 }
 
+void terminal_cols_rows(tty_t *session, size_t *cols, size_t *rows) {
+    struct flanterm_context *fl_context = session->terminal;
+    flanterm_get_dimensions(fl_context, cols, rows);
+}
+
+void terminal_width_height(tty_t *session, size_t *width, size_t *height) {
+    tty_device_t *device = session->device;
+    if (device->type == TTY_DEVICE_GRAPHI) {
+        struct tty_graphics_ *graphics = device->private_data;
+        *width                         = graphics->width;
+        *height                        = graphics->height;
+    }
+}
+
 errno_t create_session_terminal(tty_t *session) {
     if (session->device == NULL) return -ENODEV;
     if (session->device->type != TTY_DEVICE_GRAPHI) return -EINVAL;

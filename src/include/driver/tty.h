@@ -182,15 +182,20 @@ typedef struct tty_session_ops {
     size_t (*write)(tty_t *device, const char *buf, size_t count);
     size_t (*read)(tty_t *device, char *buf, size_t count);
     void (*flush)(tty_t *res);
-    int (*ioctl)(tty_t *device, uint32_t cmd, uint32_t arg);
+    errno_t (*ioctl)(tty_t *device, size_t cmd, void *arg);
+    errno_t (*poll)(tty_t *session,size_t events);
 } tty_session_ops_t;
 
 typedef struct tty_session { // 一个 TTY 会话
     void             *terminal;
     termios_t         termios;
     tty_session_ops_t ops;
+    pid_t             fgproc; // 前台进程组ID
     tty_device_t     *device; // 会话所属的TTY设备
     atom_queue       *queue;  // 输入缓冲队列
+    struct vt_mode    vt_mode;
+    int               tty_mode;
+    int               tty_kbmode;
 } tty_t;
 
 extern tty_t *kernel_session;

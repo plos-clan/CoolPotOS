@@ -135,6 +135,10 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_MREMAP]     = (syscall_t)syscall_mremap,
     [SYSCALL_MUNMAP]     = (syscall_t)syscall_munmap,
     [SYSCALL_FCNTL]      = (syscall_t)syscall_fcntl,
+    [SYSCALL_MOUNT]      = (syscall_t)syscall_mount,
+    [SYSCALL_FSTAT]      = (syscall_t)syscall_fstat,
+    [SYSCALL_C_GETTIME]  = (syscall_t)syscall_clock_gettime,
+    [SYSCALL_C_GETRES]   = (syscall_t)syscall_clock_getres,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

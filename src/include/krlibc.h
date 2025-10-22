@@ -29,6 +29,10 @@
 // 分支预测优化: x 很可能为真
 #define likely(x) __builtin_expect(!!(x), 1)
 
+#define ABS(x)    ((x) > 0 ? (x) : -(x))
+#define MAX(x, y) ((x > y) ? (x) : (y))
+#define MIN(x, y) ((x < y) ? (x) : (y))
+
 #include "metadata.h"
 #include "types.h"
 #include "types/limits.h"
