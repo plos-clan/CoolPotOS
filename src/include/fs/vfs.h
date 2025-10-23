@@ -1,5 +1,7 @@
 #pragma once
 
+#define AT_FDCWD (-100)
+
 #include "types.h"
 #include "llist.h"
 #include "list.h"

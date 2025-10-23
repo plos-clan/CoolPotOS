@@ -1,7 +1,8 @@
 #include "task/scheduler.h"
+#include "task/eevdf.h"
 #include "task/smp.h"
 #include "term/klog.h"
-#include "task/eevdf.h"
+#include "timer.h"
 
 _Atomic volatile bool scheduler_status = false;
 
@@ -11,6 +12,30 @@ void enable_scheduler() {
 
 void disable_scheduler() {
     scheduler_status = false;
+}
+
+
+void scheduler_nano_sleep(uint64_t nano) {
+    uint64_t targetTime        = nano_time();
+    uint64_t after             = 0;
+    get_current_task()->status = T_WAIT;
+    while (true) {
+        uint64_t n = nano_time();
+        if (n < targetTime) {
+            after      += UINT64_MAX - targetTime + n;
+            targetTime  = n;
+        } else {
+            after      += n - targetTime;
+            targetTime  = n;
+        }
+        if (after >= nano) {
+            get_current_task()->status = T_RUNNING;
+            return;
+        }
+        if (nano > 10) {
+            scheduler_yield(); // 让出CPU时间片
+        }
+    }
 }
 
 bool add_task_prio(tcb_t thread, uint64_t prio) {

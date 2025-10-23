@@ -181,3 +181,7 @@ re_futex: //TODO PRIVATE 标志暂时不支持
     }
     }
 }
+
+syscall_(get_tid) {
+    return get_current_task()->tid;
+}

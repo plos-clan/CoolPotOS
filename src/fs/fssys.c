@@ -545,3 +545,327 @@ syscall_(link, char *name, char *new) {
 
     return ret;
 }
+
+syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except,
+         struct timeval *timeout) {
+    if (read && check_user_overflow((uint64_t)read, sizeof(struct pollfd))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (write && check_user_overflow((uint64_t)write, sizeof(struct pollfd))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (except && check_user_overflow((uint64_t)except, sizeof(struct pollfd))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    size_t         complength = sizeof(struct pollfd);
+    struct pollfd *comp       = (struct pollfd *)malloc(complength);
+    memset(comp, 0, complength);
+    size_t compIndex = 0;
+    if (read) {
+        for (int i = 0; i < nfds; i++) {
+            if (select_bitmap(read, i)) select_add(&comp, &compIndex, &complength, i, POLLIN);
+        }
+    }
+    if (write) {
+        for (int i = 0; i < nfds; i++) {
+            if (select_bitmap(write, i)) select_add(&comp, &compIndex, &complength, i, POLLOUT);
+        }
+    }
+    if (except) {
+        for (int i = 0; i < nfds; i++) {
+            if (select_bitmap(except, i))
+                select_add(&comp, &compIndex, &complength, i, POLLPRI | POLLERR);
+        }
+    }
+
+    //int toZero = (nfds + 8) / 8;
+    int toZero = (nfds + 7) / 8;
+    if (read) memset(read, 0, toZero);
+    if (write) memset(write, 0, toZero);
+    if (except) memset(except, 0, toZero);
+
+    size_t time = 0;
+    if (timeout == NULL) {
+        time = -1;
+    } else if (timeout->tv_sec == -1 || timeout->tv_usec == -1) {
+        time = -1;
+    } else
+        time = (timeout->tv_sec * 1000 + (timeout->tv_usec + 1000) / 1000);
+
+    size_t res = syscall_poll(comp, compIndex, time, 0, 0, 0, 0);
+
+    if ((int64_t)res < 0) {
+        free(comp);
+        return res;
+    }
+
+    size_t verify = 0;
+    for (size_t i = 0; i < compIndex; i++) {
+        if (!comp[i].revents) continue;
+        if (comp[i].events & POLLIN && comp[i].revents & POLLIN) {
+            select_bitmap_set(read, comp[i].fd);
+            verify++;
+        }
+        if (comp[i].events & POLLOUT && comp[i].revents & POLLOUT) {
+            select_bitmap_set(write, comp[i].fd);
+            verify++;
+        }
+        if ((comp[i].events & POLLPRI && comp[i].revents & POLLPRI)) {
+            select_bitmap_set(except, comp[i].fd);
+            verify++;
+        }
+    }
+
+    free(comp);
+    return verify;
+}
+
+syscall_(pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+         struct timespec *timeout, WeirdPselect6 *weirdPselect6) {
+    if (readfds && check_user_overflow((uint64_t)readfds, sizeof(fd_set) * nfds)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (writefds && check_user_overflow((uint64_t)writefds, sizeof(fd_set) * nfds)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (exceptfds && check_user_overflow((uint64_t)exceptfds, sizeof(fd_set) * nfds)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    size_t    sigsetsize = weirdPselect6->ss_len;
+    sigset_t *sigmask    = weirdPselect6->ss;
+    if (sigsetsize < sizeof(sigset_t)) { return SYSCALL_FAULT_(EINVAL); }
+    sigset_t origmask = 0;
+    if (sigmask) { syscall_ssetmask(SIG_SETMASK, sigmask, &origmask, 0, 0, 0, regs); }
+    struct timeval timeoutConv;
+    if (timeout) {
+        timeoutConv = (struct timeval){.tv_sec  = (long)timeout->tv_sec,
+                                       .tv_usec = (long)(timeout->tv_nsec + 1000l) / 1000};
+    } else {
+        timeoutConv = (struct timeval){.tv_sec = (long)-1, .tv_usec = (long)-1};
+    }
+
+    size_t ret = syscall_select((uint64_t)nfds, (uint8_t *)readfds, (uint8_t *)writefds,
+                                (uint8_t *)exceptfds, &timeoutConv, 0, 0);
+    if (sigmask) { syscall_ssetmask(SIG_SETMASK, &origmask, NULL, 0, 0, 0, regs); }
+    return ret;
+}
+
+syscall_(getdents, int fd, struct dirent *dents, size_t size) {
+    if (unlikely(check_user_overflow((uint64_t)dents, size))) { return SYSCALL_FAULT_(EFAULT); }
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (unlikely(handle == NULL)) { return SYSCALL_FAULT_(EBADF); }
+    if (handle->node->type != file_dir) { return SYSCALL_FAULT_(ENOTDIR); }
+    size_t   child_count   = (uint64_t)list_length(handle->node->child);
+    size_t   max_dents_num = size / sizeof(struct dirent);
+    size_t   read_count    = 0;
+    uint64_t offset        = 0;
+    list_foreach(handle->node->child, i) {
+        if (offset < handle->offset) { goto next; }
+        if (handle->offset >= (child_count * sizeof(struct dirent))) { break; }
+        if (read_count >= max_dents_num) { break; }
+        vfs_node_t child_node      = (vfs_node_t)i->data;
+        dents[read_count].d_ino    = (long)child_node->inode;
+        dents[read_count].d_off    = (long)handle->offset;
+        dents[read_count].d_reclen = sizeof(struct dirent);
+        if (child_node->type & file_symlink) {
+            dents[read_count].d_type = DT_LNK;
+        } else if (child_node->type & file_none) {
+            dents[read_count].d_type = DT_REG;
+        } else if (child_node->type & file_block) {
+            dents[read_count].d_type = DT_BLK;
+        } else if (child_node->type & file_stream) {
+            dents[read_count].d_type = DT_CHR;
+        } else if (child_node->type & file_socket) {
+            dents[read_count].d_type = DT_SOCK;
+        } else if (child_node->type & file_dir) {
+            dents[read_count].d_type = DT_DIR;
+        } else {
+            dents[read_count].d_type = DT_UNKNOWN;
+        }
+        strncpy(dents[read_count].d_name, child_node->name, 256);
+        handle->offset += sizeof(struct dirent);
+        read_count++;
+    next:
+        offset += sizeof(struct dirent);
+    }
+    return read_count * sizeof(struct dirent);
+}
+
+syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags) {
+    char    *resolved = at_resolve_pathname(dirfd, pathname);
+    uint64_t ret      = syscall_stat(resolved, buf, 0, 0, 0, 0, regs);
+    free(resolved);
+    return ret;
+}
+
+syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct statx *buff) {
+    if (unlikely(!pathname || check_user_overflow((uint64_t)pathname, strlen(pathname)))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (unlikely(!buff || check_user_overflow((uint64_t)buff, sizeof(struct statx)))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    struct stat simple;
+    memset(&simple, 0, sizeof(struct stat));
+    uint64_t ret = syscall_newfstatat(dirfd, pathname, &simple, flags, 0, 0, 0);
+    if ((int64_t)ret < 0) return ret;
+
+    buff->stx_mask            = mask;
+    buff->stx_blksize         = simple.st_blksize;
+    buff->stx_attributes      = 0;
+    buff->stx_nlink           = simple.st_nlink;
+    buff->stx_uid             = simple.st_uid;
+    buff->stx_gid             = simple.st_gid;
+    buff->stx_mode            = simple.st_mode;
+    buff->stx_ino             = simple.st_ino;
+    buff->stx_size            = simple.st_size;
+    buff->stx_blocks          = simple.st_blocks;
+    buff->stx_attributes_mask = 0;
+
+    buff->stx_atime.tv_sec  = (long)simple.st_atim.tv_sec;
+    buff->stx_atime.tv_nsec = simple.st_atim.tv_nsec;
+
+    buff->stx_btime.tv_sec  = (long)simple.st_ctim.tv_sec;
+    buff->stx_btime.tv_nsec = simple.st_ctim.tv_nsec;
+
+    buff->stx_ctime.tv_sec  = (long)simple.st_ctim.tv_sec;
+    buff->stx_ctime.tv_nsec = simple.st_ctim.tv_nsec;
+
+    buff->stx_mtime.tv_sec  = (long)simple.st_mtim.tv_sec;
+    buff->stx_mtime.tv_nsec = simple.st_mtim.tv_nsec;
+    return EOK;
+}
+
+syscall_(pipe2, int *pipefd, uint64_t flags) {
+    /* fs/pipefs.c */
+    extern vfs_node_t pipefs_root;
+    extern int        pipefd_id;
+    extern int        pipefs_id;
+
+    if (pipefs_root == NULL) return SYSCALL_FAULT_(ENOSYS);
+
+    char buf[16];
+    sprintf(buf, "pipe%d", pipefd_id++);
+
+    vfs_node_t node_input = vfs_node_alloc(pipefs_root, buf);
+    node_input->type      = file_pipe;
+    node_input->fsid      = pipefs_id;
+    node_input->refcount++;
+    pipefs_root->mode = 0700;
+
+    sprintf(buf, "pipe%d", pipefd_id++);
+    vfs_node_t node_output = vfs_node_alloc(pipefs_root, buf);
+    node_output->type      = file_pipe;
+    node_output->fsid      = pipefs_id;
+    node_output->refcount++;
+    pipefs_root->mode = 0700;
+
+    pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));
+    memset(info, 0, sizeof(pipe_info_t));
+    info->buf       = calloc(1, PIPE_BUFF);
+    info->read_fds  = 1;
+    info->write_fds = 1;
+    info->ptr       = 0;
+    info->lock      = SPIN_INIT;
+
+    pipe_specific_t *read_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
+    read_spec->write           = false;
+    read_spec->info            = info;
+    read_spec->node            = node_input;
+
+    pipe_specific_t *write_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
+    write_spec->write           = true;
+    write_spec->info            = info;
+    write_spec->node            = node_output;
+
+    node_input->handle  = read_spec;
+    node_output->handle = write_spec;
+
+    fdt_t *fd_table   = get_current_task()->process->fdts;
+    fd_t  *handle_in  = malloc(sizeof(fd_t));
+    handle_in->node   = node_input;
+    handle_in->offset = 0;
+    handle_in->flags  = flags;
+    handle_in->fd     = add_fd(fd_table, handle_in);
+
+    fd_t *handle_out   = malloc(sizeof(fd_t));
+    handle_out->node   = node_output;
+    handle_out->offset = 0;
+    handle_out->flags  = flags;
+    handle_out->fd     = add_fd(fd_table, handle_out);
+
+    pipefd[0] = (int)handle_in->fd;
+    pipefd[1] = (int)handle_out->fd;
+
+    return EOK;
+}
+
+syscall_(pipe, int *pipefd) {
+    return syscall_pipe2(pipefd, 0, 0, 0, 0, 0, regs);
+}
+
+syscall_(unlink, char *name) {
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    char      *npath = vfs_cwd_path_build(name);
+    vfs_node_t node  = vfs_open(npath);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (node->type != file_none && node->type != file_symlink) {
+        vfs_close(node);
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+    size_t ret;
+    if (node->refcount > 0) {
+        node->refcount--;
+        return EOK;
+    } else
+        ret = vfs_delete(node) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
+    free(npath);
+    return ret;
+}
+
+syscall_(rmdir, char *name) {
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    char      *n_name = vfs_cwd_path_build(name);
+    vfs_node_t node   = vfs_open(n_name);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (node->type != file_dir) {
+        vfs_close(node);
+        free(n_name);
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+    size_t ret;
+    if (node->refcount > 0) {
+        node->refcount--;
+        ret = EOK;
+    } else {
+        ret = vfs_delete(node);
+    }
+    free(n_name);
+    return ret;
+}
+
+syscall_(unlinkat, int dirfd, char *name) {
+    if (check_user_overflow((uint64_t)name, strlen(name))) { return (uint64_t)-EFAULT; }
+    char *path = at_resolve_pathname(dirfd, (char *)name);
+    if (!path) return -ENOENT;
+
+    uint64_t ret = syscall_unlink(path, 0, 0, 0, 0, 0, regs);
+
+    free(path);
+
+    return ret;
+}
+
+syscall_(access, char *filename) {
+    struct stat buf;
+    return syscall_stat(filename, &buf, 0, 0, 0, 0, regs);
+}
+
+syscall_(mkdir, char *name, uint64_t mode) {
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    char  *npath = vfs_cwd_path_build(name);
+    size_t ret   = vfs_mkdir(npath) == EOK ? EOK : -1;
+    free(npath);
+    return ret;
+}
