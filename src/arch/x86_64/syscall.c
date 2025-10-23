@@ -2,7 +2,9 @@
 #include "errno.h"
 #include "fsgsbase.h"
 #include "io.h"
+#include "krlibc.h"
 #include "nr.h"
+#include "ptrace.h"
 #include "task/task.h"
 #include "term/klog.h"
 
@@ -162,6 +164,20 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_RENAME]      = (syscall_t)syscall_rename,
     [SYSCALL_SYMLINK]     = (syscall_t)syscall_symlink,
     [SYSCALL_LINK]        = (syscall_t)syscall_link,
+    [SYSCALL_NANO_SLEEP]  = (syscall_t)syscall_nano_sleep,
+    [SYSCALL_GET_TID]     = (syscall_t)syscall_get_tid,
+    [SYSCALL_SELECT]      = (syscall_t)syscall_select,
+    [SYSCALL_PSELECT6]    = (syscall_t)syscall_pselect6,
+    [SYSCALL_GETDENTS64]  = (syscall_t)syscall_getdents,
+    [SYSCALL_NEWFSTATAT]  = (syscall_t)syscall_newfstatat,
+    [SYSCALL_STATX]       = (syscall_t)syscall_statx,
+    [SYSCALL_PIPE2]       = (syscall_t)syscall_pipe2,
+    [SYSCALL_PIPE]        = (syscall_t)syscall_pipe,
+    [SYSCALL_UNLINK]      = (syscall_t)syscall_unlink,
+    [SYSCALL_UNLINKAT]    = (syscall_t)syscall_unlinkat,
+    [SYSCALL_RMDIR]       = (syscall_t)syscall_rmdir,
+    [SYSCALL_ACCESS]      = (syscall_t)syscall_access,
+    [SYSCALL_MKDIR]       = (syscall_t)syscall_mkdir,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理
@@ -200,7 +216,7 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
     if (likely(syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL)) {
         arch_open_interrupt();
-        regs->rax = ((syscall_t)syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
+        regs->rax = (syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
                                                               regs->r10, regs->r8, regs->r9, regs);
         arch_close_interrupt();
     } else {

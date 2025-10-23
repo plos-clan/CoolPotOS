@@ -1,6 +1,7 @@
 #include "errno.h"
 #include "krlibc.h"
 #include "syscall.h"
+#include "task/scheduler.h"
 #include "term/klog.h"
 #include "timer.h"
 
@@ -61,4 +62,14 @@ syscall_(getgroups, int count, int *gid_list) {
         return 1;
     }
     return 0;
+}
+
+syscall_(nano_sleep, void *time_handle) {
+    struct timespec k_req;
+    if (unlikely(time_handle == NULL)) return SYSCALL_FAULT_(EINVAL);
+    memcpy(&k_req, time_handle, sizeof(k_req));
+    if (unlikely(k_req.tv_nsec >= 1000000000L)) return SYSCALL_FAULT_(EINVAL);
+    uint64_t nsec = k_req.tv_sec * 1000000000 + k_req.tv_nsec;
+    scheduler_nano_sleep(nsec);
+    return EOK;
 }

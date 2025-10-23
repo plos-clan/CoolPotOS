@@ -109,6 +109,17 @@
 #define FUTEX_TRYLOCK_PI  8
 #define FUTEX_WAIT_BITSET 9
 
+#define DT_UNKNOWN 0
+#define DT_FIFO    1
+#define DT_CHR     2
+#define DT_DIR     4
+#define DT_BLK     6
+#define DT_REG     8
+#define DT_LNK     10
+#define DT_SOCK    12
+#define DT_WHT     14
+
+#define FD_SETSIZE 1024
 
 #define SEEK_SET  0 /* Seek from beginning of file.  */
 #define SEEK_CUR  1 /* Seek from current position.  */
@@ -116,6 +127,7 @@
 #define SEEK_DATA 3
 #define SEEK_HOLE 4
 
+#include "fs/vfs.h"
 #include "task/poll.h"
 #include "task/signal.h"
 #include "types.h"
@@ -156,6 +168,69 @@ struct utsname {
     char domainname[65];
 };
 
+typedef struct {
+    unsigned long fds_bits[FD_SETSIZE / 8 / sizeof(long)];
+} fd_set;
+
+typedef struct {
+    sigset_t *ss;
+    size_t    ss_len;
+} WeirdPselect6;
+
+struct timeval {
+    long tv_sec;
+    long tv_usec;
+};
+
+struct dirent {
+    long           d_ino;
+    long           d_off;
+    unsigned short d_reclen;
+    unsigned char  d_type;
+    char           d_name[256];
+};
+
+struct statx_timestamp {
+    int64_t  tv_sec;
+    uint32_t tv_nsec;
+    int32_t  __reserved;
+};
+
+struct statx {
+    /* 0x00 */
+    uint32_t stx_mask;       /* What results were written [uncond] */
+    uint32_t stx_blksize;    /* Preferred general I/O size [uncond] */
+    uint64_t stx_attributes; /* Flags conveying information about the file [uncond] */
+    /* 0x10 */
+    uint32_t stx_nlink; /* Number of hard links */
+    uint32_t stx_uid;   /* User ID of owner */
+    uint32_t stx_gid;   /* Group ID of owner */
+    uint16_t stx_mode;  /* File mode */
+    uint16_t __spare0[1];
+    /* 0x20 */
+    uint64_t stx_ino;             /* Inode number */
+    uint64_t stx_size;            /* File size */
+    uint64_t stx_blocks;          /* Number of 512-byte blocks allocated */
+    uint64_t stx_attributes_mask; /* Mask to show what's supported in stx_attributes */
+    /* 0x40 */
+    struct statx_timestamp stx_atime; /* Last access time */
+    struct statx_timestamp stx_btime; /* File creation time */
+    struct statx_timestamp stx_ctime; /* Last attribute change time */
+    struct statx_timestamp stx_mtime; /* Last data modification time */
+    /* 0x80 */
+    uint32_t               stx_rdev_major; /* Device ID of special file [if bdev/cdev] */
+    uint32_t               stx_rdev_minor;
+    uint32_t               stx_dev_major; /* ID of device containing file [uncond] */
+    uint32_t               stx_dev_minor;
+    /* 0x90 */
+    uint64_t               stx_mnt_id;
+    uint32_t               stx_dio_mem_align;    /* Memory buffer alignment for direct I/O */
+    uint32_t               stx_dio_offset_align; /* File offset alignment for direct I/O */
+    /* 0xa0 */
+    uint64_t               __spare3[12]; /* Spare space for future expansion */
+                                         /* 0x100 */
+};
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -185,8 +260,22 @@ syscall_(ftruncate);
 syscall_(rename, char *oldpath, char *newpath);
 syscall_(symlink, char *name, char *new);
 syscall_(link, char *name, char *new);
+syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except,
+         struct timeval *timeout);
+syscall_(pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+         struct timespec *timeout, WeirdPselect6 *weirdPselect6);
+syscall_(getdents, int fd, struct dirent *dents, size_t size);
+syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags);
+syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct statx *buff);
+syscall_(pipe2, int *pipefd, uint64_t flags);
+syscall_(pipe, int *pipefd) ;
+syscall_(unlink,char *name);
+syscall_(rmdir,char *name);
+syscall_(unlinkat,int dirfd,char *name);
+syscall_(access, char *filename);
+syscall_(mkdir, char *name, uint64_t mode);
 
-// proc syscall
+    // proc syscall
 syscall_(exit, int exit_code);
 syscall_(set_tid_address, int *tidptr);
 syscall_(getpid);
@@ -206,6 +295,7 @@ syscall_(getegid);
 syscall_(geteuid);
 syscall_(waitpid, pid_t pid, int *status, uint64_t options);
 syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout);
+syscall_(get_tid);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
@@ -221,3 +311,4 @@ syscall_(uname, struct utsname *utsname);
 syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
 syscall_(clock_getres);
 syscall_(getgroups, int count, int *gid_list);
+syscall_(nano_sleep, void *time_handle);
