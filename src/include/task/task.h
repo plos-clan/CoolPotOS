@@ -135,6 +135,7 @@ struct thread_control_block {
     size_t            ct_index;      // 子线程列表索引
     task_status       status;        // 线程状态
     uint64_t          _start;        // 线程入口函数
+    uint64_t          affinity_mask; // 线程亲和性掩码
 
     sigaction_t actions[MAXSIG]; // 信号处理器回调
     uint64_t    signal;          // 信号位图
@@ -155,8 +156,8 @@ _Noreturn void arch_switch_to_user_mode();               // 架构实现切换�
 pid_t          create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, pcb_t process,
                            uint64_t prio);
-int waitpid(pid_t pid, pid_t *pid_ret);
-    void  kill_thread(tcb_t task);
+int   waitpid(pid_t pid, pid_t *pid_ret);
+void  kill_thread(tcb_t task);
 void  kill_proc(pcb_t pcb, int exit_code, bool is_zombie);
 bool  signals_pending_quick(tcb_t task); // signal.c
 pcb_t found_pcb(pid_t pid);

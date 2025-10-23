@@ -76,3 +76,52 @@ void free_llist_queue(list_queue_t *queue, data_free_func_t data_free_func, void
     spin_unlock(queue->lock);
     free(queue);
 }
+
+list_queue_t *copy_list_queue(list_queue_t *src_queue, void*(*copy)(void*)) {
+    if (!src_queue || !copy) return NULL;
+    spin_lock(src_queue->lock);
+    list_queue_t *new_queue = create_llist_queue();
+    if (!new_queue) {
+        spin_unlock(src_queue->lock);
+        return NULL;
+    }
+    list_node_t *current_src = src_queue->head;
+    list_node_t *prev_new = NULL;
+
+    while (current_src != NULL) {
+        list_node_t *new_node = (list_node_t *)malloc(sizeof(list_node_t));
+        if (!new_node) {
+            list_node_t *cleanup_node = new_queue->head;
+            while(cleanup_node != NULL) {
+                list_node_t *next = cleanup_node->next;
+                free(cleanup_node);
+                cleanup_node = next;
+            }
+            free(new_queue);
+
+            spin_unlock(src_queue->lock);
+            return NULL;
+        }
+
+        // 浅拷贝数据指针
+        new_node->data = copy(current_src->data);
+
+        new_node->prev = prev_new;
+        new_node->next = NULL;
+
+        if (new_queue->size == 0 || prev_new == NULL) {
+            new_queue->head = new_node;
+        } else {
+            prev_new->next = new_node;
+        }
+
+        new_queue->tail = new_node;
+        prev_new = new_node;
+        new_queue->size++;
+
+        current_src = current_src->next;
+    }
+
+    spin_unlock(src_queue->lock);
+    return new_queue;
+}
