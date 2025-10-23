@@ -4,10 +4,10 @@
 #    undef PAGE_SIZE
 #endif
 
-#define PAGE_SIZE     4096
-#define ARCH_PT_LEVEL 4
-#define PAGE_MASK     (~(PAGE_SIZE - 1))
-#define ENTRY_MASK    0x1FF
+#define PAGE_SIZE           4096
+#define ARCH_PT_LEVEL       4
+#define PAGE_MASK           (~(PAGE_SIZE - 1))
+#define ENTRY_MASK          0x1FF
 #define PT_OFFSET_BASE      12
 #define PT_OFFSET_PER_LEVEL 9
 
@@ -50,7 +50,9 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
-void              switch_page_directory(page_directory_t *dir);
+void switch_page_directory(page_directory_t *dir); // 切换页表: 架构具体实现
+void free_page_directory(page_directory_t *dir); // 释放页表: 架构具体实现
+
 /**
  * 克隆一个新的页表
  * @param dir 源页表

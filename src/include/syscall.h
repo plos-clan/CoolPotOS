@@ -97,8 +97,28 @@
 #define MS_SLAVE       (1 << 19)
 #define MS_UNBINDABLE  (1 << 17)
 
-#include "types.h"
+// futex 系统调用操作码
+#define FUTEX_WAIT        0
+#define FUTEX_WAKE        1
+#define FUTEX_FD          2
+#define FUTEX_REQUEUE     3
+#define FUTEX_CMP_REQUEUE 4
+#define FUTEX_WAKE_OP     5
+#define FUTEX_LOCK_PI     6
+#define FUTEX_UNLOCK_PI   7
+#define FUTEX_TRYLOCK_PI  8
+#define FUTEX_WAIT_BITSET 9
+
+
+#define SEEK_SET  0 /* Seek from beginning of file.  */
+#define SEEK_CUR  1 /* Seek from current position.  */
+#define SEEK_END  2 /* Seek from end of file.  */
+#define SEEK_DATA 3
+#define SEEK_HOLE 4
+
 #include "task/poll.h"
+#include "task/signal.h"
+#include "types.h"
 
 struct iovec {
     void  *iov_base;
@@ -155,6 +175,16 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg);
 syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data);
 syscall_(fstat, int fd, struct stat *buf);
 syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout);
+syscall_(umount2,char *path0);
+syscall_(lseek, int fd, size_t offset, size_t whence);
+syscall_(pread, int fd, uint8_t *buffer);
+syscall_(pwrite, int fd, uint8_t *buffer);
+syscall_(copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
+         uint64_t flags);
+syscall_(ftruncate);
+syscall_(rename, char *oldpath, char *newpath);
+syscall_(symlink, char *name, char *new);
+syscall_(link, char *name, char *new);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -166,6 +196,16 @@ syscall_(yield);
 syscall_(setpgid, pid_t pid, pid_t pgid);
 syscall_(getpgid);
 syscall_(getppid);
+syscall_(ssetmask, int how, sigset_t *nset, sigset_t *oset);
+syscall_(sigaltstack, altstack_t *old_stack, altstack_t *new_stack);
+syscall_(sig_action, int sig, sigaction_t *action, sigaction_t *oldaction);
+syscall_(sigsuspend, const sigset_t *mask);
+syscall_(signal, int sig, void *handler);
+syscall_(sigret);
+syscall_(getegid);
+syscall_(geteuid);
+syscall_(waitpid, pid_t pid, int *status, uint64_t options);
+syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
@@ -174,8 +214,10 @@ syscall_(munmap, uint64_t addr, size_t size);
 syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
          uint64_t new_addr);
 syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot);
+syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec);
 
 // os syscall
 syscall_(uname, struct utsname *utsname);
 syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
 syscall_(clock_getres);
+syscall_(getgroups, int count, int *gid_list);
