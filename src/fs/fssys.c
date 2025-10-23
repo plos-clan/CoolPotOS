@@ -185,27 +185,6 @@ syscall_(ioctl, int fd, int options, void *arg2) {
     return vfs_ioctl(handle->node, options, arg2);
 }
 
-fd_t *fd_dup(fd_t *src) {
-    fd_t *new = (fd_t *)malloc(sizeof(fd_t));
-    not_null_assert(new, "fd_dup out of memory.");
-    src->node->refcount++;
-    new->node       = src->node;
-    new->offset     = src->offset;
-    new->flags      = src->flags;
-    new->fd         = src->fd;
-    vfs_node_t node = new->node;
-    if (node->type == file_pipe) {
-        pipe_specific_t *spec = node->handle;
-        pipe_info_t     *pipe = spec->info;
-        if (spec->write) {
-            pipe->write_fds++;
-        } else {
-            pipe->read_fds++;
-        }
-    }
-    return new;
-}
-
 syscall_(dup2, int fd, int newfd) {
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);

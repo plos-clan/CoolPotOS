@@ -8,6 +8,8 @@
 #include "task/task.h"
 #include "term/klog.h"
 
+syscall_(arch_prctl, uint64_t code, uint64_t addr); // prsys_x64.c
+
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
                      "cli\n\t"
@@ -94,24 +96,6 @@ void arch_enable_syscall() {
     wrmsr(MSR_SYSCALL_MASK, (1 << 9));
 }
 
-syscall_(arch_prctl, uint64_t code, uint64_t addr) {
-    tcb_t thread = get_current_task();
-    switch (code) {
-    case ARCH_SET_FS:
-        thread->context.fs_base = addr;
-        write_fsbase(thread->context.fs_base);
-        break;
-    case ARCH_GET_FS: return thread->context.fs_base;
-    case ARCH_SET_GS:
-        thread->context.gs_base = addr;
-        write_gsbase(thread->context.gs_base);
-        break;
-    case ARCH_GET_GS: return thread->context.gs_base;
-    default: return -EINVAL;
-    }
-    return EOK;
-}
-
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EXIT]        = (syscall_t)syscall_exit,
     [SYSCALL_OPEN]        = (syscall_t)syscall_open,
@@ -178,6 +162,11 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_RMDIR]       = (syscall_t)syscall_rmdir,
     [SYSCALL_ACCESS]      = (syscall_t)syscall_access,
     [SYSCALL_MKDIR]       = (syscall_t)syscall_mkdir,
+    [SYSCALL_PRCTL]       = (syscall_t)syscall_prctl,
+    [SYSCALL_FORK]        = (syscall_t)syscall_fork,
+    [SYSCALL_EXECVE]      = (syscall_t)syscall_execve,
+    [SYSCALL_VFORK]       = (syscall_t)syscall_vfork,
+    [SYSCALL_CLONE]       = (syscall_t)syscall_clone,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理
@@ -216,8 +205,8 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
     if (likely(syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL)) {
         arch_open_interrupt();
-        regs->rax = (syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx,
-                                                              regs->r10, regs->r8, regs->r9, regs);
+        regs->rax = (syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx, regs->r10,
+                                                   regs->r8, regs->r9, regs);
         arch_close_interrupt();
     } else {
         if (unlikely(syscall_id != 12)) logkf("Syscall(%d) cannot implemented.\n", syscall_id);

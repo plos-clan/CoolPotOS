@@ -250,7 +250,7 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg);
 syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data);
 syscall_(fstat, int fd, struct stat *buf);
 syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout);
-syscall_(umount2,char *path0);
+syscall_(umount2, char *path0);
 syscall_(lseek, int fd, size_t offset, size_t whence);
 syscall_(pread, int fd, uint8_t *buffer);
 syscall_(pwrite, int fd, uint8_t *buffer);
@@ -260,22 +260,21 @@ syscall_(ftruncate);
 syscall_(rename, char *oldpath, char *newpath);
 syscall_(symlink, char *name, char *new);
 syscall_(link, char *name, char *new);
-syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except,
-         struct timeval *timeout);
+syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except, struct timeval *timeout);
 syscall_(pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
          struct timespec *timeout, WeirdPselect6 *weirdPselect6);
 syscall_(getdents, int fd, struct dirent *dents, size_t size);
 syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags);
 syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct statx *buff);
 syscall_(pipe2, int *pipefd, uint64_t flags);
-syscall_(pipe, int *pipefd) ;
-syscall_(unlink,char *name);
-syscall_(rmdir,char *name);
-syscall_(unlinkat,int dirfd,char *name);
+syscall_(pipe, int *pipefd);
+syscall_(unlink, char *name);
+syscall_(rmdir, char *name);
+syscall_(unlinkat, int dirfd, char *name);
 syscall_(access, char *filename);
 syscall_(mkdir, char *name, uint64_t mode);
 
-    // proc syscall
+// proc syscall
 syscall_(exit, int exit_code);
 syscall_(set_tid_address, int *tidptr);
 syscall_(getpid);
@@ -296,6 +295,11 @@ syscall_(geteuid);
 syscall_(waitpid, pid_t pid, int *status, uint64_t options);
 syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout);
 syscall_(get_tid);
+syscall_(fork);
+syscall_(vfork);
+syscall_(execve, char *path, char **argv, char **envp);
+syscall_(prctl,int option);
+syscall_(clone, uint64_t flags, uint64_t stack, int *parent_tid, int *child_tid, uint64_t tls);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,

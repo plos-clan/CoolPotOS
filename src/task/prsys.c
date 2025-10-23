@@ -185,3 +185,24 @@ re_futex: //TODO PRIVATE 标志暂时不支持
 syscall_(get_tid) {
     return get_current_task()->tid;
 }
+
+syscall_(prctl,int option) {
+    switch (option) {
+    case PR_SET_NAME:
+        if (arg2 == 0) return -1;
+        char *new_name = (char *)arg2;
+        int   length   = strlen(new_name);
+        if (length > 16) return -1;
+        memcpy(get_current_task()->name, new_name, length);
+        break;
+    case PR_GET_NAME:
+        if (arg2 == 0) return -1;
+        char *proc_name = (char *)arg2;
+        memcpy(proc_name, get_current_task()->name, 16);
+        break;
+    case PR_GET_DUMPABLE: return 0; //TODO CP_Kernel 不支持核心转储
+    case PR_SET_DUMPABLE: return -1;
+    default: return -1;
+    }
+    return EOK;
+}

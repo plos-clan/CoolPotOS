@@ -1,5 +1,7 @@
 #include "fs/fds.h"
 #include "errno.h"
+#include "fs/pipefs.h"
+#include "fs/vfs.h"
 
 int find_free_fd(fdt_t *fdt) {
     if (!fdt) {
@@ -79,6 +81,56 @@ errno_t remove_fd(fdt_t *fdt, int fd) {
 void free_fdt(fdt_t *fdt){
     free((void*)fdt->fds);
     free(fdt);
+}
+
+fd_t *fd_dup(fd_t *src) {
+    fd_t *new = (fd_t *)malloc(sizeof(fd_t));
+    not_null_assert(new, "fd_dup out of memory.");
+    src->node->refcount++;
+    new->node       = src->node;
+    new->offset     = src->offset;
+    new->flags      = src->flags;
+    new->fd         = src->fd;
+    vfs_node_t node = new->node;
+    if (node->type == file_pipe) {
+        pipe_specific_t *spec = node->handle;
+        pipe_info_t     *pipe = spec->info;
+        if (spec->write) {
+            pipe->write_fds++;
+        } else {
+            pipe->read_fds++;
+        }
+    }
+    return new;
+}
+
+fdt_t *copy_fdt(fdt_t *src_fdt) {
+    if (!src_fdt) {
+        return NULL;
+    }
+
+    fdt_t *new_fdt = (fdt_t *)malloc(sizeof(fdt_t));
+    if (new_fdt == NULL) {
+        return NULL;
+    }
+
+    new_fdt->fds_length = src_fdt->fds_length;
+
+    size_t array_size = new_fdt->fds_length * sizeof(fd_t *);
+    new_fdt->fds = (fd_t **)malloc(array_size);
+    if (new_fdt->fds == NULL) {
+        free(new_fdt);
+        return NULL;
+    }
+    for (size_t i = 0; i < src_fdt->fds_length; i++) {
+        fd_t *fd_entry = src_fdt->fds[i];
+        if (fd_entry != NULL) {
+            new_fdt->fds[i] = fd_dup(fd_entry);
+        } else {
+            new_fdt->fds[i] = NULL;
+        }
+    }
+    return new_fdt;
 }
 
 fdt_t *fds_init() {
