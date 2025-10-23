@@ -252,3 +252,31 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
 
     return EOK;
 }
+
+syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
+    if (check_user_overflow(addr, size)) { return SYSCALL_FAULT_(EFAULT); }
+
+    if (size == 0) { return EOK; }
+
+    uint64_t start_page = addr & (~(PAGE_SIZE - 1));
+    uint64_t end_page   = (addr + size - 1) & (~(PAGE_SIZE - 1));
+    uint64_t num_pages  = ((end_page - start_page) / PAGE_SIZE) + 1;
+
+    if (check_user_overflow(vec, num_pages)) { return SYSCALL_FAULT_(EFAULT); }
+
+    spin_lock(mm_op_lock);
+    uint64_t current_addr = start_page;
+
+    for (uint64_t i = 0; i < num_pages; i++) {
+        uint64_t phys_addr = arch_virt_to_phys(current_addr);
+
+        uint8_t resident = (phys_addr != 0) ? 1 : 0;
+
+        memcpy((void *)(vec + i), &resident, sizeof(uint8_t));
+
+        current_addr += PAGE_SIZE;
+    }
+
+    spin_unlock(mm_op_lock);
+    return EOK;
+}

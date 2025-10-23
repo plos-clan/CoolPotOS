@@ -143,4 +143,7 @@ void launch_init_process() {
     stderr->fd = add_fd(init_process->fdts,stderr);
 
     create_kernel_thread("main", (void *)arch_switch_to_user_mode, NULL, init_process, NICE_TO_PRIO(0));
+
+    int exit_code = waitpid(init_pid,&init_pid);
+    kwarn("Init process exit, code:%d",exit_code);
 }

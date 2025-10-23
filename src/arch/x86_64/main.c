@@ -32,6 +32,8 @@
 #include "driver/input_device.h"
 #include "fs/pipefs.h"
 #include "timer.h"
+#include "task/signal.h"
+#include "task/futex.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -73,6 +75,8 @@ USED _Noreturn void kmain() {
 
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");
+    signal_init();
+    futex_init();
     setup_task();
     smp_init();
     arch_enable_syscall();

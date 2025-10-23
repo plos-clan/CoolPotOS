@@ -54,3 +54,11 @@ syscall_(clock_getres) {
     ((struct timespec *)arg2)->tv_nsec = 1000000;
     return EOK;
 }
+
+syscall_(getgroups, int count, int *gid_list) {
+    if (count > 0) {
+        gid_list[0] = 0;
+        return 1;
+    }
+    return 0;
+}

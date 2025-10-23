@@ -76,6 +76,11 @@ errno_t remove_fd(fdt_t *fdt, int fd) {
     return EOK;
 }
 
+void free_fdt(fdt_t *fdt){
+    free((void*)fdt->fds);
+    free(fdt);
+}
+
 fdt_t *fds_init() {
     fdt_t *fdt = malloc(sizeof(fdt_t));
     fdt->fds_length = FD_INITIAL_CAPACITY;

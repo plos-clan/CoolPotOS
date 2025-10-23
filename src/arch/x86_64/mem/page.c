@@ -178,6 +178,27 @@ page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     return new_directory;
 }
 
+static void free_page_table_recursive(page_table_t *table, int level) {
+    if (table == NULL) return;
+    if (level == 0) {
+        free_frame(virt_to_phys(table));
+        return;
+    }
+
+    for (int i = 0; i < (level == 4 ? 256 : 512); i++) {
+        page_table_t *page_table_next = phys_to_virt(table->entries[i].value & PTE_FRAME_MASK);
+        free_page_table_recursive(page_table_next, level - 1);
+    }
+    free_frame(virt_to_phys(table));
+}
+
+void free_page_directory(page_directory_t *dir) {
+    spin_lock(page_lock);
+    free_page_table_recursive(dir->table, 4);
+    free(dir);
+    spin_unlock(page_lock);
+}
+
 void switch_page_directory0(page_directory_t *dir) {
     page_table_t *physical_table = (page_table_t*)virt_to_phys(dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));

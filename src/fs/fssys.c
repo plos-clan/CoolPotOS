@@ -3,6 +3,7 @@
 #include "fs/fds.h"
 #include "fs/pipefs.h"
 #include "fs/vfs.h"
+#include "mem/frame.h"
 #include "syscall.h"
 #include "task/poll.h"
 #include "task/scheduler.h"
@@ -364,8 +365,9 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
     do {
         // 检查每个文件描述符
         for (size_t i = 0; i < get_current_task()->process->fdts->fds_length; i++) {
-            fd_t      *handle = get_current_task()->process->fdts->fds[i];
-            vfs_node_t node   = handle->node;
+            fd_t *handle = get_current_task()->process->fdts->fds[i];
+            if (handle == NULL) continue;
+            vfs_node_t node = handle->node;
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
                 if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {
                     fds_user[i].revents = fds_user[i].events & POLLIN ? POLLIN : POLLOUT;
@@ -420,4 +422,126 @@ syscall_(fstat, int fd, struct stat *buf) {
     buf->st_blocks  = (node->size + PAGE_SIZE - 1) / PAGE_SIZE;
     buf->st_ino     = node->inode;
     return EOK;
+}
+
+syscall_(umount2, char *path0) {
+    char   *path   = normalize_path(path0);
+    int     flags  = arg1;
+    errno_t status = vfs_unmount(path);
+    long    ret    = status;
+    if (status != EOK) ret = SYSCALL_FAULT_(EBUSY);
+    free(path);
+    return ret;
+}
+
+syscall_(lseek, int fd, size_t offset, size_t whence) {
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
+
+    int64_t real_offset = (int64_t)offset;
+    if (real_offset < 0 && handle->node->type & file_none && whence != SEEK_CUR)
+        return SYSCALL_FAULT_(EBADF);
+    switch (whence) {
+    case SEEK_SET: handle->offset = real_offset; break;
+    case SEEK_CUR:
+        handle->offset += real_offset;
+        if ((int64_t)handle->offset < 0) {
+            handle->offset = 0;
+        } else if (handle->offset > handle->node->size) {
+            handle->offset = handle->node->size;
+        }
+        break;
+    case SEEK_END: handle->offset = handle->node->size - real_offset; break;
+    case SEEK_DATA:
+        if (offset >= handle->node->size) return SYSCALL_FAULT_(ENXIO);
+        break;
+    case SEEK_HOLE:
+        if (offset >= handle->node->size) return SYSCALL_FAULT_(ENXIO);
+        return handle->node->size;
+    default: return SYSCALL_FAULT_(ENXIO);
+    }
+
+    return handle->offset;
+}
+
+syscall_(pread, int fd, uint8_t *buffer) {
+    syscall_lseek(fd, arg3, SEEK_SET, 0, 0, 0, regs);
+    return syscall_read(fd, buffer, arg2, 0, 0, 0, regs);
+}
+
+syscall_(pwrite, int fd, uint8_t *buffer) {
+    syscall_lseek(fd, arg3, SEEK_SET, 0, 0, 0, regs);
+    return syscall_write(fd, buffer, arg2, 0, 0, 0, regs);
+}
+
+syscall_(copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
+         uint64_t flags) {
+    if (flags != 0) { return SYSCALL_FAULT_(EINVAL); }
+    fd_t *src_handle = get_fd(get_current_task()->process->fdts, fd_in);
+    fd_t *dst_handle = get_fd(get_current_task()->process->fdts, fd_out);
+    if (src_handle == NULL || dst_handle == NULL) { return SYSCALL_FAULT_(EBADF); }
+    if (dst_handle->offset >= dst_handle->node->size && dst_handle->node->size > 0) return EOK;
+    uint64_t src_offset = off_in ? *off_in : src_handle->offset;
+    uint64_t dst_offset = off_out ? *off_out : dst_handle->offset;
+
+    uint64_t length     = src_handle->node->size > len ? len : src_handle->node->size;
+    uint8_t *buffer     = (uint8_t *)malloc(length);
+    size_t   copy_total = 0;
+    if (vfs_read(src_handle->node, buffer, src_offset, length) == (size_t)-1) { goto errno_; }
+    copy_total = vfs_write(dst_handle->node, buffer, dst_offset, length);
+    if (copy_total == (size_t)-1) { goto errno_; }
+    vfs_update(dst_handle->node);
+    free(buffer);
+    dst_handle->offset += copy_total;
+    return copy_total;
+errno_:
+    free(buffer);
+    return SYSCALL_FAULT_(EFAULT);
+}
+
+syscall_(ftruncate) {
+    return EOK;
+}
+
+syscall_(rename, char *oldpath, char *newpath) {
+    if (!oldpath || !newpath) return SYSCALL_FAULT_(EINVAL);
+    if (check_user_overflow((uint64_t)oldpath, strlen(oldpath))) { return SYSCALL_FAULT_(EFAULT); }
+    if (check_user_overflow((uint64_t)newpath, strlen(newpath))) { return SYSCALL_FAULT_(EFAULT); }
+    char      *noldpath = vfs_cwd_path_build(oldpath);
+    char      *nnewpath = vfs_cwd_path_build(newpath);
+    vfs_node_t oldnode  = vfs_open(noldpath);
+    if (!oldnode) {
+        free(noldpath);
+        free(nnewpath);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+    vfs_node_t newnode = vfs_open(nnewpath);
+    if (newnode) { vfs_delete(newnode); }
+    size_t     ret        = vfs_rename(oldnode, nnewpath) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
+    char      *parent     = get_parent_path(nnewpath);
+    vfs_node_t parent_dir = vfs_open(parent);
+    if (!parent_dir) {
+        free(parent);
+        ret = SYSCALL_FAULT_(ENOENT);
+        goto end_rename;
+    }
+    vfs_close(parent_dir); // 更新父目录的信息
+    free(parent);
+end_rename:
+    free(noldpath);
+    free(nnewpath);
+    return ret;
+}
+
+syscall_(symlink, char *name, char *new) {
+    if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
+    errno_t ret = vfs_symlink(name, new);
+    return ret;
+}
+
+syscall_(link, char *name, char *new) {
+    if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
+    errno_t ret = vfs_link(name, new);
+
+    return ret;
 }

@@ -61,6 +61,9 @@
 #define CLONE_NEWNET       0x40000000 /* New network namespace */
 #define CLONE_IO           0x80000000 /* Clone io context */
 
+typedef struct process_control_block *pcb_t;
+typedef struct thread_control_block  *tcb_t;
+
 #include "arch_context.h"
 #include "cow_arraylist.h"
 #include "driver/tty.h"
@@ -72,10 +75,8 @@
 #include "mem/vma.h"
 #include "metadata.h"
 #include "ptrace.h"
+#include "signal.h"
 #include "types.h"
-
-typedef struct process_control_block *pcb_t;
-typedef struct thread_control_block  *tcb_t;
 
 typedef enum {
     T_CREATE  = 0, // 创建中
@@ -96,7 +97,9 @@ struct process_control_block {
     char          *cmdline;       // 命令行完整形参
     pcb_t          parent;        // 父进程
     size_t         pl_index;      // 进程列表索引
+    size_t         ppl_index;     // 子进程列表索引
     cow_arraylist *child_threads; // 子线程
+    cow_arraylist *child_process; // 子进程
     task_status    status;        // 进程状态
 
     page_directory_t *directory;   // 进程页表
@@ -110,7 +113,9 @@ struct process_control_block {
     fdt_t       *fdts;      // 文件描述符表
     char       **envp;      // 进程环境变量
     size_t       envc;      // 进程环境变量长度
-    uint64_t     uid;       // 用户会话ID
+
+    uint64_t uid;   // 用户会话ID
+    bool     vfork; // 是否是 vfork 出来的进程
 };
 
 struct thread_control_block {
@@ -119,16 +124,25 @@ struct thread_control_block {
     uint64_t             signal_stack;       // 信号栈顶地址
     uint64_t             call_in_signal;     // 是否在信号处理过程
     struct arch_context_ context;            // 任务上下文
-    uint64_t             tid_address;        //
-    page_directory_t    *tid_directory;      //
-    char                *name;               // 线程名
-    pid_t                tid;                // 线程ID
-    pcb_t                process;            // 所属进程
-    uint64_t             prio;               // 任务优先级
-    void                *sched_handle;       // 调度器句柄
-    size_t               ct_index;           // 子线程列表索引
-    task_status          status;             // 线程状态
-    uint64_t             _start;             // 线程入口函数
+
+    uint64_t          tid_address;   //
+    page_directory_t *tid_directory; //
+    char             *name;          // 线程名
+    pid_t             tid;           // 线程ID
+    pcb_t             process;       // 所属进程
+    uint64_t          prio;          // 任务优先级
+    void             *sched_handle;  // 调度器句柄
+    size_t            ct_index;      // 子线程列表索引
+    task_status       status;        // 线程状态
+    uint64_t          _start;        // 线程入口函数
+
+    sigaction_t actions[MAXSIG]; // 信号处理器回调
+    uint64_t    signal;          // 信号位图
+    uint64_t    blocked;         // 屏蔽位图
+    altstack_t  alt_stack;       // 信号备用栈
+
+    size_t cpu_id; // 线程所属CPUID
+    size_t futex_index;
 };
 
 pid_t alloc_pid();
@@ -141,5 +155,9 @@ _Noreturn void arch_switch_to_user_mode();               // 架构实现切换�
 pid_t          create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, pcb_t process,
                            uint64_t prio);
+int waitpid(pid_t pid, pid_t *pid_ret);
+    void  kill_thread(tcb_t task);
+void  kill_proc(pcb_t pcb, int exit_code, bool is_zombie);
+bool  signals_pending_quick(tcb_t task); // signal.c
 pcb_t found_pcb(pid_t pid);
 void  setup_task();

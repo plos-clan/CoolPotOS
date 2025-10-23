@@ -86,6 +86,10 @@ struct eevdf_t {
     uint64_t min_vruntime;
 };
 
+void change_entity_weight(tcb_t thread, uint64_t prio, cpu_local_t *cpu);
+void remove_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
+void wait_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
+void futex_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
 void  add_eevdf_entity_with_prio(tcb_t new_task, uint64_t prio, cpu_local_t *cpu);
 void init_cpu_idle(cpu_local_t *cpu, tcb_t ap_idle);
 tcb_t eevdf_pick_next_task(cpu_local_t *cpu);

@@ -531,4 +531,22 @@ void cmd_free(char **argv, int argc) {
     }
 }
 
+char *get_parent_path(const char *path) {
+    if (!path || !*path) return strdup(".");
 
+    char *copy = strdup(path);
+    if (!copy) return NULL;
+
+    char *last_slash = strrchr(copy, '/');
+
+    if (last_slash && last_slash != copy) {
+        *last_slash = '\0';
+    } else if (last_slash == copy) {
+        copy[1] = '\0';
+    } else {
+        free(copy);
+        return strdup(".");
+    }
+
+    return copy;
+}
