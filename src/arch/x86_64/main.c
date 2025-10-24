@@ -2,15 +2,21 @@
 #include "bootarg.h"
 #include "description_table.h"
 #include "driver/acpi.h"
+#include "driver/ahci.h"
 #include "driver/blk_device.h"
+#include "driver/char/ps2_kbd.h"
 #include "driver/gop.h"
+#include "driver/input_device.h"
 #include "driver/pci/pci.h"
 #include "driver/power/power.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
 #include "exec/dlinker.h"
+#include "exec/elf_load.h"
 #include "fpu.h"
 #include "fs/cpio.h"
+#include "fs/devtmpfs.h"
+#include "fs/pipefs.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "fsgsbase.h"
@@ -21,19 +27,14 @@
 #include "mem/heap.h"
 #include "mem/page.h"
 #include "module.h"
+#include "syscall.h"
+#include "task/futex.h"
 #include "task/scheduler.h"
+#include "task/signal.h"
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "exec/elf_load.h"
-#include "syscall.h"
-#include "fs/devtmpfs.h"
-#include "driver/char/ps2_kbd.h"
-#include "driver/input_device.h"
-#include "fs/pipefs.h"
 #include "timer.h"
-#include "task/signal.h"
-#include "task/futex.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -72,6 +73,7 @@ USED _Noreturn void kmain() {
 
     ps2_kdb_setup();
     rtc_setup();
+    ahci_setup();
 
     extern intctl_t apic_controller;
     irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");

@@ -243,33 +243,31 @@ const char *pci_classname(uint32_t classcode) {
     return "Unknown device";
 }
 
-void pci_find_vid(pci_device_t **result, uint32_t *n, uint32_t vid) {
+void pci_find_vid(uint32_t vid,void (*load_device)(pci_device_t *device)) {
     int idx = 0;
     for (uint32_t i = 0; i < pci_device_number; i++) {
         if (pci_devices[i]->vendor_id == vid) {
-            result[idx] = pci_devices[i];
+            load_device(pci_devices[i]);
             idx++;
             continue;
         }
     }
-    *n = idx;
 }
 
-void pci_find_class(pci_device_t **result, uint32_t *n, uint32_t class_code) {
+void pci_find_class(uint32_t class_code, void (*load_device)(pci_device_t *device)) {
     int idx = 0;
     for (uint32_t i = 0; i < pci_device_number; i++) {
         if (pci_devices[i]->class_code == class_code) {
-            result[idx] = pci_devices[i];
+            load_device(pci_devices[i]);
             idx++;
             continue;
         }
         if (class_code == (pci_devices[i]->class_code & 0xFFFF00)) {
-            result[idx] = pci_devices[i];
+            load_device(pci_devices[i]);
             idx++;
             continue;
         }
     }
-    *n = idx;
 }
 
 pci_device_t *pci_find_bdfs(uint8_t bus, uint8_t slot, uint8_t func, uint16_t segment) {
