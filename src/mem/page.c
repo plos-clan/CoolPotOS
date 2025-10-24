@@ -73,7 +73,7 @@ page_directory_t *switch_context_directory(page_directory_t *directory){
 
 page_directory_t *get_current_directory() {
     cpu_local_t *local = arch_current_cpu();
-    if(local == NULL) return NULL;
+    if(local == NULL) return get_kernel_pagedir();
     return local->directory;
 }
 

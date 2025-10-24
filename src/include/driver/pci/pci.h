@@ -11,7 +11,7 @@
 
 #define EXPORT_BYTE(target, first) ((first) ? ((target) & ~0xFF00) : (((target) & ~0x00FF) >> 8))
 
-#include "../../types.h"
+#include "types.h"
 
 typedef struct {
     uint64_t address;
@@ -56,10 +56,12 @@ typedef struct {
     void *desc;
 } pci_device_t;
 
-const char *pci_classname(uint32_t classcode);
-
+const char   *pci_classname(uint32_t classcode);
+void          pci_find_vid(uint32_t vid, void (*load_device)(pci_device_t *device));
+void          pci_find_class(uint32_t class_code, void (*load_device)(pci_device_t *device));
 pci_device_t *pci_find_bdfs(uint8_t bus, uint8_t slot, uint8_t func, uint16_t segment);
 
+uint32_t pci_enumerate_capability_list(pci_device_t *pci_dev, uint32_t cap_type);
 void arch_pci_legacy_enum(); // 架构具体实现: MCFG找不到情况下采用经典枚举办法
 
 void pci_scan_bus(uint16_t segment_group, uint8_t bus);
