@@ -57,6 +57,10 @@ uint64_t get_bsp_cpu_id() {
     return bsp_cpu_id;
 }
 
+size_t get_cpu_count() {
+    return cpu_count;
+}
+
 static void set_bsp_cpu_info(cpu_local_t *bsp_cpu) {
     extern tcb_t bsp_idle_thread;
     bsp_cpu->enable    = true;
@@ -71,6 +75,7 @@ void smp_init() {
 
     for (uint64_t i = 0; i < mp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = mp_response->cpus[i];
+        cpu_local_infos[i].enable = true;
 #if defined(__x86_64__) || defined(__amd64__)
         cpu_local_infos[i].id = cpu->lapic_id;
         bsp_cpu_id            = mp_response->bsp_lapic_id;
@@ -95,7 +100,6 @@ void smp_init() {
         }
         bsp_cpu_id = bsp_hartid_request.response->bsp_hartid;
 #endif
-        cpu_local_infos[i].enable = true;
         cpu->goto_address         = (limine_goto_address)arch_ap_cpu_entry;
     }
     arch_bsp_cpu_init();

@@ -20,3 +20,7 @@ int snprintf(char *buf, int count, const char *fmt, ...) {
     va_end(va);
     return result;
 }
+
+int vsnprintf(char *buf, int count, const char *fmt,va_list va){
+    return STB_SPRINTF_DECORATE(vsnprintf)(buf, count, fmt, va);
+}

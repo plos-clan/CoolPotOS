@@ -98,6 +98,16 @@ uint64_t virt_to_phys(void *virt_addr) {
     return (uint64_t)(virt_addr - physical_memory_offset);
 }
 
+void *driver_phys_to_virt(uint64_t phys_addr) {
+    if (phys_addr == 0) return NULL;
+    return (void *)(phys_addr + DRIVER_AREA_MEM);
+}
+
+uint64_t driver_virt_to_phys(void *virt_addr) {
+    if (virt_addr == 0) return 0;
+    return (uint64_t)(virt_addr - DRIVER_AREA_MEM);
+}
+
 void free_frames(uint64_t addr, size_t count) {
     buddy_free_pages(addr, count);
     frame_allocator.usable_frames += count;

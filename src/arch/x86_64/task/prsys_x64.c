@@ -302,6 +302,14 @@ syscall_(execve, char *path, char **argv, char **envp) {
 
     process->exec = node;
 
+    for (size_t i = 0; i < process->fdts->fds_length; i++) {
+        fd_t *handle = process->fdts->fds[i];
+        if (handle != NULL) {
+            vfs_close(handle->node);
+            free(handle);
+        }
+    }
+
     free_fdt(process->fdts);
     process->fdts = fds_init();
 

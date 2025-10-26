@@ -7,6 +7,7 @@
 #include "driver/char/ps2_kbd.h"
 #include "driver/gop.h"
 #include "driver/input_device.h"
+#include "driver/nvme.h"
 #include "driver/pci/pci.h"
 #include "driver/power/power.h"
 #include "driver/serial.h"
@@ -71,12 +72,14 @@ USED _Noreturn void kmain() {
     devtmpfs_regist();
     pipefs_regist();
 
+    // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用
+    extern intctl_t apic_controller;
+    irq_allocate_irqnum();
+    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle",0);
+
     ps2_kdb_setup();
     rtc_setup();
-    ahci_setup();
 
-    extern intctl_t apic_controller;
-    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle");
     signal_init();
     futex_init();
     setup_task();
@@ -84,7 +87,11 @@ USED _Noreturn void kmain() {
     arch_enable_syscall();
     float_processor_setup();
     calibrate_tsc_with_hpet();
+
     power_button_init();
+    ahci_setup();
+    nvme_setup();
+
     kmodule_init();
     cpio_init();
     ksuccess("Kernel load done!");

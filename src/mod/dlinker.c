@@ -324,7 +324,9 @@ void kmodule_init() {
     kernel_mode_t *cpkrnl = malloc(sizeof(kernel_mode_t));
     *cpkrnl = (kernel_mode_t){};
     cpkrnl->name          = strdup("cpkrnl");
+
     dlfunc_register(cpkrnl, "printk", cp_printk);
+
     cpkrnl->lists_index = cow_list_add(kmod_lists, cpkrnl);
     load_all_kernel_module();
     kinfo("Load kernel module...");
