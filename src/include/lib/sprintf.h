@@ -1650,3 +1650,4 @@ static stbsp__int32 stbsp__real_to_str(char const **start, stbsp__uint32 *len, c
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);
+int vsnprintf(char *buf, int count, const char *fmt,va_list va);

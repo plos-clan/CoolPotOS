@@ -16,7 +16,7 @@ typedef struct cpu_local_info {
     bool              enable;       // 该核心是否启用
     arch_cpu_t        arch_data;    // 架构私有数据
     size_t            task_count;   // 任务数量
-}__attribute__((packed)) cpu_local_t;
+} __attribute__((packed)) cpu_local_t;
 
 #if defined(__x86_64__) || defined(__amd64__)
 bool x2apic_mode_supported();
@@ -25,6 +25,7 @@ bool x2apic_mode_supported();
 cpu_local_t   *get_min_task_count_cpu();
 cpu_local_t   *get_cpu_local(size_t id);
 uint64_t       get_bsp_cpu_id();
+size_t         get_cpu_count();
 cpu_local_t   *arch_current_cpu();  // 由架构具体实现
 _Noreturn void arch_ap_cpu_entry(); // 由架构具体实现
 void           arch_bsp_cpu_init(); // 由架构具体实现

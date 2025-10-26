@@ -9,8 +9,8 @@
 #define GIGA_FACTOR (1UL << GIGA_SHIFT) // 1073741824
 
 #include "limine.h"
-#include "types.h"
 #include "metadata.h"
+#include "types.h"
 
 typedef struct {
     void  *allocator;
@@ -35,6 +35,8 @@ void     free_frames_1G(uint64_t addr);
 uint64_t get_physical_memory_offset();
 void    *phys_to_virt(uint64_t phys_addr);
 uint64_t virt_to_phys(void *virt_addr);
+void    *driver_phys_to_virt(uint64_t phys_addr);
+uint64_t driver_virt_to_phys(void *virt_addr);
 
 static inline bool check_user_overflow(uint64_t addr, uint64_t size) {
     return (addr + size) > KERNEL_AREA_MEM;

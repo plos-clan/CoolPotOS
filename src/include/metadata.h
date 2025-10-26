@@ -78,3 +78,4 @@
 #define INTERPRETER_BASE_ADDR 0x0000100000000000   // 链接器基址起始地址
 #define USER_MMAP_START       0x0000400000000000UL // 用户堆映射起始地址
 #define KERNEL_AREA_MEM       0xf000000000000000   // 内核地址空间起始
+#define DRIVER_AREA_MEM       0xffffb00000000000   // 驱动恒等映射空间偏移

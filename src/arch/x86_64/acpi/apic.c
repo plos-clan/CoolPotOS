@@ -223,19 +223,23 @@ void apic_init() {
     local_apic_init();
 }
 
-int64_t apic_mask(uint64_t irq) {
+int64_t apic_mask(uint64_t irq,uint64_t flags) {
+    if (flags & IRQ_FLAGS_MSIX)
+        return 0;
     ioapic_disable((uint8_t)irq);
-
     return 0;
 }
 
-int64_t apic_unmask(uint64_t irq) {
+int64_t apic_unmask(uint64_t irq,uint64_t flags) {
+    if (flags & IRQ_FLAGS_MSIX)
+        return 0;
     ioapic_enable((uint8_t)irq);
-
     return 0;
 }
 
-int64_t apic_install(uint64_t vector, uint64_t irq) {
+int64_t apic_install(uint64_t vector, uint64_t irq,uint64_t flags) {
+    if (flags & IRQ_FLAGS_MSIX)
+        return 0;
     ioapic_add(vector, irq);
     return 0;
 }
