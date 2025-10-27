@@ -22,7 +22,7 @@
 #define PTE_U_DIRTY      (1ULL << 6)   // 已写入 (CPU主动标记)
 #define KERNEL_PTE_FLAGS (PTE_PRESENT | PTE_WRITEABLE | PTE_NO_EXECUTE)
 
-#define PTE_FRAME_MASK 0x000ffffffffff000
+#define PTE_FRAME_MASK 0x00007ffffffff000
 
 #define ARCH_PT_TABLE_FLAGS (PTE_PRESENT | PTE_WRITEABLE)
 
