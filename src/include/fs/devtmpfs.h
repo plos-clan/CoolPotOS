@@ -30,11 +30,12 @@ typedef struct devtmp_handle {
     size_t (*read_t)(void *handle, void *addr, size_t offset, size_t size);
     size_t (*write_t)(void *handle, const void *addr, size_t offset, size_t size);
     errno_t (*poll_t)(void *handle, size_t events);
+    size_t (*size_t)(void *handle);
     void *(*mapfile_t)(void *file, void *addr, size_t offset, size_t size, size_t prot,
                            size_t flags);
 } dtmp_handle_t;
 
 errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, void *handle,
                            vfs_ioctl_t ioctl, vfs_read_t read, vfs_write_t write, vfs_poll_t poll,
-                           vfs_mapfile_t map);
+                           vfs_mapfile_t map,size_t (*size_t)(void *handle));
 void devtmpfs_regist();

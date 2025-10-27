@@ -67,6 +67,10 @@ void tty_event_handle(indev_t *device, intype type, uint64_t code, uint8_t value
     }
 }
 
+static size_t tty_size_t(tty_t *session){
+    return -1;
+}
+
 static void termios_init(termios_t *termios) {
     termios->c_lflag = ECHO | ICANON | IEXTEN | ISIG;
     termios->c_iflag = BRKINT | ICRNL | INPCK | ISTRIP | IXON;
@@ -242,6 +246,7 @@ tty_t *alloc_tty_session(tty_device_t *device) {
     session->ops.read   = stdin_read;
     session->ops.ioctl  = tty_ioctl;
     session->ops.poll   = tty_poll;
+    session->ops.size_t = tty_size_t;
     termios_init(&session->termios);
     create_session_terminal(session);
     return session;

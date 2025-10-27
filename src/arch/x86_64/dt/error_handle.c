@@ -234,6 +234,8 @@ err:;
         arch_wait_for_interrupt();
 }
 
+USED volatile int is_debug;
+
 __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64_t error_code) {
 
     if (get_current_task() != NULL) {
@@ -249,13 +251,11 @@ __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64
         arch_close_interrupt();
 
     kerror("general_protection_fault: %x at %p", error_code, frame->rip);
+    if (is_debug) return;
 err:;
     while (true)
         arch_wait_for_interrupt();
 }
-
-
-USED volatile int is_debug;
 
 __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code) {
     arch_close_interrupt();

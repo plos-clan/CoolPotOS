@@ -18,14 +18,17 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
 
     extern tty_t *kernel_session;
     create_device_node(node, "stdout", device_stream, kernel_session,
-                       (void*)kernel_session->ops.ioctl, (void*)kernel_session->ops.read,
-                       (void*)kernel_session->ops.write, (void*)kernel_session->ops.poll, NULL);
+                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
+                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
+                       (void *)kernel_session->ops.size_t);
     create_device_node(node, "stderr", device_stream, kernel_session,
-                       (void*)kernel_session->ops.ioctl, (void*)kernel_session->ops.read,
-                       (void*)kernel_session->ops.write, (void*)kernel_session->ops.poll, NULL);
+                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
+                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
+                       (void *)kernel_session->ops.size_t);
     create_device_node(node, "stdin", device_stream, kernel_session,
-                       (void*)kernel_session->ops.ioctl, (void*)kernel_session->ops.read,
-                       (void*)kernel_session->ops.write, (void*)kernel_session->ops.poll, NULL);
+                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
+                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
+                       (void *)kernel_session->ops.size_t);
     return EOK;
 }
 
@@ -156,13 +159,13 @@ errno_t devtmpfs_stat(void *file, vfs_node_t node) {
     node->type = file0->type == dtp_file_symlink ? file_symlink
                  : file0->type == dtp_file_dir   ? file_dir
                                                  : file_none;
-    node->size = file0->type == file_dir ? 0 : file0->size;
+    node->size = file0->type == dtp_file_dir ? 0 : file0->size_t(file0->device_handle);
     return EOK;
 }
 
 errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, void *handle,
                            vfs_ioctl_t ioctl, vfs_read_t read, vfs_write_t write, vfs_poll_t poll,
-                           vfs_mapfile_t map) {
+                           vfs_mapfile_t map, size_t (*size_t)(void *handle)) {
     if (root == NULL) return -EINVAL;
     if (root->fsid != dev_tmpfs_id) return -ENODEV;
     char *full_path  = vfs_get_fullpath(root);
@@ -181,12 +184,16 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     fs_handle->mapfile_t     = map;
     fs_handle->poll_t        = poll;
     fs_handle->device_handle = handle;
-    logkf("devtmpfs: create device at %s\n\r",creat_path);
+    fs_handle->size_t        = size_t;
+    free(node->handle);
+    node->handle             = fs_handle;
+    logkf("devtmpfs: create device at %s\n\r", creat_path);
+    node->size = size_t(handle);
     vfs_update(node);
     vfs_close(node);
     return EOK;
 err:;
-    kerror("Cannot create device %s",creat_path);
+    kerror("Cannot create device %s", creat_path);
     free(full_path);
     free(creat_path);
     return -EIO;

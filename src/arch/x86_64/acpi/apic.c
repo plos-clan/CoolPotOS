@@ -168,7 +168,7 @@ void local_apic_init() {
     for (;;)
         if (nano_time() - b >= 1000000) break;
     uint64_t lapic_timer     = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
-    calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / LAPIC_TIMER_SPEED);
+    calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / SCHED_TIMER_SPEED);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
 

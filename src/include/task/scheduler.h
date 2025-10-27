@@ -3,6 +3,8 @@
 #include "task.h"
 #include "eevdf.h"
 
+#define TICK_NSEC ((1000000000+SCHED_TIMER_SPEED/2)/SCHED_TIMER_SPEED)
+
 tcb_t pick_next_task(uint64_t cpu_id);
 bool add_task_prio(tcb_t thread, uint64_t prio);
 bool add_task_prio_cpu(tcb_t thread, uint64_t prio,cpu_local_t *cpu);

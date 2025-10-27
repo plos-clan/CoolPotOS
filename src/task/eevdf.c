@@ -1,14 +1,15 @@
 /**
 * CP_Kernel 精简版 EEVDF 最小虚拟截止时间优先调度
 */
-#pragma GCC push_options
-#pragma GCC optimize("O0")
+//#pragma GCC push_options
+//#pragma GCC optimize("O0")
 
 #include "task/eevdf.h"
-#include "task/smp.h"
-#include "mem/heap.h"
-#include "timer.h"
 #include "krlibc.h"
+#include "mem/heap.h"
+#include "task/scheduler.h"
+#include "task/smp.h"
+#include "timer.h"
 
 unsigned int sysctl_sched_base_slice = 700000ULL; // 默认时间片长度
 
@@ -38,11 +39,11 @@ static uint64_t mul_u64_u32_shr(uint64_t a, uint32_t mul, unsigned int shift) {
     return (uint64_t)(((unsigned __int128)a * mul) >> shift);
 }
 
-static inline void avg_vruntime_update(uint64_t delta,cpu_local_t *cpu) {
+static inline void avg_vruntime_update(uint64_t delta, cpu_local_t *cpu) {
     eevdf_sched(cpu)->avg_vruntime -= eevdf_sched(cpu)->avg_load * delta;
 }
 
-static inline int64_t entity_key(struct sched_entity *entity,cpu_local_t *cpu) {
+static inline int64_t entity_key(struct sched_entity *entity, cpu_local_t *cpu) {
     return (int64_t)(entity->vruntime - eevdf_sched(cpu)->min_vruntime);
 }
 
@@ -50,14 +51,13 @@ static inline bool entity_before(const struct sched_entity *a, const struct sche
     return (int64_t)(a->deadline - b->deadline) < 0;
 }
 
-
-static int vruntime_eligible(uint64_t vruntime,cpu_local_t *cpu) {
+static int vruntime_eligible(uint64_t vruntime, cpu_local_t *cpu) {
     struct sched_entity *curr = eevdf_sched(cpu)->current;
     int64_t              avg  = eevdf_sched(cpu)->avg_vruntime;
     long                 load = eevdf_sched(cpu)->avg_load;
     if (curr && curr->on_rq) {
         unsigned long weight  = scale_load_down(curr->load.weight);
-        avg                  += entity_key(curr,cpu) * weight;
+        avg                  += entity_key(curr, cpu) * weight;
         load                 += weight;
     }
     return avg >= (int64_t)(vruntime - eevdf_sched(cpu)->min_vruntime) * load;
@@ -145,7 +145,8 @@ static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct l
 }
 
 static inline uint64_t calc_delta_fair(uint64_t delta, struct sched_entity *se) {
-    if (se->load.weight != NICE_0_LOAD) delta = __calc_delta(delta, NICE_0_LOAD, &se->load);
+    if (se->load.weight != scale_load(NICE_0_LOAD))
+        delta = __calc_delta(delta, NICE_0_LOAD, &se->load);
     return delta;
 }
 
@@ -201,20 +202,20 @@ struct sched_entity *pick_eevdf(cpu_local_t *cpu) {
     struct sched_entity *best = NULL;
     struct rb_node      *node = eevdf_sched(cpu)->root->rb_node;
 
-    if (se && vruntime_eligible(se->vruntime,cpu)) {
+    if (se && vruntime_eligible(se->vruntime, cpu)) {
         best = se;
         goto found;
     }
 
     while (node) {
         struct rb_node *left = node->rb_left;
-        if (left &&
-            vruntime_eligible(container_of(left, struct sched_entity, run_node)->min_vruntime,cpu)) {
+        if (left && vruntime_eligible(
+                        container_of(left, struct sched_entity, run_node)->min_vruntime, cpu)) {
             node = left;
             continue;
         }
         se = container_of(node, struct sched_entity, run_node);
-        if (vruntime_eligible(se->vruntime,cpu)) {
+        if (vruntime_eligible(se->vruntime, cpu)) {
             best = se;
             break;
         }
@@ -227,11 +228,11 @@ found:;
     return best;
 }
 
-static uint64_t __update_min_vruntime(uint64_t vruntime,cpu_local_t *cpu) {
+static uint64_t __update_min_vruntime(uint64_t vruntime, cpu_local_t *cpu) {
     uint64_t min_vruntime = eevdf_sched(cpu)->min_vruntime;
     int64_t  delta        = (int64_t)(vruntime - min_vruntime);
     if (delta > 0) {
-        avg_vruntime_update(delta,cpu);
+        avg_vruntime_update(delta, cpu);
         min_vruntime = vruntime;
     }
     return min_vruntime;
@@ -256,7 +257,27 @@ static void update_min_vruntime(cpu_local_t *cpu) {
         else
             vruntime = min_vruntime(vruntime, se->vruntime);
     }
-    eevdf_sched(cpu)->min_vruntime = MAX(__update_min_vruntime(vruntime,cpu), vruntime);
+    eevdf_sched(cpu)->min_vruntime = MAX(__update_min_vruntime(vruntime, cpu), vruntime);
+}
+
+// 溢出检查
+static void wrap_vruntime(cpu_local_t *cpu) {
+    struct eevdf_t *eevdf = eevdf_sched(cpu);
+    if (likely(eevdf->min_vruntime < VRUNTIME_OFFSET_THRESHOLD)) return;
+    uint64_t offset            = VRUNTIME_OFFSET_THRESHOLD;
+    eevdf->min_vruntime       -= offset;
+    struct sched_entity *curr  = eevdf->current;
+    if (curr) {
+        curr->vruntime -= offset;
+        curr->deadline -= offset;
+    }
+    struct rb_node *node;
+    for (node = rb_first(eevdf->root); node; node = rb_next(node)) {
+        struct sched_entity *se = container_of(node, struct sched_entity, run_node);
+        if (se->vruntime > offset) se->vruntime -= offset;
+        if (se->deadline > offset) se->deadline -= offset;
+    }
+    eevdf->avg_vruntime -= offset;
 }
 
 static int64_t update_curr_se(struct sched_entity *curr) {
@@ -264,34 +285,50 @@ static int64_t update_curr_se(struct sched_entity *curr) {
     int64_t  delta_exec;
 
     delta_exec = now - curr->exec_start;
-    if (delta_exec <= 0) return delta_exec;
+    if (unlikely(delta_exec <= 0)) return delta_exec;
 
     curr->exec_start        = now;
     curr->sum_exec_runtime += delta_exec;
     return delta_exec;
 }
 
+static void update_vlag(struct sched_entity *se, cpu_local_t *cpu) {
+    int64_t vlag_raw = 0;
+    int64_t limit    = 0;
+    vlag_raw         = eevdf_sched(cpu)->min_vruntime - se->vruntime;
+    limit            = calc_delta_fair(MAX(2 * se->slice, TICK_NSEC), se);
+    se->vlag         = clamp(vlag_raw, -limit, limit);
+}
+
 void update_current_task(cpu_local_t *cpu) {
     struct sched_entity *curr = eevdf_sched(cpu)->current;
-    if (!curr) return;
+    if (unlikely(!curr)) return;
     bool    resche;
     int64_t delta_exec;
     delta_exec = update_curr_se(curr);
-    if (delta_exec <= 0) return;
+    if (unlikely(delta_exec <= 0)) return;
+
     if (curr->is_yield) {
         struct sched_entity *last =
             container_of(rb_last(eevdf_sched(cpu)->root), struct sched_entity, run_node);
         curr->vruntime = curr->deadline = last->deadline;
-        curr->is_yield = false;
+        curr->is_yield                  = false;
     }
     curr->vruntime += calc_delta_fair(delta_exec, curr);
-    resche          = update_deadline(curr);
-
+    update_vlag(curr, cpu);
+    resche = update_deadline(curr);
     update_min_vruntime(cpu);
+    wrap_vruntime(cpu);
+    curr->min_vruntime = eevdf_sched(cpu)->min_vruntime;
     if (resche) {
         rb_erase(&curr->run_node, eevdf_sched(cpu)->root);
         insert_sched_entity(eevdf_sched(cpu)->root, curr);
     }
+}
+
+void set_entity_yield(tcb_t thread) {
+    struct sched_entity *entity = thread->sched_handle;
+    entity->is_yield            = true;
 }
 
 void remove_sched_entity(struct rb_root *root, struct sched_entity *se, cpu_local_t *cpu) {
@@ -306,7 +343,7 @@ tcb_t eevdf_pick_next_task(cpu_local_t *cpu) {
     update_current_task(cpu);
     struct sched_entity *current = pick_eevdf(cpu);
     current->exec_start          = sched_clock();
-    eevdf_sched(cpu)->current         = current;
+    eevdf_sched(cpu)->current    = current;
     return current->thread;
 }
 
@@ -336,14 +373,14 @@ void add_eevdf_entity_prio(tcb_t new_task, cpu_local_t *cpu, uint64_t prio) {
 
 void remove_eevdf_entity(tcb_t thread, cpu_local_t *cpu) {
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
-    remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity,cpu);
+    remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity, cpu);
     free(entity);
     eevdf_sched(cpu)->task_count--;
 }
 
 void wait_eevdf_entity(tcb_t thread, cpu_local_t *cpu) {
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
-    remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity,cpu);
+    remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity, cpu);
     entity->wait_index = cow_list_add(((struct eevdf_t *)cpu->sched_handle)->wait_queue, entity);
     eevdf_sched(cpu)->task_count--;
 }
@@ -370,4 +407,4 @@ void init_cpu_idle(cpu_local_t *cpu, tcb_t ap_idle) {
     eevdf_sched(cpu)->current = idle_entity;
 }
 
-#pragma GCC pop_options
+//#pragma GCC pop_options

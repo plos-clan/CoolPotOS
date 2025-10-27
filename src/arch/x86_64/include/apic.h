@@ -20,9 +20,8 @@
 #define MAX_IOAPICS 8  // IOAPIC最大支持数(物理机会存在多个IOAPIC)
 #define MAX_ISO     64 // 最大支持中断源数
 
-#define LAPIC_TIMER_SPEED 100 // 100Hz
-
 #include "types.h"
+#include "metadata.h"
 
 struct ioapic_info {
     uint8_t   id;

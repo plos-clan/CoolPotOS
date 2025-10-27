@@ -44,7 +44,9 @@ uint64_t naos_get_time_ms(void) {
 }
 
 // Locking (for multi-threaded environments)
-void *naos_mutex_create(void) {}
+void *naos_mutex_create(void) {
+    return NULL;
+}
 void  naos_mutex_lock(void *mutex) {}
 void  naos_mutex_unlock(void *mutex) {}
 void  naos_mutex_destroy(void *mutex) {}

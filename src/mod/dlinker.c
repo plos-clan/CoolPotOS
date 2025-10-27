@@ -326,6 +326,30 @@ void kmodule_init() {
     cpkrnl->name          = strdup("cpkrnl");
 
     dlfunc_register(cpkrnl, "printk", cp_printk);
+    dlfunc_register(cpkrnl, "memset", memset);
+    dlfunc_register(cpkrnl, "memmove", memmove);
+    dlfunc_register(cpkrnl, "memchr", memchr);
+    dlfunc_register(cpkrnl, "memcmp", memcmp);
+    dlfunc_register(cpkrnl, "memcpy", memcpy);
+    dlfunc_register(cpkrnl, "strnlen", strnlen);
+    dlfunc_register(cpkrnl, "strlen", strlen);
+    dlfunc_register(cpkrnl, "strcat", strcat);
+    dlfunc_register(cpkrnl, "strcpy", strcpy);
+    dlfunc_register(cpkrnl, "strncpy", strncpy);
+    dlfunc_register(cpkrnl, "strchrnul", strchrnul);
+    dlfunc_register(cpkrnl, "strncmp", strncmp);
+    dlfunc_register(cpkrnl, "strchr", strchr);
+    dlfunc_register(cpkrnl, "strcmp", strcmp);
+    dlfunc_register(cpkrnl, "strrchr", strrchr);
+    dlfunc_register(cpkrnl, "strtok", strtok);
+    dlfunc_register(cpkrnl, "strdup", strdup);
+    dlfunc_register(cpkrnl, "strndup", strndup);
+    dlfunc_register(cpkrnl, "strtol", strtol);
+    dlfunc_register(cpkrnl, "sprintf", sprintf);
+    dlfunc_register(cpkrnl, "snprintf", snprintf);
+    dlfunc_register(cpkrnl, "malloc", malloc);
+    dlfunc_register(cpkrnl, "free", free);
+
 
     cpkrnl->lists_index = cow_list_add(kmod_lists, cpkrnl);
     load_all_kernel_module();

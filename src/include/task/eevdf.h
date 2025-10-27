@@ -41,6 +41,23 @@
 
 #define eevdf_sched(cpu) ((struct eevdf_t *)cpu->sched_handle)
 
+#define __clamp(val, lo, hi) ((val) >= (hi) ? (hi) : ((val) <= (lo) ? (lo) : (val)))
+
+#define __clamp_once(type, val, lo, hi, uval, ulo, uhi)                                            \
+    ({                                                                                             \
+        type uval = (val);                                                                         \
+        type ulo  = (lo);                                                                          \
+        type uhi  = (hi);                                                                          \
+        __clamp(uval, ulo, uhi);                                                                   \
+    })
+
+#define __careful_clamp(type, val, lo, hi)                                                         \
+    __clamp_once(type, val, lo, hi, __UNIQUE_ID(v_), __UNIQUE_ID(l_), __UNIQUE_ID(h_))
+
+#define clamp(val, lo, hi) __careful_clamp(__auto_type, val, lo, hi)
+
+#define VRUNTIME_OFFSET_THRESHOLD 0xa000000000000000
+
 #include "cow_arraylist.h"
 #include "rbtree.h"
 #include "smp.h"
@@ -64,6 +81,7 @@ struct sched_entity {
     uint64_t           exec_start;
     uint64_t           min_vruntime;
     uint64_t           sum_exec_runtime;
+    int64_t            vlag;
     bool               is_idle; // 是否是IDLE进程
     struct load_weight load;
     struct rb_node     run_node;
@@ -86,10 +104,11 @@ struct eevdf_t {
     uint64_t min_vruntime;
 };
 
-void change_entity_weight(tcb_t thread, uint64_t prio, cpu_local_t *cpu);
-void remove_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
-void wait_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
-void futex_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
+void  set_entity_yield(tcb_t thread);
+void  change_entity_weight(tcb_t thread, uint64_t prio, cpu_local_t *cpu);
+void  remove_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
+void  wait_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
+void  futex_eevdf_entity(tcb_t thread, cpu_local_t *cpu);
 void  add_eevdf_entity_with_prio(tcb_t new_task, uint64_t prio, cpu_local_t *cpu);
-void init_cpu_idle(cpu_local_t *cpu, tcb_t ap_idle);
+void  init_cpu_idle(cpu_local_t *cpu, tcb_t ap_idle);
 tcb_t eevdf_pick_next_task(cpu_local_t *cpu);

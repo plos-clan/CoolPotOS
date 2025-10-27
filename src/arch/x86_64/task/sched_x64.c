@@ -2,6 +2,7 @@
 #include "fs/vfs.h"
 #include "fsgsbase.h"
 #include "hpet.h"
+#include "intctl.h"
 #include "io.h"
 #include "krlibc.h"
 #include "lock.h"
@@ -31,20 +32,22 @@ bool cpu_has_rdtsc() {
 }
 
 uint64_t read_tsc() {
-    //    uint32_t low, high;
-    //    __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
-    //    return ((uint64_t)high << 32) | low;
     __asm__ volatile("");
     return __builtin_ia32_rdtsc();
 }
 
 size_t sched_clock() {
+    return nano_time(); //TODO 优先 nano_time 提供, tsc计算有误暂时废弃
     if (!arch_current_cpu()->arch_data.support_tsc) return nano_time();
     uint64_t now   = read_tsc();
     uint64_t delta = now - arch_current_cpu()->arch_data.tsc_base_tsc;
     uint64_t ns    = ((delta * (uint64_t)arch_current_cpu()->arch_data.tsc_conv_mul) >>
                    arch_current_cpu()->arch_data.tsc_conv_shift);
     return (ns - arch_current_cpu()->arch_data.tsc_base_tsc) / 1000;
+}
+
+void arch_send_scheduler(){
+    __asm__ volatile("int %0\n\r" :: "i"(timer));
 }
 
 void calibrate_tsc_with_hpet() {

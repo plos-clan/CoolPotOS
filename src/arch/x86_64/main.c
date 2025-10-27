@@ -41,6 +41,15 @@ __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
 LIMINE_REQUEST LIMINE_BASE_REVISION(3);
 
+_Noreturn static void tast_thread(void *arg){
+    uint64_t a = 0;
+    do{
+        logkf("%llu\n",a);
+        scheduler_yield();
+        nsleep(100);
+        a++;
+    }while(true);
+}
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
     init_frame();
@@ -75,7 +84,7 @@ USED _Noreturn void kmain() {
     // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用
     extern intctl_t apic_controller;
     irq_allocate_irqnum();
-    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle",0);
+    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle", 0);
 
     ps2_kdb_setup();
     rtc_setup();
@@ -89,8 +98,8 @@ USED _Noreturn void kmain() {
     calibrate_tsc_with_hpet();
 
     power_button_init();
-    ahci_setup();
-    nvme_setup();
+    // ahci_setup();
+    // nvme_setup();
 
     kmodule_init();
     cpio_init();
@@ -98,7 +107,13 @@ USED _Noreturn void kmain() {
     arch_open_interrupt();
     enable_scheduler();
     start_all_kernel_module();
-    launch_init_process();
+
+     (struct sched_entity *)get_current_task()->sched_handle;
+     for (int i = 0; i < 20; ++i) {
+         create_kernel_thread("thread1",(void*)tast_thread,NULL,NULL, NICE_TO_PRIO(0));
+     }
+
+    //launch_init_process();
     while (true)
         arch_wait_for_interrupt();
 }
