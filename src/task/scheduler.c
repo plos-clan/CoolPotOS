@@ -1,4 +1,5 @@
 #include "task/scheduler.h"
+#include "intctl.h"
 #include "task/eevdf.h"
 #include "task/smp.h"
 #include "term/klog.h"
@@ -90,6 +91,8 @@ tcb_t pick_next_task(uint64_t cpu_id) {
 
 void scheduler_yield() {
     //TODO yield impl
+    set_entity_yield(get_current_task());
+    arch_send_scheduler();
 }
 
 void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {

@@ -79,3 +79,4 @@
 #define USER_MMAP_START       0x0000400000000000UL // 用户堆映射起始地址
 #define KERNEL_AREA_MEM       0xf000000000000000   // 内核地址空间起始
 #define DRIVER_AREA_MEM       0xffffb00000000000   // 驱动恒等映射空间偏移
+#define SCHED_TIMER_SPEED     100                  // 调度时钟频率 100Hz

@@ -10,6 +10,7 @@
 
 #include "types.h"
 
+void arch_send_scheduler();
 size_t sched_clock();
 uint64_t nano_time();
 int64_t mktime_universal();

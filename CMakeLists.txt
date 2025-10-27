@@ -83,6 +83,7 @@ add_custom_target(fetch_limine_binaries
 ###
 
 add_subdirectory(module/e1000)
+add_subdirectory(module/extfs)
 
 add_executable(kernel)
 
