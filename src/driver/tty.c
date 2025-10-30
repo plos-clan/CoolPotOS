@@ -67,7 +67,7 @@ void tty_event_handle(indev_t *device, intype type, uint64_t code, uint8_t value
     }
 }
 
-static size_t tty_size_t(tty_t *session){
+static size_t tty_size_t(tty_t *session) {
     return -1;
 }
 
@@ -192,7 +192,7 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
     return EOK;
 }
 
-size_t stdin_read(tty_t *session, char *buffer,size_t offset, size_t number) {
+size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
     bool is_sti = arch_check_interrupt();
     arch_open_interrupt();
 
@@ -202,7 +202,7 @@ size_t stdin_read(tty_t *session, char *buffer,size_t offset, size_t number) {
         if (c == 0x7f) { c = '\b'; }
         if (c == 0x9) { c = '\t'; }
         if (c == '\b') {
-            if (session->termios.c_lflag & ECHO) session->ops.write(session,"\b \b",0,3);
+            if (session->termios.c_lflag & ECHO) session->ops.write(session, "\b \b", 0, 3);
             if (session->termios.c_lflag & ICANON) {
                 if (i > 0) {
                     buffer[i--] = '\0';
@@ -217,7 +217,8 @@ size_t stdin_read(tty_t *session, char *buffer,size_t offset, size_t number) {
         if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;
             i++;
-            if (session->termios.c_lflag & ECHO && c == '\r') session->ops.write(session,"\n",0,1);
+            if (session->termios.c_lflag & ECHO && c == '\r')
+                session->ops.write(session, "\n", 0, 1);
             break;
         }
         buffer[i] = c;
@@ -228,8 +229,8 @@ size_t stdin_read(tty_t *session, char *buffer,size_t offset, size_t number) {
     return i;
 }
 
-errno_t tty_poll(tty_t *session,size_t events) {
-    ssize_t            revents = 0;
+errno_t tty_poll(tty_t *session, size_t events) {
+    ssize_t revents = 0;
     // if (events & EPOLLERR || events & EPOLLPRI) return 0;
     if (events & EPOLLIN && (session->queue->size > 0)) revents |= EPOLLIN;
     if (events & EPOLLOUT) revents |= EPOLLOUT;
@@ -238,15 +239,16 @@ errno_t tty_poll(tty_t *session,size_t events) {
 
 tty_t *alloc_tty_session(tty_device_t *device) {
     if (device == NULL) return NULL;
-    tty_t *session      = calloc(1, sizeof(tty_t));
-    session->device     = device;
-    session->queue      = create_atom_queue(1024);
-    session->tty_kbmode = K_XLATE;
-    session->tty_mode   = KD_TEXT;
-    session->ops.read   = stdin_read;
-    session->ops.ioctl  = tty_ioctl;
-    session->ops.poll   = tty_poll;
-    session->ops.size_t = tty_size_t;
+    tty_t *session         = calloc(1, sizeof(tty_t));
+    session->device        = device;
+    session->queue         = create_atom_queue(1024);
+    session->tty_kbmode    = K_XLATE;
+    session->tty_mode      = KD_TEXT;
+    tty_session_ops_t *ops = &session->ops;
+    ops->read              = stdin_read;
+    ops->ioctl             = tty_ioctl;
+    ops->poll              = tty_poll;
+    ops->size_t            = tty_size_t;
     termios_init(&session->termios);
     create_session_terminal(session);
     return session;

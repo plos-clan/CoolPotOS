@@ -9,6 +9,7 @@
 #include "mem/heap.h"
 #include "task/scheduler.h"
 #include "task/smp.h"
+#include "term/klog.h"
 #include "timer.h"
 
 unsigned int sysctl_sched_base_slice = 700000ULL; // 默认时间片长度
@@ -145,7 +146,7 @@ static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct l
 }
 
 static inline uint64_t calc_delta_fair(uint64_t delta, struct sched_entity *se) {
-    if (se->load.weight != scale_load(NICE_0_LOAD))
+    if (se->load.weight != NICE_0_LOAD)
         delta = __calc_delta(delta, NICE_0_LOAD, &se->load);
     return delta;
 }
@@ -179,6 +180,11 @@ struct sched_entity *new_entity(tcb_t task, uint64_t prio, cpu_local_t *cpu) {
     update_deadline(entity);
     entity->thread = task;
     return entity;
+}
+
+void get_all_eevdf() {
+    eevdf_t *eevdf = eevdf_sched(arch_current_cpu());
+    logkf("all min_vruntime:%lx",eevdf->min_vruntime);
 }
 
 void change_entity_weight(tcb_t thread, uint64_t prio, cpu_local_t *cpu) {
@@ -307,22 +313,21 @@ void update_current_task(cpu_local_t *cpu) {
     int64_t delta_exec;
     delta_exec = update_curr_se(curr);
     if (unlikely(delta_exec <= 0)) return;
-
-    if (curr->is_yield) {
-        struct sched_entity *last =
-            container_of(rb_last(eevdf_sched(cpu)->root), struct sched_entity, run_node);
-        curr->vruntime = curr->deadline = last->deadline;
-        curr->is_yield                  = false;
-    }
     curr->vruntime += calc_delta_fair(delta_exec, curr);
     update_vlag(curr, cpu);
     resche = update_deadline(curr);
     update_min_vruntime(cpu);
-    wrap_vruntime(cpu);
     curr->min_vruntime = eevdf_sched(cpu)->min_vruntime;
     if (resche) {
         rb_erase(&curr->run_node, eevdf_sched(cpu)->root);
         insert_sched_entity(eevdf_sched(cpu)->root, curr);
+    }
+
+    if (curr->is_yield) {
+        struct sched_entity *last =
+            container_of(rb_last(eevdf_sched(cpu)->root), struct sched_entity, run_node);
+        curr->deadline += calc_delta_fair(curr->slice,curr);;
+        curr->is_yield                  = false;
     }
 }
 

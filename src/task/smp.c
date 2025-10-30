@@ -1,8 +1,8 @@
 #include "task/smp.h"
 #include "krlibc.h"
 #include "limine.h"
-#include "term/klog.h"
 #include "task/scheduler.h"
+#include "term/klog.h"
 
 volatile bool smp_enable = false;
 
@@ -63,10 +63,15 @@ size_t get_cpu_count() {
 
 static void set_bsp_cpu_info(cpu_local_t *bsp_cpu) {
     extern tcb_t bsp_idle_thread;
-    bsp_cpu->enable    = true;
-    bsp_cpu->directory = get_kernel_pagedir();
+    bsp_cpu->enable       = true;
+    bsp_cpu->directory    = get_kernel_pagedir();
     bsp_cpu->current_task = bsp_idle_thread;
-    set_cpu_idle_task(bsp_idle_thread,bsp_cpu);
+
+    bsp_idle_thread->prio   = NICE_TO_PRIO(0);
+    bsp_cpu->idle_task      = bsp_idle_thread;
+    bsp_cpu->current_task   = bsp_idle_thread;
+    bsp_idle_thread->cpu_id = bsp_cpu->id;
+    init_cpu_idle(bsp_cpu, bsp_idle_thread);
 }
 
 void smp_init() {
@@ -75,7 +80,7 @@ void smp_init() {
 
     for (uint64_t i = 0; i < mp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = mp_response->cpus[i];
-        cpu_local_infos[i].enable = true;
+        cpu_local_infos[i].enable   = true;
 #if defined(__x86_64__) || defined(__amd64__)
         cpu_local_infos[i].id = cpu->lapic_id;
         bsp_cpu_id            = mp_response->bsp_lapic_id;
@@ -100,7 +105,7 @@ void smp_init() {
         }
         bsp_cpu_id = bsp_hartid_request.response->bsp_hartid;
 #endif
-        cpu->goto_address         = (limine_goto_address)arch_ap_cpu_entry;
+        cpu->goto_address = (limine_goto_address)arch_ap_cpu_entry;
     }
     arch_bsp_cpu_init();
     smp_enable = true;

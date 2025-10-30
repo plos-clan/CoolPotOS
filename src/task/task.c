@@ -9,6 +9,7 @@
 #include "task/scheduler.h"
 #include "task/smp.h"
 #include "term/klog.h"
+#include "task/eevdf.h"
 
 pcb_t                  kernel_process;
 tcb_t                  bsp_idle_thread;
@@ -16,6 +17,20 @@ cow_arraylist         *process_list;
 _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
 extern volatile bool   smp_enable;
+
+USED void foreach_task(){
+    pcb_t process = NULL;
+    cow_foreach(process_list,process) {
+        logkf("PID:%d - %s %p\n\r",process->pid,process->name,process);
+        tcb_t thread = NULL;
+        cow_foreach(process->child_threads,thread) {
+            logkf("\t TID:%d - %s %p\n\r",thread->tid,thread->name,thread);
+            struct sched_entity *entity = thread->sched_handle;
+            //logkf("\t deadline: %x - vruntime: %x\n\r",entity->deadline,entity->vruntime);
+            logkf("\t deadline: %lx - vruntime: %lx\n\r",entity->deadline,entity->vruntime);
+        }
+    }
+}
 
 pid_t alloc_pid() {
     return now_pid++;
@@ -36,8 +51,6 @@ pcb_t found_pcb(pid_t pid) {
     }
     return NULL;
 }
-
-
 
 static void kill_thread0(pcb_t parent, tcb_t task) {
     task->status = T_OUT;
@@ -228,6 +241,7 @@ void setup_task() {
     kernel_process->vfork         = false;
 
     bsp_idle_thread                = malloc(STACK_SIZE);
+    bsp_idle_thread->name          = strdup("bsp_idle");
     bsp_idle_thread->process       = kernel_process;
     bsp_idle_thread->tid           = alloc_tid();
     bsp_idle_thread->ct_index      = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
