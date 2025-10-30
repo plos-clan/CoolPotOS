@@ -185,8 +185,6 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     fs_handle->poll_t        = poll;
     fs_handle->device_handle = handle;
     fs_handle->size_t        = size_t;
-    free(node->handle);
-    node->handle             = fs_handle;
     logkf("devtmpfs: create device at %s\n\r", creat_path);
     node->size = size_t(handle);
     vfs_update(node);

@@ -268,7 +268,7 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
             arch_open_interrupt();
             return;
         }
-        logkf("page_fault process(%s:%d) thread %s:%d\n", get_current_task()->process->name,
+        logkf("page_fault %p process(%s:%d) thread %s:%d\n", get_current_task()->process->name,
               get_current_task()->process->pid, get_current_task()->name, get_current_task()->tid);
         pcb_t process = get_current_task()->process;
         if (process->pid != 0) kill_proc(process, -1, true);

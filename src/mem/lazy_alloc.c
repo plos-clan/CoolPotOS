@@ -14,9 +14,16 @@ void *virt_copy(void *ptr) {
     return new_page;
 }
 
+#include "term/klog.h"
+USED void debug_print_virt_queue(pcb_t pcb) {
+    qlist_foreach(pcb->virt_queue, node) {
+        mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
+        logkf("%p",vpage);
+    }
+}
+
 errno_t lazy_tryalloc(pcb_t pcb, uint64_t address) {
     mm_virtual_page_t *virt_page = NULL;
-    spin_lock(pcb->virt_queue->lock);
     qlist_foreach(pcb->virt_queue, node) {
         mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;
         if (address >= vpage->start && address < vpage->start + vpage->count * PAGE_SIZE) {
@@ -24,7 +31,6 @@ errno_t lazy_tryalloc(pcb_t pcb, uint64_t address) {
             break;
         }
     }
-    spin_unlock(pcb->virt_queue->lock);
 
     if (virt_page == NULL) {
         return -1;

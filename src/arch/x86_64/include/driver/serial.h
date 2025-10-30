@@ -36,6 +36,8 @@
 #    define SERIAL_STOP_BITS 1
 #endif
 
+#define SRI_PNP_ID "PNP0501"
+
 #include "types.h"
 
 int init_serial();

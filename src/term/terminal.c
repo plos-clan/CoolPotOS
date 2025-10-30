@@ -41,7 +41,5 @@ errno_t create_session_terminal(tty_t *session) {
     session->terminal  = fl_context;
     session->ops.flush = terminal_flush;
     session->ops.write = terminal_write;
-    session->ops.read  = NULL;
-    session->ops.ioctl = NULL;
     return EOK;
 }

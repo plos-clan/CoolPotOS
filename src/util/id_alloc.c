@@ -18,6 +18,10 @@ id_allocator_t *id_allocator_create(uint32_t max_ids) {
     return alloc;
 }
 
+void id_alloc_set(id_allocator_t *allocator,size_t index){
+
+}
+
 int32_t id_alloc(id_allocator_t *allocator) {
     if (!allocator || allocator->free_count == 0) return -1;
 

@@ -56,6 +56,7 @@ next:;
 syscall_(close, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
     fd_t *handle = (fd_t *)get_fd(get_current_task()->process->fdts, fd);
+    if(handle == NULL) return SYSCALL_FAULT_(EBADF);
     vfs_close(handle->node);
     free(handle);
     return EOK;
