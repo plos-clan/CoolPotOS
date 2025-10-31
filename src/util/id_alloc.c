@@ -18,8 +18,19 @@ id_allocator_t *id_allocator_create(uint32_t max_ids) {
     return alloc;
 }
 
-void id_alloc_set(id_allocator_t *allocator,size_t index){
+void id_alloc_set(id_allocator_t *allocator,size_t id){
+    if (!allocator || id >= allocator->max_ids) {
+        return;
+    }
 
+    uint32_t word_index = id / BITS_PER_WORD;
+    uint32_t bit_index  = id % BITS_PER_WORD;
+    uint32_t mask       = 1U << bit_index;
+
+    if ((allocator->bitmap[word_index] & mask) == 0) {
+        allocator->bitmap[word_index] |= mask;
+        allocator->free_count--;
+    }
 }
 
 int32_t id_alloc(id_allocator_t *allocator) {

@@ -20,8 +20,6 @@ void do_irq(struct pt_regs *regs, uint64_t irq_num) {
     } else {
         printk("Intr vector [%d] does not have an ack\n", irq_num);
     }
-
-    //TODO scheduler irq
 }
 
 void irq_regist_irq(uint64_t irq_num,
@@ -51,6 +49,10 @@ int irq_allocate_irqnum() {
 
 void irq_deallocate_irqnum(int irq_num) {
     id_free(intctl_irq_alloc, irq_num);
+}
+
+void irq_set_alloc(size_t irq_num){
+    id_alloc_set(intctl_irq_alloc,irq_num);
 }
 
 void intctl_init() {

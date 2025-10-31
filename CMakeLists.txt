@@ -83,7 +83,7 @@ add_custom_target(fetch_limine_binaries
 ###
 
 add_subdirectory(module/e1000)
-add_subdirectory(module/extfs)
+add_subdirectory(module/fatfs)
 
 add_executable(kernel)
 
@@ -237,7 +237,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
 
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:kernel> ${ISO_DIR}/cpkrnl_x64.elf
 
-            #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:extfs> ${ISO_DIR}/extfs.km
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fatfs> ${ISO_DIR}/fatfs.km
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:e1000> ${ISO_DIR}/e1000.km
             #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:nvme> ${ISO_DIR}/nvme.km
             #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:hid> ${ISO_DIR}/hid.km

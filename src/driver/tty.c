@@ -14,9 +14,12 @@ tty_t              *current_session = NULL; // 当前会话
 
 int kernel_getch() {
     char ch;
+    bool int_status = arch_check_interrupt();
+    arch_open_interrupt();
     while ((ch = atom_pop(current_session->queue)) == -1) {
         arch_pause();
     }
+    if (!int_status) arch_close_interrupt();
     return ch;
 }
 
@@ -193,8 +196,6 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
 }
 
 size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
-    bool is_sti = arch_check_interrupt();
-    arch_open_interrupt();
 
     size_t i = 0;
     for (; i < number; i++) {
@@ -223,8 +224,6 @@ size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
         }
         buffer[i] = c;
     }
-
-    if (!is_sti) arch_open_interrupt();
 
     return i;
 }
