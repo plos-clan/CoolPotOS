@@ -319,39 +319,66 @@ void start_all_kernel_module() {
     }
 }
 
+static inline void register_cp_kernel_lib(kernel_mode_t *kernel) {
+    dlfunc_register(kernel, "printk", cp_printk);
+    dlfunc_register(kernel, "memset", memset);
+    dlfunc_register(kernel, "memmove", memmove);
+    dlfunc_register(kernel, "memchr", memchr);
+    dlfunc_register(kernel, "memcmp", memcmp);
+    dlfunc_register(kernel, "memcpy", memcpy);
+    dlfunc_register(kernel, "strnlen", strnlen);
+    dlfunc_register(kernel, "strlen", strlen);
+    dlfunc_register(kernel, "strcat", strcat);
+    dlfunc_register(kernel, "strcpy", strcpy);
+    dlfunc_register(kernel, "strncpy", strncpy);
+    dlfunc_register(kernel, "strchrnul", strchrnul);
+    dlfunc_register(kernel, "strncmp", strncmp);
+    dlfunc_register(kernel, "strchr", strchr);
+    dlfunc_register(kernel, "strcmp", strcmp);
+    dlfunc_register(kernel, "strrchr", strrchr);
+    dlfunc_register(kernel, "strtok", strtok);
+    dlfunc_register(kernel, "strdup", strdup);
+    dlfunc_register(kernel, "strndup", strndup);
+    dlfunc_register(kernel, "strtol", strtol);
+    dlfunc_register(kernel, "sprintf", sprintf);
+    dlfunc_register(kernel, "snprintf", snprintf);
+    dlfunc_register(kernel, "malloc", malloc);
+    dlfunc_register(kernel, "free", free);
+}
+
+static inline void register_fs_subsystem_lib(kernel_mode_t *kernel){
+    dlfunc_register(kernel,"vfs_mkdir", vfs_mkdir);
+    dlfunc_register(kernel,"vfs_mkfile",vfs_mkfile);
+    dlfunc_register(kernel,"vfs_regist",vfs_regist);
+    dlfunc_register(kernel,"vfs_link",vfs_link);
+    dlfunc_register(kernel,"vfs_symlink",vfs_symlink);
+    dlfunc_register(kernel,"vfs_child_append",vfs_child_append);
+    dlfunc_register(kernel,"vfs_node_alloc",vfs_node_alloc);
+    dlfunc_register(kernel,"vfs_close",vfs_close);
+    dlfunc_register(kernel,"vfs_free",vfs_free);
+    dlfunc_register(kernel,"vfs_update",vfs_update);
+    dlfunc_register(kernel,"vfs_open",vfs_open);
+    dlfunc_register(kernel,"vfs_ioctl",vfs_ioctl);
+    dlfunc_register(kernel,"vfs_readlink",vfs_readlink);
+    dlfunc_register(kernel,"get_filesystem",get_filesystem);
+    dlfunc_register(kernel,"get_filesystem_node",get_filesystem_node);
+    dlfunc_register(kernel,"get_rootdir",get_rootdir);
+    dlfunc_register(kernel,"vfs_get_fullpath",vfs_get_fullpath);
+    dlfunc_register(kernel,"vfs_read",vfs_read);
+    dlfunc_register(kernel,"vfs_write",vfs_write);
+    dlfunc_register(kernel,"vfs_mount",vfs_mount);
+    dlfunc_register(kernel,"vfs_unmount",vfs_unmount);
+    dlfunc_register(kernel,"general_map",general_map);
+}
+
 void kmodule_init() {
     kmod_lists            = cow_list_create();
-    kernel_mode_t *cpkrnl = malloc(sizeof(kernel_mode_t));
-    *cpkrnl = (kernel_mode_t){};
-    cpkrnl->name          = strdup("cpkrnl");
-
-    dlfunc_register(cpkrnl, "printk", cp_printk);
-    dlfunc_register(cpkrnl, "memset", memset);
-    dlfunc_register(cpkrnl, "memmove", memmove);
-    dlfunc_register(cpkrnl, "memchr", memchr);
-    dlfunc_register(cpkrnl, "memcmp", memcmp);
-    dlfunc_register(cpkrnl, "memcpy", memcpy);
-    dlfunc_register(cpkrnl, "strnlen", strnlen);
-    dlfunc_register(cpkrnl, "strlen", strlen);
-    dlfunc_register(cpkrnl, "strcat", strcat);
-    dlfunc_register(cpkrnl, "strcpy", strcpy);
-    dlfunc_register(cpkrnl, "strncpy", strncpy);
-    dlfunc_register(cpkrnl, "strchrnul", strchrnul);
-    dlfunc_register(cpkrnl, "strncmp", strncmp);
-    dlfunc_register(cpkrnl, "strchr", strchr);
-    dlfunc_register(cpkrnl, "strcmp", strcmp);
-    dlfunc_register(cpkrnl, "strrchr", strrchr);
-    dlfunc_register(cpkrnl, "strtok", strtok);
-    dlfunc_register(cpkrnl, "strdup", strdup);
-    dlfunc_register(cpkrnl, "strndup", strndup);
-    dlfunc_register(cpkrnl, "strtol", strtol);
-    dlfunc_register(cpkrnl, "sprintf", sprintf);
-    dlfunc_register(cpkrnl, "snprintf", snprintf);
-    dlfunc_register(cpkrnl, "malloc", malloc);
-    dlfunc_register(cpkrnl, "free", free);
-
-
-    cpkrnl->lists_index = cow_list_add(kmod_lists, cpkrnl);
+    kernel_mode_t *kernel = malloc(sizeof(kernel_mode_t));
+    *kernel = (kernel_mode_t){};
+    kernel->name          = strdup("kernel");
+    register_cp_kernel_lib(kernel);
+    register_fs_subsystem_lib(kernel);
+    kernel->lists_index = cow_list_add(kmod_lists, kernel);
     load_all_kernel_module();
     kinfo("Load kernel module...");
 }

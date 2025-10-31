@@ -4,6 +4,13 @@
 #include "types/stdint.h"
 #include "types/stddef.h"
 
+typedef int errno_t;
+typedef __INTPTR_TYPE__ ssize_t;
+typedef __INTPTR_TYPE__ ptrdiff_t;
+typedef size_t          usize;
+typedef ssize_t         isize;
+typedef int             wchar_t;
+
 void   *memset(void *dest, int c, size_t n);
 void   *memmove(void *dest, const void *src, size_t n);
 void   *memchr(const void *src, int c, size_t n);
@@ -24,6 +31,8 @@ int64_t strtol(const char *str, char **endptr, int base);
 int     memcmp(const void *a_, const void *b_, size_t size);
 void   *memcpy(void *dest, const void *src, size_t n);
 void    printk(const char *fmt, ...);
+
+int sprintf(char *buf, char const *fmt, ...);
 
 void *malloc(size_t size);
 void free(void *ptr);
