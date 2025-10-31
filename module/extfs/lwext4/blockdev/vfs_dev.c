@@ -80,7 +80,8 @@ static void drop_cache(void) {}
 /******************************************************************************/
 static int vfs_dev_bwrite(struct ext4_blockdev *bdev, const void *buf, uint64_t blk_id,
                           uint32_t blk_cnt) {
-    vfs_write(dev_node, buf, blk_id * vfs_dev.bdif->ph_bsize, blk_cnt * vfs_dev.bdif->ph_bsize);
+    vfs_write(dev_node, (void *)buf, blk_id * vfs_dev.bdif->ph_bsize,
+              blk_cnt * vfs_dev.bdif->ph_bsize);
 
     drop_cache();
     return EOK;
@@ -88,7 +89,7 @@ static int vfs_dev_bwrite(struct ext4_blockdev *bdev, const void *buf, uint64_t 
 /******************************************************************************/
 static int vfs_dev_close(struct ext4_blockdev *bdev) {
     vfs_close(dev_node);
-    free(dev_name);
+    free((void *)dev_name);
     return EOK;
 }
 

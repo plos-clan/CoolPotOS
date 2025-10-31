@@ -44,7 +44,7 @@ extern "C"
 
 #include <ext4_config.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 
 	struct ext4_hash_info
 	{

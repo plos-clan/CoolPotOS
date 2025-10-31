@@ -45,7 +45,7 @@ extern "C"
 #include <ext4_config.h>
 #include <ext4_errno.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 
 #if !CONFIG_HAVE_OWN_ASSERT
 #include <assert.h>

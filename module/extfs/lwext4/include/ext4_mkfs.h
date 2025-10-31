@@ -49,7 +49,7 @@ extern "C"
 #include <ext4_fs.h>
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <types/stdint.h>
 
 	struct ext4_mkfs_info
 	{

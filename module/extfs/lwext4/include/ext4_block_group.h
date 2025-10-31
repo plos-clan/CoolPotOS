@@ -51,7 +51,7 @@ extern "C"
 #include <ext4_types.h>
 #include <ext4_super.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 #include <stdbool.h>
 
 	/**@brief Get address of block with data block bitmap.

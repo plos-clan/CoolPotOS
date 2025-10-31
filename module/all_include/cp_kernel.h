@@ -10,6 +10,7 @@ typedef __INTPTR_TYPE__ ptrdiff_t;
 typedef size_t          usize;
 typedef ssize_t         isize;
 typedef int             wchar_t;
+typedef int (*cmpfun)(const void *, const void *);
 
 void   *memset(void *dest, int c, size_t n);
 void   *memmove(void *dest, const void *src, size_t n);
@@ -33,6 +34,11 @@ void   *memcpy(void *dest, const void *src, size_t n);
 void    printk(const char *fmt, ...);
 
 int sprintf(char *buf, char const *fmt, ...);
+int snprintf(char *buf, int count, const char *fmt, ...);
+
+void qsort(void *base, size_t nel, size_t width, cmpfun cmp);
 
 void *malloc(size_t size);
+void *calloc(size_t n, size_t size);
+void *realloc(void *ptr, size_t newsize);
 void free(void *ptr);

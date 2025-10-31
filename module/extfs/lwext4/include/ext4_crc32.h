@@ -46,7 +46,7 @@ extern "C"
 
 #include <ext4_config.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 
     /**@brief	CRC32 algorithm.
      * @param	crc input feed

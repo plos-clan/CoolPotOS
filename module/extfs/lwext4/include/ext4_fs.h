@@ -51,7 +51,7 @@ extern "C"
 #include <ext4_types.h>
 #include <ext4_misc.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 #include <stdbool.h>
 
 	struct ext4_fs
