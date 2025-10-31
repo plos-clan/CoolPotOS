@@ -84,6 +84,7 @@ add_custom_target(fetch_limine_binaries
 
 add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
+add_subdirectory(module/extfs)
 
 add_executable(kernel)
 
@@ -225,7 +226,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
     set(LIMINE_SHARE_DIR "${LIMINE_TMP_DIR}/share/limine")
     add_custom_target(iso ALL
             # 依赖于 kernel 和所有模块目标
-            DEPENDS kernel e1000 fetch_limine_binaries
+            DEPENDS kernel e1000 fatfs extfs fetch_limine_binaries
 
             # 步骤 1: 创建 ISO 目录并复制文件 (xmake的 os.cp)
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${ISO_DIR}
@@ -239,7 +240,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
 
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fatfs> ${ISO_DIR}/fatfs.km
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:e1000> ${ISO_DIR}/e1000.km
-            #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:nvme> ${ISO_DIR}/nvme.km
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:extfs> ${ISO_DIR}/extfs.km
             #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:hid> ${ISO_DIR}/hid.km
             #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:xhci> ${ISO_DIR}/xhci.km
 

@@ -43,7 +43,7 @@ extern "C"
 {
 #endif
 
-#include <stdint.h>
+#include <types/stdint.h>
 
 	/**************************************************************/
 

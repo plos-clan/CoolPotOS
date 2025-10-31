@@ -2,6 +2,18 @@
 
 #define AT_FDCWD (-100)
 
+#define O_RDONLY 00
+#define O_WRONLY 01
+#define O_RDWR 02
+#define O_CREAT 0100
+#define O_EXCL 0200
+#define O_TRUNC 01000
+#define O_APPEND 02000
+
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
 #include "cp_kernel.h"
 #include "llist.h"
 #include "list.h"
@@ -270,7 +282,4 @@ vfs_node_t get_rootdir();
 void       set_rootdir(vfs_node_t node);
 
 char *vfs_get_fullpath(vfs_node_t node);
-char *at_resolve_pathname(int dirfd, char *pathname);
-char *vfs_cwd_path_build(char *src); // 构建当前工作目录的路径
-bool  vfs_init();
 

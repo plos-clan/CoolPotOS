@@ -51,7 +51,7 @@ extern "C"
 
 #include <ext4_fs.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 #include <stdbool.h>
 
 	/**@brief Compute number of block group from block address.

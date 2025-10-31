@@ -50,7 +50,7 @@ extern "C"
 #include <ext4_config.h>
 #include <ext4_types.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 
 	/**@brief Get mode of the i-node.
 	 * @param sb    Superblock

@@ -53,7 +53,7 @@ extern "C"
 #include <ext4_blockdev.h>
 #include <ext4_super.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 
 	struct ext4_dir_iter
 	{

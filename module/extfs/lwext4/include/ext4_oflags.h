@@ -89,8 +89,7 @@ extern "C"
 #endif
 
 #else
-#include <unistd.h>
-#include <fcntl.h>
+#include <fs_subsystem.h>
 #endif
 
 #ifdef __cplusplus

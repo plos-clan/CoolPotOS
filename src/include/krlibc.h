@@ -44,6 +44,8 @@
 #include "types.h"
 #include "types/limits.h"
 
+typedef int (*cmpfun)(const void *, const void *);
+
 void arch_pause();
 void arch_wait_for_interrupt();
 void arch_close_interrupt();
@@ -107,3 +109,5 @@ void   free_envp(char **envp);
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);
+
+void qsort(void *base, size_t nel, size_t width, cmpfun cmp);

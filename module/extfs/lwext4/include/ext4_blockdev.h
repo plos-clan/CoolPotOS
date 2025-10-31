@@ -45,7 +45,7 @@ extern "C"
 #include <ext4_bcache.h>
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <types/stdint.h>
 
 	struct ext4_blockdev_iface
 	{

@@ -44,7 +44,7 @@ extern "C"
 
 #include <ext4_config.h>
 
-#include <stdint.h>
+#include <types/stdint.h>
 #include <stdbool.h>
 
 	/**@brief   Set bitmap bit.
