@@ -277,7 +277,10 @@ errno_t vfs_mkfile(const char *name) {
         parent = vfs_open(fullpath);
     }
 
-    if (parent == NULL || parent->type != file_dir) { return VFS_STATUS_FAILED; }
+    if (parent == NULL || parent->type != file_dir) {
+        free(fullpath);
+        return VFS_STATUS_FAILED;
+    }
 
     // 创建文件
     vfs_node_t node = vfs_child_append(parent, filename, NULL);
