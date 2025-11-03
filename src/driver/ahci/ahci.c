@@ -326,7 +326,7 @@ void load_ahci(pci_device_t *device) {
         sprintf(name_buf, "sata%zu", i);
         blk_device_t *sata = malloc(sizeof(blk_device_t));
         sata->size         = hbadev->max_lba * hbadev->block_size;
-        sata->sector_size  = hbadev->block_size;
+        sata->block_size  = hbadev->block_size;
         sata->ops.read     = ahci_read;
         sata->ops.write    = ahci_write;
         sata->handle       = hbadev;

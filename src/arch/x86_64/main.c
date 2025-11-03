@@ -36,6 +36,7 @@
 #include "task/task.h"
 #include "term/klog.h"
 #include "timer.h"
+#include "security.h"
 
 __attribute__((used, section(".limine_requests_"
                              "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
@@ -65,6 +66,7 @@ USED _Noreturn void kmain() {
     intctl_init();
     acpi_init();
     hpet_init();
+    init_stack_canary();
     apic_init();
     pci_init();
     acpi_namespace_setup();
@@ -100,6 +102,11 @@ USED _Noreturn void kmain() {
     start_all_kernel_module();
 
     launch_init_process();
+
+//    for (int i = 0; i < 10; i++) {
+//        create_kernel_thread("test_thread",(void*)test_proc,NULL,NULL, NICE_TO_PRIO(0));
+//    }
+
     while (true)
         arch_wait_for_interrupt();
 }

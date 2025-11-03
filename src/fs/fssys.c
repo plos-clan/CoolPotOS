@@ -56,7 +56,7 @@ next:;
 syscall_(close, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
     fd_t *handle = (fd_t *)get_fd(get_current_task()->process->fdts, fd);
-    if(handle == NULL) return SYSCALL_FAULT_(EBADF);
+    if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     vfs_close(handle->node);
     free(handle);
     return EOK;
@@ -344,9 +344,12 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
 
     do {
         // 检查每个文件描述符
-        for (size_t i = 0; i < get_current_task()->process->fdts->fds_length; i++) {
-            fd_t *handle = get_current_task()->process->fdts->fds[i];
-            if (handle == NULL) continue;
+        for (size_t i = 0; i < nfds; i++) {
+            fd_t *handle = get_fd(get_current_task()->process->fdts,fds_user[i].fd);
+            if (handle == NULL) {
+                fds_user[i].revents |= POLLNVAL;
+                continue;
+            }
             vfs_node_t node = handle->node;
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
                 if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {

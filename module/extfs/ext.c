@@ -118,8 +118,7 @@ void ext_open(void *parent, const char *name, vfs_node_t node) {
 
         ext4_dir_entry_rewind(handle->dir);
     } else if (node->type & file_symlink) {
-    symlink:
-        char  *path = vfs_get_fullpath(node);
+    symlink:;
         char  *buf  = malloc(1024);
         size_t rcnt = 0;
         ext4_readlink((const char *)path, buf, 1024, &rcnt);

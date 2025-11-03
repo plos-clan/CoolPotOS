@@ -61,18 +61,6 @@ size_t get_cpu_count() {
     return cpu_count;
 }
 
-static void set_bsp_cpu_info(cpu_local_t *bsp_cpu) {
-    extern tcb_t bsp_idle_thread;
-    bsp_cpu->enable       = true;
-    bsp_cpu->directory    = get_kernel_pagedir();
-    bsp_cpu->current_task = bsp_idle_thread;
-
-    bsp_idle_thread->prio   = NICE_TO_PRIO(0);
-    bsp_cpu->idle_task      = bsp_idle_thread;
-    bsp_cpu->current_task   = bsp_idle_thread;
-    bsp_idle_thread->cpu_id = bsp_cpu->id;
-    init_cpu_idle(bsp_cpu, bsp_idle_thread);
-}
 
 void smp_init() {
     struct limine_smp_response *mp_response = mp_request.response;

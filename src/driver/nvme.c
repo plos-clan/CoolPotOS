@@ -47,9 +47,9 @@ uint64_t naos_get_time_ms(void) {
 void *naos_mutex_create(void) {
     return NULL;
 }
-void  naos_mutex_lock(void *mutex) {}
-void  naos_mutex_unlock(void *mutex) {}
-void  naos_mutex_destroy(void *mutex) {}
+void naos_mutex_lock(void *mutex) {}
+void naos_mutex_unlock(void *mutex) {}
+void naos_mutex_destroy(void *mutex) {}
 
 int naos_printk(const char *fmt, ...) {
     char buf[2048];
@@ -237,6 +237,7 @@ static int nvme_enable_controller(nvme_controller_t *ctrl) {
 // 为队列绑定中断向量
 static int nvme_bind_queue_interrupt(nvme_controller_t *ctrl, nvme_queue_t *queue,
                                      uint16_t vector) {
+    logkf("nvme: bind queue int irq:%llu vector:%llu\n\r", vector, vector + IRQ_BASE_VECTOR);
     // 注册中断处理程序
 #if defined(__x86_64__)
     uint64_t          cpu_id = queue->queue_id ? (queue->queue_id - 1) : 0;
@@ -878,6 +879,7 @@ size_t nvme_read(void *data, uint8_t *buffer, size_t size, size_t lba) {
     nvme_callback_ctx_t *cb_ctx = malloc(sizeof(nvme_callback_ctx_t));
     cb_ctx->completed           = false;
     cb_ctx->success             = false;
+    bool en                     = arch_check_interrupt();
     arch_open_interrupt();
     int r = nvme_read_async(ns->ctrl, ns->ns->nsid, lba, size, buffer,
                             arch_virt_to_phys((uint64_t)buffer), nvme_io_callback, cb_ctx);
@@ -894,7 +896,7 @@ size_t nvme_read(void *data, uint8_t *buffer, size_t size, size_t lba) {
         }
         arch_wait_for_interrupt();
     }
-    arch_close_interrupt();
+    if (!en) arch_close_interrupt();
     if (timeout) {
         while (nvme_process_queue_completions(ns->ctrl, queue))
             ;
@@ -1084,15 +1086,14 @@ void nvme_probe(pci_device_t *device) {
             ns->ctrl      = ctrl;
             ns->ns        = &ctrl->namespaces[i - 1];
 
-            //blk_device_t *device_b = malloc(sizeof(device_b));
-            blk_device_t *device_b = malloc(sizeof(*device_b));
+            blk_device_t *device_b = malloc(sizeof(blk_device_t));
             sprintf(device_b->name, "nvme%d", i);
-            device_b->handle      = ns;
-            device_b->ops.write   = nvme_write;
-            device_b->ops.read    = nvme_read;
-            device_b->sector_size = ns->ns->block_size;
-            device_b->size        = ns->ns->block_count * ns->ns->block_size;
-            // ctrl->max_transfer_size 读写缓冲区长度
+            device_b->handle     = ns;
+            device_b->ops.write  = nvme_write;
+            device_b->ops.read   = nvme_read;
+            device_b->block_size = ns->ns->block_size;
+            device_b->size       = ns->ns->block_count * ns->ns->block_size;
+            device_b->max_size   = ctrl->max_transfer_size;
             register_device(device_b);
         }
     }

@@ -119,6 +119,13 @@ static void __update_inv_weight(struct load_weight *lw) {
         lw->inv_weight = WMULT_CONST / w;
 }
 
+static inline void __min_vruntime_update(struct sched_entity *se, struct rb_node *node) {
+    if (node) {
+        struct sched_entity *rse = __node_2_se(node);
+        if (vruntime_gt(min_vruntime, se, rse)) se->min_vruntime = rse->min_vruntime;
+    }
+}
+
 static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct load_weight *lw) {
     uint64_t fact    = scale_load_down(weight);
     uint32_t fact_hi = (uint32_t)(fact >> 32);
@@ -145,9 +152,19 @@ static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct l
     return mul_u64_u32_shr(delta_exec, fact, shift);
 }
 
+static inline bool min_vruntime_update(struct sched_entity *se, bool exit) {
+    uint64_t        old_min_vruntime = se->min_vruntime;
+    struct rb_node *node             = &se->run_node;
+
+    se->min_vruntime = se->vruntime;
+    __min_vruntime_update(se, node->rb_right);
+    __min_vruntime_update(se, node->rb_left);
+
+    return se->min_vruntime == old_min_vruntime;
+}
+
 static inline uint64_t calc_delta_fair(uint64_t delta, struct sched_entity *se) {
-    if (se->load.weight != NICE_0_LOAD)
-        delta = __calc_delta(delta, NICE_0_LOAD, &se->load);
+    if (se->load.weight != NICE_0_LOAD) delta = __calc_delta(delta, NICE_0_LOAD, &se->load);
     return delta;
 }
 
@@ -184,7 +201,7 @@ struct sched_entity *new_entity(tcb_t task, uint64_t prio, cpu_local_t *cpu) {
 
 void get_all_eevdf() {
     eevdf_t *eevdf = eevdf_sched(arch_current_cpu());
-    logkf("all min_vruntime:%lx",eevdf->min_vruntime);
+    logkf("all min_vruntime:%lx", eevdf->min_vruntime);
 }
 
 void change_entity_weight(tcb_t thread, uint64_t prio, cpu_local_t *cpu) {
@@ -318,7 +335,8 @@ void update_current_task(cpu_local_t *cpu) {
     resche = update_deadline(curr);
     update_min_vruntime(cpu);
     curr->min_vruntime = eevdf_sched(cpu)->min_vruntime;
-    if (resche) {
+    if (resche || curr->is_idle) {
+        min_vruntime_update(curr,false);
         rb_erase(&curr->run_node, eevdf_sched(cpu)->root);
         insert_sched_entity(eevdf_sched(cpu)->root, curr);
     }
@@ -326,8 +344,8 @@ void update_current_task(cpu_local_t *cpu) {
     if (curr->is_yield) {
         struct sched_entity *last =
             container_of(rb_last(eevdf_sched(cpu)->root), struct sched_entity, run_node);
-        curr->deadline += calc_delta_fair(curr->slice,curr);;
-        curr->is_yield                  = false;
+        curr->deadline += calc_delta_fair(curr->slice, curr);
+        curr->is_yield  = false;
     }
 }
 
@@ -341,7 +359,8 @@ void remove_sched_entity(struct rb_root *root, struct sched_entity *se, cpu_loca
     struct sched_entity *current = eevdf_sched(cpu)->current;
     if (current == se) eevdf_sched(cpu)->current = NULL;
     eevdf_sched(cpu)->current = pick_eevdf(cpu);
-    update_min_vruntime(cpu);
+    min_vruntime_update(se,true); // 更新子树节点 min_vruntime
+    update_min_vruntime(cpu); // 更新全局 min_vruntime
 }
 
 tcb_t eevdf_pick_next_task(cpu_local_t *cpu) {

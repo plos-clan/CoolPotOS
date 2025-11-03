@@ -110,6 +110,7 @@ target_compile_options(kernel PRIVATE
         -Wno-incompatible-library-redeclaration
         -Wno-unused-function
         -flto
+        -fstack-protector
 )
 
 file(GLOB_RECURSE X86_64_SOURCES
