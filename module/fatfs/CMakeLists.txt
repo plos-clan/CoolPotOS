@@ -15,6 +15,7 @@ target_compile_options(fatfs PRIVATE
         -fPIC
         -fvisibility=hidden
         -fno-stack-protector
+        -Wno-incompatible-library-redeclaration
 )
 
 target_link_options(fatfs PRIVATE

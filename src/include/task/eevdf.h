@@ -1,20 +1,5 @@
 #pragma once
 
-#define MAX(x, y) ((x > y) ? (x) : (y))
-
-#define MAX_NICE   19
-#define MIN_NICE   -20
-#define NICE_WIDTH (MAX_NICE - MIN_NICE + 1)
-
-#define MAX_RT_PRIO 100
-#define MAX_DL_PRIO 0
-
-#define MAX_PRIO     (MAX_RT_PRIO + NICE_WIDTH)
-#define DEFAULT_PRIO (MAX_RT_PRIO + NICE_WIDTH / 2)
-
-#define NICE_TO_PRIO(nice) ((nice) + DEFAULT_PRIO)
-#define PRIO_TO_NICE(prio) ((prio) - DEFAULT_PRIO)
-
 #define SCHED_FIXEDPOINT_SHIFT 10
 #define SCHED_FIXEDPOINT_SCALE (1L << SCHED_FIXEDPOINT_SHIFT)
 
@@ -56,6 +41,11 @@
 
 #define clamp(val, lo, hi) __careful_clamp(__auto_type, val, lo, hi)
 
+#define vruntime_gt(field, lse, rse) ({ (int64_t)((lse)->field - (rse)->field) > 0; })
+
+#define __node_2_se(node) \
+	rb_entry((node), struct sched_entity, run_node)
+
 #define VRUNTIME_OFFSET_THRESHOLD 0xa000000000000000
 
 #include "cow_arraylist.h"
@@ -63,6 +53,7 @@
 #include "smp.h"
 #include "task.h"
 #include "types.h"
+#include "scheduler.h"
 
 extern unsigned int    sysctl_sched_base_slice;
 typedef struct eevdf_t eevdf_t;
@@ -73,18 +64,18 @@ struct load_weight {
 };
 
 struct sched_entity {
-    uint64_t           prio;
-    uint64_t           vruntime;
-    uint64_t           slice;
+    uint64_t           prio;     // 调度优先级
+    uint64_t           vruntime; // 虚拟时间
+    uint64_t           slice;    // 时间片
     uint64_t           custom_slice;
-    uint64_t           deadline;
-    uint64_t           exec_start;
-    uint64_t           min_vruntime;
+    uint64_t           deadline;     // 虚拟截止时间
+    uint64_t           exec_start;   // 此次调度开始执行的时间
+    uint64_t           min_vruntime; // 子树下的 min_vruntime
     uint64_t           sum_exec_runtime;
-    int64_t            vlag;
+    int64_t            vlag;    // min_vruntime 与 vruntime 的差值
     bool               is_idle; // 是否是IDLE进程
     struct load_weight load;
-    struct rb_node     run_node;
+    struct rb_node     run_node;   // 红黑树节点
     bool               on_rq;      // 是否就绪
     tcb_t              thread;     // 任务句柄
     size_t             wait_index; // 等待队列索引

@@ -2,6 +2,18 @@
 
 #define AT_FDCWD (-100)
 
+#define S_IFMT 00170000
+#define S_IFSOCK 0140000
+#define S_IFLNK 0120000
+#define S_IFREG 0100000
+#define S_IFBLK 0060000
+#define S_IFDIR 0040000
+#define S_IFCHR 0020000
+#define S_IFIFO 0010000
+#define S_ISUID 0004000
+#define S_ISGID 0002000
+#define S_ISVTX 0001000
+
 #include "types.h"
 #include "llist.h"
 #include "list.h"
@@ -35,6 +47,9 @@ typedef errno_t (*vfs_poll_t)(void *file, size_t events);
 typedef void *(*vfs_mapfile_t)(void *file, void *addr, size_t offset, size_t size, size_t prot,
                                size_t flags);
 typedef errno_t (*vfs_free_t)(void *handle);
+typedef errno_t (*vfs_mknod_t)(void *parent, const char *name, vfs_node_t node,
+                           uint16_t mode, int dev);
+typedef errno_t (*vfs_chmod_t)(vfs_node_t node, uint16_t mode);
 
 enum {
     file_none     = 0x1UL,    // 未获取信息
@@ -74,6 +89,8 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_del_t delete;         // 删除文件或文件夹
     vfs_rename_t rename;      // 重命名文件或文件夹
     vfs_free_t     free;      // 释放文件句柄
+    vfs_mknod_t    mknod;     // 创建设备节点
+    vfs_chmod_t    chmod;     // 更改文件权限
 } *vfs_callback_t;
 
 typedef struct vfs_filesystem {

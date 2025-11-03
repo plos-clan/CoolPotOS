@@ -40,14 +40,19 @@ size_t partition_write(void *handle, uint8_t *buf, size_t number, uint64_t lba) 
 }
 
 bool parser_block_device(blk_device_t *disk) {
-    uint8_t *mbr = malloc(disk->sector_size);
-    if (blk_device_read(0, disk->sector_size,mbr, disk) == (size_t)-1) return false;
+    uint8_t *mbr = calloc(1,disk->block_size);
+    if (blk_device_read(disk, mbr, 0, disk->block_size) == (size_t)-1) return false;
+
+    for (size_t i = 0; i < disk->block_size; ++i) {
+        logkf("%2x ",mbr[i]);
+    }
+    logkf("\n");
+
     if (mbr[0x1FE] == 0x55 && mbr[0x1FF] == 0xAA) {
         uint8_t part_type = mbr[0x1BE + 4];
         if (part_type == 0xEE) {
-            struct GPT_DPT *gpt = malloc(disk->sector_size);
-            if (disk->ops.read(disk, (uint8_t *)gpt, 1 * disk->sector_size, disk->sector_size) ==
-                (size_t)-1) {
+            struct GPT_DPT *gpt = malloc(disk->block_size);
+            if (blk_device_read(disk, gpt, 1 * disk->block_size, disk->block_size) == (size_t)-1) {
                 free(gpt);
                 free(mbr);
                 return false;
@@ -62,7 +67,7 @@ bool parser_block_device(blk_device_t *disk) {
 
             size_t           dptes_size = gpt->num_partition_entries * gpt->size_of_partition_entry;
             struct GPT_DPTE *dptes      = (struct GPT_DPTE *)malloc(dptes_size);
-            blk_device_read(gpt->partition_entry_lba, dptes_size,dptes,disk);
+            blk_device_read(disk, dptes, gpt->partition_entry_lba * disk->block_size, dptes_size);
             for (size_t j = 0; j < gpt->num_partition_entries; j++) {
                 struct GPT_DPTE *entry =
                     (struct GPT_DPTE *)((uint8_t *)dptes + j * gpt->size_of_partition_entry);
@@ -72,7 +77,7 @@ bool parser_block_device(blk_device_t *disk) {
                     partition->starting_lba = entry->starting_lba;
                     partition->ending_lba   = entry->ending_lba;
                     partition->type         = GPT;
-                    partition->sector_size  = disk->sector_size;
+                    partition->sector_size  = disk->block_size;
                     partition->is_used      = true;
                     memcpy(partition->disk_guid, gpt->disk_guid, 16);
                     memcpy(partition->partition_type_guid, entry->partition_type_guid, 16);
@@ -85,7 +90,7 @@ bool parser_block_device(blk_device_t *disk) {
                     blk_device_t *part = malloc(sizeof(blk_device_t));
                     part->size =
                         (partition->ending_lba - partition->starting_lba) * partition->sector_size;
-                    part->sector_size = partition->sector_size;
+                    part->block_size = partition->sector_size;
                     part->ops.read    = partition_read;
                     part->ops.write   = partition_write;
                     part->handle      = partition;
@@ -111,7 +116,7 @@ bool parser_block_device(blk_device_t *disk) {
                 partition->starting_lba   = starting_lba;
                 partition->ending_lba     = ending_lba;
                 partition->type           = MBR;
-                partition->sector_size    = disk->sector_size;
+                partition->sector_size    = disk->block_size;
                 partition->is_used        = true;
                 kinfo("MBR Partition(%s) %d lba=%llu..%llu %s", disk->name, j, starting_lba,
                       ending_lba, (boot_sector->dpte[j].flags & 0x80) != 0 ? "bootable" : "");
@@ -120,7 +125,7 @@ bool parser_block_device(blk_device_t *disk) {
                 blk_device_t *part = malloc(sizeof(blk_device_t));
                 part->size =
                     (partition->ending_lba - partition->starting_lba) * partition->sector_size;
-                part->sector_size = partition->sector_size;
+                part->block_size = partition->sector_size;
                 part->ops.read    = partition_read;
                 part->ops.write   = partition_write;
                 part->handle      = partition;

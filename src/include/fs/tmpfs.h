@@ -6,6 +6,8 @@ enum tmpfs_type {
     tp_file_dir,
     tp_file_file,
     tp_file_symlink,
+    tp_file_char,
+    tp_file_blk,
 };
 
 typedef struct tmpfs_file {
