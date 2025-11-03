@@ -315,6 +315,23 @@ static int dummy() {
     return -ENOSYS;
 }
 
+errno_t fatfs_chmod(vfs_node_t node, uint16_t mode) {
+    node->mode = mode;
+    file_t file = node->handle;
+    uint8_t mask = 0;
+    uint8_t attr = 0;
+    if(mode | O_RDONLY){
+        mask |= AM_RDO;
+    }
+    if(mask | O_RDWR) {
+        mask |= AM_RDO;
+        attr |= AM_RDO;
+    }
+    if(mask == 0) return EOK;
+    FRESULT res = FR_OK ;// f_chmod(file->path,attr,mask);
+    return res != FR_OK ? -ENOENT : EOK;
+}
+
 static struct vfs_callback fatfs_callbacks = {
     .mount    = fatfs_mount,
     .unmount  = fatfs_unmount,
@@ -335,6 +352,8 @@ static struct vfs_callback fatfs_callbacks = {
     .poll     = fatfs_poll,
     .dup      = fatfs_dup,
     .free     = (vfs_free_t)dummy,
+    .mknod    = (vfs_mknod_t)dummy,
+    .chmod    = fatfs_chmod,
 };
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {

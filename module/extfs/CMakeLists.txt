@@ -20,6 +20,7 @@ target_compile_options(extfs PRIVATE
         -fPIC
         -fvisibility=hidden
         -fno-stack-protector
+        -Wno-incompatible-library-redeclaration
 )
 
 target_link_options(extfs PRIVATE

@@ -15,6 +15,7 @@ target_compile_options(e1000 PRIVATE
         -fPIC
         -fvisibility=hidden
         -fno-stack-protector
+        -Wno-incompatible-library-redeclaration
 )
 
 target_link_options(e1000 PRIVATE

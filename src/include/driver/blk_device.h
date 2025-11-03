@@ -4,7 +4,7 @@
 
 typedef struct block_device blk_device_t;
 
-enum blk_type{
+enum blk_type {
     BLK_BLOCK_DEVICE,
     BLK_PARTITION,
 };
@@ -21,16 +21,17 @@ struct block_device_ops {
 struct block_device {
     void  *handle;
     size_t device_id;
-    size_t size;         // 块设备大小
-    size_t sector_size; // 扇区大小
+    size_t size;       // 块设备大小
+    size_t block_size; // 块大小
+    size_t max_size;   // 最大读取缓冲区
     char   name[20];
 
-    enum blk_type type;
+    enum blk_type           type;
     struct block_device_ops ops;
 };
 
-size_t blk_device_read(size_t lba, size_t number, void *buffer, blk_device_t *device);
-size_t blk_device_write(size_t lba, size_t number, const void *buffer, blk_device_t *device);
+size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t length);
+size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset, size_t length);
 
 errno_t delete_blk_device(size_t blk_id);
 size_t  register_device(blk_device_t *device);

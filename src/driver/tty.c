@@ -104,8 +104,13 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
     case TIOCGWINSZ:;
         struct winsize *ws = (struct winsize *)arg;
         if (ws != NULL) {
-            terminal_cols_rows(session, (size_t *)&ws->ws_col, (size_t *)&ws->ws_row);
-            terminal_width_height(session, (size_t *)&ws->ws_xpixel, (size_t *)&ws->ws_ypixel);
+            size_t col, row, x, y;
+            terminal_cols_rows(session, &col, &row);
+            terminal_width_height(session, &x, &y);
+            ws->ws_col    = col;
+            ws->ws_row    = row;
+            ws->ws_xpixel = x;
+            ws->ws_ypixel = y;
         }
         break;
     case TCGETS:;

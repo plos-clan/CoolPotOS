@@ -29,6 +29,10 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
                        (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
                        (void *)kernel_session->ops.size_t);
+    create_device_node(node, "tty", device_stream, kernel_session,
+                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
+                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
+                       (void *)kernel_session->ops.size_t);
     return EOK;
 }
 
@@ -197,6 +201,40 @@ err:;
     return -EIO;
 }
 
+errno_t devtmpfs_chmod(vfs_node_t node, uint16_t mode) {
+    node->mode = mode;
+    return EOK;
+}
+
+errno_t devtmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mode, int dev) {
+    node->dev             = 0;
+    node->rdev            = dev;
+    node->mode            = mode & 0777;
+    dtmp_handle_t *handle = malloc(sizeof(dtmp_handle_t));
+    handle->size          = 0;
+    handle->node          = node;
+    if ((mode & S_IFMT) == S_IFBLK) {
+        node->type = file_block;
+        handle->type = dtp_file_device;
+    }
+    if ((mode & S_IFMT) == S_IFCHR) {
+        node->type = file_stream;
+        handle->type = dtp_file_device;
+    } else {
+        node->type = file_none;
+        handle->type = dtp_file_file;
+    }
+    strncpy(handle->name, name, 64);
+    node->handle = handle;
+    return 0;
+}
+
+errno_t devtmpfs_ioctl(void *file, size_t req, void *arg) {
+    dtmp_handle_t *handle = file;
+    if(handle->ioctl_t == NULL) return -ENOSYS;
+    return handle->ioctl_t(handle->device_handle,req,arg);
+}
+
 static struct vfs_callback devtmpfs_callbacks = {
     .mount    = devtmpfs_mount,
     .unmount  = devtmpfs_umount,
@@ -210,13 +248,15 @@ static struct vfs_callback devtmpfs_callbacks = {
     .mkfile   = devtmpfs_mkfile,
     .link     = (vfs_mk_t)dummy,
     .symlink  = devtmpfs_symlink,
-    .ioctl    = (vfs_ioctl_t)dummy,
+    .ioctl    = devtmpfs_ioctl,
     .dup      = devtmpfs_dup,
     .delete   = devtmpfs_delete,
     .rename   = devtmpfs_rename,
     .poll     = devtmpfs_poll,
     .map      = devtmpfs_map,
     .free     = devtmpfs_free,
+    .chmod    = devtmpfs_chmod,
+    .mknod    = devtmpfs_mknod,
 };
 
 void devtmpfs_regist() {

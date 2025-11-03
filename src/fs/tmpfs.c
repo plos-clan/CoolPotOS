@@ -127,15 +127,51 @@ errno_t tmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
     return EOK;
 }
 
-errno_t tmpfs_free(void *handle){
+errno_t tmpfs_free(void *handle) {
     tmpfs_file_t *file = handle;
-    if(file->type != tp_file_file){
+    if (file->type != tp_file_file) {
         free(file);
         return EOK;
     }
-    if(file->data != NULL) free(file->data);
+    if (file->data != NULL) free(file->data);
     free(file);
     return EOK;
+}
+
+errno_t tmpfs_chmod(vfs_node_t node, uint16_t mode) {
+    node->mode = mode;
+    return EOK;
+}
+
+errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mode, int dev) {
+    node->dev            = 0;
+    node->rdev           = dev;
+    node->mode           = mode & 0777;
+    tmpfs_file_t *handle = malloc(sizeof(tmpfs_file_t));
+    handle->size         = 0;
+    handle->node         = node;
+    if ((mode & S_IFMT) == S_IFBLK) {
+        node->type = file_block;
+        handle->type = tp_file_blk;
+    }
+    if ((mode & S_IFMT) == S_IFCHR) {
+        node->type = file_stream;
+        handle->type = tp_file_char;
+    } else {
+        node->type = file_none;
+        handle->type = tp_file_file;
+    }
+    strncpy(handle->name, name, 64);
+    node->handle = handle;
+    return 0;
+}
+
+errno_t tmpfs_ioctl(void *file, size_t req, void *arg) {
+    tmpfs_file_t *handle = file;
+    if (handle->type == tp_file_char || handle->type == tp_file_blk) {
+        return EOK;
+    } else
+        return EOK;
 }
 
 static struct vfs_callback tmpfs_callbacks = {
@@ -151,13 +187,15 @@ static struct vfs_callback tmpfs_callbacks = {
     .mkfile   = tmpfs_mkfile,
     .link     = (vfs_mk_t)dummy,
     .symlink  = tmpfs_symlink,
-    .ioctl    = (vfs_ioctl_t)dummy,
+    .ioctl    = tmpfs_ioctl,
     .dup      = tmpfs_dup,
     .delete   = tmpfs_delete,
     .rename   = tmpfs_rename,
     .poll     = tmpfs_poll,
     .map      = tmpfs_map,
     .free     = tmpfs_free,
+    .chmod    = tmpfs_chmod,
+    .mknod    = tmpfs_mknod,
 };
 
 void tmpfs_regist() {
