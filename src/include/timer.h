@@ -10,8 +10,14 @@
 
 #include "types.h"
 
+typedef uint64_t clock_t;
+
 void arch_send_scheduler();
 size_t sched_clock();
 uint64_t nano_time();
 int64_t mktime_universal();
 void rtc_setup();
+
+static inline clock_t clock() {
+    return sched_clock();
+}

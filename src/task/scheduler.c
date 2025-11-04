@@ -4,9 +4,7 @@
 #include "term/klog.h"
 #include "timer.h"
 
-// #define EEVDF_SCHEDULER 1
-
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
 #    include "task/eevdf.h"
 #else
 #    include "task/rrs.h"
@@ -52,7 +50,7 @@ bool add_task_prio(tcb_t thread, uint64_t prio) {
     if (local == NULL) return false;
     thread->prio   = prio;
     thread->cpu_id = local->id;
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     add_eevdf_entity_with_prio(thread, prio, local);
 #else
     add_rrs_entity(thread, local);
@@ -64,7 +62,7 @@ bool add_task_prio_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu) {
     if (cpu == NULL || thread == NULL) return false;
     thread->prio   = prio;
     thread->cpu_id = cpu->id;
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     add_eevdf_entity_with_prio(thread, prio, cpu);
 #else
     add_rrs_entity(thread, cpu);
@@ -82,7 +80,7 @@ void set_bsp_cpu_info(cpu_local_t *bsp_cpu) {
     bsp_cpu->idle_task      = bsp_idle_thread;
     bsp_cpu->current_task   = bsp_idle_thread;
     bsp_idle_thread->cpu_id = bsp_cpu->id;
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     init_cpu_idle(bsp_cpu, bsp_idle_thread);
 #else
     init_cpu_idle_rrs(bsp_cpu, bsp_idle_thread);
@@ -94,7 +92,7 @@ void set_cpu_idle_task(tcb_t thread, cpu_local_t *cpu) {
     cpu->idle_task    = thread;
     cpu->current_task = thread;
     thread->cpu_id    = cpu->id;
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     init_cpu_idle(cpu, thread);
 #else
     init_cpu_idle_rrs(cpu, thread);
@@ -105,7 +103,7 @@ void remove_task(tcb_t thread, cpu_local_t *cpu) {
     if (thread->status == T_FUTEX) {
         bool int_enable = arch_check_interrupt();
         arch_close_interrupt();
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
         futex_eevdf_entity(thread, cpu);
         remove_eevdf_entity(thread, cpu);
 #else
@@ -114,7 +112,7 @@ void remove_task(tcb_t thread, cpu_local_t *cpu) {
         if (int_enable) arch_open_interrupt();
         return;
     }
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     remove_eevdf_entity(thread, cpu);
 #else
     remove_rrs_entity(thread, cpu);
@@ -122,7 +120,7 @@ void remove_task(tcb_t thread, cpu_local_t *cpu) {
 }
 
 void change_task_weight(tcb_t thread, uint64_t prio) {
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     change_entity_weight(thread, prio, get_cpu_local(thread->cpu_id));
 #endif
 }
@@ -130,7 +128,7 @@ void change_task_weight(tcb_t thread, uint64_t prio) {
 tcb_t pick_next_task(uint64_t cpu_id) {
     cpu_local_t *cpu_local = get_cpu_local(cpu_id);
     tcb_t        next_thread =
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
         eevdf_pick_next_task(cpu_local);
 #else
         rrs_pick_next_task(cpu_local);
@@ -140,7 +138,7 @@ tcb_t pick_next_task(uint64_t cpu_id) {
 }
 
 void scheduler_yield() {
-#ifdef EEVDF_SCHEDULER
+#if EEVDF_SCHEDULER
     set_entity_yield(get_current_task());
 #endif
     arch_send_scheduler();

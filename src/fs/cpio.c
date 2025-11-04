@@ -1,10 +1,10 @@
 #include "fs/cpio.h"
-#include "fs/vfs.h"
-#include "mem/heap.h"
-#include "term/klog.h"
-#include "module.h"
-#include "krlibc.h"
 #include "errno.h"
+#include "fs/vfs.h"
+#include "krlibc.h"
+#include "mem/heap.h"
+#include "mod/module.h"
+#include "term/klog.h"
 
 static char *get_pdir_fpath(char *path) {
     if (path == NULL) { return NULL; }

@@ -27,7 +27,8 @@
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
-#include "module.h"
+#include "mod/module.h"
+#include "security.h"
 #include "syscall.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
@@ -36,11 +37,17 @@
 #include "task/task.h"
 #include "term/klog.h"
 #include "timer.h"
-#include "security.h"
 
-__attribute__((used, section(".limine_requests_"
-                             "start"))) static volatile LIMINE_REQUESTS_START_MARKER;
+USED SECTION(".limine_requests_start") static volatile LIMINE_REQUESTS_START_MARKER;
+USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
+
 LIMINE_REQUEST LIMINE_BASE_REVISION(3);
+
+LIMINE_REQUEST struct limine_stack_size_request stack_request = {
+    .id         = LIMINE_STACK_SIZE_REQUEST,
+    .revision   = 0,
+    .stack_size = MAX_STACK_SIZE // 128K
+};
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
