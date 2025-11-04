@@ -171,6 +171,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
             src/arch/x86_64/include
             src/include/types
             src/include
+            ${CMAKE_BINARY_DIR}
     )
     target_link_libraries(kernel PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/lib/libllvm_x64.a
@@ -206,6 +207,7 @@ elseif (TARGET_ARCH STREQUAL "riscv64")
             src/arch/riscv64/include
             src/include/types
             src/include
+            ${CMAKE_BINARY_DIR}
     )
     target_link_libraries(kernel PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgcc_rv64.a
