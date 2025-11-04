@@ -157,6 +157,7 @@ next:;
             status = vfs_mkdir(filename);
             if (status != EOK) {
                 kerror("Cannot build initramfs directory(%s), error code: %d", filename, status);
+                free(filedata);
                 return;
             }
         } else if ((mode & 0120000) == 0120000) {
@@ -174,22 +175,26 @@ next:;
             free(symlink_path);
             if (status != EOK) {
                 kerror("Cannot build initramfs symlink(%s), error code: %d", filename, status);
+                free(filedata);
                 return;
             }
         } else {
             status = vfs_mkfile(filename);
             if (status != EOK) {
                 kerror("Cannot build initramfs file(%s), error code: %d", filename, status);
+                free(filedata);
                 return;
             }
             vfs_node_t file = vfs_open(filename);
             if (file == NULL) {
                 kerror("Cannot build initramfs, open error(%s)", filename);
+                free(filedata);
                 return;
             }
             status = vfs_write(file, filedata, 0, filesize);
             if (status == -1) {
                 kerror("Cannot build initramfs, write error(%s): %d", filename, status);
+                free(filedata);
                 return;
             }
             vfs_close(file);
