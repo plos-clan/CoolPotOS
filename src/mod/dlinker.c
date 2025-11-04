@@ -2,7 +2,8 @@
 #include "errno.h"
 #include "lib/sprintf.h"
 #include "limine.h"
-#include "module.h"
+#include "mod/module.h"
+#include "mod/modchk.h"
 #include "term/klog.h"
 
 #define EXPORT_SYMBOL(mode, FUNC) dlfunc_register(mode, #FUNC, (void *)(FUNC))
@@ -296,6 +297,7 @@ void load_all_kernel_module() {
     for (size_t i = 0; i < modules_count; i++) {
         if (ends_with_km(boot_modules[i].path)) {
             module_t      *mod  = &boot_modules[i];
+            if(!mod_check_signature(mod->data,mod->size)) continue;
             kernel_mode_t *kmod = calloc(1,sizeof(kernel_mode_t));
             kmod->name          = strdup(mod->name);
             kmod->data          = mod->data;

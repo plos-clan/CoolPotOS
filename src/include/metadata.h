@@ -68,6 +68,7 @@
     (KERNEL_NAME_ "-" KERNEL_ARCH "-" KERNEL_VERSION "." KERNEL_ARCH_VERSION "_(git:" GIT_VERSION  \
                   ")_{" COMPILER_NAME " " COMPILER_VERSION "}")
 
+// 内核属性
 #define MAX_CPU               256                  // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START     0xffff900000000000   // 内核堆起始地址
 #define KERNEL_HEAP_SIZE      0x6400000            // 内核堆大小 100MB
@@ -80,3 +81,9 @@
 #define KERNEL_AREA_MEM       0xf000000000000000   // 内核地址空间起始
 #define DRIVER_AREA_MEM       0xffffb00000000000   // 驱动恒等映射空间偏移
 #define SCHED_TIMER_SPEED     100                  // 调度时钟频率 100Hz
+#define MAX_STACK_SIZE        131072               // 增强栈大小 128k
+
+// 内核编译配置选项
+#define EEVDF_SCHEDULER 0 // 是否启用EEVDF调度器
+#define HEAP_CHECK      0 // 启用内核堆双端越界检查
+#define MODULE_CHECK    0 // 启动内核模块签名校验

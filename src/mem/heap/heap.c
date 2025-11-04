@@ -4,8 +4,6 @@
 #include "lock.h"
 #include "term/klog.h"
 
-// #define HEAP_CHECK 1 //启用内核堆双端越界检查
-
 static void *heap_alloc(void *ptr, size_t size);
 
 static struct mpool pool = {
@@ -87,7 +85,7 @@ void *check_magic(void *ptr, bool fill_mem) {
 void *malloc(size_t size) {
     const bool is_sti = alloc_enter();
 
-#ifdef HEAP_CHECK
+#if HEAP_CHECK
     size             = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
     void  *ptr       = mpool_alloc(&pool, true_size);
@@ -108,7 +106,7 @@ void *malloc(size_t size) {
 void free(void *ptr) {
     if (!ptr) return;
     bool is_sti = alloc_enter();
-#ifdef HEAP_CHECK
+#if HEAP_CHECK
     ptr = check_magic(ptr, true);
 #endif
     mpool_free(&pool, ptr);
@@ -131,7 +129,7 @@ void *calloc(size_t n, size_t size) {
 
 void *realloc(void *ptr, size_t newsize) {
     const bool is_sti = alloc_enter();
-#ifdef HEAP_CHECK
+#if HEAP_CHECK
     if (ptr != NULL) ptr = check_magic(ptr, false);
     newsize          = (newsize + 7) & ~7;
     size_t true_size = get_true_size(newsize);
@@ -151,7 +149,7 @@ void *reallocarray(void *ptr, size_t n, size_t size) {
 
 void *aligned_alloc(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
-#ifdef HEAP_CHECK
+#if HEAP_CHECK
     size             = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
     void  *ptr       = mpool_aligned_alloc(&pool, true_size, align);

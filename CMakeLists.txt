@@ -82,6 +82,12 @@ add_custom_target(fetch_limine_binaries
 )
 ###
 
+# ⚠️ 必须在 add_subdirectory 之前定义这些变量，以便子目录访问
+set(CPOS_KEY_DIR "${CMAKE_BINARY_DIR}/cpos_keys")
+set(CPOS_PRIVATE_KEY_ECC "${CPOS_KEY_DIR}/cpos_module_signing_ecc.key" CACHE INTERNAL "Path to the ECC private key.")
+set(MODULE_SIGNING_SCRIPT "${PROJECT_ROOT_DIR}/sign_module.sh" CACHE INTERNAL "Script path for module signing.")
+set(CPOS_PUBKEY_HEADER "${CMAKE_BINARY_DIR}/pubkey.h")
+
 add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
 add_subdirectory(module/extfs)
@@ -130,6 +136,7 @@ file(GLOB_RECURSE MOD_SOURCES "src/mod/*.c")
 file(GLOB_RECURSE MEM_SOURCES "src/mem/*.c")
 file(GLOB_RECURSE TASK_SOURCES "src/task/*.c")
 file(GLOB_RECURSE INT_SOURCES "src/int/*.c")
+file(GLOB_RECURSE LIB_SOURCES "src/lib/*.c")
 
 if (TARGET_ARCH STREQUAL "x86_64")
 
@@ -158,6 +165,7 @@ if (TARGET_ARCH STREQUAL "x86_64")
             ${MEM_SOURCES}
             ${TASK_SOURCES}
             ${INT_SOURCES}
+            ${LIB_SOURCES}
     )
     target_include_directories(kernel PUBLIC
             src/arch/x86_64/include
@@ -192,6 +200,7 @@ elseif (TARGET_ARCH STREQUAL "riscv64")
             ${MEM_SOURCES}
             ${TASK_SOURCES}
             ${INT_SOURCES}
+            ${LIB_SOURCES}
     )
     target_include_directories(kernel PUBLIC
             src/arch/riscv64/include
