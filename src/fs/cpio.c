@@ -1,4 +1,5 @@
 #include "fs/cpio.h"
+#include "lib/zstd/zstd.h"
 #include "errno.h"
 #include "fs/vfs.h"
 #include "krlibc.h"
@@ -110,15 +111,14 @@ void cpio_init(void) {
         is_free       = false;
         compress_type = "cpio";
         break;
-//    case COMPRESSION_ZSTD:
-//        size_t dict_size = ZSTD_getFrameContentSize(init_ramfs->data, init_ramfs->size);
-//        void  *dict_data = malloc(dict_size);
-//        ZSTD_decompress(dict_data, dict_size, init_ramfs->data, init_ramfs->size);
-//        data_d        = dict_data;
-//        size_d        = dict_size;
-//        is_free       = true;
-//        compress_type = "zstd";
-//        break;
+    case COMPRESSION_ZSTD:
+        size_d = ZSTD_getFrameContentSize(init_ramfs->data, init_ramfs->size);
+        void  *dict_data = malloc(size_d);
+        ZSTD_decompress(dict_data, size_d, init_ramfs->data, init_ramfs->size);
+        data_d        = dict_data;
+        is_free       = true;
+        compress_type = "zstd";
+        break;
     default: kerror("Cannot load initramfs, unknown format."); return;
     }
 
