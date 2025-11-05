@@ -18,6 +18,7 @@
 #include "fs/cpio.h"
 #include "fs/devtmpfs.h"
 #include "fs/pipefs.h"
+#include "fs/procfs.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "fsgsbase.h"
@@ -103,6 +104,7 @@ USED _Noreturn void kmain() {
 
     kmodule_init();
     cpio_init();
+    procfs_setup();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
     enable_scheduler();

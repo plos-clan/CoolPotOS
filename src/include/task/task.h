@@ -106,13 +106,14 @@ struct process_control_block {
     vma_manager_t     vma_manager; // VMA 内存管理器
     list_queue_t     *virt_queue;  // 懒分配器队列
 
-    ipc_queue_t *ipc_queue; // 进程消息队列
-    tty_t       *tty;       // 进程占用的TTY会话
-    vfs_node_t   cwd;       // 进程工作目录
-    vfs_node_t   exec;      // 可执行文件句柄
-    fdt_t       *fdts;      // 文件描述符表
-    char       **envp;      // 进程环境变量
-    size_t       envc;      // 进程环境变量长度
+    ipc_queue_t *ipc_queue;   // 进程消息队列
+    tty_t       *tty;         // 进程占用的TTY会话
+    vfs_node_t   cwd;         // 进程工作目录
+    vfs_node_t   exec;        // 可执行文件句柄
+    vfs_node_t   procfs_node; // 进程信息虚拟文件系统节点
+    fdt_t       *fdts;        // 文件描述符表
+    char       **envp;        // 进程环境变量
+    size_t       envc;        // 进程环境变量长度
 
     uint64_t uid;   // 用户会话ID
     bool     vfork; // 是否是 vfork 出来的进程
