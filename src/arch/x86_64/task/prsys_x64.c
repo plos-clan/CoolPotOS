@@ -16,8 +16,8 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
 
     pcb_t new_pcb = malloc(sizeof(struct process_control_block));
     memset(new_pcb, 0, sizeof(struct process_control_block));
-    new_pcb->pid = alloc_pid();
-    strcpy(new_pcb->name, current_pcb->name);
+    new_pcb->pid    = alloc_pid();
+    new_pcb->name   = strdup(current_pcb->name);
     new_pcb->status = T_START;
     new_pcb->tty    = current_pcb->tty;
 
@@ -57,7 +57,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_task->context.user_stack_top = parent_task->context.user_stack_top;
     new_task->context.kernel_stack   = ((uint64_t)new_task) + STACK_SIZE;
     new_task->_start                 = parent_task->_start;
-    strcpy(new_task->name, parent_task->name);
+    new_task->name                   = strdup(parent_task->name);
 
     new_task->context.regs.rip    = reg->rcx; // syscall 指令中 rcx 寄存器为 rip
     new_task->context.regs.rflags = reg->r11; // syscall 指令中 r11 寄存器为 rflags
@@ -276,6 +276,8 @@ syscall_(execve, char *path, char **argv, char **envp) {
 
     char *old_cmdline = process->cmdline;
     process->cmdline  = strdup(cmdline);
+    if (process->name != NULL) free(process->name);
+    process->name = strdup(path);
     strncpy(process->name, norm_path, 50);
 
     char **old_envp = process->envp;
@@ -304,20 +306,18 @@ syscall_(execve, char *path, char **argv, char **envp) {
 
     for (size_t i = 0; i < process->fdts->fds_length; i++) {
         fd_t *handle = process->fdts->fds[i];
-        if (handle != NULL) {
+        if (handle != NULL && handle->flags & O_CLOEXEC) {
             vfs_close(handle->node);
-            free(handle);
+            remove_fd(process->fdts, handle->fd);
         }
     }
 
-    free_fdt(process->fdts);
-    process->fdts = fds_init();
-
-    lazy_free(process);
-    process->virt_queue = create_llist_queue();
-
-    ipc_queue_release(process->ipc_queue);
-    process->ipc_queue = ipc_queue_init();
+    // 根据 POSIX 的 execve 规范定义, 内核对象不变, 故懒分配器, IPC等不动
+//    lazy_free(process);
+//    process->virt_queue = create_llist_queue();
+//
+//    ipc_queue_release(process->ipc_queue);
+//    process->ipc_queue = ipc_queue_init();
 
     free(norm_path);
 

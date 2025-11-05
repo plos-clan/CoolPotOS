@@ -82,17 +82,16 @@ add_custom_target(fetch_limine_binaries
 )
 ###
 
-# ⚠️ 必须在 add_subdirectory 之前定义这些变量，以便子目录访问
-set(CPOS_KEY_DIR "${CMAKE_BINARY_DIR}/cpos_keys")
-set(CPOS_PRIVATE_KEY_ECC "${CPOS_KEY_DIR}/cpos_module_signing_ecc.key" CACHE INTERNAL "Path to the ECC private key.")
-set(MODULE_SIGNING_SCRIPT "${PROJECT_ROOT_DIR}/sign_module.sh" CACHE INTERNAL "Script path for module signing.")
-set(CPOS_PUBKEY_HEADER "${CMAKE_BINARY_DIR}/pubkey.h")
-
 add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
 add_subdirectory(module/extfs)
 
 add_executable(kernel)
+
+### 内核校验密钥生成
+include(tools/gen_ecc_keys.cmake)
+message(STATUS "[ECC] Public key header: ${PUB_HEADER}")
+target_include_directories(kernel PRIVATE "${CMAKE_BINARY_DIR}/keys")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(COMPILE_MODE
@@ -249,6 +248,11 @@ if (TARGET_ARCH STREQUAL "x86_64")
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/background.jpg ${ISO_DIR}/background.jpg
 
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:kernel> ${ISO_DIR}/cpkrnl_x64.elf
+
+            # 追加签名头
+            COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:fatfs> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
+            COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:extfs> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
+            COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:e1000> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
 
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fatfs> ${ISO_DIR}/fatfs.km
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:e1000> ${ISO_DIR}/e1000.km
