@@ -85,6 +85,7 @@ add_custom_target(fetch_limine_binaries
 add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
 add_subdirectory(module/extfs)
+add_subdirectory(module/iso9660)
 
 add_executable(kernel)
 
@@ -253,11 +254,12 @@ if (TARGET_ARCH STREQUAL "x86_64")
             COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:fatfs> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
             COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:extfs> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
             COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:e1000> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
+            COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/sign_module.py $<TARGET_FILE:iso9660> ${CMAKE_BINARY_DIR}/keys/module_signing_priv.pem
 
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:fatfs> ${ISO_DIR}/fatfs.km
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:e1000> ${ISO_DIR}/e1000.km
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:extfs> ${ISO_DIR}/extfs.km
-            #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:hid> ${ISO_DIR}/hid.km
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:iso9660> ${ISO_DIR}/iso9660.km
             #COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:xhci> ${ISO_DIR}/xhci.km
 
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LIMINE_SHARE_DIR}/limine-bios.sys ${ISO_DIR}/limine/limine-bios.sys
