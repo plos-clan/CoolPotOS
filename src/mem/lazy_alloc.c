@@ -23,6 +23,7 @@ USED void debug_print_virt_queue(pcb_t pcb) {
 }
 
 errno_t lazy_tryalloc(pcb_t pcb, uint64_t address) {
+    if(unlikely(address == 0)) return -1;
     mm_virtual_page_t *virt_page = NULL;
     qlist_foreach(pcb->virt_queue, node) {
         mm_virtual_page_t *vpage = (mm_virtual_page_t *)node->data;

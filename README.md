@@ -43,6 +43,7 @@ You need to install them on your computer:
 - clang (x86_64 only)
 - lld (x86_64 only, for linking LTO objects)
 - openssl (kernel module key)
+- python3 `cryptography` (sign kernel module)
 
 ### Options
 

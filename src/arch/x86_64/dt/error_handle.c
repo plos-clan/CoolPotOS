@@ -261,16 +261,21 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
     arch_close_interrupt();
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
-    if (likely(get_current_task() != NULL)) {
-        if (get_current_task()->process->pid == 0) goto msg;
-        errno_t status = lazy_tryalloc(get_current_task()->process, faulting_address);
+    tcb_t current_task = get_current_task();
+    if (likely(current_task != NULL)) {
+        if(current_task->process == NULL) {
+            logkf("ERROR: HANDLE NULL TO #PF CURRENT TASK\n\r");
+            goto wfi;
+        }
+        if (current_task->process->pid == 0) goto msg;
+        errno_t status = lazy_tryalloc(current_task->process, faulting_address);
         if (status == EOK) {
             arch_open_interrupt();
             return;
         }
-        logkf("page_fault %p process(%s:%d) thread %s:%d\n", get_current_task()->process->name,
-              get_current_task()->process->pid, get_current_task()->name, get_current_task()->tid);
-        pcb_t process = get_current_task()->process;
+        logkf("page_fault %p process(%s:%d) thread %s:%d\n", current_task->process->name,
+              current_task->process->pid, current_task->name, current_task->tid);
+        pcb_t process = current_task->process;
         if (process->pid != 0) kill_proc(process, -1, true);
         goto wfi;
     }
@@ -282,9 +287,9 @@ msg:;
                       : error_code & 0x10 ? "DecodeAddress"
                                           : "Unknown";
     kerror("Page %s fault %p at %p", error_msg, faulting_address, frame->rip);
-    if (get_current_task() != NULL) {
-        printk("Current process(%s:%d) thread %s:%d\n", get_current_task()->process->name,
-               get_current_task()->process->pid, get_current_task()->name, get_current_task()->tid);
+    if (current_task != NULL) {
+        printk("Current process(%s:%d) thread %s:%d\n", current_task->process->name,
+               current_task->process->pid, current_task->name, current_task->tid);
     }
     arch_close_interrupt();
 wfi:
