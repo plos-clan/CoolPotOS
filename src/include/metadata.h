@@ -71,8 +71,8 @@
 // 内核属性
 #define MAX_CPU               256                  // 最大支持CPU核心数 256
 #define KERNEL_HEAP_START     0xffff900000000000   // 内核堆起始地址
-#define KERNEL_HEAP_SIZE      0x6400000            // 内核堆大小 100MB
-#define STACK_SIZE            0x4000//32768                // 栈大小
+#define KERNEL_HEAP_SIZE      0x1600000            // 内核堆初始大小 25MB (可扩容)
+#define STACK_SIZE            0x4000               //32768                // 栈大小
 #define BIG_USER_STACK        999424               // 用户栈大小，要对齐到页
 #define EHDR_START_ADDR       0x0000300000000000   // ELF头起始地址
 #define INTERPRETER_EHDR_ADDR 0x0000200000000000   // 链接器ELF头起始地址

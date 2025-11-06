@@ -3,6 +3,7 @@
 #include "limine.h"
 #include "task/scheduler.h"
 #include "term/klog.h"
+#include "mem/buddy.h"
 
 volatile bool smp_enable = false;
 
@@ -98,4 +99,6 @@ void smp_init() {
     arch_bsp_cpu_init();
     smp_enable = true;
     kinfo("%d processors have been enabled.", cpu_count);
+    percpu_pagecache_init();
+    kinfo("buddy per-cpu page cache enable.");
 }

@@ -52,6 +52,9 @@ LIMINE_REQUEST struct limine_stack_size_request stack_request = {
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
+
+    gop_clear(get_framebuffer_response()->framebuffers[0],0xffffff);
+
     init_frame();
     init_page();
     init_heap();
@@ -99,10 +102,11 @@ USED _Noreturn void kmain() {
     calibrate_tsc_with_hpet();
 
     power_button_init();
-    // ahci_setup();
+    kmodule_init();
+
+    ahci_setup();
     nvme_setup();
 
-    kmodule_init();
     cpio_init();
     procfs_setup();
     ksuccess("Kernel load done!");

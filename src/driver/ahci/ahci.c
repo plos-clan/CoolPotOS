@@ -97,10 +97,9 @@ int hba_bind_vbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, struct vecbuf *v
     struct vecbuf *pos = vbuf;
 
     do {
-        cmdt->entries[i++] = (struct hba_prdte){
-            .data_base  = driver_virt_to_phys(pos->buf.buffer),
-            .byte_count = pos->buf.size - 1};
-        pos = list_entry(pos->components.next, struct vecbuf, components);
+        cmdt->entries[i++] = (struct hba_prdte){.data_base  = driver_virt_to_phys(pos->buf.buffer),
+                                                .byte_count = pos->buf.size - 1};
+        pos                = list_entry(pos->components.next, struct vecbuf, components);
     } while (pos != vbuf);
 
     cmdh->prdt_len = i + 1;
@@ -275,15 +274,17 @@ void load_ahci(pci_device_t *device) {
         __hba_reset_port(port_regs);
 
         if (!clbp) {
-            clb_pa = alloc_frames(1);
+            clb_pa      = alloc_frames(1);
             void *vaddr = driver_phys_to_virt(clb_pa);
-            page_map_range(get_kernel_pagedir(),(uint64_t)vaddr,clb_pa,PAGE_SIZE,KERNEL_PTE_FLAGS);
+            page_map_range(get_kernel_pagedir(), (uint64_t)vaddr, clb_pa, PAGE_SIZE,
+                           KERNEL_PTE_FLAGS);
             memset(vaddr, 0, 0x1000);
         }
         if (!fisp) {
-            fis_pa = alloc_frames(1);
+            fis_pa      = alloc_frames(1);
             void *vaddr = driver_phys_to_virt(fis_pa);
-            page_map_range(get_kernel_pagedir(),(uint64_t)vaddr,fis_pa,PAGE_SIZE,KERNEL_PTE_FLAGS);
+            page_map_range(get_kernel_pagedir(), (uint64_t)vaddr, fis_pa, PAGE_SIZE,
+                           KERNEL_PTE_FLAGS);
             memset(vaddr, 0, 0x1000);
         }
 
@@ -326,7 +327,7 @@ void load_ahci(pci_device_t *device) {
         sprintf(name_buf, "sata%zu", i);
         blk_device_t *sata = malloc(sizeof(blk_device_t));
         sata->size         = hbadev->max_lba * hbadev->block_size;
-        sata->block_size  = hbadev->block_size;
+        sata->block_size   = hbadev->block_size;
         sata->ops.read     = ahci_read;
         sata->ops.write    = ahci_write;
         sata->handle       = hbadev;
@@ -334,10 +335,11 @@ void load_ahci(pci_device_t *device) {
         sata->ops.poll     = (void *)dummy;
         sata->ops.map      = (void *)dummy;
         sata->type         = BLK_BLOCK_DEVICE;
+        sata->max_size     = PAGE_SIZE;
         strcpy(sata->name, name_buf);
-        register_device(sata);
-        kinfo("sata%d: blk_size=%d, blk=0..%d, %s", i, hbadev->block_size, hbadev->max_lba,
-              hbadev->model);
+        size_t id = register_device(sata);
+        kinfo("sata%d: blk_size=%d, blk=0..%d, device_id=%lu %s", i, hbadev->block_size, hbadev->max_lba,
+              id,hbadev->model);
     }
     kinfo("AHCI initialized with %d ports, version %d.%d.%d", hba->ports_num,
           (hba->version >> 16) & 0xff, (hba->version >> 8) & 0xff, hba->version & 0xff);

@@ -355,7 +355,6 @@ void iso9660_close(file_t handle) {
 }
 
 errno_t iso9660_mount(const char *src, vfs_node_t node) {
-    if (is_virtual_fs(src)) return -1;
     vfs_node_t device = vfs_open(src);
     if (device == NULL || device->type == file_dir) { return -1; }
     node->dev           = device->rdev;
