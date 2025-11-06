@@ -245,8 +245,6 @@ vfs_filesystem_t get_filesystem(char *type);
  */
 vfs_filesystem_t get_filesystem_node(vfs_node_t node);
 
-bool is_virtual_fs(const char *src);
-
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
 void       vfs_free_child(vfs_node_t vfs);
 errno_t    vfs_delete(vfs_node_t node);

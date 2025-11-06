@@ -109,36 +109,36 @@ uint64_t driver_virt_to_phys(void *virt_addr) {
 }
 
 void free_frames(uint64_t addr, size_t count) {
-    buddy_free_pages(addr, count);
+    buddy_free_frames(addr, count);
     frame_allocator.usable_frames += count;
 }
 
 void free_frame(uint64_t addr) {
-    buddy_free_pages(addr, 1);
+    buddy_free_frames(addr, 1);
     frame_allocator.usable_frames++;
 }
 
 void free_frames_2M(uint64_t addr) {
-    buddy_free_frames_2M(addr);
+   // buddy_free_frames_2M(addr);
     frame_allocator.usable_frames += 512;
 }
 
 void free_frames_1G(uint64_t addr) {
-    buddy_free_frames_1G(addr);
+    //buddy_free_frames_1G(addr);
     frame_allocator.usable_frames += 262144;
 }
 
 uint64_t alloc_frames(size_t count) {
     frame_allocator.usable_frames -= count;
-    return buddy_alloc_pages(count);
+    return buddy_alloc_frames(count);
 }
 
 uint64_t alloc_frames_2M(size_t count) {
     frame_allocator.usable_frames -= 512;
-    return buddy_alloc_frames_2M(count);
+    return 0;//buddy_alloc_frames_2M(count);
 }
 
 uint64_t alloc_frames_1G(size_t count) {
     frame_allocator.usable_frames -= 262144;
-    return buddy_alloc_frames_1G(count);
+    return 0;//buddy_alloc_frames_1G(count);
 }
