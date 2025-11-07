@@ -1,7 +1,6 @@
 #include "exec/dlinker.h"
 #include "errno.h"
 #include "lib/sprintf.h"
-#include "limine.h"
 #include "mod/module.h"
 #include "mod/modchk.h"
 #include "term/klog.h"

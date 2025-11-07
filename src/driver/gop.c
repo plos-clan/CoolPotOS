@@ -1,17 +1,9 @@
 #include "driver/gop.h"
 #include "driver/tty.h"
 #include "lib/sprintf.h"
-#include "limine.h"
 #include "mem/heap.h"
 
-LIMINE_REQUEST struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
-
-struct limine_framebuffer_response *get_framebuffer_response() {
-    return framebuffer_request.response;
-}
-
-void gop_clear(struct limine_framebuffer *framebuffer, uint32_t color) {
+void gop_clear(struct boot_framebuffer *framebuffer, uint32_t color) {
     uint64_t stride = framebuffer->pitch / 4;
 
     for (size_t y = 0; y < framebuffer->height; y++) {
@@ -22,14 +14,13 @@ void gop_clear(struct limine_framebuffer *framebuffer, uint32_t color) {
 }
 
 void init_gop() {
-    struct limine_framebuffer_response *response = get_framebuffer_response();
-    for (size_t i = 0; i < response->framebuffer_count; i++) {
-        struct limine_framebuffer *framebuffer = response->framebuffers[i];
+    for (size_t i = 0; i < boot_framebuffer_count(); i++) {
+        struct boot_framebuffer *framebuffer = boot_get_framebuffer(i);
 
         tty_device_t         *device   = alloc_tty_device(TTY_DEVICE_GRAPHI);
         struct tty_graphics_ *graphics = malloc(sizeof(struct tty_graphics_));
 
-        graphics->address = framebuffer->address;
+        graphics->address = (void *)framebuffer->address;
         graphics->width   = framebuffer->width;
         graphics->height  = framebuffer->height;
         graphics->bpp     = framebuffer->bpp;

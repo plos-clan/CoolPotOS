@@ -82,6 +82,8 @@
 #define DRIVER_AREA_MEM       0xffffb00000000000   // 驱动恒等映射空间偏移
 #define SCHED_TIMER_SPEED     100                  // 调度时钟频率 100Hz
 #define MAX_STACK_SIZE        131072               // 增强栈大小 128k
+#define MAX_FRAMEBUFFER       10                   // 最大帧缓冲区个数识别
+#define MAX_LOAD_MODULE       256                  // 最大模块加载数
 
 // 内核编译配置选项
 #define EEVDF_SCHEDULER 0 // 是否启用EEVDF调度器

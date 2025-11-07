@@ -4,17 +4,8 @@
 #include "driver/uacpi/uacpi.h"
 #include "driver/uacpi/utilities.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "term/klog.h"
 
-LIMINE_REQUEST struct limine_rsdp_request rsdp_request = {
-    .id = LIMINE_RSDP_REQUEST,
-    .revision  = 0
-};
-
-uintptr_t boot_get_acpi_rsdp() {
-    return (uintptr_t)rsdp_request.response->address;
-}
 
 void acpi_init() {
     uacpi_status ret = uacpi_initialize(0);

@@ -8,7 +8,6 @@
 #define MEGA_FACTOR (1UL << MEGA_SHIFT) // 1048576
 #define GIGA_FACTOR (1UL << GIGA_SHIFT) // 1073741824
 
-#include "limine.h"
 #include "metadata.h"
 #include "types.h"
 
@@ -20,7 +19,6 @@ typedef struct {
 
 extern FrameAllocator frame_allocator;
 
-struct limine_memmap_response *get_memory_map();
 uint64_t                       get_memory_size();
 
 void     init_frame();
