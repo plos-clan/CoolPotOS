@@ -65,6 +65,7 @@ target_compile_options(kernel PRIVATE
         -Wno-unused-function
         -flto
         -fstack-protector
+        -fstack-protector-all
 )
 
 file(GLOB_RECURSE FS_SOURCES "src/fs/*.c")
