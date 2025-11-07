@@ -1,17 +1,8 @@
 #include "bootarg.h"
 #include "krlibc.h"
-#include "limine.h"
 
 static boot_param_t params[MAX_PARAMS];
 static int          param_count = 0;
-
-LIMINE_REQUEST struct limine_executable_cmdline_request cmdline_request = {
-    .id = LIMINE_EXECUTABLE_CMDLINE_REQUEST,
-};
-
-char *get_kernel_cmdline() {
-    return cmdline_request.response->cmdline;
-}
 
 int boot_parse_cmdline(const char *cmdline) {
     param_count = 0;

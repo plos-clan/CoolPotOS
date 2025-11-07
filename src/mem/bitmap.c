@@ -12,12 +12,14 @@ void bitmap_init(Bitmap *bitmap, uint8_t *buffer, size_t size) {
 bool bitmap_get(const Bitmap *bitmap, size_t index) {
     size_t word_index = index / 8;
     size_t bit_index  = index % 8;
+    if(unlikely(word_index > bitmap->length)) return false;
     return (bitmap->buffer[word_index] >> bit_index) & 1;
 }
 
 void bitmap_set(Bitmap *bitmap, size_t index, bool value) {
     size_t word_index = index / 8;
     size_t bit_index  = index % 8;
+    if(unlikely(word_index > bitmap->length)) return;
     if (value) {
         bitmap->buffer[word_index] |= ((size_t)1UL << bit_index);
     } else {

@@ -4,6 +4,7 @@
  */
 #include "mem/buddy.h"
 #include "krlibc.h"
+#include "boot.h"
 #include "mem/bitmap.h"
 #include "mem/frame.h"
 #include "mem/page.h"
@@ -607,7 +608,7 @@ static void process_memory_region(uintptr_t start, uintptr_t end) {
 }
 
 void init_frame_buddy(uint64_t memory_size) {
-    struct limine_memmap_response *memory_map = get_memory_map();
+    boot_memory_map_t *memory_map = boot_get_memory_map();
 
     if (!memory_map) return;
 
@@ -618,13 +619,13 @@ void init_frame_buddy(uint64_t memory_size) {
     uint64_t bitmap_address = 0;
 
     for (uint64_t i = 0; i < memory_map->entry_count; i++) {
-        struct limine_memmap_entry *region = memory_map->entries[i];
+        struct boot_memory_map_entry *region = &memory_map->entries[i];
 
 #if defined(__x86_64__)
         if (region->base < 0x100000) continue;
 #endif
 
-        if (region->type == LIMINE_MEMMAP_USABLE) {
+        if (region->type == BOOT_MMAP_USABLE) {
             if (region->length >= bitmap_size) {
                 bitmap_address = region->base;
                 break;
@@ -636,7 +637,7 @@ void init_frame_buddy(uint64_t memory_size) {
 
     size_t origin_frames = 0;
     for (uint64_t i = 0; i < memory_map->entry_count; i++) {
-        struct limine_memmap_entry *region = memory_map->entries[i];
+        struct boot_memory_map_entry *region = &memory_map->entries[i];
 
         size_t start_frame = region->base / PAGE_SIZE;
         size_t frame_count = region->length / PAGE_SIZE;
@@ -645,7 +646,7 @@ void init_frame_buddy(uint64_t memory_size) {
         if (region->base < 0x100000) continue;
 #endif
 
-        if (region->type == LIMINE_MEMMAP_USABLE) {
+        if (region->type == BOOT_MMAP_USABLE) {
             origin_frames += frame_count;
             bitmap_set_range(&usable_regions, start_frame, start_frame + frame_count, true);
         }
@@ -662,13 +663,13 @@ void init_frame_buddy(uint64_t memory_size) {
 
     zones_init(memory_size);
     for (uint64_t i = 0; i < memory_map->entry_count; i++) {
-        struct limine_memmap_entry *region = memory_map->entries[i];
+        struct boot_memory_map_entry *region = &memory_map->entries[i];
 
 #if defined(__x86_64__)
         if (region->base < 0x100000) continue;
 #endif
 
-        if (region->type != LIMINE_MEMMAP_USABLE) continue;
+        if (region->type != BOOT_MMAP_USABLE) continue;
 
         uint64_t addr = region->base;
         uint64_t len  = region->length;

@@ -42,3 +42,7 @@ struct pt_regs {
     uint64_t stval;   // 异常值
     uint64_t sstatus; // 机器状态寄存器
 };
+
+struct syscall_regs {
+    struct pt_regs regs;
+};

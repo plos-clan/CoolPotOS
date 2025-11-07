@@ -33,6 +33,8 @@
 
 #if defined(__x86_64__) || defined(__amd64__)
 #    include "page_x64.h"
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+#    include "page_rv64.h"
 #endif
 
 page_directory_t *get_kernel_pagedir();

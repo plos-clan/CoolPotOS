@@ -1,14 +1,9 @@
 #include "mod/module.h"
+#include "boot.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "mem/heap.h"
 
-LIMINE_REQUEST struct limine_module_request modules_request = {
-    .id       = LIMINE_MODULE_REQUEST,
-    .revision = 0,
-};
-
-module_t boot_modules[256];
+module_t boot_modules[MAX_LOAD_MODULE];
 size_t modules_count = 0;
 
 void extract_name(const char *input, char *output, size_t output_size) {
@@ -48,13 +43,15 @@ module_t *get_module_raw(const char *module_name) {
 }
 
 void load_module() {
-    for (uint64_t i = 0; i < modules_request.response->module_count; i++) {
-        boot_modules[i].path = strdup(modules_request.response->modules[i]->path);
-        boot_modules[i].size = modules_request.response->modules[i]->size;
+    boot_module_t *boot_modules0[MAX_LOAD_MODULE];
+    boot_get_modules(boot_modules0, &modules_count);
+
+    for (uint64_t i = 0; i < modules_count; i++) {
+        boot_modules[i].path = strdup(boot_modules0[i]->path);
+        boot_modules[i].size = boot_modules0[i]->size;
         boot_modules[i].data = malloc(boot_modules[i].size);
-        memcpy(boot_modules[i].data, modules_request.response->modules[i]->address,
+        memcpy(boot_modules[i].data, boot_modules0[i]->data,
                boot_modules[i].size);
         extract_name(boot_modules[i].path, boot_modules[i].name, sizeof(char) * 20);
     }
-    modules_count = modules_request.response->module_count;
 }

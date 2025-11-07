@@ -1,28 +1,21 @@
 #include "mem/frame.h"
 #include "mem/buddy.h"
 #include "mem/page.h"
-#include "limine.h"
 #include "bootarg.h"
 #include "krlibc.h"
-
-LIMINE_REQUEST struct limine_memmap_request memmap_request = {
-    .id       = LIMINE_MEMMAP_REQUEST,
-    .revision = 0,
-};
-
-LIMINE_REQUEST struct limine_hhdm_request hhdm_request = {.id = LIMINE_HHDM_REQUEST, .revision = 0};
+#include "boot.h"
 
 static uint64_t physical_memory_offset;
 FrameAllocator  frame_allocator;
 
 uint64_t get_memory_size() {
     uint64_t                       all_memory_size = 0;
-    struct limine_memmap_response *memory_map      = memmap_request.response;
+    boot_memory_map_t *memory_map      = boot_get_memory_map();
 
     for (uint64_t i = memory_map->entry_count - 1;; i--) {
-        struct limine_memmap_entry *region = memory_map->entries[i];
-        if (region->type == LIMINE_MEMMAP_USABLE) {
-            all_memory_size = region->base + region->length;
+        struct boot_memory_map_entry region = memory_map->entries[i];
+        if (region.type == BOOT_MMAP_USABLE) {
+            all_memory_size = region.base + region.length;
             break;
         }
     }
@@ -63,7 +56,7 @@ uint64_t mem_parse_size(const char *s) {
 }
 
 void init_frame() {
-    physical_memory_offset = hhdm_request.response->offset;
+    physical_memory_offset = boot_get_hhdm_offset();
     const char    *mem_str = boot_get_cmdline_param("mem");
     uint64_t memory_size = 0;
 
@@ -78,10 +71,6 @@ void init_frame() {
     }
 
     init_frame_buddy(memory_size);
-}
-
-struct limine_memmap_response *get_memory_map() {
-    return memmap_request.response;
 }
 
 uint64_t get_physical_memory_offset() {

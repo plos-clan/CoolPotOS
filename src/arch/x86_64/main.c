@@ -39,21 +39,10 @@
 #include "term/klog.h"
 #include "timer.h"
 
-USED SECTION(".limine_requests_start") static volatile LIMINE_REQUESTS_START_MARKER;
-USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
-
-LIMINE_REQUEST LIMINE_BASE_REVISION(3);
-
-LIMINE_REQUEST struct limine_stack_size_request stack_request = {
-    .id         = LIMINE_STACK_SIZE_REQUEST,
-    .revision   = 0,
-    .stack_size = MAX_STACK_SIZE // 128K
-};
-
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
 
-    gop_clear(get_framebuffer_response()->framebuffers[0],0xffffff);
+    gop_clear(boot_get_framebuffer(0),0xffffff);
 
     init_frame();
     init_page();

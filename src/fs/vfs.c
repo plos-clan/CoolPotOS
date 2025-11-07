@@ -11,7 +11,7 @@
 #include "term/klog.h"
 
 static void empty_func() {}
-vfs_node_t rootdir = NULL;
+vfs_node_t  rootdir = NULL;
 
 struct vfs_callback   vfs_empty_callback;
 struct vfs_filesystem vfs_empty_filesystem;
@@ -21,10 +21,9 @@ vfs_callback_t fs_callbacks[256] = {
 };
 
 struct llist_header fs_metadata_list;
-static int fs_nextid = 1;
+static int          fs_nextid = 1;
 
 #define callbackof(node, _name_) (fs_callbacks[(node)->fsid]->_name_)
-
 
 static inline char *pathtok(char **sp) {
     char *s = *sp;
@@ -97,7 +96,6 @@ char *at_resolve_pathname(int dirfd, char *pathname) {
 
     return NULL;
 }
-
 
 static inline void do_open(vfs_node_t file) {
     if (file->handle != NULL) {
@@ -427,7 +425,6 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     return node;
 }
 
-
 errno_t vfs_close(vfs_node_t node) {
     if (unlikely(node == NULL)) return -EINVAL;
     if (node == rootdir) return EOK;
@@ -465,13 +462,13 @@ void vfs_free_child(vfs_node_t vfs) {
     list_free_with(vfs->child, (void (*)(void *))vfs_free);
 }
 
-errno_t vfs_mount(const char *src,const char *type, vfs_node_t node) {
+errno_t vfs_mount(const char *src, const char *type, vfs_node_t node) {
     if (node == NULL || type == NULL) return -EINVAL;
     if (node->type != file_dir) return -EINVAL;
 
-    vfs_filesystem_t fs = get_filesystem((char*)type);
-    if(fs == NULL) return -ENODEV;
-    if(fs->callback->mount(src,node) == 0) {
+    vfs_filesystem_t fs = get_filesystem((char *)type);
+    if (fs == NULL) return -ENODEV;
+    if (fs->callback->mount(src, node) == 0) {
         node->fsid     = fs->fsid;
         node->root     = node;
         node->is_mount = true;
@@ -596,11 +593,16 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
                   uint64_t flags, uint64_t offset) {
     UNUSED(flags);
 
+#if defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+    uint64_t pt_flags = ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ;
+    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#elif defined(__x86_64__) || defined(__amd64__)
     uint64_t pt_flags = PTE_USER | PTE_WRITEABLE | PTE_PRESENT;
 
     if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
     if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
     if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+#endif
 
     page_map_range_to_random(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
                              (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
@@ -628,4 +630,3 @@ bool vfs_init() {
     kinfo("Virtual File System initialize.");
     return true;
 }
-
