@@ -8,6 +8,7 @@
 #include "task/scheduler.h"
 #include "task/smp.h"
 #include "syscall.h"
+#include "security.h"
 
 extern struct idt_register idt_pointer;
 
@@ -46,7 +47,6 @@ static void apu_gdt_setup() {
                        "a"(&_setcs_helper), "b"((uint16_t)0x8U)
                      : "memory");
 
-    write_fsbase(0);
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
 
@@ -69,7 +69,6 @@ static void apu_gdt_setup() {
 void arch_bsp_cpu_init() {
     uint32_t     this_id  = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
-    write_fsbase(0);
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
 }
@@ -79,6 +78,8 @@ cpu_local_t *arch_current_cpu() {
 }
 
 _Noreturn void arch_ap_cpu_entry() {
+    init_stack_canary();
+
     page_table_t *physical_table = (page_table_t *)virt_to_phys(get_kernel_pagedir()->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
     apu_gdt_setup();
@@ -97,6 +98,7 @@ _Noreturn void arch_ap_cpu_entry() {
     arch_context_init(&idle_thread->context);
     arch_enable_syscall();
     arch_open_interrupt();
+
     while (true)
         arch_wait_for_interrupt();
 }

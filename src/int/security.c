@@ -6,12 +6,26 @@
 #include "task/scheduler.h"
 #include "term/klog.h"
 #include "timer.h"
+#include "fsgsbase.h"
+#include "metadata.h"
 
-uintptr_t __stack_chk_guard = 0;
+static struct pthread pthread_self;
 
-void init_stack_canary() {
-    __stack_chk_guard = sched_clock() ^ 0xDEADBEEF;
-    kinfo("stack canary initialized to 0x%llX", (uint64_t)__stack_chk_guard);
+uint64_t __stack_chk_guard;
+
+void test_stack_chk(void) {
+    int val       = 1234;
+    *(long *)&val = 5678;
+}
+
+__attr(always_inline) void init_stack_canary(void) {
+    __stack_chk_guard = (uint64_t)&__stack_chk_guard * 1103515245;
+    pthread_self.self = &pthread_self;
+    pthread_self.canary = __stack_chk_guard;
+    uint64_t chk_base_value = (uint64_t)&pthread_self;
+#if defined(__x86_64__) || defined(__amd64__)
+    __asm__ volatile("wrmsr" : : "c"(IA32_FS_BASE), "a"(chk_base_value), "d"(chk_base_value >> 32));
+#endif
 }
 
 _Noreturn USED void __stack_chk_fail() {

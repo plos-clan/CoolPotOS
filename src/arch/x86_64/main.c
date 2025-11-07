@@ -40,9 +40,11 @@
 #include "timer.h"
 
 USED _Noreturn void kmain() {
+    init_stack_canary();
+
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
 
-    gop_clear(boot_get_framebuffer(0),0xffffff);
+    gop_clear(boot_get_framebuffer(0), 0xffffff);
 
     init_frame();
     init_page();
@@ -66,7 +68,6 @@ USED _Noreturn void kmain() {
     intctl_init();
     acpi_init();
     hpet_init();
-    init_stack_canary();
     apic_init();
     pci_init();
     acpi_namespace_setup();
@@ -105,9 +106,9 @@ USED _Noreturn void kmain() {
 
     launch_init_process();
 
-//    for (int i = 0; i < 10; i++) {
-//        create_kernel_thread("test_thread",(void*)test_proc,NULL,NULL, NICE_TO_PRIO(0));
-//    }
+    //    for (int i = 0; i < 10; i++) {
+    //        create_kernel_thread("test_thread",(void*)test_proc,NULL,NULL, NICE_TO_PRIO(0));
+    //    }
 
     while (true)
         arch_wait_for_interrupt();
