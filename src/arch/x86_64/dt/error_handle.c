@@ -6,6 +6,8 @@
 #include "task/task.h"
 #include "term/klog.h"
 
+extern void print_kernel_backtrace(struct interrupt_frame *frame);
+
 __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_code) {
     if (get_current_task() != NULL) {
         pcb_t process = get_current_task()->process;
@@ -20,6 +22,7 @@ __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_cod
         arch_close_interrupt();
 
     kerror("divide_error: error_code %x at %p", error_code, frame->rip);
+    print_kernel_backtrace(frame);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -134,6 +137,7 @@ __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_c
         arch_close_interrupt();
 
     kerror("invalid_opcode: error_code %x at %p", error_code, frame->rip);
+    print_kernel_backtrace(frame);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -210,6 +214,7 @@ __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t er
         arch_close_interrupt();
 
     kerror("segment_not_present: error_code %x at %p", error_code, frame->rip);
+    print_kernel_backtrace(frame);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -229,6 +234,7 @@ __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t er
         arch_close_interrupt();
 
     kerror("stack_segment_fault: error_code %x at %p", error_code, frame->rip);
+    print_kernel_backtrace(frame);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -251,6 +257,7 @@ __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64
         arch_close_interrupt();
 
     kerror("general_protection_fault: %x at %p", error_code, frame->rip);
+    print_kernel_backtrace(frame);
     if (is_debug) return;
 err:;
     while (true)
@@ -291,6 +298,7 @@ msg:;
         printk("Current process(%s:%d) thread %s:%d\n", current_task->process->name,
                current_task->process->pid, current_task->name, current_task->tid);
     }
+    print_kernel_backtrace(frame);
     arch_close_interrupt();
 wfi:
     if (is_debug) return;
