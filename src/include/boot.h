@@ -45,10 +45,11 @@ typedef struct boot_module {
     size_t size;
 } boot_module_t;
 
-uintptr_t boot_get_acpi_rsdp();
-void      boot_get_modules(boot_module_t **modules, size_t *count);
-size_t    boot_framebuffer_count();
+uintptr_t           boot_get_acpi_rsdp();
+void                boot_get_modules(boot_module_t **modules, size_t *count);
+size_t              boot_framebuffer_count();
 boot_framebuffer_t *boot_get_framebuffer(size_t index);
 uint64_t            boot_get_hhdm_offset();
 boot_memory_map_t  *boot_get_memory_map();
 char               *get_kernel_cmdline();
+uint64_t            boot_get_dtb();

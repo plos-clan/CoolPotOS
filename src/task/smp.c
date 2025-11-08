@@ -1,6 +1,5 @@
 #include "task/smp.h"
 #include "krlibc.h"
-#include "limine.h"
 #include "mem/buddy.h"
 #include "term/klog.h"
 

@@ -51,10 +51,9 @@ endif()
 
 add_custom_target(run
         DEPENDS kernel
-        COMMAND qemu-system-riscv64 -machine virt -cpu rv64 -smp 2 -m 2G
-        -kernel $<TARGET_FILE:kernel>
-        -initrd ${CMAKE_CURRENT_SOURCE_DIR}/assets/initramfs.img
-        -append "console=ttyS0 init=/initrc"
-        -nographic ${RUN_ARG}
+        COMMAND echo qemu-system-riscv64 -machine virt -cpu rv64 -smp 2 -m 2G -kernel $<TARGET_FILE:kernel>
+        # -initrd ${CMAKE_CURRENT_SOURCE_DIR}/assets/initramfs.img
+        -append "console=ttyS0"
+        ${RUN_ARG}
         COMMENT "Running QEMU for RISC-V64..."
 )

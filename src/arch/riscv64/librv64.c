@@ -1,4 +1,5 @@
 #include "krlibc.h"
+#include "io.h"
 
 void arch_pause() {
     __asm__ volatile("nop");
@@ -6,6 +7,20 @@ void arch_pause() {
 
 void arch_wait_for_interrupt() {
     __asm__ volatile("wfi");
+}
+
+void arch_open_interrupt() {
+    csr_set(sstatus, (1 << 1)); /* SIE */
+}
+
+void arch_close_interrupt() {
+    csr_clear(sstatus, (1 << 1)); /* SIE */
+}
+
+bool arch_check_interrupt(void) {
+    uint64_t sstatus;
+    __asm__ volatile("csrr %0, sstatus" : "=r"(sstatus));
+    return (sstatus & SSTATUS_SIE) != 0;
 }
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {

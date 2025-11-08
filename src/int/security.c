@@ -3,11 +3,14 @@
  */
 #include "security.h"
 #include "krlibc.h"
+#include "metadata.h"
 #include "task/scheduler.h"
 #include "term/klog.h"
 #include "timer.h"
-#include "fsgsbase.h"
-#include "metadata.h"
+
+#if defined(__x86_64__) || defined(__amd64__)
+#    include "fsgsbase.h"
+#endif
 
 static struct pthread pthread_self;
 
@@ -19,9 +22,9 @@ void test_stack_chk(void) {
 }
 
 __attr(always_inline) void init_stack_canary(void) {
-    __stack_chk_guard = (uint64_t)&__stack_chk_guard * 1103515245;
-    pthread_self.self = &pthread_self;
-    pthread_self.canary = __stack_chk_guard;
+    __stack_chk_guard       = (uint64_t)&__stack_chk_guard * 1103515245;
+    pthread_self.self       = &pthread_self;
+    pthread_self.canary     = __stack_chk_guard;
     uint64_t chk_base_value = (uint64_t)&pthread_self;
 #if defined(__x86_64__) || defined(__amd64__)
     __asm__ volatile("wrmsr" : : "c"(IA32_FS_BASE), "a"(chk_base_value), "d"(chk_base_value >> 32));

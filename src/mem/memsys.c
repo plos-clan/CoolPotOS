@@ -93,12 +93,22 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
         return ret;
     }
 
-    uint64_t pt_flags = PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-
+    uint64_t pt_flags =
+#if defined(__x86_64__) || defined(__amd64__)
+        PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+        ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
+#endif
     if (prot != PROT_NONE) {
+#if defined(__x86_64__) || defined(__amd64__)
         if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
         if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
         if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+        if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
+        if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
+        if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#endif
     }
 
     lazy_infoalloc(process, start_addr, aligned_len, pt_flags, flags);
@@ -185,11 +195,18 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
     // 如果需要扩大，检查是否有足够空间
     uint64_t new_end = vma->vm_start + new_size;
     if (!vma_find_intersection(mgr, vma->vm_end, new_end)) {
-        uint64_t pt_flags = PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-
+        uint64_t pt_flags =
+#if defined(__x86_64__) || defined(__amd64__)
+            PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
         if (vma->vm_flags & VMA_READ) pt_flags |= PTE_PRESENT;
         if (vma->vm_flags & VMA_WRITE) pt_flags |= PTE_WRITEABLE;
         if (!(vma->vm_flags & VMA_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+            ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
+        if (vma->vm_flags & VMA_READ) pt_flags |= ARCH_PT_FLAG_VALID;
+        if (vma->vm_flags & VMA_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
+        if (vma->vm_flags & VMA_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#endif
 
         page_map_range(get_current_directory(), vma->vm_end,
                        old_addr_phys + vma->vm_end - vma->vm_start, new_end - vma->vm_end,
@@ -220,11 +237,18 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
             return SYSCALL_FAULT_(ENOMEM);
         }
 
-        uint64_t pt_flags = PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-
+        uint64_t pt_flags =
+#if defined(__x86_64__) || defined(__amd64__)
+            PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
         if (new_vma->vm_flags & VMA_READ) pt_flags |= PTE_PRESENT;
         if (new_vma->vm_flags & VMA_WRITE) pt_flags |= PTE_WRITEABLE;
         if (!(new_vma->vm_flags & VMA_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+            ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
+        if (new_vma->vm_flags & VMA_READ) pt_flags |= ARCH_PT_FLAG_VALID;
+        if (new_vma->vm_flags & VMA_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
+        if (new_vma->vm_flags & VMA_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#endif
 
         page_map_range(get_current_directory(), start_addr, old_addr_phys, new_size, pt_flags);
 
@@ -241,11 +265,20 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
 
     if (check_user_overflow(addr, length)) { return SYSCALL_FAULT_(EFAULT); }
 
-    uint64_t pt_flags = PTE_USER;
+    uint64_t pt_flags =
+#if defined(__x86_64__) || defined(__amd64__)
+        PTE_USER;
 
     if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
     if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
     if (prot & PROT_EXEC) pt_flags |= PTE_USER;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+        ARCH_PT_FLAG_USER;
+
+    if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
+    if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
+    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_USER;
+#endif
 
     map_change_attribute_range(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
                                (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
