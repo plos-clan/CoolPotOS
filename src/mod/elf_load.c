@@ -15,8 +15,19 @@ void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool
     if (load_start != NULL) {
         if (lo < *load_start) { *load_start = lo; }
     }
-    uint64_t flags = PTE_PRESENT | PTE_WRITEABLE;
-    if (is_user) flags |= PTE_USER;
+    uint64_t flags =
+#if  defined(__x86_64__) || defined(__amd64__)
+        PTE_PRESENT | PTE_WRITEABLE;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+        ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_EXEC;
+#endif
+
+    if (is_user)
+#if  defined(__x86_64__) || defined(__amd64__)
+        flags |= PTE_USER;
+#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+        flags |= ARCH_PT_FLAG_USER;
+#endif
     if ((phdr->p_flags & PF_R) && !(phdr->p_flags & PF_W)) {
         for (size_t i = lo; i < hi; i += 0x1000) {
             page_map_to(directory, i, alloc_frames(1), flags);

@@ -34,10 +34,10 @@
 #define MIN(x, y) ((x < y) ? (x) : (y))
 
 #define ___PASTE(a, b) a##b
-#define __PASTE(a, b) ___PASTE(a, b)
+#define __PASTE(a, b)  ___PASTE(a, b)
 
 #ifndef __UNIQUE_ID
-# define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
+#    define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
 #endif
 
 #include "metadata.h"
@@ -68,7 +68,6 @@ static inline errno_t dummy() {
     return 0;
 }
 
-
 void not_null_assert(void *ptr, const char *msg);
 
 void   *memset(void *dest, int c, size_t n);
@@ -90,6 +89,7 @@ char   *strncpy(char *dest, const char *src, size_t n);
 int64_t strtol(const char *str, char **endptr, int base);
 int     memcmp(const void *a_, const void *b_, size_t size);
 void   *memcpy(void *dest, const void *src, size_t n);
+char   *strstr(const char *h, const char *n);
 
 int isdigit(int c);
 int isspace(int c);

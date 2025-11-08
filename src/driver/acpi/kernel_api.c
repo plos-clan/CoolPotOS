@@ -1,4 +1,5 @@
 #include "driver/pci/pci.h"
+#include "task/task.h"
 #include <driver/acpi.h>
 #include <driver/uacpi/kernel_api.h>
 #include <intctl.h>

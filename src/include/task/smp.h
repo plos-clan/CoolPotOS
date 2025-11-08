@@ -3,7 +3,9 @@
 #include "mem/page.h"
 #include "task.h"
 
-#if defined(__x86_64__) || defined(__amd64__)
+#if defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+#    include "smp_rv64.h"
+#elif defined(__x86_64__) || defined(__amd64__)
 #    include "smp_x64.h"
 #endif
 

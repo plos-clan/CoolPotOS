@@ -204,13 +204,6 @@ void switch_page_directory0(page_directory_t *dir) {
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }
 
-void switch_page_directory(page_directory_t *dir) {
-    if (arch_current_cpu()) {
-        arch_current_cpu()->directory = dir;
-    }
-    switch_page_directory0(dir);
-}
-
 void arch_page_setup_l2() {
     page_directory_t *new_directory = clone_page_directory(&kernel_page_dir, true);
     kernel_page_dir.table           = new_directory->table;

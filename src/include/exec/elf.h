@@ -2779,4 +2779,68 @@ typedef Elf32_Addr Elf32_Conflict;
 #    define R_M32R_GOTOFF_LO 64  /* Low 16 bit offset to GOT */
 #    define R_M32R_NUM       256 /* Keep this the last entry. */
 
+/* RISCV relocations. */
+#define R_RISCV_NONE 0      // 无操作
+#define R_RISCV_32 1        // 32 位绝对地址
+#define R_RISCV_64 2        // 64 位绝对地址
+#define R_RISCV_RELATIVE 3  // 相对基地址的重定位
+#define R_RISCV_COPY 4      // 复制符号
+#define R_RISCV_JUMP_SLOT 5 // PLT 跳转槽
+
+/* TLS (Thread Local Storage) 重定位 */
+#define R_RISCV_TLS_DTPMOD32 6 // 32 位 TLS 模块 ID
+#define R_RISCV_TLS_DTPMOD64 7 // 64 位 TLS 模块 ID
+#define R_RISCV_TLS_DTPREL32 8 // 32 位 TLS 偏移
+#define R_RISCV_TLS_DTPREL64 9 // 64 位 TLS 偏移
+#define R_RISCV_TLS_TPREL32 10 // 32 位 TLS TP 相对偏移
+#define R_RISCV_TLS_TPREL64 11 // 64 位 TLS TP 相对偏移
+
+/* 分支和跳转重定位 */
+#define R_RISCV_BRANCH 16       // PC 相对分支
+#define R_RISCV_JAL 17          // PC 相对跳转
+#define R_RISCV_CALL 18         // PC 相对调用
+#define R_RISCV_CALL_PLT 19     // PC 相对 PLT 调用
+#define R_RISCV_GOT_HI20 20     // GOT 表高 20 位
+#define R_RISCV_TLS_GOT_HI20 21 // TLS GOT 高 20 位
+#define R_RISCV_TLS_GD_HI20 22  // TLS GD 高 20 位
+
+/* PC 相对重定位 */
+#define R_RISCV_PCREL_HI20 23   // PC 相对高 20 位
+#define R_RISCV_PCREL_LO12_I 24 // PC 相对低 12 位（I 型）
+#define R_RISCV_PCREL_LO12_S 25 // PC 相对低 12 位（S 型）
+
+/* HI20/LO12 重定位 */
+#define R_RISCV_HI20 26   // 高 20 位
+#define R_RISCV_LO12_I 27 // 低 12 位（I 型）
+#define R_RISCV_LO12_S 28 // 低 12 位（S 型）
+
+/* TPREL 重定位 */
+#define R_RISCV_TPREL_HI20 29   // TLS TP 相对高 20 位
+#define R_RISCV_TPREL_LO12_I 30 // TLS TP 相对低 12 位（I 型）
+#define R_RISCV_TPREL_LO12_S 31 // TLS TP 相对低 12 位（S 型）
+#define R_RISCV_TPREL_ADD 32    // TLS TP 相对加法
+
+/* 其他常用重定位 */
+#define R_RISCV_ADD8 33  // 8 位加法
+#define R_RISCV_ADD16 34 // 16 位加法
+#define R_RISCV_ADD32 35 // 32 位加法
+#define R_RISCV_ADD64 36 // 64 位加法
+#define R_RISCV_SUB8 37  // 8 位减法
+#define R_RISCV_SUB16 38 // 16 位减法
+#define R_RISCV_SUB32 39 // 32 位减法
+#define R_RISCV_SUB64 40 // 64 位减法
+
+/* 对齐和松弛相关 */
+#define R_RISCV_ALIGN 43      // 对齐
+#define R_RISCV_RVC_BRANCH 44 // RVC 分支
+#define R_RISCV_RVC_JUMP 45   // RVC 跳转
+#define R_RISCV_RELAX 51      // 链接时松弛
+
+/* 扩展重定位 */
+#define R_RISCV_SUB6 52  // 6 位减法
+#define R_RISCV_SET6 53  // 设置 6 位
+#define R_RISCV_SET8 54  // 设置 8 位
+#define R_RISCV_SET16 55 // 设置 16 位
+#define R_RISCV_SET32 56 // 设置 32 位
+
 #endif /* elf.h */

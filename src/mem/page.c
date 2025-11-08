@@ -60,6 +60,13 @@ uint64_t map_change_attribute_range(page_directory_t *directory, uint64_t vaddr,
     return 0;
 }
 
+void switch_page_directory(page_directory_t *dir) {
+    if (arch_current_cpu()) {
+        arch_current_cpu()->directory = dir;
+    }
+    switch_page_directory0(dir);
+}
+
 page_directory_t *switch_context_directory(page_directory_t *directory){
     tcb_t thread = get_current_task();
     if(thread == NULL) return NULL;

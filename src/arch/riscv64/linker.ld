@@ -21,7 +21,9 @@ SECTIONS
     /* and because that is what the Limine spec mandates. */
     /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
     /* that is the beginning of the region. */
-    . = 0xffffffff80000000;
+    /* . = 0xffffffff80000000;*/
+    . = 0x20000000;
+    _kernel_start = .;
 
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
     .limine_requests : {
@@ -73,9 +75,14 @@ SECTIONS
         *(COMMON)
     } :data
 
+    . = ALIGN(16);
+    . += 0x8000;          /* 32 KiB Stack */
+    _boot_stack_top = .;  /* stack top */
+
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
         *(.eh_frame*)
         *(.note .note.*)
     }
+    _kernel_end = .;
 }
