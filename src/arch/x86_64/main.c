@@ -39,13 +39,14 @@
 #include "term/klog.h"
 #include "timer.h"
 
+extern void kallsyms_init_from_elf();
+
 USED _Noreturn void kmain() {
     init_stack_canary();
 
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
 
     gop_clear(boot_get_framebuffer(0), 0xffffff);
-
     init_frame();
     init_page();
     init_heap();
@@ -60,6 +61,7 @@ USED _Noreturn void kmain() {
     gdt_setup();
     idt_setup();
     init_err_handle();
+    kallsyms_init_from_elf();
     generic_interrupt_table_init();
     load_module();
     init_block_device_manager();

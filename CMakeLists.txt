@@ -51,6 +51,7 @@ else()
     set(COMPILE_MODE
             -g3
             -O0
+            -fno-omit-frame-pointer
     )
 endif()
 
