@@ -6,9 +6,11 @@
 #include "task/task.h"
 #include "term/klog.h"
 
-extern void print_kernel_backtrace(struct interrupt_frame *frame);
+extern void print_kernel_backtrace(struct interrupt_frame *frame,uint64_t saved_rbp);
 
 __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_code) {
+    uint64_t saved_rbp;
+    __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
     if (get_current_task() != NULL) {
         pcb_t process = get_current_task()->process;
         if (process->pid != 0) {
@@ -22,7 +24,7 @@ __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_cod
         arch_close_interrupt();
 
     kerror("divide_error: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame);
+    print_kernel_backtrace(frame,saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -124,6 +126,8 @@ err:;
 }
 
 __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_code) {
+    uint64_t saved_rbp;
+    __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
     if (get_current_task() != NULL) {
         pcb_t process = get_current_task()->process;
         if (process->pid != 0) {
@@ -137,7 +141,7 @@ __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_c
         arch_close_interrupt();
 
     kerror("invalid_opcode: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame);
+    print_kernel_backtrace(frame,saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -201,6 +205,8 @@ err:;
 }
 
 __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t error_code) {
+    uint64_t saved_rbp;
+    __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
     if (get_current_task() != NULL) {
         pcb_t process = get_current_task()->process;
         if (process->pid != 0) {
@@ -214,13 +220,15 @@ __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t er
         arch_close_interrupt();
 
     kerror("segment_not_present: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame);
+    print_kernel_backtrace(frame,saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t error_code) {
+    uint64_t saved_rbp;
+    __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
     if (get_current_task() != NULL) {
         pcb_t process = get_current_task()->process;
         if (process->pid != 0) {
@@ -234,7 +242,7 @@ __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t er
         arch_close_interrupt();
 
     kerror("stack_segment_fault: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame);
+    print_kernel_backtrace(frame,saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -243,7 +251,8 @@ err:;
 USED volatile int is_debug;
 
 __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64_t error_code) {
-
+    uint64_t saved_rbp;
+    __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
     if (get_current_task() != NULL) {
         pcb_t process = get_current_task()->process;
         if (process->pid != 0) {
@@ -257,7 +266,7 @@ __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64
         arch_close_interrupt();
 
     kerror("general_protection_fault: %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame);
+    print_kernel_backtrace(frame,saved_rbp);
     if (is_debug) return;
 err:;
     while (true)
@@ -265,40 +274,44 @@ err:;
 }
 
 __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code) {
+    uint64_t saved_rbp;
+    __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
     arch_close_interrupt();
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     tcb_t current_task = get_current_task();
+    char *error_msg    = !(error_code & 0x1) ? "NotPresent"
+                         : error_code & 0x2  ? "WriteError"
+                         : error_code & 0x4  ? "UserMode"
+                         : error_code & 0x8  ? "ReservedBitsSet"
+                         : error_code & 0x10 ? "DecodeAddress"
+                                             : "Unknown";
     if (likely(current_task != NULL)) {
-        if(current_task->process == NULL) {
+        if (current_task->process == NULL) {
             logkf("ERROR: HANDLE NULL TO #PF CURRENT TASK\n\r");
             goto wfi;
         }
         if (current_task->process->pid == 0) goto msg;
+        if(faulting_address < 0x1000) goto kill;
         errno_t status = lazy_tryalloc(current_task->process, faulting_address);
         if (status == EOK) {
             arch_open_interrupt();
             return;
         }
-        logkf("page_fault %p process(%s:%d) thread %s:%d\n", current_task->process->name,
+    kill:
+        logkf("page_fault %s process(%s:%d) thread %s:%d\n", error_msg, current_task->process->name,
               current_task->process->pid, current_task->name, current_task->tid);
         pcb_t process = current_task->process;
         if (process->pid != 0) kill_proc(process, -1, true);
         goto wfi;
     }
 msg:;
-    char *error_msg = !(error_code & 0x1) ? "NotPresent"
-                      : error_code & 0x2  ? "WriteError"
-                      : error_code & 0x4  ? "UserMode"
-                      : error_code & 0x8  ? "ReservedBitsSet"
-                      : error_code & 0x10 ? "DecodeAddress"
-                                          : "Unknown";
     kerror("Page %s fault %p at %p", error_msg, faulting_address, frame->rip);
     if (current_task != NULL) {
         printk("Current process(%s:%d) thread %s:%d\n", current_task->process->name,
                current_task->process->pid, current_task->name, current_task->tid);
     }
-    print_kernel_backtrace(frame);
+    print_kernel_backtrace(frame,saved_rbp);
     arch_close_interrupt();
 wfi:
     if (is_debug) return;

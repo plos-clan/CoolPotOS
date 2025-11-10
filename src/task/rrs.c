@@ -6,12 +6,14 @@ void add_rrs_entity(tcb_t thread, cpu_local_t *local) {
     struct sched_entity *entity    = malloc(sizeof(struct sched_entity));
     entity->thread                 = thread;
     entity->node                   = list_enqueue(scheduler->sched_queue, entity);
+    thread->sched_handle           = entity;
 }
 
 void remove_rrs_entity(tcb_t thread, cpu_local_t *local) {
     rrs_t               *scheduler = local->sched_handle;
     struct sched_entity *entity    = thread->sched_handle;
     list_remove_node(scheduler->sched_queue, entity->node);
+    if(scheduler->curr == entity) scheduler->curr = scheduler->idle;
     free(entity);
 }
 

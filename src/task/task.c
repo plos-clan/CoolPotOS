@@ -133,7 +133,8 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
                 kill_thread(tcb);
             }
         }
-
+        pcb_t parent = pcb->parent;
+        cow_list_remove(parent->child_process,pcb->ppl_index);
         pcb->status       = T_ZOMBIE;
         ipc_message_t msg = malloc(sizeof(struct ipc_message));
         msg->pid          = pcb->pid;
@@ -156,18 +157,18 @@ int waitpid(pid_t pid, pid_t *pid_ret) {
     bool is_sti                = arch_check_interrupt();
     arch_open_interrupt();
 
-    pcb_t prcoess = get_current_task()->process;
+    pcb_t process = get_current_task()->process;
 
     ipc_message_t mesg;
     int           exit_code;
     while (1) {
         change_task_weight(get_current_task(), NICE_TO_PRIO(10));
-        mesg = ipc_recv_wait(prcoess->ipc_queue,IPC_MSG_TYPE_EPID);
+        mesg = ipc_recv_wait(process->ipc_queue,IPC_MSG_TYPE_EPID);
         change_task_weight(get_current_task(), NICE_TO_PRIO(0));
         exit_code =
             (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
         if (pid == -1 || pid == mesg->pid) break;
-        ipc_send(prcoess->ipc_queue, mesg);
+        ipc_send(process->ipc_queue, mesg);
     }
     pcb_t wait_p = found_pcb(mesg->pid);
     if (wait_p->status == T_ZOMBIE) kill_proc(wait_p, exit_code, false);

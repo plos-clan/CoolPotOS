@@ -126,6 +126,5 @@ SECTIONS {
         *(.interp)
         *(.note .note.*)
         *(.gnu .gnu.*)
-        *(.eh_frame*)
     }
 }

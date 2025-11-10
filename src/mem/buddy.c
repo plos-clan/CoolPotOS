@@ -3,8 +3,8 @@
  * Copyright @2025-2026 by lihanrui2913.
  */
 #include "mem/buddy.h"
-#include "krlibc.h"
 #include "boot.h"
+#include "krlibc.h"
 #include "mem/bitmap.h"
 #include "mem/frame.h"
 #include "mem/page.h"
@@ -714,7 +714,7 @@ uintptr_t buddy_alloc_frames(size_t count) {
     size_t order          = log2_floor(required_pages);
 
     page_t *page = alloc_pages(GFP_KERNEL_NORMAL, order);
-
+    if (unlikely(page == NULL)) return 0;
     uint64_t idx = page - mem_map;
 
     return idx * PAGE_SIZE;
