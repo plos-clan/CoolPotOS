@@ -3,6 +3,7 @@ target_compile_options(kernel PRIVATE
         -target x86_64-freestanding
         -mno-80387 -mno-mmx -mno-sse -mno-sse2
         -mno-red-zone -msoft-float
+        -fPIC
         ${COMPILE_MODE}
 )
 

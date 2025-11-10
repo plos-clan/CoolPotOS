@@ -9,14 +9,8 @@
 #include "sbi.h"
 #include "term/klog.h"
 
-extern char _boot_stack_top[]; // linker.ld
-
-extern void setup_rvboot(unsigned long hartid, void* dtb_ptr);
-
-USED _Noreturn void kmain(unsigned long hartid, void* dtb_ptr) {
-    __asm__ volatile ("mv sp, %0" :: "r"(&_boot_stack_top) : "memory");
-    setup_rvboot(hartid,dtb_ptr);
-
+USED _Noreturn void kmain() {
+    while (true) arch_wait_for_interrupt();
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
     init_frame();
     init_page();

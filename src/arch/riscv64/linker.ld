@@ -1,88 +1,79 @@
 OUTPUT_FORMAT(elf64-littleriscv)
+ENTRY(_opensbi_start)
 
-/* We want the symbol kmain to be our entry point */
-ENTRY(kmain)
+SECTIONS {
+    KERNEL_VMA = 0xffff800000000000;
+    /* 内核物理加载地址 */
+    . = 0x80200000;
 
-/* Define the program headers we want so the bootloader gives us the right */
-/* MMU permissions; this also allows us to exert more control over the linking */
-/* process. */
-PHDRS
-{
-    limine_requests PT_LOAD;
-    text PT_LOAD;
-    rodata PT_LOAD;
-    data PT_LOAD;
-    ksymtab PT_LOAD;
-}
+    kernel_phys_start = .;
+    kernel_virt_start = . + KERNEL_VMA;
 
-SECTIONS
-{
-    /* We want to be placed in the topmost 2GiB of the address space, for optimisations */
-    /* and because that is what the Limine spec mandates. */
-    /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
-    /* that is the beginning of the region. */
-    /* . = 0xffffffff80000000;*/
-    . = 0x80000000;
-    _kernel_start = .;
+    /* 低地址部分 - 用于启动 */
+    .bootstrap : {
+        *(.boot)
+        *(.boot.*)
+    }
 
-    /* Define a section to contain the Limine requests and assign it to its own PHDR */
-    .limine_requests : {
-        KEEP(*(.limine_requests_start))
-        KEEP(*(.limine_requests))
-        KEEP(*(.limine_requests_end))
-    } :limine_requests
+    /* 内核虚拟地址 - 高半部分 */
+    . += KERNEL_VMA;
 
-    /* Move to the next memory page for .text */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
-    .text : {
-        _text = .;
-        *(.text .text.*)
-        _etext = .;
-    } :text
+    text_start_va = .;
+    .text (text_start_va) : AT(text_start_va - KERNEL_VMA) {
+        *(.text)
+        *(.text.*)
+    }
 
-    /* Move to the next memory page for .rodata */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
-    .rodata : {
-        *(.rodata .rodata.*)
-    } :rodata
+    rodata_start_va = .;
+    .rodata (rodata_start_va) : AT(rodata_start_va - KERNEL_VMA) {
+        *(.rodata)
+        *(.rodata.*)
+    }
 
-    /* Move to the next memory page for .ksymtab */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
-    .ksymtab : {
+    ksymtab_start_va = .;
+    .ksymtab (ksymtab_start_va) : AT(ksymtab_start_va - KERNEL_VMA) {
         __ksymtab_start = .;
         KEEP(*(.ksymtab))
         __ksymtab_end = .;
-    } : ksymtab
+    }
 
-    /* Move to the next memory page for .data */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
-    .data : {
-        *(.data .data.*)
-        *(.sdata .sdata.*)
-    } :data
+    data_start_va = .;
+    .data (data_start_va) : AT(data_start_va - KERNEL_VMA) {
+        *(.sdata)
+        *(.sdata.*)
+        *(.data)
+        *(.data.*)
+    }
 
-    /* NOTE: .bss needs to be the last thing mapped to :data, otherwise lots of */
-    /* unnecessary zeros will be written to the binary. */
-    /* If you need, for example, .init_array and .fini_array, those should be placed */
-    /* above this. */
-    .bss : {
-        *(.sbss .sbss.*)
-        *(.bss .bss.*)
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+
+    _bss_start = .;
+
+    bss_start_va = .;
+    .bss (bss_start_va) : AT(bss_start_va - KERNEL_VMA) {
+        *(.sbss)
+        *(.sbss.*)
+        *(.bss)
+        *(.bss.*)
         *(COMMON)
-    } :data
+    }
 
-    . = ALIGN(16);
-    . += 0x8000;          /* 32 KiB Stack */
-    _boot_stack_top = .;  /* stack top */
+    _bss_end = .;
+
+    kernel_virt_end = .;
+    kernel_phys_end = . - KERNEL_VMA;
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
         *(.eh_frame*)
         *(.note .note.*)
     }
-    _kernel_end = .;
 }
