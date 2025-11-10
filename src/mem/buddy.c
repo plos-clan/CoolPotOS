@@ -676,7 +676,7 @@ void init_frame_buddy(uint64_t memory_size) {
 
         if (addr == bitmap_address) {
             addr += (bitmap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-            len  -= (len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+            len  -= (bitmap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
         }
 
         process_memory_region(addr, addr + len);

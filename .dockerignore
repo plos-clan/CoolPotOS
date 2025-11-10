@@ -1,0 +1,26 @@
+.*
+!.dockerignore
+
+# 忽略编译产物
+.xmake/
+.idea/
+build/
+_build/
+*.o
+*.elf
+*.bin
+*.iso
+*.img
+*.log
+
+.git/
+
+*.qcow2
+*.vdi
+
+compile_commands.json
+
+*~
+*.swp
+.DS_Store
+tmp/

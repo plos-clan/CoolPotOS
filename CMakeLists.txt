@@ -58,7 +58,6 @@ endif()
 target_compile_options(kernel PRIVATE
         -nostdinc
         -nostdlib
-        -fPIC
         -Wno-unused-parameter
         -Wno-unused-variable
         -Wno-unused-value

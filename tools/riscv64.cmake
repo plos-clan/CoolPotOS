@@ -14,6 +14,7 @@ target_link_options(kernel PRIVATE
 
 file(GLOB_RECURSE RISCV64_SOURCES
         "src/arch/riscv64/*.c"
+        "src/arch/riscv64/*.S"
 )
 
 target_sources(kernel PRIVATE
