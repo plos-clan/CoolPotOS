@@ -158,7 +158,7 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
     __atomic_store_n((size_t *)&list->size, new_size, __ATOMIC_RELEASE);
     spin_unlock(list->lock);
 
-    return new_size;
+    return new_size - 1;
 }
 
 void * cow_list_remove(cow_arraylist *list, size_t index) {

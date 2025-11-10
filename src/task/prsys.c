@@ -8,7 +8,11 @@
 syscall_(exit, int exit_code) {
     tcb_t exit_thread = get_current_task();
     logkf("sys_exit: Thread %s exit with code %d.\n", exit_thread->name, exit_code);
-    kill_thread(exit_thread);
+    pcb_t process = exit_thread->process;
+    if (process->child_threads->size <= 1) {
+        kill_proc(process, exit_code, true);
+    } else
+        kill_thread(exit_thread);
     arch_open_interrupt();
     while (true)
         arch_wait_for_interrupt();
@@ -168,9 +172,7 @@ re_futex: //TODO PRIVATE 标志暂时不支持
         futex_add((void *)arch_virt_to_phys((uint64_t)uaddr), thread);
         scheduler_yield();
         return EOK;
-    case FUTEX_WAKE:
-        futex_wake((void *)arch_virt_to_phys((uint64_t)uaddr), val);
-        return EOK;
+    case FUTEX_WAKE: futex_wake((void *)arch_virt_to_phys((uint64_t)uaddr), val); return EOK;
     default: {
         if (!is_pre_sub) {
             op         -= 1;
@@ -186,7 +188,7 @@ syscall_(get_tid) {
     return get_current_task()->tid;
 }
 
-syscall_(prctl,int option) {
+syscall_(prctl, int option) {
     switch (option) {
     case PR_SET_NAME:
         if (arg2 == 0) return -1;

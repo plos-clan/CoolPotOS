@@ -1,8 +1,8 @@
 #include "description_table.h"
 #include "exec/elf.h"
-#include "mem/heap.h"
 #include "krlibc.h"
 #include "limine.h"
+#include "mem/heap.h"
 #include "ptrace.h"
 #include "term/klog.h"
 
@@ -16,8 +16,10 @@ LIMINE_REQUEST struct limine_kernel_file_request kfile_request = {
 };
 extern char   _kernel_start[];
 static ksym_t static_ksyms[8192];
-ksym_t       *kallsyms     = NULL;
-size_t        kallsyms_num = 0;
+ksym_t       *kallsyms       = NULL;
+size_t        kallsyms_num   = 0;
+void         *eh_frame_start = NULL;
+size_t        eh_frame_size  = 0;
 
 static int ksym_cmp(const void *a, const void *b) {
     const ksym_t *sym_a = (const ksym_t *)a;
@@ -29,9 +31,7 @@ static int ksym_cmp(const void *a, const void *b) {
 }
 
 void sort_kallsyms(void) {
-    if (kallsyms && kallsyms_num > 0) {
-        qsort(kallsyms, kallsyms_num, sizeof(ksym_t), ksym_cmp);
-    }
+    if (kallsyms && kallsyms_num > 0) { qsort(kallsyms, kallsyms_num, sizeof(ksym_t), ksym_cmp); }
 }
 
 void kallsyms_init_from_elf() {
@@ -46,12 +46,25 @@ void kallsyms_init_from_elf() {
 
     size_t symtabsz = 0;
 
+    bool has_sym = false;
+
     for (int i = 0; i < ehdr->e_shnum; i++) {
-        if (shdrs[i].sh_type == SHT_SYMTAB) {
+        switch (shdrs[i].sh_type) {
+        case SHT_SYMTAB:
+            if(has_sym) break;
             symtab   = (Elf64_Sym *)((char *)ehdr + shdrs[i].sh_offset);
             symtabsz = shdrs[i].sh_size;
             strtab   = (char *)ehdr + shdrs[shdrs[i].sh_link].sh_offset;
+            has_sym = true;
             break;
+        case SHT_PROGBITS:
+            if (shdrs[i].sh_name >= shdrs[ehdr->e_shstrndx].sh_size) { break; }
+            const char *sec_name = shstrtab + shdrs[i].sh_name;
+            if (strcmp(sec_name, ".eh_frame") == 0) {
+                eh_frame_start = (void *)((char *)ehdr + shdrs[i].sh_offset);
+                eh_frame_size  = shdrs[i].sh_size;
+                break;
+            }
         }
     }
 
@@ -72,6 +85,7 @@ void kallsyms_init_from_elf() {
         }
     }
     sort_kallsyms();
+    kinfo("eh_frame: %p sz=%llu symnum=%llu", eh_frame_start, eh_frame_start, kallsyms_num);
 }
 
 const char *kallsyms_lookup(uint64_t addr, uint64_t *sym_addr) {
@@ -93,7 +107,7 @@ const char *kallsyms_lookup(uint64_t addr, uint64_t *sym_addr) {
     return NULL;
 }
 
-void print_kernel_backtrace(struct interrupt_frame *frame) {
+void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp) {
     printk("Call Trace (stack scanning):\n");
 
     uint64_t    sym_addr = 0;

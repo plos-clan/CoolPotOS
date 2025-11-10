@@ -1,9 +1,10 @@
 #include "mem/frame.h"
-#include "mem/buddy.h"
-#include "mem/page.h"
+#include "boot.h"
 #include "bootarg.h"
 #include "krlibc.h"
-#include "boot.h"
+#include "mem/buddy.h"
+#include "mem/page.h"
+#include "term/klog.h"
 
 static uint64_t physical_memory_offset;
 FrameAllocator  frame_allocator;
@@ -119,7 +120,14 @@ void free_frames_1G(uint64_t addr) {
 
 uint64_t alloc_frames(size_t count) {
     frame_allocator.usable_frames -= count;
-    return buddy_alloc_frames(count);
+    uintptr_t frame = buddy_alloc_frames(count);
+    if(unlikely(frame == 0)){
+        logkf("out of memory for buddy alloc\n");
+        //TODO disable_scheduler
+        arch_close_interrupt();
+        arch_wait_for_interrupt();
+    }
+    return frame;
 }
 
 uint64_t alloc_frames_2M(size_t count) {
