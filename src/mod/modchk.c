@@ -1,15 +1,18 @@
 #include "mod/modchk.h"
+#include "term/klog.h"
+
+#if MODULE_CHECK
 #include "lib/tinycrypt/constants.h"
 #include "lib/tinycrypt/ecc.h"
 #include "lib/tinycrypt/ecc_dsa.h"
 #include "lib/tinycrypt/sha256.h"
 #include "pubkey.h" // 该文件自动生成 (包含 cpos_signing_key_pub[])
-#include "term/klog.h"
+#endif
 
 bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t module_size) {
 #if !(MODULE_CHECK)
     return true;
-#endif
+#else
     if (module_size < sizeof(struct module_signature)) {
         kerror("module file too small to contain signature info.");
         return false;
@@ -70,4 +73,5 @@ bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t mod
                mod->path, result);
         return false;
     }
+#endif
 }

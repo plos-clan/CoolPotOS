@@ -5,9 +5,6 @@ set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(FetchContent)
 
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_ASM_COMPILER clang)
 set(CMAKE_LINKER lld)
 set(LIMINE_TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/limine_temp)
 
@@ -55,18 +52,6 @@ else()
     )
 endif()
 
-target_compile_options(kernel PRIVATE
-        -nostdinc
-        -nostdlib
-        -Wno-unused-parameter
-        -Wno-unused-variable
-        -Wno-unused-value
-        -Wno-incompatible-library-redeclaration
-        -Wno-unused-function
-        -flto
-        -fstack-protector
-        -fstack-protector-all
-)
 
 file(GLOB_RECURSE FS_SOURCES "src/fs/*.c")
 file(GLOB_RECURSE UTIL_SOURCES "src/util/*.c")

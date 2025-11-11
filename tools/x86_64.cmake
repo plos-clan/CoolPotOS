@@ -1,9 +1,22 @@
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_ASM_COMPILER clang)
 
 target_compile_options(kernel PRIVATE
         -target x86_64-freestanding
         -mno-80387 -mno-mmx -mno-sse -mno-sse2
         -mno-red-zone -msoft-float
         -fPIC
+        -nostdinc
+        -nostdlib
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-unused-value
+        -Wno-incompatible-library-redeclaration
+        -Wno-unused-function
+        -flto
+        -fstack-protector
+        -fstack-protector-all
         ${COMPILE_MODE}
 )
 

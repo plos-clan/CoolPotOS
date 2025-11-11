@@ -41,6 +41,7 @@ You need to install them on your computer:
 - QEMU
 - git (x86_64 only, for `GIT_VERSION` macro)
 - clang (x86_64 only)
+- riscv64-elf-gcc (riscv64 only)
 - lld (x86_64 only, for linking LTO objects)
 - openssl (kernel module key)
 - python3 `cryptography` (sign kernel module)

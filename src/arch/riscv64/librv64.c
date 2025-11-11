@@ -1,5 +1,6 @@
-#include "krlibc.h"
+#include "exec/elf.h"
 #include "io.h"
+#include "krlibc.h"
 
 void arch_pause() {
     __asm__ volatile("nop");
@@ -164,4 +165,28 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     for (; n; n--)
         *d++ = *s++;
     return dest;
+}
+
+bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
+    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
+        ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
+        ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr) ||
+        ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
+        return false;
+    }
+
+//    switch (ehdr->e_machine) {
+//    case EM_386: break;
+//    default: return false;
+//    }
+
+    return true;
+}
+
+uint64_t nano_time() {
+    return 0;
+}
+
+void arch_pci_legacy_enum() {
+
 }

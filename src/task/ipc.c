@@ -80,7 +80,7 @@ ipc_message_t ipc_recv_wait(ipc_queue_t *queue,uint8_t type) {
 ipc_message_t ipc_recv_wait2(ipc_queue_t *queue,uint8_t type0, uint8_t type1) {
     ipc_message_t message = NULL;
     do {
-        __asm__ volatile("pause");
+        arch_pause();
         scheduler_yield();
         message = ipc_recv(queue,type0);
         if (message == NULL) { message = ipc_recv(queue,type1); }
