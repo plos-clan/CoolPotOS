@@ -1,12 +1,22 @@
+set(CMAKE_C_COMPILER riscv64-elf-gcc)
+set(CMAKE_CXX_COMPILER riscv64-elf-g++)
+set(CMAKE_ASM_COMPILER riscv64-elf-gcc)
 
 target_compile_options(kernel PRIVATE
-        -target riscv64-unknown-elf
         -march=rv64gc -mabi=lp64d -mcmodel=medany -mno-relax
+        -nostdinc
+        -nostdlib
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-unused-value
+        -Wno-incompatible-library-redeclaration
+        -Wno-unused-function
+        -fstack-protector
+        #-fstack-protector-all
         ${COMPILE_MODE}
 )
 
 target_link_options(kernel PRIVATE
-        -target riscv64-unknown-elf
         -T ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/riscv64/linker.ld
         -nostdlib
         -fuse-ld=lld

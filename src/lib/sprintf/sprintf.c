@@ -1,4 +1,7 @@
 #define STB_SPRINTF_IMPLEMENTATION
+#if !(defined(__x86_64__) || defined(__amd64__))
+#define STB_SPRINTF_NOFLOAT
+#endif
 #include "types.h"
 #include "lib/sprintf.h"
 #include "krlibc.h"

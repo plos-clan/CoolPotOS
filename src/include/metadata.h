@@ -86,6 +86,14 @@
 #define MAX_LOAD_MODULE       256                  // 最大模块加载数
 
 // 内核编译配置选项
+#ifndef EEVDF_SCHEDULER
 #define EEVDF_SCHEDULER 0 // 是否启用EEVDF调度器
+#endif
+
+#ifndef HEAP_CHECK
 #define HEAP_CHECK      0 // 启用内核堆双端越界检查
+#endif
+
+#ifndef MODULE_CHECK
 #define MODULE_CHECK    1 // 启动内核模块签名校验
+#endif

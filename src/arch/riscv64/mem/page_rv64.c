@@ -11,6 +11,10 @@ static spin_t                    page_lock         = SPIN_INIT;
 
 uint64_t get_arch_page_table_flags(uint64_t flags) {
     uint64_t result = ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_ACCESSED | ARCH_PT_FLAG_DIRTY;
+    if(flags & ARCH_PT_FLAG_WRITE) result |= ARCH_PT_FLAG_WRITE;
+    if(flags & ARCH_PT_FLAG_READ) result |= ARCH_PT_FLAG_READ;
+    if(flags & ARCH_PT_FLAG_USER) result |= ARCH_PT_FLAG_USER;
+    if(flags & ARCH_PT_FLAG_EXEC) result |= ARCH_PT_FLAG_EXEC;
     return result;
 }
 
@@ -29,6 +33,10 @@ static void page_table_clear(page_table_t *table) {
     for (int i = 0; i < 512; i++) {
         table->entries[i].value = 0;
     }
+}
+
+uint64_t arch_virt_to_phys(uint64_t va) {
+    return 0; // TODO
 }
 
 void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags) {
