@@ -261,6 +261,7 @@ tty_t *alloc_tty_session(tty_device_t *device) {
 void init_tty_session() {
     tty_device_t *device = get_tty_device(boot_get_cmdline_param("console"));
     device = device == NULL ? container_of(tty_device_list.prev, tty_device_t, node) : device;
+    not_null_assert(device,"no tty device error.");
     kernel_session  = alloc_tty_session(device);
     current_session = kernel_session;
 

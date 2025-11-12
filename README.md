@@ -51,9 +51,12 @@ You need to install them on your computer:
 You can use the command to set the target architecture (`x86_64` default):
 
 ```bash
-cmake -S . -B build/ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake -S . -B build/ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=<mode> -DTARGET_ARCH=<arch>
 cmake --build build/ --target run
 ```
+
+* mode - `Release` | `Debug`
+* arch - `x86_64` | `riscv64` | `aarch64`
 
 Copy `build/compile_commands.json` to the project root directory.
 
