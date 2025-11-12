@@ -8,6 +8,7 @@ extern uint8_t _bss_start[], _bss_end[];
 
 extern boot_memory_map_t  opensbi_memory_map;
 extern boot_framebuffer_t opensbi_fb;
+extern char              *kernel_cmdline;
 void                     *opensbi_dtb_vaddr;
 
 static bool fdt_getprop_u64(const void *fdt, int node, const char *name, int idx, uint64_t *out) {
@@ -364,6 +365,17 @@ static void setup_memmap(boot_memory_map_t *mmap, uintptr_t kernel_start, uintpt
     }
 }
 
+static const char *fdt_kernel_cmdline(void *fdt) {
+    int chosen_off = fdt_path_offset(fdt, "/chosen");
+    if (chosen_off < 0) return NULL;
+
+    int         len      = 0;
+    const char *bootargs = fdt_getprop(fdt, chosen_off, "bootargs", &len);
+    if (!bootargs || len <= 0) return NULL;
+
+    return bootargs;
+}
+
 extern void init_early_paging();
 
 uint64_t bsp_hart_id = UINT64_MAX;
@@ -395,8 +407,7 @@ USED void opensbi_c_start(uint64_t boot_hart_id, uintptr_t dtb_ptr) {
     opensbi_dtb_vaddr = (void *)dtb_ptr;
     setup_framebuffer(&opensbi_fb);
     setup_memmap(&opensbi_memory_map, 0x80000000, 0x81000000, &opensbi_fb);
-
+    kernel_cmdline = (char*)fdt_kernel_cmdline(opensbi_dtb_vaddr);
     init_early_paging();
-
     __asm__ volatile("j kmain");
 }
