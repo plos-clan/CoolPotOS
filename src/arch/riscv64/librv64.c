@@ -175,10 +175,10 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
         return false;
     }
 
-//    switch (ehdr->e_machine) {
-//    case EM_386: break;
-//    default: return false;
-//    }
+    switch (ehdr->e_machine) {
+    case EM_OPENRISC: break;
+    default: return false;
+    }
 
     return true;
 }

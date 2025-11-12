@@ -1,8 +1,9 @@
-set(CMAKE_C_COMPILER riscv64-elf-gcc)
-set(CMAKE_CXX_COMPILER riscv64-elf-g++)
-set(CMAKE_ASM_COMPILER riscv64-elf-gcc)
+#set(CMAKE_C_COMPILER riscv64-elf-gcc)
+#set(CMAKE_CXX_COMPILER riscv64-elf-g++)
+#set(CMAKE_ASM_COMPILER riscv64-elf-gcc)
 
 target_compile_options(kernel PRIVATE
+        -target riscv64-freestanding
         -march=rv64gc -mabi=lp64d -mcmodel=medany -mno-relax
         -nostdinc
         -nostdlib
@@ -17,6 +18,7 @@ target_compile_options(kernel PRIVATE
 )
 
 target_link_options(kernel PRIVATE
+        -target riscv64-freestanding
         -T ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/riscv64/linker.ld
         -nostdlib
         -fuse-ld=lld

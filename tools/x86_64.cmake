@@ -1,6 +1,3 @@
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
-set(CMAKE_ASM_COMPILER clang)
 
 target_compile_options(kernel PRIVATE
         -target x86_64-freestanding
