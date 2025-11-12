@@ -241,6 +241,27 @@ errno_t tty_poll(tty_t *session, size_t events) {
     return revents;
 }
 
+size_t tty_serial_read(tty_t *session, char *buffer, size_t offset, size_t count) {
+    tty_device_t *device = session->device;
+    return device->ops.read(device, buffer, count);
+}
+
+size_t tty_serial_write(tty_t *session, const char *buffer, size_t offset, size_t count) {
+    tty_device_t *device = session->device;
+    return device->ops.write(device, buffer, count);
+}
+
+void tty_serial_flush(tty_t *session) {}
+
+errno_t create_session_serial(tty_t *session) {
+    if (session->device == NULL) return -ENODEV;
+    session->terminal  = NULL;
+    session->ops.read  = tty_serial_read;
+    session->ops.write = tty_serial_write;
+    session->ops.flush = tty_serial_flush;
+    return EOK;
+}
+
 tty_t *alloc_tty_session(tty_device_t *device) {
     if (device == NULL) return NULL;
     tty_t *session         = calloc(1, sizeof(tty_t));
@@ -254,14 +275,19 @@ tty_t *alloc_tty_session(tty_device_t *device) {
     ops->poll              = tty_poll;
     ops->size_t            = tty_size_t;
     termios_init(&session->termios);
-    create_session_terminal(session);
+
+    switch (device->type) {
+    case TTY_DEVICE_GRAPHI: create_session_terminal(session); break;
+    case TTY_DEVICE_SERIAL: create_session_serial(session); break;
+    default: break;
+    }
     return session;
 }
 
 void init_tty_session() {
     tty_device_t *device = get_tty_device(boot_get_cmdline_param("console"));
     device = device == NULL ? container_of(tty_device_list.prev, tty_device_t, node) : device;
-    not_null_assert(device,"no tty device error.");
+    not_null_assert(device, "no tty device error.");
     kernel_session  = alloc_tty_session(device);
     current_session = kernel_session;
 

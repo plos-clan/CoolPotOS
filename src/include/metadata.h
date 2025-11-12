@@ -16,7 +16,7 @@
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
 #    define KERNEL_ARCH         "riscv64"
-#    define KERNEL_ARCH_VERSION "0"
+#    define KERNEL_ARCH_VERSION "1"
 
 #elif defined(__aarch64__)
 #    undef KERNEL_ARCH
