@@ -10,7 +10,6 @@
 #include "term/klog.h"
 
 USED _Noreturn void kmain() {
-    while (true) arch_wait_for_interrupt();
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
     init_frame();
     init_page();

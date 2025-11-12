@@ -24,7 +24,7 @@ boot_framebuffer_t *boot_get_framebuffer(size_t index) {
 }
 
 size_t boot_framebuffer_count() {
-    return 1;
+    return 0; //TODO
 }
 
 static void *find_string_tag(void *mb2_info_addr) {

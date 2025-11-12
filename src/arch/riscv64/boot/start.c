@@ -10,55 +10,92 @@ extern boot_memory_map_t opensbi_memory_map;
 extern boot_framebuffer_t opensbi_fb;
 
 static void setup_framebuffer(boot_framebuffer_t *fb) {
-    int chosen_off = fdt_find_node("/chosen");
-    if (chosen_off < 0) {
-        return;
-    }
+    // 初始化 framebuffer 结构
+    memset(fb, 0, sizeof(*fb));
 
-    const char *stdout_path =
-        fdt_get_property_string(chosen_off, "stdout-path");
-    if (!stdout_path) {
-        return;
-    }
-
-    char node_path[256];
-    const char *colon = strchr(stdout_path, ':');
-    size_t path_len =
-        colon ? (size_t)(colon - stdout_path) : strlen(stdout_path);
-    if (path_len >= sizeof(node_path))
-        return;
-    memcpy(node_path, stdout_path, path_len);
-    node_path[path_len] = '\0';
-
-    int fb_off = fdt_find_node(node_path);
+    // 直接查找 simple-framebuffer 节点
+    int fb_off = fdt_find_node("/framebuffer");
     if (fb_off < 0) {
-        return;
+        // 失败的话查找 compatible 为 simple-framebuffer 的节点
+        uint32_t *p = (uint32_t *)g_fdt_ctx.dt_struct;
+        int depth = 0;
+
+        while (1) {
+            uint32_t tag = fdt32_to_cpu(*p++);
+
+            switch (tag) {
+            case FDT_BEGIN_NODE: {
+                const char *name = (const char *)p;
+                int node_off =
+                    (uint8_t *)p - (uint8_t *)g_fdt_ctx.dt_struct - 4;
+
+                // 检查 compatible 属性
+                int len;
+                const char *compatible =
+                    fdt_get_property(node_off, "compatible", &len);
+                if (compatible && strstr(compatible, "simple-framebuffer")) {
+                    fb_off = node_off;
+                    goto found_fb;
+                }
+
+                depth++;
+                p = (uint32_t *)ALIGN_UP((uintptr_t)p + strlen(name) + 1, 4);
+                break;
+            }
+
+            case FDT_END_NODE:
+                depth--;
+                break;
+
+            case FDT_PROP: {
+                struct fdt_property *prop = (struct fdt_property *)p;
+                uint32_t len = fdt32_to_cpu(prop->len);
+                p = (uint32_t *)ALIGN_UP(
+                    (uintptr_t)p + sizeof(struct fdt_property) + len, 4);
+                break;
+            }
+
+            case FDT_END:
+                goto no_fb;
+
+            default:
+                break;
+            }
+        }
     }
 
-    const char *compatible = fdt_get_property_string(fb_off, "compatible");
-    if (!compatible || strstr(compatible, "simple-framebuffer") == NULL) {
-        return;
+found_fb:
+    if (fb_off < 0) {
+        goto no_fb;
     }
 
-    uint32_t width, height, stride;
-    const char *format;
+    // 获取 framebuffer 属性
+    uint32_t width = 0, height = 0, stride = 0;
 
-    if (fdt_get_property_u32(fb_off, "width", &width) < 0)
-        return;
-    if (fdt_get_property_u32(fb_off, "height", &height) < 0)
-        return;
-    if (fdt_get_property_u32(fb_off, "stride", &stride) < 0)
-        return;
-    format = fdt_get_property_string(fb_off, "format");
-    if (!format)
-        return;
+    if (fdt_get_property_u32(fb_off, "width", &width) < 0) {
+        goto no_fb;
+    }
+    if (fdt_get_property_u32(fb_off, "height", &height) < 0) {
+        goto no_fb;
+    }
+    if (fdt_get_property_u32(fb_off, "stride", &stride) < 0) {
+        // stride 不是必须的，可以计算
+        stride = width * 4; // 假设 32bpp
+    }
 
+    const char *format = fdt_get_property_string(fb_off, "format");
+    if (!format) {
+        format = "x8r8g8b8"; // 默认格式
+    }
+
+    // 解析颜色格式
     uint8_t red_size = 0, red_shift = 0;
     uint8_t green_size = 0, green_shift = 0;
     uint8_t blue_size = 0, blue_shift = 0;
     uint8_t alpha_size = 0, alpha_shift = 0;
+    uint8_t bpp = 0;
 
-    if (strcmp(format, "a8r8g8b8") == 0 || strcmp(format, "x8r8g8b8") == 0) {
+    if (strcmp(format, "a8r8g8b8") == 0) {
         blue_size = 8;
         blue_shift = 0;
         green_size = 8;
@@ -67,6 +104,37 @@ static void setup_framebuffer(boot_framebuffer_t *fb) {
         red_shift = 16;
         alpha_size = 8;
         alpha_shift = 24;
+        bpp = 32;
+    } else if (strcmp(format, "x8r8g8b8") == 0) {
+        blue_size = 8;
+        blue_shift = 0;
+        green_size = 8;
+        green_shift = 8;
+        red_size = 8;
+        red_shift = 16;
+        alpha_size = 0;
+        alpha_shift = 0;
+        bpp = 32;
+    } else if (strcmp(format, "a8b8g8r8") == 0) {
+        red_size = 8;
+        red_shift = 0;
+        green_size = 8;
+        green_shift = 8;
+        blue_size = 8;
+        blue_shift = 16;
+        alpha_size = 8;
+        alpha_shift = 24;
+        bpp = 32;
+    } else if (strcmp(format, "x8b8g8r8") == 0) {
+        red_size = 8;
+        red_shift = 0;
+        green_size = 8;
+        green_shift = 8;
+        blue_size = 8;
+        blue_shift = 16;
+        alpha_size = 0;
+        alpha_shift = 0;
+        bpp = 32;
     } else if (strcmp(format, "r5g6b5") == 0) {
         blue_size = 5;
         blue_shift = 0;
@@ -74,6 +142,23 @@ static void setup_framebuffer(boot_framebuffer_t *fb) {
         green_shift = 5;
         red_size = 5;
         red_shift = 11;
+        bpp = 16;
+    } else if (strcmp(format, "r8g8b8") == 0) {
+        blue_size = 8;
+        blue_shift = 0;
+        green_size = 8;
+        green_shift = 8;
+        red_size = 8;
+        red_shift = 16;
+        bpp = 24;
+    } else if (strcmp(format, "b8g8r8") == 0) {
+        red_size = 8;
+        red_shift = 0;
+        green_size = 8;
+        green_shift = 8;
+        blue_size = 8;
+        blue_shift = 16;
+        bpp = 24;
     } else {
         blue_size = 8;
         blue_shift = 0;
@@ -81,22 +166,31 @@ static void setup_framebuffer(boot_framebuffer_t *fb) {
         green_shift = 8;
         red_size = 8;
         red_shift = 16;
+        bpp = 32;
     }
 
+    // 获取 framebuffer 内存地址
     int reg_len;
     const void *reg = fdt_get_property(fb_off, "reg", &reg_len);
     if (!reg || reg_len < 16) {
+        goto no_fb;
     }
 
-    uint64_t fb_phys = fdt64_to_cpu(*(uint64_t *)reg);
-    // uint64_t fb_size = fdt64_to_cpu(*((uint64_t *)reg + 1));
+    uint64_t fb_phys = fdt64_to_cpu(*(const uint64_t *)reg);
+    uint64_t fb_size = fdt64_to_cpu(*((const uint64_t *)reg + 1));
 
+    // 验证 framebuffer 大小是否足够
+    size_t required_size = stride * height;
+    if (fb_size < required_size) {
+        goto no_fb;
+    }
+
+    // 填充 framebuffer 信息
     fb->address = (uintptr_t)fb_phys;
     fb->width = (size_t)width;
     fb->height = (size_t)height;
-    fb->pitch = (size_t)stride; // pitch = stride in bytes
-    fb->bpp =
-        (red_size + green_size + blue_size + alpha_size); // bits per pixel
+    fb->pitch = (size_t)stride;
+    fb->bpp = bpp;
 
     fb->red_mask_size = red_size;
     fb->red_mask_shift = red_shift;
@@ -104,6 +198,11 @@ static void setup_framebuffer(boot_framebuffer_t *fb) {
     fb->green_mask_shift = green_shift;
     fb->blue_mask_size = blue_size;
     fb->blue_mask_shift = blue_shift;
+
+    return;
+
+no_fb:
+    memset(fb, 0, sizeof(*fb));
 }
 
 static void setup_memmap(boot_memory_map_t *mmap, uintptr_t kernel_start,
@@ -361,10 +460,9 @@ USED void opensbi_c_start(uint64_t boot_hart_id, uintptr_t dtb_ptr) {
         (struct fdt_reserve_entry *)((uint8_t *)g_fdt_ctx.dtb_base +
                                      fdt32_to_cpu(header->off_mem_rsvmap));
 
+    opensbi_dtb_vaddr = dtb_ptr;
     setup_framebuffer(&opensbi_fb);
     setup_memmap(&opensbi_memory_map, 0x80000000, 0x81000000, &opensbi_fb);
-
-    opensbi_dtb_vaddr = dtb_ptr;
 
     init_early_paging();
 
