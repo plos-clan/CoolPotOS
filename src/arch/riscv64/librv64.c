@@ -175,18 +175,13 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
         return false;
     }
 
-    switch (ehdr->e_machine) {
-    case EM_OPENRISC: break;
-    default: return false;
+    if (ehdr->e_ident[4] != 2 || // 64-bit
+        ehdr->e_machine != 0xF3  // riscv64
+    ) {
+        return false;
     }
 
     return true;
 }
 
-uint64_t nano_time() {
-    return 0;
-}
-
-void arch_pci_legacy_enum() {
-
-}
+void arch_pci_legacy_enum() {}
