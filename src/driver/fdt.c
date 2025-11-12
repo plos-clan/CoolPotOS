@@ -2,6 +2,9 @@
 #include "krlibc.h"
 #include "boot.h"
 
+/* 全局FDT上下文 */
+struct fdt_context g_fdt_ctx;
+
 /**
  * 初始化FDT解析器
  * @param dtb_phys_addr DTB的物理地址

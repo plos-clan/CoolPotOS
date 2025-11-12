@@ -8,6 +8,8 @@ _opensbi_start:
     mv tp, a0              // hart_id
     mv s1, a1              // dtb_ptr
 
+    csrw stvec, zero
+
     // 设置临时栈
     la sp, boot_stack_top
 

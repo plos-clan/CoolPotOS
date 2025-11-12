@@ -3,6 +3,7 @@
 #include "lock.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
+#include "mem/page.h"
 #include "term/klog.h"
 
 extern page_directory_t          kernel_page_dir;
@@ -11,10 +12,10 @@ static spin_t                    page_lock         = SPIN_INIT;
 
 uint64_t get_arch_page_table_flags(uint64_t flags) {
     uint64_t result = ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_ACCESSED | ARCH_PT_FLAG_DIRTY;
-    if(flags & ARCH_PT_FLAG_WRITE) result |= ARCH_PT_FLAG_WRITE;
-    if(flags & ARCH_PT_FLAG_READ) result |= ARCH_PT_FLAG_READ;
-    if(flags & ARCH_PT_FLAG_USER) result |= ARCH_PT_FLAG_USER;
-    if(flags & ARCH_PT_FLAG_EXEC) result |= ARCH_PT_FLAG_EXEC;
+    if (flags & ARCH_PT_FLAG_WRITE) result |= ARCH_PT_FLAG_WRITE;
+    if (flags & ARCH_PT_FLAG_READ) result |= ARCH_PT_FLAG_READ;
+    if (flags & ARCH_PT_FLAG_USER) result |= ARCH_PT_FLAG_USER;
+    if (flags & ARCH_PT_FLAG_EXEC) result |= ARCH_PT_FLAG_EXEC;
     return result;
 }
 
@@ -35,41 +36,58 @@ static void page_table_clear(page_table_t *table) {
     }
 }
 
-uint64_t arch_virt_to_phys(uint64_t va) {
-    return 0; // TODO
+uint64_t arch_virt_to_phys(uint64_t vaddr) {
+    if (!vaddr) return 0;
+    page_directory_t *curr  = get_current_directory();
+    uint64_t         *pgdir = (uint64_t *)curr->table;
+
+    uint64_t indexs[ARCH_PT_LEVEL];
+    for (uint64_t i = 0; i < ARCH_PT_LEVEL; i++) {
+        indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
+    }
+
+    for (uint64_t i = 0; i < ARCH_PT_LEVEL - 1; i++) {
+        uint64_t index = indexs[i];
+        uint64_t addr  = pgdir[index];
+        if (ARCH_PT_IS_LARGE(addr)) {
+            return (ARCH_READ_PTE(pgdir[index]) & ~PAGE_CALC_PAGE_TABLE_MASK(i + 1)) +
+                   (vaddr & PAGE_CALC_PAGE_TABLE_MASK(i + 1));
+        }
+        if (!ARCH_PT_IS_TABLE(addr)) { return 0; }
+        pgdir = (uint64_t *)phys_to_virt(ARCH_READ_PTE(addr));
+    }
+
+    uint64_t index = indexs[ARCH_PT_LEVEL - 1];
+    return ARCH_READ_PTE(pgdir[index]) + (vaddr & PAGE_CALC_PAGE_TABLE_MASK(ARCH_PT_LEVEL));
 }
 
 void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags) {
-    page_table_t *pgdir      = directory->table;
-    uint64_t      indices[4] = {
-        (vaddr >> (12 + 9 * 3)) & 0x1FF, // Level 3 (PGD)
-        (vaddr >> (12 + 9 * 2)) & 0x1FF, // Level 2 (PUD)
-        (vaddr >> (12 + 9 * 1)) & 0x1FF, // Level 1 (PMD)
-        (vaddr >> 12) & 0x1FF            // Level 0 (PTE)
-    };
+    uint64_t *pgdir                 = (uint64_t *)directory->table;
+    uint64_t  indexs[ARCH_PT_LEVEL] = {0};
+    for (uint64_t i = 0; i < ARCH_PT_LEVEL; i++) {
+        indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
+    }
 
-    page_table_t *tables[4];
-    tables[0] = pgdir;
+    for (uint64_t i = 0; i < ARCH_PT_LEVEL - 1; i++) {
+        uint64_t index = indexs[i];
+        uint64_t addr  = pgdir[index];
+        if (ARCH_PT_IS_LARGE(addr)) { return; }
 
-    for (int i = 0; i < 3; i++) {
-        page_table_entry_t *entry = &tables[i]->entries[indices[i]];
-        if ((entry->value & ARCH_PT_FLAG_VALID) == 0) {
-            uint64_t frame = alloc_frames(1);
-            if (frame == 0) { logkf("page_map_to: failed to allocate page table frame"); }
-            page_table_t *new_table = (page_table_t *)phys_to_virt(frame);
-            page_table_clear(new_table);
-            entry->value = frame | ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_WRITE;
+        if (!ARCH_PT_IS_TABLE(addr)) {
+            uint64_t a = alloc_frames(1);
+            not_null_assert((void *)a, "page_map_to alloc frame null.");
+            memset((uint64_t *)phys_to_virt(a), 0, PAGE_SIZE);
+            pgdir[index] = ARCH_MAKE_PTE(a, ARCH_PT_TABLE_FLAGS);
         }
-        uint64_t next_table_pa = entry->value & ARCH_ADDR_MASK;
-        tables[i + 1]          = (page_table_t *)phys_to_virt(next_table_pa);
+        pgdir = (uint64_t *)phys_to_virt(ARCH_READ_PTE(pgdir[index]));
     }
 
-    page_table_entry_t *pte = &tables[3]->entries[indices[3]];
-    if (pte->value & ARCH_PT_FLAG_VALID) {
-        // 已映射：可根据需求处理（覆盖 or 忽略）此处选择直接覆盖
+    uint64_t index = indexs[ARCH_PT_LEVEL - 1];
+    if (pgdir[index] & ARCH_PT_FLAG_VALID) {
+        //TODO force
     }
 
-    pte->value = (paddr & ARCH_ADDR_MASK) | flags;
+    pgdir[index] = ARCH_MAKE_PTE(paddr, flags);
     flush_tlb(vaddr);
 }
 
@@ -175,53 +193,43 @@ void free_page_directory(page_directory_t *dir) {
 static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy,
                                                bool kernel_space) {
     if (source_table == NULL) return NULL;
-
     if (level == 0) {
         if (kernel_space) { return source_table; }
 
-        uint64_t frame = alloc_frames(1);
-        not_null_assert((void *)frame, "copy page error");
+        uint64_t      frame          = alloc_frames(1);
         page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
-        memcpy(new_page_table, source_table, sizeof(page_table_t)); // 整个结构体复制
+        memcpy(new_page_table, source_table, PAGE_SIZE);
         return new_page_table;
     }
 
-    uint64_t phy_frame = alloc_frames(1);
-    not_null_assert((void *)phy_frame, "copy page error");
+    uint64_t      phy_frame = alloc_frames(1);
     page_table_t *new_table = (page_table_t *)phys_to_virt(phy_frame);
-    memset(new_table, 0, sizeof(page_table_t));
-    uint64_t num_entries = all_copy ? 512 : (level == 4 ? 256 : 512);
-
-    for (uint64_t i = 0; i < num_entries; i++) {
-        uint64_t entry_val = source_table->entries[i].value;
-        if ((entry_val & ARCH_PT_FLAG_VALID) == 0) {
-            new_table->entries[i].value = 0;
+    for (uint64_t i = 0; i < (all_copy ? 512 : (level == ARCH_PT_LEVEL ? 256 : 512)); i++) {
+        if (ARCH_PT_IS_LARGE(source_table->entries[i].value) && level != 1) {
+            new_table->entries[i].value = source_table->entries[i].value;
             continue;
         }
-        uint64_t      next_pa        = entry_val & ARCH_ADDR_MASK;
-        page_table_t *source_next    = (page_table_t *)phys_to_virt(next_pa);
-        bool          next_is_kernel = (level == 4) ? (i >= 256) : kernel_space;
-        page_table_t *new_next =
-            copy_page_table_recursive(source_next, level - 1, all_copy, next_is_kernel);
-        uint64_t new_pa             = virt_to_phys(new_next);
-        uint64_t flags              = entry_val & ~ARCH_ADDR_MASK;
-        new_table->entries[i].value = new_pa | flags;
-    }
 
+        page_table_t *source_page_table_next =
+            (page_table_t *)phys_to_virt(ARCH_READ_PTE(source_table->entries[i].value));
+        page_table_t *new_page_table =
+            copy_page_table_recursive(source_page_table_next, level - 1, all_copy,
+                                      level != ARCH_PT_LEVEL ? kernel_space : i >= 256);
+        new_table->entries[i].value =
+            ARCH_MAKE_PTE((uint64_t)virt_to_phys(new_page_table),
+                          ARCH_READ_PTE_FLAG(source_table->entries[i].value));
+    }
     return new_table;
 }
 
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     spin_lock(page_lock);
-
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     if (new_directory == NULL) {
         spin_unlock(page_lock);
         return NULL;
     }
-
     new_directory->table = copy_page_table_recursive(dir->table, 4, all_copy, false);
-
     if (!all_copy) {
         memcpy((uint8_t *)new_directory->table + 256 * sizeof(page_table_entry_t),
                (uint8_t *)dir->table + 256 * sizeof(page_table_entry_t),
