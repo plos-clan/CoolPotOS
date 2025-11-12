@@ -542,6 +542,30 @@ char *strstr(const char *h, const char *n) {
     return twoway_strstr((void *)h, (void *)n);
 }
 
+unsigned long strtoul(const char *restrict cp, char **restrict endp, int base) {
+    unsigned long result = 0, value;
+
+    if (!base) {
+        base = 10;
+        if (*cp == '0') {
+            base = 8;
+            cp++;
+            if ((TOLOWER(*cp) == 'x') && isxdigit(cp[1])) {
+                cp++;
+                base = 16;
+            }
+        }
+    } else if (base == 16) {
+        if (cp[0] == '0' && TOLOWER(cp[1]) == 'x') cp += 2;
+    }
+    while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10) < base) {
+        result = result * base + value;
+        cp++;
+    }
+    if (endp) *endp = (char *)cp;
+    return result;
+}
+
 int atoi(const char *pstr) {
     int Ret_Integer  = 0;
     int Integer_sign = 1;

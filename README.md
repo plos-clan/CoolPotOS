@@ -31,6 +31,7 @@ and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
 - `os_terminal` by wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 - `plant-vfs` by min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
 - `EEVDF` by xiaoyi1212 [plos-clan/EEVDF](https://github.com/plos-clan/EEVDF)
+- `libfdt` by osdev [osdev/libfdt](https://codeberg.org/OSDev/libfdt)
 
 ## Build & Run
 
@@ -40,9 +41,8 @@ You need to install them on your computer:
 - xorriso
 - QEMU
 - git (x86_64 only, for `GIT_VERSION` macro)
-- clang (x86_64 only)
-- riscv64-elf-gcc (riscv64 only)
-- lld (x86_64 only, for linking LTO objects)
+- clang
+- lld (for linking LTO objects)
 - openssl (kernel module key)
 - python3 `cryptography` (sign kernel module)
 

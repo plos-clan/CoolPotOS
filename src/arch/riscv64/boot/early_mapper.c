@@ -173,7 +173,7 @@ static int map_region(pte_t *root_table, uintptr_t pa_start, uintptr_t pa_end,
     return 0;
 }
 
-extern uintptr_t opensbi_dtb_vaddr;
+extern void *opensbi_dtb_vaddr;
 
 int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
     // 重置页表池
@@ -194,7 +194,7 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
         return -1;
     }
 
-    uintptr_t dtb_paddr = opensbi_dtb_vaddr - KERNEL_VIRTUAL_BASE;
+    uintptr_t dtb_paddr = (uintptr_t)opensbi_dtb_vaddr - KERNEL_VIRTUAL_BASE;
 
     if (map_region((pte_t *)root_table, dtb_paddr, dtb_paddr + SIZE_2M,
                    PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D) < 0) {

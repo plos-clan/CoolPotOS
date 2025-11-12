@@ -31,6 +31,7 @@ Languages
 - `os_terminal` 来自 wenxuanjun [plos-clan/libos-terminal](https://github.com/plos-clan/libos-terminal)
 - `plant-vfs` 来自 min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
 - `EEVDF` 来自 xiaoyi1212 [plos-clan/EEVDF](https://github.com/plos-clan/EEVDF)
+- `libfdt` 来自 osdev [osdev/libfdt](https://codeberg.org/OSDev/libfdt)
 
 ## 构建与运行
 
@@ -40,9 +41,8 @@ Languages
 - xorriso
 - QEMU
 - git (`GIT_VERSION` 宏哈希获取)
-- clang (x86_64 特需)
-- riscv64-elf-gcc (riscv64 特需)
-- lld (x86_64 特需)
+- clang 
+- lld
 - openssl (内核签名密钥生成)
 - python3 `cryptography` (签名内核模块)
 - 
