@@ -2,9 +2,14 @@
 
 #include "ptrace.h"
 
+typedef struct fpu_context {
+    uint64_t regs[32];
+    uint64_t fcsr;
+} fpu_context_t;
+
 struct arch_context_ {
-    struct pt_regs regs;
-    uint64_t       kernel_stack;
-    uint64_t       user_stack;
-    uint64_t       user_stack_top;
+    uint64_t       ra;
+    uint64_t       sp;
+    struct pt_regs ctx;
+    fpu_context_t  fpu_ctx;
 };
