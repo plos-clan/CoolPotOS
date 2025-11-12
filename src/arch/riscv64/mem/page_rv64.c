@@ -92,25 +92,23 @@ void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, ui
 }
 
 void unmap_page(page_directory_t *directory, uint64_t vaddr) {
-    page_table_t *pgdir      = directory->table;
-    uint64_t      indices[4] = {
-        (vaddr >> (12 + 9 * 3)) & 0x1FF, // L3 (PGD)
-        (vaddr >> (12 + 9 * 2)) & 0x1FF, // L2 (PUD)
-        (vaddr >> (12 + 9 * 1)) & 0x1FF, // L1 (PMD)
-        (vaddr >> 12) & 0x1FF            // L0 (PTE)
-    };
+    uint64_t *pgdir                 = (uint64_t *)directory->table;
+    uint64_t  indexs[ARCH_PT_LEVEL] = {0};
+    for (uint64_t i = 0; i < ARCH_PT_LEVEL; i++) {
+        indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
+    }
 
     page_table_t *tables[4];
     tables[0] = pgdir;
 
     for (int i = 0; i < 3; i++) {
-        page_table_entry_t *entry = &tables[i]->entries[indices[i]];
+        page_table_entry_t *entry = &tables[i]->entries[indexs[i]];
         if ((entry->value & ARCH_PT_FLAG_VALID) == 0) { return; }
         uint64_t next_pa = entry->value & ARCH_ADDR_MASK;
         tables[i + 1]    = (page_table_t *)phys_to_virt(next_pa);
     }
 
-    page_table_entry_t *pte = &tables[3]->entries[indices[3]];
+    page_table_entry_t *pte = &tables[3]->entries[indexs[3]];
     if ((pte->value & ARCH_PT_FLAG_VALID) == 0) { return; }
 
     uint64_t paddr = pte->value & ARCH_ADDR_MASK;
@@ -133,7 +131,7 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
         if (empty) {
             uint64_t table_pa = virt_to_phys(current);
             free_frame(table_pa);
-            page_table_entry_t *parent_entry = &tables[level - 1]->entries[indices[level - 1]];
+            page_table_entry_t *parent_entry = &tables[level - 1]->entries[indexs[level - 1]];
             parent_entry->value              = 0;
         } else {
             break;
