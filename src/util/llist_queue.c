@@ -1,7 +1,7 @@
 #include "llist_queue.h"
 #include "mem/heap.h"
 
-list_queue_t *create_llist_queue(){
+list_queue_t *create_llist_queue() {
     return calloc(1, sizeof(list_queue_t));
 }
 
@@ -17,17 +17,19 @@ list_node_t *list_enqueue(list_queue_t *queue, void *data) {
     new_node->data = data;
     new_node->next = NULL;
 
-    if (queue->size == 0) {
-        // 队列为空
-        new_node->prev = NULL;
+    if (queue->head == NULL) {
         queue->head = new_node;
-        queue->tail = new_node;
     } else {
-        // 队列非空，插入到尾部
-        new_node->prev = queue->tail;
-        queue->tail->next = new_node;
-        queue->tail = new_node;
+        list_node_t *current = queue->head;
+        while (true) {
+            if (current->next == NULL) {
+                current->next = new_node;
+                break;
+            }
+            current = current->next;
+        }
     }
+    queue->tail = new_node;
 
     queue->size++;
     spin_unlock(queue->lock);
@@ -37,22 +39,28 @@ list_node_t *list_enqueue(list_queue_t *queue, void *data) {
 void list_remove_node(list_queue_t *queue, list_node_t *node_to_remove) {
     if (!queue || !node_to_remove) return;
 
-    if (node_to_remove->prev) {
-        node_to_remove->prev->next = node_to_remove->next;
-    } else {
-        // 被删除的是头部节点
-        queue->head = node_to_remove->next;
-    }
+    spin_lock(queue->lock); // 加锁保护链表结构
+    list_node_t *current  = queue->head;
+    list_node_t *previous = NULL;
 
-    if (node_to_remove->next) {
-        node_to_remove->next->prev = node_to_remove->prev;
-    } else {
-        // 被删除的是尾部节点
-        queue->tail = node_to_remove->prev;
+    while (current != NULL) {
+        if (current == node_to_remove) {
+            if (previous == NULL) {
+                list_node_t *new_head = current->next;
+                queue->head           = new_head;
+            } else {
+                previous->next = current->next;
+            }
+            void *handle = current->data;
+            free(current);
+            queue->size--;
+            spin_unlock(queue->lock);
+            return;
+        }
+        previous = current;
+        current  = current->next;
     }
-
-    free(node_to_remove);
-    queue->size--;
+    spin_unlock(queue->lock);
 }
 
 void free_llist_queue(list_queue_t *queue, data_free_func_t data_free_func, void *arg) {
@@ -64,62 +72,42 @@ void free_llist_queue(list_queue_t *queue, data_free_func_t data_free_func, void
 
     while (current != NULL) {
         next_node = current->next;
-        if (data_free_func && current->data) {
-            data_free_func(current->data,arg);
-        }
+        if (data_free_func && current->data) { data_free_func(current->data, arg); }
         free(current);
         current = next_node;
     }
     queue->head = NULL;
-    queue->tail = NULL;
     queue->size = 0;
     spin_unlock(queue->lock);
     free(queue);
 }
 
-list_queue_t *copy_list_queue(list_queue_t *src_queue, void*(*copy)(void*)) {
+list_queue_t *copy_list_queue(list_queue_t *src_queue, void *(*copy)(void *),
+                              void (*index_clone)(void *, list_node_t *index)) {
     if (!src_queue || !copy) return NULL;
     spin_lock(src_queue->lock);
+
     list_queue_t *new_queue = create_llist_queue();
     if (!new_queue) {
         spin_unlock(src_queue->lock);
         return NULL;
     }
-    list_node_t *current_src = src_queue->head;
-    list_node_t *prev_new = NULL;
 
-    while (current_src != NULL) {
-        list_node_t *new_node = (list_node_t *)malloc(sizeof(list_node_t));
-        if (!new_node) {
-            list_node_t *cleanup_node = new_queue->head;
-            while(cleanup_node != NULL) {
-                list_node_t *next = cleanup_node->next;
-                free(cleanup_node);
-                cleanup_node = next;
-            }
-            free(new_queue);
-
+    for (list_node_t *cur = src_queue->head; cur; cur = cur->next) {
+        void *copied = copy(cur->data);
+        if (!copied) {
+            free_llist_queue(new_queue, NULL, NULL);
             spin_unlock(src_queue->lock);
             return NULL;
         }
-
-        // 浅拷贝数据指针
-        new_node->data = copy(current_src->data);
-
-        new_node->prev = prev_new;
-        new_node->next = NULL;
-
-        if (new_queue->size == 0 || prev_new == NULL) {
-            new_queue->head = new_node;
-        } else {
-            prev_new->next = new_node;
+        list_node_t *node = list_enqueue(new_queue, copied);
+        if (node == NULL) {
+            free(copied);
+            free_llist_queue(new_queue, NULL, NULL);
+            spin_unlock(src_queue->lock);
+            return NULL;
         }
-
-        new_queue->tail = new_node;
-        prev_new = new_node;
-        new_queue->size++;
-
-        current_src = current_src->next;
+        if(index_clone) index_clone(copied,node);
     }
 
     spin_unlock(src_queue->lock);

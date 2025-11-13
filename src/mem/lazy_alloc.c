@@ -10,8 +10,13 @@ void *virt_copy(void *ptr) {
     new_page->flags             = src_page->flags;
     new_page->count             = src_page->count;
     new_page->pte_flags         = src_page->pte_flags;
-    new_page->index             = src_page->index;
+    //new_page->index             = src_page->index;
     return new_page;
+}
+
+void virt_copy_index(void *ptr, list_node_t *node){
+    mm_virtual_page_t *src_page = (mm_virtual_page_t *)ptr;
+    src_page->index = node;
 }
 
 #include "term/klog.h"
