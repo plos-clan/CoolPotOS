@@ -2,6 +2,7 @@
 #include "mem/alloc/area.h"
 #include "mem/alloc/block.h"
 #include "mem/alloc/freelist.h"
+#include "term/klog.h"
 #include "krlibc.h"
 
 // mpool_free 中使用的临时函数
@@ -139,6 +140,12 @@ void *mpool_aligned_alloc(mpool_t pool, size_t size, size_t align) {
 
 void mpool_free(mpool_t pool, void *ptr) {
     if (ptr == NULL) return;
+
+    if(blk_head(ptr) & FREE_FLAG) {
+        logkf("ERROR: DOUBLE FREE\n");
+        arch_close_interrupt();
+        while (true) arch_wait_for_interrupt();
+    }
 
     pool->alloced_size -= blk_size(ptr);
 

@@ -37,7 +37,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->cwd           = current_pcb->cwd;
     new_pcb->cwd->refcount++;
     new_pcb->parent     = current_pcb;
-    new_pcb->virt_queue = copy_list_queue(current_pcb->virt_queue, virt_copy);
+    new_pcb->virt_queue = copy_list_queue(current_pcb->virt_queue, virt_copy, virt_copy_index);
     // new_pcb->mmap_start    = current_pcb->mmap_start;
     new_pcb->fdts          = copy_fdt(current_pcb->fdts);
     new_pcb->pl_index      = cow_list_add(process_list, new_pcb);
@@ -313,11 +313,11 @@ syscall_(execve, char *path, char **argv, char **envp) {
     }
 
     // 根据 POSIX 的 execve 规范定义, 内核对象不变, 故懒分配器, IPC等不动
-//    lazy_free(process);
-//    process->virt_queue = create_llist_queue();
-//
-//    ipc_queue_release(process->ipc_queue);
-//    process->ipc_queue = ipc_queue_init();
+    //    lazy_free(process);
+    //    process->virt_queue = create_llist_queue();
+    //
+    //    ipc_queue_release(process->ipc_queue);
+    //    process->ipc_queue = ipc_queue_init();
 
     free(norm_path);
 
