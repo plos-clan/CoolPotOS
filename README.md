@@ -83,4 +83,4 @@ Welcome to create pull requests or issues to this project. Then sit back and rel
 
 ### Contributors
 
-* Goto [CoolPotOS | Website](cpos.plos-clan.org) to see the contributors list.
+* Goto [CoolPotOS | Website](https://cpos.plos-clan.org) to see the contributors list.
