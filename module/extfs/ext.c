@@ -15,7 +15,10 @@ extern char *vfs_get_fullpath(vfs_node_t);
 int ext_mount(const char *src, vfs_node_t node) {
     spin_lock(rwlock);
 
-    if (is_virtual_fs(src)) return -1;
+    if (is_virtual_fs(src)) {
+        spin_unlock(rwlock);
+        return -1;
+    }
 
     ext4_device_register(vfs_dev_get(), src);
 
@@ -306,7 +309,7 @@ int ext_mkdir(void *parent, const char *name, vfs_node_t node) {
     return ret;
 }
 
-int ext_delete(void *parent, vfs_node_t node) {
+errno_t ext_delete(void *parent, vfs_node_t node) {
     spin_lock(rwlock);
 
     char *path = vfs_get_fullpath(node);
@@ -366,7 +369,7 @@ static struct vfs_callback callbacks = {
     .mkfile   = ext_mkfile,
     .link     = ext_link,
     .symlink  = ext_symlink,
-    .delete   = (vfs_del_t)ext_delete,
+    .delete   = ext_delete,
     .rename   = (vfs_rename_t)ext_rename,
     .map      = (vfs_mapfile_t)ext_map,
     .stat     = ext_stat,
@@ -375,8 +378,12 @@ static struct vfs_callback callbacks = {
     .dup      = (vfs_dup_t)ext_dup,
 };
 
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    return EOK;
+}
+
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
-    ext_fsid = vfs_regist("extfs", &callbacks);
+    ext_fsid = vfs_regist("ext3", &callbacks, 0, 0xef53);
     if (ext_fsid == -1) {
         printk("Cannot register extfs file system.\n");
         return -EFAULT;

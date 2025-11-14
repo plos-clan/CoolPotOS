@@ -459,8 +459,12 @@ NVME_CONTROLLER *nvme_driver_init(uint64_t bar0, uint64_t bar_size) {
     nvme.flag        = 1;
     nvme.sector_size = ns->BSZ;
     strcpy(nvme.drive_name, "nvme0");
-    namespace_[regist_device(nvme)] = ns;
+    namespace_[regist_device(NULL, nvme)] = ns;
     return ctrl;
+}
+
+__attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
+    return EOK;
 }
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
