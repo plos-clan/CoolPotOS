@@ -76,6 +76,10 @@ xmake project -k compile_commands
 
 该项目完全遵循 MIT 协议，任何人都可以免费使用它，另见 [LICENSE](/LICENSE)。
 
+## 文档
+
+详细说明请访问 [docs/README.md](/docs/README.md)。
+
 ## 支持功能
 
 ### AMD64
