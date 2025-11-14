@@ -70,4 +70,4 @@ cmake --build build/ --target run
 
 ### 贡献者们
 
-* 前往 [CoolPotOS | Website](cpos.plos-clan.org) 查看贡献者列表
+* 前往 [CoolPotOS | Website](https://cpos.plos-clan.org) 查看贡献者列表
