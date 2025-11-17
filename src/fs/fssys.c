@@ -634,6 +634,13 @@ syscall_(pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exc
     return ret;
 }
 
+USED static void debug_handle(fd_t *handle) {
+    list_foreach(handle->node->child, i) {
+        logkf("%p\r\n", i->data);
+    }
+    logkf("\r\n");
+}
+
 syscall_(getdents, int fd, struct dirent *dents, size_t size) {
     if (unlikely(check_user_overflow((uint64_t)dents, size))) { return SYSCALL_FAULT_(EFAULT); }
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);

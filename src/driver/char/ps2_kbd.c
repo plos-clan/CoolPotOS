@@ -163,7 +163,7 @@ void ps2k_create_device() {
 #if defined(__x86_64__) || defined(__amd64__)
     extern intctl_t apic_controller;
     irq_regist_irq(ps2_kbd_irq + IRQ_BASE_VECTOR, ps2_key_handle, ps2_kbd_irq, NULL,
-                   &apic_controller, "ps2_keyboard", 0);
+                   &apic_controller, "ps2_keyboard", 0, IO_APIC);
 #endif
     irq_set_alloc(ps2_kbd_irq);
     ps2_kbd_device       = alloc_input_dev();

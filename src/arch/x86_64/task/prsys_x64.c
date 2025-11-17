@@ -277,7 +277,7 @@ syscall_(execve, char *path, char **argv, char **envp) {
     char *old_cmdline = process->cmdline;
     process->cmdline  = strdup(cmdline);
     if (process->name != NULL) free(process->name);
-    process->name = strdup(path);
+    process->name = malloc(50);
     strncpy(process->name, norm_path, 50);
 
     char **old_envp = process->envp;

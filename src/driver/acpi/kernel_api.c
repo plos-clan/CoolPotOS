@@ -274,7 +274,7 @@ uacpi_status uacpi_kernel_install_interrupt_handler(uacpi_u32               irq,
 #    if defined(__x86_64__) || defined(__amd64__)
     extern intctl_t apic_controller;
     irq_regist_irq(irq + IRQ_BASE_VECTOR, uacpi_irq_handler, irq, arg, &apic_controller,
-                   "uacpi_irq_handler",0);
+                   "uacpi_irq_handler",0,IO_APIC);
 #    endif
     return UACPI_STATUS_OK;
 }
