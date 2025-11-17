@@ -80,7 +80,7 @@ USED _Noreturn void kmain() {
     // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用
     extern intctl_t apic_controller;
     irq_allocate_irqnum();
-    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle", 0);
+    irq_regist_irq(timer, scheduler_handler, 0, NULL, &apic_controller, "sched_handle", 0, IO_APIC);
 
     ps2_kdb_setup();
     // rtc_setup();
@@ -105,6 +105,9 @@ USED _Noreturn void kmain() {
     arch_open_interrupt();
     enable_scheduler();
     start_all_kernel_module();
+
+    extern void mount_modfs();
+    mount_modfs();
 
     launch_init_process();
 

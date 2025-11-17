@@ -163,6 +163,7 @@ static inline void freelist_put(freelist_t *list_p, freelist_t ptr) {
 static inline bool freelists_put(freelists_t lists, void *_ptr) {
     freelist_t ptr  = _ptr;
     size_t     size = blk_size(ptr);
+    if(size == 0) return true;
     int        id   = freelists_size2id(size);
     if (id < 0) return false;
     ptr->next = lists[id];

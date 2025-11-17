@@ -3,7 +3,9 @@
 #include "bootarg.h"
 #include "errno.h"
 #include "fs/fds.h"
+#include "intctl.h"
 #include "mem/vma.h"
+#include "task/smp.h"
 #include "term/klog.h"
 
 static int procfs_id     = 0;
@@ -157,6 +159,54 @@ char *proc_gen_mounts(size_t *context_len) {
     return strdup(mount_info);
 }
 
+char *proc_gen_interrupts(size_t *context_len) {
+    extern irq_action_t actions[ARCH_MAX_IRQ_NUM];
+    const size_t        bufsize = PAGE_SIZE * 4;
+    char               *buffer  = malloc(bufsize);
+    if (!buffer) return NULL;
+
+    size_t offset = 0;
+    memset(buffer, 0, bufsize);
+
+    // 写入 CPU 表头
+    offset += snprintf(buffer + offset, bufsize - offset, "           ");
+    for (size_t cpu = 0; cpu < get_cpu_count(); cpu++) {
+        offset += snprintf(buffer + offset, bufsize - offset, "CPU%-4zu", cpu);
+    }
+    offset += snprintf(buffer + offset, bufsize - offset, "\n");
+    for (size_t irq = 0; irq < ARCH_MAX_IRQ_NUM; irq++) {
+        irq_action_t *action = &actions[irq];
+        if(action->irq_controller == NULL || action->handler == NULL) continue;
+
+        offset += snprintf(buffer + offset, bufsize - offset, "%3zu:    ", irq);
+
+        // 写入每 CPU 的计数
+        for (size_t cpu = 0; cpu < get_cpu_count(); cpu++) {
+            offset += snprintf(buffer + offset, bufsize - offset,
+                               "%-8llu", (unsigned long long)action->int_count[cpu]);
+        }
+
+        char *name_type;
+        switch (action->type) {
+        case IO_APIC:
+            name_type = "IO_APIC";
+            break;
+        case PCI_MSI:
+            name_type = "PCI_MSI";
+            break;
+        }
+        offset += snprintf(buffer + offset, bufsize - offset, "%s ", name_type);
+
+        if (action->name)
+            offset += snprintf(buffer + offset, bufsize - offset, "%s\n", action->name);
+        else
+            offset += snprintf(buffer + offset, bufsize - offset, "unknown\n");
+    }
+
+    *context_len = offset;
+    return buffer;
+}
+
 extern cow_arraylist *process_list;
 
 errno_t procfs_mount(const char *src, vfs_node_t node) {
@@ -185,6 +235,14 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     mounts->handle          = mounts_h;
     mounts_h->task          = NULL;
     sprintf(mounts_h->name, "mounts");
+
+    vfs_node_t interrupts       = vfs_node_alloc(procfs_root, "interrupts");
+    interrupts->type            = file_none;
+    interrupts->mode            = 0700;
+    proc_handle_t *interrupts_h = malloc(sizeof(proc_handle_t));
+    interrupts->handle          = interrupts_h;
+    interrupts_h->task          = NULL;
+    sprintf(mounts_h->name, "interrupts");
 
     vfs_node_t filesystems            = vfs_node_alloc(procfs_root, "filesystems");
     filesystems->type                 = file_none;
@@ -247,6 +305,12 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
     } else if (!strcmp(handle->name, "mounts")) {
         size_t len     = 0;
         char  *contect = proc_gen_mounts(&len);
+        memcpy(addr, contect, len);
+        free(contect);
+        return len;
+    } else if (!strcmp(handle->name, "interrupts")) {
+        size_t len     = 0;
+        char  *contect = proc_gen_interrupts(&len);
         memcpy(addr, contect, len);
         free(contect);
         return len;
@@ -320,6 +384,11 @@ errno_t procfs_stat(void *file, vfs_node_t node) {
     } else if (!strcmp(handle->name, "mounts")) {
         size_t content_len = 0;
         char  *content     = proc_gen_mounts(&content_len);
+        free(content);
+        node->size = content_len;
+    } else if (!strcmp(handle->name, "interrupts")) {
+        size_t content_len = 0;
+        char  *content     = proc_gen_interrupts(&content_len);
         free(content);
         node->size = content_len;
     }

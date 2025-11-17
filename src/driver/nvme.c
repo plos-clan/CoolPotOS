@@ -260,7 +260,7 @@ static int nvme_bind_queue_interrupt(nvme_controller_t *ctrl, nvme_queue_t *queu
 
     extern intctl_t apic_controller;
     irq_regist_irq(vector + IRQ_BASE_VECTOR, nvme_interrupt_handler, vector, queue,
-                   &apic_controller, "NVMe", IRQ_FLAGS_MSIX);
+                   &apic_controller, "NVMe", IRQ_FLAGS_MSIX, PCI_MSI);
 #endif
 
     g_nvme_platform_ops->log("NVMe: Queue %u bound to interrupt vector %u\n", queue->queue_id,

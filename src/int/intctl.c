@@ -1,13 +1,17 @@
 #include "intctl.h"
 #include "id_alloc.h"
-#include "term/klog.h"
 #include "krlibc.h"
+#include "task/smp.h"
+#include "term/klog.h"
 
 id_allocator_t *intctl_irq_alloc;
 irq_action_t    actions[ARCH_MAX_IRQ_NUM];
 
 void do_irq(struct pt_regs *regs, uint64_t irq_num) {
     irq_action_t *action = &actions[irq_num];
+
+    cpu_local_t *cpu = arch_current_cpu();
+    action->int_count[cpu->id]++;
 
     if (action->handler) {
         action->handler(irq_num, action->data, regs);
@@ -24,13 +28,15 @@ void do_irq(struct pt_regs *regs, uint64_t irq_num) {
 
 void irq_regist_irq(uint64_t irq_num,
                     void (*handler)(uint64_t irq_num, void *data, struct pt_regs *regs),
-                    uint64_t arg, void *data, intctl_t *controller, char *name, uint64_t flags) {
+                    uint64_t arg, void *data, intctl_t *controller, char *name, uint64_t flags,
+                    enum irq_type type) {
     irq_action_t *action = &actions[irq_num];
 
     action->handler        = handler;
     action->data           = data;
     action->irq_controller = controller;
     action->name           = strdup(name);
+    action->type           = type;
 
     if (action->irq_controller && action->irq_controller->_install) {
         action->irq_controller->_install(irq_num, arg, flags);
@@ -51,8 +57,8 @@ void irq_deallocate_irqnum(int irq_num) {
     id_free(intctl_irq_alloc, irq_num);
 }
 
-void irq_set_alloc(size_t irq_num){
-    id_alloc_set(intctl_irq_alloc,irq_num);
+void irq_set_alloc(size_t irq_num) {
+    id_alloc_set(intctl_irq_alloc, irq_num);
 }
 
 void intctl_init() {
