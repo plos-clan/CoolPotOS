@@ -84,6 +84,7 @@
 #define MAX_STACK_SIZE        131072               // 增强栈大小 128k
 #define MAX_FRAMEBUFFER       10                   // 最大帧缓冲区个数识别
 #define MAX_LOAD_MODULE       256                  // 最大模块加载数
+#define SENDFILE_BUF_SIZE     1024                 // sendfile 系统调用缓冲区
 
 // 内核编译配置选项
 #ifndef EEVDF_SCHEDULER

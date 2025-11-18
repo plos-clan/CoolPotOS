@@ -1,4 +1,5 @@
 #include "errno.h"
+#include "fs/procfs.h"
 #include "fsgsbase.h"
 #include "mem/lazy_alloc.h"
 #include "nr.h"
@@ -105,7 +106,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     add_task_prio(new_task, NICE_TO_PRIO(0));
     enable_scheduler();
     arch_open_interrupt();
-    // procfs_on_new_task(new_pcb);
+    procfs_on_new_task(new_pcb);
 
     if (!is_vfork) return new_pcb->pid;
     while (true) {

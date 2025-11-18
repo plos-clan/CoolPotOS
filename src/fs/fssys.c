@@ -860,3 +860,64 @@ syscall_(mkdir, char *name, uint64_t mode) {
     free(npath);
     return ret;
 }
+
+syscall_(readlink,char *path,char *buf,uint64_t size) {
+    if (path == NULL || buf == NULL || size == 0) { return SYSCALL_FAULT_(EINVAL); }
+    if (check_user_overflow((uint64_t)buf, size)) { return SYSCALL_FAULT_(EFAULT); }
+
+    vfs_node_t node = vfs_open(path);
+    if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
+    if (!(node->type & file_symlink)) return SYSCALL_FAULT_(EINVAL);
+
+    return vfs_readlink(node, buf, (size_t)size);
+}
+
+syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
+    pcb_t           process    = get_current_task()->process;
+    fd_t *out_handle = get_fd(process->fdts, out_fd);
+    fd_t *in_handle  = get_fd(process->fdts, in_fd);
+    if (out_handle == NULL || in_handle == NULL) return SYSCALL_FAULT_(EBADF);
+
+    uint64_t current_offset = offset_ptr == NULL ? in_handle->offset : *offset_ptr;
+    size_t   total_sent     = 0;
+
+    size_t remaining = count;
+
+    char *buffer = (char *)malloc(SENDFILE_BUF_SIZE);
+    if (buffer == NULL) { return SYSCALL_FAULT_(ENOMEM); }
+
+    while (remaining > 0) {
+        size_t bytes_to_read = remaining < SENDFILE_BUF_SIZE ? remaining : SENDFILE_BUF_SIZE;
+        size_t bytes_read;
+        size_t bytes_written;
+        bytes_read = vfs_read(in_handle->node, buffer, current_offset, bytes_to_read);
+        if (bytes_read <= 0) {
+            if (bytes_read == (size_t)-1 && total_sent == 0) {
+                free(buffer);
+                return SYSCALL_FAULT_(EIO);
+            }
+            break;
+        }
+        bytes_written = vfs_write(out_handle->node, buffer, out_handle->offset, bytes_read);
+        if (bytes_written == (size_t)-1) {
+            if (total_sent == 0) {
+                free(buffer);
+                return SYSCALL_FAULT_(EIO);
+            }
+            break;
+        }
+        if (bytes_written < bytes_read) { bytes_read = bytes_written; }
+        current_offset     += bytes_read;
+        out_handle->offset += bytes_read;
+        total_sent         += bytes_read;
+        remaining          -= bytes_read;
+    }
+    free(buffer);
+    if (offset_ptr != NULL) {
+        *offset_ptr = current_offset;
+    } else {
+        in_handle->offset = current_offset;
+    }
+    return total_sent;
+}
+
