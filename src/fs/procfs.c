@@ -176,24 +176,20 @@ char *proc_gen_interrupts(size_t *context_len) {
     offset += snprintf(buffer + offset, bufsize - offset, "\n");
     for (size_t irq = 0; irq < ARCH_MAX_IRQ_NUM; irq++) {
         irq_action_t *action = &actions[irq];
-        if(action->irq_controller == NULL || action->handler == NULL) continue;
+        if (action->irq_controller == NULL || action->handler == NULL) continue;
 
         offset += snprintf(buffer + offset, bufsize - offset, "%3zu:    ", irq);
 
         // 写入每 CPU 的计数
         for (size_t cpu = 0; cpu < get_cpu_count(); cpu++) {
-            offset += snprintf(buffer + offset, bufsize - offset,
-                               "%-8llu", (unsigned long long)action->int_count[cpu]);
+            offset += snprintf(buffer + offset, bufsize - offset, "%-8llu",
+                               (unsigned long long)action->int_count[cpu]);
         }
 
         char *name_type;
         switch (action->type) {
-        case IO_APIC:
-            name_type = "IO_APIC";
-            break;
-        case PCI_MSI:
-            name_type = "PCI_MSI";
-            break;
+        case IO_APIC: name_type = "IO_APIC"; break;
+        case PCI_MSI: name_type = "PCI_MSI"; break;
         }
         offset += snprintf(buffer + offset, bufsize - offset, "%s ", name_type);
 
@@ -218,6 +214,7 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     procfs_self->type      = file_symlink;
     procfs_self->mode      = 0644;
     procfs_self->linkto    = NULL;
+    procfs_self->handle    = NULL;
     procfs_self->fsid      = proc_self_id;
 
     vfs_node_t cmdline    = vfs_node_alloc(procfs_root, "cmdline");
@@ -424,10 +421,10 @@ size_t procfs_self_write(void *fd, const void *addr, size_t offset, size_t size)
 }
 
 size_t procfs_self_readlink(vfs_node_t file, void *addr, size_t offset, size_t size) {
-    procfs_self_handle_t *handle = file->handle;
-    if (offset >= strlen(handle->self->linkto->name)) return 0;
+    if (!(file->type & file_symlink)) return 0;
+    if (offset >= strlen(file->linkto->name)) return 0;
     logkf("procfs: readlink offset:%llu size:%llu", offset, size);
-    char   *ptr = handle->self->linkto->name + offset;
+    char   *ptr = file->linkto->name + offset;
     ssize_t len = strlen(ptr);
     len         = MIN(len, (ssize_t)size);
     memcpy(addr, ptr, len);
@@ -437,7 +434,8 @@ size_t procfs_self_readlink(vfs_node_t file, void *addr, size_t offset, size_t s
 errno_t procfs_self_stat(void *file, vfs_node_t node) {
     procfs_self_handle_t *handle  = file;
     node->type                   |= file_symlink;
-    node->size                    = strlen(handle->self->linkto->name);
+    node->linkto                  = get_current_task()->process->procfs_node;
+    node->size                    = strlen(node->linkto->name);
     return EOK;
 }
 

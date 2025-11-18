@@ -168,6 +168,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_VFORK]       = (syscall_t)syscall_vfork,
     [SYSCALL_CLONE]       = (syscall_t)syscall_clone,
     [SYSCALL_LSTAT]       = (syscall_t)syscall_stat,
+    [SYSCALL_SYSINFO]     = (syscall_t)syscall_sysinfo,
+    [SYSCALL_READLINK]    = (syscall_t)syscall_readlink,
+    [SYSCALL_SENDFILE]    = (syscall_t)syscall_sendfile,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

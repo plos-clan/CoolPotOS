@@ -1,15 +1,16 @@
 #include "task/task.h"
 #include "cow_arraylist.h"
 #include "errno.h"
+#include "fs/procfs.h"
 #include "krlibc.h"
 #include "mem/heap.h"
 #include "mem/lazy_alloc.h"
 #include "metadata.h"
+#include "task/eevdf.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
 #include "task/smp.h"
 #include "term/klog.h"
-#include "task/eevdf.h"
 
 pcb_t                  kernel_process;
 tcb_t                  bsp_idle_thread;
@@ -79,7 +80,7 @@ static void kill_proc0(pcb_t pcb) {
     cow_list_destroy(pcb->child_threads);
     cow_list_remove(process_list, pcb->pl_index);
 
-    //procfs_on_exit_task(pcb);
+    procfs_on_exit_task(pcb);
 
     for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
         fd_t *handle = pcb->fdts->fds[i];

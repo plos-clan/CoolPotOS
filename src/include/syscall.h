@@ -231,6 +231,23 @@ struct statx {
                                          /* 0x100 */
 };
 
+struct sysinfo {
+    int64_t  uptime;    /* Seconds since boot */
+    uint64_t loads[3];  /* 1, 5, and 15 minute load averages */
+    uint64_t totalram;  /* Total usable main memory size */
+    uint64_t freeram;   /* Available memory size */
+    uint64_t sharedram; /* Amount of shared memory */
+    uint64_t bufferram; /* Memory used by buffers */
+    uint64_t totalswap; /* Total swap space size */
+    uint64_t freeswap;  /* swap space still available */
+    uint16_t procs;     /* Number of current processes */
+    uint16_t pad;       /* Explicit padding for m68k */
+    uint64_t totalhigh; /* Total high memory size */
+    uint64_t freehigh;  /* Available high memory size */
+    uint32_t mem_unit;  /* Memory unit size in bytes */
+    char     _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
+};
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -273,6 +290,8 @@ syscall_(rmdir, char *name);
 syscall_(unlinkat, int dirfd, char *name);
 syscall_(access, char *filename);
 syscall_(mkdir, char *name, uint64_t mode);
+syscall_(readlink,char *path,char *buf,uint64_t size);
+syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -316,3 +335,4 @@ syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
 syscall_(clock_getres);
 syscall_(getgroups, int count, int *gid_list);
 syscall_(nano_sleep, void *time_handle);
+syscall_(sysinfo, struct sysinfo *info) ;

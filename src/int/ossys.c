@@ -1,9 +1,13 @@
 #include "errno.h"
 #include "krlibc.h"
+#include "mem/frame.h"
 #include "syscall.h"
 #include "task/scheduler.h"
 #include "term/klog.h"
 #include "timer.h"
+#include "mem/memstat.h"
+
+extern cow_arraylist *process_list;
 
 syscall_(uname, struct utsname *utsname) {
     if (unlikely(utsname == NULL)) return SYSCALL_FAULT_(EINVAL);
@@ -71,5 +75,15 @@ syscall_(nano_sleep, void *time_handle) {
     if (unlikely(k_req.tv_nsec >= 1000000000L)) return SYSCALL_FAULT_(EINVAL);
     uint64_t nsec = k_req.tv_sec * 1000000000 + k_req.tv_nsec;
     scheduler_nano_sleep(nsec);
+    return EOK;
+}
+
+syscall_(sysinfo, struct sysinfo *info) {
+    if (check_user_overflow((uint64_t)info, sizeof(struct sysinfo))) return SYSCALL_FAULT_(EFAULT);
+    memset(info, 0, sizeof(struct sysinfo));
+    info->freeram  = get_available_memory();
+    info->totalram = get_all_memory();
+    info->mem_unit = 1;
+    info->procs    = process_list->size;
     return EOK;
 }
