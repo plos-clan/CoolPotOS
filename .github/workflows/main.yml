@@ -1,0 +1,46 @@
+name: CI Workflow
+
+on:
+  push:
+    branches: [ "rebuild" ]
+    paths-ignore:
+      - 'readme'
+      - '.gitignore'
+      - 'README.md'
+  pull_request:
+    branches: [ "rebuild" ]
+    paths-ignore:
+      - 'readme'
+      - '.gitignore'
+      - 'README.md'
+jobs:
+  x86_64:
+    runs-on: ubuntu-latest
+    name: x86_64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Install packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: xorriso clang mtools lld openssl python3 cmake
+          version: 1.0
+          
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build/ \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DTARGET_ARCH=x86_64
+          
+      - name: Build CPOS x86_64
+        run: |
+          cmake --build build/ --target run -j 12
+
+      - name: Upload CoolPotOS-x86_64 ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoolPotOS-x86_64 (ISO)
+          path: build/CoolPotOS.iso
+          compression-level: 9
