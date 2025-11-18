@@ -193,9 +193,8 @@ syscall_(dup2, int fd, int newfd) {
 
     fd_t *old_handle = get_fd(get_current_task()->process->fdts, newfd);
     if (old_handle != NULL) {
-        remove_fd(get_current_task()->process->fdts, newfd);
         vfs_close(old_handle->node);
-        free(old_handle);
+        remove_fd(get_current_task()->process->fdts, newfd);
     }
 
     fd_t *new_handle = fd_dup(handle);
@@ -919,5 +918,52 @@ syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
         in_handle->offset = current_offset;
     }
     return total_sent;
+}
+
+syscall_(openat,int dirfd,char *name,uint64_t flags,uint64_t mode) {
+    if (unlikely(!name || check_user_overflow((uint64_t)name, strlen(name)))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    char *path = at_resolve_pathname(dirfd, (char *)name);
+    if (!path) return SYSCALL_FAULT_(ENOMEM);
+    uint64_t ret = syscall_open(path, flags, mode, 0, 0, 0, regs);
+    free(path);
+    return ret;
+}
+
+syscall_(faccessat,int dirfd,char *pathname,uint64_t mode) {
+    if (pathname[0] == '\0') { // by fd
+        return 0;
+    }
+    if (check_user_overflow((uint64_t)pathname, strlen(pathname))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    char *resolved = at_resolve_pathname(dirfd, (char *)pathname);
+    if (resolved == NULL) return SYSCALL_FAULT_(ENOENT);
+
+    size_t ret = syscall_access(resolved, mode, 0, 0, 0, 0, regs);
+
+    free(resolved);
+
+    return ret;
+}
+
+syscall_(faccessat2,int dirfd,char *pathname,uint64_t mode,uint64_t flag) {
+    if (pathname[0] == '\0') { // by fd
+        return 0;
+    }
+    if (check_user_overflow((uint64_t)pathname, strlen(pathname))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    char *resolved = at_resolve_pathname(dirfd, (char *)pathname);
+    if (resolved == NULL) return SYSCALL_FAULT_(ENOENT);
+
+    size_t ret = syscall_access(resolved, mode, 0, 0, 0, 0, regs);
+
+    free(resolved);
+
+    return ret;
 }
 
