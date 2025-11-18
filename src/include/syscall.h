@@ -292,6 +292,9 @@ syscall_(access, char *filename);
 syscall_(mkdir, char *name, uint64_t mode);
 syscall_(readlink,char *path,char *buf,uint64_t size);
 syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count);
+syscall_(openat,int dirfd,char *name,uint64_t flags,uint64_t mode);
+syscall_(faccessat,int dirfd,char *pathname,uint64_t mode);
+syscall_(faccessat2,int dirfd,char *pathname,uint64_t mode,uint64_t flag);
 
 // proc syscall
 syscall_(exit, int exit_code);

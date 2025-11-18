@@ -6,7 +6,7 @@
 #include "task/task.h"
 #include "term/klog.h"
 
-extern void print_kernel_backtrace(struct interrupt_frame *frame,uint64_t saved_rbp);
+extern void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp);
 
 __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
@@ -24,7 +24,7 @@ __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_cod
         arch_close_interrupt();
 
     kerror("divide_error: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame,saved_rbp);
+    print_kernel_backtrace(frame, saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -141,7 +141,7 @@ __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_c
         arch_close_interrupt();
 
     kerror("invalid_opcode: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame,saved_rbp);
+    print_kernel_backtrace(frame, saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -220,7 +220,7 @@ __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t er
         arch_close_interrupt();
 
     kerror("segment_not_present: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame,saved_rbp);
+    print_kernel_backtrace(frame, saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -242,7 +242,7 @@ __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t er
         arch_close_interrupt();
 
     kerror("stack_segment_fault: error_code %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame,saved_rbp);
+    print_kernel_backtrace(frame, saved_rbp);
 err:;
     while (true)
         arch_wait_for_interrupt();
@@ -266,7 +266,7 @@ __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64
         arch_close_interrupt();
 
     kerror("general_protection_fault: %x at %p", error_code, frame->rip);
-    print_kernel_backtrace(frame,saved_rbp);
+    print_kernel_backtrace(frame, saved_rbp);
     if (is_debug) return;
 err:;
     while (true)
@@ -292,15 +292,16 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
             goto wfi;
         }
         if (current_task->process->pid == 0) goto msg;
-        if(faulting_address < 0x1000) goto kill;
+        if (faulting_address < 0x1000) goto kill;
         errno_t status = lazy_tryalloc(current_task->process, faulting_address);
         if (status == EOK) {
             arch_open_interrupt();
             return;
         }
     kill:
-        logkf("page_fault %s process(%s:%d) thread %s:%d\n", error_msg, current_task->process->name,
-              current_task->process->pid, current_task->name, current_task->tid);
+        logkf("page_fault %s process(%s:%d) thread %s:%d (%p)->%p\n", error_msg,
+              current_task->process->name, current_task->process->pid, current_task->name,
+              current_task->tid, faulting_address, frame->rip);
         pcb_t process = current_task->process;
         if (process->pid != 0) kill_proc(process, -1, true);
         goto wfi;
@@ -311,7 +312,7 @@ msg:;
         printk("Current process(%s:%d) thread %s:%d\n", current_task->process->name,
                current_task->process->pid, current_task->name, current_task->tid);
     }
-    print_kernel_backtrace(frame,saved_rbp);
+    print_kernel_backtrace(frame, saved_rbp);
     arch_close_interrupt();
 wfi:
     if (is_debug) return;

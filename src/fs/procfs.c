@@ -295,26 +295,34 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
             return 0;
     } else if (!strcmp(handle->name, "cmdline")) {
         size_t len = strlen(get_kernel_cmdline());
-        if (len == 0) return 0;
+        if (len == 0 || offset > len) return 0;
         len = (len + 1) > size ? size : len + 1;
         memcpy(addr, get_kernel_cmdline(), len);
         return len;
     } else if (!strcmp(handle->name, "mounts")) {
         size_t len     = 0;
         char  *contect = proc_gen_mounts(&len);
+        if (len == 0 || offset > len) {
+            free(contect);
+            return 0;
+        }
         memcpy(addr, contect, len);
         free(contect);
         return len;
     } else if (!strcmp(handle->name, "interrupts")) {
         size_t len     = 0;
         char  *contect = proc_gen_interrupts(&len);
+        if (len == 0 || offset > len) {
+            free(contect);
+            return 0;
+        }
         memcpy(addr, contect, len);
         free(contect);
         return len;
     } else if (!strcmp(handle->name, "proc_cmdline")) {
         char   *cmdline = task->cmdline ? task->cmdline : "no_cmdline";
         ssize_t len     = strlen(cmdline);
-        if (len == 0) return 0;
+        if (len == 0 || offset > len) return 0;
         len = (len + 1) > size ? size : len + 1;
         memcpy(addr, cmdline, len);
         return len;

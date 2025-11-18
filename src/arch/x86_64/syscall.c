@@ -171,6 +171,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SYSINFO]     = (syscall_t)syscall_sysinfo,
     [SYSCALL_READLINK]    = (syscall_t)syscall_readlink,
     [SYSCALL_SENDFILE]    = (syscall_t)syscall_sendfile,
+    [SYSCALL_OPENAT]      = (syscall_t)syscall_openat,
+    [SYSCALL_FACCESSAT]   = (syscall_t)syscall_faccessat,
+    [SYSCALL_FACCESSAT2]  = (syscall_t)syscall_faccessat2,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

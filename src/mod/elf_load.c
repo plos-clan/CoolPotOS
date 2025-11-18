@@ -109,12 +109,12 @@ void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset, u
 
 void launch_init_process() {
     const char *cmdline = boot_get_cmdline_param("init");
-    vfs_node_t node = vfs_open(cmdline);
+    vfs_node_t node = vfs_open("/bin/sh");
     if (node == NULL) {
         kwarn("Cannot open init file.");
         return;
     }
-    pid_t init_pid = create_process(cmdline, NULL, CLONE_VM);
+    pid_t init_pid = create_process("/bin/sh", NULL, CLONE_VM);
     if (init_pid == -1) {
         kerror("Cannot create init process\n");
         return;
@@ -132,7 +132,7 @@ void launch_init_process() {
     init_process->envp[0] = strdup("PWD=/");
     init_process->envp[1] = strdup("HOME=/root");
     init_process->envp[2] = strdup("TERM=linux");
-    init_process->cmdline = (char*)cmdline;
+    init_process->cmdline = strdup("/bin/sh /init");
 
     fd_t *stdout = calloc(1,sizeof(fd_t));
     stdout->node = vfs_open("/dev/stdout");

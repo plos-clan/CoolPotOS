@@ -1,9 +1,10 @@
 #define ALL_IMPLEMENTATION
 #include "fs/pipefs.h"
 #include "errno.h"
+#include "krlibc.h"
 #include "list.h"
 #include "task/scheduler.h"
-#include "krlibc.h"
+#include "term/klog.h"
 
 vfs_node_t pipefs_root = NULL;
 int        pipefs_id   = 0;
@@ -152,6 +153,10 @@ errno_t pipefs_stat(void *file, vfs_node_t node) {
     return EOK;
 }
 
+errno_t pipefs_free(void *handle) {
+    return EOK;
+}
+
 static struct vfs_callback pipefs_callbacks = {
     .mount    = pipefs_mount,
     .unmount  = (vfs_unmount_t)dummy,
@@ -171,8 +176,14 @@ static struct vfs_callback pipefs_callbacks = {
     .ioctl    = (vfs_ioctl_t)pipefs_ioctl,
     .poll     = pipefs_poll,
     .dup      = (vfs_dup_t)dummy,
+    .free     = pipefs_free,
+    .chmod    = (vfs_chmod_t)dummy,
+    .mknod    = (vfs_mknod_t)dummy,
 };
 
 void pipefs_regist() {
     pipefs_id = vfs_regist("pipefs", &pipefs_callbacks, 0x50495045);
+    if (pipefs_id == -EINVAL) {
+        kerror("pipefs regist error.");
+    }
 }
