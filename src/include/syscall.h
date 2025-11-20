@@ -248,6 +248,25 @@ struct sysinfo {
     char     _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
 };
 
+typedef struct {
+    int val[2];
+} __kernel_fsid_t;
+
+struct statfs {
+    uint64_t        f_type;
+    uint64_t        f_bsize;
+    uint64_t        f_blocks;
+    uint64_t        f_bfree;
+    uint64_t        f_bavail;
+    uint64_t        f_files;
+    uint64_t        f_ffree;
+    __kernel_fsid_t f_fsid;
+    uint64_t        f_namelen;
+    uint64_t        f_frsize;
+    uint64_t        f_flags;
+    uint64_t        f_spare[4];
+};
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -290,11 +309,12 @@ syscall_(rmdir, char *name);
 syscall_(unlinkat, int dirfd, char *name);
 syscall_(access, char *filename);
 syscall_(mkdir, char *name, uint64_t mode);
-syscall_(readlink,char *path,char *buf,uint64_t size);
+syscall_(readlink, char *path, char *buf, uint64_t size);
 syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count);
-syscall_(openat,int dirfd,char *name,uint64_t flags,uint64_t mode);
-syscall_(faccessat,int dirfd,char *pathname,uint64_t mode);
-syscall_(faccessat2,int dirfd,char *pathname,uint64_t mode,uint64_t flag);
+syscall_(openat, int dirfd, char *name, uint64_t flags, uint64_t mode);
+syscall_(faccessat, int dirfd, char *pathname, uint64_t mode);
+syscall_(faccessat2, int dirfd, char *pathname, uint64_t mode, uint64_t flag);
+syscall_(statfs, char *path, struct statfs *buf);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -320,7 +340,7 @@ syscall_(get_tid);
 syscall_(fork);
 syscall_(vfork);
 syscall_(execve, char *path, char **argv, char **envp);
-syscall_(prctl,int option);
+syscall_(prctl, int option);
 syscall_(clone, uint64_t flags, uint64_t stack, int *parent_tid, int *child_tid, uint64_t tls);
 
 // mem syscall
@@ -338,4 +358,4 @@ syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
 syscall_(clock_getres);
 syscall_(getgroups, int count, int *gid_list);
 syscall_(nano_sleep, void *time_handle);
-syscall_(sysinfo, struct sysinfo *info) ;
+syscall_(sysinfo, struct sysinfo *info);
