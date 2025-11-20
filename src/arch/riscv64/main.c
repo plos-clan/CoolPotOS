@@ -9,14 +9,17 @@
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "intctl.h"
+#include "io.h"
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
+#include "rv64_irq.h"
 #include "sbi.h"
 #include "task/futex.h"
 #include "term/klog.h"
-#include "rv64_irq.h"
+
+extern void arch_cpu_init();
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -35,6 +38,10 @@ USED _Noreturn void kmain() {
     vfs_init();
     intctl_init();
     trap_init();
+    arch_cpu_init();
+
+    __asm__ volatile("mv tp, %0\n\t" ::"r"(NULL));
+    csr_write(sscratch, 0);
 
     tmpfs_regist();
     devtmpfs_regist();

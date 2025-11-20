@@ -185,3 +185,10 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
 }
 
 void arch_pci_legacy_enum() {}
+
+void arch_cpu_init(){
+    // SUM
+    csr_set(sstatus, (1UL << 18));
+    // FPU
+    csr_set(sstatus, (3UL << 13));
+}

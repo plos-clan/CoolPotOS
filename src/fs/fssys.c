@@ -967,3 +967,12 @@ syscall_(faccessat2,int dirfd,char *pathname,uint64_t mode,uint64_t flag) {
     return ret;
 }
 
+syscall_(statfs, char *path, struct statfs *buf) {
+    vfs_node_t node = vfs_open(path);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    vfs_filesystem_t filesystem = get_filesystem_node(node);
+    if (filesystem == NULL) return SYSCALL_FAULT_(EINVAL);
+    buf->f_type = filesystem->magic;
+    buf->f_namelen = 255;
+    return EOK;
+}
