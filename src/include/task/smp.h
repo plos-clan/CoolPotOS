@@ -29,6 +29,5 @@ cpu_local_t   *get_cpu_local(size_t id);
 uint64_t       get_bsp_cpu_id();
 size_t         get_cpu_count();
 cpu_local_t   *arch_current_cpu();  // 由架构具体实现
-_Noreturn void arch_ap_cpu_entry(); // 由架构具体实现
 void           arch_bsp_cpu_init(); // 由架构具体实现
 void           smp_init();

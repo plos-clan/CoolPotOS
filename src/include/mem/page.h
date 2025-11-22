@@ -95,4 +95,7 @@ uint64_t arch_virt_to_phys(uint64_t va);
 uint64_t map_change_attribute_range(page_directory_t *directory, uint64_t vaddr, uint64_t len,
                                     uint64_t flags);
 
+
+void switch_page_directory(page_directory_t *dir); // 切换页表: 架构具体实现
+
 void init_page();

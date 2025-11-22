@@ -24,13 +24,6 @@ void timer_init_hart(uint32_t hart_id) {
     /* 使能S模式定时器中断 */
     csr_set(sie, (1 << 5)); /* STIE */
 
-    //    uacpi_table  rhct_table;
-    //    uacpi_status status = uacpi_table_find_by_signature(ACPI_RHCT_SIGNATURE, &rhct_table);
-    //    if (status == UACPI_STATUS_OK) {
-    //        struct acpi_rhct *rhct = rhct_table.ptr;
-    //        timer_freq             = rhct->timebase_frequency;
-    //    }
-
     arch_open_interrupt();
 
     sbi_set_timer(get_timer() + timer_freq / SCHED_TIMER_SPEED);
