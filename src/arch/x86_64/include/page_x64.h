@@ -50,7 +50,6 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
-void switch_page_directory(page_directory_t *dir); // 切换页表: 架构具体实现
 void free_page_directory(page_directory_t *dir); // 释放页表: 架构具体实现
 
 /**

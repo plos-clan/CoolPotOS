@@ -17,7 +17,9 @@
 #include "rv64_irq.h"
 #include "sbi.h"
 #include "task/futex.h"
+#include "task/smp.h"
 #include "term/klog.h"
+#include "timer_rv64.h"
 
 extern void arch_cpu_init();
 
@@ -50,6 +52,7 @@ USED _Noreturn void kmain() {
     signal_init();
     futex_init();
     setup_task();
+    smp_init();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
     while (true) arch_wait_for_interrupt();

@@ -4,7 +4,6 @@
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
-#include "term/klog.h"
 
 extern page_directory_t          kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
@@ -28,12 +27,6 @@ void switch_page_directory0(page_directory_t *dir) {
     uint64_t      satp           = MAKE_SATP_PADDR(SATP_MODE_SV48, 0, (uint64_t)physical_table);
     __asm__ volatile("csrw satp, %0" : : "r"(satp) : "memory");
     __asm__ volatile("sfence.vma" : : : "memory");
-}
-
-static void page_table_clear(page_table_t *table) {
-    for (int i = 0; i < 512; i++) {
-        table->entries[i].value = 0;
-    }
 }
 
 uint64_t arch_virt_to_phys(uint64_t vaddr) {
@@ -99,7 +92,7 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
     }
 
     page_table_t *tables[4];
-    tables[0] = pgdir;
+    tables[0] = (page_table_t*)pgdir;
 
     for (int i = 0; i < 3; i++) {
         page_table_entry_t *entry = &tables[i]->entries[indexs[i]];
@@ -140,6 +133,7 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
 }
 
 uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
+    if(vaddr < PAGE_SIZE) return -1;
     uint64_t indexs[4];
     for (uint64_t i = 0; i < 4; i++) {
         indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);

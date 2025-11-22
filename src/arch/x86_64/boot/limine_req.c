@@ -4,6 +4,8 @@
 #include "task/scheduler.h"
 #include "task/smp.h"
 
+extern void arch_ap_cpu_entry();
+
 USED SECTION(".limine_requests_start") static volatile LIMINE_REQUESTS_START_MARKER;
 USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
 

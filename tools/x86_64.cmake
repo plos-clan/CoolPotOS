@@ -69,6 +69,7 @@ add_custom_target(iso ALL
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/readme.txt ${ISO_DIR}/readme.txt
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/initramfs.img ${ISO_DIR}/initramfs.img
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/minirootfs_x86_64.tar.gz ${ISO_DIR}/minirootfs_x86_64.tar.gz
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/limine.conf ${ISO_DIR}/limine.conf
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/background.jpg ${ISO_DIR}/background.jpg
 
