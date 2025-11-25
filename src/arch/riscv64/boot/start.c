@@ -2,8 +2,6 @@
 #include "krlibc.h"
 #include "lib/libfdt/libfdt.h"
 
-uintptr_t smp_entry = 0;
-
 extern uint8_t _bss_start[], _bss_end[];
 
 extern boot_memory_map_t  opensbi_memory_map;
@@ -378,20 +376,12 @@ static const char *fdt_kernel_cmdline(void *fdt) {
 
 extern void init_early_paging();
 
-uint64_t bsp_hart_id = UINT64_MAX;
+uint64_t bsp_hart_id;
 
 USED void opensbi_c_start(uint64_t boot_hart_id, uintptr_t dtb_ptr) {
-    if (bsp_hart_id == UINT64_MAX) bsp_hart_id = boot_hart_id;
+    bsp_hart_id = boot_hart_id;
 
-    if (boot_hart_id != bsp_hart_id) {
-        while (!smp_entry) {
-            arch_pause();
-        }
-
-        ((void (*)(void))smp_entry)();
-    } else {
-        memset(&_bss_start, 0, (uint8_t *)&_bss_end - (uint8_t *)&_bss_start);
-    }
+    memset(&_bss_start, 0, (uint8_t *)&_bss_end - (uint8_t *)&_bss_start);
 
     struct fdt_header *header;
 
