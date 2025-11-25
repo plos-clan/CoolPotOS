@@ -17,11 +17,19 @@
 #include "rv64_irq.h"
 #include "sbi.h"
 #include "task/futex.h"
+#include "task/scheduler.h"
 #include "task/smp.h"
 #include "term/klog.h"
 #include "timer_rv64.h"
 
 extern void arch_cpu_init();
+
+static void test_func() {
+    while (true) {
+        kinfo("HELLO! WORLD!");
+        for (int i = 0; i < PAGE_SIZE * PAGE_SIZE; ++i) {}
+    }
+}
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -55,5 +63,10 @@ USED _Noreturn void kmain() {
     smp_init();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
-    while (true) arch_wait_for_interrupt();
+
+    extern pcb_t kernel_process;
+    create_kernel_thread("test", (void *)test_func, NULL, kernel_process, NICE_TO_PRIO(0));
+
+    while (true)
+        arch_wait_for_interrupt();
 }
