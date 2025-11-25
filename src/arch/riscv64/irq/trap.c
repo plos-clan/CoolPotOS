@@ -23,7 +23,7 @@ void handle_exception_c(struct pt_regs *regs, uint64_t cause) {
         printk("Breakpoint at PC: 0x%lx\n", regs->epc);
         break;
 
-    case 8: // ecall
+    case 8: // ecallj
         handle_syscall(regs);
         regs->epc     += 4;
         regs->sstatus |= (1UL << 5) | (1UL << 0);
@@ -34,7 +34,9 @@ void handle_exception_c(struct pt_regs *regs, uint64_t cause) {
         regs->epc     += 4;
         regs->sstatus |= (1UL << 5) | (1UL << 0);
         break;
-
+    case 12: page_fault_(regs, INS_PAGE); break;
+    case 13: page_fault_(regs, LOAD_PAGE); break;
+    case 15: page_fault_(regs, STORE_AMO_PAGE); break;
     default: printk("Unhandled exception: %lu\n", cause); break;
     }
 }
@@ -46,7 +48,6 @@ void handle_interrupt_c(struct pt_regs *regs, uint64_t cause) {
         sbi_set_timer(get_timer() + timer_freq / SCHED_TIMER_SPEED);
         scheduler_handler(0, NULL, regs);
         break;
-
     default: do_irq(regs, cause); break;
     }
 }

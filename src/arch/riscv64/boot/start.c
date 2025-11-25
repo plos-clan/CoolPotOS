@@ -379,9 +379,9 @@ extern void init_early_paging();
 uint64_t bsp_hart_id;
 
 USED void opensbi_c_start(uint64_t boot_hart_id, uintptr_t dtb_ptr) {
-    bsp_hart_id = boot_hart_id;
-
     memset(&_bss_start, 0, (uint8_t *)&_bss_end - (uint8_t *)&_bss_start);
+
+    bsp_hart_id = boot_hart_id;
 
     struct fdt_header *header;
 
