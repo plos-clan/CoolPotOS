@@ -171,6 +171,18 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     return total_written;
 }
 
+size_t blk_size_t(blk_device_t *device){
+    return device->size;
+}
+
+errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg){
+    return EOK;
+}
+
+errno_t blk_poll(blk_device_t *device, size_t events){
+    return events;
+}
+
 errno_t delete_blk_device(size_t blk_id) {
     blk_device_t *device = cow_list_get(block_device_list, blk_id);
     if (device == NULL) return -ENODEV;

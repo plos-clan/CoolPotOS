@@ -105,6 +105,7 @@
 #include "atom_queue.h"
 #include "llist.h"
 #include "types.h"
+#include "metadata.h"
 
 enum tty_device_type {
     TTY_DEVICE_SERIAL = 0, // 串口设备
@@ -179,29 +180,30 @@ typedef struct termios {
 } termios_t;
 
 typedef struct tty_session_ops {
-    size_t (*write)(tty_t *device, const char *buf,size_t offset, size_t count);
-    size_t (*read)(tty_t *device, char *buf,size_t offset, size_t count);
+    size_t (*write)(tty_t *device, const char *buf, size_t offset, size_t count);
+    size_t (*read)(tty_t *device, char *buf, size_t offset, size_t count);
     void (*flush)(tty_t *res);
     errno_t (*ioctl)(tty_t *device, size_t cmd, void *arg);
-    errno_t (*poll)(tty_t *session,size_t events);
+    errno_t (*poll)(tty_t *session, size_t events);
     size_t (*size_t)(tty_t *session);
 } tty_session_ops_t;
 
 typedef struct tty_session { // 一个 TTY 会话
-    void             *terminal;
-    termios_t         termios;
-    tty_session_ops_t ops;
-    pid_t             fgproc; // 前台进程组ID
-    tty_device_t     *device; // 会话所属的TTY设备
-    atom_queue       *queue;  // 输入缓冲队列
-    struct vt_mode    vt_mode;
-    int               tty_mode;
-    int               tty_kbmode;
+    void               *terminal;
+    termios_t           termios;
+    tty_session_ops_t   ops;
+    pid_t               fgproc; // 前台进程组ID
+    tty_device_t       *device; // 会话所属的TTY设备
+    atom_queue         *queue;  // 输入缓冲队列
+    struct vt_mode      vt_mode;
+    int                 tty_mode;
+    int                 tty_kbmode;
+    struct llist_header list_node;
 } tty_t;
 
 extern tty_t *kernel_session;
 
-int kernel_getch();
+int           kernel_getch();
 tty_device_t *get_tty_device(const char *name);
 tty_device_t *alloc_tty_device(enum tty_device_type type);
 errno_t       register_tty_device(tty_device_t *device);

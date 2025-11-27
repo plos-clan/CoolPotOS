@@ -85,16 +85,17 @@
 #define MAX_FRAMEBUFFER       10                   // 最大帧缓冲区个数识别
 #define MAX_LOAD_MODULE       256                  // 最大模块加载数
 #define SENDFILE_BUF_SIZE     1024                 // sendfile 系统调用缓冲区
+#define VT_TTY_MAX            63                   // tty会话个数
 
 // 内核编译配置选项
 #ifndef EEVDF_SCHEDULER
-#define EEVDF_SCHEDULER 0 // 是否启用EEVDF调度器
+#    define EEVDF_SCHEDULER 0 // 是否启用EEVDF调度器
 #endif
 
 #ifndef HEAP_CHECK
-#define HEAP_CHECK      1 // 启用内核堆双端越界检查
+#    define HEAP_CHECK 1 // 启用内核堆双端越界检查
 #endif
 
 #ifndef MODULE_CHECK
-#define MODULE_CHECK    1 // 启动内核模块签名校验
+#    define MODULE_CHECK 1 // 启动内核模块签名校验
 #endif

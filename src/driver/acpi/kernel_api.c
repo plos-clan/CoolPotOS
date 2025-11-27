@@ -147,27 +147,27 @@ uacpi_status uacpi_kernel_io_write32(uacpi_handle base, uacpi_size offset, uacpi
 
 #else
 
-uacpi_status uacpi_kernel_io_read8(uacpi_handle, uacpi_size offset, uacpi_u8 *out_value) {
+uacpi_status uacpi_kernel_io_read8(uacpi_handle handle, uacpi_size offset, uacpi_u8 *out_value) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 
-uacpi_status uacpi_kernel_io_read16(uacpi_handle, uacpi_size offset, uacpi_u16 *out_value) {
+uacpi_status uacpi_kernel_io_read16(uacpi_handle handle, uacpi_size offset, uacpi_u16 *out_value) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 
-uacpi_status uacpi_kernel_io_read32(uacpi_handle, uacpi_size offset, uacpi_u32 *out_value) {
+uacpi_status uacpi_kernel_io_read32(uacpi_handle handle, uacpi_size offset, uacpi_u32 *out_value) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 
-uacpi_status uacpi_kernel_io_write8(uacpi_handle, uacpi_size offset, uacpi_u8 in_value) {
+uacpi_status uacpi_kernel_io_write8(uacpi_handle handle, uacpi_size offset, uacpi_u8 in_value) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 
-uacpi_status uacpi_kernel_io_write16(uacpi_handle, uacpi_size offset, uacpi_u16 in_value) {
+uacpi_status uacpi_kernel_io_write16(uacpi_handle handle, uacpi_size offset, uacpi_u16 in_value) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 
-uacpi_status uacpi_kernel_io_write32(uacpi_handle, uacpi_size offset, uacpi_u32 in_value) {
+uacpi_status uacpi_kernel_io_write32(uacpi_handle handle, uacpi_size offset, uacpi_u32 in_value) {
     return UACPI_STATUS_UNIMPLEMENTED;
 }
 

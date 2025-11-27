@@ -31,6 +31,13 @@ static void test_func() {
     }
 }
 
+static void test_func1() {
+    while (true) {
+        kinfo("HELLO! CPOS!");
+        for (int i = 0; i < PAGE_SIZE * PAGE_SIZE; ++i) {}
+    }
+}
+
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
     init_frame();
@@ -62,10 +69,12 @@ USED _Noreturn void kmain() {
     setup_task();
     smp_init();
     ksuccess("Kernel load done!");
+    enable_scheduler();
     arch_open_interrupt();
 
     extern pcb_t kernel_process;
     create_kernel_thread("test", (void *)test_func, NULL, kernel_process, NICE_TO_PRIO(0));
+    create_kernel_thread("test1", (void *)test_func1, NULL, kernel_process, NICE_TO_PRIO(0));
 
     while (true)
         arch_wait_for_interrupt();
