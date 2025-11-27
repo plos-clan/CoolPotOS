@@ -98,7 +98,10 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
         PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
+#elif defined(__loongarch__) || defined(__loongarch64)
+        ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_USER;
 #endif
+
     if (prot != PROT_NONE) {
 #if defined(__x86_64__) || defined(__amd64__)
         if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
@@ -108,6 +111,8 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
         if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
         if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
         if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#elif defined(__loongarch__) || defined(__loongarch64)
+        //TODO
 #endif
     }
 
@@ -206,6 +211,9 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
         if (vma->vm_flags & VMA_READ) pt_flags |= ARCH_PT_FLAG_VALID;
         if (vma->vm_flags & VMA_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
         if (vma->vm_flags & VMA_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#elif defined(__loongarch__) || defined(__loongarch64)
+            ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_USER;
+        //TODO
 #endif
 
         page_map_range(get_current_directory(), vma->vm_end,
@@ -248,6 +256,9 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
         if (new_vma->vm_flags & VMA_READ) pt_flags |= ARCH_PT_FLAG_VALID;
         if (new_vma->vm_flags & VMA_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
         if (new_vma->vm_flags & VMA_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#elif defined(__loongarch__) || defined(__loongarch64)
+            ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_USER;
+        //TODO
 #endif
 
         page_map_range(get_current_directory(), start_addr, old_addr_phys, new_size, pt_flags);

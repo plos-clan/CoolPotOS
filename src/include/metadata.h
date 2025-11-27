@@ -27,7 +27,7 @@
 #elif defined(__loongarch__) || defined(__loongarch64)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH         "loongarch"
+#    define KERNEL_ARCH         "loongarch64"
 #    define KERNEL_ARCH_VERSION "0"
 
 #elif defined(__x86_64__) || defined(__amd64__)

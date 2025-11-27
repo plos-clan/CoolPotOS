@@ -20,12 +20,16 @@ void load_segment(Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool
         PTE_PRESENT | PTE_WRITEABLE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_EXEC;
+#elif defined(__loongarch__) || defined(__loongarch64)
+        ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY;
 #endif
 
     if (is_user)
 #if  defined(__x86_64__) || defined(__amd64__)
         flags |= PTE_USER;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
+        flags |= ARCH_PT_FLAG_USER;
+#elif defined(__loongarch__) || defined(__loongarch64)
         flags |= ARCH_PT_FLAG_USER;
 #endif
     if ((phdr->p_flags & PF_R) && !(phdr->p_flags & PF_W)) {

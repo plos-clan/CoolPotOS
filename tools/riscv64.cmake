@@ -1,7 +1,3 @@
-#set(CMAKE_C_COMPILER riscv64-elf-gcc)
-#set(CMAKE_CXX_COMPILER riscv64-elf-g++)
-#set(CMAKE_ASM_COMPILER riscv64-elf-gcc)
-
 target_compile_options(kernel PRIVATE
         -target riscv64-freestanding
         -march=rv64gc -mabi=lp64d -mcmodel=medany -mno-relax

@@ -35,6 +35,8 @@
 #    include "page_x64.h"
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
 #    include "page_rv64.h"
+#elif defined(__loongarch__) || defined(__loongarch64)
+#    include "page_la64.h"
 #endif
 
 page_directory_t *get_kernel_pagedir();
@@ -94,7 +96,6 @@ uint64_t arch_virt_to_phys(uint64_t va);
 
 uint64_t map_change_attribute_range(page_directory_t *directory, uint64_t vaddr, uint64_t len,
                                     uint64_t flags);
-
 
 void switch_page_directory(page_directory_t *dir); // 切换页表: 架构具体实现
 
