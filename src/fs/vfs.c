@@ -602,6 +602,9 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
     if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
     if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
     if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+#elif defined(__loongarch__) || defined(__loongarch64)
+    uint64_t pt_flags = ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_WRITEABLE;
+    //TODO
 #endif
 
     page_map_range_to_random(get_current_directory(), addr & (~(PAGE_SIZE - 1)),

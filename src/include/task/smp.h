@@ -7,6 +7,8 @@
 #    include "smp_rv64.h"
 #elif defined(__x86_64__) || defined(__amd64__)
 #    include "smp_x64.h"
+#elif defined(__loongarch__) || defined(__loongarch64)
+#    include "smp_la64.h"
 #endif
 
 typedef struct cpu_local_info {
@@ -24,10 +26,10 @@ typedef struct cpu_local_info {
 bool x2apic_mode_supported();
 #endif
 
-cpu_local_t   *get_min_task_count_cpu();
-cpu_local_t   *get_cpu_local(size_t id);
-uint64_t       get_bsp_cpu_id();
-size_t         get_cpu_count();
-cpu_local_t   *arch_current_cpu();  // 由架构具体实现
-void           arch_bsp_cpu_init(); // 由架构具体实现
-void           smp_init();
+cpu_local_t *get_min_task_count_cpu();
+cpu_local_t *get_cpu_local(size_t id);
+uint64_t     get_bsp_cpu_id();
+size_t       get_cpu_count();
+cpu_local_t *arch_current_cpu();  // 由架构具体实现
+void         arch_bsp_cpu_init(); // 由架构具体实现
+void         smp_init();
