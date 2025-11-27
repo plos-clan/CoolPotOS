@@ -76,7 +76,7 @@ end:
     spin_unlock(tsc_lock);
 }
 
-void arch_context_init(struct arch_context_ *context) {
+void arch_context_init(tcb_t thread,struct arch_context_ *context) {
     context->kernel_stack = get_rsp();
     context->user_stack   = get_rsp();
     context->regs.rflags  = get_rflags();

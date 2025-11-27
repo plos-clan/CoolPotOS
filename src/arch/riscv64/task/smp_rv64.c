@@ -54,7 +54,7 @@ _Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
     idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
     idle_thread->status   = T_RUNNING;
     set_cpu_idle_task(idle_thread, arch_current_cpu());
-    arch_context_init(&idle_thread->context);
+    arch_context_init(idle_thread,&idle_thread->context);
 
     timer_init_hart(hartid);
     atomic_inc(&started_cpu_count);

@@ -41,6 +41,9 @@ struct pt_regs {
     uint64_t scause;  // 异常原因
     uint64_t stval;   // 异常值
     uint64_t sstatus; // 机器状态寄存器
+
+    uint64_t ktp;
+    uint64_t padding;
 };
 
 struct syscall_regs {

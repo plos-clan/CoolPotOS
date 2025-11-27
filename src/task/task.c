@@ -250,6 +250,6 @@ void setup_task() {
     bsp_idle_thread->status        = T_RUNNING;
     bsp_idle_thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     bsp_idle_thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    arch_context_init(&bsp_idle_thread->context);
+    arch_context_init(bsp_idle_thread,&bsp_idle_thread->context);
     kinfo("kernel process(%s) PID: %d ", kernel_process->name, kernel_process->pid);
 }

@@ -1,4 +1,6 @@
 #include "fs/devtmpfs.h"
+#include "cow_arraylist.h"
+#include "driver/blk_device.h"
 #include "driver/tty.h"
 #include "errno.h"
 #include "lib/sprintf.h"
@@ -7,15 +9,7 @@
 
 int dev_tmpfs_id = 0;
 
-errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
-    node->fsid                = dev_tmpfs_id;
-    dtmp_handle_t *tmpfs_root = (dtmp_handle_t *)malloc(sizeof(dtmp_handle_t));
-    tmpfs_root->type          = dtp_file_dir;
-    tmpfs_root->node          = node;
-    tmpfs_root->root          = node;
-    strcpy(tmpfs_root->name, "tmp");
-    node->handle = tmpfs_root;
-
+static void load_tty_device(vfs_node_t node) {
     extern tty_t *kernel_session;
     create_device_node(node, "stdout", device_stream, kernel_session,
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
@@ -29,10 +23,35 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
                        (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
                        (void *)kernel_session->ops.size_t);
+
     create_device_node(node, "tty", device_stream, kernel_session,
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
                        (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
                        (void *)kernel_session->ops.size_t);
+}
+
+static void load_blk_device(vfs_node_t node) {
+    extern cow_arraylist *block_device_list;
+    blk_device_t         *device = NULL;
+    cow_foreach(block_device_list, device) {
+        create_device_node(node, device->name, device_block, device, (void *)blk_ioctl,
+                           (void *)blk_device_read, (void *)blk_device_write, (void *)blk_poll,
+                           NULL, (void *)blk_size_t);
+    }
+}
+
+errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
+    node->fsid                = dev_tmpfs_id;
+    dtmp_handle_t *tmpfs_root = (dtmp_handle_t *)malloc(sizeof(dtmp_handle_t));
+    tmpfs_root->type          = dtp_file_dir;
+    tmpfs_root->node          = node;
+    tmpfs_root->root          = node;
+    strcpy(tmpfs_root->name, "tmp");
+    node->handle = tmpfs_root;
+
+    load_tty_device(node);
+    load_blk_device(node);
+
     return EOK;
 }
 
@@ -214,14 +233,14 @@ errno_t devtmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t
     handle->size          = 0;
     handle->node          = node;
     if ((mode & S_IFMT) == S_IFBLK) {
-        node->type = file_block;
+        node->type   = file_block;
         handle->type = dtp_file_device;
     }
     if ((mode & S_IFMT) == S_IFCHR) {
-        node->type = file_stream;
+        node->type   = file_stream;
         handle->type = dtp_file_device;
     } else {
-        node->type = file_none;
+        node->type   = file_none;
         handle->type = dtp_file_file;
     }
     strncpy(handle->name, name, 64);
@@ -231,8 +250,8 @@ errno_t devtmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t
 
 errno_t devtmpfs_ioctl(void *file, size_t req, void *arg) {
     dtmp_handle_t *handle = file;
-    if(handle->ioctl_t == NULL) return -ENOSYS;
-    return handle->ioctl_t(handle->device_handle,req,arg);
+    if (handle->ioctl_t == NULL) return -ENOSYS;
+    return handle->ioctl_t(handle->device_handle, req, arg);
 }
 
 static struct vfs_callback devtmpfs_callbacks = {

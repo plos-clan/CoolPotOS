@@ -35,6 +35,7 @@ kernel_thread_func:
     addi sp, sp, 296
     // RISC-V: s1 存放函数指针，a2 是参数
     mv a0, a2 // 将 a2 作为第一个参数传递
+    csrrs zero, sstatus, 2
     jalr s1   // 调用 s1 中的函数指针
     // 线程退出
     li a0, 0      // 参数设为 0

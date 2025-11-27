@@ -95,7 +95,7 @@ _Noreturn void arch_ap_cpu_entry() {
     idle_thread->status      = T_RUNNING;
     set_cpu_idle_task(idle_thread, arch_current_cpu());
     float_processor_setup();
-    arch_context_init(&idle_thread->context);
+    arch_context_init(idle_thread,&idle_thread->context);
     arch_enable_syscall();
     arch_open_interrupt();
 
