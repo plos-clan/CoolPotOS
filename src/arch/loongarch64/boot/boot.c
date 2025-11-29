@@ -1,4 +1,5 @@
 #include "boot.h"
+#include "krlibc.h"
 
 uint64_t boot_get_hhdm_offset() {
     return 0xffff800000000000;
@@ -33,3 +34,6 @@ uint64_t boot_get_dtb() {
     return 0; // TODO
 }
 
+_Noreturn void _boot_c_start() {
+    for (;;) arch_wait_for_interrupt();
+}

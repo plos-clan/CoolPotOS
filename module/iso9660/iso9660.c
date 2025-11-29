@@ -349,9 +349,11 @@ void iso9660_open(void *parent, const char *name, vfs_node_t node) {
     node->size   = c_file->length;
     free(c_dir);
 }
-void iso9660_close(file_t handle) {
+
+bool iso9660_close(file_t handle) {
     free(handle->handle);
     free(handle);
+    return true;
 }
 
 errno_t iso9660_mount(const char *src, vfs_node_t node) {

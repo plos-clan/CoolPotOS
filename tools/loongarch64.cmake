@@ -1,5 +1,5 @@
 target_compile_options(kernel PRIVATE
-        -target loongarch64-unknown-none
+        -target loongarch64-freestanding
         -march=loongarch64 -mabi=lp64d
         -mcmodel=medium
         -static

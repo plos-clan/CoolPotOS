@@ -161,7 +161,9 @@ void *devtmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t pr
         return general_map(devtmpfs_read, file, (uint64_t)addr, size, prot, flags, offset);
 }
 
-void devtmpfs_close(void *file) {}
+bool devtmpfs_close(void *file) {
+    return false;
+}
 
 int devtmpfs_poll(void *file, size_t events) {
     dtmp_handle_t *f = (dtmp_handle_t *)file;
