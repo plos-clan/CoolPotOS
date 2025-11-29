@@ -289,7 +289,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     return tmp_stack;
 }
 
-#define ulog(...) kerror(__VA_ARGS__);
+#define ulog(...) logkf(__VA_ARGS__);
 
 _Noreturn void arch_switch_to_user_mode() {
     get_current_task()->context.regs.rflags = 0 << 12 | 0b10 | 1 << 9;
@@ -337,6 +337,10 @@ _Noreturn void arch_switch_to_user_mode() {
                        "r"(entry), "r"((uint64_t)0x1b)
                      : "memory");
 err:;
+    if (process->child_threads->size <= 1) {
+        kill_proc(process, -1, true);
+    } else
+        kill_thread(get_current_task());
     while (true)
         arch_wait_for_interrupt();
 }

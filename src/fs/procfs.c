@@ -17,6 +17,7 @@ const char filesystems_content[] = //"nodev\tsysfs\n"
     "nodev\ttmpfs\n"
     "nodev\tproc\n"
     "nodev\tmodfs\n"
+    "     \tfatfs\n"
     "     \text4\n"
     "     \text3\n"
     "     \text2\n";

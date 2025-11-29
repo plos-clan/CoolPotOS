@@ -142,6 +142,7 @@ int pipefs_mount(const char *handle, vfs_node_t node) {
     if (pipefs_root != NULL) return -EBUSY;
     node->fsid  = pipefs_id;
     pipefs_root = node;
+    node->handle = calloc(1,sizeof(pipe_specific_t));
     return EOK;
 }
 

@@ -40,20 +40,17 @@ size_t partition_write(void *handle, uint8_t *buf, size_t number, uint64_t lba) 
 }
 
 static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
-    if (memcmp(gpt->signature, "EFI PART", 8) != 0 ||
-        gpt->num_partition_entries == 0 ||
-        gpt->partition_entry_lba == 0 ||
-        gpt->size_of_partition_entry < sizeof(struct GPT_DPTE) ||
+    if (memcmp(gpt->signature, "EFI PART", 8) != 0 || gpt->num_partition_entries == 0 ||
+        gpt->partition_entry_lba == 0 || gpt->size_of_partition_entry < sizeof(struct GPT_DPTE) ||
         gpt->size_of_partition_entry > 512) {
         return false;
     }
 
-    size_t dptes_size = (size_t)gpt->num_partition_entries * gpt->size_of_partition_entry;
-    struct GPT_DPTE *dptes = (struct GPT_DPTE *)malloc(dptes_size);
+    size_t           dptes_size = (size_t)gpt->num_partition_entries * gpt->size_of_partition_entry;
+    struct GPT_DPTE *dptes      = (struct GPT_DPTE *)malloc(dptes_size);
     if (!dptes) return false;
 
-    if (blk_device_read(disk, (uint8_t *)dptes,
-                        gpt->partition_entry_lba * disk->block_size,
+    if (blk_device_read(disk, (uint8_t *)dptes, gpt->partition_entry_lba * disk->block_size,
                         dptes_size) == (size_t)-1) {
         free(dptes);
         return false;
@@ -68,13 +65,13 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
                 break;
             }
 
-            partition_t *partition = &partitions[partition_num];
-            partition->device = disk;
+            partition_t *partition  = &partitions[partition_num];
+            partition->device       = disk;
             partition->starting_lba = entry->starting_lba;
-            partition->ending_lba = entry->ending_lba;
-            partition->type = GPT;
-            partition->sector_size = disk->block_size;
-            partition->is_used = true;
+            partition->ending_lba   = entry->ending_lba;
+            partition->type         = GPT;
+            partition->sector_size  = disk->block_size;
+            partition->is_used      = true;
             memcpy(partition->disk_guid, gpt->disk_guid, 16);
             memcpy(partition->partition_type_guid, entry->partition_type_guid, 16);
             memcpy(partition->unique_partition_guid, entry->unique_partition_guid, 16);
@@ -87,15 +84,17 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
             // 注册为块设备
             blk_device_t *part = (blk_device_t *)malloc(sizeof(blk_device_t));
             if (part) {
-                part->size = (partition->ending_lba - partition->starting_lba + 1) * partition->sector_size;
+                part->size =
+                    (partition->ending_lba - partition->starting_lba + 1) * partition->sector_size;
                 part->block_size = partition->sector_size;
-                part->ops.read = partition_read;
-                part->ops.write = partition_write;
-                part->ops.ioctl = (void *)dummy;
-                part->ops.poll = (void *)dummy;
-                part->ops.map = (void *)dummy;
-                part->handle = partition;
-                part->type = BLK_PARTITION;
+                part->ops.read   = partition_read;
+                part->ops.write  = partition_write;
+                part->ops.ioctl  = (void *)dummy;
+                part->ops.poll   = (void *)dummy;
+                part->ops.map    = (void *)dummy;
+                part->handle     = partition;
+                part->type       = BLK_PARTITION;
+                sprintf(part->name, "%sp%zu", disk->name, partition_num);
                 register_device(part);
             }
 
@@ -109,12 +108,11 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
 
 // 从保护性 MBR 中解析 GPT（LBA 由 MBR 指定）
 static bool parse_gpt_from_protective_mbr(blk_device_t *disk, uint8_t *mbr) {
-    uint32_t gpt_lba_start = *(uint32_t *)&mbr[0x1BE + 8];
-    struct GPT_DPT *gpt = (struct GPT_DPT *)malloc(disk->block_size);
+    uint32_t        gpt_lba_start = *(uint32_t *)&mbr[0x1BE + 8];
+    struct GPT_DPT *gpt           = (struct GPT_DPT *)malloc(disk->block_size);
     if (!gpt) return false;
 
-    if (blk_device_read(disk, (uint8_t *)gpt,
-                        (uint64_t)gpt_lba_start * disk->block_size,
+    if (blk_device_read(disk, (uint8_t *)gpt, (uint64_t)gpt_lba_start * disk->block_size,
                         disk->block_size) == (size_t)-1) {
         free(gpt);
         return false;
@@ -174,29 +172,31 @@ bool parser_block_device(blk_device_t *disk) {
 
             if (partition_num >= MAX_PARTITIONS_NUM) break;
 
-            partition_t *partition = &partitions[partition_num];
-            partition->device = disk;
+            partition_t *partition  = &partitions[partition_num];
+            partition->device       = disk;
             partition->starting_lba = boot_sector->dpte[j].start_lba;
-            partition->ending_lba = boot_sector->dpte[j].start_lba + boot_sector->dpte[j].sectors_limit - 1;
-            partition->type = MBR;
+            partition->ending_lba =
+                boot_sector->dpte[j].start_lba + boot_sector->dpte[j].sectors_limit - 1;
+            partition->type        = MBR;
             partition->sector_size = disk->block_size;
-            partition->is_used = true;
+            partition->is_used     = true;
 
-            kinfo("MBR Partition(%s) %d lba=%llu..%llu %s", disk->name, j,
-                  partition->starting_lba, partition->ending_lba,
-                  (boot_sector->dpte[j].flags & 0x80) ? "bootable" : "");
+            kinfo("MBR Partition(%s) %d lba=%llu..%llu %s", disk->name, j, partition->starting_lba,
+                  partition->ending_lba, (boot_sector->dpte[j].flags & 0x80) ? "bootable" : "");
 
             blk_device_t *part = (blk_device_t *)malloc(sizeof(blk_device_t));
             if (part) {
-                part->size = (partition->ending_lba - partition->starting_lba + 1) * partition->sector_size;
+                part->size =
+                    (partition->ending_lba - partition->starting_lba + 1) * partition->sector_size;
                 part->block_size = partition->sector_size;
-                part->ops.read = partition_read;
-                part->ops.write = partition_write;
-                part->ops.ioctl = (void *)dummy;
-                part->ops.poll = (void *)dummy;
-                part->ops.map = (void *)dummy;
-                part->handle = partition;
-                part->type = BLK_PARTITION;
+                part->ops.read   = partition_read;
+                part->ops.write  = partition_write;
+                part->ops.ioctl  = (void *)dummy;
+                part->ops.poll   = (void *)dummy;
+                part->ops.map    = (void *)dummy;
+                part->handle     = partition;
+                part->type       = BLK_PARTITION;
+                sprintf(part->name, "%sp%zu", disk->name, partition_num);
                 register_device(part);
             }
             partition_num++;
@@ -206,9 +206,7 @@ bool parser_block_device(blk_device_t *disk) {
     }
 
     free(mbr);
-    if (try_gpt_at_lba1(disk)) {
-        return true;
-    }
+    if (try_gpt_at_lba1(disk)) { return true; }
 
     kinfo("device raw partition: %s", disk->name);
     return true;
