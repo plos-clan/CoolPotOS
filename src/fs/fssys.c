@@ -58,8 +58,7 @@ syscall_(close, int fd) {
     fd_t *handle = (fd_t *)get_fd(get_current_task()->process->fdts, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     vfs_close(handle->node);
-    free(handle);
-    get_current_task()->process->fdts->fds[fd] = NULL;
+    remove_fd(get_current_task()->process->fdts,fd);
     return EOK;
 }
 

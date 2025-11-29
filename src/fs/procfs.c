@@ -261,8 +261,9 @@ void procfs_open(void *parent, const char *name, vfs_node_t node) {
     UNUSED(parent, name, node);
 }
 
-void procfs_close(void *current) {
+bool procfs_close(void *current) {
     UNUSED(current);
+    return false;
 }
 
 size_t procfs_readlink(vfs_node_t node, void *addr, size_t offset, size_t size) {
@@ -416,10 +417,11 @@ void procfs_self_open(void *parent, const char *name, vfs_node_t node) {
     list_delete(node->parent->child, node);
 }
 
-void procfs_self_close(void *current) {
+bool procfs_self_close(void *current) {
     procfs_self_handle_t *handle  = current;
     handle->self->type           |= file_delete;
     free(handle);
+    return true;
 }
 
 size_t procfs_self_read(void *fd, void *addr, size_t offset, size_t size) {

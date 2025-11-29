@@ -37,7 +37,7 @@ typedef errno_t (*vfs_mount_t)(const char *src, vfs_node_t node);
 typedef void (*vfs_unmount_t)(void *root);
 
 typedef void (*vfs_open_t)(void *parent, const char *name, vfs_node_t node);
-typedef void (*vfs_close_t)(void *current);
+typedef bool (*vfs_close_t)(void *current);
 typedef void (*vfs_resize_t)(void *current, uint64_t size);
 
 // 读写一个文件

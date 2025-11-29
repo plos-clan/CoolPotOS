@@ -417,7 +417,7 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     node->fsid     = parent ? parent->fsid : 0;
     node->root     = parent ? parent->root : node;
     node->dev      = parent ? parent->dev : 0;
-    node->refcount = 0;
+    node->refcount = 1;
     node->blksz    = PAGE_SIZE;
     node->mode     = 0777;
     node->linkto   = NULL;
@@ -442,8 +442,7 @@ errno_t vfs_close(vfs_node_t node) {
         node->handle = NULL;
         vfs_free(node);
     } else {
-        callbackof(node, close)(node->handle);
-        node->handle = NULL;
+        if(callbackof(node, close)(node->handle)) node->handle = NULL;
     }
     return EOK;
 }

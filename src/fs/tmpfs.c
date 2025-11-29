@@ -26,6 +26,7 @@ errno_t tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
     f->type      = is_dir ? tp_file_dir : tp_file_file;
+    node->type   |= is_dir ? file_dir : file_none;
     node->handle = f;
     f->node      = node;
     return EOK;
@@ -97,7 +98,9 @@ int tmpfs_poll(void *file, size_t events) {
     return revents;
 }
 
-void tmpfs_close(void *file) {}
+bool tmpfs_close(void *file) {
+    return false;
+}
 
 void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot, size_t flags) {
     return general_map(tmpfs_read, file, (uint64_t)addr, size, prot, flags, offset);
