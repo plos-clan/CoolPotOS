@@ -7,6 +7,7 @@ typedef struct block_device blk_device_t;
 enum blk_type {
     BLK_BLOCK_DEVICE,
     BLK_PARTITION,
+    BLK_STREAM_DEVICE,
 };
 
 struct block_device_ops {

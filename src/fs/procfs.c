@@ -250,6 +250,14 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     filesystems_handle->task          = NULL;
     sprintf(filesystems_handle->name, "filesystems");
 
+    vfs_node_t kmsg       = vfs_node_alloc(procfs_root, "kmsg");
+    kmsg->type            = file_none;
+    kmsg->mode            = 0700;
+    proc_handle_t *kmsg_h = malloc(sizeof(proc_handle_t));
+    kmsg->handle          = kmsg_h;
+    kmsg_h->task          = NULL;
+    sprintf(kmsg_h->name, "kmsg");
+
     pcb_t Inode = NULL;
     cow_foreach(process_list, Inode) {
         procfs_on_new_task(Inode);
@@ -298,8 +306,8 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
     } else if (!strcmp(handle->name, "cmdline")) {
         size_t len = strlen(get_kernel_cmdline());
         if (len == 0 || offset >= len) return 0;
-        len = (len + 1) > size ? size : len + 1;
-        size_t r_len = MIN(size,len);
+        len          = (len + 1) > size ? size : len + 1;
+        size_t r_len = MIN(size, len);
         memcpy(addr, get_kernel_cmdline(), r_len);
         return r_len;
     } else if (!strcmp(handle->name, "mounts")) {
@@ -309,7 +317,7 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
             free(contect);
             return 0;
         }
-        size_t r_len = MIN(size,len);
+        size_t r_len = MIN(size, len);
         memcpy(addr, contect, r_len);
         free(contect);
         return r_len;
@@ -320,7 +328,7 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
             free(contect);
             return 0;
         }
-        size_t r_len = MIN(size,len);
+        size_t r_len = MIN(size, len);
         memcpy(addr, contect, r_len);
         free(contect);
         return r_len;
@@ -328,8 +336,8 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
         char   *cmdline = task->cmdline ? task->cmdline : "no_cmdline";
         ssize_t len     = strlen(cmdline);
         if (len == 0 || offset >= len) return 0;
-        len = (len + 1) > size ? size : len + 1;
-        size_t r_len = MIN(size,len);
+        len          = (len + 1) > size ? size : len + 1;
+        size_t r_len = MIN(size, len);
         memcpy(addr, cmdline, r_len);
         return r_len;
     } else if (!strcmp(handle->name, "proc_maps")) {
@@ -363,6 +371,8 @@ size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
         free(content);
         ((char *)addr)[to_copy] = '\0';
         return to_copy;
+    } else if(!strcmp(handle->name,"kmsg")) {
+        return kmesg_read(addr,size);
     }
     return EOK;
 }
@@ -402,6 +412,8 @@ errno_t procfs_stat(void *file, vfs_node_t node) {
         char  *content     = proc_gen_interrupts(&content_len);
         free(content);
         node->size = content_len;
+    } else if (!strcmp(handle->name, "kmsg")) {
+        node->size = kmsg_length();
     }
     return EOK;
 }

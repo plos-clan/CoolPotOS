@@ -40,6 +40,7 @@
 #include "timer.h"
 
 extern void kallsyms_init_from_elf();
+extern void zero_setup();
 
 USED _Noreturn void kmain() {
     init_stack_canary();
@@ -96,6 +97,7 @@ USED _Noreturn void kmain() {
     power_button_init();
     kmodule_init();
 
+    zero_setup();
     ahci_setup();
     nvme_setup();
 

@@ -131,6 +131,7 @@ errno_t tmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
 }
 
 errno_t tmpfs_free(void *handle) {
+    if(handle == NULL) return EOK;
     tmpfs_file_t *file = handle;
     if (file->type != tp_file_file) {
         free(file);
@@ -147,7 +148,7 @@ errno_t tmpfs_chmod(vfs_node_t node, uint16_t mode) {
 }
 
 errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mode, int dev) {
-    node->dev            = 0;
+    node->dev            = dev;
     node->rdev           = dev;
     node->mode           = mode & 0777;
     tmpfs_file_t *handle = malloc(sizeof(tmpfs_file_t));

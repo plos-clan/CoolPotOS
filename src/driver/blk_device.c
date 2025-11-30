@@ -13,6 +13,10 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     if (device == NULL) return -1;
     if (device->ops.read == NULL) return -1;
 
+    if(device->type == BLK_STREAM_DEVICE){
+        return device->ops.read(device->handle,buffer,offset,length);
+    }
+
     uint64_t start_sector    = offset / device->block_size;
     uint64_t end_sector      = (offset + length - 1) / device->block_size;
     uint64_t sector_count    = end_sector - start_sector + 1;
@@ -87,6 +91,10 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
 size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset, size_t length) {
     if (device == NULL) return -1;
     if (device->ops.write == NULL) return -1;
+
+    if(device->type == BLK_STREAM_DEVICE){
+        return device->ops.write(device->handle,(uint8_t*)buffer,offset,length);
+    }
 
     uint64_t start_sector    = offset / device->block_size;
     uint64_t end_sector      = (offset + length - 1) / device->block_size;

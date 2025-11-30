@@ -64,9 +64,11 @@
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...);
 void unlock_print();
 
-void kmsg_putc(char c);
-void kmsg_write(const char *s);
-int kmsg_getc(void);
+void   kmsg_putc(char c);
+void   kmsg_write(const char *s);
+int    kmsg_getc(void);
+size_t kmsg_length();
+size_t kmesg_read(uint8_t *buffer, size_t length);
 
 void logk(const char *str);
 void logkf(char *fmt, ...);

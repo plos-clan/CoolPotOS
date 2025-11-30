@@ -13,20 +13,26 @@ void remove_rrs_entity(tcb_t thread, cpu_local_t *local) {
     rrs_t               *scheduler = local->sched_handle;
     struct sched_entity *entity    = thread->sched_handle;
     list_remove_node(scheduler->sched_queue, entity->node);
-    if(scheduler->curr == entity) scheduler->curr = scheduler->idle;
+    if (scheduler->curr == entity) scheduler->curr = scheduler->idle;
     free(entity);
 }
 
 tcb_t rrs_pick_next_task(cpu_local_t *local) {
-    rrs_t               *scheduler = local->sched_handle;
-    struct sched_entity *entity    = scheduler->curr;
-    list_node_t         *nextL     = entity->node->next;
+    rrs_t *scheduler = local->sched_handle;
+
+    if (scheduler->sched_queue->size == 1) { return scheduler->idle->thread; }
+
+resche:;
+    struct sched_entity *entity = scheduler->curr;
+    list_node_t         *nextL  = entity->node->next;
     struct sched_entity *next;
     if (nextL == NULL)
         next = scheduler->idle;
-    else
+    else {
         next = nextL->data;
+    }
     scheduler->curr = next;
+    if (scheduler->curr == scheduler->idle) { goto resche; }
     return next->thread;
 }
 

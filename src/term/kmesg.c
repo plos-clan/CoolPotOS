@@ -27,14 +27,20 @@ int kmsg_getc(void) {
     return c;
 }
 
-static size_t kmesg_read(int drive, uint8_t *buffer, size_t number, size_t lba) {
-    UNUSED(drive, lba);
-
+size_t kmesg_read(uint8_t *buffer, size_t length) {
     size_t read_count = 0;
-    while (read_count < number) {
+    while (read_count < length) {
         int c = kmsg_getc();
         if (c < 0) break; // 没有数据
         buffer[read_count++] = (uint8_t)c;
     }
     return read_count;
+}
+
+size_t kmsg_length() {
+    if (kmsg_head >= kmsg_tail) {
+        return kmsg_head - kmsg_tail;
+    } else {
+        return KMSG_SIZE - kmsg_tail + kmsg_head;
+    }
 }
