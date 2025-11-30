@@ -13,137 +13,6 @@ static int proc_self_id  = 0;
 vfs_node_t procfs_root   = NULL;
 spin_t     procfs_oplock = SPIN_INIT;
 
-extern const char filesystems_content[];
-
-const char *get_vma_permissions(vma_t *vma) {
-    static char perms[5];
-
-    perms[0] = (vma->vm_flags & VMA_READ) ? 'r' : '-';
-    perms[1] = (vma->vm_flags & VMA_WRITE) ? 'w' : '-';
-    perms[2] = (vma->vm_flags & VMA_EXEC) ? 'x' : '-';
-    perms[3] = (vma->vm_flags & VMA_SHARED) ? 's' : 'p';
-    perms[4] = '\0';
-
-    return perms;
-}
-
-char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
-    vma_t *vma = task->vma_manager.vma_list;
-
-    size_t offset  = 0;
-    size_t ctn_len = PAGE_SIZE;
-    char  *buf     = malloc(ctn_len);
-
-    while (vma) {
-        vfs_node_t node = NULL;
-        if (vma->vm_fd != -1) {
-            fd_t *fd_handle = get_fd(get_current_task()->process->fdts, vma->vm_fd);
-            node            = fd_handle->node;
-        }
-
-        int len = sprintf(buf + offset, "%012lx-%012lx %s %08lx %02x:%02x %lu", vma->vm_start,
-                          vma->vm_end, get_vma_permissions(vma), (unsigned long)vma->vm_offset, 0,
-                          0, node ? node->inode : 0);
-
-        if (offset + len > ctn_len) {
-            ctn_len = (offset + len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-            buf     = realloc(buf, ctn_len);
-        }
-        offset += len;
-
-        const char *pathname = vma->vm_name;
-        if (pathname && strlen(pathname) > 0) {
-            len = sprintf(buf + offset, "%*s%s", 15, "", pathname);
-            if (offset + len > ctn_len) {
-                ctn_len = (offset + len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-                buf     = realloc(buf, ctn_len);
-            }
-            offset += len;
-        }
-
-        len = sprintf(buf + offset, "\n");
-        if (offset + len > ctn_len) {
-            ctn_len = (offset + len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-            buf     = realloc(buf, ctn_len);
-        }
-        offset += len;
-
-        vma = vma->vm_next;
-    }
-
-    *content_len = offset;
-
-    return buf;
-}
-
-char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
-    char *buffer = malloc(PAGE_SIZE * 4);
-    int   len    = sprintf(buffer,
-                           "%d (%s) %c %d %d %d %d %d %u %d %d %d %d %d %d %d %d %d %d "
-                                "%ld %d %d %lu %d %d %d %d %d %d %d %d %d %d %d %d %d "
-                                "%d %d %d %u %u %d %d %d %d %d %d %d %d %d %d %d\n",
-                           task->pid,  // pid
-                           task->name, // name
-                      task->status == T_RUNNING  ? 'R'
-                           : task->status == T_ZOMBIE ? 'Z'
-                           : task->status == T_FUTEX  ? 'S'
-                                                      : 'T',              // state
-                           task->parent->pid,                            // ppid
-                           0,                                            // pgrp
-                           task->uid,                                    // session
-                           0,                                            // tty_nr
-                           0,                                            // tpgid
-                           0,                                            // flags
-                           0,                                            // minflt
-                           0,                                            // cminflt
-                           0,                                            // majflt
-                           0,                                            // cmajflt
-                           0,                                            // utime
-                           0,                                            // stime
-                           0,                                            // cutime
-                           0,                                            // cstime
-                      task->pid == 0 ? SCHED_IDLE : SCHED_DEADLINE, // priority
-                           0,                                            // nicec
-                           task->child_threads->size,                    // num_threads
-                           0,                                            // itrealvalue
-                           0,                                            // starttime
-                           task->vma_manager.vm_total,                   // vsize
-                           0,                                            // rss
-                           0,                                            // rsslim
-                           0,                                            // startcode
-                           0,                                            // endcode
-                           0,                                            // startstack
-                           0,                                            // kstkesp
-                           0,                                            // ksteip
-                           0,                                            // signal
-                           0,                                            // blocked
-                           0,                                            // sigignore
-                           0,                                            // sigcatch
-                           0,                                            // wchan
-                           0,                                            // nswap
-                           0,                                            // cnswap
-                           0,                                            // exit_signal
-                           0,                                            // processor
-                           0,                                            // rt_priority
-                           0,                                            // policy
-                           0,                                            // delayacct_blkio_ticks
-                           0,                                            // guest_time
-                           0,                                            // cguest_time
-                           0,                                            // start_data
-                           0,                                            // end_data
-                           0,                                            // start_brk
-                           0,                                            // arg_start
-                           0,                                            // arg_end
-                           0,                                            // env_start
-                           0,                                            // env_end
-                           0                                             // exit_code
-         );
-
-    *content_len = len;
-
-    return buffer;
-}
-
 extern cow_arraylist *process_list;
 
 errno_t procfs_mount(const char *src, vfs_node_t node) {
@@ -190,46 +59,6 @@ size_t procfs_write(void *file, const void *addr, size_t offset, size_t size) {
 size_t procfs_read(void *file, void *addr, size_t offset, size_t size) {
     proc_handle_t *handle = (proc_handle_t *)file;
     if (!handle) { return -1; }
-    pcb_t task;
-    if (handle->task == NULL) {
-        task = get_current_task()->process;
-    } else {
-        task = handle->task;
-    }
-
-    if (!strcmp(handle->name, "proc_cmdline")) {
-        char  *cmdline = task->cmdline ? task->cmdline : "no_cmdline";
-        size_t len     = strlen(cmdline);
-        char  *contect = strdup(cmdline);
-        return procfs_node_read(len, offset, size, addr, contect);
-    } else if (!strcmp(handle->name, "proc_maps")) {
-        size_t content_len = 0;
-        char  *content     = proc_gen_maps_file(handle->task, &content_len);
-        if (offset >= content_len) {
-            free(content);
-            return 0;
-        }
-        content_len    = MIN(content_len, offset + size);
-        size_t to_copy = MIN(content_len, size);
-        memcpy(addr, content + offset, to_copy);
-        free(content);
-        ((char *)addr)[to_copy] = '\0';
-        return to_copy;
-    } else if (!strcmp(handle->name, "proc_stat")) {
-        size_t content_len = 0;
-        char  *content     = proc_gen_stat_file(task, &content_len);
-        if (offset >= content_len) {
-            free(content);
-            return 0;
-        }
-        content_len    = MIN(content_len, offset + size);
-        size_t to_copy = MIN(content_len, size);
-        memcpy(addr, content + offset, to_copy);
-        free(content);
-        ((char *)addr)[to_copy] = '\0';
-        return to_copy;
-    }
-
     return procfs_read_dispatch(handle, addr, offset, size);
 }
 
@@ -240,17 +69,6 @@ vfs_node_t procfs_dup(vfs_node_t src) {
 errno_t procfs_stat(void *file, vfs_node_t node) {
     if (file == NULL) return EOK;
     proc_handle_t *handle = file;
-    if (!strcmp(handle->name, "proc_maps")) {
-        size_t content_len = 0;
-        char  *content     = proc_gen_maps_file(handle->task, &content_len);
-        free(content);
-        node->size = content_len;
-    } else if (!strcmp(handle->name, "proc_stat")) {
-        size_t content_len = 0;
-        char  *content     = proc_gen_stat_file(handle->task, &content_len);
-        node->size         = content_len;
-        free(content);
-    }
     procfs_stat_dispatch(handle, node);
     return EOK;
 }

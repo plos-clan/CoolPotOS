@@ -50,6 +50,14 @@ size_t proc_interrupts_stat(proc_handle_t *handle);
 size_t proc_interrupts_read(proc_handle_t *handle,void *addr, size_t offset, size_t size);
 size_t proc_kmsg_stat(proc_handle_t *handle);
 size_t proc_kmsg_read(proc_handle_t *handle,void *addr, size_t offset, size_t size);
+size_t proc_pcmdline_stat(proc_handle_t *handle);
+size_t proc_pcmdline_read(proc_handle_t *handle,void *addr, size_t offset, size_t size);
+size_t proc_pmaps_stat(proc_handle_t *handle);
+size_t proc_pmaps_read(proc_handle_t *handle,void *addr, size_t offset, size_t size);
+size_t proc_pstat_stat(proc_handle_t *handle);
+size_t proc_pstat_read(proc_handle_t *handle,void *addr, size_t offset, size_t size);
+size_t proc_meminfo_stat(proc_handle_t *handle);
+size_t proc_meminfo_read(proc_handle_t *handle,void *addr, size_t offset, size_t size);
 
 size_t procfs_node_read(size_t len, size_t offset, size_t size, char *addr, char *contect);
 
