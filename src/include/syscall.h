@@ -127,6 +127,24 @@
 #define SEEK_DATA 3
 #define SEEK_HOLE 4
 
+#define RLIMIT_CPU 0
+#define RLIMIT_FSIZE 1
+#define RLIMIT_DATA 2
+#define RLIMIT_STACK 3
+#define RLIMIT_CORE 4
+#define RLIMIT_RSS 5
+#define RLIMIT_NPROC 6
+#define RLIMIT_NOFILE 7
+#define RLIMIT_MEMLOCK 8
+#define RLIMIT_AS 9
+#define RLIMIT_LOCKS 10
+#define RLIMIT_SIGPENDING 11
+#define RLIMIT_MSGQUEUE 12
+#define RLIMIT_NICE 13
+#define RLIMIT_RTPRIO 14
+#define RLIMIT_RTTIME 15
+#define RLIMIT_NLIMITS 16
+
 #include "fs/vfs.h"
 #include "task/poll.h"
 #include "task/signal.h"
@@ -267,6 +285,11 @@ struct statfs {
     uint64_t        f_spare[4];
 };
 
+struct rlimit {
+    size_t rlim_cur;
+    size_t rlim_max;
+};
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -342,8 +365,13 @@ syscall_(vfork);
 syscall_(execve, char *path, char **argv, char **envp);
 syscall_(prctl, int option);
 syscall_(clone, uint64_t flags, uint64_t stack, int *parent_tid, int *child_tid, uint64_t tls);
+syscall_(get_rlimit,uint64_t resource, struct rlimit *lim);
+syscall_(prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim,
+         struct rlimit *old_rlim);
+syscall_(getresgid,int *rgid, int *egid, int *sgid);
+syscall_(getresuid,int *ruid, int *euid, int *suid);
 
-// mem syscall
+    // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
          uint64_t offset);
 syscall_(munmap, uint64_t addr, size_t size);

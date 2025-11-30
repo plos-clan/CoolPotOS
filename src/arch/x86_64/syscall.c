@@ -175,6 +175,10 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FACCESSAT]   = (syscall_t)syscall_faccessat,
     [SYSCALL_FACCESSAT2]  = (syscall_t)syscall_faccessat2,
     [SYSCALL_STATFS]      = (syscall_t)syscall_statfs,
+    [SYSCALL_GETRLIMIT]   = (syscall_t)syscall_get_rlimit,
+    [SYSCALL_PRLIMIT64]   = (syscall_t)syscall_prlimit64,
+    [SYSCALL_GETRESGID]   = (syscall_t)syscall_getresgid,
+    [SYSCALL_GETRESUID]   = (syscall_t)syscall_getresuid,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

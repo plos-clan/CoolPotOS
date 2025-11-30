@@ -46,8 +46,8 @@ size_t sched_clock() {
     return (ns - arch_current_cpu()->arch_data.tsc_base_tsc) / 1000;
 }
 
-void arch_send_scheduler(){
-    __asm__ volatile("int %0\n\r" :: "i"(timer));
+void arch_send_scheduler() {
+    __asm__ volatile("int %0\n\r" ::"i"(timer));
 }
 
 void calibrate_tsc_with_hpet() {
@@ -76,7 +76,7 @@ end:
     spin_unlock(tsc_lock);
 }
 
-void arch_context_init(tcb_t thread,struct arch_context_ *context) {
+void arch_context_init(tcb_t thread, struct arch_context_ *context) {
     context->kernel_stack = get_rsp();
     context->user_stack   = get_rsp();
     context->regs.rflags  = get_rflags();
@@ -318,6 +318,44 @@ _Noreturn void arch_switch_to_user_mode() {
     uint64_t rsp = get_current_task()->context.user_stack_top;
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
+        uint64_t linker_start = UINT64_MAX;
+        void    *linker_main  = NULL;
+        uint8_t *link_data    = NULL;
+        size_t   link_size    = 0;
+
+        linker_main = load_interpreter_elf(data, get_current_directory(), &linker_start, &link_data,
+                                           &link_size);
+        if (linker_main == NULL) {
+            logkf("elf_load: Cannot load libc module.\n\r");
+            arch_close_interrupt();
+            kill_proc(get_current_task()->process, -1, true);
+            arch_open_interrupt();
+            for (;;)
+                arch_wait_for_interrupt();
+        }
+
+        uintptr_t lm_offset = (uintptr_t)linker_main + linker_start;
+        linker_main         = (void *)lm_offset;
+
+        // VMA 标记
+        vma_t *ld_so_vma = vma_alloc();
+
+        ld_so_vma->vm_start  = linker_start;
+        ld_so_vma->vm_end    = linker_start + link_size;
+        ld_so_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
+
+        ld_so_vma->vm_type = VMA_TYPE_ANON;
+        ld_so_vma->vm_name = strdup("[libc]");
+
+        vma_t *region = vma_find_intersection(&get_current_task()->process->vma_manager,
+                                              linker_start, linker_start + link_size);
+        if (!region) { vma_insert(&get_current_task()->process->vma_manager, ld_so_vma); }
+        // 如未实现 VMA 可以直接去掉这段代码
+
+        logkf("task: linker main: %p - program main: %p\n", linker_main, entry);
+        rsp   = build_user_stack(get_current_task(), rsp, (uint64_t)entry, linker_start, link_data,
+                                 link_size, data, load_start);
+        entry = linker_main;
     } else
         rsp = build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data,
                                load_start);

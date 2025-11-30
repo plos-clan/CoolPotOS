@@ -114,9 +114,14 @@ struct process_control_block {
     fdt_t       *fdts;        // 文件描述符表
     char       **envp;        // 进程环境变量
     size_t       envc;        // 进程环境变量长度
+    bool         vfork;       // 是否是 vfork 出来的进程
 
-    uint64_t uid;   // 用户会话ID
-    bool     vfork; // 是否是 vfork 出来的进程
+    int uid; // 用户会话ID
+    int euid;
+    int ruid;
+    int egid;
+    int rgid;
+    int sgid;
 };
 
 struct thread_control_block {

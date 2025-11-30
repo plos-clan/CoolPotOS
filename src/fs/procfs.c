@@ -86,7 +86,7 @@ char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
 char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
     char *buffer = malloc(PAGE_SIZE * 4);
     int   len    = sprintf(buffer,
-                           "%d (%s) %c %d %d %lu %d %d %u %d %d %d %d %d %d %d %d %d %d "
+                           "%d (%s) %c %d %d %d %d %d %u %d %d %d %d %d %d %d %d %d %d "
                                 "%ld %d %d %lu %d %d %d %d %d %d %d %d %d %d %d %d %d "
                                 "%d %d %d %u %u %d %d %d %d %d %d %d %d %d %d %d\n",
                            task->pid,  // pid
