@@ -1,4 +1,5 @@
 #include "errno.h"
+#include "mem/frame.h"
 #include "syscall.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
@@ -206,5 +207,73 @@ syscall_(prctl, int option) {
     case PR_SET_DUMPABLE: return -1;
     default: return -1;
     }
+    return EOK;
+}
+
+syscall_(get_rlimit, uint64_t resource, struct rlimit *lim) {
+    if (!lim || check_user_overflow((uint64_t)lim, sizeof(struct rlimit))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    pcb_t process = get_current_task()->process;
+    switch (resource) {
+    case RLIMIT_STACK:
+        *lim = (struct rlimit){
+            .rlim_max = STACK_SIZE,
+            .rlim_cur = STACK_SIZE,
+        };
+        break;
+    case RLIMIT_NPROC:
+        *lim = (struct rlimit){
+            .rlim_cur = -1, // 不限制子进程数量
+            .rlim_max = -1,
+        };
+        break;
+    case RLIMIT_NOFILE:
+        *lim = (struct rlimit){
+            .rlim_cur = MAX_TASK_FD,
+            .rlim_max = MAX_TASK_FD,
+        };
+        break;
+    case RLIMIT_AS:
+        *lim = (struct rlimit){
+            .rlim_cur = process->vma_manager.vm_used,
+            .rlim_max = process->vma_manager.vm_total,
+        };
+        break;
+    case RLIMIT_CORE: *lim = (struct rlimit){0, 0}; break;
+
+    default: return SYSCALL_FAULT_(EINVAL);
+    }
+    return EOK;
+}
+
+syscall_(prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim,
+         struct rlimit *old_rlim) {
+    if (new_rlim &&
+        check_user_overflow((uint64_t)new_rlim, sizeof(struct rlimit))) {
+        return (uint64_t)-EFAULT;
+    }
+    if (old_rlim) {
+        uint64_t ret = syscall_get_rlimit(resource, old_rlim,0,0,0,0,regs);
+        if (ret != 0)
+            return ret;
+    }
+
+    return EOK;
+}
+
+syscall_(getresgid,int *rgid, int *egid, int *sgid){
+    pcb_t process = get_current_task()->process;
+    *rgid = process->rgid;
+    *egid = process->egid;
+    *sgid = process->sgid;
+    return EOK;
+}
+
+syscall_(getresuid,int *ruid, int *euid, int *suid) {
+    pcb_t process = get_current_task()->process;
+    *ruid = process->ruid;
+    *euid = process->euid;
+    *suid = process->uid;
     return EOK;
 }

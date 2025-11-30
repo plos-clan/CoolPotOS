@@ -29,13 +29,13 @@ bool is_partition_used(struct GPT_DPTE *entry) {
 
 size_t partition_read(void *handle, uint8_t *buf, size_t number, size_t lba) {
     partition_t *partition = handle;
-    return partition->device->ops.read(partition->device, buf, number,
+    return partition->device->ops.read(partition->device->handle, buf, number,
                                        partition->starting_lba + lba);
 }
 
 size_t partition_write(void *handle, uint8_t *buf, size_t number, uint64_t lba) {
     partition_t *partition = handle;
-    return partition->device->ops.write(partition->device, buf, number,
+    return partition->device->ops.write(partition->device->handle, buf, number,
                                         partition->starting_lba + lba);
 }
 
