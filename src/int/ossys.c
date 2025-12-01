@@ -1,11 +1,11 @@
 #include "errno.h"
 #include "krlibc.h"
 #include "mem/frame.h"
+#include "mem/memstat.h"
 #include "syscall.h"
 #include "task/scheduler.h"
 #include "term/klog.h"
 #include "timer.h"
-#include "mem/memstat.h"
 
 extern cow_arraylist *process_list;
 
@@ -86,4 +86,17 @@ syscall_(sysinfo, struct sysinfo *info) {
     info->mem_unit = 1;
     info->procs    = process_list->size;
     return EOK;
+}
+
+syscall_(sys_log, int type, const char *buf, size_t len) {
+    switch (type) {
+    case 3:
+        if (len <= 0) { return SYSCALL_FAULT_(EINVAL); }
+        if (check_user_overflow((uint64_t)buf, len)) { return SYSCALL_FAULT_(EFAULT); }
+        return kmesg_read((uint8_t *)buf, len);
+    case 4: return kmsg_read_all((uint8_t *)buf,len);
+    case 5: return kmsg_length();
+    case 9: kmsg_empty(); return EOK;
+    default: return SYSCALL_FAULT_(EINVAL);
+    }
 }

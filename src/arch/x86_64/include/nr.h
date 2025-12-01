@@ -64,6 +64,7 @@
 #define SYSCALL_GETRLIMIT   97
 #define SYSCALL_SYSINFO     99
 #define SYSCALL_GETUID      102
+#define SYSCALL_SYSLOG      103
 #define SYSCALL_GETGID      104
 #define SYSCALL_SETUID      105
 #define SYSCALL_SETGID      106
