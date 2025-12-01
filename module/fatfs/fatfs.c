@@ -357,7 +357,7 @@ static struct vfs_callback fatfs_callbacks = {
 };
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
-    fatfs_id = vfs_regist("fatfs", &fatfs_callbacks, 0x4d44);
+    fatfs_id = vfs_regist("fatfs", &fatfs_callbacks, 0x4d44, 0);
     if (fatfs_id == -EINVAL) { printk("Failed to register fat filesystem\n"); }
     return EOK;
 }

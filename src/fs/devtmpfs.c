@@ -281,6 +281,6 @@ static struct vfs_callback devtmpfs_callbacks = {
 };
 
 void devtmpfs_regist() {
-    dev_tmpfs_id = vfs_regist("devtmpfs", &devtmpfs_callbacks, 0x01021994);
+    dev_tmpfs_id = vfs_regist("devtmpfs", &devtmpfs_callbacks, 0x01021994, FS_VIRTUAL_FLAGS);
     if (dev_tmpfs_id & ERRNO_MASK) { kerror("devtmpfs register error"); }
 }

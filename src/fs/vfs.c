@@ -330,7 +330,7 @@ errno_t vfs_rename(vfs_node_t node, const char *new) {
     return callbackof(node, rename)(node->handle, new);
 }
 
-int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic) {
+int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic, uint64_t flags) {
     if (callback == NULL) return -EINVAL;
     for (size_t i = 0; i < sizeof(struct vfs_callback) / sizeof(void *); i++) {
         if (((void **)callback)[i] == NULL) return -EINVAL;
@@ -342,6 +342,7 @@ int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic) {
     filesystem->callback        = callback;
     filesystem->fsid            = id;
     filesystem->magic           = magic;
+    filesystem->flags           = flags;
     strcpy(filesystem->name, name);
     llist_init_head(&filesystem->node);
     llist_append(&fs_metadata_list, &filesystem->node);
@@ -442,7 +443,7 @@ errno_t vfs_close(vfs_node_t node) {
         node->handle = NULL;
         vfs_free(node);
     } else {
-        if(callbackof(node, close)(node->handle)) node->handle = NULL;
+        if (callbackof(node, close)(node->handle)) node->handle = NULL;
     }
     return EOK;
 }

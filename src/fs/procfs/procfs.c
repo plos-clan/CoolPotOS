@@ -186,8 +186,8 @@ static struct vfs_callback procfs_callbacks = {
 };
 
 void procfs_setup() {
-    procfs_id    = vfs_regist("proc", &procfs_callbacks, 0x9fa0);
-    proc_self_id = vfs_regist("proc_self", &procfs_self_callbacks, 0x0);
+    procfs_id    = vfs_regist("proc", &procfs_callbacks, 0x9fa0, FS_VIRTUAL_FLAGS);
+    proc_self_id = vfs_regist("proc_self", &procfs_self_callbacks, 0x0, FS_VIRTUAL_FLAGS | FS_NO_MOUNT_FLAGS);
     if (procfs_id == -EINVAL || proc_self_id == -EINVAL) {
         kerror("procfs register error (%d) (%d)", procfs_id, proc_self_id);
     }

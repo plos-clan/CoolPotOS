@@ -55,7 +55,7 @@ pcb_t found_pcb(pid_t pid) {
 
 static void kill_thread0(pcb_t parent, tcb_t task) {
     task->status = T_OUT;
-    free((void *)(task->syscall_stack - STACK_SIZE));
+    free((void *)(task->syscall_stack - MAX_STACK_SIZE));
     free((void *)(task->signal_stack - STACK_SIZE));
     page_directory_t *src_dir = get_current_directory();
     switch_context_directory(task->process->directory);
@@ -216,7 +216,7 @@ pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, 
     thread->_start        = (uint64_t)func;
     thread->status        = T_CREATE;
     thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, MAX_STACK_SIZE) + MAX_STACK_SIZE;
     arch_context_init_thread(thread, arg);
     add_task_prio(thread, thread->prio);
     return thread->tid;

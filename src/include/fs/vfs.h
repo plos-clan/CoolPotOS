@@ -2,22 +2,25 @@
 
 #define AT_FDCWD (-100)
 
-#define S_IFMT 00170000
+#define S_IFMT   00170000
 #define S_IFSOCK 0140000
-#define S_IFLNK 0120000
-#define S_IFREG 0100000
-#define S_IFBLK 0060000
-#define S_IFDIR 0040000
-#define S_IFCHR 0020000
-#define S_IFIFO 0010000
-#define S_ISUID 0004000
-#define S_ISGID 0002000
-#define S_ISVTX 0001000
+#define S_IFLNK  0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
 
-#include "types.h"
-#include "llist.h"
+#define FS_VIRTUAL_FLAGS 0b0010 // 虚拟文件系统
+#define FS_NO_MOUNT_FLAGS 0b100 // 不需要主动挂载
+
 #include "list.h"
+#include "llist.h"
 #include "lock.h"
+#include "types.h"
 
 typedef struct vfs_node *vfs_node_t;
 
@@ -47,8 +50,8 @@ typedef errno_t (*vfs_poll_t)(void *file, size_t events);
 typedef void *(*vfs_mapfile_t)(void *file, void *addr, size_t offset, size_t size, size_t prot,
                                size_t flags);
 typedef errno_t (*vfs_free_t)(void *handle);
-typedef errno_t (*vfs_mknod_t)(void *parent, const char *name, vfs_node_t node,
-                           uint16_t mode, int dev);
+typedef errno_t (*vfs_mknod_t)(void *parent, const char *name, vfs_node_t node, uint16_t mode,
+                               int dev);
 typedef errno_t (*vfs_chmod_t)(vfs_node_t node, uint16_t mode);
 
 enum {
@@ -88,9 +91,9 @@ typedef struct vfs_callback { // VFS回调函数
     vfs_mapfile_t  map;       // 映射文件到内存 (仅 devfs 等特殊文件系统实现)
     vfs_del_t delete;         // 删除文件或文件夹
     vfs_rename_t rename;      // 重命名文件或文件夹
-    vfs_free_t     free;      // 释放文件句柄
-    vfs_mknod_t    mknod;     // 创建设备节点
-    vfs_chmod_t    chmod;     // 更改文件权限
+    vfs_free_t   free;        // 释放文件句柄
+    vfs_mknod_t  mknod;       // 创建设备节点
+    vfs_chmod_t  chmod;       // 更改文件权限
 } *vfs_callback_t;
 
 typedef struct vfs_filesystem {
@@ -98,6 +101,7 @@ typedef struct vfs_filesystem {
     char                name[10];
     uint16_t            fsid;
     uint64_t            magic;
+    uint64_t            flags;
     struct llist_header node;
 } *vfs_filesystem_t;
 
@@ -157,9 +161,10 @@ errno_t vfs_mkfile(const char *name);
  * @param callback 回调指针
  * @param register_id 文件系统挂载id (非虚拟文件系统填0)
  * @param magic 文件系统属性类型
+ * @param flags 文件系统注册标志
  * @return 文件系统id
  */
-int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic);
+int vfs_regist(const char *name, vfs_callback_t callback, uint64_t magic, uint64_t flags);
 
 /**
  * 创建 link 文件
@@ -255,7 +260,7 @@ void      *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, 
 size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
-                       uint64_t flags, uint64_t offset); // 文件映射
+                  uint64_t flags, uint64_t offset); // 文件映射
 
 /**
  * 挂载一个文件系统到指定节点
@@ -267,7 +272,7 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
  * @param type 文件系统类型
  * @return 非0代表挂载失败
  */
-errno_t vfs_mount(const char *src,const char *type, vfs_node_t node);
+errno_t vfs_mount(const char *src, const char *type, vfs_node_t node);
 
 /**
  * 卸载一个挂载点
@@ -288,4 +293,3 @@ char *vfs_get_fullpath(vfs_node_t node);
 char *at_resolve_pathname(int dirfd, char *pathname);
 char *vfs_cwd_path_build(char *src); // 构建当前工作目录的路径
 bool  vfs_init();
-

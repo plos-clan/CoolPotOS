@@ -203,6 +203,6 @@ static struct vfs_callback tmpfs_callbacks = {
 };
 
 void tmpfs_regist() {
-    tmpfs_id = vfs_regist("tmpfs", &tmpfs_callbacks, 0x01021994);
+    tmpfs_id = vfs_regist("tmpfs", &tmpfs_callbacks, 0x01021994, FS_VIRTUAL_FLAGS);
     if (tmpfs_id & ERRNO_MASK) { kerror("tmpfs register error"); }
 }

@@ -183,7 +183,7 @@ static struct vfs_callback pipefs_callbacks = {
 };
 
 void pipefs_regist() {
-    pipefs_id = vfs_regist("pipefs", &pipefs_callbacks, 0x50495045);
+    pipefs_id = vfs_regist("pipefs", &pipefs_callbacks, 0x50495045, FS_VIRTUAL_FLAGS);
     if (pipefs_id == -EINVAL) {
         kerror("pipefs regist error.");
     }
