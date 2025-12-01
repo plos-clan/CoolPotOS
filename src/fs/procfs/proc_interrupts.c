@@ -55,6 +55,6 @@ size_t proc_interrupts_stat(proc_handle_t *handle) {
 
 size_t proc_interrupts_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t len     = 0;
-    char  *contect = proc_gen_interrupts(&len);
-    return procfs_node_read(len, offset, size, addr, contect);
+    char  *content = proc_gen_interrupts(&len);
+    return procfs_node_read(len, offset, size, addr, content);
 }

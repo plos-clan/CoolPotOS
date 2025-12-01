@@ -149,15 +149,11 @@
 #include "task/poll.h"
 #include "task/signal.h"
 #include "types.h"
+#include "timer.h"
 
 struct iovec {
     void  *iov_base;
     size_t iov_len;
-};
-
-struct timespec {
-    uint64_t tv_sec;
-    uint64_t tv_nsec;
 };
 
 struct stat {

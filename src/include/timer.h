@@ -12,6 +12,11 @@
 
 typedef uint64_t clock_t;
 
+struct timespec {
+    uint64_t tv_sec;
+    uint64_t tv_nsec;
+};
+
 void arch_send_scheduler();
 size_t sched_clock();
 uint64_t nano_time();
