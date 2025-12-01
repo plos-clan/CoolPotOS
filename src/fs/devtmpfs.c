@@ -9,7 +9,8 @@
 #include "task/poll.h"
 #include "term/klog.h"
 
-int dev_tmpfs_id = 0;
+int                            dev_tmpfs_id = 0;
+static _Atomic volatile size_t dev_id_now   = 0;
 
 static void load_tty_device(vfs_node_t node) {
     extern tty_t *kernel_session;
@@ -235,6 +236,8 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     fs_handle->size_t        = size_t;
     logkf("devtmpfs: create device at %s\n\r", creat_path);
     node->size = size_t(handle);
+    node->dev  = dev_id_now++;
+    node->rdev = node->dev;
     vfs_update(node);
     vfs_close(node);
     return EOK;

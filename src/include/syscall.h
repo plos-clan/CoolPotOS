@@ -334,6 +334,7 @@ syscall_(openat, int dirfd, char *name, uint64_t flags, uint64_t mode);
 syscall_(faccessat, int dirfd, char *pathname, uint64_t mode);
 syscall_(faccessat2, int dirfd, char *pathname, uint64_t mode, uint64_t flag);
 syscall_(statfs, char *path, struct statfs *buf);
+syscall_(chroot, char *path);
 
 // proc syscall
 syscall_(exit, int exit_code);

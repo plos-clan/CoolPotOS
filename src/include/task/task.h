@@ -111,6 +111,7 @@ struct process_control_block {
     vfs_node_t   cwd;         // 进程工作目录
     vfs_node_t   exec;        // 可执行文件句柄
     vfs_node_t   procfs_node; // 进程信息虚拟文件系统节点
+    vfs_node_t   proc_root;   // 进程根节点
     fdt_t       *fdts;        // 文件描述符表
     char       **envp;        // 进程环境变量
     size_t       envc;        // 进程环境变量长度

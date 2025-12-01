@@ -14,6 +14,11 @@ errno_t ext_mount(const char *src, vfs_node_t node) {
 
     vfs_dev_name_set(src);
 
+    vfs_node_t device = vfs_open(src);
+    if(device == NULL) return -1;
+    node->dev = device->dev;
+    vfs_close(device);
+
     char *fullpath = vfs_get_fullpath(node);
     int   ret      = ext4_mount(src, (const char *)fullpath, false);
 

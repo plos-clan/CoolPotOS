@@ -1,5 +1,6 @@
 #include "io.h"
 #include "mem/page.h"
+#include "task/smp.h"
 #include "task/task.h"
 #include "timer.h"
 
@@ -30,8 +31,8 @@ void arch_context_init_thread(tcb_t new_task, void *args) {
     new_task->context.ctx->sp  = (uint64_t)new_task->context.ctx;
     new_task->context.sp       = (uint64_t)new_task->context.ctx;
     new_task->context.dead     = false;
-    new_task->context.ctx->tp  = (uint64_t)new_task;
-    new_task->context.ctx->ktp = (uint64_t)new_task;
+    new_task->context.ctx->tp  = (uint64_t)arch_current_cpu();
+    new_task->context.ctx->ktp = (uint64_t)arch_current_cpu();
 }
 
 void arch_context_init(tcb_t thread, struct arch_context_ *context) {
@@ -39,10 +40,12 @@ void arch_context_init(tcb_t thread, struct arch_context_ *context) {
     thread->context.ctx = (struct pt_regs *)stack_top - 1;
     context->ctx->sstatus =
         (2UL << 32) | (1UL << 18) | (3UL << 13) | (1UL << 5) | (1UL << 0) | (1UL << 8) | (1UL << 1);
-    context->sp      = (uint64_t)context->ctx;
-    context->ctx->s1 = 0; // entry
-    context->ctx->a2 = 0; // initial_arg
-    context->ctx->sp = (uint64_t)context->ctx;
+    context->sp       = (uint64_t)context->ctx;
+    context->ctx->s1  = 0; // entry
+    context->ctx->a2  = 0; // initial_arg
+    context->ctx->sp  = (uint64_t)context->ctx;
+    context->ctx->tp  = (uint64_t)arch_current_cpu();
+    context->ctx->ktp = (uint64_t)arch_current_cpu();
 }
 
 USED void __switch_to(tcb_t current, tcb_t next) { // switch_to call
@@ -63,7 +66,7 @@ USED void __switch_to(tcb_t current, tcb_t next) { // switch_to call
 }
 
 void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
-    switch_to(current,next);
+    switch_to(current, next);
 }
 
 _Noreturn void arch_switch_to_user_mode() {

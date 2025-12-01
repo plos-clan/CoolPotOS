@@ -151,6 +151,7 @@ errno_t fatfs_mount(const char *src, vfs_node_t node) {
         free(path);
         return -1;
     }
+    node->dev = drive_number_mapping[drive]->dev;
     file_t f = malloc(sizeof(struct file));
     f->path  = path;
     DIR *h   = malloc(sizeof(DIR));
