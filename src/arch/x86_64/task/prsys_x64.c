@@ -46,6 +46,8 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->child_process = cow_list_create();
     new_pcb->child_threads = cow_list_create();
     new_pcb->ppl_index     = cow_list_add(current_pcb->child_process, new_pcb);
+    new_pcb->proc_root     = current_pcb->proc_root;
+    new_pcb->proc_root->refcount++;
 
     tcb_t parent_task = get_current_task();
 

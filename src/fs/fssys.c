@@ -157,6 +157,9 @@ syscall_(stat, char *fn, struct stat *buf) {
     if (unlikely(fn == NULL || buf == NULL)) return SYSCALL_FAULT_(EINVAL);
     char      *path = vfs_cwd_path_build(fn);
     vfs_node_t node = vfs_open(path);
+
+    logkf("sys_stat: stat %s\n", path);
+
     if (node == NULL) {
         free(path);
         return SYSCALL_FAULT_(ENOENT);
@@ -974,5 +977,17 @@ syscall_(statfs, char *path, struct statfs *buf) {
     if (filesystem == NULL) return SYSCALL_FAULT_(EINVAL);
     buf->f_type    = filesystem->magic;
     buf->f_namelen = 255;
+    return EOK;
+}
+
+syscall_(chroot, char *path) {
+    if (path == NULL) return SYSCALL_FAULT_(EINVAL);
+    char      *npath   = vfs_cwd_path_build(path);
+    pcb_t      process = get_current_task()->process;
+    vfs_node_t node    = vfs_open(npath);
+    free(npath);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    if (process->proc_root != NULL) vfs_close(process->proc_root);
+    process->proc_root = node;
     return EOK;
 }
