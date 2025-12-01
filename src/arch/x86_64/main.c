@@ -5,6 +5,8 @@
 #include "driver/ahci.h"
 #include "driver/blk_device.h"
 #include "driver/char/ps2_kbd.h"
+#include "driver/drm/drm_device.h"
+#include "driver/drm/plainfb.h"
 #include "driver/gop.h"
 #include "driver/input_device.h"
 #include "driver/nvme.h"
@@ -66,6 +68,7 @@ USED _Noreturn void kmain() {
     generic_interrupt_table_init();
     load_module();
     init_block_device_manager();
+    drm_device_setup();
     fsgsbase_init();
     vfs_init();
     intctl_init();
@@ -100,6 +103,7 @@ USED _Noreturn void kmain() {
     zero_setup();
     ahci_setup();
     nvme_setup();
+    drm_plainfb_init();
 
     cpio_init();
     procfs_setup();

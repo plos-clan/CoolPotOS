@@ -1,9 +1,11 @@
 #include "fs/devtmpfs.h"
 #include "cow_arraylist.h"
 #include "driver/blk_device.h"
+#include "driver/drm/drm_device.h"
 #include "driver/tty.h"
 #include "errno.h"
 #include "lib/sprintf.h"
+#include "string_builder.h"
 #include "task/poll.h"
 #include "term/klog.h"
 
@@ -40,6 +42,26 @@ static void load_blk_device(vfs_node_t node) {
     }
 }
 
+static void load_drm_device(vfs_node_t node) {
+    char             *full_path = vfs_get_fullpath(node);
+    string_builder_t *builder   = create_string_builder(50);
+    string_builder_append(builder, "%s/dri", full_path);
+    vfs_mkdir(builder->data);
+    vfs_node_t drm_dir = vfs_open(builder->data);
+
+    extern cow_arraylist *drm_devices;
+    drmd_device_t        *device = NULL;
+    cow_foreach(drm_devices, device) {
+        create_device_node(drm_dir, device->name, device_stream, device->ptr, device->ioctl,
+                           device->read, device->write, device->poll, device->map, drm_size_t);
+    }
+
+    vfs_close(drm_dir);
+    free(full_path);
+    free(builder->data);
+    free(builder);
+}
+
 errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
     node->fsid                = dev_tmpfs_id;
     dtmp_handle_t *tmpfs_root = (dtmp_handle_t *)malloc(sizeof(dtmp_handle_t));
@@ -51,6 +73,7 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
 
     load_tty_device(node);
     load_blk_device(node);
+    load_drm_device(node);
 
     return EOK;
 }
