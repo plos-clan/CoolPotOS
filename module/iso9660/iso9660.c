@@ -426,7 +426,7 @@ static struct vfs_callback iso_callbacks = {
 };
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
-    iso9660_id = vfs_regist("iso9660", &iso_callbacks, 0x9660);
+    iso9660_id = vfs_regist("iso9660", &iso_callbacks, 0x9660, 0);
     if (iso9660_id == -EINVAL) { printk("Failed to register iso9660 filesystem\n"); }
     return EOK;
 }

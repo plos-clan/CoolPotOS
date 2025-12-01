@@ -1,8 +1,8 @@
 #include "ext.h"
-#include "lock.h"
 #include "errno.h"
-#include <lwext4/blockdev/vfs_dev.h>
+#include "lock.h"
 #include "util.h"
+#include <lwext4/blockdev/vfs_dev.h>
 
 static int ext_fsid = 0;
 
@@ -346,6 +346,22 @@ vfs_node_t ext_dup(vfs_node_t node) {
     return node;
 }
 
+errno_t ext_free(void *handle) {
+    if (handle == NULL) return EOK;
+    return EOK;
+}
+
+errno_t ext_chmod(vfs_node_t node, uint16_t mode) {
+    char *path = vfs_get_fullpath(node);
+    node->mode = mode;
+    return EOK;
+}
+
+errno_t ext_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mode, int dev) {
+    //TODO
+    return 0;
+}
+
 static struct vfs_callback callbacks = {
     .mount    = ext_mount,
     .unmount  = ext_unmount,
@@ -365,6 +381,9 @@ static struct vfs_callback callbacks = {
     .ioctl    = ext_ioctl,
     .poll     = ext_poll,
     .dup      = (vfs_dup_t)ext_dup,
+    .free     = ext_free,
+    .chmod    = ext_chmod,
+    .mknod    = ext_mknod,
 };
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
@@ -372,7 +391,7 @@ __attribute__((used)) __attribute__((visibility("default"))) int dlstart(void) {
 }
 
 __attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
-    ext_fsid = vfs_regist("ext3", &callbacks, 0xef53);
+    ext_fsid = vfs_regist("ext3", &callbacks, 0xef53, 0);
     if (ext_fsid == -1) {
         printk("Cannot register extfs file system.\n");
         return -EFAULT;
