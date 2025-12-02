@@ -39,7 +39,7 @@
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "timer.h"
+#include "cpu_features.h"
 
 extern void kallsyms_init_from_elf();
 extern void zero_setup();
@@ -66,6 +66,7 @@ USED _Noreturn void kmain() {
     init_err_handle();
     kallsyms_init_from_elf();
     generic_interrupt_table_init();
+    cpu_features_setup();
     load_module();
     init_block_device_manager();
     drm_device_setup();

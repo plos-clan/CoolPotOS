@@ -158,7 +158,7 @@ syscall_(stat, char *fn, struct stat *buf) {
     char      *path = vfs_cwd_path_build(fn);
     vfs_node_t node = vfs_open(path);
 
-    logkf("sys_stat: stat %s\n", path);
+    // logkf("sys_stat: stat %s\n", path);
 
     if (node == NULL) {
         free(path);
