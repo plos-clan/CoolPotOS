@@ -272,6 +272,7 @@ create:;
     node->type      = file_symlink;
     callbackof(current, symlink)(current->handle, target_name, node);
     node->linkto = vfs_open(target_name);
+    if (node->linkto == NULL) node->linkto_path = strdup(target_name);
 
     free(path);
 
@@ -379,13 +380,15 @@ vfs_node_t vfs_open(const char *str) {
 
         do_update(current);
         if (current->type & file_symlink) {
-            if (!current->parent || !current->linkto) { goto err; }
+            if (!current->parent || (!current->linkto && !current->linkto_path)) { goto err; }
 
             current->type = file_symlink | file_proxy;
 
             vfs_node_t target = current->linkto;
+            if (target == NULL && current->linkto_path != NULL) {
+                target = vfs_open(current->linkto_path);
+            }
             if (!target) goto err;
-
             target->refcount++;
             current = target;
             continue;
@@ -412,16 +415,17 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     not_null_assert(node, "vfs alloc null");
     if (unlikely(node == NULL)) return NULL;
     memset(node, 0, sizeof(struct vfs_node));
-    node->parent   = parent;
-    node->name     = name ? strdup(name) : NULL;
-    node->type     = file_none;
-    node->fsid     = parent ? parent->fsid : 0;
-    node->root     = parent ? parent->root : node;
-    node->dev      = parent ? parent->dev : 0;
-    node->refcount = 1;
-    node->blksz    = PAGE_SIZE;
-    node->mode     = 0777;
-    node->linkto   = NULL;
+    node->parent      = parent;
+    node->name        = name ? strdup(name) : NULL;
+    node->type        = file_none;
+    node->fsid        = parent ? parent->fsid : 0;
+    node->root        = parent ? parent->root : node;
+    node->dev         = parent ? parent->dev : 0;
+    node->refcount    = 1;
+    node->blksz       = PAGE_SIZE;
+    node->mode        = 0777;
+    node->linkto      = NULL;
+    node->linkto_path = NULL;
     if (parent) list_prepend(parent->child, node);
     return node;
 }
@@ -454,6 +458,7 @@ void vfs_free(vfs_node_t vfs) {
     vfs_close(vfs);
     callbackof(vfs, free)(vfs->handle);
     free(vfs->name);
+    if(vfs->linkto_path) free(vfs->linkto_path);
     free(vfs);
 }
 

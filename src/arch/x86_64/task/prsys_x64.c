@@ -85,7 +85,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_task->context.regs.rsp    = user_stack == 0 ? reg->rsp : user_stack;
     new_task->context.regs.rcx    = reg->rcx;
 
-    memcpy(new_task->context.context.fxsave_area, parent_task->context.context.fxsave_area, 512);
+    memcpy(&new_task->context.context, &parent_task->context.context, sizeof(fpu_context_t));
 
     new_task->affinity_mask   = parent_task->affinity_mask;
     new_task->context.fs      = parent_task->context.fs;
@@ -174,7 +174,7 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->context.regs.rbp    = reg->rbp;
     new_task->context.regs.rcx    = reg->rcx;
 
-    memcpy(new_task->context.context.fxsave_area, parent_task->context.context.fxsave_area, 512);
+    memcpy(&new_task->context.context, &parent_task->context.context, sizeof(fpu_context_t));
 
     new_task->affinity_mask   = parent_task->affinity_mask;
     new_task->context.fs      = parent_task->context.fs;

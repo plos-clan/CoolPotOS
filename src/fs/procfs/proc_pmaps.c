@@ -1,4 +1,5 @@
 #include "fs/procfs.h"
+#include "string_builder.h"
 
 const char *get_vma_permissions(vma_t *vma) {
     static char perms[5];
@@ -14,10 +15,7 @@ const char *get_vma_permissions(vma_t *vma) {
 
 char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
     vma_t *vma = task->vma_manager.vma_list;
-
-    size_t offset  = 0;
-    size_t ctn_len = PAGE_SIZE;
-    char  *buf     = malloc(ctn_len);
+    string_builder_t *builder = create_string_builder(4096);
 
     while (vma) {
         vfs_node_t node = NULL;
@@ -26,39 +24,28 @@ char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
             node            = fd_handle->node;
         }
 
-        int len = sprintf(buf + offset, "%012lx-%012lx %s %08lx %02x:%02x %lu", vma->vm_start,
-                          vma->vm_end, get_vma_permissions(vma), (unsigned long)vma->vm_offset, 0,
-                          0, node ? node->inode : 0);
-
-        if (offset + len > ctn_len) {
-            ctn_len = (offset + len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-            buf     = realloc(buf, ctn_len);
-        }
-        offset += len;
+        string_builder_append(builder, "%012lx-%012lx %s %08lx %02x:%02x %lu", vma->vm_start,
+                              vma->vm_end, get_vma_permissions(vma), vma->vm_offset,
+                              node ? (node->rdev >> 8) & 0xFF : 0, node ? node->rdev & 0xFF : 0,
+                              node ? node->inode : 0);
 
         const char *pathname = vma->vm_name;
         if (pathname && strlen(pathname) > 0) {
-            len = sprintf(buf + offset, "%*s%s", 15, "", pathname);
-            if (offset + len > ctn_len) {
-                ctn_len = (offset + len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-                buf     = realloc(buf, ctn_len);
-            }
-            offset += len;
+            string_builder_append(builder, "%*s%s", 15, "", pathname);
         }
 
-        len = sprintf(buf + offset, "\n");
-        if (offset + len > ctn_len) {
-            ctn_len = (offset + len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-            buf     = realloc(buf, ctn_len);
-        }
-        offset += len;
+        string_builder_append(builder, "\n");
 
         vma = vma->vm_next;
     }
 
-    *content_len = offset;
+    *content_len = builder->size;
 
-    return buf;
+    void *data = builder->data;
+
+    free(builder);
+
+    return data;
 }
 
 size_t proc_pmaps_stat(proc_handle_t *handle){

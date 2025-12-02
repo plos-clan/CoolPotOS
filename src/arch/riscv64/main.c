@@ -20,23 +20,9 @@
 #include "task/scheduler.h"
 #include "task/smp.h"
 #include "term/klog.h"
-#include "timer_rv64.h"
+#include "exec/elf_load.h"
 
 extern void arch_cpu_init();
-
-static void test_func() {
-    while (true) {
-        kinfo("HELLO! WORLD!");
-        for (int i = 0; i < PAGE_SIZE * PAGE_SIZE; ++i) {}
-    }
-}
-
-static void test_func1() {
-    while (true) {
-        kinfo("HELLO! CPOS!");
-        for (int i = 0; i < PAGE_SIZE * PAGE_SIZE; ++i) {}
-    }
-}
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -72,9 +58,7 @@ USED _Noreturn void kmain() {
     enable_scheduler();
     arch_open_interrupt();
 
-    extern pcb_t kernel_process;
-    create_kernel_thread("test", (void *)test_func, NULL, kernel_process, NICE_TO_PRIO(0));
-    create_kernel_thread("test1", (void *)test_func1, NULL, kernel_process, NICE_TO_PRIO(0));
+    launch_init_process();
 
     while (true)
         arch_wait_for_interrupt();
