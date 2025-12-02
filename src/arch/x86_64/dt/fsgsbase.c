@@ -1,4 +1,5 @@
 #include "fsgsbase.h"
+#include "cpu_features.h"
 #include "io.h"
 #include "term/klog.h"
 
@@ -52,11 +53,8 @@ void write_kgsbase(uint64_t value) {
 }
 
 uint32_t has_fsgsbase() {
-    uint32_t eax, ebx, ecx, edx;
-    __asm__ __volatile__("cpuid"
-                         : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-                         : "a"(0x07), "c"(0x00));
-    return ebx & (1 << 0);
+    extern cpuid_ebx_features_t featuresEbx;
+    return featuresEbx & CPUID_EBX_FSGSBASE;
 }
 
 uint64_t fsgsbase_init() {

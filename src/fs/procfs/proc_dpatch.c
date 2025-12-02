@@ -51,6 +51,7 @@ void load_procfs_root() {
     create_procfs_node("filesystems", proc_filesystems_read, proc_filesystems_stat);
     create_procfs_node("kmsg", proc_kmsg_read, proc_kmsg_stat);
     create_procfs_node("meminfo", proc_meminfo_read, proc_meminfo_stat);
+    create_procfs_node("cpuinfo", proc_cpuinfo_read, proc_cpuinfo_stat);
 
     create_procfs_handle("proc_cmdline",proc_pcmdline_read,proc_pcmdline_stat);
     create_procfs_handle("proc_maps",proc_pmaps_read,proc_pmaps_stat);

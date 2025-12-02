@@ -2,15 +2,6 @@
 #include "fs/vfs.h"
 #include "string_builder.h"
 
-const char filesystems_content[] = //"nodev\tsysfs\n"
-    "nodev\ttmpfs\n"
-    "nodev\tproc\n"
-    "nodev\tmodfs\n"
-    "     \tfatfs\n"
-    "     \text4\n"
-    "     \text3\n"
-    "     \text2\n";
-
 char *proc_gen_filesystems(size_t *context_len) {
     string_builder_t *builder = create_string_builder(1024);
     vfs_filesystem_t  pos, n;
