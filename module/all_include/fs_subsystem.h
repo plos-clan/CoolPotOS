@@ -142,6 +142,7 @@ struct vfs_node {           // vfs节点
     uint64_t   dev;         // 设备号
     uint64_t   rdev;        // 真实设备号
     spin_t     lock;        // 节点操作锁
+    char      *linkto_path; // 符号链接悬空指向的路径 (若指向文件存在该字段为NULL)
 };
 
 extern struct vfs_callback vfs_empty_callback;

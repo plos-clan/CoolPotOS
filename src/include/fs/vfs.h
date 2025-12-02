@@ -14,8 +14,8 @@
 #define S_ISGID  0002000
 #define S_ISVTX  0001000
 
-#define FS_VIRTUAL_FLAGS 0b0010 // 虚拟文件系统
-#define FS_NO_MOUNT_FLAGS 0b100 // 不需要主动挂载
+#define FS_VIRTUAL_FLAGS  0b0010 // 虚拟文件系统
+#define FS_NO_MOUNT_FLAGS 0b100  // 不需要主动挂载
 
 #include "list.h"
 #include "llist.h"
@@ -133,6 +133,7 @@ struct vfs_node {           // vfs节点
     uint64_t   dev;         // 设备号
     uint64_t   rdev;        // 真实设备号
     spin_t     lock;        // 节点操作锁
+    char      *linkto_path; // 符号链接悬空指向的路径 (若指向文件存在该字段为NULL)
 };
 
 extern struct vfs_callback vfs_empty_callback;

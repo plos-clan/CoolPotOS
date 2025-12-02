@@ -8,9 +8,10 @@
 
 extern int  init_trap_vector(); // vector.S
 extern void do_irq(struct pt_regs *regs, uint64_t irq_num);
+extern void syscall_handler(struct pt_regs *regs); // syscall.c
 
 void handle_syscall(struct pt_regs *regs) {
-    // syscall_handler(regs);
+    syscall_handler(regs);
 }
 
 void handle_exception_c(struct pt_regs *regs, uint64_t cause) {

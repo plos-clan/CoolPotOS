@@ -39,31 +39,31 @@ struct arch_context_ {
     struct pt_regs *ctx;
     fpu_context_t   fpu_ctx;
     bool            dead;
+    uint64_t        user_stack;
+    uint64_t        user_stack_top;
 };
 
-#define switch_to(prev, next)                                                  \
-    do {                                                                       \
-        __asm__ volatile("addi sp, sp, -24\n\t" /* 分配栈空间 */                   \
-                     "sd s0, 0(sp)\n\t"     /* 保存帧指针 */                   \
-                     "sd t0, 8(sp)\n\t"     /* 保存临时寄存器 */               \
-                     "sd ra, 16(sp)\n\t"    /* 保存返回地址寄存器 */           \
-                     "sd sp, %0\n\t"        /* 保存当前sp */                   \
-                     "ld sp, %2\n\t"        /* 加载next的sp */                 \
-                     "la t0, 1f\n\t"        /* 获取返回地址 */                 \
-                     "sd t0, %1\n\t"        /* 保存到prev->ra */               \
-                     "ld t0, %3\n\t"        /* 加载next的ra */                 \
-                     "mv ra, t0\n\t"        /* 压入返回地址 */                 \
-                     "mv a0, %4\n\t"        /* 第一个参数 prev */              \
-                     "mv a1, %5\n\t"        /* 第二个参数 next */              \
-                     "j __switch_to\n\t"    /* 跳转到__switch_to */            \
-                     "1:\n\t"               /* 返回点 */                       \
-                     "ld ra, 16(sp)\n\t"    /* 恢复ra */                       \
-                     "ld t0, 8(sp)\n\t"     /* 恢复t0 */                       \
-                     "ld s0, 0(sp)\n\t"     /* 恢复s0 */                       \
-                     "addi sp, sp, 24\n\t"  /* 恢复栈指针 */                   \
-                     : "=m"(prev->context.sp),                           \
-                       "=m"(prev->context.ra)                            \
-                     : "m"(next->context.sp),                            \
-                       "m"(next->context.ra), "r"(prev), "r"(next)       \
-                     : "memory", "t0", "a0", "a1");                            \
+#define switch_to(prev, next)                                                                      \
+    do {                                                                                           \
+        __asm__ volatile("addi sp, sp, -24\n\t" /* 分配栈空间 */                                   \
+                         "sd s0, 0(sp)\n\t"     /* 保存帧指针 */                                   \
+                         "sd t0, 8(sp)\n\t"     /* 保存临时寄存器 */                               \
+                         "sd ra, 16(sp)\n\t"    /* 保存返回地址寄存器 */                           \
+                         "sd sp, %0\n\t"        /* 保存当前sp */                                   \
+                         "ld sp, %2\n\t"        /* 加载next的sp */                                 \
+                         "la t0, 1f\n\t"        /* 获取返回地址 */                                 \
+                         "sd t0, %1\n\t"        /* 保存到prev->ra */                               \
+                         "ld t0, %3\n\t"        /* 加载next的ra */                                 \
+                         "mv ra, t0\n\t"        /* 压入返回地址 */                                 \
+                         "mv a0, %4\n\t"        /* 第一个参数 prev */                              \
+                         "mv a1, %5\n\t"        /* 第二个参数 next */                              \
+                         "j __switch_to\n\t"    /* 跳转到__switch_to */                            \
+                         "1:\n\t"               /* 返回点 */                                       \
+                         "ld ra, 16(sp)\n\t"    /* 恢复ra */                                       \
+                         "ld t0, 8(sp)\n\t"     /* 恢复t0 */                                       \
+                         "ld s0, 0(sp)\n\t"     /* 恢复s0 */                                       \
+                         "addi sp, sp, 24\n\t"  /* 恢复栈指针 */                                   \
+                         : "=m"(prev->context.sp), "=m"(prev->context.ra)                          \
+                         : "m"(next->context.sp), "m"(next->context.ra), "r"(prev), "r"(next)      \
+                         : "memory", "t0", "a0", "a1");                                            \
     } while (0)

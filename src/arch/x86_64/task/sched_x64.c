@@ -317,6 +317,22 @@ _Noreturn void arch_switch_to_user_mode() {
         get_current_task()->context.user_stack + BIG_USER_STACK;
     uint64_t rsp = get_current_task()->context.user_stack_top;
 
+    vma_t *stack_vma = vma_alloc();
+
+    stack_vma->vm_start  = get_current_task()->context.user_stack;
+    stack_vma->vm_end    = get_current_task()->context.user_stack_top;
+    stack_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
+
+    stack_vma->vm_type = VMA_TYPE_ANON;
+    stack_vma->vm_name = strdup("[stack]");
+
+    vma_t *region =
+        vma_find_intersection(&process->vma_manager, get_current_task()->context.user_stack,
+                              get_current_task()->context.user_stack_top);
+    if (!region) {
+        vma_insert(&process->vma_manager, stack_vma);
+    }
+
     if (is_dynamic((Elf64_Ehdr *)data)) {
         uint64_t linker_start = UINT64_MAX;
         void    *linker_main  = NULL;
