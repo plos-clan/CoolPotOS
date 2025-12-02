@@ -119,8 +119,19 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
 
     set_kernel_stack(next->context.kernel_stack);
 
-    save_fpu_context(&current->context.context);
-    restore_fpu_context(&current->context.context);
+    __asm__ volatile(
+        "fxsave64 %0"
+        : "=m"(current->context.context.fxsave_area)
+        :
+        : "memory"
+    );
+
+    __asm__ volatile(
+        "fxrstor64 %0"
+        :
+        : "m"(next->context.context.fxsave_area)
+        : "memory"
+    );
 
     current->context.regs.r15    = regs->r15;
     current->context.regs.r14    = regs->r14;
