@@ -120,7 +120,7 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
     set_kernel_stack(next->context.kernel_stack);
 
     save_fpu_context(&current->context.context);
-    restore_fpu_context(&current->context.context);
+    restore_fpu_context(&next->context.context);
 
     current->context.regs.r15    = regs->r15;
     current->context.regs.r14    = regs->r14;
