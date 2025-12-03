@@ -94,9 +94,37 @@ syscall_(sys_log, int type, const char *buf, size_t len) {
         if (len <= 0) { return SYSCALL_FAULT_(EINVAL); }
         if (check_user_overflow((uint64_t)buf, len)) { return SYSCALL_FAULT_(EFAULT); }
         return kmesg_read((uint8_t *)buf, len);
-    case 4: return kmsg_read_all((uint8_t *)buf,len);
+    case 4: return kmsg_read_all((uint8_t *)buf, len);
     case 5: return kmsg_length();
     case 9: kmsg_empty(); return EOK;
     default: return SYSCALL_FAULT_(EINVAL);
     }
+}
+
+syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old) {
+    if (which != 0) return (size_t)-ENOSYS;
+
+    pcb_t process = get_current_task()->process;
+
+    uint64_t rt_at    = process->itimer_real.at;
+    uint64_t rt_reset = process->itimer_real.reset;
+
+    uint64_t now = nano_time() / 1000000;
+
+    if (old) {
+        uint64_t remaining = rt_at > now ? rt_at - now : 0;
+        ms_to_timeval(remaining, &old->it_value);
+        ms_to_timeval(rt_reset, &old->it_interval);
+    }
+
+    if (value) {
+        uint64_t targValue = value->it_value.tv_sec * 1000 + value->it_value.tv_usec / 1000;
+        uint64_t targInterval =
+            value->it_interval.tv_sec * 1000 + value->it_interval.tv_usec / 1000;
+
+        process->itimer_real.at    = targValue ? (now + targValue) : 0ULL;
+        process->itimer_real.reset = targInterval;
+    }
+
+    return 0;
 }

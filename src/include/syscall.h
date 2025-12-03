@@ -191,11 +191,6 @@ typedef struct {
     size_t    ss_len;
 } WeirdPselect6;
 
-struct timeval {
-    long tv_sec;
-    long tv_usec;
-};
-
 struct dirent {
     long           d_ino;
     long           d_off;
@@ -385,3 +380,4 @@ syscall_(getgroups, int count, int *gid_list);
 syscall_(nano_sleep, void *time_handle);
 syscall_(sysinfo, struct sysinfo *info);
 syscall_(sys_log,int type, const char *buf, size_t len);
+syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old);

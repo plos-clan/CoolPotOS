@@ -60,6 +60,8 @@ size_t proc_meminfo_stat(proc_handle_t *handle);
 size_t proc_meminfo_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 size_t proc_cpuinfo_stat(proc_handle_t *handle);
 size_t proc_cpuinfo_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
+size_t proc_stat_stat(proc_handle_t *handle);
+size_t proc_stat_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 
 size_t procfs_node_read(size_t len, size_t offset, size_t size, char *addr, char *contect);
 

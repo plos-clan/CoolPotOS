@@ -76,6 +76,7 @@ typedef struct thread_control_block  *tcb_t;
 #include "metadata.h"
 #include "ptrace.h"
 #include "signal.h"
+#include "timer.h"
 #include "types.h"
 
 typedef enum {
@@ -116,6 +117,8 @@ struct process_control_block {
     char       **envp;        // 进程环境变量
     size_t       envc;        // 进程环境变量长度
     bool         vfork;       // 是否是 vfork 出来的进程
+
+    int_timer_internal_t itimer_real;
 
     int uid; // 用户会话ID
     int euid;

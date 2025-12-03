@@ -36,6 +36,7 @@
 #define SYSCALL_DUP         32
 #define SYSCALL_DUP2        33
 #define SYSCALL_NANO_SLEEP  35
+#define SYSCALL_SETITIMER   38
 #define SYSCALL_GETPID      39
 #define SYSCALL_SENDFILE    40
 #define SYSCALL_SOCKET      41
