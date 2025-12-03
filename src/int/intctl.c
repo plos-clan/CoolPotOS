@@ -7,6 +7,12 @@
 id_allocator_t *intctl_irq_alloc;
 irq_action_t    actions[ARCH_MAX_IRQ_NUM];
 
+static _Atomic volatile uint64_t irq_count = 0;
+
+uint64_t get_all_irq_count(){
+    return irq_count;
+}
+
 void do_irq(struct pt_regs *regs, uint64_t irq_num) {
     irq_action_t *action = &actions[irq_num];
 
@@ -15,6 +21,7 @@ void do_irq(struct pt_regs *regs, uint64_t irq_num) {
 
     if (action->handler) {
         action->handler(irq_num, action->data, regs);
+        irq_count++;
     } else {
         printk("Intr vector [%d] does not have a handler\n", irq_num);
     }

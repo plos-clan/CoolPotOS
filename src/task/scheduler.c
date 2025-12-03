@@ -45,9 +45,10 @@ void scheduler_nano_sleep(uint64_t nano) {
 
 bool add_task_prio(tcb_t thread, uint64_t prio) {
     if (thread == NULL) return false;
-    cpu_local_t *local = get_min_task_count_cpu();
+    cpu_local_t *local = NULL; //get_min_task_count_cpu();
     local              = local == NULL ? arch_current_cpu() : local;
     if (local == NULL) return false;
+    local->task_count++;
     thread->prio   = prio;
     thread->cpu_id = local->id;
 #if EEVDF_SCHEDULER
@@ -60,6 +61,7 @@ bool add_task_prio(tcb_t thread, uint64_t prio) {
 
 bool add_task_prio_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu) {
     if (cpu == NULL || thread == NULL) return false;
+    cpu->task_count++;
     thread->prio   = prio;
     thread->cpu_id = cpu->id;
 #if EEVDF_SCHEDULER
@@ -75,6 +77,9 @@ void set_bsp_cpu_info(cpu_local_t *bsp_cpu) {
     bsp_cpu->enable       = true;
     bsp_cpu->directory    = get_kernel_pagedir();
     bsp_cpu->current_task = bsp_idle_thread;
+    bsp_cpu->is_yield     = false;
+    bsp_cpu->jiffies      = 0;
+    bsp_cpu->task_count   = 1;
 
     bsp_idle_thread->prio   = NICE_TO_PRIO(0);
     bsp_cpu->idle_task      = bsp_idle_thread;
@@ -91,6 +96,9 @@ void set_cpu_idle_task(tcb_t thread, cpu_local_t *cpu) {
     thread->prio      = NICE_TO_PRIO(-20);
     cpu->idle_task    = thread;
     cpu->current_task = thread;
+    cpu->is_yield     = false;
+    cpu->jiffies      = 0;
+    cpu->task_count   = 1;
     thread->cpu_id    = cpu->id;
 #if EEVDF_SCHEDULER
     init_cpu_idle(cpu, thread);
@@ -100,6 +108,7 @@ void set_cpu_idle_task(tcb_t thread, cpu_local_t *cpu) {
 }
 
 void remove_task(tcb_t thread, cpu_local_t *cpu) {
+    cpu->task_count--;
     if (thread->status == T_FUTEX) {
         bool int_enable = arch_check_interrupt();
         arch_close_interrupt();
@@ -138,6 +147,10 @@ tcb_t pick_next_task(uint64_t cpu_id) {
 }
 
 void scheduler_yield() {
+    cpu_local_t *cpu = arch_current_cpu();
+    if (unlikely(cpu == NULL)) return;
+    cpu->is_yield = true;
+
 #if EEVDF_SCHEDULER
     set_entity_yield(get_current_task());
 #endif
@@ -148,6 +161,10 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     if (!scheduler_status) return;
     cpu_local_t *cpu = arch_current_cpu();
     if (unlikely(cpu == NULL)) return;
+
+    if (!cpu->is_yield) { cpu->jiffies++; }
+    cpu->is_yield = false;
+
     tcb_t current_thread = get_current_task();
     if (unlikely(current_thread == NULL)) return;
     tcb_t next_thread = pick_next_task(cpu->id);

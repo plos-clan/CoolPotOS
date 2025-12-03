@@ -31,6 +31,11 @@ static void load_tty_device(vfs_node_t node) {
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
                        (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
                        (void *)kernel_session->ops.size_t);
+
+    create_device_node(node, "console", device_stream, kernel_session,
+                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
+                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
+                       (void *)kernel_session->ops.size_t);
 }
 
 static void load_blk_device(vfs_node_t node) {
