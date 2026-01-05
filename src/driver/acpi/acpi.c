@@ -6,6 +6,7 @@
 #include "krlibc.h"
 #include "term/klog.h"
 
+//#include "lib/neoacpi/neoacpi.h"
 
 void acpi_init() {
     uacpi_status ret = uacpi_initialize(0);

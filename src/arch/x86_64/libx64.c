@@ -30,6 +30,97 @@ __attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
                      "ret\n\t");
 }
 
+// x86 fast impl
+__attribute__((naked)) void *memset(void *s, int c, size_t n) {
+    __asm__ volatile("mov    %rdi, %r9\n\t"  // 保存原始 s (返回值) 到 r9，因为 rdi 会在 rep 中改变
+                     "movzbq %sil, %rax\n\t" // 将 c (低8位) 零扩展到 rax
+                     "movabs $0x0101010101010101, %rcx\n\t"
+                     "imul   %rcx, %rax\n\t"
+                     "cmp    $16, %rdx\n\t"
+                     "jb     .L_tail_memset\n\t"
+                     "mov    %rdi, %r8\n\t"
+                     "neg    %r8\n\t"
+                     "and    $0x7, %r8\n\t" // 计算距离下一个 8 字节边界差多少 (align_bytes)
+                     "sub    %r8, %rdx\n\t" // n -= align_bytes (更新剩余长度)
+                     "mov    %r8, %rcx\n\t"
+                     "rep    stosb\n\t" // 填补头部，使 %rdi 对齐到 8 字节
+                     "mov    %rdx, %rcx\n\t"
+                     "shr    $0x3, %rcx\n\t"
+                     "rep    stosq\n\t" // 64位高速填充
+                     "and    $0x7, %rdx\n\t"
+                     ".L_tail_memset:\n\t"
+                     "mov    %rdx, %rcx\n\t"
+                     "rep    stosb\n\t"
+                     "mov    %r9, %rax\n\t"
+                     "ret\n\t");
+}
+
+// x86 fast impl
+__attribute__((naked)) void *memmove(void *dest, const void *src, size_t n) {
+    __asm__ volatile(
+        "mov    %rdi, %rax\n\t"
+        "cmp    %rsi, %rdi\n\t"
+        "jb     .L_fwd\n\t"             // dest < src: 无需反向
+        "mov    %rsi, %r8\n\t"
+        "add    %rdx, %r8\n\t"
+        "cmp    %r8, %rdi\n\t"
+        "jae    .L_fwd\n\t"             // dest >= src + n: 无重叠
+        "std\n\t"                       // 设置 DF=1，指针递减
+        "add    %rdx, %rdi\n\t"
+        "add    %rdx, %rsi\n\t"
+        "dec    %rdi\n\t"               // 指向最后一个字节
+        "dec    %rsi\n\t"
+        "mov    %rdx, %rcx\n\t"
+        "shr    $3, %rcx\n\t"
+        "rep    movsq\n\t"
+        "mov    %rdx, %rcx\n\t"
+        "and    $7, %rcx\n\t"
+        "rep    movsb\n\t"
+        "cld\n\t"                       // 必须恢复 DF=0
+        "ret\n\t"
+        ".L_fwd:\n\t"
+        "mov    %rdx, %rcx\n\t"
+        "shr    $3, %rcx\n\t"
+        "rep    movsq\n\t"
+        "mov    %rdx, %rcx\n\t"
+        "and    $7, %rcx\n\t"
+        "rep    movsb\n\t"
+        "ret\n\t"
+    );
+}
+
+// x86 fast impl
+__attribute__((naked)) int memcmp(const void *s1, const void *s2, size_t n) {
+    __asm__ volatile(
+        "test   %rdx, %rdx\n\t"
+        "jz     .L_eq\n\t"
+        "mov    %rdx, %rcx\n\t"
+        "shr    $3, %rcx\n\t"
+        "jz     .L_tail_memcmp\n\t"
+        "repe   cmpsq\n\t"
+        "je     .L_tail_memcmp\n\t"
+        "sub    $8, %rdi\n\t"
+        "sub    $8, %rsi\n\t"
+        "mov    $8, %rcx\n\t"
+        "jmp    .L_byte_loop\n\t"
+        ".L_tail_memcmp:\n\t"
+        "mov    %rdx, %rcx\n\t"
+        "and    $7, %rcx\n\t"
+        "jz     .L_eq\n\t"
+        ".L_byte_loop:\n\t"
+        "repe   cmpsb\n\t"
+        "je     .L_eq\n\t"
+        "movzbq -1(%rdi), %rax\n\t"
+        "movzbq -1(%rsi), %rcx\n\t"
+        "sub    %ecx, %eax\n\t"
+        "ret\n\t"
+        ".L_eq:\n\t"
+        "xor    %eax, %eax\n\t"
+        "ret\n\t"
+    );
+}
+
+
 void arch_close_interrupt() {
     __asm__ volatile("cli");
 }
@@ -38,7 +129,7 @@ void arch_open_interrupt() {
     __asm__ volatile("sti");
 }
 
-bool arch_check_interrupt(){
+bool arch_check_interrupt() {
     uint64_t rflags;
     __asm__ volatile("pushfq\n\t"
                      "pop %0"

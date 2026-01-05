@@ -11,6 +11,7 @@
 #include "security.h"
 
 extern struct idt_register idt_pointer;
+int                nr_cpu = 256;
 
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"

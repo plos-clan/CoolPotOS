@@ -374,6 +374,63 @@ static const char *fdt_kernel_cmdline(void *fdt) {
     return bootargs;
 }
 
+uint64_t fdt_get_initrd(const void *fdt, size_t *out_size) {
+    int chosen;
+    const void *prop;
+    int len;
+    uint64_t start = 0, end = 0;
+
+    if (!fdt) return 0;
+
+    chosen = fdt_path_offset((void *)fdt, "/chosen");
+    if (chosen < 0) {
+        // 没有 /chosen
+        return 0;
+    }
+
+    /* 常见属性名优先级： linux,initrd-start/end -> initrd-start/end */
+    prop = fdt_getprop((void *)fdt, chosen, "linux,initrd-start", &len);
+    if (prop) {
+        if (len == 8) {
+            start = fdt64_to_cpu(*(const fdt64_t *)prop);
+        } else if (len == 4) {
+            start = fdt32_to_cpu(*(const fdt32_t *)prop);
+        } else {
+            return 0;
+        }
+    } else {
+        prop = fdt_getprop((void *)fdt, chosen, "initrd-start", &len);
+        if (prop) {
+            if (len == 8) start = fdt64_to_cpu(*(const fdt64_t *)prop);
+            else if (len == 4) start = fdt32_to_cpu(*(const fdt32_t *)prop);
+            else return 0;
+        }
+    }
+
+    prop = fdt_getprop((void *)fdt, chosen, "linux,initrd-end", &len);
+    if (prop) {
+        if (len == 8) {
+            end = fdt64_to_cpu(*(const fdt64_t *)prop);
+        } else if (len == 4) {
+            end = fdt32_to_cpu(*(const fdt32_t *)prop);
+        } else {
+            return false;
+        }
+    } else {
+        prop = fdt_getprop((void *)fdt, chosen, "initrd-end", &len);
+        if (prop) {
+            if (len == 8) end = fdt64_to_cpu(*(const fdt64_t *)prop);
+            else if (len == 4) end = fdt32_to_cpu(*(const fdt32_t *)prop);
+            else return false;
+        }
+    }
+
+    if (start == 0 || end == 0 || end <= start) return false;
+
+    if (out_size)  *out_size = (size_t)(end - start);
+    return start;
+}
+
 extern void init_early_paging();
 
 uint64_t bsp_hart_id;
@@ -399,5 +456,6 @@ USED void opensbi_c_start(uint64_t boot_hart_id, uintptr_t dtb_ptr) {
     setup_memmap(&opensbi_memory_map, 0x80000000, 0x81000000, &opensbi_fb);
     kernel_cmdline = (char*)fdt_kernel_cmdline(opensbi_dtb_vaddr);
     init_early_paging();
+
     __asm__ volatile("j kmain");
 }

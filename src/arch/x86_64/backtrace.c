@@ -1,4 +1,3 @@
-#include "description_table.h"
 #include "exec/elf.h"
 #include "krlibc.h"
 #include "limine.h"
@@ -51,11 +50,11 @@ void kallsyms_init_from_elf() {
     for (int i = 0; i < ehdr->e_shnum; i++) {
         switch (shdrs[i].sh_type) {
         case SHT_SYMTAB:
-            if(has_sym) break;
+            if (has_sym) break;
             symtab   = (Elf64_Sym *)((char *)ehdr + shdrs[i].sh_offset);
             symtabsz = shdrs[i].sh_size;
             strtab   = (char *)ehdr + shdrs[shdrs[i].sh_link].sh_offset;
-            has_sym = true;
+            has_sym  = true;
             break;
         case SHT_PROGBITS:
             if (shdrs[i].sh_name >= shdrs[ehdr->e_shstrndx].sh_size) { break; }

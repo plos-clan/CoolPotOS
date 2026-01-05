@@ -8,7 +8,6 @@
 #include "term/klog.h"
 
 static char *get_pdir_fpath(char *path) {
-    if (path == NULL) { return NULL; }
 
     if (strcmp(path, "/") == 0) { return strdup("/"); }
 
@@ -82,9 +81,9 @@ compression_type_t get_compression_type(const void *data, size_t size) {
     return COMPRESSION_UNKNOWN;
 }
 
-static size_t read_num(const char *str, size_t count) {
+static size_t read_num(const char *str) {
     size_t val = 0;
-    for (size_t i = 0; i < count; ++i)
+    for (size_t i = 0; i < 8; ++i)
         val = val * 16 + (isdigit(str[i]) ? str[i] - '0' : str[i] - 'A' + 10);
     return val;
 }
@@ -92,7 +91,6 @@ static size_t read_num(const char *str, size_t count) {
 void cpio_init(void) {
     module_t *init_ramfs = get_module("initramfs");
     if (!init_ramfs) return;
-    vfs_node_t root = get_rootdir();
     if (vfs_mount(NULL,"tmpfs",get_rootdir()) != EOK) {
         kerror("Cannot mount tmpfs to root_dir");
         return;
@@ -122,7 +120,7 @@ void cpio_init(void) {
     default: kerror("Cannot load initramfs, unknown format."); return;
     }
 
-next:;
+
     struct cpio_newc_header_t hdr;
     size_t                    offset       = 0;
     size_t                    file_num_all = 0;
@@ -130,13 +128,13 @@ next:;
         memcpy(&hdr, data_d + offset, sizeof(hdr));
         offset += sizeof(hdr);
 
-        size_t namesize = read_num(hdr.c_namesize, 8);
+        size_t namesize = read_num(hdr.c_namesize);
         char   filename[namesize + 1];
         filename[0] = '/';
         memcpy(filename + 1, data_d + offset, namesize);
         offset = (offset + namesize + 3) & ~3;
 
-        size_t         filesize = read_num(hdr.c_filesize, 8);
+        size_t         filesize = read_num(hdr.c_filesize);
         char *filedata = malloc(filesize);
         memcpy(filedata, data_d + offset, filesize);
         offset = (offset + filesize + 3) & ~3;
@@ -151,7 +149,7 @@ next:;
         }
 
         file_num_all++;
-        size_t  mode = read_num(hdr.c_mode, 8);
+        size_t  mode = read_num(hdr.c_mode);
         errno_t status;
         if (mode & 040000) {
             status = vfs_mkdir(filename);
@@ -203,6 +201,6 @@ next:;
     }
     if (is_free) free(data_d);
 
-    kinfo("Loaded initramfs size:%llu files:%llu compress: %s", init_ramfs->size, file_num_all,
+    kinfo("Loaded initramfs size:%llu files:%llu compress: %s", size_d, file_num_all,
           compress_type);
 }

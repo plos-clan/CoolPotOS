@@ -1,14 +1,14 @@
 #include "page_x64.h"
+#include "io.h"
+#include "krlibc.h"
+#include "lock.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
-#include "io.h"
-#include "lock.h"
-#include "krlibc.h"
 #include "task/smp.h"
 
-extern page_directory_t kernel_page_dir;
+extern page_directory_t          kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
-static spin_t page_lock = SPIN_INIT;
+static spin_t                    page_lock         = SPIN_INIT;
 
 static void page_table_clear(page_table_t *table) {
     for (int i = 0; i < 512; i++) {
@@ -63,7 +63,6 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
     flush_tlb(vaddr);
 }
 
-
 static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy,
                                                bool kernel_space) {
     if (source_table == NULL) return NULL;
@@ -93,8 +92,8 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
             phys_to_virt(source_table->entries[i].value & PTE_FRAME_MASK);
         page_table_t *new_page_table = copy_page_table_recursive(
             source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256);
-        new_table->entries[i].value = virt_to_phys(new_page_table) |
-                                      (source_table->entries[i].value & 0xFF000000000FFF);
+        new_table->entries[i].value =
+            virt_to_phys(new_page_table) | (source_table->entries[i].value & 0xFF000000000FFF);
     }
     return new_table;
 }
@@ -200,7 +199,7 @@ void free_page_directory(page_directory_t *dir) {
 }
 
 void switch_page_directory0(page_directory_t *dir) {
-    page_table_t *physical_table = (page_table_t*)virt_to_phys(dir->table);
+    page_table_t *physical_table = (page_table_t *)virt_to_phys(dir->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
 }
 
@@ -212,7 +211,7 @@ void arch_page_setup_l2() {
     double_fault_page = get_cr3();
 }
 
-void arch_page_setup(){
+void arch_page_setup() {
     page_table_t *kernel_page_table = (page_table_t *)phys_to_virt(get_cr3());
     kernel_page_dir                 = (page_directory_t){.table = kernel_page_table};
     double_fault_page               = get_cr3();

@@ -322,6 +322,7 @@ void start_all_kernel_module() {
 
 static inline void register_cp_kernel_lib(kernel_mode_t *kernel) {
     dlfunc_register(kernel, "printk", cp_printk);
+    dlfunc_register(kernel, "bcmp", memcmp);
     EXPORT_SYMBOL(kernel, memset);
     EXPORT_SYMBOL(kernel, memmove);
     EXPORT_SYMBOL(kernel, memchr);
