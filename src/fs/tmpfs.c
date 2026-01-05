@@ -53,7 +53,7 @@ size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
     tmpfs_file_t *f   = (tmpfs_file_t *)file;
     size_t        end = offset + size;
     if (end > f->capacity) {
-        size_t new_cap = end * 2;
+        size_t new_cap = end + PAGE_SIZE;
         char  *new_buf = realloc(f->data, new_cap);
         if (!new_buf) return 0;
         f->data     = new_buf;

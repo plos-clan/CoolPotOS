@@ -4,6 +4,8 @@
 #include "driver/input_device.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
+#include "exec/elf_load.h"
+#include "fs/cpio.h"
 #include "fs/devtmpfs.h"
 #include "fs/pipefs.h"
 #include "fs/tmpfs.h"
@@ -14,15 +16,16 @@
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
+#include "mod/module.h"
 #include "rv64_irq.h"
 #include "sbi.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
 #include "task/smp.h"
 #include "term/klog.h"
-#include "exec/elf_load.h"
 
-extern void arch_cpu_init();
+extern void  arch_cpu_init();
+extern void initrd_setup();
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -42,7 +45,8 @@ USED _Noreturn void kmain() {
     intctl_init();
     trap_init();
     arch_cpu_init();
-
+    initrd_setup();
+    load_module();
     __asm__ volatile("mv tp, %0\n\t" ::"r"(NULL));
     csr_write(sscratch, 0);
 
@@ -54,11 +58,12 @@ USED _Noreturn void kmain() {
     futex_init();
     setup_task();
     smp_init();
+    // cpio_init();
     ksuccess("Kernel load done!");
     enable_scheduler();
     arch_open_interrupt();
 
-    launch_init_process();
+   // launch_init_process();
 
     while (true)
         arch_wait_for_interrupt();

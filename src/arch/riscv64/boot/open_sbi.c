@@ -4,8 +4,8 @@ extern uintptr_t smp_entry;
 
 boot_memory_map_t  opensbi_memory_map;
 boot_framebuffer_t opensbi_fb;
-char *kernel_cmdline = NULL;
-extern uintptr_t opensbi_dtb_vaddr;
+char              *kernel_cmdline = NULL;
+extern uintptr_t   opensbi_dtb_vaddr;
 
 uint64_t boot_get_hhdm_offset() {
     return 0xffff800000000000;
@@ -38,7 +38,10 @@ char *get_kernel_cmdline() {
 boot_module_t opensbi_modules[MAX_LOAD_MODULE];
 
 void boot_get_modules(boot_module_t **modules, size_t *count) {
-    *count = 0;
+    for (uint64_t i = 0; i < 1; i++) {
+        modules[i] = &opensbi_modules[i];
+        (*count)++;
+    }
 }
 
 uint64_t boot_get_dtb() {

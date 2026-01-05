@@ -4,6 +4,10 @@
  * CP_Kernel 新版内核元数据统计头文件
  * 内核编号格式:
  *    内核名称-大型更新版本.架构无关版本号.平台相关代码版本号_(git:<git哈希>)_{编译器名称 编译器版本}
+ *
+ * ARCH_HAS_OPTIMIZED_MEMCPY 该架构有 memcpy 高速指令集优化, 取消 krlibc 原版实现
+ * ARCH_HAS_OPTIMIZED_MEMSET 该架构有 memset 高速指令集优化
+ *
  */
 
 #define KERNEL_NAME_   "CP_Kernel"
@@ -33,9 +37,12 @@
 #elif defined(__x86_64__) || defined(__amd64__)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
-#    define KERNEL_ARCH         "x86_64"
-#    define KERNEL_ARCH_VERSION "39"
-
+#    define KERNEL_ARCH                "x86_64"
+#    define KERNEL_ARCH_VERSION        "39"
+#    define ARCH_HAS_OPTIMIZED_MEMCPY  1
+#    define ARCH_HAS_OPTIMIZED_MEMSET  1
+#    define ARCH_HAS_OPTIMIZED_MEMCMP  1
+#    define ARCH_HAS_OPTIMIZED_MEMMOVE 1
 #elif defined(__i386__)
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
@@ -69,9 +76,9 @@
                   ")_{" COMPILER_NAME " " COMPILER_VERSION "}")
 
 // 内核属性
-#define MAX_CPU               256                  // 最大支持CPU核心数 256
-#define KERNEL_HEAP_START     0xffff900000000000   // 内核堆起始地址
-#define KERNEL_HEAP_SIZE      0x1600000            // 内核堆初始大小 25MB (可扩容)
+#define MAX_CPU               256                // 最大支持CPU核心数 256
+#define KERNEL_HEAP_START     0xffff900000000000 // 内核堆起始地址
+#define KERNEL_HEAP_SIZE      0x1600000          // 内核堆初始大小 25MB (可扩容)
 //#define STACK_SIZE            0x4000               //32768                // 栈大小
 #define STACK_SIZE            0x8000               //32768                // 栈大小
 #define BIG_USER_STACK        999424               // 用户栈大小，要对齐到页
@@ -81,6 +88,9 @@
 #define USER_MMAP_START       0x0000400000000000UL // 用户堆映射起始地址
 #define KERNEL_AREA_MEM       0xf000000000000000   // 内核地址空间起始
 #define DRIVER_AREA_MEM       0xffffb00000000000   // 驱动恒等映射空间偏移
+#define KASAN_SHADOW_BASE     0xffffd00000000000   // KASAN 影子内存映射基址
+#define KASAN_MONITOR_START   0xffffffff80000000UL // KASAN 监控起始
+#define KASAN_MONITOR_END     0xffffffffc0000000UL // KASON 监控终止
 #define SCHED_TIMER_SPEED     100                  // 调度时钟频率 100Hz
 #define MAX_STACK_SIZE        131072ULL            // 增强栈大小 128k
 #define MAX_FRAMEBUFFER       10                   // 最大帧缓冲区个数识别
