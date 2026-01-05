@@ -91,12 +91,12 @@ extern "C"
 
 /**@brief  Enable/disable xattr*/
 #ifndef CONFIG_XATTR_ENABLE
-#define CONFIG_XATTR_ENABLE 1
+#define CONFIG_XATTR_ENABLE 0
 #endif
 
 /**@brief  Enable/disable extents*/
 #ifndef CONFIG_EXTENTS_ENABLE
-#define CONFIG_EXTENTS_ENABLE 1
+#define CONFIG_EXTENTS_ENABLE 0
 #endif
 
 /**@brief   Include error codes from ext4_errno or standard library.*/
