@@ -130,7 +130,10 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     }
     uint8_t *buf = (uint8_t *)malloc(buf_len);
     if (handle->node->size != (uint64_t)-1) {
-        if (handle->offset > handle->node->size) return EOK;
+        if (handle->offset > handle->node->size) {
+            free(buf);
+            return EOK;
+        }
     }
     size_t status = vfs_read(handle->node, buf, handle->offset, buf_len);
     if (status == (size_t)-1) {
@@ -222,6 +225,7 @@ syscall_(getcwd, char *buffer, size_t length) {
     size_t cwd_leng = strlen(cwd);
     if (length > cwd_leng) length = cwd_leng;
     memcpy(buffer, cwd, length);
+    free(cwd);
     return length;
 }
 
@@ -253,6 +257,7 @@ syscall_(chdir, char *s) {
     if (node->type == file_dir) {
         process->cwd = node;
     } else {
+        free(normalized_path);
         return SYSCALL_FAULT_(ENOTDIR);
     }
 
@@ -809,6 +814,7 @@ syscall_(unlink, char *name) {
 
     if (node->refcount > 1) {
         node->refcount--;
+        free(npath);
         return EOK;
     }
     size_t ret = vfs_delete(node) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
