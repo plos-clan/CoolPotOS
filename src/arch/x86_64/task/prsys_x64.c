@@ -26,9 +26,19 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
         is_vfork ? current_pcb->directory : clone_page_directory(current_pcb->directory, false);
     if (!vma_manager_clone(&current_pcb->vma_manager, &new_pcb->vma_manager)) {
         logkf("task: cannot clone process vma information.\n");
+        free(new_pcb->name);
         free(new_pcb);
         return -ENOMEM;
     }
+    tcb_t parent_task = get_current_task();
+    tcb_t new_task    = (tcb_t)malloc(STACK_SIZE);
+    if (new_task == NULL) {
+        free(new_pcb->name);
+        free(new_pcb);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
+    memset(new_task, 0, sizeof(struct thread_control_block));
+
     new_pcb->exec = current_pcb->exec;
     new_pcb->exec->refcount++;
 
@@ -49,11 +59,6 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->proc_root     = current_pcb->proc_root;
     new_pcb->proc_root->refcount++;
 
-    tcb_t parent_task = get_current_task();
-
-    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
-    if (new_task == NULL) return SYSCALL_FAULT_(ENOMEM);
-    memset(new_task, 0, sizeof(struct thread_control_block));
     new_task->cpu_id                 = current_cpu->id;
     new_task->status                 = T_START;
     new_task->context.user_stack     = parent_task->context.user_stack;
@@ -120,16 +125,6 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
         }
         ipc_send(current_pcb->parent->ipc_queue, msg);
     }
-
-    int npid = new_pcb->pid;
-    do {
-        ipc_message_t msg = ipc_recv_wait(current_pcb->ipc_queue, IPC_MSG_TYPE_EXEC);
-        if (npid == msg->pid) {
-            free(msg);
-            return npid;
-        }
-        ipc_send(current_pcb->parent->ipc_queue, msg);
-    } while (true);
 }
 
 uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid,
@@ -236,7 +231,10 @@ syscall_(execve, char *path, char **argv, char **envp) {
     if (unlikely(path == NULL)) return SYSCALL_FAULT_(EINVAL);
     char      *norm_path = vfs_cwd_path_build(path);
     vfs_node_t node      = vfs_open(norm_path);
-    if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
+    if (node == NULL) {
+        free(norm_path);
+        return SYSCALL_FAULT_(ENOENT);
+    }
     uint64_t buf_len = (node->size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
     pcb_t process = get_current_task()->process;

@@ -362,6 +362,7 @@ syscall_(prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim,
          struct rlimit *old_rlim);
 syscall_(getresgid, int *rgid, int *egid, int *sgid);
 syscall_(getresuid, int *ruid, int *euid, int *suid);
+syscall_(kill,int pid, int sig);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,

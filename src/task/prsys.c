@@ -277,3 +277,13 @@ syscall_(getresuid,int *ruid, int *euid, int *suid) {
     *suid = process->uid;
     return EOK;
 }
+
+syscall_(kill,int pid, int sig) {
+    pcb_t process = found_pcb(pid);
+    if(process == NULL) return SYSCALL_FAULT_(ESRCH);
+    if (sig < MINSIG || sig > MAXSIG) return EOK;
+
+    //TODO kill
+
+    return EOK;
+}

@@ -50,6 +50,7 @@
 #define SYSCALL_EXECVE      59
 #define SYSCALL_EXIT        60
 #define SYSCALL_WAITPID     61
+#define SYSCALL_KILL        62
 #define SYSCALL_UNAME       63
 #define SYSCALL_FCNTL       72
 #define SYSCALL_FTRUNCATE   77
