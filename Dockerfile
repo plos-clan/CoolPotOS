@@ -21,7 +21,7 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*
 
-# 设置默认工作目录（主人可以按需修改）
+# 设置默认工作目录（可以按需修改）
 WORKDIR /workspace
 
 # 可选：设置默认命令（比如启动 shell）
