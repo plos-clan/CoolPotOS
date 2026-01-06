@@ -223,7 +223,7 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     if (root == NULL) return -EINVAL;
     if (root->fsid != dev_tmpfs_id) return -ENODEV;
     char *full_path  = vfs_get_fullpath(root);
-    char *creat_path = calloc(1, strlen(full_path) + strlen(name) + 1);
+    char *creat_path = calloc(1, strlen(full_path) + strlen(name) + 5);
     sprintf(creat_path, "%s/%s", full_path, name);
     if (vfs_mkdir(creat_path) != EOK) goto err;
     vfs_node_t node = vfs_open(creat_path);
@@ -245,6 +245,8 @@ errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, v
     node->rdev = node->dev;
     vfs_update(node);
     vfs_close(node);
+    free(creat_path);
+    free(full_path);
     return EOK;
 err:;
     kerror("Cannot create device %s", creat_path);
