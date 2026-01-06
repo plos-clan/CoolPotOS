@@ -13,7 +13,9 @@ RUN apt-get update && \
         qemu-system-riscv64 \
         cmake \
         python3 \
+        python3-cryptography \
         python3-pip \
+        python3-venv \
         git \
         build-essential \
         && \
