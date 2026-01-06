@@ -31,3 +31,6 @@ assets/*.elf
 /cpkrnl_x64.elf
 /Makefile
 
+#AI Agent Cache
+.codex
+AGENTS.md
