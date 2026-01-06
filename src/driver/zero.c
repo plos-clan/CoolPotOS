@@ -51,6 +51,7 @@ void zero_setup() {
     null_device->ops.write    = null_write;
     null_device->ops.poll     = zero_poll;
     null_device->ops.ioctl    = zero_ioctl;
+    null_device->handle       = null_device;
     strcpy(null_device->name, "null");
     register_device(null_device);
 
@@ -63,6 +64,7 @@ void zero_setup() {
     zero_device->ops.write    = null_write;
     zero_device->ops.poll     = zero_poll;
     zero_device->ops.ioctl    = zero_ioctl;
+    zero_device->handle       = zero_device;
     strcpy(zero_device->name, "zero");
     register_device(zero_device);
 }
