@@ -22,10 +22,7 @@ uint64_t      max_pfn               = 0;
 uint64_t      min_pfn               = 0;
 zone_t       *zones[__MAX_NR_ZONES] = {NULL};
 int           nr_zones              = 0;
-static size_t origin_frames         = 0;
-static size_t usable_frames         = 0;
 static size_t total_frames          = 0;
-static size_t metadata_frames       = 0;
 Bitmap        usable_regions;
 spin_t        frame_op_lock        = SPIN_INIT;
 static size_t early_last_alloc_pos = 0;
@@ -684,9 +681,10 @@ void init_frame_buddy(uint64_t memory_size) {
     }
 
     frame_allocator.origin_frames = origin_frames;
-    frame_allocator.usable_frames = usable_frames;
-    logkf("buddy: total frames = %zu, metadata_frames = %zu, usable_frames = %zu\n", total_frames,
-          metadata_frames, usable_frames);
+    frame_allocator.usable_frames = origin_frames;
+    frame_allocator.total_frames  = total_frames;
+    logkf("buddy: total frames = %zu, usable_frames = %zu\n", total_frames,
+          frame_allocator.usable_frames);
 }
 
 static size_t next_power_of_2(size_t n) {

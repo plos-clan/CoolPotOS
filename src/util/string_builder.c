@@ -1,12 +1,14 @@
 #include "string_builder.h"
 #include "lib/sprintf.h"
 #include "mem/heap.h"
+#include "types/limits.h"
 
 string_builder_t *create_string_builder(size_t initial_capacity) {
+    if (initial_capacity == 0) initial_capacity = 1;
     string_builder_t *buf = malloc(sizeof(string_builder_t));
     if (!buf) return NULL;
 
-    buf->data = malloc(initial_capacity);
+    buf->data = calloc(1,initial_capacity);
     if (!buf->data) {
         free(buf);
         return NULL;
@@ -14,7 +16,6 @@ string_builder_t *create_string_builder(size_t initial_capacity) {
 
     buf->size     = 0;
     buf->capacity = initial_capacity;
-    buf->data[0]  = '\0';
 
     return buf;
 }
@@ -59,17 +60,21 @@ bool string_builder_append(string_builder_t *buf, const char *format, ...) {
     }
     
     // 实际写入
+    size_t avail = buf->capacity - buf->size;
+    if (avail > (size_t)INT_MAX) avail = (size_t)INT_MAX;
+
     va_start(args, format);
-    int written = vsnprintf(buf->data + buf->size, 
-                           buf->capacity - buf->size, 
-                           format, args);
+    int written = vsnprintf(buf->data + buf->size,
+                            (int)avail,
+                            format, args);
     va_end(args);
     
     if (written < 0) return false;
-    
+    if ((size_t)written >= avail) return false;
+
     // 更新大小（写入的字符数不会超过 needed）
     buf->size += (size_t)written;
     buf->data[buf->size] = '\0';  // 确保 null 终止
-    
+
     return true;
 }

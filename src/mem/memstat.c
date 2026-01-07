@@ -4,14 +4,13 @@
 
 uint64_t reserved_memory = 0;
 uint64_t bad_memory      = 0;
-uint64_t all_memory      = 0;
 
 uint64_t get_reserved_memory() {
     return reserved_memory;
 }
 
 uint64_t get_all_memory() {
-    return all_memory;
+    return frame_allocator.total_frames * PAGE_SIZE;
 }
 
 uint64_t get_available_memory() {
@@ -20,6 +19,18 @@ uint64_t get_available_memory() {
 
 uint64_t get_used_memory() {
     return (frame_allocator.origin_frames - frame_allocator.usable_frames) * PAGE_SIZE;
+}
+
+size_t get_total_frames() {
+    return frame_allocator.total_frames;
+}
+
+size_t get_origin_frames() {
+    return frame_allocator.origin_frames;
+}
+
+size_t get_usable_frames() {
+    return frame_allocator.usable_frames;
 }
 
 uint64_t get_bad_memory() {

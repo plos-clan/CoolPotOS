@@ -13,6 +13,7 @@
 
 typedef struct {
     void  *allocator;
+    size_t total_frames;
     size_t origin_frames;
     size_t usable_frames;
 } FrameAllocator;

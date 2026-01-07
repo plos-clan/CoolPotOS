@@ -78,6 +78,6 @@ size_t proc_pmaps_read(proc_handle_t *handle,void *addr, size_t offset, size_t s
     size_t to_copy = MIN(content_len, size);
     memcpy(addr, content + offset, to_copy);
     free(content);
-    ((char *)addr)[to_copy] = '\0';
+    if(to_copy < size) ((char *)addr)[to_copy] = '\0';
     return to_copy;
 }
