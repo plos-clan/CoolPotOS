@@ -321,6 +321,7 @@ syscall_(execve, char *path, char **argv, char **envp) {
     //    process->ipc_queue = ipc_queue_init();
 
     free(norm_path);
+    free_envp(old_envp);
 
     uint64_t stack = page_alloc_random(get_current_directory(), BIG_USER_STACK,
                                        PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
