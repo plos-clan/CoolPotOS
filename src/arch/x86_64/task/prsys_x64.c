@@ -31,8 +31,9 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
         return -ENOMEM;
     }
     tcb_t parent_task = get_current_task();
-    tcb_t new_task    = (tcb_t)malloc(STACK_SIZE);
+    tcb_t new_task    = malloc(STACK_SIZE);
     if (new_task == NULL) {
+        vma_manager_exit_cleanup(&new_pcb->vma_manager);
         free(new_pcb->name);
         free(new_pcb);
         return SYSCALL_FAULT_(ENOMEM);
