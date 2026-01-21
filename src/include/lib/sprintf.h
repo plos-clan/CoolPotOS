@@ -98,7 +98,7 @@ STBSP__PUBLICDEC void STB_SPRINTF_DECORATE(set_separators)(char comma, char peri
             defined(_M_X64) || defined(__x86_64__) || defined(__x86_64) || defined(__s390x__)
 #            define stbsp__uintptr stbsp__uint64
 #        else
-#            define stbsp__uintptr stbsp__uint32
+#            define stbsp__uintptr stbsp__uint64
 #        endif
 #    endif
 
@@ -206,9 +206,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
                                                       char *buf, char const *fmt, va_list va) {
     static char hex[]  = "0123456789abcdefxp";
     static char hexu[] = "0123456789ABCDEFXP";
-    char       *bf = NULL;
-    char const *f = NULL;
-    int         tlen = 0;
+    char       *bf     = NULL;
+    char const *f      = NULL;
+    int         tlen   = 0;
 
     bf = buf;
     f  = fmt;
@@ -1650,4 +1650,4 @@ static stbsp__int32 stbsp__real_to_str(char const **start, stbsp__uint32 *len, c
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);
-int vsnprintf(char *buf, int count, const char *fmt,va_list va);
+int vsnprintf(char *buf, int count, const char *fmt, va_list va);
