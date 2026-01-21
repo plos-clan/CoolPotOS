@@ -20,11 +20,11 @@ page_table_t *page_table_create(page_table_entry_t *entry) {
     if (entry->value == 0) {
         uint64_t frame      = alloc_frames(1);
         entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
-        page_table_t *table = (page_table_t *)phys_to_virt(entry->value & PTE_FRAME_MASK);
+        page_table_t *table = phys_to_virt(entry->value & PTE_FRAME_MASK);
         page_table_clear(table);
         return table;
     }
-    page_table_t *table = (page_table_t *)phys_to_virt(entry->value & PTE_FRAME_MASK);
+    page_table_t *table = phys_to_virt(entry->value & PTE_FRAME_MASK);
     return table;
 }
 
@@ -45,10 +45,10 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
 }
 
 void unmap_page(page_directory_t *directory, uint64_t vaddr) {
-    uint64_t l4_index = (((vaddr >> 39)) & 0x1FF);
-    uint64_t l3_index = (((vaddr >> 30)) & 0x1FF);
-    uint64_t l2_index = (((vaddr >> 21)) & 0x1FF);
-    uint64_t l1_index = (((vaddr >> 12)) & 0x1FF);
+    uint64_t l4_index = (vaddr >> 39) & 0x1FF;
+    uint64_t l3_index = (vaddr >> 30) & 0x1FF;
+    uint64_t l2_index = (vaddr >> 21) & 0x1FF;
+    uint64_t l1_index = (vaddr >> 12) & 0x1FF;
 
     page_table_t *l4_table = directory->table;
     page_table_t *l3_table = phys_to_virt((&(l4_table->entries[l4_index]))->value & PTE_FRAME_MASK);
@@ -100,7 +100,7 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
 
 uint64_t arch_virt_to_phys(uint64_t va) {
     uint64_t  pml4_phys = get_cr3();
-    uint64_t *pml4      = (uint64_t *)phys_to_virt(pml4_phys);
+    uint64_t *pml4      = phys_to_virt(pml4_phys);
 
     size_t pml4_idx = (va >> 39) & ENTRY_MASK;
     size_t pdpt_idx = (va >> 30) & ENTRY_MASK;
@@ -110,12 +110,12 @@ uint64_t arch_virt_to_phys(uint64_t va) {
 
     uint64_t pml4e = pml4[pml4_idx];
     if (!(pml4e & PTE_PRESENT)) return 0; // not mapped
-    uint64_t *pdpt = (uint64_t *)phys_to_virt(pml4e & PAGE_MASK);
+    uint64_t *pdpt = phys_to_virt(pml4e & PAGE_MASK);
 
     uint64_t pdpte = pdpt[pdpt_idx];
     if (!(pdpte & PTE_PRESENT)) return 0;
     if (pdpte & PTE_HUGE) { return (pdpte & ~((1ULL << 30) - 1)) + (va & ((1ULL << 30) - 1)); }
-    uint64_t *pd = (uint64_t *)phys_to_virt(pdpte & PAGE_MASK);
+    uint64_t *pd = phys_to_virt(pdpte & PAGE_MASK);
 
     uint64_t pde = pd[pd_idx];
     if (!(pde & PTE_PRESENT)) return 0;
@@ -212,7 +212,7 @@ void arch_page_setup_l2() {
 }
 
 void arch_page_setup() {
-    page_table_t *kernel_page_table = (page_table_t *)phys_to_virt(get_cr3());
+    page_table_t *kernel_page_table = phys_to_virt(get_cr3());
     kernel_page_dir                 = (page_directory_t){.table = kernel_page_table};
     double_fault_page               = get_cr3();
 }

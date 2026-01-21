@@ -329,9 +329,7 @@ _Noreturn void arch_switch_to_user_mode() {
     vma_t *region =
         vma_find_intersection(&process->vma_manager, get_current_task()->context.user_stack,
                               get_current_task()->context.user_stack_top);
-    if (!region) {
-        vma_insert(&process->vma_manager, stack_vma);
-    }
+    if (!region) { vma_insert(&process->vma_manager, stack_vma); }
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
         uint64_t linker_start = UINT64_MAX;
@@ -375,7 +373,7 @@ _Noreturn void arch_switch_to_user_mode() {
     } else
         rsp = build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data,
                                load_start);
-
+    free(data);
     arch_close_interrupt();
     __asm__ volatile("mov %0, %%es\n"
                      "mov %0, %%ds\n"
