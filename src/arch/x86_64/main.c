@@ -1,5 +1,6 @@
 #include "apic.h"
 #include "bootarg.h"
+#include "cpu_features.h"
 #include "description_table.h"
 #include "driver/acpi.h"
 #include "driver/ahci.h"
@@ -26,6 +27,7 @@
 #include "fsgsbase.h"
 #include "hpet.h"
 #include "intctl.h"
+#include "kasan.h"
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
@@ -39,7 +41,6 @@
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-#include "cpu_features.h"
 
 extern void kallsyms_init_from_elf();
 extern void zero_setup();
@@ -52,11 +53,13 @@ USED _Noreturn void kmain() {
     gop_clear(boot_get_framebuffer(0), 0xffffff);
     init_frame();
     init_page();
+    kasan_init();
     init_heap();
     arch_page_setup_l2();
     init_tty();
     init_gop();
     init_serial();
+    if (kasan_is_active()) { logkf("[KASAN] active\n"); }
     init_input_manager();
     init_tty_session();
     printk("CoolPotOS %s\n", KERNEL_NAME);

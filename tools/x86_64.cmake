@@ -98,13 +98,13 @@ add_custom_target(iso ALL
 # === Run target ===
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(RUN_ARG)
-else()
+else ()
     set(RUN_ARG "-s -S")
-endif()
+endif ()
 
 add_custom_target(run
         DEPENDS iso
         COMMAND echo "qemu-system-x86_64 -M q35 -cpu Haswell,+x2apic,+avx -smp 1 -serial stdio -m 2048M -audiodev sdl,id=audio0 -device sb16,audiodev=audio0 -netdev user,id=net0 -device e1000,netdev=net0 -rtc base=utc -vga vmware -drive if=pflash,format=raw,file=${CMAKE_CURRENT_SOURCE_DIR}/assets/ovmf-code_x64.fd -drive if=none,file=${PROJECT_ROOT_DIR}/rootfs-x86_64.img,format=raw,id=harddisk -device nvme,drive=harddisk,serial=1234 -cdrom ${ISO_FILE} ${RUN_ARG}"
-	#COMMAND qemu-system-x86_64 -M q35 -cpu Haswell,+x2apic,+avx -smp 1 -serial stdio -m 2048M -audiodev sdl,id=audio0 -device sb16,audiodev=audio0 -netdev user,id=net0 -device e1000,netdev=net0 -rtc base=utc -vga vmware -drive if=pflash,format=raw,file=${CMAKE_CURRENT_SOURCE_DIR}/assets/ovmf-code_x64.fd -drive if=none,file=${PROJECT_ROOT_DIR}/rootfs-x86_64.img,format=raw,id=harddisk -device nvme,drive=harddisk,serial=1234 -cdrom ${ISO_FILE} ${RUN_ARG}
+        #COMMAND qemu-system-x86_64 -M q35 -cpu Haswell,+x2apic,+avx -smp 1 -serial stdio -m 2048M -audiodev sdl,id=audio0 -device sb16,audiodev=audio0 -netdev user,id=net0 -device e1000,netdev=net0 -rtc base=utc -vga vmware -drive if=pflash,format=raw,file=${CMAKE_CURRENT_SOURCE_DIR}/assets/ovmf-code_x64.fd -drive if=none,file=${PROJECT_ROOT_DIR}/rootfs-x86_64.img,format=raw,id=harddisk -device nvme,drive=harddisk,serial=1234 -cdrom ${ISO_FILE} ${RUN_ARG}
         COMMENT "Running QEMU for x86_64 ISO..."
 )

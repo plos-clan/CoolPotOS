@@ -111,3 +111,7 @@
 #ifndef MODULE_CHECK
 #    define MODULE_CHECK 1 // 启动内核模块签名校验
 #endif
+
+#ifndef KASAN_CHECK
+#    define KASAN_CHECK 0 // 启动 KASAN 内核内存检查
+#endif

@@ -1,5 +1,6 @@
 #include "exec/elf.h"
 #include "krlibc.h"
+#include "kasan.h"
 #include "term/klog.h"
 
 void arch_pause() {
@@ -11,7 +12,7 @@ void arch_wait_for_interrupt() {
 }
 
 // x86 fast impl
-__attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
+__attribute__((naked)) static void *__memcpy_asm(void *dest, const void *src, size_t n) {
     __asm__ volatile("mov   %rdi, %rax\n\t" // 返回值 = dest
                      "mov   %eax, %r8d\n\t"
                      "neg   %r8d\n\t"
@@ -30,8 +31,14 @@ __attribute__((naked)) void *memcpy(void *dest, const void *src, size_t n) {
                      "ret\n\t");
 }
 
+void *memcpy(void *dest, const void *src, size_t n) {
+    kasan_check_write(dest, n);
+    kasan_check_read(src, n);
+    return __memcpy_asm(dest, src, n);
+}
+
 // x86 fast impl
-__attribute__((naked)) void *memset(void *s, int c, size_t n) {
+__attribute__((naked)) static void *__memset_asm(void *s, int c, size_t n) {
     __asm__ volatile("mov    %rdi, %r9\n\t"  // 保存原始 s (返回值) 到 r9，因为 rdi 会在 rep 中改变
                      "movzbq %sil, %rax\n\t" // 将 c (低8位) 零扩展到 rax
                      "movabs $0x0101010101010101, %rcx\n\t"
@@ -55,8 +62,13 @@ __attribute__((naked)) void *memset(void *s, int c, size_t n) {
                      "ret\n\t");
 }
 
+void *memset(void *s, int c, size_t n) {
+    kasan_check_write(s, n);
+    return __memset_asm(s, c, n);
+}
+
 // x86 fast impl
-__attribute__((naked)) void *memmove(void *dest, const void *src, size_t n) {
+__attribute__((naked)) static void *__memmove_asm(void *dest, const void *src, size_t n) {
     __asm__ volatile(
         "mov    %rdi, %rax\n\t"
         "cmp    %rsi, %rdi\n\t"
@@ -89,8 +101,14 @@ __attribute__((naked)) void *memmove(void *dest, const void *src, size_t n) {
     );
 }
 
+void *memmove(void *dest, const void *src, size_t n) {
+    kasan_check_write(dest, n);
+    kasan_check_read(src, n);
+    return __memmove_asm(dest, src, n);
+}
+
 // x86 fast impl
-__attribute__((naked)) int memcmp(const void *s1, const void *s2, size_t n) {
+__attribute__((naked)) static int __memcmp_asm(const void *s1, const void *s2, size_t n) {
     __asm__ volatile(
         "test   %rdx, %rdx\n\t"
         "jz     .L_eq\n\t"
@@ -118,6 +136,12 @@ __attribute__((naked)) int memcmp(const void *s1, const void *s2, size_t n) {
         "xor    %eax, %eax\n\t"
         "ret\n\t"
     );
+}
+
+int memcmp(const void *s1, const void *s2, size_t n) {
+    kasan_check_read(s1, n);
+    kasan_check_read(s2, n);
+    return __memcmp_asm(s1, s2, n);
 }
 
 
