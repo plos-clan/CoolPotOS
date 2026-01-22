@@ -1,8 +1,8 @@
 #include "mem/heap.h"
-#include "mem/page.h"
-#include "krlibc.h"
 #include "kasan.h"
+#include "krlibc.h"
 #include "lock.h"
+#include "mem/page.h"
 #include "term/klog.h"
 
 static void *heap_alloc(void *ptr, size_t size);
@@ -13,6 +13,7 @@ static struct mpool pool = {
 
 static spin_t lock = SPIN_INIT;
 
+#if KASAN_CHECK
 static inline void kasan_mark_alloc(void *raw, void *user, size_t user_size) {
     if (raw == NULL || user == NULL) return;
     size_t block_size = mpool_msize(&pool, raw);
@@ -25,6 +26,7 @@ static inline void kasan_mark_free(void *raw) {
     size_t block_size = mpool_msize(&pool, raw);
     kasan_poison(raw, block_size);
 }
+#endif
 
 static bool alloc_enter() {
     bool is_sti = arch_check_interrupt();
@@ -45,7 +47,9 @@ static void *heap_alloc(void *ptr, size_t size) {
         return (void *)ptr0;
     }
     page_map_range_to_random(get_kernel_pagedir(), (uint64_t)ptr, size, KERNEL_PTE_FLAGS);
+#if KASAN_CHECK
     kasan_heap_extend((uintptr_t)ptr, size);
+#endif
     return ptr;
 }
 
@@ -99,7 +103,9 @@ void *check_magic(void *ptr, bool fill_mem) {
 
 void *malloc(size_t size) {
     const bool is_sti = alloc_enter();
+#if KASAN_CHECK
     kasan_push_disable();
+#endif
 
 #if HEAP_CHECK
     size             = (size + 7) & ~7;
@@ -111,12 +117,12 @@ void *malloc(size_t size) {
         arch_wait_for_interrupt();
     }
     ptr = set_magic(ptr, size, true);
+#    if KASAN_CHECK
     kasan_pop_disable();
     kasan_mark_alloc((uint8_t *)ptr - sizeof(start_magic) - sizeof(size_t), ptr, size);
+#    endif
 #else
     void *ptr = mpool_alloc(&pool, size);
-    kasan_pop_disable();
-    kasan_mark_alloc(ptr, ptr, size);
 #endif
 
     alloc_exit(is_sti);
@@ -126,13 +132,17 @@ void *malloc(size_t size) {
 void free(void *ptr) {
     if (!ptr) return;
     bool is_sti = alloc_enter();
+#if KASAN_CHECK
     kasan_push_disable();
+#endif
 #if HEAP_CHECK
     ptr = check_magic(ptr, true);
 #else
 #endif
+#if KASAN_CHECK
     kasan_pop_disable();
     kasan_mark_free(ptr);
+#endif
     mpool_free(&pool, ptr);
     alloc_exit(is_sti);
 }
@@ -153,9 +163,11 @@ void *calloc(size_t n, size_t size) {
 
 void *realloc(void *ptr, size_t newsize) {
     const bool is_sti = alloc_enter();
+#if KASAN_CHECK
     kasan_push_disable();
+#endif
 #if HEAP_CHECK
-    void *old_raw = NULL;
+    void  *old_raw        = NULL;
     size_t old_block_size = 0;
     if (ptr != NULL) {
         old_raw        = check_magic(ptr, false);
@@ -166,16 +178,15 @@ void *realloc(void *ptr, size_t newsize) {
 
     ptr = mpool_realloc(&pool, old_raw, true_size);
     ptr = set_magic(ptr, newsize, false);
+#    if KASAN_CHECK
     kasan_pop_disable();
     if (old_raw && ptr != old_raw) kasan_poison(old_raw, old_block_size);
     kasan_mark_alloc((uint8_t *)ptr - sizeof(start_magic) - sizeof(size_t), ptr, newsize);
+#    endif
 #else
-    void *old_raw = ptr;
+    void  *old_raw        = ptr;
     size_t old_block_size = (old_raw != NULL) ? mpool_msize(&pool, old_raw) : 0;
-    ptr = mpool_realloc(&pool, ptr, newsize);
-    kasan_pop_disable();
-    if (old_raw && ptr != old_raw) kasan_poison(old_raw, old_block_size);
-    kasan_mark_alloc(ptr, ptr, newsize);
+    ptr                   = mpool_realloc(&pool, ptr, newsize);
 #endif
     alloc_exit(is_sti);
     return ptr;
@@ -187,18 +198,20 @@ void *reallocarray(void *ptr, size_t n, size_t size) {
 
 void *aligned_alloc(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
+#if KASAN_CHECK
     kasan_push_disable();
+#endif
 #if HEAP_CHECK
     size             = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
     void  *ptr       = mpool_aligned_alloc(&pool, true_size, align);
     ptr              = set_magic(ptr, size, true);
+#    if KASAN_CHECK
     kasan_pop_disable();
     kasan_mark_alloc((uint8_t *)ptr - sizeof(start_magic) - sizeof(size_t), ptr, size);
+#    endif
 #else
     void *ptr = mpool_aligned_alloc(&pool, size, align);
-    kasan_pop_disable();
-    kasan_mark_alloc(ptr, ptr, size);
 #endif
     alloc_exit(is_sti);
     return ptr;
@@ -214,7 +227,9 @@ size_t malloc_usable_size(void *ptr) {
 void *memalign(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
     void      *ptr    = mpool_aligned_alloc(&pool, size, align);
+#if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
+#endif
     alloc_exit(is_sti);
     return ptr;
 }
@@ -222,7 +237,9 @@ void *memalign(size_t align, size_t size) {
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
     const bool is_sti = alloc_enter();
     void      *ptr    = mpool_aligned_alloc(&pool, size, alignment);
+#if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
+#endif
     alloc_exit(is_sti);
     if (ptr == NULL) return 1;
     *memptr = ptr;
@@ -232,7 +249,9 @@ int posix_memalign(void **memptr, size_t alignment, size_t size) {
 void *valloc(size_t size) {
     const bool is_sti = alloc_enter();
     void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
+#if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
+#endif
     alloc_exit(is_sti);
     return ptr;
 }
@@ -240,7 +259,9 @@ void *valloc(size_t size) {
 void *pvalloc(size_t size) {
     const bool is_sti = alloc_enter();
     void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
+#if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
+#endif
     alloc_exit(is_sti);
     return ptr;
 }
@@ -250,5 +271,7 @@ void init_heap() {
     logkf("kernel_heap: init heap at %p - size: %llu\n", base_addr, KERNEL_HEAP_SIZE);
     page_map_range_to_random(get_kernel_pagedir(), base_addr, KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
     mpool_init(&pool, (void *)base_addr, KERNEL_HEAP_SIZE);
+#if KASAN_CHECK
     kasan_heap_init(base_addr, KERNEL_HEAP_SIZE);
+#endif
 }
