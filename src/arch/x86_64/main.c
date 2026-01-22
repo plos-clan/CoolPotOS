@@ -53,13 +53,17 @@ USED _Noreturn void kmain() {
     gop_clear(boot_get_framebuffer(0), 0xffffff);
     init_frame();
     init_page();
+#if KASAN_CHECK
     kasan_init();
+#endif
     init_heap();
     arch_page_setup_l2();
     init_tty();
     init_gop();
     init_serial();
-    if (kasan_is_active()) { logkf("[KASAN] active\n"); }
+#if KASAN_CHECK
+    logkf("[KASAN] active\n");
+#endif
     init_input_manager();
     init_tty_session();
     printk("CoolPotOS %s\n", KERNEL_NAME);
