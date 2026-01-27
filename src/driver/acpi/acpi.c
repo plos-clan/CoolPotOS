@@ -6,13 +6,22 @@
 #include "krlibc.h"
 #include "term/klog.h"
 
-//#include "lib/neoacpi/neoacpi.h"
+// #include "boot.h"
+// #include "lib/neoacpi/neoacpi.h"
 
 void acpi_init() {
+    //
+    // struct neo_acpi_handle *handle = neo_acpi_initialize(boot_get_acpi_rsdp());
+    // if (!handle) { kerror("cannot initialize acpi"); }
+    //
+    // while (true)
+    //     arch_wait_for_interrupt();
+
     uacpi_status ret = uacpi_initialize(0);
     if (uacpi_unlikely_error(ret)) {
         printk("uacpi_initialize error: %s\n", uacpi_status_to_string(ret));
-        while (true) arch_wait_for_interrupt();
+        while (true)
+            arch_wait_for_interrupt();
     }
 }
 

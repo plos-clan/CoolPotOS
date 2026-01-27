@@ -1,7 +1,7 @@
-#include "term/klog.h"
+#include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
-#include "mem/frame.h"
+#include "term/klog.h"
 
 #include "lib/neoacpi/neo_impl.h"
 
@@ -24,8 +24,13 @@ void neo_acpi_free(void *ptr) {
     free(ptr);
 }
 
-void neo_acpi_info_logger(char *buffer) {
-    printk("%s",buffer);
+void neo_acpi_kernel_logger(logger_level level, char *buffer) {
+    switch (level) {
+    case INFO: kinfo(buffer); break;
+    case WARN: kwarn(buffer); break;
+    case FAILED: kerror(buffer); break;
+    default: break;
+    }
 }
 
 uintptr_t neo_acpi_kernel_io_map(neo_acpi_phys_addr base, size_t len) {

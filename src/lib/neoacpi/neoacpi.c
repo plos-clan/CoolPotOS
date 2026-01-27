@@ -9,8 +9,8 @@
 neo_acpi_handle_t *neo_acpi_initialize(neo_acpi_phys_addr rsdt_base_addr) {
     if (rsdt_base_addr == 0) return NULL;
 
-    neo_acpi_phys_addr roor_table_phy;
-    size_t             table_entries;
+    neo_acpi_phys_addr roor_table_phy = 0;
+    size_t             table_entries  = 0;
 
     neo_acpi_handle_t *handle = neo_acpi_malloc(sizeof(neo_acpi_handle_t));
     if (handle == NULL) {
@@ -44,11 +44,11 @@ bool table_find_by_signature(const neo_acpi_handle_t *handle, const char signatu
                              acpi_table *table) {
     if (!handle || !table) return false;
 
-    uint32_t target_sig;
+    uint32_t target_sig = 0;
     neo_acpi_memcpy(&target_sig, signature, sizeof(uint32_t));
 
     for (size_t i = 0; i < handle->entries_length; i++) {
-        neo_acpi_table_entry_t *entry = handle->entries[i];
+        const neo_acpi_table_entry_t *entry = handle->entries[i];
         if (entry == NULL) continue;
         if (entry->signature.id == target_sig) {
             table->index     = i;

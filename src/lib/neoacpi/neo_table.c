@@ -2,58 +2,58 @@
 #include "lib/neoacpi/neo_stdlib.h"
 #include "lib/neoacpi/neoacpi.h"
 
+#include <term/klog.h>
+
 bool neo_acpi_push_table(neo_acpi_handle_t *handle, neo_acpi_table_entry_t *data) {
-    size_t                   new_len = handle->entries_length + 1;
+    const size_t             new_len = handle->entries_length + 1;
     neo_acpi_table_entry_t **new_entries =
         (neo_acpi_table_entry_t **)neo_acpi_malloc(new_len * sizeof(void *));
 
-    if (new_entries == NULL) { return false; }
+    if ((void *)new_entries == NULL) { return false; }
 
-    if (handle->entries_length > 0 && handle->entries != NULL) {
-        neo_acpi_memcpy(new_entries, handle->entries, handle->entries_length * sizeof(void *));
-        neo_acpi_free(handle->entries);
+    if (handle->entries_length > 0 && (void *)handle->entries != NULL) {
+        neo_acpi_memcpy((void *)new_entries, (void *)handle->entries,
+                        handle->entries_length * sizeof(void *));
+        neo_acpi_free((void *)handle->entries);
     }
 
     new_entries[handle->entries_length] = data;
-    handle->entries        = new_entries;
-    handle->entries_length = new_len;
+    handle->entries                     = new_entries;
+    handle->entries_length              = new_len;
 
     return true;
 }
 
-static inline bool signatures_match(const void *const lhs, const void *const rhs) {
+static bool signatures_match(const void *const lhs, const void *const rhs) {
     return neo_acpi_memcmp(lhs, rhs, sizeof(acpi_object_name)) == 0;
 }
 
-static uint8_t table_checksum(void *table, size_t size) {
-    uint8_t *bytes = table;
-    uint8_t  csum  = 0;
-    size_t   i;
+static uint8_t table_checksum(const void *table, const size_t size) {
+    const uint8_t *bytes = table;
+    uint8_t        csum  = 0;
 
-    for (i = 0; i < size; ++i)
+    for (size_t i = 0; i < size; ++i)
         csum += bytes[i];
 
     return csum;
 }
 
-void dump_table_header(neo_acpi_phys_addr phys_addr, void *hdr) {
+void dump_table_header(const neo_acpi_phys_addr phys_addr, void *hdr) {
     struct acpi_sdt_hdr *sdt = hdr;
 
     if (signatures_match(hdr, ACPI_FACS_SIGNATURE)) {
-        log_info("FACS 0x%016llu %08X", ((unsigned long long)phys_addr), sdt->length);
+        log_info("FACS 0x%p %08X", phys_addr, sdt->length);
         return;
     }
 
     if (!neo_acpi_memcmp(hdr, ACPI_RSDP_SIGNATURE, sizeof(ACPI_RSDP_SIGNATURE) - 1)) {
         struct acpi_rsdp *rsdp = hdr;
-        log_info("RSDP 0x%016llu %08X v%02X %6.6s", ((unsigned long long)phys_addr),
-                 rsdp->revision >= 2 ? rsdp->length : 20, rsdp->revision, rsdp->oemid);
+        log_info("RSDP 0x%p %08X v%02X %6.6s", phys_addr, rsdp->revision >= 2 ? rsdp->length : 20,
+                 rsdp->revision, rsdp->oemid);
         return;
     }
-
-    log_info("%.4s 0x%016llu %08X v%02X %6.6s %8.8s", sdt->signature,
-             ((unsigned long long)phys_addr), sdt->length, sdt->revision, sdt->oemid,
-             sdt->oem_table_id);
+    log_info("%.4s 0x%p %08X v%02X %6.6s %8.8s", sdt->signature, phys_addr, sdt->length,
+             sdt->revision, sdt->oemid, sdt->oem_table_id);
 }
 
 static bool check_table_signature(void *table, const char *expect) {
@@ -61,15 +61,14 @@ static bool check_table_signature(void *table, const char *expect) {
         struct acpi_sdt_hdr *hdr = table;
         log_error("invalid table '%.4s' (OEM ID '%.6s' OEM Table ID '%.8s') signature (expected "
                   "'%.4s')\n",
-                  (hdr)->signature, (hdr)->oemid, (hdr)->oem_table_id, expect);
+                  hdr->signature, hdr->oemid, hdr->oem_table_id, expect);
         return false;
     }
     return true;
 }
 
 static bool verify_table_checksum(void *table, size_t size) {
-    uint8_t csum;
-    csum = table_checksum(table, size);
+    uint8_t csum = table_checksum(table, size);
 
     if (csum != 0) {
         struct acpi_sdt_hdr *hdr = table;
@@ -110,15 +109,17 @@ static bool load_table_entry(neo_acpi_handle_t *handle, neo_acpi_phys_addr entry
 
 neo_acpi_handle_t *neo_acpi_rsdt_init(neo_acpi_handle_t *handle, neo_acpi_phys_addr roor_table_phy,
                                       size_t entry_size) {
-    struct acpi_rxsdt *rxsdt;
-    size_t             i, entry_bytes, map_len = sizeof(*rxsdt);
-    neo_acpi_phys_addr entry_addr;
+    struct acpi_rxsdt *rxsdt       = NULL;
+    size_t             entry_bytes = 0;
+    size_t             map_len     = sizeof(*rxsdt);
+    neo_acpi_phys_addr entry_addr  = 0;
 
     rxsdt = neo_acpi_kernel_map(roor_table_phy, map_len);
     if (rxsdt == NULL) {
         log_error("cannot mmap rxsdt.");
         return NULL;
     }
+
     dump_table_header(roor_table_phy, rxsdt);
 
     if (!check_table_signature(rxsdt,
@@ -130,7 +131,7 @@ neo_acpi_handle_t *neo_acpi_rsdt_init(neo_acpi_handle_t *handle, neo_acpi_phys_a
     neo_acpi_kernel_unmap(rxsdt, sizeof(*rxsdt));
 
     // Invalid table length
-    if (map_len < (sizeof(*rxsdt) + entry_size)) return NULL;
+    if (map_len < sizeof(*rxsdt) + entry_size) return NULL;
 
     entry_bytes  = map_len - sizeof(*rxsdt);
     entry_bytes &= ~(entry_size - 1);
@@ -140,7 +141,7 @@ neo_acpi_handle_t *neo_acpi_rsdt_init(neo_acpi_handle_t *handle, neo_acpi_phys_a
 
     if (!verify_table_checksum(rxsdt, map_len)) goto error_out;
 
-    for (i = 0; i < entry_bytes; i += entry_size) {
+    for (size_t i = 0; i < entry_bytes; i += entry_size) {
         uint64_t entry_phys_addr_large = 0;
         neo_acpi_memcpy(&entry_phys_addr_large, &rxsdt->ptr_bytes[i], entry_size);
         if (!entry_phys_addr_large) continue;
@@ -149,8 +150,18 @@ neo_acpi_handle_t *neo_acpi_rsdt_init(neo_acpi_handle_t *handle, neo_acpi_phys_a
     }
 
     neo_acpi_kernel_unmap(rxsdt, map_len);
-    return handle;
+    return acpi_load_fadt(handle);
 error_out:
     neo_acpi_kernel_unmap(rxsdt, map_len);
     return NULL;
+}
+
+void acpi_enable_acpi_mode(struct acpi_fadt *fadt) {}
+
+neo_acpi_handle_t *acpi_load_fadt(neo_acpi_handle_t *handle) {
+    acpi_table table;
+    if (!table_find_by_signature(handle, ACPI_FADT_SIGNATURE, &table)) return NULL;
+    struct acpi_fadt *fadt = table.ptr;
+    handle->fadt           = fadt;
+    return handle;
 }

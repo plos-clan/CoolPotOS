@@ -171,12 +171,12 @@ static const uint8_t ascii_map[256] = {
     CHAR_TYPE_CONTROL // 127 backspace
 };
 
-#define WT         size_t
-#define WS         (sizeof(WT))
-#define SS         (sizeof(size_t))
-#define ALIGN      (sizeof(size_t) - 1)
-#define ONES       ((size_t)-1 / UCHAR_MAX)
-#define HIGHS      (ONES * (UCHAR_MAX / 2 + 1))
+#define WT    size_t
+#define WS    (sizeof(WT))
+#define SS    (sizeof(size_t))
+#define ALIGN (sizeof(size_t) - 1)
+#define ONES  ((size_t)-1 / UCHAR_MAX)
+#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
 #define BITOP(a, b, op)                                                                            \
     ((a)[(size_t)(b) / (8 * sizeof *(a))] op(size_t) 1 << ((size_t)(b) % (8 * sizeof *(a))))
 
@@ -875,4 +875,13 @@ int32_t neo_acpi_vsnprintf(char *buffer, size_t capacity, const char *fmt, neo_a
     }
 
     return fb_state.bytes_written;
+}
+
+char *neo_acpi_strcat(char *dest, const char *src) {
+    char *ret = dest;
+    while (*dest)
+        dest++;
+    while ((*dest++ = *src++))
+        ;
+    return ret;
 }
