@@ -16,6 +16,8 @@
 #define ACPI_ECDT_SIGNATURE "ECDT"
 #define ACPI_RHCT_SIGNATURE "RHCT"
 
+#define ACPI_PM1_CNT_SCI_EN (1 << 0)
+
 #include "neotype.h"
 
 typedef union acpi_object_name {
@@ -74,11 +76,11 @@ struct acpi_rxsdt {
 
 typedef struct acpi_fadt_info {
     const char *name;
-    uint16_t address64;
-    uint16_t address32;
-    uint16_t length;
-    uint8_t default_length;
-    uint8_t flags;
+    uint16_t    address64;
+    uint16_t    address32;
+    uint16_t    length;
+    uint8_t     default_length;
+    uint8_t     flags;
 } acpi_fadt_info;
 
 struct acpi_hpet {
@@ -90,5 +92,73 @@ struct acpi_hpet {
     uint8_t             flags;
 } __attribute__((packed));
 
-void dump_table_header(neo_acpi_phys_addr phys_addr, void *hdr);
+struct acpi_fadt {
+    struct acpi_sdt_hdr hdr;
+    uint32_t            firmware_ctrl;
+    uint32_t            dsdt;
+    uint8_t             int_model;
+    uint8_t             preferred_pm_profile;
+    uint16_t            sci_int;
+    uint32_t            smi_cmd;
+    uint8_t             acpi_enable;
+    uint8_t             acpi_disable;
+    uint8_t             s4bios_req;
+    uint8_t             pstate_cnt;
+    uint32_t            pm1a_evt_blk;
+    uint32_t            pm1b_evt_blk;
+    uint32_t            pm1a_cnt_blk;
+    uint32_t            pm1b_cnt_blk;
+    uint32_t            pm2_cnt_blk;
+    uint32_t            pm_tmr_blk;
+    uint32_t            gpe0_blk;
+    uint32_t            gpe1_blk;
+    uint8_t             pm1_evt_len;
+    uint8_t             pm1_cnt_len;
+    uint8_t             pm2_cnt_len;
+    uint8_t             pm_tmr_len;
+    uint8_t             gpe0_blk_len;
+    uint8_t             gpe1_blk_len;
+    uint8_t             gpe1_base;
+    uint8_t             cst_cnt;
+    uint16_t            p_lvl2_lat;
+    uint16_t            p_lvl3_lat;
+    uint16_t            flush_size;
+    uint16_t            flush_stride;
+    uint8_t             duty_offset;
+    uint8_t             duty_width;
+    uint8_t             day_alrm;
+    uint8_t             mon_alrm;
+    uint8_t             century;
+    uint16_t            iapc_boot_arch;
+    uint8_t             rsvd;
+    uint32_t            flags;
+    struct acpi_gas     reset_reg;
+    uint8_t             reset_value;
+    uint16_t            arm_boot_arch;
+    uint8_t             fadt_minor_verison;
+    uint64_t            x_firmware_ctrl;
+    uint64_t            x_dsdt;
+    struct acpi_gas     x_pm1a_evt_blk;
+    struct acpi_gas     x_pm1b_evt_blk;
+    struct acpi_gas     x_pm1a_cnt_blk;
+    struct acpi_gas     x_pm1b_cnt_blk;
+    struct acpi_gas     x_pm2_cnt_blk;
+    struct acpi_gas     x_pm_tmr_blk;
+    struct acpi_gas     x_gpe0_blk;
+    struct acpi_gas     x_gpe1_blk;
+    struct acpi_gas     sleep_control_reg;
+    struct acpi_gas     sleep_status_reg;
+    uint64_t            hypervisor_vendor_identity;
+} __attribute__((packed));
 
+struct acpi_dsdt {
+    struct acpi_sdt_hdr hdr;
+    uint8_t             definition_block[];
+} __attribute__((packed));
+
+struct acpi_ssdt {
+    struct acpi_sdt_hdr hdr;
+    uint8_t             definition_block[];
+} __attribute__((packed));
+
+void dump_table_header(neo_acpi_phys_addr phys_addr, void *hdr);

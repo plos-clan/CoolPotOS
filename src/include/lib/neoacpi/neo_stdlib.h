@@ -48,6 +48,7 @@ struct fmt_spec {
     uint32_t base;
 };
 
+char   *neo_acpi_strcat(char *dest, const char *src);
 size_t  neo_acpi_strlen(const char *s);
 void   *neo_acpi_memcpy(void *restrict dest, const void *restrict src, size_t n);
 void   *neo_acpi_memset(void *dest, int c, size_t n);
