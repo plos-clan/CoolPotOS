@@ -26,8 +26,12 @@ int acpi_sprintf(char *String, const char *Format, ...);
 
 /* ACPICA global variable declaration helpers */
 #ifdef DEFINE_ACPI_GLOBALS
+#    ifndef ACPI_GLOBAL
 #    define ACPI_GLOBAL(type, name) type name
+#endif
+#    ifndef ACPI_INIT_GLOBAL
 #    define ACPI_INIT_GLOBAL(type, name, value) type name = value
+#endif
 #else
 #    ifndef ACPI_GLOBAL
 #        define ACPI_GLOBAL(type, name) extern type name
@@ -89,7 +93,7 @@ int acpi_sprintf(char *String, const char *Format, ...);
 #endif
 
 /* Host-dependent types and defines */
-#if defined(__x86_64__) || defined(__aarch64__) || defined(__loongarch64__) ||                   \
+#if defined(__x86_64__) || defined(__aarch64__) || defined(__loongarch64__) || defined(__loongarch__) || defined(__loongarch64) || \
     (defined(__riscv) && (defined(__LP64__) || defined(_LP64))) || defined(__PPC64__) ||         \
     defined(__s390x__) || defined(__ia64__)
 #    define ACPI_MACHINE_WIDTH        64
