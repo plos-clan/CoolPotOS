@@ -40,7 +40,7 @@ void neo_acpi_logger_failed(const char *str, ...) {
     neo_acpi_va_list vlist;
     neo_acpi_va_start(vlist, str);
 
-    ret = neo_acpi_vsnprintf(buf + 11, sizeof(buf), str, vlist);
+    ret = neo_acpi_vsnprintf(buf, sizeof(buf), str, vlist);
     if (ret < 0) return;
 
     neo_acpi_kernel_logger(FAILED, buf);

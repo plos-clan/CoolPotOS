@@ -18,6 +18,7 @@ typedef struct neo_acpi_handle {
     size_t                   entries_length;
     aml_context_t           *aml_context;
     struct acpi_fadt         global_fadt;
+    acpi_table_facs_t       *global_facs;
     bool                     reduced_hardware;
 } neo_acpi_handle_t;
 

@@ -192,5 +192,19 @@ typedef struct acpi_generic_address {
     uint64_t address;      /* 64-bit address of struct or register */
 } acpi_generic_address_t;
 
+typedef struct acpi_table_facs {
+    char     signature[4];       /* ASCII table signature */
+    uint32_t length;             /* Length of structure, in bytes */
+    uint32_t hard_signature;     /* Hardware configuration signature */
+    uint32_t firm_waking_vector; /* 32-bit physical address of the Firmware Waking Vector */
+    uint32_t global_lock;        /* Global Lock for shared hardware resources */
+    uint32_t flags;
+    uint64_t x_firm_waking_vector; /* 64-bit version of the Firmware Waking Vector (ACPI 2.0+) */
+    uint8_t  version;              /* Version of this table (ACPI 2.0+) */
+    uint8_t  _reserved[3];         /* Reserved, must be zero */
+    uint32_t ospm_flags;           /* Flags to be set by OSPM (ACPI 4.0) */
+    uint8_t  _reserved1[24];       /* Reserved, must be zero */
+} __attribute__((packed)) acpi_table_facs_t;
+
 void dump_table_header(neo_acpi_phys_addr phys_addr, void *hdr);
 bool verify_table_checksum(void *table, size_t size);
