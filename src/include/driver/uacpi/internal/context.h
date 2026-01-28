@@ -26,11 +26,10 @@ struct uacpi_runtime_context {
     /*
      * pm1{a,b}_evt_blk split into two registers for convenience
      */
-    struct acpi_fadt fadt;
-    struct acpi_gas  pm1a_status_blk;
-    struct acpi_gas  pm1b_status_blk;
-    struct acpi_gas  pm1a_enable_blk;
-    struct acpi_gas  pm1b_enable_blk;
+    struct acpi_gas pm1a_status_blk;
+    struct acpi_gas pm1b_status_blk;
+    struct acpi_gas pm1a_enable_blk;
+    struct acpi_gas pm1b_enable_blk;
 
 #    define UACPI_SLEEP_TYP_INVALID 0xFF
     uacpi_u8 last_sleep_typ_a;
