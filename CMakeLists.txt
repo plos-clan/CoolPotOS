@@ -3,6 +3,9 @@ project(CoolPotOS LANGUAGES C ASM)
 
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_compile_definitions(__CPOS__)
+add_compile_definitions(ACPI_USE_SYSTEM_CLIBRARY)
+
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_ASM_COMPILER clang)
@@ -68,6 +71,12 @@ file(GLOB_RECURSE MEM_SOURCES "src/mem/*.c")
 file(GLOB_RECURSE TASK_SOURCES "src/task/*.c")
 file(GLOB_RECURSE INT_SOURCES "src/int/*.c")
 file(GLOB_RECURSE LIB_SOURCES "src/lib/*.c")
+
+# Exclude ACPICA debugger/disassembler sources for kernel build.
+list(FILTER LIB_SOURCES EXCLUDE REGEX "acpica/components/debugger/.*")
+list(FILTER LIB_SOURCES EXCLUDE REGEX "acpica/components/disassembler/.*")
+list(FILTER LIB_SOURCES EXCLUDE REGEX "acpica/components/resources/rsdump\\.c$")
+list(FILTER LIB_SOURCES EXCLUDE REGEX "acpica/components/resources/rsdumpinfo\\.c$")
 
 execute_process(
         COMMAND git rev-parse --short HEAD

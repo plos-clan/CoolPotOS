@@ -66,3 +66,7 @@ void arch_pci_legacy_enum(); // 架构具体实现: MCFG找不到情况下采用
 
 void pci_scan_bus(uint16_t segment_group, uint8_t bus);
 void pci_init();
+
+uint32_t pci_read(uint32_t b, uint32_t d, uint32_t f, uint32_t s, uint32_t offset);
+void     pci_write(uint32_t b, uint32_t d, uint32_t f, uint32_t s, uint32_t offset,
+                   uint32_t value);

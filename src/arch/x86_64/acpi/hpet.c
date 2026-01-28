@@ -1,11 +1,10 @@
 #include "hpet.h"
-#include "driver/uacpi/acpi.h"
-#include "driver/uacpi/tables.h"
+#include "krlibc.h"
+#include "lib/acpica/acpi.h"
 #include "mem/frame.h"
 #include "mem/page.h"
 #include "term/klog.h"
 #include "timer.h"
-#include "krlibc.h"
 
 HpetInfo       *hpet_addr;
 static uint64_t hpetPeriod   = 0;
@@ -39,20 +38,24 @@ void nsleep(uint64_t nano) {
 }
 
 void hpet_init() {
-    struct uacpi_table hpet_table;
-    uacpi_status       status = uacpi_table_find_by_signature("HPET", &hpet_table);
-
-    if (status == UACPI_STATUS_OK) {
-        struct acpi_hpet *hpet = hpet_table.ptr;
-
-        hpet_addr = (HpetInfo *)phys_to_virt(hpet->address.address);
-        page_map_range(get_kernel_pagedir(), (uint64_t)hpet_addr, hpet->address.address, PAGE_SIZE,
-                       KERNEL_PTE_FLAGS);
-        uint32_t counterClockPeriod                         = hpet_addr->generalCapabilities >> 32;
-        hpetPeriod                                          = counterClockPeriod / 1000000;
-        hpet_addr->generalConfiguration                    |= 1;
-        *(volatile uint64_t *)((uint64_t)hpet_addr + 0xf0)  = 0;
-        fms_per_tick                                        = hpet_addr->mainCounterValue;
-        kinfo("Setup acpi hpet table (nano_time: %#ld).", nano_time());
+    ACPI_TABLE_HPET *hpet_table = NULL;
+    ACPI_STATUS      status     = AcpiGetTable(ACPI_SIG_HPET, 1, (ACPI_TABLE_HEADER **)&hpet_table);
+    if (ACPI_FAILURE(status)) {
+        kerror("ACPI: HPET table not found.");
+        return;
     }
+    ACPI_GENERIC_ADDRESS *gas = &hpet_table->Address;
+    if (gas->SpaceId != ACPI_ADR_SPACE_SYSTEM_MEMORY) {
+        kerror("ACPI: Error! HPET is not MMIO.");
+        return;
+    }
+    hpet_addr = (HpetInfo *)phys_to_virt(gas->Address);
+    page_map_range(get_kernel_pagedir(), (uint64_t)hpet_addr, gas->Address, PAGE_SIZE,
+                   KERNEL_PTE_FLAGS);
+    uint32_t counterClockPeriod                         = hpet_addr->generalCapabilities >> 32;
+    hpetPeriod                                          = counterClockPeriod / 1000000;
+    hpet_addr->generalConfiguration                    |= 1;
+    *(volatile uint64_t *)((uint64_t)hpet_addr + 0xf0)  = 0;
+    fms_per_tick                                        = hpet_addr->mainCounterValue;
+    kinfo("Setup acpi hpet table (nano_time: %#ld).", nano_time());
 }

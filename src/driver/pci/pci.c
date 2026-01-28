@@ -1,7 +1,6 @@
 #include "driver/pci/pci.h"
-#include "driver/uacpi/acpi.h"
-#include "driver/uacpi/tables.h"
 #include "krlibc.h"
+#include "lib/acpica/acpi.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
 #include "mem/page.h"
@@ -141,17 +140,16 @@ struct {
     {0x000000, (char *)NULL                                 }
 };
 
-struct acpi_mcfg_allocation *mcfg_entries[PCI_MCFG_MAX_ENTRIES_LEN];
-uint64_t                     mcfg_entries_len = 0;
-pci_device_t                *pci_devices[PCI_DEVICE_MAX];
-uint32_t                     pci_device_number = 0;
+ACPI_MCFG_ALLOCATION *mcfg_entries[PCI_MCFG_MAX_ENTRIES_LEN];
+uint64_t              mcfg_entries_len = 0;
+pci_device_t         *pci_devices[PCI_DEVICE_MAX];
+uint32_t              pci_device_number = 0;
 
-void mcfg_addr_to_entries(struct acpi_mcfg *mcfg, struct acpi_mcfg_allocation **entries,
-                          uint64_t *num) {
-    struct acpi_mcfg_allocation *entry =
-        (struct acpi_mcfg_allocation *)((uint64_t)mcfg + sizeof(struct acpi_mcfg));
-    int length = mcfg->hdr.length - sizeof(struct acpi_mcfg);
-    *num       = length / sizeof(struct acpi_mcfg_allocation);
+void mcfg_addr_to_entries(ACPI_TABLE_MCFG *mcfg, ACPI_MCFG_ALLOCATION **entries, uint64_t *num) {
+    ACPI_MCFG_ALLOCATION *entry =
+        (ACPI_MCFG_ALLOCATION *)((uint64_t)mcfg + sizeof(ACPI_TABLE_MCFG));
+    int length = mcfg->Header.Length - sizeof(ACPI_TABLE_MCFG);
+    *num       = length / sizeof(ACPI_MCFG_ALLOCATION);
     for (uint64_t i = 0; i < *num; i++) {
         entries[i] = entry + i;
     }
@@ -160,9 +158,9 @@ void mcfg_addr_to_entries(struct acpi_mcfg *mcfg, struct acpi_mcfg_allocation **
 uint64_t get_device_mmio_physical_address(uint16_t segment_group, uint8_t bus, uint8_t device,
                                           uint8_t function) {
     for (uint64_t i = 0; i < mcfg_entries_len; i++) {
-        if (mcfg_entries[i]->segment == segment_group) {
-            return mcfg_entries[i]->address +
-                   (((uint64_t)bus - (uint64_t)mcfg_entries[i]->start_bus) << 20) +
+        if (mcfg_entries[i]->PciSegment == segment_group) {
+            return mcfg_entries[i]->Address +
+                   (((uint64_t)bus - (uint64_t)mcfg_entries[i]->StartBusNumber) << 20) +
                    ((uint64_t)device << 15) + ((uint64_t)function << 12);
         }
     }
@@ -243,7 +241,7 @@ const char *pci_classname(uint32_t classcode) {
     return "Unknown device";
 }
 
-void pci_find_vid(uint32_t vid,void (*load_device)(pci_device_t *device)) {
+void pci_find_vid(uint32_t vid, void (*load_device)(pci_device_t *device)) {
     int idx = 0;
     for (uint32_t i = 0; i < pci_device_number; i++) {
         if (pci_devices[i]->vendor_id == vid) {
@@ -486,15 +484,19 @@ void pci_scan_segment(uint16_t segment_group) {
 }
 
 void pci_init() {
-    struct uacpi_table mcfg_table;
-    uacpi_status       status = uacpi_table_find_by_signature("MCFG", &mcfg_table);
-    if (status == UACPI_STATUS_OK) {
-        // Scan PCIe bus
-        mcfg_addr_to_entries((struct acpi_mcfg *)mcfg_table.ptr, mcfg_entries, &mcfg_entries_len);
+    ACPI_TABLE_MCFG *mcfg   = NULL;
+    ACPI_STATUS      status = AcpiGetTable(ACPI_SIG_MCFG, 1, (ACPI_TABLE_HEADER **)&mcfg);
 
-        for (uint64_t i = 0; i < mcfg_entries_len; i++) {
-            uint16_t segment_group = mcfg_entries[i]->segment;
-            pci_scan_segment(segment_group);
-        }
-    } else arch_pci_legacy_enum();
+    if (ACPI_FAILURE(status)) {
+        kwarn("MCFG table not found (System switch to Legacy PCI model).");
+        arch_pci_legacy_enum();
+        return;
+    }
+
+    mcfg_addr_to_entries(mcfg, mcfg_entries, &mcfg_entries_len);
+
+    for (uint64_t i = 0; i < mcfg_entries_len; i++) {
+        uint16_t segment_group = mcfg_entries[i]->PciSegment;
+        pci_scan_segment(segment_group);
+    }
 }

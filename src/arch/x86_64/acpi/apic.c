@@ -1,13 +1,12 @@
 #include "apic.h"
-#include "driver/uacpi/acpi.h"
-#include "driver/uacpi/tables.h"
-#include "timer.h"
 #include "intctl.h"
 #include "io.h"
+#include "lib/acpica/acpi.h"
 #include "mem/frame.h"
 #include "mem/page.h"
-#include "term/klog.h"
 #include "task/smp.h"
+#include "term/klog.h"
+#include "timer.h"
 
 bool     x2apic_mode = false;
 uint64_t lapic_address;
@@ -126,29 +125,29 @@ void lapic_timer_stop() {
     lapic_write(LAPIC_REG_TIMER, (1 << 16));
 }
 
-static void apic_handle_ioapic(struct acpi_madt_ioapic *ioapic_madt) {
+static void apic_handle_ioapic(ACPI_MADT_IO_APIC *ioapic_madt) {
     struct ioapic_info *ioapic = &found_ioapics[found_ioapic_count];
     found_ioapic_count++;
 
-    uint64_t mmio_phys = ioapic_madt->address;
+    uint64_t mmio_phys = ioapic_madt->Address;
     uint64_t mmio_virt = (uint64_t)phys_to_virt(mmio_phys);
     page_map_range(get_kernel_pagedir(), mmio_virt, mmio_phys, PAGE_SIZE, KERNEL_PTE_FLAGS);
     ioapic->mmio_base = mmio_virt;
 
-    ioapic->gsi_base  = ioapic_madt->gsi_base;
+    ioapic->gsi_base  = ioapic_madt->GlobalIrqBase;
     ioapic->irq_count = (ioapic_mmio_read(ioapic->mmio_base, 0x01) & 0x00FF0000) >> 16;
 
     kinfo("IOAPIC found: MMIO %p, GSI base %d, IRQs %d", (void *)ioapic->mmio_base,
-           ioapic->gsi_base, ioapic->irq_count);
+          ioapic->gsi_base, ioapic->irq_count);
 
-    ioapic->id = ioapic_madt->id;
+    ioapic->id = ioapic_madt->Id;
 }
 
-static void apic_handle_override(struct acpi_madt_interrupt_source_override *override_madt) {
+static void apic_handle_override(ACPI_MADT_INTERRUPT_OVERRIDE *override_madt) {
     struct iso_info *override = &found_isos[found_iso_count];
     found_iso_count++;
-    override->irq_source = override_madt->source;
-    override->gsi        = override_madt->gsi;
+    override->irq_source = override_madt->SourceIrq;
+    override->gsi        = override_madt->GlobalIrq;
 }
 
 void local_apic_init() {
@@ -193,53 +192,51 @@ void ap_local_apic_init() {
 }
 
 void apic_init() {
-    struct uacpi_table madt_table;
-    uacpi_status       status = uacpi_table_find_by_signature("APIC", &madt_table);
-    if (status != UACPI_STATUS_OK) return;
-    struct acpi_madt *madt = (struct acpi_madt *)madt_table.ptr;
-    lapic_address = (uint64_t)phys_to_virt((uint64_t)madt->local_interrupt_controller_address);
-    page_map_range(get_kernel_pagedir(), lapic_address, madt->local_interrupt_controller_address,
-                   PAGE_SIZE, KERNEL_PTE_FLAGS);
-    x2apic_mode = x2apic_mode_supported();
-    uint64_t current = 0;
-    for (;;) {
-        if (current + ((uint32_t)sizeof(struct acpi_madt) - 1) >= madt->hdr.length) { break; }
-        struct acpi_entry_hdr *header =
-            (struct acpi_entry_hdr *)((uint64_t)(&madt->entries) + current);
-        if (header->type == ACPI_MADT_ENTRY_TYPE_IOAPIC) {
-            struct acpi_madt_ioapic *ioapic =
-                (struct acpi_madt_ioapic *)((uint64_t)(&madt->entries) + current);
+    ACPI_TABLE_MADT  *madt   = NULL;
+    const ACPI_STATUS status = AcpiGetTable(ACPI_SIG_MADT, 1, (ACPI_TABLE_HEADER **)&madt);
+    if (ACPI_FAILURE(status)) {
+        kerror("Failed to get MADT table: %s", AcpiFormatException(status));
+        return;
+    }
+
+    lapic_address = (uint64_t)phys_to_virt(madt->Address);
+    page_map_range(get_kernel_pagedir(), lapic_address, madt->Address, PAGE_SIZE, KERNEL_PTE_FLAGS);
+    x2apic_mode                    = x2apic_mode_supported();
+    ACPI_SUBTABLE_HEADER *subtable = (ACPI_SUBTABLE_HEADER *)(madt + 1);
+    uintptr_t             end      = (uintptr_t)madt + madt->Header.Length;
+    while ((uintptr_t)subtable < end) {
+        switch (subtable->Type) {
+        case ACPI_MADT_TYPE_IO_APIC:;
+            ACPI_MADT_IO_APIC *ioapic = (ACPI_MADT_IO_APIC *)subtable;
             apic_handle_ioapic(ioapic);
-        } else if (header->type == ACPI_MADT_ENTRY_TYPE_INTERRUPT_SOURCE_OVERRIDE) {
-            struct acpi_madt_interrupt_source_override *override =
-                (struct acpi_madt_interrupt_source_override *)((uint64_t)(&madt->entries) +
-                                                               current);
-            apic_handle_override(override);
+            break;
+        case ACPI_MADT_TYPE_INTERRUPT_OVERRIDE:;
+            ACPI_MADT_INTERRUPT_OVERRIDE *iso = (ACPI_MADT_INTERRUPT_OVERRIDE *)subtable;
+            apic_handle_override(iso);
+            break;
+        default: break;
         }
-        current += (uint64_t)header->length;
+        subtable = (ACPI_SUBTABLE_HEADER *)((char *)subtable + subtable->Length);
     }
 
     disable_pic();
     local_apic_init();
 }
 
-int64_t apic_mask(uint64_t irq,uint64_t flags) {
-    if (flags & IRQ_FLAGS_MSIX)
-        return 0;
+int64_t apic_mask(uint64_t irq, uint64_t flags) {
+    if (flags & IRQ_FLAGS_MSIX) return 0;
     ioapic_disable((uint8_t)irq);
     return 0;
 }
 
-int64_t apic_unmask(uint64_t irq,uint64_t flags) {
-    if (flags & IRQ_FLAGS_MSIX)
-        return 0;
+int64_t apic_unmask(uint64_t irq, uint64_t flags) {
+    if (flags & IRQ_FLAGS_MSIX) return 0;
     ioapic_enable((uint8_t)irq);
     return 0;
 }
 
-int64_t apic_install(uint64_t vector, uint64_t irq,uint64_t flags) {
-    if (flags & IRQ_FLAGS_MSIX)
-        return 0;
+int64_t apic_install(uint64_t vector, uint64_t irq, uint64_t flags) {
+    if (flags & IRQ_FLAGS_MSIX) return 0;
     ioapic_add(vector, irq);
     return 0;
 }

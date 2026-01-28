@@ -1,10 +1,9 @@
 #include "driver/char/ps2_kbd.h"
 #include "driver/input_device.h"
 #include "driver/tty.h"
-#include "driver/uacpi/resources.h"
-#include "driver/uacpi/utilities.h"
 #include "intctl.h"
 #include "krlibc.h"
+#include "lib/acpica/acpi.h"
 #include "term/klog.h"
 
 #if defined(__x86_64__) || defined(__amd64__)
@@ -172,34 +171,54 @@ void ps2k_create_device() {
     register_input_device(ps2_kbd_device);
 }
 
-static uacpi_iteration_decision iteration_decision(void *user, uacpi_resource *resource) {
-    if (resource == NULL) return UACPI_ITERATION_DECISION_BREAK;
-    if (resource->type == UACPI_RESOURCE_TYPE_IRQ) {
-        for (uacpi_u32 i = 0; i < resource->irq.num_irqs; i++) {
-            uint64_t current_irq = resource->irq.irqs[i];
-            if (current_irq == 1) {
-                ps2_kbd_irq = current_irq;
-                kinfo("found PS/2 keyboard IRQ: %llu", ps2_kbd_irq);
-                return UACPI_ITERATION_DECISION_BREAK;
-            }
+typedef struct {
+    UINT32 Irq;
+    UINT32 IoBase;
+} ps2_resource_t;
+
+ACPI_STATUS resource_callback(ACPI_RESOURCE *Resource, void *Context) {
+    ps2_resource_t *res = Context;
+    switch (Resource->Type) {
+    case ACPI_RESOURCE_TYPE_IRQ:
+        if (Resource->Data.Irq.InterruptCount > 0) { res->Irq = Resource->Data.Irq.Interrupts[0]; }
+        break;
+    case ACPI_RESOURCE_TYPE_EXTENDED_IRQ:
+        if (Resource->Data.ExtendedIrq.InterruptCount > 0) {
+            res->Irq = Resource->Data.ExtendedIrq.Interrupts[0];
         }
+        break;
+    case ACPI_RESOURCE_TYPE_IO: res->IoBase = Resource->Data.Io.Minimum; break;
+    case ACPI_RESOURCE_TYPE_FIXED_IO: res->IoBase = Resource->Data.FixedIo.Address; break;
     }
-    return UACPI_ITERATION_DECISION_NEXT_PEER;
+    return AE_OK;
 }
 
-static uacpi_iteration_decision match_ps2k(void *user, uacpi_namespace_node *node, uacpi_u32 i) {
-    uacpi_resources *kb_res;
-    uacpi_status     ret = uacpi_get_current_resources(node, &kb_res);
-    if (uacpi_unlikely_error(ret)) {
-        kwarn("unable to retrieve PS2K resources: %s", uacpi_status_to_string(ret));
-        return UACPI_ITERATION_DECISION_NEXT_PEER;
-    }
-    uacpi_for_each_resource(kb_res, iteration_decision, user);
+ACPI_STATUS device_found_callback(ACPI_HANDLE ObjectHandle, UINT32 NestingLevel, void *Context,
+                                  void **ReturnValue) {
+    ACPI_STATUS    status;
+    ps2_resource_t res    = {0};
+    ACPI_BUFFER    buffer = {ACPI_ALLOCATE_BUFFER, NULL};
+    status = AcpiEvaluateObjectTyped(ObjectHandle, "_STA", NULL, &buffer, ACPI_TYPE_INTEGER);
+    if (ACPI_FAILURE(status)) { return AE_ERROR; }
+    ACPI_OBJECT *obj       = buffer.Pointer;
+    UINT64       sta_value = obj->Integer.Value;
+    AcpiOsFree(buffer.Pointer);
+    if ((sta_value & 0x3) != 0x3) { return AE_OK; }
+    status = AcpiWalkResources(ObjectHandle, "_CRS", resource_callback, &res);
+    if (ACPI_FAILURE(status)) { return AE_OK; }
+    char *type = Context;
+    kinfo("Found PS/2 %s: IRQ=%d, IO=0x%x", type, res.Irq, res.IoBase);
+    ps2_kbd_irq = res.Irq;
     ps2k_create_device();
-    uacpi_free_resources(kb_res);
-    return UACPI_ITERATION_DECISION_CONTINUE;
+    return AE_OK;
+}
+
+bool has_ps2_controller() {
+    if (AcpiGbl_FADT.BootFlags & ACPI_FADT_8042) { return true; }
+    return false;
 }
 
 void ps2_kdb_setup() {
-    uacpi_find_devices(PS2K_PNP_ID, match_ps2k, NULL);
+    if (!has_ps2_controller()) return;
+    AcpiGetDevices("PNP0303", device_found_callback, "Keyboard", NULL);
 }
