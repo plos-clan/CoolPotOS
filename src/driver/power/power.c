@@ -1,40 +1,55 @@
 #include "driver/power/power.h"
-#include "driver/uacpi/event.h"
-#include "driver/uacpi/sleep.h"
-#include "driver/uacpi/uacpi.h"
-#include "term/klog.h"
 #include "krlibc.h"
+#include "lib/acpica/acpi.h"
+#include "task/scheduler.h"
+#include "term/klog.h"
 
-void power_restart(){
-    uacpi_reboot();
+void power_restart() {
+    ACPI_STATUS status;
+    kinfo("ACPI: Attempting hardware reset...");
+    status = AcpiReset();
+    if (ACPI_FAILURE(status)) { kerror("ACPI: Reset failed: %s", AcpiFormatException(status)); }
+    for (;;)
+        arch_wait_for_interrupt();
 }
 
 void power_off() {
-    uacpi_status ret = uacpi_prepare_for_sleep_state(UACPI_SLEEP_STATE_S5);
-    if (uacpi_unlikely_error(ret)) {
-        kerror("failed to prepare for sleep: %s", uacpi_status_to_string(ret));
+    ACPI_STATUS status;
+    kinfo("ACPI: Preparing to enter S5 state...");
+    status = AcpiEnterSleepStatePrep(ACPI_STATE_S5);
+    if (ACPI_FAILURE(status)) {
+        kerror("ACPI: Failed to prepare for S5: %s", AcpiFormatException(status));
         return;
     }
     arch_close_interrupt();
-    ret = uacpi_enter_sleep_state(UACPI_SLEEP_STATE_S5);
-    if (uacpi_unlikely_error(ret)) {
-        kerror("failed to enter sleep: %s", uacpi_status_to_string(ret));
-    }
+    disable_scheduler();
+    status = AcpiEnterSleepState(ACPI_STATE_S5);
+    kerror("ACPI: Failed to enter S5: %s", AcpiFormatException(status));
+    for (;;)
+        arch_wait_for_interrupt();
 }
 
-static uacpi_interrupt_ret handle_power_button(uacpi_handle ctx) {
-    kwarn("The kernel is shutting down..");
-    uacpi_kernel_sleep(100);
+static UINT32 AcpiFixedEventPowerButtonHandler(void *Context) {
+
+    // signal_shutdown_event();
     power_off();
-    return UACPI_INTERRUPT_HANDLED;
+
+    return ACPI_INTERRUPT_HANDLED;
 }
 
 void power_button_init() {
-    uacpi_status ret = uacpi_install_fixed_event_handler(
-        UACPI_FIXED_EVENT_POWER_BUTTON,
-        handle_power_button, UACPI_NULL
-    );
-    if (uacpi_unlikely_error(ret)) {
-        kerror("failed to install power button event callback: %s", uacpi_status_to_string(ret));
+    ACPI_STATUS status;
+    AcpiClearEvent(ACPI_EVENT_POWER_BUTTON);
+    status = AcpiInstallFixedEventHandler(ACPI_EVENT_POWER_BUTTON, AcpiFixedEventPowerButtonHandler,
+                                          NULL);
+    if (ACPI_FAILURE(status)) {
+        kerror("Failed to install fixed power button handler: %s", AcpiFormatException(status));
+        return;
+    }
+    status = AcpiEnableEvent(ACPI_EVENT_POWER_BUTTON, 0);
+    if (ACPI_FAILURE(status)) {
+        kerror("Failed to enable fixed power button.");
+    } else {
+        kinfo("ACPI: Fixed Power Button initialized.");
     }
 }
