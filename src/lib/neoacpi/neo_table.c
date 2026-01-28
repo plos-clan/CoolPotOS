@@ -61,7 +61,7 @@ static bool check_table_signature(void *table, const char *expect) {
     if (!signatures_match(table, expect)) {
         struct acpi_sdt_hdr *hdr = table;
         log_error("invalid table '%.4s' (OEM ID '%.6s' OEM Table ID '%.8s') signature (expected "
-                  "'%.4s')\n",
+                  "'%.4s')",
                   hdr->signature, hdr->oemid, hdr->oem_table_id, expect);
         return false;
     }
@@ -73,7 +73,7 @@ bool verify_table_checksum(void *table, size_t size) {
 
     if (csum != 0) {
         struct acpi_sdt_hdr *hdr = table;
-        log_error("invalid table '%.4s' (OEM ID '%.6s' OEM Table ID '%.8s') checksum %d!\n",
+        log_error("invalid table '%.4s' (OEM ID '%.6s' OEM Table ID '%.8s') checksum %d!",
                   (hdr)->signature, (hdr)->oemid, (hdr)->oem_table_id, csum);
         return false;
     }

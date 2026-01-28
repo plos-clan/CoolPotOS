@@ -64,13 +64,16 @@ static void acpi_gas_init_system_io(struct acpi_gas *gas, uint64_t address, uint
     gas->access_size         = 0;
 }
 
-static void acpi_fixup_fadt(struct acpi_fadt *fadt) {
+static void acpi_fixup_fadt(neo_acpi_handle_t *handle, struct acpi_fadt *fadt) {
     size_t i;
 
     if (!fadt->x_dsdt) { fadt->x_dsdt = fadt->dsdt; }
     if (fadt->firmware_ctrl) { fadt->x_firmware_ctrl = fadt->firmware_ctrl; }
+    if (fadt->hdr.revision >= 5 && fadt->hdr.length >= 116 && fadt->flags & ACPI_FADT_HW_REDUCED) {
+        return;
+    }
 
-    if (fadt->flags & ACPI_FADT_HW_REDUCED) { return; }
+    log_info("legacy ACPI model, acpi enabling...");
 
     for (i = 0; i < ACPI_FADT_INFO_ENTRIES; i++) {
         const acpi_fadt_info_t *info        = &fadt_info_table[i];
@@ -121,9 +124,9 @@ neo_acpi_handle_t *acpi_load_fadt(neo_acpi_handle_t *handle) {
     }
 
     fadt->hdr.length = sizeof(struct acpi_fadt);
-    fadt->x_dsdt     = neo_acpi_fadt_select("DSDT", fadt->dsdt, fadt->x_dsdt);
+    fadt->x_dsdt     = neo_acpi_fadt_select(ACPI_DSDT_SIGNATURE, fadt->dsdt, fadt->x_dsdt);
 
-    acpi_fixup_fadt(fadt);
+    acpi_fixup_fadt(handle, fadt);
 
     handle->aml_context = neo_acpi_malloc(sizeof(aml_context_t));
     struct acpi_dsdt *dsdt =
@@ -135,6 +138,17 @@ neo_acpi_handle_t *acpi_load_fadt(neo_acpi_handle_t *handle) {
     size_t dsdt_length = dsdt->hdr.length;
     neo_acpi_kernel_unmap(dsdt, sizeof(struct acpi_sdt_hdr));
 
+    uintptr_t phys_addr =
+        neo_acpi_fadt_select(ACPI_FACS_SIGNATURE, fadt->firmware_ctrl, fadt->x_firmware_ctrl);
+    struct acpi_sdt_hdr *hdr = neo_acpi_kernel_map(phys_addr, sizeof(struct acpi_sdt_hdr));
+
+    size_t facs_length = hdr->length;
+    neo_acpi_kernel_unmap(hdr, sizeof(struct acpi_sdt_hdr));
+    handle->global_facs = neo_acpi_kernel_map(phys_addr, facs_length);
+    if (handle->global_facs == NULL) {
+        log_error("cannot mmap dsdt header table.");
+        return NULL;
+    }
     dsdt = neo_acpi_kernel_map(handle->global_fadt.x_dsdt, dsdt_length);
     if (!verify_table_checksum(dsdt, dsdt->hdr.length)) { return NULL; }
     aml_context_initialize(handle, dsdt);
