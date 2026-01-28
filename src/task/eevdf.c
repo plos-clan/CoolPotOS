@@ -56,6 +56,7 @@ static int vruntime_eligible(uint64_t vruntime, cpu_local_t *cpu) {
     struct sched_entity *curr = eevdf_sched(cpu)->current;
     int64_t              avg  = eevdf_sched(cpu)->avg_vruntime;
     long                 load = eevdf_sched(cpu)->avg_load;
+    if (unlikely(load == 0)) return 1;
     if (curr && curr->on_rq) {
         unsigned long weight  = scale_load_down(curr->load.weight);
         avg                  += entity_key(curr, cpu) * weight;
@@ -300,7 +301,11 @@ static void wrap_vruntime(cpu_local_t *cpu) {
         if (se->vruntime > offset) se->vruntime -= offset;
         if (se->deadline > offset) se->deadline -= offset;
     }
-    eevdf->avg_vruntime -= offset;
+    if (eevdf->avg_load) {
+        eevdf->avg_vruntime -= (uint64_t)eevdf->avg_load * offset;
+    } else {
+        eevdf->avg_vruntime = 0;
+    }
 }
 
 static int64_t update_curr_se(struct sched_entity *curr) {
@@ -329,24 +334,32 @@ void update_current_task(cpu_local_t *cpu) {
     bool    resche;
     int64_t delta_exec;
     delta_exec = update_curr_se(curr);
-    if (unlikely(delta_exec <= 0)) return;
+    if (unlikely(delta_exec <= 0)) {
+        if (curr->is_yield) {
+            curr->deadline = curr->vruntime + calc_delta_fair(curr->slice, curr);
+            curr->is_yield = false;
+            min_vruntime_update(curr,false);
+            rb_erase(&curr->run_node, eevdf_sched(cpu)->root);
+            insert_sched_entity(eevdf_sched(cpu)->root, curr);
+        }
+        return;
+    }
     curr->vruntime += calc_delta_fair(delta_exec, curr);
     update_vlag(curr, cpu);
     resche = update_deadline(curr);
     update_min_vruntime(cpu);
     curr->min_vruntime = eevdf_sched(cpu)->min_vruntime;
+    if (curr->is_yield) {
+        curr->deadline = curr->vruntime + calc_delta_fair(curr->slice, curr);
+        curr->is_yield = false;
+        resche         = true;
+    }
     if (resche || curr->is_idle) {
         min_vruntime_update(curr,false);
         rb_erase(&curr->run_node, eevdf_sched(cpu)->root);
         insert_sched_entity(eevdf_sched(cpu)->root, curr);
     }
-
-    if (curr->is_yield) {
-        struct sched_entity *last =
-            container_of(rb_last(eevdf_sched(cpu)->root), struct sched_entity, run_node);
-        curr->deadline += calc_delta_fair(curr->slice, curr);
-        curr->is_yield  = false;
-    }
+    wrap_vruntime(cpu);
 }
 
 void set_entity_yield(tcb_t thread) {
@@ -356,6 +369,7 @@ void set_entity_yield(tcb_t thread) {
 
 void remove_sched_entity(struct rb_root *root, struct sched_entity *se, cpu_local_t *cpu) {
     rb_erase(&se->run_node, root);
+    se->on_rq = false;
     struct sched_entity *current = eevdf_sched(cpu)->current;
     if (current == se) eevdf_sched(cpu)->current = NULL;
     eevdf_sched(cpu)->current = pick_eevdf(cpu);
@@ -413,6 +427,7 @@ void futex_eevdf_entity(tcb_t thread, cpu_local_t *cpu) {
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
     cow_list_remove(((struct eevdf_t *)cpu->sched_handle)->wait_queue, entity->wait_index);
     entity->handle = cpu->sched_handle;
+    entity->on_rq = true;
     insert_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity);
     eevdf_sched(cpu)->task_count++;
 }

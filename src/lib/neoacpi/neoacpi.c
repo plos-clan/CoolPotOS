@@ -41,6 +41,8 @@ neo_acpi_handle_t *neo_acpi_initialize(neo_acpi_phys_addr rsdt_base_addr) {
     return neo_acpi_rsdt_init(handle, roor_table_phy, table_entries);
 }
 
+neo_acpi_handle_t *neo_acpi_namespace_initialize(neo_acpi_handle_t *handle) {}
+
 bool table_find_by_signature(const neo_acpi_handle_t *handle, const char signature[4],
                              acpi_table *table) {
     if (!handle || !table) return false;
