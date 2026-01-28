@@ -16,6 +16,38 @@
 #define ACPI_ECDT_SIGNATURE "ECDT"
 #define ACPI_RHCT_SIGNATURE "RHCT"
 
+/* Number of distinct FADT-based GPE register blocks (GPE0 and GPE1) */
+
+#define ACPI_MAX_GPE_BLOCKS 2
+
+/* Default ACPI register widths */
+
+#define ACPI_GPE_REGISTER_WIDTH   8
+#define ACPI_PM1_REGISTER_WIDTH   16
+#define ACPI_PM2_REGISTER_WIDTH   8
+#define ACPI_PM_TIMER_WIDTH       32
+#define ACPI_RESET_REGISTER_WIDTH 8
+
+/* Names within the namespace are 4 bytes long */
+
+#define ACPI_NAMESEG_SIZE        4 /* Fixed by ACPI spec */
+#define ACPI_PATH_SEGMENT_LENGTH 5 /* 4 chars for name + 1 char for separator */
+#define ACPI_PATH_SEPARATOR      '.'
+
+/* Sizes for ACPI table headers */
+
+#define ACPI_OEM_ID_SIZE       6
+#define ACPI_OEM_TABLE_ID_SIZE 8
+
+/* ACPI/PNP hardware IDs */
+
+#define PCI_ROOT_HID_STRING         "PNP0A03"
+#define PCI_EXPRESS_ROOT_HID_STRING "PNP0A08"
+
+/* PM Timer ticks per second (HZ) */
+
+#define ACPI_PM_TIMER_FREQUENCY 3579545
+
 #define ACPI_PM1_CNT_SCI_EN (1 << 0)
 
 #include "neotype.h"
@@ -74,15 +106,6 @@ struct acpi_rxsdt {
     uint8_t             ptr_bytes[];
 } __attribute__((packed));
 
-typedef struct acpi_fadt_info {
-    const char *name;
-    uint16_t    address64;
-    uint16_t    address32;
-    uint16_t    length;
-    uint8_t     default_length;
-    uint8_t     flags;
-} acpi_fadt_info;
-
 struct acpi_hpet {
     struct acpi_sdt_hdr hdr;
     uint32_t            block_id;
@@ -130,7 +153,7 @@ struct acpi_fadt {
     uint8_t             mon_alrm;
     uint8_t             century;
     uint16_t            iapc_boot_arch;
-    uint8_t             rsvd;
+    uint8_t             _rsvd;
     uint32_t            flags;
     struct acpi_gas     reset_reg;
     uint8_t             reset_value;
@@ -161,4 +184,13 @@ struct acpi_ssdt {
     uint8_t             definition_block[];
 } __attribute__((packed));
 
+typedef struct acpi_generic_address {
+    uint8_t  space_id;     /* Address space where struct or register exists */
+    uint8_t  bit_width;    /* Size in bits of given register */
+    uint8_t  bit_offset;   /* Bit offset within the register */
+    uint8_t  access_width; /* Minimum Access size (ACPI 3.0) */
+    uint64_t address;      /* 64-bit address of struct or register */
+} acpi_generic_address_t;
+
 void dump_table_header(neo_acpi_phys_addr phys_addr, void *hdr);
+bool verify_table_checksum(void *table, size_t size);

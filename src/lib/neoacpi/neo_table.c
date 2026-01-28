@@ -1,8 +1,9 @@
+#include "lib/neoacpi/fadt.h"
+#include "lib/neoacpi/neo_impl.h"
 #include "lib/neoacpi/neo_logger.h"
 #include "lib/neoacpi/neo_stdlib.h"
 #include "lib/neoacpi/neoacpi.h"
-
-#include <term/klog.h>
+#include "lib/neoacpi/neotable.h"
 
 bool neo_acpi_push_table(neo_acpi_handle_t *handle, neo_acpi_table_entry_t *data) {
     const size_t             new_len = handle->entries_length + 1;
@@ -67,7 +68,7 @@ static bool check_table_signature(void *table, const char *expect) {
     return true;
 }
 
-static bool verify_table_checksum(void *table, size_t size) {
+bool verify_table_checksum(void *table, size_t size) {
     uint8_t csum = table_checksum(table, size);
 
     if (csum != 0) {
@@ -154,14 +155,4 @@ neo_acpi_handle_t *neo_acpi_rsdt_init(neo_acpi_handle_t *handle, neo_acpi_phys_a
 error_out:
     neo_acpi_kernel_unmap(rxsdt, map_len);
     return NULL;
-}
-
-void acpi_enable_acpi_mode(struct acpi_fadt *fadt) {}
-
-neo_acpi_handle_t *acpi_load_fadt(neo_acpi_handle_t *handle) {
-    acpi_table table;
-    if (!table_find_by_signature(handle, ACPI_FADT_SIGNATURE, &table)) return NULL;
-    struct acpi_fadt *fadt = table.ptr;
-    handle->fadt           = fadt;
-    return handle;
 }

@@ -2,6 +2,7 @@
  * UinxedKernel & CoolPotOS NeoACPI Library.
  */
 #include "lib/neoacpi/neoacpi.h"
+#include "lib/neoacpi/neo_impl.h"
 #include "lib/neoacpi/neo_logger.h"
 #include "lib/neoacpi/neo_stdlib.h"
 #include "term/klog.h"
