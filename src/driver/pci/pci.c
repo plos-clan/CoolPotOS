@@ -144,40 +144,76 @@ ACPI_MCFG_ALLOCATION *mcfg_entries[PCI_MCFG_MAX_ENTRIES_LEN];
 uint64_t              mcfg_entries_len = 0;
 pci_device_t         *pci_devices[PCI_DEVICE_MAX];
 uint32_t              pci_device_number = 0;
+static bool           pci_use_mcfg = false;
+static uint64_t       mcfg_virt_bases[PCI_MCFG_MAX_ENTRIES_LEN];
+
+#if defined(__x86_64__) || defined(__amd64__)
+uint32_t pci_read0(uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset);
+void     pci_write0(uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset,
+                    uint32_t value);
+#endif
 
 void mcfg_addr_to_entries(ACPI_TABLE_MCFG *mcfg, ACPI_MCFG_ALLOCATION **entries, uint64_t *num) {
     ACPI_MCFG_ALLOCATION *entry =
         (ACPI_MCFG_ALLOCATION *)((uint64_t)mcfg + sizeof(ACPI_TABLE_MCFG));
     int length = mcfg->Header.Length - sizeof(ACPI_TABLE_MCFG);
-    *num       = length / sizeof(ACPI_MCFG_ALLOCATION);
+    if (length < 0) {
+        *num = 0;
+        return;
+    }
+    *num = (uint64_t)length / sizeof(ACPI_MCFG_ALLOCATION);
+    if (*num > PCI_MCFG_MAX_ENTRIES_LEN) {
+        *num = PCI_MCFG_MAX_ENTRIES_LEN;
+    }
     for (uint64_t i = 0; i < *num; i++) {
         entries[i] = entry + i;
     }
 }
 
+static bool mcfg_find_entry(uint16_t segment_group, uint8_t bus, uint64_t *index_out) {
+    for (uint64_t i = 0; i < mcfg_entries_len; i++) {
+        if (mcfg_entries[i]->PciSegment != segment_group) { continue; }
+        if (mcfg_entries[i]->Address == 0) { continue; }
+        if (bus < mcfg_entries[i]->StartBusNumber || bus > mcfg_entries[i]->EndBusNumber) {
+            continue;
+        }
+        if (index_out) { *index_out = i; }
+        return true;
+    }
+    return false;
+}
+
 uint64_t get_device_mmio_physical_address(uint16_t segment_group, uint8_t bus, uint8_t device,
                                           uint8_t function) {
-    for (uint64_t i = 0; i < mcfg_entries_len; i++) {
-        if (mcfg_entries[i]->PciSegment == segment_group) {
-            return mcfg_entries[i]->Address +
-                   (((uint64_t)bus - (uint64_t)mcfg_entries[i]->StartBusNumber) << 20) +
-                   ((uint64_t)device << 15) + ((uint64_t)function << 12);
-        }
-    }
-    return 0;
+    uint64_t idx;
+    if (!mcfg_find_entry(segment_group, bus, &idx)) { return 0; }
+    return mcfg_entries[idx]->Address +
+           (((uint64_t)bus - (uint64_t)mcfg_entries[idx]->StartBusNumber) << 20) +
+           ((uint64_t)device << 15) + ((uint64_t)function << 12);
 }
 
 uint64_t get_mmio_address(uint32_t pci_address, uint16_t offset) {
+    if (!pci_use_mcfg) { return 0; }
+
     uint16_t segment  = (pci_address >> 16) & 0xFFFF;
     uint8_t  bus      = (pci_address >> 8) & 0xFF;
     uint8_t  device   = (pci_address >> 3) & 0x1F;
     uint8_t  function = pci_address & 0x07;
 
-    uint64_t phys = get_device_mmio_physical_address(segment, bus, device, function);
-    if (phys == 0) { return 0; }
+    uint64_t idx;
+    if (!mcfg_find_entry(segment, bus, &idx)) { return 0; }
+
+    uint64_t bus_off =
+        (((uint64_t)bus - (uint64_t)mcfg_entries[idx]->StartBusNumber) << 20) +
+        ((uint64_t)device << 15) + ((uint64_t)function << 12);
+
+    if (mcfg_virt_bases[idx] != 0) {
+        return mcfg_virt_bases[idx] + bus_off + offset;
+    }
+
+    uint64_t phys = mcfg_entries[idx]->Address + bus_off;
     uint64_t virt = (uint64_t)phys_to_virt(phys);
     page_map_range(get_kernel_pagedir(), virt, phys, PAGE_SIZE * 4, KERNEL_PTE_FLAGS);
-
     return virt + offset;
 }
 
@@ -190,14 +226,25 @@ uint32_t segment_bus_device_functon_to_pci_address(uint16_t segment, uint8_t bus
 uint32_t pci_read(uint32_t b, uint32_t d, uint32_t f, uint32_t s, uint32_t offset) {
     uint32_t pci_address  = segment_bus_device_functon_to_pci_address(s, b, d, f);
     uint64_t mmio_address = get_mmio_address(pci_address, offset);
-    if (mmio_address == 0) { printk("Cannot read pci: failed to get mmio address\n"); }
+    if (mmio_address == 0) {
+#if defined(__x86_64__) || defined(__amd64__)
+        return pci_read0(b, d, f, s, offset);
+#else
+        return 0xFFFFFFFFU;
+#endif
+    }
     return *(volatile uint32_t *)mmio_address;
 }
 
 void pci_write(uint32_t b, uint32_t d, uint32_t f, uint32_t s, uint32_t offset, uint32_t value) {
     uint32_t pci_address  = segment_bus_device_functon_to_pci_address(s, b, d, f);
     uint64_t mmio_address = get_mmio_address(pci_address, offset);
-    if (mmio_address == 0) { printk("Cannot write pci: failed to get mmio address\n"); }
+    if (mmio_address == 0) {
+#if defined(__x86_64__) || defined(__amd64__)
+        pci_write0(b, d, f, s, offset, value);
+#endif
+        return;
+    }
     *(volatile uint32_t *)mmio_address = value;
 }
 
@@ -279,22 +326,19 @@ pci_device_t *pci_find_bdfs(uint8_t bus, uint8_t slot, uint8_t func, uint16_t se
 }
 
 void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint8_t function) {
-    uint32_t pci_address =
-        segment_bus_device_functon_to_pci_address(segment_group, bus, device, function);
-
-    uint64_t id_mmio_addr = get_mmio_address(pci_address, 0x00);
-    uint16_t vendor_id    = *(volatile uint16_t *)id_mmio_addr;
+    uint32_t id_value = pci_read(bus, device, function, segment_group, 0x00);
+    uint16_t vendor_id = (uint16_t)(id_value & 0xFFFF);
     if (vendor_id == 0xFFFF) { return; }
-    uint16_t device_id = *(volatile uint16_t *)(id_mmio_addr + 2);
+    uint16_t device_id = (uint16_t)(id_value >> 16);
 
-    uint64_t field_mmio_addr  = get_mmio_address(pci_address, PCI_CONF_REVISION);
-    uint8_t  device_revision  = EXPORT_BYTE(*(volatile uint8_t *)field_mmio_addr, true);
-    uint8_t  device_class     = *((uint8_t *)field_mmio_addr + 3);
-    uint8_t  device_subclass  = *((uint8_t *)field_mmio_addr + 2);
-    uint8_t  device_interface = *((uint8_t *)field_mmio_addr + 1);
+    uint32_t class_reg = pci_read(bus, device, function, segment_group, PCI_CONF_REVISION);
+    uint8_t  device_revision  = (uint8_t)(class_reg & 0xFF);
+    uint8_t  device_interface = (uint8_t)((class_reg >> 8) & 0xFF);
+    uint8_t  device_subclass  = (uint8_t)((class_reg >> 16) & 0xFF);
+    uint8_t  device_class     = (uint8_t)((class_reg >> 24) & 0xFF);
 
-    uint64_t header_type_mmio_addr = get_mmio_address(pci_address, 0x0c);
-    uint8_t  header_type           = (*((uint8_t *)header_type_mmio_addr + 2)) & 0x7F;
+    uint32_t header_reg = pci_read(bus, device, function, segment_group, 0x0c);
+    uint8_t  header_type = (uint8_t)((header_reg >> 16) & 0x7F);
 
     pci_device_t *pci_device = (pci_device_t *)malloc(sizeof(pci_device_t));
     memset(pci_device, 0, sizeof(pci_device_t));
@@ -462,9 +506,8 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
 void pci_scan_bus(uint16_t segment_group, uint8_t bus) {
     for (int i = 0; i < 32; i++) {
         pci_scan_function(segment_group, bus, i, 0);
-        uint32_t pci_address = segment_bus_device_functon_to_pci_address(segment_group, bus, i, 0);
-        uint64_t mmio_addr   = get_mmio_address(pci_address, 0x0c);
-        if (*(volatile uint32_t *)mmio_addr & (1UL << 23)) {
+        uint32_t header_reg = pci_read(bus, i, 0, segment_group, 0x0c);
+        if (header_reg != 0xFFFFFFFF && (header_reg & (1UL << 23))) {
             for (int j = 1; j < 8; j++) {
                 pci_scan_function(segment_group, bus, i, j);
             }
@@ -474,9 +517,8 @@ void pci_scan_bus(uint16_t segment_group, uint8_t bus) {
 
 void pci_scan_segment(uint16_t segment_group) {
     pci_scan_bus(segment_group, 0);
-    uint32_t pci_address = segment_bus_device_functon_to_pci_address(segment_group, 0, 0, 0);
-    uint64_t mmio_addr   = get_mmio_address(pci_address, 0x0c);
-    if (*(volatile uint32_t *)mmio_addr & (1UL << 23)) {
+    uint32_t header_reg = pci_read(0, 0, 0, segment_group, 0x0c);
+    if (header_reg != 0xFFFFFFFF && (header_reg & (1UL << 23))) {
         for (int i = 1; i < 8; i++) {
             pci_scan_bus(segment_group, i);
         }
@@ -486,7 +528,6 @@ void pci_scan_segment(uint16_t segment_group) {
 void pci_init() {
     ACPI_TABLE_MCFG *mcfg   = NULL;
     ACPI_STATUS      status = AcpiGetTable(ACPI_SIG_MCFG, 1, (ACPI_TABLE_HEADER **)&mcfg);
-
     if (ACPI_FAILURE(status)) {
         kwarn("MCFG table not found (System switch to Legacy PCI model).");
         arch_pci_legacy_enum();
@@ -494,9 +535,43 @@ void pci_init() {
     }
 
     mcfg_addr_to_entries(mcfg, mcfg_entries, &mcfg_entries_len);
+    pci_use_mcfg = (mcfg_entries_len != 0);
+    if (!pci_use_mcfg) {
+        kwarn("MCFG table invalid or empty (System switch to Legacy PCI model).");
+        arch_pci_legacy_enum();
+        return;
+    }
+
+    bool has_valid_entry = false;
+    for (uint64_t i = 0; i < mcfg_entries_len; i++) {
+        if (mcfg_entries[i]->Address == 0) { continue; }
+        if (mcfg_entries[i]->EndBusNumber < mcfg_entries[i]->StartBusNumber) { continue; }
+        has_valid_entry = true;
+        break;
+    }
+
+    if (!has_valid_entry) {
+        kwarn("MCFG entries invalid (System switch to Legacy PCI model).");
+        pci_use_mcfg = false;
+        arch_pci_legacy_enum();
+        return;
+    }
 
     for (uint64_t i = 0; i < mcfg_entries_len; i++) {
         uint16_t segment_group = mcfg_entries[i]->PciSegment;
-        pci_scan_segment(segment_group);
+        uint8_t  start_bus     = mcfg_entries[i]->StartBusNumber;
+        uint8_t  end_bus       = mcfg_entries[i]->EndBusNumber;
+        if (mcfg_entries[i]->Address == 0) { continue; }
+        if (end_bus < start_bus) { continue; }
+        uint64_t size = ((uint64_t)(end_bus - start_bus + 1)) << 20;
+        uint64_t virt = (uint64_t)phys_to_virt(mcfg_entries[i]->Address);
+        page_map_range(get_kernel_pagedir(), virt, mcfg_entries[i]->Address, size,
+                       KERNEL_PTE_FLAGS);
+        mcfg_virt_bases[i] = virt;
+        kinfo("MCFG map: seg=%u bus=%u-%u phys=%#llx virt=%#llx size=%#llx",
+              segment_group, start_bus, end_bus, mcfg_entries[i]->Address, virt, size);
+        for (uint16_t bus = start_bus; bus <= end_bus; bus++) {
+            pci_scan_bus(segment_group, (uint8_t)bus);
+        }
     }
 }
