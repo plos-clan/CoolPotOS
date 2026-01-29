@@ -67,6 +67,11 @@ syscall_(write, int fd, uint8_t *buffer, size_t size) {
     if (unlikely(size == 0)) return EOK;
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
+    if (handle->node->type & file_pipe) {
+        size_t ret = vfs_write(handle->node, buffer, 0, size);
+        if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
+        return ret;
+    }
     size_t ret = vfs_write(handle->node, buffer, handle->offset, size);
     if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) handle->offset += ret;
@@ -79,26 +84,22 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     if (unlikely(size == 0)) return EOK;
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
-    if (handle->node->type & file_pipe && handle->node->size == 0 && handle->flags & O_NONBLOCK) {
-        return SYSCALL_FAULT_(EWOULDBLOCK);
+    if (handle->node->type & file_pipe) {
+        vfs_update(handle->node);
+        if (handle->node->size == 0 && handle->flags & O_NONBLOCK) {
+            return SYSCALL_FAULT_(EWOULDBLOCK);
+        }
+        size_t ret = vfs_read(handle->node, buffer, 0, size);
+        if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
+        return ret;
     }
     if (handle->node->size != (uint64_t)-1) {
-        if (handle->offset >= handle->node->size) {
-            if (handle->node->type & file_pipe) { goto pipe; }
-            return EOK;
-        }
+        if (handle->offset >= handle->node->size) { return EOK; }
     }
-read:;
     size_t ret = vfs_read(handle->node, buffer, handle->offset, size);
     if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) { handle->offset += ret; }
     return ret;
-pipe:;
-    while (handle->offset >= handle->node->size) {
-        vfs_update(handle->node);
-        scheduler_yield();
-    }
-    goto read;
 }
 
 syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
@@ -108,8 +109,8 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
     size_t total  = 0;
     for (int i = 0; i < iovcnt; i++) {
         size_t status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
-        if (handle->node->size != (uint64_t)-1) {
-            if (status == (size_t)-1) return total;
+        if (status == (size_t)-1) return total;
+        if (!(handle->node->type & file_pipe) && handle->node->size != (uint64_t)-1) {
             handle->offset += status;
         }
         total += iov[i].iov_len;
@@ -129,7 +130,7 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
         buf_len += iov[i].iov_len;
     }
     uint8_t *buf = (uint8_t *)malloc(buf_len);
-    if (handle->node->size != (uint64_t)-1) {
+    if (!(handle->node->type & file_pipe) && handle->node->size != (uint64_t)-1) {
         if (handle->offset > handle->node->size) {
             free(buf);
             return EOK;
@@ -140,7 +141,9 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
         free(buf);
         return SYSCALL_FAULT_(EIO);
     }
-    if (handle->node->size != (uint64_t)-1) handle->offset += status;
+    if (!(handle->node->type & file_pipe) && handle->node->size != (uint64_t)-1) {
+        handle->offset += status;
+    }
     size_t copied = 0;
     for (size_t i = 0; i < iovcnt; i++) {
         size_t len = iov[i].iov_len;
@@ -748,14 +751,12 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
     vfs_node_t node_input = vfs_node_alloc(pipefs_root, buf);
     node_input->type      = file_pipe;
     node_input->fsid      = pipefs_id;
-    node_input->refcount++;
     pipefs_root->mode = 0700;
 
     sprintf(buf, "pipe%d", pipefd_id++);
     vfs_node_t node_output = vfs_node_alloc(pipefs_root, buf);
     node_output->type      = file_pipe;
     node_output->fsid      = pipefs_id;
-    node_output->refcount++;
     pipefs_root->mode = 0700;
 
     pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));
@@ -770,11 +771,15 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
     read_spec->write           = false;
     read_spec->info            = info;
     read_spec->node            = node_input;
+    read_spec->active          = 0;
+    read_spec->free_pending    = false;
 
     pipe_specific_t *write_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
     write_spec->write           = true;
     write_spec->info            = info;
     write_spec->node            = node_output;
+    write_spec->active          = 0;
+    write_spec->free_pending    = false;
 
     node_input->handle  = read_spec;
     node_output->handle = write_spec;
@@ -995,5 +1000,17 @@ syscall_(chroot, char *path) {
     if (node == NULL) return SYSCALL_FAULT_(ENOENT);
     if (process->proc_root != NULL) vfs_close(process->proc_root);
     process->proc_root = node;
+    return EOK;
+}
+
+syscall_(chown, const char *filename, uint64_t uid, uint64_t gid) {
+    return vfs_chown(filename, uid, gid);
+}
+
+syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags) {
+    return EOK;
+}
+
+syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes) {
     return EOK;
 }

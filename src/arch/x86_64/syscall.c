@@ -183,6 +183,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_CHROOT]      = (syscall_t)syscall_chroot,
     [SYSCALL_SETITIMER]   = (syscall_t)syscall_setitimer,
     [SYSCALL_KILL]        = (syscall_t)syscall_kill,
+    [SYSCALL_CHOWN]       = (syscall_t)syscall_chown,
+    [SYSCALL_UTIMENSAT]   = (syscall_t)syscall_utimensat,
+    [SYSCALL_FUTIMESAT]   = (syscall_t)syscall_futimensat,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

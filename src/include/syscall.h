@@ -330,6 +330,9 @@ syscall_(faccessat, int dirfd, char *pathname, uint64_t mode);
 syscall_(faccessat2, int dirfd, char *pathname, uint64_t mode, uint64_t flag);
 syscall_(statfs, char *path, struct statfs *buf);
 syscall_(chroot, char *path);
+syscall_(chown, const char *filename, uint64_t uid, uint64_t gid);
+syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags);
+syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -362,7 +365,7 @@ syscall_(prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim,
          struct rlimit *old_rlim);
 syscall_(getresgid, int *rgid, int *egid, int *sgid);
 syscall_(getresuid, int *ruid, int *euid, int *suid);
-syscall_(kill,int pid, int sig);
+syscall_(kill, int pid, int sig);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
@@ -380,5 +383,5 @@ syscall_(clock_getres);
 syscall_(getgroups, int count, int *gid_list);
 syscall_(nano_sleep, void *time_handle);
 syscall_(sysinfo, struct sysinfo *info);
-syscall_(sys_log,int type, const char *buf, size_t len);
+syscall_(sys_log, int type, const char *buf, size_t len);
 syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old);
