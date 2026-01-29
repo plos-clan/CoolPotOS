@@ -172,7 +172,7 @@ int waitpid(pid_t pid, pid_t *pid_ret) {
         ipc_send(process->ipc_queue, mesg);
     }
     pcb_t wait_p = found_pcb(mesg->pid);
-    if (wait_p->status == T_ZOMBIE) kill_proc(wait_p, exit_code, false);
+    if (wait_p && wait_p->status == T_ZOMBIE) kill_proc(wait_p, exit_code, false);
     *pid_ret = mesg->pid;
     free(mesg);
 

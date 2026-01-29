@@ -258,6 +258,7 @@ errno_t    vfs_rename(vfs_node_t node, const char *new);
 errno_t    vfs_poll(vfs_node_t node, size_t event);
 void      *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags,
                    uint64_t offset);
+int        vfs_chown(const char *path, uint64_t uid, uint64_t gid);
 size_t     vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t     vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,

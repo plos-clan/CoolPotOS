@@ -18,6 +18,8 @@ typedef struct pipe_info {
 
     int write_fds;
     int read_fds;
+    int active;
+    bool free_pending;
 
     spin_t lock;
 
@@ -30,6 +32,8 @@ struct pipe_specific {
     bool         write;
     pipe_info_t *info;
     vfs_node_t   node;
+    int          active;
+    bool         free_pending;
 };
 
 void pipefs_regist();

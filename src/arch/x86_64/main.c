@@ -109,7 +109,7 @@ USED _Noreturn void kmain() {
     kmodule_init();
 
     zero_setup();
-    ahci_setup();
+    // ahci_setup();
     // nvme_setup();
     drm_plainfb_init();
 

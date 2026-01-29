@@ -6,6 +6,7 @@
 #define ALL_IMPLEMENTATION
 #include "fs/vfs.h"
 #include "errno.h"
+#include "fs/pipefs.h"
 #include "krlibc.h"
 #include "task/task.h"
 #include "term/klog.h"
@@ -438,6 +439,19 @@ errno_t vfs_close(vfs_node_t node) {
     node->refcount--;
 
     if (node->type & file_proxy) return EOK;
+    if (node->type & file_pipe) {
+        pipe_specific_t *spec = node->handle;
+        callbackof(node, close)(node->handle);
+        if (node->refcount != 0) return EOK;
+        if (spec && spec->active > 0) {
+            spec->free_pending = true;
+            return EOK;
+        }
+        if (node->parent) list_delete(node->parent->child, node);
+        node->handle = NULL;
+        vfs_free(node);
+        return EOK;
+    }
     if (node->type & file_dir) return EOK;
     if (node->refcount != 0) return EOK;
     if (node->type & file_delete) {
@@ -458,7 +472,7 @@ void vfs_free(vfs_node_t vfs) {
     vfs_close(vfs);
     callbackof(vfs, free)(vfs->handle);
     free(vfs->name);
-    if(vfs->linkto_path) free(vfs->linkto_path);
+    if (vfs->linkto_path) free(vfs->linkto_path);
     free(vfs);
 }
 
@@ -626,6 +640,10 @@ void *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint6
     if (unlikely(node == NULL)) return NULL;
     if (unlikely(node->type == file_dir)) return NULL;
     return callbackof(node, map)(node->handle, (void *)addr, offset, len, prot, flags);
+}
+
+int vfs_chown(const char *path, uint64_t uid, uint64_t gid) {
+    return 0;
 }
 
 bool vfs_init() {

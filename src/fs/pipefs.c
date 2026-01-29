@@ -2,7 +2,6 @@
 #include "fs/pipefs.h"
 #include "errno.h"
 #include "krlibc.h"
-#include "list.h"
 #include "task/scheduler.h"
 #include "term/klog.h"
 
@@ -17,76 +16,176 @@ void pipefs_open(void *parent, const char *name, vfs_node_t node) {
 }
 
 size_t pipefs_read(void *file, void *addr, size_t offset, size_t size) {
+    (void)offset;
     if (size > PIPE_BUFF) size = PIPE_BUFF;
 
     pipe_specific_t *spec = (pipe_specific_t *)file;
-    if (!spec) return -EINVAL;
+    if (!spec) return (size_t)-1;
+    if (spec->write) return (size_t)-1;
     pipe_info_t *pipe = spec->info;
-    if (!pipe) return -EINVAL;
-
-    while (pipe->ptr == 0) {
-        if (pipe->write_fds == 0) { return 0; }
-
-        scheduler_yield();
-    }
-
-    // 实际读取量
-    uint32_t to_read = MIN(size, pipe->ptr);
-
-    if (to_read == 0) { return 0; }
+    if (!pipe) return (size_t)-1;
 
     spin_lock(pipe->lock);
-
-    memcpy(addr, pipe->buf, to_read);
-    memmove(pipe->buf, &pipe->buf[pipe->ptr], pipe->ptr - to_read);
-
-    pipe->ptr -= to_read;
-
+    spec->active++;
+    pipe->active++;
     spin_unlock(pipe->lock);
 
-    return to_read;
+    size_t ret = (size_t)-1;
+    for (;;) {
+        while (pipe->ptr == 0) {
+            if (pipe->write_fds == 0) {
+                ret = 0;
+                goto out;
+            }
+            scheduler_yield();
+        }
+
+        spin_lock(pipe->lock);
+        if (pipe->ptr == 0) {
+            spin_unlock(pipe->lock);
+            continue;
+        }
+
+        // 实际读取量
+        uint32_t to_read = MIN(size, pipe->ptr);
+
+        memcpy(addr, pipe->buf, to_read);
+        memmove(pipe->buf, pipe->buf + to_read, pipe->ptr - to_read);
+
+        pipe->ptr      -= to_read;
+        pipe->assigned  = (int)pipe->ptr;
+        if (spec->node) spec->node->size = pipe->ptr;
+
+        spin_unlock(pipe->lock);
+        ret = to_read;
+        goto out;
+    }
+
+out:
+    spin_lock(pipe->lock);
+    spec->active--;
+    pipe->active--;
+    bool free_spec = spec->free_pending && spec->active == 0;
+    bool free_pipe =
+        pipe->free_pending && pipe->active == 0 && pipe->read_fds == 0 && pipe->write_fds == 0;
+    spin_unlock(pipe->lock);
+
+    vfs_node_t node = spec->node;
+    if (free_spec) {
+        if (node) node->handle = NULL;
+        free(spec);
+    }
+    if (free_pipe) {
+        free(pipe->buf);
+        free(pipe);
+    }
+    if (free_spec && node && node->refcount == 0) {
+        if (node->parent) list_delete(node->parent->child, node);
+        vfs_free(node);
+    }
+    return ret;
 }
 
 size_t pipe_write_inner(void *file, const void *addr, size_t size) {
-    pipe_specific_t *spec = (pipe_specific_t *)file;
-    pipe_info_t     *pipe = spec->info;
+    pipe_specific_t *spec = file;
+    if (!spec || !spec->write) return (size_t)-1;
+    pipe_info_t *pipe = spec->info;
+    if (!pipe) return (size_t)-1;
+    if (pipe->read_fds == 0) { return (size_t)-1; }
 
-    while ((PIPE_BUFF - pipe->ptr) < size) {
-        if (pipe->read_fds == 0) { return -EPIPE; }
-        scheduler_yield();
+    for (;;) {
+        while ((PIPE_BUFF - pipe->ptr) < size) {
+            if (pipe->read_fds == 0) { return (size_t)-1; }
+            scheduler_yield();
+        }
+
+        spin_lock(pipe->lock);
+        if ((PIPE_BUFF - pipe->ptr) < size) {
+            spin_unlock(pipe->lock);
+            continue;
+        }
+        memcpy(&pipe->buf[pipe->ptr], addr, size);
+        pipe->ptr      += size;
+        pipe->assigned  = (int)pipe->ptr;
+        if (spec->node) spec->node->size = pipe->ptr;
+        spin_unlock(pipe->lock);
+        return size;
     }
-
-    spin_lock(pipe->lock);
-    memcpy(&pipe->buf[pipe->ptr], addr, size);
-    pipe->ptr += size;
-    spin_unlock(pipe->lock);
-
-    return size;
 }
 
 size_t pipefs_write(void *file, const void *addr, size_t offset, size_t size) {
-    size_t ret       = 0;
-    size_t chunks    = size / PIPE_BUFF;
-    size_t remainder = size % PIPE_BUFF;
+    (void)offset;
+    pipe_specific_t *spec = file;
+    if (!spec || !spec->write) return (size_t)-1;
+    pipe_info_t *pipe = spec->info;
+    if (!pipe) return (size_t)-1;
+    const uint8_t *src = (const uint8_t *)addr;
+    size_t         ret = 0;
+    size_t         chunks = size / PIPE_BUFF;
+    size_t         remainder = size % PIPE_BUFF;
+
+    spin_lock(pipe->lock);
+    spec->active++;
+    pipe->active++;
+    spin_unlock(pipe->lock);
+
     if (chunks)
         for (size_t i = 0; i < chunks; i++) {
             size_t cycle = 0;
-            while (cycle != PIPE_BUFF)
-                cycle += pipe_write_inner(file, addr + i * PIPE_BUFF + cycle, PIPE_BUFF - cycle);
+            while (cycle != PIPE_BUFF) {
+                const size_t ret1 =
+                    pipe_write_inner(file, src + i * PIPE_BUFF + cycle, PIPE_BUFF - cycle);
+                if (ret1 == (size_t)-1) {
+                    ret = (size_t)-1;
+                    goto out;
+                }
+                cycle += ret1;
+            }
             ret += cycle;
         }
 
     if (remainder) {
         size_t cycle = 0;
-        while (cycle != remainder)
-            cycle += pipe_write_inner(file, addr + chunks * PIPE_BUFF + cycle, remainder - cycle);
+        while (cycle != remainder) {
+            const size_t ret0 =
+                pipe_write_inner(file, src + chunks * PIPE_BUFF + cycle, remainder - cycle);
+            if (ret0 == (size_t)-1) {
+                ret = (size_t)-1;
+                goto out;
+            }
+            cycle += ret0;
+        }
         ret += cycle;
     }
 
+out:
+    spin_lock(pipe->lock);
+    spec->active--;
+    pipe->active--;
+    bool free_spec = spec->free_pending && spec->active == 0;
+    bool free_pipe =
+        pipe->free_pending && pipe->active == 0 && pipe->read_fds == 0 && pipe->write_fds == 0;
+    spin_unlock(pipe->lock);
+
+    vfs_node_t node = spec->node;
+    if (free_spec) {
+        if (node) node->handle = NULL;
+        free(spec);
+    }
+    if (free_pipe) {
+        free(pipe->buf);
+        free(pipe);
+    }
+    if (free_spec && node && node->refcount == 0) {
+        if (node->parent) list_delete(node->parent->child, node);
+        vfs_free(node);
+    }
     return ret;
 }
 
 int pipefs_ioctl(void *file, ssize_t cmd, ssize_t arg) {
+    (void)file;
+    (void)arg;
     switch (cmd) {
     default: return -ENOSYS;
     }
@@ -94,45 +193,77 @@ int pipefs_ioctl(void *file, ssize_t cmd, ssize_t arg) {
 
 bool pipefs_close(void *current) {
     pipe_specific_t *spec = (pipe_specific_t *)current;
-    pipe_info_t     *pipe = spec->info;
-
-    spin_lock(pipe->lock);
-    if (spec->write) {
-        pipe->write_fds--;
-    } else {
-        pipe->read_fds--;
-    }
-
-    list_delete(pipefs_root->child, spec->node);
-    if ((spec->write && pipe->write_fds == 0) || pipe->read_fds == 0) free(spec);
-
-    if (pipe->write_fds == 0 && pipe->read_fds == 0) {
-        spin_unlock(pipe->lock);
-        free(pipe->buf);
-        free(pipe);
+    if (!spec) return true;
+    pipe_info_t *pipe = spec->info;
+    if (!pipe) {
+        if (spec->node) spec->node->handle = NULL;
+        free(spec);
         return true;
     }
 
+    bool free_spec = false;
+    bool free_pipe = false;
+
+    spin_lock(pipe->lock);
+    if (spec->write) {
+        if (pipe->write_fds > 0) pipe->write_fds--;
+        if (pipe->write_fds == 0) {
+            if (spec->active == 0) {
+                free_spec = true;
+            } else {
+                spec->free_pending = true;
+            }
+        }
+    } else {
+        if (pipe->read_fds > 0) pipe->read_fds--;
+        if (pipe->read_fds == 0) {
+            if (spec->active == 0) {
+                free_spec = true;
+            } else {
+                spec->free_pending = true;
+            }
+        }
+    }
+
+    if (pipe->write_fds == 0 && pipe->read_fds == 0) {
+        if (pipe->active == 0) {
+            free_pipe = true;
+        } else {
+            pipe->free_pending = true;
+        }
+    }
     spin_unlock(pipe->lock);
+
+    if (free_spec) {
+        if (spec->node) spec->node->handle = NULL;
+        free(spec);
+    }
+
+    if (free_pipe) {
+        free(pipe->buf);
+        free(pipe);
+    }
 
     return true;
 }
 
 int pipefs_poll(void *file, size_t events) {
     pipe_specific_t *spec = (pipe_specific_t *)file;
-    pipe_info_t     *pipe = spec->info;
+    if (!spec) return 0;
+    pipe_info_t *pipe = spec->info;
+    if (!pipe) return 0;
 
     int out = 0;
 
     spin_lock(pipe->lock);
     if (events & EPOLLIN) {
         if (!pipe->write_fds) out |= EPOLLHUP;
-        if (pipe->assigned > 0) out |= EPOLLIN;
+        if (pipe->ptr > 0) out |= EPOLLIN;
     }
 
     if (events & EPOLLOUT) {
         if (!pipe->read_fds) out |= EPOLLHUP;
-        if (pipe->assigned < PIPE_BUFF) out |= EPOLLOUT;
+        if (pipe->ptr < PIPE_BUFF) out |= EPOLLOUT;
     }
     spin_unlock(pipe->lock);
     return out;
@@ -140,14 +271,15 @@ int pipefs_poll(void *file, size_t events) {
 
 int pipefs_mount(const char *handle, vfs_node_t node) {
     if (pipefs_root != NULL) return -EBUSY;
-    node->fsid  = pipefs_id;
-    pipefs_root = node;
-    node->handle = calloc(1,sizeof(pipe_specific_t));
+    node->fsid   = pipefs_id;
+    pipefs_root  = node;
+    node->handle = calloc(1, sizeof(pipe_specific_t));
     return EOK;
 }
 
 errno_t pipefs_stat(void *file, vfs_node_t node) {
     pipe_specific_t *spec = (pipe_specific_t *)file;
+    if (!spec) return EOK;
     pipe_info_t     *pipe = spec->info;
     if (pipe == NULL) return EOK;
     node->size = pipe->ptr;
@@ -155,6 +287,7 @@ errno_t pipefs_stat(void *file, vfs_node_t node) {
 }
 
 errno_t pipefs_free(void *handle) {
+    (void)handle;
     return EOK;
 }
 
@@ -184,7 +317,5 @@ static struct vfs_callback pipefs_callbacks = {
 
 void pipefs_regist() {
     pipefs_id = vfs_regist("pipefs", &pipefs_callbacks, 0x50495045, FS_VIRTUAL_FLAGS);
-    if (pipefs_id == -EINVAL) {
-        kerror("pipefs regist error.");
-    }
+    if (pipefs_id == -EINVAL) { kerror("pipefs regist error."); }
 }
