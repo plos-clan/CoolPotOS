@@ -17,8 +17,6 @@
 Languages
 : *English*
 | [简体中文](readme/README-zh-CN.md)
-| [Français](readme/README-fr-FR.md)
-| [日本語](readme/README-ja-JP.md)
 
 ## Introduction
 
@@ -32,6 +30,10 @@ and [amd64](https://en.wikipedia.org/wiki/X86-64) architecture.
 - `plant-vfs` by min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
 - `EEVDF` by xiaoyi1212 [plos-clan/EEVDF](https://github.com/plos-clan/EEVDF)
 - `libfdt` by osdev [osdev/libfdt](https://codeberg.org/OSDev/libfdt)
+- `acpica` by acpica [acpica/acpica](https://github.com/acpica/acpica)
+- `stb_sprintf` by nothing [nothing/stb](https://github.com/nothings/stb)
+- `tinycrypt` by intel [intel/tinycrypt](https://github.com/intel/tinycrypt)
+- `zstd` by facebook [facebook/zstd](https://github.com/facebook/zstd)
 
 ## Build & Run
 

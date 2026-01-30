@@ -19,16 +19,16 @@ _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
 extern volatile bool   smp_enable;
 
-USED void foreach_task(){
+USED void foreach_task() {
     pcb_t process = NULL;
-    cow_foreach(process_list,process) {
-        logkf("PID:%d - %s %p\n\r",process->pid,process->name,process);
+    cow_foreach(process_list, process) {
+        logkf("PID:%d - %s %p\n\r", process->pid, process->name, process);
         tcb_t thread = NULL;
-        cow_foreach(process->child_threads,thread) {
-            logkf("\t TID:%d - %s %p\n\r",thread->tid,thread->name,thread);
+        cow_foreach(process->child_threads, thread) {
+            logkf("\t TID:%d - %s %p\n\r", thread->tid, thread->name, thread);
             struct sched_entity *entity = thread->sched_handle;
             //logkf("\t deadline: %x - vruntime: %x\n\r",entity->deadline,entity->vruntime);
-            logkf("\t deadline: %lx - vruntime: %lx\n\r",entity->deadline,entity->vruntime);
+            logkf("\t deadline: %lx - vruntime: %lx\n\r", entity->deadline, entity->vruntime);
         }
     }
 }
@@ -66,7 +66,7 @@ static void kill_thread0(pcb_t parent, tcb_t task) {
 
 static void kill_proc0(pcb_t pcb) {
     do {
-        if(pcb->child_threads->size == 0) break;
+        if (pcb->child_threads->size == 0) break;
         tcb_t thread = NULL;
         cow_foreach(pcb->child_threads, thread) {
             break;
@@ -82,19 +82,11 @@ static void kill_proc0(pcb_t pcb) {
 
     procfs_on_exit_task(pcb);
 
-    for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
-        fd_t *handle = pcb->fdts->fds[i];
-        if (handle != NULL) {
-            vfs_close(handle->node);
-            free(handle);
-        }
-    }
-
     lazy_free(pcb);
 
     free_fdt(pcb->fdts);
     ipc_queue_release(pcb->ipc_queue);
-    free_llist_queue(pcb->virt_queue,NULL,NULL);
+    free_llist_queue(pcb->virt_queue, NULL, NULL);
     free(pcb->cmdline);
     vfs_close(pcb->cwd);
     vfs_close(pcb->exec);
@@ -135,7 +127,7 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
             }
         }
         pcb_t parent = pcb->parent;
-        cow_list_remove(parent->child_process,pcb->ppl_index);
+        cow_list_remove(parent->child_process, pcb->ppl_index);
         pcb->status       = T_ZOMBIE;
         ipc_message_t msg = malloc(sizeof(struct ipc_message));
         msg->pid          = pcb->pid;
@@ -145,6 +137,15 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
         msg->data[2]      = (exit_code >> 16) & 0xFF;
         msg->data[3]      = (exit_code >> 24) & 0xFF;
         ipc_send(pcb->parent->ipc_queue, msg);
+
+        for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
+            fd_t *handle = pcb->fdts->fds[i];
+            if (handle != NULL) {
+                vfs_close(handle->node);
+                free(handle);
+            }
+        }
+
         enable_scheduler();
     } else {
         cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
@@ -164,7 +165,7 @@ int waitpid(pid_t pid, pid_t *pid_ret) {
     int           exit_code;
     while (1) {
         change_task_weight(get_current_task(), NICE_TO_PRIO(10));
-        mesg = ipc_recv_wait(process->ipc_queue,IPC_MSG_TYPE_EPID);
+        mesg = ipc_recv_wait(process->ipc_queue, IPC_MSG_TYPE_EPID);
         change_task_weight(get_current_task(), NICE_TO_PRIO(0));
         exit_code =
             (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
@@ -251,6 +252,6 @@ void setup_task() {
     bsp_idle_thread->status        = T_RUNNING;
     bsp_idle_thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     bsp_idle_thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    arch_context_init(bsp_idle_thread,&bsp_idle_thread->context);
+    arch_context_init(bsp_idle_thread, &bsp_idle_thread->context);
     kinfo("kernel process(%s) PID: %d ", kernel_process->name, kernel_process->pid);
 }

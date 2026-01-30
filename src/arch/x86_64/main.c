@@ -3,7 +3,6 @@
 #include "cpu_features.h"
 #include "description_table.h"
 #include "driver/acpi.h"
-#include "driver/ahci.h"
 #include "driver/blk_device.h"
 #include "driver/char/ps2_kbd.h"
 #include "driver/drm/drm_device.h"
@@ -15,6 +14,7 @@
 #include "driver/power/power.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
+#include "driver/usb/xhci.h"
 #include "exec/dlinker.h"
 #include "exec/elf_load.h"
 #include "fpu.h"
@@ -109,7 +109,7 @@ USED _Noreturn void kmain() {
     kmodule_init();
 
     zero_setup();
-    // ahci_setup();
+    usb_setup();
     // nvme_setup();
     drm_plainfb_init();
 
