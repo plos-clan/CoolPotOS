@@ -291,6 +291,7 @@ syscall_(read, int fd, uint8_t *buffer, size_t size);
 syscall_(writev, int fd, struct iovec *iov, int iovcnt);
 syscall_(readv, int fd, struct iovec *iov, int iovcnt0);
 syscall_(stat, char *fn, struct stat *buf);
+syscall_(lstat, char *fn, struct stat *buf);
 syscall_(ioctl, int fd, int options, void *arg2);
 syscall_(dup2, int fd, int newfd);
 syscall_(dup, int fd);
@@ -324,6 +325,7 @@ syscall_(unlinkat, int dirfd, char *name);
 syscall_(access, char *filename);
 syscall_(mkdir, char *name, uint64_t mode);
 syscall_(readlink, char *path, char *buf, uint64_t size);
+syscall_(chmod, char *path, uint64_t mode);
 syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count);
 syscall_(openat, int dirfd, char *name, uint64_t flags, uint64_t mode);
 syscall_(faccessat, int dirfd, char *pathname, uint64_t mode);
@@ -333,6 +335,7 @@ syscall_(chroot, char *path);
 syscall_(chown, const char *filename, uint64_t uid, uint64_t gid);
 syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags);
 syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
+syscall_(umask, uint64_t mask);
 
 // proc syscall
 syscall_(exit, int exit_code);

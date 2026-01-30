@@ -30,6 +30,7 @@
 typedef struct file_description {
     vfs_node_t node;
     size_t     offset;
+    vfs_node_t dir_last;
     uint64_t   flags;
     int        fd;
 } fd_t;

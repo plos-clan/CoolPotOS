@@ -130,6 +130,25 @@ errno_t tmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
     return EOK;
 }
 
+size_t tmpfs_readlink(vfs_node_t node, void *addr, size_t offset, size_t size) {
+    if (node == NULL || addr == NULL || size == 0) return 0;
+    const char *target = node->linkto_path;
+    if (target == NULL && node->linkto != NULL) {
+        target = vfs_get_fullpath(node->linkto);
+        if (target == NULL) return 0;
+    }
+    size_t len = strlen(target);
+    if (offset >= len) {
+        if (target != node->linkto_path) free((void *)target);
+        return 0;
+    }
+    size_t to_copy = len - offset;
+    if (to_copy > size) to_copy = size;
+    memcpy(addr, target + offset, to_copy);
+    if (target != node->linkto_path) free((void *)target);
+    return to_copy;
+}
+
 errno_t tmpfs_free(void *handle) {
     if(handle == NULL) return EOK;
     tmpfs_file_t *file = handle;
@@ -187,7 +206,7 @@ static struct vfs_callback tmpfs_callbacks = {
     .open     = tmpfs_open,
     .read     = tmpfs_read,
     .write    = tmpfs_write,
-    .readlink = (vfs_readlink_t)dummy,
+    .readlink = tmpfs_readlink,
     .mkfile   = tmpfs_mkfile,
     .link     = (vfs_mk_t)dummy,
     .symlink  = tmpfs_symlink,

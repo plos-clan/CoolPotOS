@@ -126,6 +126,7 @@ struct process_control_block {
     int egid;
     int rgid;
     int sgid;
+    uint16_t umask;
 };
 
 struct thread_control_block {

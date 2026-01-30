@@ -1,6 +1,7 @@
 #pragma once
 
 #define AT_FDCWD (-100)
+#define AT_SYMLINK_NOFOLLOW 0x100
 
 #define S_IFMT   00170000
 #define S_IFSOCK 0140000
@@ -218,6 +219,7 @@ void vfs_update(vfs_node_t node);
  * @return 为NULL代表打开失败
  */
 vfs_node_t vfs_open(const char *str);
+vfs_node_t vfs_open_nofollow(const char *str);
 
 /**
  * 向一个节点发送 I/O 控制命令
@@ -256,6 +258,7 @@ void       vfs_free_child(vfs_node_t vfs);
 errno_t    vfs_delete(vfs_node_t node);
 errno_t    vfs_rename(vfs_node_t node, const char *new);
 errno_t    vfs_poll(vfs_node_t node, size_t event);
+errno_t    vfs_chmod(vfs_node_t node, uint16_t mode);
 void      *vfs_map(vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags,
                    uint64_t offset);
 int        vfs_chown(const char *path, uint64_t uid, uint64_t gid);
