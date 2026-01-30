@@ -273,7 +273,8 @@ create:;
     node->type      = file_symlink;
     callbackof(current, symlink)(current->handle, target_name, node);
     node->linkto = vfs_open(target_name);
-    if (node->linkto == NULL) node->linkto_path = strdup(target_name);
+    if (node->linkto_path) free(node->linkto_path);
+    node->linkto_path = strdup(target_name);
 
     free(path);
 
@@ -322,9 +323,21 @@ errno_t vfs_mkfile(const char *name) {
     return status;
 }
 
+static bool vfs_dir_has_live_child(vfs_node_t dir) {
+    list_foreach(dir->child, it) {
+        vfs_node_t child = (vfs_node_t)it->data;
+        if (!(child->type & file_delete)) return true;
+    }
+    return false;
+}
+
 errno_t vfs_delete(vfs_node_t node) {
     if (node == rootdir) return -EINVAL;
+    if ((node->type & file_dir) && vfs_dir_has_live_child(node)) return -ENOTEMPTY;
     node->type |= file_delete;
+    if (node->parent) {
+        list_delete(node->parent->child, node);
+    }
     return EOK;
 }
 
@@ -403,6 +416,59 @@ err:
     return NULL;
 }
 
+vfs_node_t vfs_open_nofollow(const char *str) {
+    if (unlikely(str == NULL)) return NULL;
+    if (unlikely(str[0] != '/')) return NULL;
+    if (str[1] == '\0') return rootdir;
+
+    char *path = strdup(str + 1);
+    if (unlikely(path == NULL)) return NULL;
+
+    char      *save_ptr = path;
+    vfs_node_t current  = rootdir;
+
+    for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
+        if (streq(buf, ".")) {
+            continue;
+        } else if (streq(buf, "..")) {
+            if (current->parent) { current = current->parent; }
+            continue;
+        }
+
+        bool last = (save_ptr == NULL || *save_ptr == '\0');
+        current   = vfs_child_find(current, buf);
+        if (current == NULL) { goto err; }
+
+        do_update(current);
+        if (current->type & file_symlink) {
+            if (last) {
+                current->type &= ~file_proxy;
+                free(path);
+                return current;
+            }
+
+            if (!current->parent || (!current->linkto && !current->linkto_path)) { goto err; }
+
+            current->type = file_symlink | file_proxy;
+
+            vfs_node_t target = current->linkto;
+            if (target == NULL && current->linkto_path != NULL) {
+                target = vfs_open(current->linkto_path);
+            }
+            if (!target) goto err;
+            target->refcount++;
+            current = target;
+            continue;
+        }
+    }
+
+    free(path);
+    return current;
+err:
+    free(path);
+    return NULL;
+}
+
 void vfs_update(vfs_node_t node) {
     do_update(node);
 }
@@ -452,7 +518,16 @@ errno_t vfs_close(vfs_node_t node) {
         vfs_free(node);
         return EOK;
     }
-    if (node->type & file_dir) return EOK;
+    if (node->type & file_dir) {
+        if (!(node->type & file_delete)) return EOK;
+        if (vfs_dir_has_live_child(node)) return -ENOTEMPTY;
+        errno_t res = callbackof(node, delete)(node->parent->handle, node);
+        if (res < 0) return res;
+        if (node->parent) list_delete(node->parent->child, node);
+        node->handle = NULL;
+        vfs_free(node);
+        return EOK;
+    }
     if (node->refcount != 0) return EOK;
     if (node->type & file_delete) {
         errno_t res = callbackof(node, delete)(node->parent->handle, node);
@@ -509,6 +584,14 @@ size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
     if (file->type == file_dir) return -1;
     size_t ret = callbackof(file, write)(file->handle, addr, offset, size);
     do_update(file);
+    return ret;
+}
+
+errno_t vfs_chmod(vfs_node_t node, uint16_t mode) {
+    if (node == NULL) return -EINVAL;
+    do_update(node);
+    errno_t ret = callbackof(node, chmod)(node, mode);
+    if (ret == EOK) node->mode = mode;
     return ret;
 }
 

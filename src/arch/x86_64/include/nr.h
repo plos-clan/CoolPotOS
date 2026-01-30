@@ -63,7 +63,9 @@
 #define SYSCALL_UNLINK      87
 #define SYSCALL_SYMLINK     88
 #define SYSCALL_READLINK    89
+#define SYSCALL_CHMOD       90
 #define SYSCALL_CHOWN       92
+#define SYSCALL_UMASK       95
 #define SYSCALL_GETRLIMIT   97
 #define SYSCALL_SYSINFO     99
 #define SYSCALL_GETUID      102

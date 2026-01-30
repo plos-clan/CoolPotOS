@@ -189,6 +189,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->pl_index      = cow_list_add(process_list, new_pgb);
     new_pgb->pid           = alloc_pid();
     new_pgb->parent        = parent == NULL ? kernel_process : parent;
+    new_pgb->umask         = new_pgb->parent ? new_pgb->parent->umask : 0022;
     new_pgb->child_threads = cow_list_create();
     new_pgb->tty           = new_pgb->parent->tty;
     new_pgb->fdts          = fds_init();
@@ -243,6 +244,7 @@ void setup_task() {
     kernel_process->child_process = cow_list_create();
     kernel_process->ipc_queue     = ipc_queue_init();
     kernel_process->vfork         = false;
+    kernel_process->umask         = 0022;
 
     bsp_idle_thread                = malloc(STACK_SIZE);
     bsp_idle_thread->name          = strdup("bsp_idle");

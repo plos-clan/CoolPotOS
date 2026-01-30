@@ -28,8 +28,14 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
             node = vfs_open(normalized_path);
             if (node == NULL)
                 goto err;
-            else
+            else {
+                if (flags & O_CREAT) {
+                    uint16_t final_mode = (uint16_t)(mode & 0777);
+                    final_mode &= (uint16_t)~(get_current_task()->process->umask & 0777);
+                    vfs_chmod(node, final_mode);
+                }
                 goto next;
+            }
         } else
         err:
             free(normalized_path);
@@ -159,17 +165,7 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     return status;
 }
 
-syscall_(stat, char *fn, struct stat *buf) {
-    if (unlikely(fn == NULL || buf == NULL)) return SYSCALL_FAULT_(EINVAL);
-    char      *path = vfs_cwd_path_build(fn);
-    vfs_node_t node = vfs_open(path);
-
-    // logkf("sys_stat: stat %s\n", path);
-
-    if (node == NULL) {
-        free(path);
-        return SYSCALL_FAULT_(ENOENT);
-    }
+static inline void vfs_fill_stat(vfs_node_t node, struct stat *buf) {
     buf->st_gid   = (int)node->group;
     buf->st_uid   = (int)node->owner;
     buf->st_ino   = node->inode;
@@ -184,7 +180,30 @@ syscall_(stat, char *fn, struct stat *buf) {
     buf->st_nlink = 1;
     buf->st_dev   = (long)node->dev;
     buf->st_rdev  = (long)node->rdev;
+}
+
+syscall_(stat, char *fn, struct stat *buf) {
+    if (unlikely(fn == NULL || buf == NULL)) return SYSCALL_FAULT_(EINVAL);
+    char      *path = vfs_cwd_path_build(fn);
+    vfs_node_t node = vfs_open(path);
+
+    if (node == NULL) {
+        free(path);
+        return SYSCALL_FAULT_(ENOENT);
+    }
+    vfs_fill_stat(node, buf);
     free(path);
+    return EOK;
+}
+
+syscall_(lstat, char *fn, struct stat *buf) {
+    if (unlikely(fn == NULL || buf == NULL)) return SYSCALL_FAULT_(EINVAL);
+    char      *path = vfs_cwd_path_build(fn);
+    vfs_node_t node = vfs_open_nofollow(path);
+    free(path);
+    if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
+    vfs_fill_stat(node, buf);
+    vfs_close(node);
     return EOK;
 }
 
@@ -435,7 +454,12 @@ syscall_(lseek, int fd, size_t offset, size_t whence) {
     if (real_offset < 0 && handle->node->type & file_none && whence != SEEK_CUR)
         return SYSCALL_FAULT_(EBADF);
     switch (whence) {
-    case SEEK_SET: handle->offset = real_offset; break;
+    case SEEK_SET:
+        handle->offset = real_offset;
+        if ((handle->node->type & file_dir) && real_offset == 0) {
+            handle->dir_last = NULL;
+        }
+        break;
     case SEEK_CUR:
         handle->offset += real_offset;
         if ((int64_t)handle->offset < 0) {
@@ -527,16 +551,23 @@ end_rename:
 }
 
 syscall_(symlink, char *name, char *new) {
+    if (name == NULL || new == NULL) return SYSCALL_FAULT_(EINVAL);
     if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
-    errno_t ret = vfs_symlink(name, new);
-    return ret;
+    if (check_user_overflow((uint64_t)new, strlen(new))) { return SYSCALL_FAULT_(EFAULT); }
+    char *linkpath = vfs_cwd_path_build(new);
+    errno_t ret = vfs_symlink(linkpath, name);
+    free(linkpath);
+    return ret < 0 ? SYSCALL_FAULT_(-ret) : ret;
 }
 
 syscall_(link, char *name, char *new) {
+    if (name == NULL || new == NULL) return SYSCALL_FAULT_(EINVAL);
     if (check_user_overflow((uint64_t)name, strlen(name))) { return SYSCALL_FAULT_(EFAULT); }
-    errno_t ret = vfs_link(name, new);
-
-    return ret;
+    if (check_user_overflow((uint64_t)new, strlen(new))) { return SYSCALL_FAULT_(EFAULT); }
+    char *linkpath = vfs_cwd_path_build(new);
+    errno_t ret = vfs_link(linkpath, name);
+    free(linkpath);
+    return ret < 0 ? SYSCALL_FAULT_(-ret) : ret;
 }
 
 syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except,
@@ -655,15 +686,28 @@ syscall_(getdents, int fd, struct dirent *dents, size_t size) {
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (unlikely(handle == NULL)) { return SYSCALL_FAULT_(EBADF); }
     if (handle->node->type != file_dir) { return SYSCALL_FAULT_(ENOTDIR); }
-    size_t   child_count   = (uint64_t)list_length(handle->node->child);
     size_t   max_dents_num = size / sizeof(struct dirent);
     size_t   read_count    = 0;
-    uint64_t offset        = 0;
-    list_foreach(handle->node->child, i) {
-        if (offset < handle->offset) { goto next; }
-        if (handle->offset >= (child_count * sizeof(struct dirent))) { break; }
+    if (max_dents_num == 0) { return 0; }
+
+    list_t start = handle->node->child;
+    if (handle->dir_last) {
+        list_t cur = handle->node->child;
+        while (cur && cur->data != handle->dir_last) {
+            cur = cur->next;
+        }
+        if (cur) {
+            start = cur->next;
+        } else {
+            handle->dir_last = NULL;
+        }
+    }
+
+    for (list_t it = start; it; it = it->next) {
         if (read_count >= max_dents_num) { break; }
-        vfs_node_t child_node      = (vfs_node_t)i->data;
+        vfs_node_t child_node = (vfs_node_t)it->data;
+        handle->dir_last      = child_node;
+        if (child_node->type & file_delete) { continue; }
         dents[read_count].d_ino    = (long)child_node->inode;
         dents[read_count].d_off    = (long)handle->offset;
         dents[read_count].d_reclen = sizeof(struct dirent);
@@ -685,15 +729,19 @@ syscall_(getdents, int fd, struct dirent *dents, size_t size) {
         strncpy(dents[read_count].d_name, child_node->name, 256);
         handle->offset += sizeof(struct dirent);
         read_count++;
-    next:
-        offset += sizeof(struct dirent);
     }
     return read_count * sizeof(struct dirent);
 }
 
 syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags) {
     char    *resolved = at_resolve_pathname(dirfd, pathname);
-    uint64_t ret      = syscall_stat(resolved, buf, 0, 0, 0, 0, regs);
+    if (resolved == NULL) return SYSCALL_FAULT_(ENOENT);
+    uint64_t ret;
+    if (flags & AT_SYMLINK_NOFOLLOW) {
+        ret = syscall_lstat(resolved, buf, 0, 0, 0, 0, regs);
+    } else {
+        ret = syscall_stat(resolved, buf, 0, 0, 0, 0, regs);
+    }
     free(resolved);
     return ret;
 }
@@ -810,20 +858,20 @@ syscall_(pipe, int *pipefd) {
 syscall_(unlink, char *name) {
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
     char      *npath = vfs_cwd_path_build(name);
-    vfs_node_t node  = vfs_open(npath);
+    vfs_node_t node  = vfs_open_nofollow(npath);
     if (node == NULL) return SYSCALL_FAULT_(ENOENT);
     if (node->type != file_none && node->type != file_symlink) {
         vfs_close(node);
         return SYSCALL_FAULT_(ENOTDIR);
     }
 
-    if (node->refcount > 1) {
-        node->refcount--;
-        free(npath);
-        return EOK;
-    }
     size_t ret = vfs_delete(node) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
-    vfs_close(node);
+    if (ret == EOK) {
+        errno_t c = vfs_close(node);
+        if (c < 0) ret = SYSCALL_FAULT_(-c);
+    } else {
+        vfs_close(node);
+    }
     free(npath);
     return ret;
 }
@@ -831,19 +879,24 @@ syscall_(unlink, char *name) {
 syscall_(rmdir, char *name) {
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
     char      *n_name = vfs_cwd_path_build(name);
-    vfs_node_t node   = vfs_open(n_name);
+    vfs_node_t node   = vfs_open_nofollow(n_name);
     if (node == NULL) return SYSCALL_FAULT_(ENOENT);
     if (node->type != file_dir) {
         vfs_close(node);
         free(n_name);
         return SYSCALL_FAULT_(ENOTDIR);
     }
-    size_t ret;
-    if (node->refcount > 0) {
-        node->refcount--;
-        ret = EOK;
+    if (node->child != NULL) {
+        vfs_close(node);
+        free(n_name);
+        return SYSCALL_FAULT_(ENOTEMPTY);
+    }
+    size_t ret = vfs_delete(node) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
+    if (ret == EOK) {
+        errno_t c = vfs_close(node);
+        if (c < 0) ret = SYSCALL_FAULT_(-c);
     } else {
-        ret = vfs_delete(node);
+        vfs_close(node);
     }
     free(n_name);
     return ret;
@@ -868,8 +921,17 @@ syscall_(access, char *filename) {
 
 syscall_(mkdir, char *name, uint64_t mode) {
     if (name == NULL) return SYSCALL_FAULT_(EINVAL);
-    char  *npath = vfs_cwd_path_build(name);
-    size_t ret   = vfs_mkdir(npath) == EOK ? EOK : -1;
+    char *npath = vfs_cwd_path_build(name);
+    size_t ret  = vfs_mkdir(npath) == EOK ? EOK : -1;
+    if (ret == EOK) {
+        vfs_node_t node = vfs_open(npath);
+        if (node) {
+            uint16_t final_mode = (uint16_t)(mode & 0777);
+            final_mode &= (uint16_t)~(get_current_task()->process->umask & 0777);
+            vfs_chmod(node, final_mode);
+            vfs_close(node);
+        }
+    }
     free(npath);
     return ret;
 }
@@ -878,11 +940,27 @@ syscall_(readlink, char *path, char *buf, uint64_t size) {
     if (path == NULL || buf == NULL || size == 0) { return SYSCALL_FAULT_(EINVAL); }
     if (check_user_overflow((uint64_t)buf, size)) { return SYSCALL_FAULT_(EFAULT); }
 
-    vfs_node_t node = vfs_open(path);
+    char *npath = vfs_cwd_path_build(path);
+    vfs_node_t node = vfs_open_nofollow(npath);
+    free(npath);
     if (node == NULL) { return SYSCALL_FAULT_(ENOENT); }
     if (!(node->type & file_symlink)) return SYSCALL_FAULT_(EINVAL);
 
     return vfs_readlink(node, buf, (size_t)size);
+}
+
+syscall_(chmod, char *path, uint64_t mode) {
+    if (unlikely(!path || check_user_overflow((uint64_t)path, strlen(path)))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    char *npath = vfs_cwd_path_build(path);
+    vfs_node_t node = vfs_open(npath);
+    free(npath);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    errno_t ret = vfs_chmod(node, (uint16_t)(mode & 0777));
+    vfs_close(node);
+    if (ret < 0) return SYSCALL_FAULT_(-ret);
+    return EOK;
 }
 
 syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
@@ -932,6 +1010,13 @@ syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
         in_handle->offset = current_offset;
     }
     return total_sent;
+}
+
+syscall_(umask, uint64_t mask) {
+    pcb_t process = get_current_task()->process;
+    uint16_t old = process->umask;
+    process->umask = (uint16_t)(mask & 0777);
+    return old;
 }
 
 syscall_(openat, int dirfd, char *name, uint64_t flags, uint64_t mode) {

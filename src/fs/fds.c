@@ -89,6 +89,7 @@ fd_t *fd_dup(fd_t *src) {
     src->node->refcount++;
     new->node       = src->node;
     new->offset     = src->offset;
+    new->dir_last   = src->dir_last;
     new->flags      = src->flags;
     new->fd         = src->fd;
     vfs_node_t node = new->node;
