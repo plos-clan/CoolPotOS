@@ -17,8 +17,6 @@
 Languages
 : [English](../README.md)
 | *简体中文*
-| [Français](README-fr-FR.md)
-| [日本語](/readme/README-ja-JP.md)
 
 ## 介绍
 
@@ -32,6 +30,10 @@ Languages
 - `plant-vfs` 来自 min0911Y [plos-clan/plant-vfs](https://github.com/plos-clan/plant-vfs)
 - `EEVDF` 来自 xiaoyi1212 [plos-clan/EEVDF](https://github.com/plos-clan/EEVDF)
 - `libfdt` 来自 osdev [osdev/libfdt](https://codeberg.org/OSDev/libfdt)
+- `acpica` 来自 acpica [acpica/acpica](https://github.com/acpica/acpica)
+- `stb_sprintf` 来自 nothing [nothing/stb](https://github.com/nothings/stb)
+- `tinycrypt` 来自 intel [intel/tinycrypt](https://github.com/intel/tinycrypt)
+- `zstd` 来自 facebook [facebook/zstd](https://github.com/facebook/zstd)
 
 ## 构建与运行
 
@@ -41,11 +43,12 @@ Languages
 - xorriso
 - QEMU
 - git (`GIT_VERSION` 宏哈希获取)
-- clang 
+- clang
 - lld
 - openssl (内核签名密钥生成)
 - python3 `cryptography` (签名内核模块)
-- 
+-
+
 ### 参数
 
 你可以在命令行指定需要编译的 CoolPotOS 架构 (默认为 `x86_64`):

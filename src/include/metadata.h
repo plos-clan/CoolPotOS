@@ -38,7 +38,7 @@
 #    undef KERNEL_ARCH
 #    undef KERNEL_ARCH_VERSION
 #    define KERNEL_ARCH                "x86_64"
-#    define KERNEL_ARCH_VERSION        "39"
+#    define KERNEL_ARCH_VERSION        "40"
 #    define ARCH_HAS_OPTIMIZED_MEMCPY  1
 #    define ARCH_HAS_OPTIMIZED_MEMSET  1
 #    define ARCH_HAS_OPTIMIZED_MEMCMP  1
