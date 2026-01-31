@@ -97,6 +97,8 @@
 #define MAX_LOAD_MODULE       256                  // 最大模块加载数
 #define SENDFILE_BUF_SIZE     1024                 // sendfile 系统调用缓冲区
 #define VT_TTY_MAX            63                   // tty会话个数
+#define CMD_BUF_SIZE          2048                 // 命令行最大长度缓冲区
+#define MAX_ARGC              256                  // 命令行最大个数
 #define MAX_TASK_FD           0x10000 // 任务最大文件描述符个数 (为 sys_rlimit 提供, 实际内核不限制大小)
 
 // 内核编译配置选项

@@ -120,12 +120,12 @@ struct process_control_block {
 
     int_timer_internal_t itimer_real;
 
-    int uid; // 用户会话ID
-    int euid;
-    int ruid;
-    int egid;
-    int rgid;
-    int sgid;
+    int      uid; // 用户会话ID
+    int      euid;
+    int      ruid;
+    int      egid;
+    int      rgid;
+    int      sgid;
     uint16_t umask;
 };
 

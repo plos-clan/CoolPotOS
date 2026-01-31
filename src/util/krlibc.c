@@ -48,7 +48,7 @@ void *memset(void *dest, int c, size_t n) {
     n -= k;
     n &= -4;
 
-#ifdef __GNUC__
+#    ifdef __GNUC__
     typedef uint32_t __attribute__((__may_alias__)) u32;
     typedef uint64_t __attribute__((__may_alias__)) u64;
 
@@ -82,17 +82,16 @@ void *memset(void *dest, int c, size_t n) {
         *(u64 *)(s + 16) = c64;
         *(u64 *)(s + 24) = c64;
     }
-#else
+#    else
     /* Pure C fallback with no aliasing violations. */
     for (; n; n--, s++)
         *s = c;
-#endif
+#    endif
 
     return dest;
 }
 
 #endif
-
 
 #ifndef ARCH_HAS_OPTIMIZED_MEMSET
 
@@ -100,15 +99,15 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     unsigned char       *d = dest;
     const unsigned char *s = src;
 
-#ifdef __GNUC__
+#    ifdef __GNUC__
 
-#    if __BYTE_ORDER == __LITTLE_ENDIAN
-#        define LS >>
-#        define RS <<
-#    else
-#        define LS <<
-#        define RS >>
-#    endif
+#        if __BYTE_ORDER == __LITTLE_ENDIAN
+#            define LS >>
+#            define RS <<
+#        else
+#            define LS <<
+#            define RS >>
+#        endif
 
     typedef uint32_t __attribute__((__may_alias__)) u32;
     uint32_t                                        w, x;
@@ -232,7 +231,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     }
     if (n & 1) { *d = *s; }
     return dest;
-#endif
+#    endif
 
     for (; n; n--)
         *d++ = *s++;
@@ -240,7 +239,6 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 }
 
 #endif
-
 
 #ifndef ARCH_HAS_OPTIMIZED_MEMMOVE
 void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cognitive-complexity)
@@ -889,4 +887,50 @@ char *get_parent_path(const char *path) {
     }
 
     return copy;
+}
+
+int x_cmd_parse(const char *source, char **target) {
+    static char cmd_buf[CMD_BUF_SIZE];
+    int         argc       = 0;
+    int         buf_idx    = 0;
+    int         src_idx    = 0;
+    char        quote_char = 0;
+    while (source[src_idx] != '\0') {
+        while (source[src_idx] == ' ' && quote_char == 0) {
+            src_idx++;
+        }
+        if (source[src_idx] == '\0') { break; }
+        if (argc >= MAX_ARGC) { break; }
+        target[argc] = &cmd_buf[buf_idx];
+        argc++;
+        while (source[src_idx] != '\0') {
+            char c = source[src_idx];
+            if (buf_idx >= CMD_BUF_SIZE - 1) {
+                cmd_buf[buf_idx] = '\0';
+                return argc;
+            }
+            if (quote_char == 0) {
+                if (c == '\"' || c == '\'') {
+                    quote_char = c;
+                    src_idx++;
+                    continue;
+                }
+                if (c == ' ') {
+                    src_idx++;
+                    break;
+                }
+            } else {
+                if (c == quote_char) {
+                    quote_char = 0;
+                    src_idx++;
+                    continue;
+                }
+            }
+            cmd_buf[buf_idx++] = c;
+            src_idx++;
+        }
+        cmd_buf[buf_idx++] = '\0';
+    }
+    target[argc] = NULL;
+    return argc;
 }

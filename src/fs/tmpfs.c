@@ -4,7 +4,8 @@
 #include "task/poll.h"
 #include "term/klog.h"
 
-int tmpfs_id = 0;
+int         tmpfs_id      = 0;
+_Atomic int mount_dev_now = 0;
 
 errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
     node->fsid               = tmpfs_id;
@@ -14,6 +15,7 @@ errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
     tmpfs_root->root         = node;
     strcpy(tmpfs_root->name, "tmp");
     node->handle = tmpfs_root;
+    node->dev    = mount_dev_now++;
     return EOK;
 }
 
@@ -25,10 +27,10 @@ void tmpfs_umount(void *root) {
 errno_t tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
-    f->type      = is_dir ? tp_file_dir : tp_file_file;
+    f->type       = is_dir ? tp_file_dir : tp_file_file;
     node->type   |= is_dir ? file_dir : file_none;
-    node->handle = f;
-    f->node      = node;
+    node->handle  = f;
+    f->node       = node;
     return EOK;
 }
 
@@ -150,7 +152,7 @@ size_t tmpfs_readlink(vfs_node_t node, void *addr, size_t offset, size_t size) {
 }
 
 errno_t tmpfs_free(void *handle) {
-    if(handle == NULL) return EOK;
+    if (handle == NULL) return EOK;
     tmpfs_file_t *file = handle;
     if (file->type != tp_file_file) {
         free(file);
@@ -174,14 +176,14 @@ errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mo
     handle->size         = 0;
     handle->node         = node;
     if ((mode & S_IFMT) == S_IFBLK) {
-        node->type = file_block;
+        node->type   = file_block;
         handle->type = tp_file_blk;
     }
     if ((mode & S_IFMT) == S_IFCHR) {
-        node->type = file_stream;
+        node->type   = file_stream;
         handle->type = tp_file_char;
     } else {
-        node->type = file_none;
+        node->type   = file_none;
         handle->type = tp_file_file;
     }
     strncpy(handle->name, name, 64);
