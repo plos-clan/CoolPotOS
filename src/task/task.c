@@ -65,6 +65,7 @@ static void kill_thread0(pcb_t parent, tcb_t task) {
 }
 
 static void kill_proc0(pcb_t pcb) {
+    cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
     do {
         if (pcb->child_threads->size == 0) break;
         tcb_t thread = NULL;
@@ -126,8 +127,6 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
                 kill_thread(tcb);
             }
         }
-        pcb_t parent = pcb->parent;
-        cow_list_remove(parent->child_process, pcb->ppl_index);
         pcb->status       = T_ZOMBIE;
         ipc_message_t msg = malloc(sizeof(struct ipc_message));
         msg->pid          = pcb->pid;

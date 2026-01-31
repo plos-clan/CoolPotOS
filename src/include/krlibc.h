@@ -105,6 +105,7 @@ int fls(unsigned int x);
 char *normalize_path(const char *path);
 char *pathacat(char *p1, char *p2);
 int   cmd_parse(const char *cmd_str, char **argv, char token);
+int   x_cmd_parse(const char *source, char **target);
 void  cmd_free(char **argv, int argc);
 char *get_parent_path(const char *path);
 
