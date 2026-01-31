@@ -14,7 +14,7 @@
 #include "driver/power/power.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
-#include "driver/usb/xhci.h"
+#include "driver/usb/init.h"
 #include "exec/dlinker.h"
 #include "exec/elf_load.h"
 #include "fpu.h"
@@ -41,6 +41,9 @@
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
+
+#include <driver/usb/xhci/core/xhci.h>
+#include <driver/usb/xhci/init.h>
 
 extern void kallsyms_init_from_elf();
 extern void zero_setup();
@@ -109,7 +112,7 @@ USED _Noreturn void kmain() {
     kmodule_init();
 
     zero_setup();
-    usb_setup();
+    usb_init();
     // nvme_setup();
     drm_plainfb_init();
 
@@ -122,6 +125,8 @@ USED _Noreturn void kmain() {
 
     extern void mount_modfs();
     mount_modfs();
+
+    usb_kservice_setup();
 
     launch_init_process();
 
