@@ -31,11 +31,11 @@
 
 #define kdebug(...)                                                                                \
     do {                                                                                           \
-        printk("[");                                                                               \
-        color_printk(BLUE, BLACK, "DEBUG (%s:%d)", __FILE__, __LINE__);                            \
-        printk("]: ");                                                                             \
-        printk(__VA_ARGS__);                                                                       \
-        printk("\n");                                                                              \
+        logkf("[");                                                                                \
+        logkf("DEBUG (%s:%d)", __FILE__, __LINE__);                                                \
+        logkf("]: ");                                                                              \
+        logkf(__VA_ARGS__);                                                                        \
+        logkf("\n\r");                                                                             \
     } while (0)
 
 #define kwarn(...)                                                                                 \

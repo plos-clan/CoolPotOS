@@ -1,0 +1,80 @@
+#pragma once
+
+#define USB_DESC_DEVICE               1
+#define USB_DESC_CONFIGURATION        2
+#define USB_DESC_STRING               3
+#define USB_DESC_INTERFACE            4
+#define USB_DESC_ENDPOINT             5
+#define USB_DESC_DEVICE_QUALIFIER     6
+#define USB_DESC_OTHER_SPEED_CONFIG   7
+#define USB_DESC_INTERFACE_POWER      8
+#define USB_DESC_OTG                  9
+#define USB_DESC_DEBUG                10
+#define USB_DESC_INTERFACE_ASSOCIATION 11
+
+#define USB_DESC_BOS                  15
+#define USB_DESC_DEVICE_CAPABILITY    16
+#define USB_DESC_SS_EP_COMPANION      48
+
+#define USB_DESC_HID                  0x21
+#define USB_DESC_REPORT               0x22
+#define USB_DESC_PHYSICAL             0x23
+#define USB_DESC_CS_INTERFACE         0x24
+#define USB_DESC_CS_ENDPOINT          0x25
+
+#define USB_REQ_GET_STATUS            0
+#define USB_REQ_CLEAR_FEATURE         1
+#define USB_REQ_SET_FEATURE           3
+#define USB_REQ_SET_ADDRESS           5
+#define USB_REQ_GET_DESCRIPTOR        6
+#define USB_REQ_SET_DESCRIPTOR        7
+#define USB_REQ_GET_CONFIGURATION     8
+#define USB_REQ_SET_CONFIGURATION     9
+
+#define USB_REQ_DIR_IN                0x80
+#define USB_REQ_DIR_OUT               0x00
+#define USB_REQ_TYPE_STANDARD         0x00
+#define USB_REQ_TYPE_CLASS            0x20
+#define USB_REQ_TYPE_VENDOR           0x40
+#define USB_REQ_REC_DEVICE            0x00
+#define USB_REQ_REC_INTERFACE         0x01
+#define USB_REQ_REC_ENDPOINT          0x02
+
+#define USB_CLASS_PER_INTERFACE       0x00
+#define USB_CLASS_AUDIO               0x01
+#define USB_CLASS_COMM                0x02
+#define USB_CLASS_HID                 0x03
+#define USB_CLASS_PHYSICAL            0x05
+#define USB_CLASS_IMAGE               0x06
+#define USB_CLASS_PRINTER             0x07
+#define USB_CLASS_MASS_STORAGE        0x08
+#define USB_CLASS_HUB                 0x09
+#define USB_CLASS_DATA                0x0a
+#define USB_CLASS_SMART_CARD          0x0b
+#define USB_CLASS_VIDEO               0x0e
+#define USB_CLASS_HEALTHCARE          0x0f
+#define USB_CLASS_DIAGNOSTIC          0xdc
+#define USB_CLASS_WIRELESS            0xe0
+#define USB_CLASS_MISC                0xef
+#define USB_CLASS_VENDOR_SPEC         0xff
+
+#define USB_EP_TYPE_CONTROL           0
+#define USB_EP_TYPE_ISO               1
+#define USB_EP_TYPE_BULK              2
+#define USB_EP_TYPE_INT               3
+
+#define USB_REQ_GET_REPORT            0x01
+#define USB_REQ_GET_IDLE              0x02
+#define USB_REQ_GET_PROTOCOL          0x03
+#define USB_REQ_SET_REPORT            0x09
+#define USB_REQ_SET_IDLE              0x0a
+#define USB_REQ_SET_PROTOCOL          0x0b
+
+#define USB_PROTO_BOOT                0
+#define USB_PROTO_REPORT              1
+
+#define USB_SPEED_FULL                1
+#define USB_SPEED_LOW                 2
+#define USB_SPEED_HIGH                3
+#define USB_SPEED_SUPER               4
+#define USB_SPEED_SUPER_PLUS          5
