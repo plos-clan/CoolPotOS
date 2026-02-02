@@ -261,9 +261,6 @@ syscall_(execve, char *path, char **argv, char **envp) {
     //        //TODO cmd_parse 无合理释放的区域, 会造成内存泄漏, 等待修复
     //    }
 
-    char cmdline[PAGE_SIZE];
-    memset(cmdline, 0, sizeof(cmdline));
-    char *cmdline_ptr = cmdline;
     if (argv == NULL) {
         free(norm_path);
         enable_scheduler();
@@ -271,13 +268,8 @@ syscall_(execve, char *path, char **argv, char **envp) {
         return SYSCALL_FAULT_(EINVAL);
     }
 
-    for (int i = 0; argv[i]; i++) {
-        int len      = sprintf(cmdline_ptr, "%s ", argv[i]);
-        cmdline_ptr += len;
-    }
-
     char *old_cmdline = process->cmdline;
-    process->cmdline  = strdup(cmdline);
+    process->cmdline  = build_proc_cmdline(argv, &process->cl_length);
     if (process->name != NULL) free(process->name);
     process->name = malloc(50);
     strncpy(process->name, norm_path, 50);

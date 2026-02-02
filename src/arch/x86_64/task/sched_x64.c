@@ -183,9 +183,8 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     uint64_t env_i  = 0;
     int      argv_i = 0;
 
-    char     *argv[50];
-    char     *build_cmdline = strdup(task->process->cmdline);
-    const int argc          = cmd_parse(build_cmdline, argv, ' ');
+    int    argc = 0;
+    char **argv = restore_argv(task->process->cmdline, task->process->cl_length, &argc);
 
     char **envp = task->process->envp;
 
@@ -283,8 +282,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     free(envps);
     free(argvps);
     free(link_data);
-    free(build_cmdline);
-    cmd_free(argv, argc);
+    free_argv(argv);
 
     return tmp_stack;
 }
