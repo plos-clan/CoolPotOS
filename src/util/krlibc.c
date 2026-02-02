@@ -835,40 +835,6 @@ char *pathacat(char *p1, char *p2) {
     return p;
 }
 
-int cmd_parse(const char *cmd_str, char **argv, char token) {
-    int         argc = 0;
-    const char *next = cmd_str;
-
-    while (*next) {
-        while (*next == token)
-            next++;
-        if (*next == '\0') break;
-        const char *start = next;
-        while (*next && *next != token)
-            next++;
-        size_t len = next - start;
-        argv[argc] = (char *)malloc(len + 1);
-        if (!argv[argc]) {
-            for (int i = 0; i < argc; i++)
-                free(argv[i]);
-            return -1;
-        }
-        memcpy(argv[argc], start, len);
-        argv[argc][len] = '\0';
-
-        argc++;
-        if (argc >= 50) break;
-    }
-    argv[argc] = NULL;
-    return argc;
-}
-
-void cmd_free(char **argv, int argc) {
-    for (int i = 0; i < argc; i++) {
-        free(argv[i]);
-    }
-}
-
 char *get_parent_path(const char *path) {
     if (!path || !*path) return strdup(".");
 
@@ -889,48 +855,75 @@ char *get_parent_path(const char *path) {
     return copy;
 }
 
-int x_cmd_parse(const char *source, char **target) {
-    static char cmd_buf[CMD_BUF_SIZE];
-    int         argc       = 0;
-    int         buf_idx    = 0;
-    int         src_idx    = 0;
-    char        quote_char = 0;
-    while (source[src_idx] != '\0') {
-        while (source[src_idx] == ' ' && quote_char == 0) {
-            src_idx++;
-        }
-        if (source[src_idx] == '\0') { break; }
-        if (argc >= MAX_ARGC) { break; }
-        target[argc] = &cmd_buf[buf_idx];
-        argc++;
-        while (source[src_idx] != '\0') {
-            char c = source[src_idx];
-            if (buf_idx >= CMD_BUF_SIZE - 1) {
-                cmd_buf[buf_idx] = '\0';
-                return argc;
-            }
-            if (quote_char == 0) {
-                if (c == '\"' || c == '\'') {
-                    quote_char = c;
-                    src_idx++;
-                    continue;
-                }
-                if (c == ' ') {
-                    src_idx++;
-                    break;
-                }
-            } else {
-                if (c == quote_char) {
-                    quote_char = 0;
-                    src_idx++;
-                    continue;
-                }
-            }
-            cmd_buf[buf_idx++] = c;
-            src_idx++;
-        }
-        cmd_buf[buf_idx++] = '\0';
+char *build_proc_cmdline(char **argv, size_t *out_len) {
+    if (argv == NULL || out_len == NULL) {
+        if (out_len) *out_len = 0;
+        return NULL;
     }
-    target[argc] = NULL;
-    return argc;
+    size_t total_length = 0;
+    int    i            = 0;
+    while (argv[i] != NULL) {
+        total_length += strlen(argv[i]) + 1;
+        i++;
+    }
+    if (total_length == 0) {
+        *out_len = 0;
+        return NULL;
+    }
+    char *cmdline_buf = (char *)malloc(total_length);
+    if (cmdline_buf == NULL) {
+        kerror("malloc failed");
+        *out_len = 0;
+        return NULL;
+    }
+    char *current_ptr = cmdline_buf;
+    i                 = 0;
+    while (argv[i] != NULL) {
+        size_t len = strlen(argv[i]);
+        memcpy(current_ptr, argv[i], len);
+        current_ptr[len]  = '\0';
+        current_ptr      += len + 1;
+        i++;
+    }
+    *out_len = total_length;
+    return cmdline_buf;
+}
+
+char **restore_argv(const char *cmdline_buf, size_t len, int *out_argc) {
+    if (cmdline_buf == NULL || len == 0) {
+        if (out_argc) *out_argc = 0;
+        return NULL;
+    }
+    int argc = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (cmdline_buf[i] == '\0') { argc++; }
+    }
+    if (out_argc) *out_argc = argc;
+    char **argv = (char **)malloc(sizeof(char *) * (argc + 1));
+    if (!argv) return NULL;
+    const char *ptr   = cmdline_buf;
+    const char *end   = cmdline_buf + len;
+    int         index = 0;
+    while (ptr < end && index < argc) {
+        size_t str_len = strlen(ptr);
+        argv[index]    = (char *)malloc(str_len + 1);
+        if (argv[index] == NULL) {
+            kerror("malloc failed");
+            return NULL;
+        }
+        memcpy(argv[index], ptr, str_len + 1);
+        ptr += (str_len + 1);
+        index++;
+    }
+    argv[argc] = NULL;
+
+    return argv;
+}
+
+void free_argv(char **argv) {
+    if (argv == NULL) return;
+    for (int i = 0; argv[i] != NULL; i++) {
+        free(argv[i]);
+    }
+    free(argv);
 }

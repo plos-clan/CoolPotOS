@@ -168,7 +168,13 @@ void launch_init_process() {
     init_process->envp[0] = strdup("PWD=/");
     init_process->envp[1] = strdup("HOME=/root");
     init_process->envp[2] = strdup("TERM=linux");
-    init_process->cmdline = strdup("/bin/sh /init");
+
+    char *argv[] = {
+        "/bin/sh",
+        "/init",
+        NULL,
+    };
+    init_process->cmdline = build_proc_cmdline(argv, &init_process->cl_length);
 
     fd_t *stdout = calloc(1, sizeof(fd_t));
     stdout->node = vfs_open("/dev/stdout");

@@ -96,6 +96,7 @@ struct process_control_block {
     pid_t          pgid;          // 进程组ID
     char          *name;          // 进程名
     char          *cmdline;       // 命令行完整形参
+    size_t         cl_length;     // 命令行形参长度
     pcb_t          parent;        // 父进程
     size_t         pl_index;      // 进程列表索引
     size_t         ppl_index;     // 子进程列表索引
