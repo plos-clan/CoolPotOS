@@ -145,6 +145,21 @@
 #define RLIMIT_RTTIME     15
 #define RLIMIT_NLIMITS    16
 
+#define LINUX_REBOOT_MAGIC1  0xfee1dead
+#define LINUX_REBOOT_MAGIC2  672274793
+#define LINUX_REBOOT_MAGIC2A 85072278
+#define LINUX_REBOOT_MAGIC2B 369367448
+#define LINUX_REBOOT_MAGIC2C 537993216
+
+#define LINUX_REBOOT_CMD_RESTART    0x01234567
+#define LINUX_REBOOT_CMD_HALT       0xCDEF0123
+#define LINUX_REBOOT_CMD_CAD_ON     0x89ABCDEF
+#define LINUX_REBOOT_CMD_CAD_OFF    0x00000000
+#define LINUX_REBOOT_CMD_POWER_OFF  0x4321FEDC
+#define LINUX_REBOOT_CMD_RESTART2   0xA1B2C3D4
+#define LINUX_REBOOT_CMD_SW_SUSPEND 0xD000FCE2
+#define LINUX_REBOOT_CMD_KEXEC      0x45584543
+
 #include "fs/vfs.h"
 #include "task/poll.h"
 #include "task/signal.h"
@@ -292,7 +307,7 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt);
 syscall_(readv, int fd, struct iovec *iov, int iovcnt0);
 syscall_(stat, char *fn, struct stat *buf);
 syscall_(lstat, char *fn, struct stat *buf);
-syscall_(ioctl, int fd, int options, void *arg2);
+syscall_(ioctl, int fd, size_t options, void *arg2);
 syscall_(dup2, int fd, int newfd);
 syscall_(dup, int fd);
 syscall_(getcwd, char *buffer, size_t length);
@@ -336,6 +351,7 @@ syscall_(chown, const char *filename, uint64_t uid, uint64_t gid);
 syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags);
 syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
 syscall_(umask, uint64_t mask);
+syscall_(sync);
 
 // proc syscall
 syscall_(exit, int exit_code);
@@ -388,3 +404,4 @@ syscall_(nano_sleep, void *time_handle);
 syscall_(sysinfo, struct sysinfo *info);
 syscall_(sys_log, int type, const char *buf, size_t len);
 syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old);
+syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg);

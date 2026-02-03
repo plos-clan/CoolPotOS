@@ -89,6 +89,7 @@
 #define SYSCALL_PIVOT_ROOT  155
 #define SYSCALL_G_AFFINITY  160
 #define SYSCALL_CHROOT      161
+#define SYSCALL_SYNC        162
 #define SYSCALL_MOUNT       165
 #define SYSCALL_UMOUNT2     166
 #define SYSCALL_REBOOT      169

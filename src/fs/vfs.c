@@ -335,9 +335,7 @@ errno_t vfs_delete(vfs_node_t node) {
     if (node == rootdir) return -EINVAL;
     if ((node->type & file_dir) && vfs_dir_has_live_child(node)) return -ENOTEMPTY;
     node->type |= file_delete;
-    if (node->parent) {
-        list_delete(node->parent->child, node);
-    }
+    if (node->parent) { list_delete(node->parent->child, node); }
     return EOK;
 }
 
@@ -596,6 +594,7 @@ errno_t vfs_chmod(vfs_node_t node, uint16_t mode) {
 }
 
 errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg) {
+    options &= 0xffffffff;
     if (device == NULL) return -EINVAL;
     do_update(device);
     if (device->type == file_dir) return -EISDIR;

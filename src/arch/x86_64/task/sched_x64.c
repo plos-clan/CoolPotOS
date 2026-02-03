@@ -181,7 +181,7 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
                                  uint8_t *link_data, size_t link_size, uint8_t *src_data,
                                  uint64_t load_start) {
     uint64_t env_i  = 0;
-    int      argv_i = 0;
+    uint64_t argv_i = 0;
 
     int    argc = 0;
     char **argv = restore_argv(task->process->cmdline, task->process->cl_length, &argc);
@@ -294,18 +294,18 @@ _Noreturn void arch_switch_to_user_mode() {
 
     pcb_t process = get_current_task()->process;
     if (process->exec == NULL) {
-        ulog("process exec file handle is null.");
+        ulog("process exec file handle is null.\n");
         goto err;
     }
     uint8_t *data = malloc(process->exec->size);
     if (vfs_read(process->exec, data, 0, process->exec->size) == -1) {
-        ulog("process exec read file null.");
+        ulog("process exec read file null.\n");
         goto err;
     }
     uint64_t load_start = 0;
     void    *entry      = load_executor_elf(data, process->directory, 0, &load_start, process);
     if (entry == NULL) {
-        ulog("cannot load process exec file.");
+        ulog("cannot load process exec file.\n");
         goto err;
     }
 

@@ -87,14 +87,23 @@ bool is_dynamic(Elf64_Ehdr *ehdr) {
 
 void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset, uint64_t *load_start,
                         pcb_t process) {
-    if (data == NULL) return NULL;
+    if (data == NULL) {
+        logkf("exec: data is null.\n\r");
+        return NULL;
+    }
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
-    if (!arch_elf_test_head(ehdr)) { return NULL; }
+    if (!arch_elf_test_head(ehdr)) {
+        logkf("exec: elf header check error.\n\r");
+        return NULL;
+    }
     Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur   = get_current_directory();
     switch_context_directory(dir);
     size_t load_size = 0;
-    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, &load_size)) { return NULL; }
+    if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, &load_size)) {
+        logkf("exec: mmap phdr segment error.\n\r");
+        return NULL;
+    }
     // VMA
     if (process != NULL) {
         vma_t *ld_so_vma = vma_alloc();
@@ -115,7 +124,10 @@ void *load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_
                            uint8_t **link_data, size_t *link_size) {
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
-    if (!arch_elf_test_head(ehdr)) { return NULL; }
+    if (!arch_elf_test_head(ehdr)) {
+        logkf("exec: libc data is null.\n\r");
+        return NULL;
+    }
     Elf64_Phdr *phdrs            = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     char       *interpreter_name = NULL;
     for (int i = 0; i < ehdr->e_phnum; ++i) {
@@ -123,16 +135,24 @@ void *load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_
             interpreter_name = ((char *)ehdr + phdrs[i].p_offset);
             logkf("load interpreter: %s\n", interpreter_name);
         }
+        logkf("debug_exec: load phdrs type: %d\n\r", phdrs[i].p_type);
     }
-    if (interpreter_name == NULL) return NULL;
+    if (interpreter_name == NULL) {
+        logkf("exec: libc open error [null].\n\r");
+        return NULL;
+    }
     vfs_node_t inter_file = vfs_open(interpreter_name);
-    if (inter_file == NULL) return NULL;
+    if (inter_file == NULL) {
+        logkf("exec: libc open error [%s].\n\r", interpreter_name);
+        return NULL;
+    }
     Elf64_Ehdr *inter_ehdr = malloc(inter_file->size);
     if (vfs_read(inter_file, inter_ehdr, 0, inter_file->size) == (size_t)-1) {
         vfs_close(inter_file);
         free(inter_ehdr);
         *link_data = NULL;
         *link_size = 0;
+        logkf("exec: libc read error\n\r");
         return NULL;
     }
     void *start =

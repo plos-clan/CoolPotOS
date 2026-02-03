@@ -1,6 +1,5 @@
 #pragma once
 
-
 #define _IOC(a, b, c, d) (((a) << 30) | ((b) << 8) | (c) | ((d) << 16))
 #define _IOC_NONE        0U
 #define _IOC_WRITE       1U
@@ -265,3 +264,9 @@
 #define SIOCDEVPRIVATE   0x89F0
 #define SIOCPROTOPRIVATE 0x89E0
 
+#define BLKGETSIZE64 _IOR(0x12, 114, size_t)
+#define BLKRRPART    _IO(0x12, 95)
+#define BLKGETSIZE   _IO(0x12, 96)
+#define BLKSSZGET    _IO(0x12, 104)
+
+#define HDIO_GETGEO 0x0301

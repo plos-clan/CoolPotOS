@@ -42,6 +42,7 @@
 #include "task/task.h"
 #include "term/klog.h"
 
+#include <driver/ahci.h>
 #include <driver/usb/xhci/core/xhci.h>
 #include <driver/usb/xhci/init.h>
 
@@ -112,7 +113,8 @@ USED _Noreturn void kmain() {
     kmodule_init();
 
     zero_setup();
-    usb_init();
+    // usb_init();
+    ahci_setup();
     // nvme_setup();
     drm_plainfb_init();
 
@@ -126,7 +128,7 @@ USED _Noreturn void kmain() {
     extern void mount_modfs();
     mount_modfs();
 
-    usb_kservice_setup();
+    // usb_kservice_setup();
 
     launch_init_process();
 
