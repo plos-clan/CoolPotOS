@@ -19,6 +19,13 @@ struct block_device_ops {
     errno_t (*del_blk)(void *handle);
 };
 
+struct hd_geometry {
+    unsigned char  heads;     // 磁头数 (Heads)
+    unsigned char  sectors;   // 每磁道的扇区数 (Sectors per track)
+    unsigned short cylinders; // 柱面数 (Cylinders)
+    unsigned long  start;     // 该分区在磁盘上的起始偏移量 (以扇区为单位)
+};
+
 struct block_device {
     void  *handle;
     size_t device_id;
@@ -26,6 +33,8 @@ struct block_device {
     size_t block_size; // 块大小
     size_t max_size;   // 最大读取缓冲区
     char   name[20];
+
+    struct hd_geometry geometry;
 
     enum blk_type           type;
     struct block_device_ops ops;

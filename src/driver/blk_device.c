@@ -1,5 +1,6 @@
 #include "driver/blk_device.h"
 #include "cow_arraylist.h"
+#include "driver/ioctl.h"
 #include "errno.h"
 #include "fs/partition.h"
 #include "mem/frame.h"
@@ -13,8 +14,8 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     if (device == NULL) return -1;
     if (device->ops.read == NULL) return -1;
 
-    if(device->type == BLK_STREAM_DEVICE){
-        return device->ops.read(device->handle,buffer,offset,length);
+    if (device->type == BLK_STREAM_DEVICE) {
+        return device->ops.read(device->handle, buffer, offset, length);
     }
 
     uint64_t start_sector    = offset / device->block_size;
@@ -35,8 +36,11 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
         while (remaining_sectors > 0) {
             uint64_t to_copy_sectors =
                 MIN(remaining_sectors, device->max_size / device->block_size);
-            device->ops.read(device->handle, kbuf, to_copy_sectors,
-                             start_sector + total_copied / device->block_size);
+
+            size_t read_length = start_sector + total_copied / device->block_size;
+            read_length        = read_length == 0 ? device->block_size : read_length;
+
+            device->ops.read(device->handle, kbuf, to_copy_sectors, read_length);
             uint64_t to_copy_bytes = to_copy_sectors * device->block_size;
             memcpy(buffer + total_copied, kbuf, to_copy_bytes);
             total_copied      += to_copy_bytes;
@@ -92,8 +96,8 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     if (device == NULL) return -1;
     if (device->ops.write == NULL) return -1;
 
-    if(device->type == BLK_STREAM_DEVICE){
-        return device->ops.write(device->handle,(uint8_t*)buffer,offset,length);
+    if (device->type == BLK_STREAM_DEVICE) {
+        return device->ops.write(device->handle, (uint8_t *)buffer, offset, length);
     }
 
     uint64_t start_sector    = offset / device->block_size;
@@ -116,9 +120,11 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
                 MIN(remaining_sectors, device->max_size / device->block_size);
             uint64_t to_copy_bytes = to_copy_sectors * device->block_size;
             memcpy(tmp, buffer + total_copied, to_copy_bytes);
-            uint64_t ret       = device->ops.write(device->handle, tmp,
-                                                   start_sector + total_copied / device->block_size,
-                                                   to_copy_sectors);
+
+            size_t write_length = start_sector + total_copied / device->block_size;
+            write_length        = write_length == 0 ? device->block_size : write_length;
+
+            device->ops.write(device->handle, tmp, write_length, to_copy_sectors);
             total_copied      += to_copy_bytes;
             remaining_sectors -= to_copy_sectors;
         }
@@ -179,15 +185,25 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     return total_written;
 }
 
-size_t blk_size_t(blk_device_t *device){
+size_t blk_size_t(blk_device_t *device) {
     return device->size;
 }
 
-errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg){
+errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg) {
+    switch (cmd) {
+    case BLKGETSIZE64: *(uint64_t *)arg = device->size; break;
+    case BLKGETSIZE: *(unsigned long *)arg = device->size / device->block_size; break;
+    case BLKSSZGET: *((int *)arg) = device->block_size; break;
+    case BLKRRPART:
+        if (device->type != BLK_BLOCK_DEVICE) return -ENOSYS;
+        parser_block_device(device);
+        break;
+    default: return -ENOSYS;
+    }
     return EOK;
 }
 
-errno_t blk_poll(blk_device_t *device, size_t events){
+errno_t blk_poll(blk_device_t *device, size_t events) {
     return events;
 }
 

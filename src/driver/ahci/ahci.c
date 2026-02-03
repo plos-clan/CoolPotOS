@@ -325,21 +325,32 @@ void load_ahci(pci_device_t *device) {
 
         char name_buf[20];
         sprintf(name_buf, "sata%zu", i);
-        blk_device_t *sata = malloc(sizeof(blk_device_t));
-        sata->size         = hbadev->max_lba * hbadev->block_size;
-        sata->block_size   = hbadev->block_size;
-        sata->ops.read     = ahci_read;
-        sata->ops.write    = ahci_write;
-        sata->handle       = hbadev;
-        sata->ops.ioctl    = (void *)dummy;
-        sata->ops.poll     = (void *)dummy;
-        sata->ops.map      = (void *)dummy;
-        sata->type         = BLK_BLOCK_DEVICE;
-        sata->max_size     = PAGE_SIZE;
+        blk_device_t *sata     = malloc(sizeof(blk_device_t));
+        sata->size             = hbadev->max_lba * hbadev->block_size;
+        sata->block_size       = hbadev->block_size;
+        sata->ops.read         = ahci_read;
+        sata->ops.write        = ahci_write;
+        sata->handle           = hbadev;
+        sata->ops.ioctl        = (void *)dummy;
+        sata->ops.poll         = (void *)dummy;
+        sata->ops.map          = (void *)dummy;
+        sata->type             = BLK_BLOCK_DEVICE;
+        sata->max_size         = PAGE_SIZE;
+        sata->geometry.heads   = 64;
+        sata->geometry.sectors = 32;
+
+        uint64_t total_sectors = hbadev->max_lba + 1;
+        uint64_t cyls          = total_sectors / (sata->geometry.heads * sata->geometry.sectors);
+        if (cyls > 65535) {
+            sata->geometry.cylinders = 65535;
+        } else {
+            sata->geometry.cylinders = (unsigned short)cyls;
+        }
+
         strcpy(sata->name, name_buf);
         size_t id = register_device(sata);
-        kinfo("sata%d: blk_size=%d, blk=0..%d, device_id=%lu %s", i, hbadev->block_size, hbadev->max_lba,
-              id,hbadev->model);
+        kinfo("sata%d: blk_size=%d, blk=0..%d, device_id=%lu %s", i, hbadev->block_size,
+              hbadev->max_lba, id, hbadev->model);
     }
     kinfo("AHCI initialized with %d ports, version %d.%d.%d", hba->ports_num,
           (hba->version >> 16) & 0xff, (hba->version >> 8) & 0xff, hba->version & 0xff);

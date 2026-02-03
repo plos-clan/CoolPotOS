@@ -7,6 +7,8 @@
 #include "term/klog.h"
 #include "timer.h"
 
+#include <driver/power/power.h>
+
 extern cow_arraylist *process_list;
 
 syscall_(uname, struct utsname *utsname) {
@@ -127,4 +129,16 @@ syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old) {
     }
 
     return 0;
+}
+
+syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg) {
+    if (magic1 != LINUX_REBOOT_MAGIC1 || magic2 != LINUX_REBOOT_MAGIC2) return (uint64_t)-EINVAL;
+    switch (cmd) {
+    case LINUX_REBOOT_CMD_CAD_OFF: return EOK;
+    case LINUX_REBOOT_CMD_CAD_ON: return EOK;
+    case LINUX_REBOOT_CMD_RESTART:
+    case LINUX_REBOOT_CMD_RESTART2: power_restart(); return EOK;
+    case LINUX_REBOOT_CMD_POWER_OFF: power_off(); return EOK;
+    default: return (uint64_t)-EINVAL;
+    }
 }

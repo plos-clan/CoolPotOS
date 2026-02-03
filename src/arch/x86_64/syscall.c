@@ -188,6 +188,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_UMASK]       = (syscall_t)syscall_umask,
     [SYSCALL_UTIMENSAT]   = (syscall_t)syscall_utimensat,
     [SYSCALL_FUTIMESAT]   = (syscall_t)syscall_futimensat,
+    [SYSCALL_SYNC]        = (syscall_t)syscall_sync,
+    [SYSCALL_REBOOT]      = (syscall_t)syscall_reboot,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理
