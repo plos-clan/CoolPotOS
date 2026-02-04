@@ -33,6 +33,7 @@
 #define SYSCALL_YIELD       24
 #define SYSCALL_MREMAP      25
 #define SYSCALL_MINCORE     27
+#define SYSCALL_MADVISE     28
 #define SYSCALL_DUP         32
 #define SYSCALL_DUP2        33
 #define SYSCALL_NANO_SLEEP  35
@@ -71,6 +72,7 @@
 #define SYSCALL_GETUID      102
 #define SYSCALL_SYSLOG      103
 #define SYSCALL_GETGID      104
+#define SYSCALL_GETSID      124
 #define SYSCALL_SETUID      105
 #define SYSCALL_SETGID      106
 #define SYSCALL_GETEUID     107
@@ -111,6 +113,7 @@
 #define SYSCALL_UTIMENSAT   280
 #define SYSCALL_PIPE2       293
 #define SYSCALL_PRLIMIT64   302
+#define SYSCALL_GETRANDOM   318
 #define SYSCALL_CP_F_RANGE  326
 #define SYSCALL_STATX       332
 #define SYSCALL_FSOPEN      430

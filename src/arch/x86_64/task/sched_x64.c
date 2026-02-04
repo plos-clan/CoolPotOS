@@ -237,19 +237,17 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     ((uint64_t *)tmp)[0] = AT_NULL;
     ((uint64_t *)tmp)[1] = 0;
 
-    if (link_data != NULL) {
-        ((uint64_t *)tmp)[0] = AT_PHDR;
-        ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
-        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    ((uint64_t *)tmp)[0] = AT_PHDR;
+    ((uint64_t *)tmp)[1] = (uint64_t)phdrs;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-        ((uint64_t *)tmp)[0] = AT_PHENT;
-        ((uint64_t *)tmp)[1] = sizeof(Elf64_Phdr);
-        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+    ((uint64_t *)tmp)[0] = AT_PHENT;
+    ((uint64_t *)tmp)[1] = sizeof(Elf64_Phdr);
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-        ((uint64_t *)tmp)[0] = AT_PHNUM;
-        ((uint64_t *)tmp)[1] = ehdr->e_phnum;
-        tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
-    }
+    ((uint64_t *)tmp)[0] = AT_PHNUM;
+    ((uint64_t *)tmp)[1] = ehdr->e_phnum;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
     ((uint64_t *)tmp)[0] = AT_ENTRY;
     ((uint64_t *)tmp)[1] = entry_point;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
@@ -337,6 +335,7 @@ _Noreturn void arch_switch_to_user_mode() {
 
         linker_main = load_interpreter_elf(data, get_current_directory(), &linker_start, &link_data,
                                            &link_size);
+        if (linker_main == (void *)1) goto static_p;
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n\r");
             arch_close_interrupt();
@@ -368,9 +367,11 @@ _Noreturn void arch_switch_to_user_mode() {
         rsp   = build_user_stack(get_current_task(), rsp, (uint64_t)entry, linker_start, link_data,
                                  link_size, data, load_start);
         entry = linker_main;
-    } else
+    } else {
+    static_p:
         rsp = build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data,
                                load_start);
+    }
     free(data);
     arch_close_interrupt();
     __asm__ volatile("mov %0, %%es\n"

@@ -109,6 +109,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETPID]      = (syscall_t)syscall_getpid,
     [SYSCALL_EXIT_GROUP]  = (syscall_t)syscall_exit_group,
     [SYSCALL_GETUID]      = (syscall_t)syscall_getuid,
+    [SYSCALL_GETGID]      = (syscall_t)syscall_getgid,
     [SYSCALL_STAT]        = (syscall_t)syscall_stat,
     [SYSCALL_IOCTL]       = (syscall_t)syscall_ioctl,
     [SYSCALL_DUP]         = (syscall_t)syscall_dup,
@@ -120,12 +121,14 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_MMAP]        = (syscall_t)syscall_mmap,
     [SYSCALL_MREMAP]      = (syscall_t)syscall_mremap,
     [SYSCALL_MUNMAP]      = (syscall_t)syscall_munmap,
+    [SYSCALL_MADVISE]     = (syscall_t)syscall_madvise,
     [SYSCALL_FCNTL]       = (syscall_t)syscall_fcntl,
     [SYSCALL_MOUNT]       = (syscall_t)syscall_mount,
     [SYSCALL_FSTAT]       = (syscall_t)syscall_fstat,
     [SYSCALL_C_GETTIME]   = (syscall_t)syscall_clock_gettime,
     [SYSCALL_C_GETRES]    = (syscall_t)syscall_clock_getres,
     [SYSCALL_GETPGID]     = (syscall_t)syscall_getpgid,
+    [SYSCALL_GETSID]      = (syscall_t)syscall_getsid,
     [SYSCALL_SETPGID]     = (syscall_t)syscall_setpgid,
     [SYSCALL_MPROTECT]    = (syscall_t)syscall_mprotect,
     [SYSCALL_GETPPID]     = (syscall_t)syscall_getppid,
@@ -190,6 +193,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_FUTIMESAT]   = (syscall_t)syscall_futimensat,
     [SYSCALL_SYNC]        = (syscall_t)syscall_sync,
     [SYSCALL_REBOOT]      = (syscall_t)syscall_reboot,
+    [SYSCALL_GETRANDOM]   = (syscall_t)syscall_getrandom,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

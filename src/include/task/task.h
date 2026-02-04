@@ -169,7 +169,7 @@ _Noreturn void arch_switch_to_user_mode();                        // 架构实�
 pid_t          create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, pcb_t process,
                            uint64_t prio);
-int   waitpid(pid_t pid, pid_t *pid_ret);
+int   waitpid(pid_t pid, pid_t *pid_ret, bool nohang);
 void  kill_thread(tcb_t task);
 void  kill_proc(pcb_t pcb, int exit_code, bool is_zombie);
 bool  signals_pending_quick(tcb_t task); // signal.c

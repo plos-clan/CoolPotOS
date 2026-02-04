@@ -49,6 +49,10 @@ syscall_(getuid) {
     return get_current_task()->process->uid;
 }
 
+syscall_(getgid) {
+    return get_current_task()->process->rgid;
+}
+
 syscall_(yield) {
     scheduler_yield();
     return EOK;
@@ -65,6 +69,12 @@ syscall_(setpgid, pid_t pid, pid_t pgid) {
 syscall_(getpgid) {
     size_t pid     = arg0;
     pcb_t  process = pid == 0 ? get_current_task()->process : found_pcb(pid);
+    if (process == NULL || process->status == T_DEATH) { return SYSCALL_FAULT_(ESRCH); }
+    return process->pgid;
+}
+
+syscall_(getsid, pid_t pid) {
+    pcb_t process = pid == 0 ? get_current_task()->process : found_pcb(pid);
     if (process == NULL || process->status == T_DEATH) { return SYSCALL_FAULT_(ESRCH); }
     return process->pgid;
 }
@@ -155,14 +165,14 @@ syscall_(waitpid, pid_t pid, int *status, uint64_t options) {
     if (wait_p == NULL) return SYSCALL_FAULT_(ECHILD);
 wait:;
     pid_t ret_pid = 0;
-    int   status0 = waitpid(pid, &ret_pid);
-    if (status) *status = status0;
+    int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
+    if (ret_pid == 0) { return 0; }
+    if (status) { *status = ((status0 & 0xFF) << 8); }
     return ret_pid;
 }
 
 syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout) {
-    tcb_t thread     = get_current_task();
-    bool  is_pre_sub = false;
+    tcb_t thread = get_current_task();
 re_futex: //TODO PRIVATE 标志暂时不支持
     switch (op) {
     case FUTEX_WAIT:
@@ -173,15 +183,11 @@ re_futex: //TODO PRIVATE 标志暂时不支持
         futex_add((void *)arch_virt_to_phys((uint64_t)uaddr), thread);
         scheduler_yield();
         return EOK;
-    case FUTEX_WAKE: futex_wake((void *)arch_virt_to_phys((uint64_t)uaddr), val); return EOK;
-    default: {
-        if (!is_pre_sub) {
-            op         -= 1;
-            is_pre_sub  = true;
-            goto re_futex;
-        }
-        return SYSCALL_FAULT_(EINVAL);
-    }
+    case FUTEX_WAKE:
+        if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
+        futex_wake((void *)arch_virt_to_phys((uint64_t)uaddr), val);
+        return EOK;
+    default: return SYSCALL_FAULT_(EINVAL);
     }
 }
 
@@ -249,38 +255,36 @@ syscall_(get_rlimit, uint64_t resource, struct rlimit *lim) {
 
 syscall_(prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim,
          struct rlimit *old_rlim) {
-    if (new_rlim &&
-        check_user_overflow((uint64_t)new_rlim, sizeof(struct rlimit))) {
+    if (new_rlim && check_user_overflow((uint64_t)new_rlim, sizeof(struct rlimit))) {
         return (uint64_t)-EFAULT;
     }
     if (old_rlim) {
-        uint64_t ret = syscall_get_rlimit(resource, old_rlim,0,0,0,0,regs);
-        if (ret != 0)
-            return ret;
+        uint64_t ret = syscall_get_rlimit(resource, old_rlim, 0, 0, 0, 0, regs);
+        if (ret != 0) return ret;
     }
 
     return EOK;
 }
 
-syscall_(getresgid,int *rgid, int *egid, int *sgid){
+syscall_(getresgid, int *rgid, int *egid, int *sgid) {
     pcb_t process = get_current_task()->process;
-    *rgid = process->rgid;
-    *egid = process->egid;
-    *sgid = process->sgid;
+    *rgid         = process->rgid;
+    *egid         = process->egid;
+    *sgid         = process->sgid;
     return EOK;
 }
 
-syscall_(getresuid,int *ruid, int *euid, int *suid) {
+syscall_(getresuid, int *ruid, int *euid, int *suid) {
     pcb_t process = get_current_task()->process;
-    *ruid = process->ruid;
-    *euid = process->euid;
-    *suid = process->uid;
+    *ruid         = process->ruid;
+    *euid         = process->euid;
+    *suid         = process->uid;
     return EOK;
 }
 
-syscall_(kill,int pid, int sig) {
+syscall_(kill, int pid, int sig) {
     pcb_t process = found_pcb(pid);
-    if(process == NULL) return SYSCALL_FAULT_(ESRCH);
+    if (process == NULL) return SYSCALL_FAULT_(ESRCH);
     if (sig < MINSIG || sig > MAXSIG) return EOK;
 
     //TODO kill

@@ -324,3 +324,10 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
     spin_unlock(mm_op_lock);
     return EOK;
 }
+
+syscall_(madvise, uint64_t addr, size_t length, int advice) {
+    UNUSED(advice);
+    if (length == 0) { return EOK; }
+    if (check_user_overflow(addr, length)) { return SYSCALL_FAULT_(EFAULT); }
+    return EOK;
+}

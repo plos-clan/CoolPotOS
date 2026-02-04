@@ -74,6 +74,7 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *di
         }
     }
 
+    if (load_start) { *load_start = load_min; }
     if (load_size) { *load_size = load_max - load_min; }
 
     return true;
@@ -135,11 +136,10 @@ void *load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_
             interpreter_name = ((char *)ehdr + phdrs[i].p_offset);
             logkf("load interpreter: %s\n", interpreter_name);
         }
-        logkf("debug_exec: load phdrs type: %d\n\r", phdrs[i].p_type);
     }
     if (interpreter_name == NULL) {
-        logkf("exec: libc open error [null].\n\r");
-        return NULL;
+        logkf("exec: no find libc path / static program.\n\r");
+        return (void *)1;
     }
     vfs_node_t inter_file = vfs_open(interpreter_name);
     if (inter_file == NULL) {
@@ -180,14 +180,18 @@ void launch_init_process() {
         kerror("Cannot mount devtmpfs");
         return;
     }
-    pcb_t init_process    = found_pcb(init_pid);
-    init_process->exec    = node;
-    init_process->envp    = malloc(4 * sizeof(char *));
-    init_process->envp[3] = NULL;
-    init_process->envc    = 3;
-    init_process->envp[0] = strdup("PWD=/");
-    init_process->envp[1] = strdup("HOME=/root");
-    init_process->envp[2] = strdup("TERM=linux");
+    pcb_t init_process          = found_pcb(init_pid);
+    init_process->exec          = node;
+    const char *init_envp_src[] = {
+        "PWD=/", "HOME=/root", "TERM=linux", "PATH=/bin:/sbin:/usr/bin", NULL,
+    };
+    size_t envc        = (sizeof(init_envp_src) / sizeof(init_envp_src[0])) - 1;
+    init_process->envp = malloc((envc + 1) * sizeof(char *));
+    init_process->envc = envc;
+    for (size_t i = 0; i < envc; i++) {
+        init_process->envp[i] = strdup(init_envp_src[i]);
+    }
+    init_process->envp[envc] = NULL;
 
     char *argv[] = {
         "/bin/sh",
@@ -218,6 +222,6 @@ void launch_init_process() {
     create_kernel_thread("main", (void *)arch_switch_to_user_mode, NULL, init_process,
                          NICE_TO_PRIO(0));
 
-    int exit_code = waitpid(init_pid, &init_pid);
+    int exit_code = waitpid(init_pid, &init_pid, false);
     kwarn("Init process exit, code:%d", exit_code);
 }

@@ -112,6 +112,38 @@ static inline void do_update(vfs_node_t file) {
         do_open(file);
 }
 
+static vfs_node_t vfs_resolve_symlink_target(vfs_node_t link) {
+    if (!link) {
+        return NULL;
+    }
+    if (link->linkto) {
+        return link->linkto;
+    }
+    if (!link->linkto_path) {
+        return NULL;
+    }
+
+    vfs_node_t target = NULL;
+    if (link->linkto_path[0] == '/') {
+        target = vfs_open(link->linkto_path);
+    } else {
+        char *base = vfs_get_fullpath(link->parent ? link->parent : rootdir);
+        if (!base) {
+            return NULL;
+        }
+        char *joined = pathacat(base, link->linkto_path);
+        char *norm   = normalize_path(joined);
+        if (norm) {
+            target = vfs_open(norm);
+            free(norm);
+        }
+        free(joined);
+        free(base);
+    }
+
+    return target;
+}
+
 vfs_filesystem_t get_filesystem(char *type) {
     vfs_filesystem_t filesystem = NULL;
     vfs_filesystem_t pos, n;
@@ -396,10 +428,7 @@ vfs_node_t vfs_open(const char *str) {
 
             current->type = file_symlink | file_proxy;
 
-            vfs_node_t target = current->linkto;
-            if (target == NULL && current->linkto_path != NULL) {
-                target = vfs_open(current->linkto_path);
-            }
+            vfs_node_t target = vfs_resolve_symlink_target(current);
             if (!target) goto err;
             target->refcount++;
             current = target;
@@ -449,10 +478,7 @@ vfs_node_t vfs_open_nofollow(const char *str) {
 
             current->type = file_symlink | file_proxy;
 
-            vfs_node_t target = current->linkto;
-            if (target == NULL && current->linkto_path != NULL) {
-                target = vfs_open(current->linkto_path);
-            }
+            vfs_node_t target = vfs_resolve_symlink_target(current);
             if (!target) goto err;
             target->refcount++;
             current = target;
