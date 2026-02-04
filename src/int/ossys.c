@@ -142,3 +142,16 @@ syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg) {
     default: return (uint64_t)-EINVAL;
     }
 }
+
+syscall_(getrandom, void *buffer, size_t len, uint32_t flags) {
+    if (len == 0 || len > 1024 * 1024) { return SYSCALL_FAULT_(EINVAL); }
+
+    for (size_t i = 0; i < len; i++) {
+        uint64_t next     = nano_time();
+        next              = next * 1103515245 + 12345;
+        uint8_t rand_byte = ((uint8_t)(next / 65536) % 32768);
+        memcpy(buffer + i, &rand_byte, 1);
+    }
+
+    return len;
+}

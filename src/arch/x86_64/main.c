@@ -14,7 +14,7 @@
 #include "driver/power/power.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
-#include "driver/usb/init.h"
+#include "driver/urandom.h"
 #include "exec/dlinker.h"
 #include "exec/elf_load.h"
 #include "fpu.h"
@@ -113,6 +113,7 @@ USED _Noreturn void kmain() {
     kmodule_init();
 
     zero_setup();
+    urandom_init();
     // usb_init();
     ahci_setup();
     // nvme_setup();

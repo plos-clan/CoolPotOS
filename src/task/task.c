@@ -153,24 +153,44 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
     }
 }
 
-int waitpid(pid_t pid, pid_t *pid_ret) {
+int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
     get_current_task()->status = T_WAIT;
     bool is_sti                = arch_check_interrupt();
     arch_open_interrupt();
 
     pcb_t process = get_current_task()->process;
 
-    ipc_message_t mesg;
-    int           exit_code;
-    while (1) {
-        change_task_weight(get_current_task(), NICE_TO_PRIO(10));
-        mesg = ipc_recv_wait(process->ipc_queue, IPC_MSG_TYPE_EPID);
-        change_task_weight(get_current_task(), NICE_TO_PRIO(0));
-        exit_code =
-            (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) | mesg->data[0];
-        if (pid == -1 || pid == mesg->pid) break;
-        ipc_send(process->ipc_queue, mesg);
+    ipc_message_t mesg     = NULL;
+    int           exit_code = 0;
+    if (nohang) {
+        size_t tries = process->ipc_queue->size;
+        for (size_t i = 0; i < tries; i++) {
+            mesg = ipc_recv(process->ipc_queue, IPC_MSG_TYPE_EPID);
+            if (mesg == NULL) { break; }
+            exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) |
+                        (mesg->data[1] << 8) | mesg->data[0];
+            if (pid == -1 || pid == mesg->pid) { break; }
+            ipc_send(process->ipc_queue, mesg);
+            mesg = NULL;
+        }
+        if (mesg == NULL) {
+            if (!is_sti) arch_close_interrupt();
+            get_current_task()->status = T_RUNNING;
+            *pid_ret                   = 0;
+            return 0;
+        }
+    } else {
+        while (1) {
+            change_task_weight(get_current_task(), NICE_TO_PRIO(10));
+            mesg = ipc_recv_wait(process->ipc_queue, IPC_MSG_TYPE_EPID);
+            change_task_weight(get_current_task(), NICE_TO_PRIO(0));
+            exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) |
+                        (mesg->data[1] << 8) | mesg->data[0];
+            if (pid == -1 || pid == mesg->pid) break;
+            ipc_send(process->ipc_queue, mesg);
+        }
     }
+
     pcb_t wait_p = found_pcb(mesg->pid);
     if (wait_p && wait_p->status == T_ZOMBIE) kill_proc(wait_p, exit_code, false);
     *pid_ret = mesg->pid;

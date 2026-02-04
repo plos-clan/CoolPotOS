@@ -108,6 +108,9 @@
 #define FUTEX_UNLOCK_PI   7
 #define FUTEX_TRYLOCK_PI  8
 #define FUTEX_WAIT_BITSET 9
+#define FUTEX_PRIVATE_FLAG 128
+#define FUTEX_CLOCK_REALTIME 256
+#define FUTEX_CMD_MASK 0x7f
 
 #define DT_UNKNOWN 0
 #define DT_FIFO    1
@@ -120,6 +123,10 @@
 #define DT_WHT     14
 
 #define FD_SETSIZE 1024
+
+#define WNOHANG    1
+#define WUNTRACED  2
+#define WCONTINUED 8
 
 #define SEEK_SET  0 /* Seek from beginning of file.  */
 #define SEEK_CUR  1 /* Seek from current position.  */
@@ -359,9 +366,11 @@ syscall_(set_tid_address, int *tidptr);
 syscall_(getpid);
 syscall_(exit_group, int exit_code);
 syscall_(getuid);
+syscall_(getgid);
 syscall_(yield);
 syscall_(setpgid, pid_t pid, pid_t pgid);
 syscall_(getpgid);
+syscall_(getsid, pid_t pid);
 syscall_(getppid);
 syscall_(ssetmask, int how, sigset_t *nset, sigset_t *oset);
 syscall_(sigaltstack, altstack_t *old_stack, altstack_t *new_stack);
@@ -392,6 +401,7 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
 syscall_(munmap, uint64_t addr, size_t size);
 syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
          uint64_t new_addr);
+syscall_(madvise, uint64_t addr, size_t length, int advice);
 syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot);
 syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec);
 
@@ -405,3 +415,4 @@ syscall_(sysinfo, struct sysinfo *info);
 syscall_(sys_log, int type, const char *buf, size_t len);
 syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old);
 syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg);
+syscall_(getrandom, void *buffer, size_t len, uint32_t flags);
