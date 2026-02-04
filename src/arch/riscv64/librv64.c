@@ -49,3 +49,7 @@ void arch_cpu_init(){
     // FPU
     csr_set(sstatus, (3UL << 13));
 }
+
+bool arch_get_random_bytes(uint8_t *buf, size_t size) {
+    return false;
+}

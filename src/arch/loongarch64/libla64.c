@@ -50,3 +50,7 @@ uint64_t sched_clock() {
 uint64_t nano_time() {
     return 0;
 }
+
+bool arch_get_random_bytes(uint8_t *buf, size_t size) {
+    return false;
+}
