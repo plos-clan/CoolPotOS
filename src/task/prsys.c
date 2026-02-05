@@ -1,5 +1,6 @@
 #include "errno.h"
 #include "mem/frame.h"
+#include "krlibc.h"
 #include "syscall.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
@@ -123,8 +124,78 @@ syscall_(sig_action, int sig, sigaction_t *action, sigaction_t *oldaction) {
     return EOK;
 }
 
-syscall_(sigsuspend, const sigset_t *mask) {
+static int pick_pending_signal(sigset_t pending) {
+    for (int i = MINSIG; i <= MAXSIG; i++) {
+        if (pending & SIGMASK(i)) return i;
+    }
+    return 0;
+}
+
+syscall_(sigpending, sigset_t *set, size_t sigsetsize) {
+    if (set == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (sigsetsize < sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
+    *set = get_current_task()->signal;
+    return EOK;
+}
+
+syscall_(sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timespec *timeout,
+         size_t sigsetsize) {
+    if (set == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (sigsetsize < sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
+
+    sigset_t mask = *set;
+    if (mask == 0) return SYSCALL_FAULT_(EINVAL);
+
+    uint64_t timeout_ns = 0;
+    bool     has_timeout = false;
+    if (timeout) {
+        if (timeout->tv_nsec >= 1000000000ULL) return SYSCALL_FAULT_(EINVAL);
+        timeout_ns  = timeout->tv_sec * 1000000000ULL + timeout->tv_nsec;
+        has_timeout = true;
+    }
+
+    uint64_t start = nano_time();
+    while (true) {
+        tcb_t    thread  = get_current_task();
+        sigset_t pending = thread->signal & mask;
+        if (pending) {
+            int signum = pick_pending_signal(pending);
+            if (signum > 0) { thread->signal &= ~SIGMASK(signum); }
+            if (info) {
+                memset(info, 0, sizeof(*info));
+                info->si_signo = signum;
+            }
+            return signum > 0 ? signum : SYSCALL_FAULT_(EAGAIN);
+        }
+        if (has_timeout) {
+            uint64_t now = nano_time();
+            if (now - start >= timeout_ns) return SYSCALL_FAULT_(EAGAIN);
+        }
+        arch_open_interrupt();
+        arch_pause();
+        arch_close_interrupt();
+    }
+}
+
+syscall_(sigqueueinfo, pid_t pid, int sig, siginfo_t *info) {
+    if (sig < MINSIG || sig > MAXSIG) return SYSCALL_FAULT_(EINVAL);
+    pcb_t process = found_pcb(pid);
+    if (process == NULL || process->status == T_DEATH) return SYSCALL_FAULT_(ESRCH);
+
+    tcb_t target = NULL;
+    cow_foreach(process->child_threads, target) {
+        break;
+    }
+    if (target == NULL) return SYSCALL_FAULT_(ESRCH);
+
+    target->signal |= SIGMASK(sig);
+    (void)info;
+    return EOK;
+}
+
+syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     if (mask == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (sigsetsize < sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
     sigset_t old = get_current_task()->blocked;
 
     get_current_task()->blocked = (uint64_t)*mask;

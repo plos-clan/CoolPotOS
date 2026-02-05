@@ -375,7 +375,11 @@ syscall_(getppid);
 syscall_(ssetmask, int how, sigset_t *nset, sigset_t *oset);
 syscall_(sigaltstack, altstack_t *old_stack, altstack_t *new_stack);
 syscall_(sig_action, int sig, sigaction_t *action, sigaction_t *oldaction);
-syscall_(sigsuspend, const sigset_t *mask);
+syscall_(sigpending, sigset_t *set, size_t sigsetsize);
+syscall_(sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timespec *timeout,
+         size_t sigsetsize);
+syscall_(sigqueueinfo, pid_t pid, int sig, siginfo_t *info);
+syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize);
 syscall_(signal, int sig, void *handler);
 syscall_(sigret);
 syscall_(getegid);
