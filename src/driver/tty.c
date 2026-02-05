@@ -1,4 +1,5 @@
 #include "driver/tty.h"
+#include "boot.h"
 #include "bootarg.h"
 #include "driver/input_device.h"
 #include "driver/ioctl.h"
@@ -297,4 +298,18 @@ void init_tty_session() {
     handler->handle          = tty_event_handle;
     handler->id              = INPUT_KEYBOARD_ID;
     register_input_handler(handler);
+}
+
+void init_console_symlink() {
+    char *console = boot_get_cmdline_param("console");
+    if (console == NULL) console = "tty0";
+
+    char buf[50];
+    sprintf(buf, "/dev/%s", console);
+
+    vfs_symlink("/dev/tty", buf);
+    vfs_symlink("/dev/console", "/dev/tty");
+    vfs_symlink("/dev/stdout", "/dev/tty");
+    vfs_symlink("/dev/stderr", "/dev/tty");
+    vfs_symlink("/dev/stdin", "/dev/tty");
 }
