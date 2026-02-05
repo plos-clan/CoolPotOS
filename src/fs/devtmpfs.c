@@ -14,25 +14,7 @@ static _Atomic volatile size_t dev_id_now   = 0;
 
 static void load_tty_device(vfs_node_t node) {
     extern tty_t *kernel_session;
-    create_device_node(node, "stdout", device_stream, kernel_session,
-                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
-                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
-                       (void *)kernel_session->ops.size_t);
-    create_device_node(node, "stderr", device_stream, kernel_session,
-                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
-                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
-                       (void *)kernel_session->ops.size_t);
-    create_device_node(node, "stdin", device_stream, kernel_session,
-                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
-                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
-                       (void *)kernel_session->ops.size_t);
-
-    create_device_node(node, "tty", device_stream, kernel_session,
-                       (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
-                       (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
-                       (void *)kernel_session->ops.size_t);
-
-    create_device_node(node, "console", device_stream, kernel_session,
+    create_device_node(node, "tty0", device_stream, kernel_session,
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
                        (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
                        (void *)kernel_session->ops.size_t);

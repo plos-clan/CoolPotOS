@@ -129,6 +129,8 @@ USED _Noreturn void kmain() {
     extern void mount_modfs();
     mount_modfs();
 
+    init_console_symlink();
+
     // usb_kservice_setup();
 
     launch_init_process();

@@ -104,8 +104,8 @@
 
 #include "atom_queue.h"
 #include "llist.h"
-#include "types.h"
 #include "metadata.h"
+#include "types.h"
 
 enum tty_device_type {
     TTY_DEVICE_SERIAL = 0, // 串口设备
@@ -210,3 +210,4 @@ errno_t       register_tty_device(tty_device_t *device);
 errno_t       delete_tty_device(tty_device_t *device);
 void          init_tty();
 void          init_tty_session();
+void          init_console_symlink();
