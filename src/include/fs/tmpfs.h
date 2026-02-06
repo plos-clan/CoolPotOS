@@ -15,6 +15,7 @@ typedef struct tmpfs_file {
     char            name[64];
     char           *data;
     size_t          size;
+    size_t          link_count;
     vfs_node_t      node;
     vfs_node_t      root;
     size_t          capacity;

@@ -113,24 +113,16 @@ static inline void do_update(vfs_node_t file) {
 }
 
 static vfs_node_t vfs_resolve_symlink_target(vfs_node_t link) {
-    if (!link) {
-        return NULL;
-    }
-    if (link->linkto) {
-        return link->linkto;
-    }
-    if (!link->linkto_path) {
-        return NULL;
-    }
+    if (!link) { return NULL; }
+    if (link->linkto) { return link->linkto; }
+    if (!link->linkto_path) { return NULL; }
 
     vfs_node_t target = NULL;
     if (link->linkto_path[0] == '/') {
         target = vfs_open(link->linkto_path);
     } else {
         char *base = vfs_get_fullpath(link->parent ? link->parent : rootdir);
-        if (!base) {
-            return NULL;
-        }
+        if (!base) { return NULL; }
         char *joined = pathacat(base, link->linkto_path);
         char *norm   = normalize_path(joined);
         if (norm) {
@@ -501,6 +493,8 @@ void vfs_deinit() {
     // 目前并不支持
 }
 
+static _Atomic size_t inode_now = 0;
+
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     vfs_node_t node = malloc(sizeof(struct vfs_node));
     not_null_assert(node, "vfs alloc null");
@@ -515,6 +509,7 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     node->refcount    = 1;
     node->blksz       = PAGE_SIZE;
     node->mode        = 0777;
+    node->inode       = inode_now++;
     node->linkto      = NULL;
     node->linkto_path = NULL;
     if (parent) list_prepend(parent->child, node);

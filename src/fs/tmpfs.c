@@ -11,6 +11,7 @@ errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
     node->fsid               = tmpfs_id;
     tmpfs_file_t *tmpfs_root = (tmpfs_file_t *)malloc(sizeof(tmpfs_file_t));
     tmpfs_root->type         = tp_file_dir;
+    tmpfs_root->link_count   = 1;
     tmpfs_root->node         = node;
     tmpfs_root->root         = node;
     strcpy(tmpfs_root->name, "tmp");
@@ -27,10 +28,11 @@ void tmpfs_umount(void *root) {
 errno_t tmpfs_mk(void *parent, const char *name, vfs_node_t node, bool is_dir) {
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
-    f->type       = is_dir ? tp_file_dir : tp_file_file;
-    node->type   |= is_dir ? file_dir : file_none;
-    node->handle  = f;
-    f->node       = node;
+    f->type        = is_dir ? tp_file_dir : tp_file_file;
+    f->link_count  = 1;
+    node->type    |= is_dir ? file_dir : file_none;
+    node->handle   = f;
+    f->node        = node;
     return EOK;
 }
 
@@ -40,6 +42,27 @@ errno_t tmpfs_mkdir(void *parent, const char *name, vfs_node_t node) {
 
 errno_t tmpfs_mkfile(void *parent, const char *name, vfs_node_t node) {
     return tmpfs_mk(parent, name, node, false);
+}
+
+errno_t tmpfs_link(void *parent, const char *name, vfs_node_t node) {
+    if (name == NULL || node == NULL) return -EINVAL;
+    char *target_path = name[0] == '/' ? strdup(name) : vfs_cwd_path_build((char *)name);
+    if (target_path == NULL) return -ENOENT;
+    vfs_node_t target = vfs_open(target_path);
+    free(target_path);
+    if (target == NULL || target->handle == NULL || (target->type & file_dir)) return -ENOENT;
+
+    tmpfs_file_t *target_file = target->handle;
+    target_file->link_count++;
+
+    node->handle = target_file;
+    node->type   = target->type;
+    node->size   = target->size;
+    node->inode  = target->inode;
+    node->mode   = target->mode;
+    node->owner  = target->owner;
+    node->group  = target->group;
+    return EOK;
 }
 
 size_t tmpfs_read(void *file, void *addr, size_t offset, size_t size) {
@@ -79,7 +102,12 @@ errno_t tmpfs_stat(void *file, vfs_node_t node) {
 
 errno_t tmpfs_delete(void *parent, vfs_node_t node) {
     tmpfs_file_t *f = (tmpfs_file_t *)node->handle;
-    free(f->data);
+    if (f == NULL) return EOK;
+    if (f->link_count > 1) {
+        f->link_count--;
+        return EOK;
+    }
+    if (f->data != NULL) free(f->data);
     free(f);
     return EOK;
 }
@@ -109,7 +137,9 @@ void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
 }
 
 vfs_node_t tmpfs_dup(vfs_node_t node) {
-    vfs_node_t copy   = vfs_node_alloc(node->parent, node->name);
+    vfs_node_t    copy = vfs_node_alloc(node->parent, node->name);
+    tmpfs_file_t *file = node->handle;
+    if (file != NULL) file->link_count++;
     copy->handle      = node->handle;
     copy->type        = node->type;
     copy->size        = node->size;
@@ -119,6 +149,7 @@ vfs_node_t tmpfs_dup(vfs_node_t node) {
     copy->owner       = node->owner;
     copy->child       = node->child;
     copy->realsize    = node->realsize;
+    copy->inode       = node->inode;
     return copy;
 }
 
@@ -126,9 +157,10 @@ errno_t tmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
     tmpfs_file_t *p = parent;
     tmpfs_file_t *f = calloc(1, sizeof(tmpfs_file_t));
     strncpy(f->name, name, sizeof(f->name));
-    f->type      = tp_file_symlink;
-    node->handle = f;
-    f->node      = node;
+    f->type       = tp_file_symlink;
+    f->link_count = 1;
+    node->handle  = f;
+    f->node       = node;
     return EOK;
 }
 
@@ -154,11 +186,11 @@ size_t tmpfs_readlink(vfs_node_t node, void *addr, size_t offset, size_t size) {
 errno_t tmpfs_free(void *handle) {
     if (handle == NULL) return EOK;
     tmpfs_file_t *file = handle;
-    if (file->type != tp_file_file) {
-        free(file);
+    if (file->link_count > 1) {
+        file->link_count--;
         return EOK;
     }
-    if (file->data != NULL) free(file->data);
+    if (file->type == tp_file_file && file->data != NULL) free(file->data);
     free(file);
     return EOK;
 }
@@ -172,8 +204,9 @@ errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mo
     node->dev            = dev;
     node->rdev           = dev;
     node->mode           = mode & 0777;
-    tmpfs_file_t *handle = malloc(sizeof(tmpfs_file_t));
+    tmpfs_file_t *handle = calloc(1, sizeof(tmpfs_file_t));
     handle->size         = 0;
+    handle->link_count   = 1;
     handle->node         = node;
     if ((mode & S_IFMT) == S_IFBLK) {
         node->type   = file_block;
@@ -193,10 +226,8 @@ errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mo
 
 errno_t tmpfs_ioctl(void *file, size_t req, void *arg) {
     tmpfs_file_t *handle = file;
-    if (handle->type == tp_file_char || handle->type == tp_file_blk) {
-        return EOK;
-    } else
-        return EOK;
+    if (handle->type == tp_file_char || handle->type == tp_file_blk) { return EOK; }
+    return EOK;
 }
 
 static struct vfs_callback tmpfs_callbacks = {
@@ -210,7 +241,7 @@ static struct vfs_callback tmpfs_callbacks = {
     .write    = tmpfs_write,
     .readlink = tmpfs_readlink,
     .mkfile   = tmpfs_mkfile,
-    .link     = (vfs_mk_t)dummy,
+    .link     = tmpfs_link,
     .symlink  = tmpfs_symlink,
     .ioctl    = tmpfs_ioctl,
     .dup      = tmpfs_dup,
