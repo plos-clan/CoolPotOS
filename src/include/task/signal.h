@@ -42,6 +42,15 @@
 #define SIG_UNBLOCK 1
 #define SIG_SETMASK 2
 
+#define SA_NOCLDSTOP 0x00000001
+#define SA_NOCLDWAIT 0x00000002
+#define SA_SIGINFO   0x00000004
+#define SA_RESTORER  0x04000000
+#define SA_ONSTACK   0x08000000
+#define SA_RESTART   0x10000000
+#define SA_NODEFER   0x40000000
+#define SA_RESETHAND 0x80000000
+
 #define MINSIG 1
 #define MAXSIG 32
 
@@ -145,4 +154,10 @@ typedef struct {
     } _sifields;
 } siginfo_t;
 
+struct syscall_regs;
+typedef struct process_control_block *pcb_t;
+
 void signal_init();
+void do_signal(struct syscall_regs *regs);
+int  send_signal_to_process(pcb_t process, int sig);
+int  send_signal_to_pgroup(pid_t pgid, int sig);

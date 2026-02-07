@@ -4,6 +4,8 @@
 #include "syscall.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
+#include "task/signal.h"
+#include "task/signal_arch.h"
 #include "task/task.h"
 #include "term/klog.h"
 
@@ -216,7 +218,7 @@ syscall_(signal, int sig, void *handler) {
 }
 
 syscall_(sigret) {
-    return EOK;
+    return arch_signal_sigreturn(regs);
 }
 
 syscall_(getegid) {
@@ -353,11 +355,39 @@ syscall_(getresuid, int *ruid, int *euid, int *suid) {
 }
 
 syscall_(kill, int pid, int sig) {
-    pcb_t process = found_pcb(pid);
-    if (process == NULL) return SYSCALL_FAULT_(ESRCH);
-    if (sig < MINSIG || sig > MAXSIG) return EOK;
+    if (sig < 0 || sig > MAXSIG) return SYSCALL_FAULT_(EINVAL);
 
-    //TODO kill
+    // sig == 0: permission check only
+    if (sig == 0) {
+        if (pid > 0) {
+            pcb_t process = found_pcb(pid);
+            return process ? EOK : SYSCALL_FAULT_(ESRCH);
+        }
+        return EOK;
+    }
 
-    return EOK;
+    if (pid > 0) {
+        // Send to specific process
+        pcb_t process = found_pcb(pid);
+        if (process == NULL) return SYSCALL_FAULT_(ESRCH);
+        return send_signal_to_process(process, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+    } else if (pid == 0) {
+        // Send to caller's process group
+        pcb_t self = get_current_task()->process;
+        return send_signal_to_pgroup(self->pgid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+    } else if (pid == -1) {
+        // Send to all processes (simplified: skip kernel process)
+        extern cow_arraylist *process_list;
+        extern pcb_t          kernel_process;
+        pcb_t process = NULL;
+        int   sent    = 0;
+        cow_foreach(process_list, process) {
+            if (process->pid == kernel_process->pid) continue;
+            if (send_signal_to_process(process, sig) == 0) sent++;
+        }
+        return sent > 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+    } else {
+        // pid < -1: send to process group |pid|
+        return send_signal_to_pgroup(-pid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+    }
 }
