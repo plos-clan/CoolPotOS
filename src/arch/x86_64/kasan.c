@@ -1,6 +1,7 @@
 #include "kasan.h"
 #include "krlibc.h"
 #include "mem/page.h"
+#include "mem/frame.h"
 #include "term/klog.h"
 
 #if KASAN_CHECK
@@ -8,8 +9,9 @@
 #define KASAN_SHADOW_SCALE_SHIFT 3
 #define KASAN_SHADOW_GRANULE    (1UL << KASAN_SHADOW_SCALE_SHIFT)
 
-#define KASAN_MAX_RANGES 8
-#define KASAN_POISON     0xFF
+#define KASAN_MAX_RANGES    8
+#define KASAN_MAX_WHITELIST 8
+#define KASAN_POISON        0xFF
 
 typedef struct {
     uintptr_t start;
@@ -20,13 +22,20 @@ typedef struct {
     size_t    shadow_map_size;
 } kasan_range_t;
 
-static kasan_range_t kasan_ranges[KASAN_MAX_RANGES];
-static size_t        kasan_range_count  = 0;
-static uintptr_t     kasan_shadow_cursor = KASAN_SHADOW_BASE;
-static bool          kasan_initialized  = false;
-static bool          kasan_active       = false;
-static int           kasan_heap_range   = -1;
-static int           kasan_disable_depth = 0;
+typedef struct {
+    uintptr_t start;
+    uintptr_t end;
+} kasan_whitelist_t;
+
+static kasan_range_t     kasan_ranges[KASAN_MAX_RANGES];
+static size_t            kasan_range_count  = 0;
+static kasan_whitelist_t kasan_whitelist[KASAN_MAX_WHITELIST];
+static size_t            kasan_whitelist_count = 0;
+static uintptr_t         kasan_shadow_cursor = KASAN_SHADOW_BASE;
+static bool              kasan_initialized  = false;
+static bool              kasan_active       = false;
+static int               kasan_heap_range   = -1;
+static int               kasan_disable_depth = 0;
 
 static inline uintptr_t align_up(uintptr_t v, uintptr_t a) {
     return (v + a - 1) & ~(a - 1);
@@ -46,13 +55,20 @@ static inline uintptr_t kasan_shadow_addr(const kasan_range_t *range, uintptr_t 
     return range->shadow_base + ((addr - range->start) >> KASAN_SHADOW_SCALE_SHIFT);
 }
 
-static bool kasan_is_shadow_addr(uintptr_t addr) {
-    for (size_t i = 0; i < kasan_range_count; i++) {
-        if (addr >= kasan_ranges[i].shadow_base && addr < kasan_ranges[i].shadow_end) {
+static bool kasan_is_whitelisted(uintptr_t start, uintptr_t end) {
+    for (size_t i = 0; i < kasan_whitelist_count; i++) {
+        if (start >= kasan_whitelist[i].start && end <= kasan_whitelist[i].end) {
             return true;
         }
     }
     return false;
+}
+
+static void kasan_add_whitelist(uintptr_t start, uintptr_t end) {
+    if (kasan_whitelist_count >= KASAN_MAX_WHITELIST) return;
+    kasan_whitelist[kasan_whitelist_count].start = start;
+    kasan_whitelist[kasan_whitelist_count].end   = end;
+    kasan_whitelist_count++;
 }
 
 static int kasan_add_range(uintptr_t start, uintptr_t end, bool poison_initial) {
@@ -161,6 +177,14 @@ void kasan_init(void) {
     if (kasan_initialized) return;
     kasan_shadow_cursor = KASAN_SHADOW_BASE;
 
+    kasan_add_whitelist(0, KERNEL_AREA_MEM);
+    kasan_add_whitelist(DRIVER_AREA_MEM, KASAN_SHADOW_BASE);
+    kasan_add_whitelist(KASAN_SHADOW_BASE, KASAN_SHADOW_BASE + 0x1000000000UL);
+    uint64_t hhdm = get_physical_memory_offset();
+    if (hhdm != 0 && hhdm < KERNEL_HEAP_START) {
+        kasan_add_whitelist(hhdm, KERNEL_HEAP_START);
+    }
+
     int kernel_idx = kasan_add_range(KASAN_MONITOR_START, KASAN_MONITOR_END, false);
     if (kernel_idx < 0) {
         logkf("[KASAN] failed to map kernel shadow\n");
@@ -168,8 +192,10 @@ void kasan_init(void) {
 
     kasan_initialized = true;
     kasan_active      = true;
-    logkf("[KASAN] enabled. shadow_base=%p ranges=%llu\n", (void *)KASAN_SHADOW_BASE,
-          (unsigned long long)kasan_range_count);
+    logkf("[KASAN] enabled. shadow_base=%p ranges=%llu whitelist=%llu\n",
+          (void *)KASAN_SHADOW_BASE,
+          (unsigned long long)kasan_range_count,
+          (unsigned long long)kasan_whitelist_count);
 }
 
 bool kasan_is_active(void) {
@@ -274,14 +300,28 @@ void kasan_check_range(const void *addr, size_t size, bool is_write, const char 
         kasan_report(reason, start, size, is_write, 0xFF);
         return;
     }
-    if (kasan_is_shadow_addr(start) || kasan_is_shadow_addr(end - 1)) return;
+
+    if (kasan_is_whitelisted(start, end)) return;
+
+    bool fully_covered = false;
+    for (size_t i = 0; i < kasan_range_count; i++) {
+        if (start >= kasan_ranges[i].start && end <= kasan_ranges[i].end) {
+            fully_covered = true;
+            break;
+        }
+    }
+
+    if (!fully_covered) {
+        kasan_report(reason, start, size, is_write, 0xFE);
+        return;
+    }
 
     for (size_t i = 0; i < kasan_range_count; i++) {
         const kasan_range_t *range = &kasan_ranges[i];
-        if (end <= range->start || start >= range->end) continue;
-        uintptr_t rs = start < range->start ? range->start : start;
-        uintptr_t re = end > range->end ? range->end : end;
-        kasan_check_range_in_range(range, rs, re, is_write, reason);
+        if (start >= range->start && end <= range->end) {
+            kasan_check_range_in_range(range, start, end, is_write, reason);
+            return;
+        }
     }
 }
 

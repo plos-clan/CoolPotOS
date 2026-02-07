@@ -66,7 +66,7 @@ USED _Noreturn void kmain() {
     init_gop();
     init_serial();
 #if KASAN_CHECK
-    logkf("[KASAN] active\n");
+    logkf("[KASAN] Address sanitizer is active\n");
 #endif
     init_input_manager();
     init_tty_session();

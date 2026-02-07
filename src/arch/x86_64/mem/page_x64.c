@@ -84,18 +84,28 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
     uint64_t phy_frame = alloc_frames(1);
     not_null_assert((void *)phy_frame, "copy page error");
     page_table_t *new_table = phys_to_virt(phy_frame);
+    page_table_clear(new_table);
+
     for (uint64_t i = 0; i < (all_copy ? 512 : (level == 4 ? 256 : 512)); i++) {
-        if (source_table->entries[i].value & PTE_HUGE) {
-            new_table->entries[i].value = source_table->entries[i].value;
+        uint64_t entry_value = source_table->entries[i].value;
+
+        // 跳过空的页表项
+        if (!(entry_value & PTE_PRESENT)) {
+            new_table->entries[i].value = 0;
+            continue;
+        }
+
+        if (entry_value & PTE_HUGE) {
+            new_table->entries[i].value = entry_value;
             continue;
         }
 
         page_table_t *source_page_table_next =
-            phys_to_virt(source_table->entries[i].value & PTE_FRAME_MASK);
+            phys_to_virt(entry_value & PTE_FRAME_MASK);
         page_table_t *new_page_table = copy_page_table_recursive(
             source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256);
         new_table->entries[i].value =
-            virt_to_phys(new_page_table) | (source_table->entries[i].value & 0xFF000000000FFF);
+            virt_to_phys(new_page_table) | (entry_value & 0xFF000000000FFF);
     }
     return new_table;
 }
@@ -169,10 +179,13 @@ uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
 }
 
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
+    bool is_sti = arch_check_interrupt();
+    arch_close_interrupt();
     spin_lock(page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     if (new_directory == NULL) {
         spin_unlock(page_lock);
+        if (is_sti) arch_open_interrupt();
         logkf("error: clone direcotry null");
         return NULL;
     }
@@ -180,6 +193,7 @@ page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     if (!all_copy)
         memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)dir->table + 256, PAGE_SIZE / 2);
     spin_unlock(page_lock);
+    if (is_sti) arch_open_interrupt();
     return new_directory;
 }
 
@@ -191,17 +205,25 @@ static void free_page_table_recursive(page_table_t *table, int level) {
     }
 
     for (int i = 0; i < (level == 4 ? 256 : 512); i++) {
-        page_table_t *page_table_next = phys_to_virt(table->entries[i].value & PTE_FRAME_MASK);
+        uint64_t entry_value = table->entries[i].value;
+        // 跳过空的或大页的页表项
+        if (!(entry_value & PTE_PRESENT) || (entry_value & PTE_HUGE)) {
+            continue;
+        }
+        page_table_t *page_table_next = phys_to_virt(entry_value & PTE_FRAME_MASK);
         free_page_table_recursive(page_table_next, level - 1);
     }
     free_frame(virt_to_phys(table));
 }
 
 void free_page_directory(page_directory_t *dir) {
+    bool is_sti = arch_check_interrupt();
+    arch_close_interrupt();
     spin_lock(page_lock);
     free_page_table_recursive(dir->table, 4);
     free(dir);
     spin_unlock(page_lock);
+    if (is_sti) arch_open_interrupt();
 }
 
 void switch_page_directory0(page_directory_t *dir) {
