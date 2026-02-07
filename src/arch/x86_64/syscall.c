@@ -5,6 +5,7 @@
 #include "krlibc.h"
 #include "nr.h"
 #include "ptrace.h"
+#include "task/signal.h"
 #include "task/task.h"
 #include "term/klog.h"
 
@@ -242,6 +243,10 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
     } else {
         if (unlikely(syscall_id != 12)) logkf("Syscall(%d) cannot implemented.\n", syscall_id);
         regs->rax = -ENOSYS;
+    }
+
+    if (syscall_id != SYSCALL_SIGRET) {
+        do_signal(regs);
     }
 
     write_fsbase(thread->context.fs_base);

@@ -9,6 +9,7 @@
 #include "task/eevdf.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
+#include "task/signal.h"
 #include "task/smp.h"
 #include "term/klog.h"
 
@@ -136,6 +137,7 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
         msg->data[2]      = (exit_code >> 16) & 0xFF;
         msg->data[3]      = (exit_code >> 24) & 0xFF;
         ipc_send(pcb->parent->ipc_queue, msg);
+        send_signal_to_process(pcb->parent, SIGCHLD);
 
         for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
             fd_t *handle = pcb->fdts->fds[i];
