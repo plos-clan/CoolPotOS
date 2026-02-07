@@ -303,6 +303,32 @@ struct rlimit {
     size_t rlim_max;
 };
 
+struct rusage {
+    struct timeval ru_utime;
+    struct timeval ru_stime;
+    long ru_maxrss;
+    long ru_ixrss;
+    long ru_idrss;
+    long ru_isrss;
+    long ru_minflt;
+    long ru_majflt;
+    long ru_nswap;
+    long ru_inblock;
+    long ru_oublock;
+    long ru_msgsnd;
+    long ru_msgrcv;
+    long ru_nsignals;
+    long ru_nvcsw;
+    long ru_nivcsw;
+};
+
+struct tms {
+    long tms_utime;
+    long tms_stime;
+    long tms_cutime;
+    long tms_cstime;
+};
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -384,7 +410,7 @@ syscall_(signal, int sig, void *handler);
 syscall_(sigret);
 syscall_(getegid);
 syscall_(geteuid);
-syscall_(waitpid, pid_t pid, int *status, uint64_t options);
+syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusage);
 syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout);
 syscall_(get_tid);
 syscall_(fork);
@@ -420,3 +446,5 @@ syscall_(sys_log, int type, const char *buf, size_t len);
 syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old);
 syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg);
 syscall_(getrandom, void *buffer, size_t len, uint32_t flags);
+syscall_(times, struct tms *buf);
+syscall_(getrusage, int who, struct rusage *usage);
