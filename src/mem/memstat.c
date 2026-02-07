@@ -10,7 +10,7 @@ uint64_t get_reserved_memory() {
 }
 
 uint64_t get_all_memory() {
-    return frame_allocator.total_frames * PAGE_SIZE;
+    return frame_allocator.origin_frames * PAGE_SIZE;
 }
 
 uint64_t get_available_memory() {

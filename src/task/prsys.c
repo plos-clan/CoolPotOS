@@ -230,7 +230,7 @@ syscall_(geteuid) {
     return get_current_task()->process->uid;
 }
 
-syscall_(waitpid, pid_t pid, int *status, uint64_t options) {
+syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusage) {
     if (get_current_task()->process->child_process->size == 0) return SYSCALL_FAULT_(ECHILD);
     if (pid == -1) goto wait;
     pcb_t wait_p = found_pcb(pid);
@@ -240,6 +240,7 @@ wait:;
     int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
     if (ret_pid == 0) { return 0; }
     if (status) { *status = ((status0 & 0xFF) << 8); }
+    if (rusage) { memset(rusage, 0, sizeof(struct rusage)); }
     return ret_pid;
 }
 
@@ -390,4 +391,14 @@ syscall_(kill, int pid, int sig) {
         // pid < -1: send to process group |pid|
         return send_signal_to_pgroup(-pid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
     }
+}
+
+syscall_(times, struct tms *buf) {
+    if (buf) { memset(buf, 0, sizeof(struct tms)); }
+    return 0;
+}
+
+syscall_(getrusage, int who, struct rusage *usage) {
+    if (usage) { memset(usage, 0, sizeof(struct rusage)); }
+    return EOK;
 }

@@ -68,7 +68,9 @@
 #define SYSCALL_CHOWN        92
 #define SYSCALL_UMASK        95
 #define SYSCALL_GETRLIMIT    97
+#define SYSCALL_GETRUSAGE    98
 #define SYSCALL_SYSINFO      99
+#define SYSCALL_TIMES        100
 #define SYSCALL_GETUID       102
 #define SYSCALL_SYSLOG       103
 #define SYSCALL_GETGID       104

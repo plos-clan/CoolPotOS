@@ -287,6 +287,8 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
     if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
     if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
     if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+#elif defined(__loongarch__) || defined(__loongarch64)
+        ARCH_PT_FLAG_USER;
 #endif
 
     if (prot != PROT_NONE) {
