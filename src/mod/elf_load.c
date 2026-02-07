@@ -190,8 +190,8 @@ void launch_init_process() {
         "HOME=/root",
         "TERM=linux",
         "PATH=/bin:/sbin:/usr/bin",
-        "PS1=\\[\\e[01;93m\\][\\[\\e[01;34m\\]\\u\\[\\e[01;32m\\]@\\h\\[\\e[00m\\] "
-        "\\[\\e[01;33m\\]\\w\\[\\e[01;93m\\]]\\[\\e[01;34m\\]\\$\\[\\e[00m\\] ",
+        // "PS1=\\[\\e[01;93m\\][\\[\\e[01;34m\\]\\u\\[\\e[01;32m\\]@\\h\\[\\e[00m\\] "
+        // "\\[\\e[01;33m\\]\\w\\[\\e[01;93m\\]]\\[\\e[01;34m\\]\\$\\[\\e[00m\\] ",
         NULL,
     };
     size_t envc        = (sizeof(init_envp_src) / sizeof(init_envp_src[0])) - 1;

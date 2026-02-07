@@ -230,39 +230,107 @@ syscall_(vfork) {
 
 syscall_(execve, char *path, char **argv, char **envp) {
     if (unlikely(path == NULL)) return SYSCALL_FAULT_(EINVAL);
-    char      *norm_path = vfs_cwd_path_build(path);
-    vfs_node_t node      = vfs_open(norm_path);
+    if (unlikely(argv == NULL)) return SYSCALL_FAULT_(EINVAL);
+
+    char      *norm_path     = vfs_cwd_path_build(path);
+    char     **shebang_argv  = NULL; // heap-allocated argv (all entries are strdup'd)
+    size_t     shebang_argc  = 0;
+    int        shebang_depth = 0;
+
+shebang_retry:;
+    vfs_node_t node = vfs_open(norm_path);
     if (node == NULL) {
         free(norm_path);
+        for (size_t i = 0; i < shebang_argc; i++) free(shebang_argv[i]);
+        free(shebang_argv);
         return SYSCALL_FAULT_(ENOENT);
     }
-    uint64_t buf_len = (node->size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
+
+    // Shebang (#!) check
+    if (shebang_depth < 4) {
+        char shebang_buf[256];
+        size_t n = vfs_read(node, shebang_buf, 0, sizeof(shebang_buf) - 1);
+        if (n >= 4 && shebang_buf[0] == '#' && shebang_buf[1] == '!') {
+            shebang_buf[n] = '\0';
+            char *nl = strchr(shebang_buf, '\n');
+            if (nl) *nl = '\0';
+
+            // Skip whitespace after #!
+            char *interp = shebang_buf + 2;
+            while (*interp == ' ' || *interp == '\t') interp++;
+
+            // Trim trailing whitespace / CR
+            size_t ilen = strlen(interp);
+            while (ilen > 0 && (interp[ilen - 1] == ' ' || interp[ilen - 1] == '\t' ||
+                                interp[ilen - 1] == '\r'))
+                interp[--ilen] = '\0';
+
+            // Split interpreter and optional argument
+            char *opt_arg = NULL;
+            char *sp = interp;
+            while (*sp && *sp != ' ' && *sp != '\t') sp++;
+            if (*sp) {
+                *sp = '\0';
+                opt_arg = sp + 1;
+                while (*opt_arg == ' ' || *opt_arg == '\t') opt_arg++;
+                if (*opt_arg == '\0') opt_arg = NULL;
+                if (opt_arg) {
+                    size_t alen = strlen(opt_arg);
+                    while (alen > 0 && (opt_arg[alen - 1] == ' ' || opt_arg[alen - 1] == '\t' ||
+                                        opt_arg[alen - 1] == '\r'))
+                        opt_arg[--alen] = '\0';
+                }
+            }
+
+            if (*interp == '\0') {
+                vfs_close(node);
+                free(norm_path);
+                for (size_t i = 0; i < shebang_argc; i++) free(shebang_argv[i]);
+                free(shebang_argv);
+                return SYSCALL_FAULT_(ENOENT);
+            }
+
+            // Count original argv
+            size_t orig_argc = 0;
+            while (argv[orig_argc]) orig_argc++;
+
+            // Build new argv: [interp, opt_arg?, script_path, original_argv[1:], NULL]
+            // All entries are strdup'd so we can safely free them later
+            size_t new_argc = 1 + (opt_arg ? 1 : 0) + 1 + (orig_argc > 1 ? orig_argc - 1 : 0);
+            char **new_argv = malloc((new_argc + 1) * sizeof(char *));
+            size_t idx = 0;
+            new_argv[idx++] = strdup(interp);
+            if (opt_arg) new_argv[idx++] = strdup(opt_arg);
+            new_argv[idx++] = strdup(norm_path); // script full path
+            for (size_t i = 1; i < orig_argc; i++)
+                new_argv[idx++] = strdup(argv[i]);
+            new_argv[idx] = NULL;
+
+            vfs_close(node);
+
+            // Free previous shebang_argv
+            for (size_t i = 0; i < shebang_argc; i++) free(shebang_argv[i]);
+            free(shebang_argv);
+            free(norm_path);
+
+            norm_path     = strdup(new_argv[0]); // interpreter path for next open
+            argv          = new_argv;
+            shebang_argv  = new_argv;
+            shebang_argc  = new_argc;
+            shebang_depth++;
+            goto shebang_retry;
+        }
+    }
 
     pcb_t process = get_current_task()->process;
 
     arch_close_interrupt();
     disable_scheduler();
 
-    //
-    //    if (strncmp(pcb_buffer, "#!", 2) == 0) {
-    //        int   interpreter_argc;
-    //        char *interpreter_argv[50];
-    //        char  interpreter_buffer[1024];
-    //        *strchr(pcb_buffer, '\n') = '\0';
-    //        strcpy(interpreter_buffer, pcb_buffer);
-    //        strcat(interpreter_buffer, " ");
-    //        strcat(interpreter_buffer, path);
-    //        interpreter_argc = cmd_parse(interpreter_buffer, interpreter_argv, ' ');
-    //
-    //        free(pcb_buffer);
-    //        vfs_close(node);
-    //        free(norm_path);
-    //        return process_execve(interpreter_argv[0], interpreter_argv, envp);
-    //        //TODO cmd_parse 无合理释放的区域, 会造成内存泄漏, 等待修复
-    //    }
-
-    if (argv == NULL) {
+    if (argv[0] == NULL) {
         free(norm_path);
+        for (size_t i = 0; i < shebang_argc; i++) free(shebang_argv[i]);
+        free(shebang_argv);
         enable_scheduler();
         arch_open_interrupt();
         return SYSCALL_FAULT_(EINVAL);
@@ -314,6 +382,8 @@ syscall_(execve, char *path, char **argv, char **envp) {
     //    process->ipc_queue = ipc_queue_init();
 
     free(norm_path);
+    for (size_t i = 0; i < shebang_argc; i++) free(shebang_argv[i]);
+    free(shebang_argv);
     free_envp(old_envp);
 
     uint64_t stack = page_alloc_random(get_current_directory(), BIG_USER_STACK,
