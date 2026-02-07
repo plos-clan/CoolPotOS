@@ -84,6 +84,9 @@ void arch_context_init(tcb_t thread, struct arch_context_ *context) {
     context->fs_base = read_fsbase();
     context->gs_base = read_gsbase();
     context->fs = context->gs = 0;
+
+    context->context.fcw   = 0x37F;
+    context->context.mxscr = 0x1F80;
 }
 
 void arch_context_init_thread(tcb_t new_task, void *args) {
@@ -105,6 +108,9 @@ void arch_context_init_thread(tcb_t new_task, void *args) {
     new_task->context.fs_base = read_fsbase();
     new_task->context.gs_base = read_gsbase();
     new_task->context.fs = new_task->context.gs = 0;
+
+    new_task->context.context.fcw   = 0x37F;
+    new_task->context.context.mxscr = 0x1F80;
 }
 
 void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
@@ -335,7 +341,6 @@ _Noreturn void arch_switch_to_user_mode() {
 
         linker_main = load_interpreter_elf(data, get_current_directory(), &linker_start, &link_data,
                                            &link_size);
-        if (linker_main == (void *)1) goto static_p;
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n\r");
             arch_close_interrupt();
@@ -368,7 +373,6 @@ _Noreturn void arch_switch_to_user_mode() {
                                  link_size, data, load_start);
         entry = linker_main;
     } else {
-    static_p:
         rsp = build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data,
                                load_start);
     }

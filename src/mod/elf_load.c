@@ -81,9 +81,12 @@ bool mmap_phdr_segment(Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *di
 }
 
 bool is_dynamic(Elf64_Ehdr *ehdr) {
-    if (ehdr->e_type != ET_DYN) { return false; }
     if (ehdr->e_phnum == 0 || ehdr->e_phoff == 0) { return false; }
-    return true;
+    Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
+    for (int i = 0; i < ehdr->e_phnum; i++) {
+        if (phdrs[i].p_type == PT_INTERP) return true;
+    }
+    return false;
 }
 
 void *load_executor_elf(uint8_t *data, page_directory_t *dir, uint64_t offset, uint64_t *load_start,
@@ -139,7 +142,7 @@ void *load_interpreter_elf(uint8_t *data, page_directory_t *dir, uint64_t *load_
     }
     if (interpreter_name == NULL) {
         logkf("exec: no find libc path / static program.\n\r");
-        return (void *)1;
+        return NULL;
     }
     vfs_node_t inter_file = vfs_open(interpreter_name);
     if (inter_file == NULL) {

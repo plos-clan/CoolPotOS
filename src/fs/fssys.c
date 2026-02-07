@@ -16,7 +16,7 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
 
     char *normalized_path = vfs_cwd_path_build(path0);
 
-    logkf("sys_open: open %s\n", normalized_path);
+    // logkf("sys_open: open %s\n", normalized_path);
 
     vfs_node_t node = vfs_open(normalized_path);
     if (node == NULL) {

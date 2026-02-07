@@ -8,119 +8,64 @@
 
 extern void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp);
 
+#define HANDLE_USER_EXCEPTION(exc)                                                                 \
+    do {                                                                                           \
+        if (get_current_task() != NULL) {                                                          \
+            pcb_t process = get_current_task()->process;                                           \
+            if (process->pid != 0) {                                                               \
+                logkf(#exc ": error_code %x at %p\n\r", error_code, frame->rip);                   \
+                logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,      \
+                      get_current_task()->name, get_current_task()->tid);                          \
+                kill_proc(process, -1, true);                                                      \
+                arch_open_interrupt();                                                             \
+                while (true)                                                                       \
+                    arch_wait_for_interrupt();                                                     \
+            }                                                                                      \
+        }                                                                                          \
+        arch_close_interrupt();                                                                    \
+    } while (0)
+
 __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
     __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("divide_error: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(divide_error);
     kerror("divide_error: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void debug_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("debug_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(debug_exception);
     kerror("debug_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void nmi_interrupt(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("nmi_interrupt: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(nmi_interrupt);
     kerror("nmi_interrupt: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void breakpoint_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("breakpoint_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(breakpoint_exception);
     kerror("breakpoint_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void overflow_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("overflow_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(overflow_exception);
     kerror("overflow_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void bound_range_exceeded(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("bound_range_exceeded: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(bound_range_exceeded);
     kerror("bound_range_exceeded: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
@@ -128,78 +73,30 @@ err:;
 __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
     __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("invalid_opcode: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(invalid_opcode);
     kerror("invalid_opcode: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void device_not_available(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("device_not_available: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(device_not_available);
     kerror("device_not_available: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void double_fault(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("double_fault: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(double_fault);
     kerror("double_fault: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void invalid_tss(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("invalid_tss: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(invalid_tss);
     kerror("invalid_tss: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
@@ -207,21 +104,9 @@ err:;
 __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
     __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("segment_not_present: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(segment_not_present);
     kerror("segment_not_present: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
@@ -229,21 +114,9 @@ err:;
 __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
     __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("stack_segment_fault: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(stack_segment_fault);
     kerror("stack_segment_fault: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
@@ -253,22 +126,10 @@ USED volatile int is_debug;
 __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
     __asm__ volatile("movq %%rbp, %0" : "=r"(saved_rbp));
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("general_protection_fault: %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(general_protection_fault);
     kerror("general_protection_fault: %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
     if (is_debug) return;
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
@@ -304,7 +165,9 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
               current_task->tid, faulting_address, frame->rip);
         pcb_t process = current_task->process;
         if (process->pid != 0) kill_proc(process, -1, true);
-        goto wfi;
+        arch_open_interrupt();
+        while (true)
+            arch_wait_for_interrupt();
     }
 msg:;
     kerror("Page %s fault %p at %p", error_msg, faulting_address, frame->rip);
@@ -313,7 +176,6 @@ msg:;
                current_task->process->pid, current_task->name, current_task->tid);
     }
     print_kernel_backtrace(frame, saved_rbp);
-    arch_close_interrupt();
 wfi:
     if (is_debug) return;
     while (true)
@@ -321,78 +183,30 @@ wfi:
 }
 
 __IRQHANDLER void x87_floating_point_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("x87_floating_point_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(x87_floating_point_exception);
     kerror("x87_floating_point_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void alignment_check_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("alignment_check_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(alignment_check_exception);
     kerror("alignment_check_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void machine_check_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("machine_check_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(machine_check_exception);
     kerror("machine_check_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
 
 __IRQHANDLER void simd_floating_point_exception(struct interrupt_frame *frame,
                                                 uint64_t                error_code) {
-    if (get_current_task() != NULL) {
-        pcb_t process = get_current_task()->process;
-        if (process->pid != 0) {
-            logkf("simd_floating_point_exception: error_code %x at %p\n\r", error_code, frame->rip);
-            logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,
-                  get_current_task()->name, get_current_task()->tid);
-            kill_proc(process, -1, true);
-            goto err;
-        }
-    } else
-        arch_close_interrupt();
-
+    HANDLE_USER_EXCEPTION(simd_floating_point_exception);
     kerror("simd_floating_point_exception: error_code %x at %p", error_code, frame->rip);
-err:;
     while (true)
         arch_wait_for_interrupt();
 }
@@ -407,7 +221,6 @@ void init_err_handle() {
     register_interrupt_handler(6, invalid_opcode, 0, 0x8E);
     register_interrupt_handler(7, device_not_available, 0, 0x8E);
     register_interrupt_handler(8, double_fault, 0, 0x8E);
-    // Skip exception 9 (x87 FPU has been removed in x86_64)
     register_interrupt_handler(10, invalid_tss, 0, 0x8E);
     register_interrupt_handler(11, segment_not_present, 0, 0x8E);
     register_interrupt_handler(12, stack_segment_fault, 0, 0x8E);
