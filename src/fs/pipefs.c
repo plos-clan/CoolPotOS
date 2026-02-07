@@ -32,33 +32,35 @@ size_t pipefs_read(void *file, void *addr, size_t offset, size_t size) {
 
     size_t ret = (size_t)-1;
     for (;;) {
-        while (pipe->ptr == 0) {
-            if (pipe->write_fds == 0) {
-                ret = 0;
-                goto out;
-            }
-            scheduler_yield();
-        }
-
         spin_lock(pipe->lock);
-        if (pipe->ptr == 0) {
+
+        // 检查是否有数据可读
+        if (pipe->ptr > 0) {
+            // 实际读取量
+            uint32_t to_read = MIN(size, pipe->ptr);
+
+            memcpy(addr, pipe->buf, to_read);
+            memmove(pipe->buf, pipe->buf + to_read, pipe->ptr - to_read);
+
+            pipe->ptr      -= to_read;
+            pipe->assigned  = (int)pipe->ptr;
+            if (spec->node) spec->node->size = pipe->ptr;
+
             spin_unlock(pipe->lock);
-            continue;
+            ret = to_read;
+            goto out;
         }
 
-        // 实际读取量
-        uint32_t to_read = MIN(size, pipe->ptr);
+        // 没有数据，检查写端是否已关闭
+        if (pipe->write_fds == 0) {
+            spin_unlock(pipe->lock);
+            ret = 0;  // EOF
+            goto out;
+        }
 
-        memcpy(addr, pipe->buf, to_read);
-        memmove(pipe->buf, pipe->buf + to_read, pipe->ptr - to_read);
-
-        pipe->ptr      -= to_read;
-        pipe->assigned  = (int)pipe->ptr;
-        if (spec->node) spec->node->size = pipe->ptr;
-
+        // 没有数据且写端还开着，等待
         spin_unlock(pipe->lock);
-        ret = to_read;
-        goto out;
+        scheduler_yield();
     }
 
 out:
@@ -94,22 +96,26 @@ size_t pipe_write_inner(void *file, const void *addr, size_t size) {
     if (pipe->read_fds == 0) { return (size_t)-1; }
 
     for (;;) {
-        while ((PIPE_BUFF - pipe->ptr) < size) {
+        // 等待有可用空间（至少1字节）
+        while (pipe->ptr >= PIPE_BUFF) {
             if (pipe->read_fds == 0) { return (size_t)-1; }
             scheduler_yield();
         }
 
         spin_lock(pipe->lock);
-        if ((PIPE_BUFF - pipe->ptr) < size) {
+        size_t available = PIPE_BUFF - pipe->ptr;
+        if (available == 0) {
             spin_unlock(pipe->lock);
             continue;
         }
-        memcpy(&pipe->buf[pipe->ptr], addr, size);
-        pipe->ptr      += size;
+        // 写入尽可能多的数据（部分写入）
+        size_t to_write = MIN(size, available);
+        memcpy(&pipe->buf[pipe->ptr], addr, to_write);
+        pipe->ptr      += to_write;
         pipe->assigned  = (int)pipe->ptr;
         if (spec->node) spec->node->size = pipe->ptr;
         spin_unlock(pipe->lock);
-        return size;
+        return to_write;
     }
 }
 

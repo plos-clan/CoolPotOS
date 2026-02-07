@@ -1,6 +1,7 @@
 #include "driver/ahci.h"
-#include "mem/heap.h"
 #include "mem/frame.h"
+#include "mem/heap.h"
+#include "mem/page.h"
 #include "term/klog.h"
 
 void sata_read_error(struct hba_port *port) {

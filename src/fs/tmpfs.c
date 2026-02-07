@@ -1,6 +1,7 @@
 #include "fs/tmpfs.h"
 #include "errno.h"
 #include "krlibc.h"
+#include "mem/page.h"
 #include "task/poll.h"
 #include "term/klog.h"
 

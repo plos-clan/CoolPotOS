@@ -271,6 +271,7 @@ void init_heap() {
     logkf("kernel_heap: init heap at %p - size: %llu\n", base_addr, KERNEL_HEAP_SIZE);
     page_map_range_to_random(get_kernel_pagedir(), base_addr, KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
     mpool_init(&pool, (void *)base_addr, KERNEL_HEAP_SIZE);
+    //heap_init((void *)base_addr, KERNEL_HEAP_SIZE);
 #if KASAN_CHECK
     kasan_heap_init(base_addr, KERNEL_HEAP_SIZE);
 #endif

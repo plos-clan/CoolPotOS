@@ -4,6 +4,7 @@
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/heap.h"
+#include "mem/page.h"
 
 int plainfb_get_display_info(drm_device_t *drm_dev, uint32_t *width, uint32_t *height,
                              uint32_t *bpp) {
