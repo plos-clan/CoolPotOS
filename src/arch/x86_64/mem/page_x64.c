@@ -6,6 +6,8 @@
 #include "mem/heap.h"
 #include "task/smp.h"
 
+#include <term/klog.h>
+
 extern page_directory_t          kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
 static spin_t                    page_lock         = SPIN_INIT;
@@ -169,7 +171,11 @@ uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     spin_lock(page_lock);
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
-    if (new_directory == NULL) return NULL;
+    if (new_directory == NULL) {
+        spin_unlock(page_lock);
+        logkf("error: clone direcotry null");
+        return NULL;
+    }
     new_directory->table = copy_page_table_recursive(dir->table, 4, all_copy, false);
     if (!all_copy)
         memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)dir->table + 256, PAGE_SIZE / 2);
