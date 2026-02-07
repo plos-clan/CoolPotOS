@@ -93,35 +93,33 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
         return ret;
     }
 
+    if (prot == PROT_NONE) {
+        spin_unlock(mm_op_lock);
+        return start_addr;
+    }
+
     uint64_t pt_flags =
 #if defined(__x86_64__) || defined(__amd64__)
-        PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-#elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
-        ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
-#elif defined(__loongarch__) || defined(__loongarch64)
-        ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_USER;
-#endif
+        PTE_USER;
 
-    if (prot != PROT_NONE) {
-#if defined(__x86_64__) || defined(__amd64__)
-        if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
-        if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
-        if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+    if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
+    if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
+    if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
-        if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
-        if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
-        if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+        ARCH_PT_FLAG_USER;
+
+    if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
+    if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
+    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
 #elif defined(__loongarch__) || defined(__loongarch64)
-        //TODO
+        ARCH_PT_FLAG_USER;
+    //TODO
 #endif
-    }
 
     lazy_infoalloc(process, start_addr, aligned_len, pt_flags, flags);
     spin_unlock(mm_op_lock);
 
     return start_addr;
-
-    return addr;
 }
 
 syscall_(munmap, uint64_t addr, size_t size) {
@@ -282,17 +280,25 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
 
     if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
     if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
-    if (prot & PROT_EXEC) pt_flags |= PTE_USER;
+    if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_USER;
 
     if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
     if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
-    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_USER;
+    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
 #endif
 
-    map_change_attribute_range(get_current_directory(), addr & (~(PAGE_SIZE - 1)),
-                               (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags);
+    if (prot != PROT_NONE) {
+        for (uint64_t a = addr; a < addr + length; a += PAGE_SIZE) {
+            if (arch_virt_to_phys(a) == 0) {
+                page_map_to(get_current_directory(), a, alloc_frames(1), pt_flags);
+                memset((void *)a, 0, PAGE_SIZE);
+            }
+        }
+    }
+
+    map_change_attribute_range(get_current_directory(), addr, length, pt_flags);
 
     return EOK;
 }

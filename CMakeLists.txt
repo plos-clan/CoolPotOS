@@ -26,19 +26,18 @@ if (NOT DEFINED TARGET_ARCH)
         set(TARGET_ARCH riscv64)
     elseif (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "loongarch64")
         set(TARGET_ARCH loongarch64)
-    else()
+    else ()
         set(TARGET_ARCH x86_64)
-    endif()
+    endif ()
     message(STATUS "TARGET_ARCH not set, defaulting to ${TARGET_ARCH}")
-else()
+else ()
     message(STATUS "Building for TARGET_ARCH=${TARGET_ARCH}")
-endif()
+endif ()
 
 include(tools/bootloader.cmake)
 
 add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
-add_subdirectory(module/extfs)
 add_subdirectory(module/iso9660)
 
 add_executable(kernel)
@@ -53,13 +52,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
             -g0
             -O3
     )
-else()
+else ()
     set(COMPILE_MODE
             -g3
             -O0
             -fno-omit-frame-pointer
     )
-endif()
+endif ()
 
 
 file(GLOB_RECURSE FS_SOURCES "src/fs/*.c")
@@ -103,6 +102,6 @@ elseif (TARGET_ARCH STREQUAL "riscv64")
     include(tools/riscv64.cmake)
 elseif (TARGET_ARCH STREQUAL "loongarch64")
     include(tools/loongarch64.cmake)
-else()
+else ()
     message(FATAL_ERROR "Unsupported target architecture: ${TARGET_ARCH}")
-endif()
+endif ()

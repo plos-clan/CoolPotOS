@@ -32,18 +32,13 @@ bool cpu_has_rdtsc() {
 }
 
 uint64_t read_tsc() {
-    __asm__ volatile("");
-    return __builtin_ia32_rdtsc();
+    uint64_t rax, rdx;
+    asm volatile("rdtscp\n" : "=a"(rax), "=d"(rdx) : : "ecx");
+    return (rdx << 32) + rax;
 }
 
 size_t sched_clock() {
-    return nano_time(); //TODO 优先 nano_time 提供, tsc计算有误暂时废弃
-    if (!arch_current_cpu()->arch_data.support_tsc) return nano_time();
-    uint64_t now   = read_tsc();
-    uint64_t delta = now - arch_current_cpu()->arch_data.tsc_base_tsc;
-    uint64_t ns    = ((delta * (uint64_t)arch_current_cpu()->arch_data.tsc_conv_mul) >>
-                   arch_current_cpu()->arch_data.tsc_conv_shift);
-    return (ns - arch_current_cpu()->arch_data.tsc_base_tsc) / 1000;
+    return nano_time();
 }
 
 void arch_send_scheduler() {
@@ -254,8 +249,38 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
     ((uint64_t *)tmp)[0] = AT_PHNUM;
     ((uint64_t *)tmp)[1] = ehdr->e_phnum;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
     ((uint64_t *)tmp)[0] = AT_ENTRY;
     ((uint64_t *)tmp)[1] = entry_point;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_UID;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_EUID;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_GID;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_EGID;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    ((uint64_t *)tmp)[0] = AT_SECURE;
+    ((uint64_t *)tmp)[1] = 0;
+    tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
+
+    uint8_t random_bytes[16];
+    for (int i = 0; i < 16; i++) random_bytes[i] = (uint8_t)(i * 17 + 42);
+    tmp_stack = push_slice(tmp_stack, random_bytes, 16);
+    uint64_t random_addr = tmp_stack;
+
+    ((uint64_t *)tmp)[0] = AT_RANDOM;
+    ((uint64_t *)tmp)[1] = random_addr;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     ((uint64_t *)tmp)[0] = AT_EXECFN;
@@ -391,7 +416,8 @@ _Noreturn void arch_switch_to_user_mode() {
                        "r"(get_current_task()->context.regs.rflags), "r"((uint64_t)0x23),
                        "r"(entry), "r"((uint64_t)0x1b)
                      : "memory");
-err:;
+err:
+    arch_open_interrupt();
     if (process->child_threads->size <= 1) {
         kill_proc(process, -1, true);
     } else

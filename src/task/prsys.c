@@ -22,11 +22,10 @@ syscall_(exit, int exit_code) {
 }
 
 syscall_(set_tid_address, int *tidptr) {
-    if (unlikely(tidptr == NULL)) return SYSCALL_FAULT_(EINVAL);
     tcb_t thread          = get_current_task();
     thread->tid_address   = (uint64_t)tidptr;
     thread->tid_directory = get_current_directory();
-    return EOK;
+    return thread->tid;
 }
 
 syscall_(getpid) {
