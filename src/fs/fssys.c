@@ -2,6 +2,7 @@
 #include "errno.h"
 #include "fs/fds.h"
 #include "fs/pipefs.h"
+#include "fs/sockfs.h"
 #include "fs/vfs.h"
 #include "mem/frame.h"
 #include "syscall.h"
@@ -46,6 +47,7 @@ next:;
     not_null_assert(fd_handle, "sys_open: null alloc fd");
     fd_handle->offset = flags & O_APPEND ? node->size : 0;
     fd_handle->node   = node;
+    fd_handle->flags  = flags;
     int index         = add_fd(get_current_task()->process->fdts, fd_handle);
     fd_handle->fd     = index;
     if (index == -1) {
@@ -85,6 +87,11 @@ syscall_(write, int fd, uint8_t *buffer, size_t size) {
         if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
         return ret;
     }
+    if (handle->node->type & file_socket) {
+        size_t ret = vfs_write(handle->node, buffer, 0, size);
+        if (ret == (size_t)-1) return SYSCALL_FAULT_(EPIPE);
+        return ret;
+    }
     size_t ret = vfs_write(handle->node, buffer, handle->offset, size);
     if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) handle->offset += ret;
@@ -99,13 +106,26 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     if (unlikely(size == 0)) return EOK;
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (!handle) return SYSCALL_FAULT_(EBADF);
+
     if (handle->node->type & file_pipe) {
+        logkf("[fd-dbg] pid=%d read(%d, size=%d) [pipe]\n",
+              get_current_task()->process->pid, fd, size);
+
         vfs_update(handle->node);
         if (handle->node->size == 0 && handle->flags & O_NONBLOCK) {
             return SYSCALL_FAULT_(EWOULDBLOCK);
         }
         size_t ret = vfs_read(handle->node, buffer, 0, size);
+
+        logkf("[fd-dbg] pid=%d read(%d) = %d\n",
+              get_current_task()->process->pid, fd, (int)ret);
+
         if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
+        return ret;
+    }
+    if (handle->node->type & file_socket) {
+        size_t ret = vfs_read(handle->node, buffer, 0, size);
+        if (ret == (size_t)-1) return SYSCALL_FAULT_(EPIPE);
         return ret;
     }
     if (handle->node->size != (uint64_t)-1) {
@@ -223,29 +243,87 @@ syscall_(ioctl, int fd, size_t options, void *arg2) {
     return vfs_ioctl(handle->node, options, arg2);
 }
 
-syscall_(dup2, int fd, int newfd) {
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
-    if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
+static int ensure_fdt_capacity(fdt_t *fdt, int expect_fd) {
+    while ((size_t)expect_fd >= fdt->fds_length) {
+        size_t old_len = fdt->fds_length;
+        size_t new_len = old_len * FD_GROWTH_FACTOR;
+        if (new_len == 0) new_len = FD_INITIAL_CAPACITY;
+        if (new_len <= (size_t)expect_fd) new_len = (size_t)expect_fd + 1;
+        fd_t **new_fds = (fd_t **)realloc(fdt->fds, new_len * sizeof(fd_t *));
+        if (!new_fds) return -ENOMEM;
+        memset(&new_fds[old_len], 0, (new_len - old_len) * sizeof(fd_t *));
+        fdt->fds        = new_fds;
+        fdt->fds_length = new_len;
+    }
+    return EOK;
+}
 
-    fd_t *old_handle = get_fd(get_current_task()->process->fdts, newfd);
-    if (old_handle != NULL) {
-        vfs_close(old_handle->node);
-        remove_fd(get_current_task()->process->fdts, newfd);
+static uint64_t dup_with_minfd(fd_t *handle, int min_fd, bool cloexec) {
+    if (unlikely(min_fd < 0)) return SYSCALL_FAULT_(EINVAL);
+    fdt_t *fdt = get_current_task()->process->fdts;
+    if (ensure_fdt_capacity(fdt, min_fd) < 0) return SYSCALL_FAULT_(ENOMEM);
+
+    int newfd = min_fd;
+    while (true) {
+        if ((size_t)newfd >= fdt->fds_length) {
+            if (ensure_fdt_capacity(fdt, newfd) < 0) return SYSCALL_FAULT_(ENOMEM);
+        }
+        if (fdt->fds[newfd] == NULL) break;
+        newfd++;
     }
 
     fd_t *new_handle = fd_dup(handle);
     if (new_handle == NULL) return SYSCALL_FAULT_(ENOMEM);
-    new_handle->fd = newfd;
-    set_fd(get_current_task()->process->fdts, new_handle, newfd);
+    new_handle->fd     = newfd;
+    new_handle->flags &= ~O_CLOEXEC;
+    if (cloexec) new_handle->flags |= O_CLOEXEC;
+    fdt->fds[newfd] = new_handle;
     return newfd;
+}
+
+syscall_(dup2, int fd, int newfd) {
+    if (unlikely(newfd < 0)) return SYSCALL_FAULT_(EINVAL);
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
+    if (fd == newfd) return newfd;
+
+    fdt_t *fdt = get_current_task()->process->fdts;
+    if (ensure_fdt_capacity(fdt, newfd) < 0) return SYSCALL_FAULT_(ENOMEM);
+
+    fd_t *old_handle = fdt->fds[newfd];
+    if (old_handle != NULL) {
+        vfs_close(old_handle->node);
+        fdt->fds[newfd] = NULL;
+        free(old_handle);
+    }
+
+    fd_t *new_handle = fd_dup(handle);
+    if (new_handle == NULL) return SYSCALL_FAULT_(ENOMEM);
+    new_handle->fd              = newfd;
+    new_handle->flags          &= ~O_CLOEXEC;  // POSIX: dup2 clears close-on-exec
+    fdt->fds[newfd]             = new_handle;
+    return newfd;
+}
+
+syscall_(dup3, int oldfd, int newfd, int flags) {
+    if (flags & ~O_CLOEXEC) return SYSCALL_FAULT_(EINVAL);
+    if (oldfd == newfd) return SYSCALL_FAULT_(EINVAL);
+    uint64_t ret = syscall_dup2(oldfd, newfd, 0, 0, 0, 0, regs);
+    if ((int64_t)ret < 0) return ret;
+    if (flags & O_CLOEXEC) {
+        fd_t *h = get_fd(get_current_task()->process->fdts, newfd);
+        if (h) h->flags |= O_CLOEXEC;
+    }
+    return ret;
 }
 
 syscall_(dup, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
-    fd_t *new_handle      = fd_dup(handle);
-    return new_handle->fd = add_fd(get_current_task()->process->fdts, new_handle);
+    fd_t *new_handle           = fd_dup(handle);
+    new_handle->flags         &= ~O_CLOEXEC;  // POSIX: dup clears close-on-exec
+    return new_handle->fd      = add_fd(get_current_task()->process->fdts, new_handle);
 }
 
 syscall_(getcwd, char *buffer, size_t length) {
@@ -302,18 +380,23 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg) {
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
 
     switch (cmd) {
-    case F_GETFD: return (handle->node->flags & O_CLOEXEC) != 0;
-    case F_SETFD: return handle->node->flags |= O_CLOEXEC;
-    case F_DUPFD_CLOEXEC:;
-        uint64_t newfd       = syscall_dup(fd, 0, 0, 0, 0, 0, regs);
-        handle->node->flags |= O_CLOEXEC;
-        return newfd;
-    case F_DUPFD: return syscall_dup(fd, 0, 0, 0, 0, 0, regs);
-    case F_GETFL: return handle->node->flags;
+    case F_GETFD: return (handle->flags & O_CLOEXEC) ? 1 : 0;
+    case F_SETFD:
+        if (arg & 1)
+            handle->flags |= O_CLOEXEC;
+        else
+            handle->flags &= ~O_CLOEXEC;
+        return EOK;
+    case F_DUPFD_CLOEXEC: return dup_with_minfd(handle, (int)arg, true);
+    case F_DUPFD: return dup_with_minfd(handle, (int)arg, false);
+    case F_GETFL: return handle->flags;
     case F_SETFL:;
         uint32_t valid_flags  = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
+        handle->flags        &= ~valid_flags;
+        handle->flags        |= arg & valid_flags;
         handle->node->flags  &= ~valid_flags;
         handle->node->flags  |= arg & valid_flags;
+        return EOK;
     default: break;
     }
     return EOK;
@@ -380,12 +463,22 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
 
     extern vfs_callback_t fs_callbacks[256];
 
+    logkf("[fd-dbg] pid=%d poll(nfds=%d, timeout=%d)\n",
+            get_current_task()->process->pid, nfds, (int)timeout);
+
     do {
+        ready = 0;
+        // 清零所有 revents
+        for (size_t i = 0; i < nfds; i++) {
+            fds_user[i].revents = 0;
+        }
+
         // 检查每个文件描述符
         for (size_t i = 0; i < nfds; i++) {
             fd_t *handle = get_fd(get_current_task()->process->fdts, fds_user[i].fd);
             if (handle == NULL) {
-                fds_user[i].revents |= POLLNVAL;
+                fds_user[i].revents = POLLNVAL;
+                ready++;
                 continue;
             }
             vfs_node_t node = handle->node;
@@ -394,7 +487,6 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
                     fds_user[i].revents = fds_user[i].events & POLLIN ? POLLIN : POLLOUT;
                     ready++;
                 }
-                i++;
                 continue;
             }
             int revents =
@@ -405,15 +497,16 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
             }
         }
 
-        // sigexit = signals_pending_quick(current_task);
+        sigexit = signals_pending_quick(get_current_task());
 
         if (ready > 0 || sigexit) break;
 
-        arch_open_interrupt();
-        arch_pause();
-    } while (timeout != 0 && ((int)timeout == -1 || (nano_time() - start_time) < timeout));
+        scheduler_yield();
+    } while (timeout != 0 && ((int)timeout == -1 || (nano_time() - start_time) < timeout * 1000000ULL));
 
-    arch_close_interrupt();
+    logkf("[fd-dbg] pid=%d poll() = %d\n",
+            get_current_task()->process->pid, ready);
+
     if (!ready && sigexit) return (size_t)-EINTR;
     return ready;
 }

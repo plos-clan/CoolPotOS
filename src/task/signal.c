@@ -117,16 +117,22 @@ void do_signal(struct syscall_regs *regs) {
         }
 
         if (handler == SIG_DFL) {
-            signal_internal_t decision  = signal_internal_decisions[sig];
-            task->signal               &= ~SIGMASK(sig);
+            signal_internal_t decision = signal_internal_decisions[sig];
             switch (decision) {
             case SIGNAL_INTERNAL_TERM:
-            case SIGNAL_INTERNAL_CORE: kill_proc(task->process, sig, true); return;
-            case SIGNAL_INTERNAL_IGN: continue;
+            case SIGNAL_INTERNAL_CORE:
+                task->signal &= ~SIGMASK(sig);
+                kill_proc(task->process, sig, true);
+                return;
+            case SIGNAL_INTERNAL_IGN:
+                task->signal &= ~SIGMASK(sig);
+                continue;
             case SIGNAL_INTERNAL_STOP:
+                task->signal &= ~SIGMASK(sig);
                 // TODO: implement process stop
                 continue;
             case SIGNAL_INTERNAL_CONT:
+                task->signal &= ~SIGMASK(sig);
                 // TODO: implement process continue
                 continue;
             }

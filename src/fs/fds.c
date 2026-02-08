@@ -1,6 +1,7 @@
 #include "fs/fds.h"
 #include "errno.h"
 #include "fs/pipefs.h"
+#include "fs/sockfs.h"
 #include "fs/vfs.h"
 
 int find_free_fd(fdt_t *fdt) {
@@ -93,13 +94,21 @@ fd_t *fd_dup(fd_t *src) {
     new->flags      = src->flags;
     new->fd         = src->fd;
     vfs_node_t node = new->node;
-    if (node->type == file_pipe) {
+    if (node->type & file_pipe) {
         pipe_specific_t *spec = node->handle;
         pipe_info_t     *pipe = spec->info;
         if (spec->write) {
             pipe->write_fds++;
         } else {
             pipe->read_fds++;
+        }
+    }
+    if (node->type & file_socket) {
+        socket_specific_t *spec = node->handle;
+        if (spec && spec->info) {
+            spin_lock(spec->info->lock);
+            spec->info->refcount++;
+            spin_unlock(spec->info->lock);
         }
     }
     return new;

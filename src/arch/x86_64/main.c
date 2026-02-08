@@ -21,6 +21,7 @@
 #include "fs/cpio.h"
 #include "fs/devtmpfs.h"
 #include "fs/pipefs.h"
+#include "fs/sockfs.h"
 #include "fs/procfs.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
@@ -92,6 +93,7 @@ USED _Noreturn void kmain() {
     tmpfs_regist();
     devtmpfs_regist();
     pipefs_regist();
+    sockfs_regist();
 
     // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用
     extern intctl_t apic_controller;
