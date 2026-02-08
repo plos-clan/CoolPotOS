@@ -43,8 +43,18 @@
 #define SYSCALL_SOCKET       41
 #define SYSCALL_CONNECT      42
 #define SYSCALL_ACCEPT       43
+#define SYSCALL_SENDTO       44
+#define SYSCALL_RECVFROM     45
+#define SYSCALL_SENDMSG      46
+#define SYSCALL_RECVMSG      47
+#define SYSCALL_SHUTDOWN     48
 #define SYSCALL_BIND         49
 #define SYSCALL_LISTEN       50
+#define SYSCALL_GETSOCKNAME  51
+#define SYSCALL_GETPEERNAME  52
+#define SYSCALL_SOCKETPAIR   53
+#define SYSCALL_SETSOCKOPT   54
+#define SYSCALL_GETSOCKOPT   55
 #define SYSCALL_CLONE        56
 #define SYSCALL_FORK         57
 #define SYSCALL_VFORK        58
@@ -117,6 +127,7 @@
 #define SYSCALL_PSELECT6     270
 #define SYSCALL_UTIMENSAT    280
 #define SYSCALL_PIPE2        293
+#define SYSCALL_DUP3         292
 #define SYSCALL_PRLIMIT64    302
 #define SYSCALL_GETRANDOM    318
 #define SYSCALL_CP_F_RANGE   326

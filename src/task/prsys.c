@@ -200,11 +200,9 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     sigset_t old = get_current_task()->blocked;
 
     get_current_task()->blocked = (uint64_t)*mask;
-    while (!signals_pending_quick(get_current_task())) {
-        arch_open_interrupt();
-        arch_pause();
+    while (!(get_current_task()->signal & ~get_current_task()->blocked)) {
+        scheduler_yield();
     }
-    arch_close_interrupt();
     get_current_task()->blocked = old;
     return SYSCALL_FAULT_(EINTR);
 }
@@ -231,6 +229,9 @@ syscall_(geteuid) {
 }
 
 syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusage) {
+    logkf("[fd-dbg] pid=%d waitpid(%d, options=0x%x)\n",
+          get_current_task()->process->pid, pid, options);
+
     if (get_current_task()->process->child_process->size == 0) return SYSCALL_FAULT_(ECHILD);
     if (pid == -1) goto wait;
     pcb_t wait_p = found_pcb(pid);
@@ -238,6 +239,10 @@ syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusag
 wait:;
     pid_t ret_pid = 0;
     int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
+
+    logkf("[fd-dbg] pid=%d waitpid() = %d (status=0x%x)\n",
+          get_current_task()->process->pid, ret_pid, status0);
+
     if (ret_pid == 0) { return 0; }
     if (status) { *status = ((status0 & 0xFF) << 8); }
     if (rusage) { memset(rusage, 0, sizeof(struct rusage)); }

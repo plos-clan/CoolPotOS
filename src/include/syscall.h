@@ -178,6 +178,8 @@ struct iovec {
     size_t iov_len;
 };
 
+#include "fs/sockfs.h"
+
 struct stat {
     long              st_dev;
     unsigned long     st_ino;
@@ -342,6 +344,7 @@ syscall_(stat, char *fn, struct stat *buf);
 syscall_(lstat, char *fn, struct stat *buf);
 syscall_(ioctl, int fd, size_t options, void *arg2);
 syscall_(dup2, int fd, int newfd);
+syscall_(dup3, int oldfd, int newfd, int flags);
 syscall_(dup, int fd);
 syscall_(getcwd, char *buffer, size_t length);
 syscall_(chdir, char *s);
@@ -385,6 +388,27 @@ syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int 
 syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
 syscall_(umask, uint64_t mask);
 syscall_(sync);
+
+// socket syscall
+syscall_(socket, int domain, int type, int protocol);
+syscall_(socketpair, int domain, int type, int protocol, int *sv);
+syscall_(bind, int sockfd, struct sockaddr *addr, uint64_t addrlen);
+syscall_(listen, int sockfd, int backlog);
+syscall_(accept, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
+syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
+syscall_(sendto, int sockfd, void *buf, size_t len, int flags,
+         struct sockaddr *dest_addr, uint64_t addrlen);
+syscall_(recvfrom, int sockfd, void *buf, size_t len, int flags,
+         struct sockaddr *src_addr, uint64_t *addrlen);
+syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags);
+syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags);
+syscall_(shutdown, int sockfd, int how);
+syscall_(setsockopt, int sockfd, int level, int optname, void *optval,
+         uint64_t optlen);
+syscall_(getsockopt, int sockfd, int level, int optname, void *optval,
+         uint64_t *optlen);
+syscall_(getsockname, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
+syscall_(getpeername, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 
 // proc syscall
 syscall_(exit, int exit_code);

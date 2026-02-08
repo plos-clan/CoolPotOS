@@ -7,6 +7,7 @@
 #include "fs/vfs.h"
 #include "errno.h"
 #include "fs/pipefs.h"
+#include "fs/sockfs.h"
 #include "krlibc.h"
 #include "task/task.h"
 #include "term/klog.h"
@@ -108,7 +109,7 @@ static inline void do_open(vfs_node_t file) {
 
 static inline void do_update(vfs_node_t file) {
     if (file->type & file_none || file->handle == NULL || file->type & file_dir ||
-        file->type & file_symlink || file->type & file_pipe)
+        file->type & file_symlink || file->type & file_pipe || file->type & file_socket)
         do_open(file);
 }
 
@@ -526,6 +527,19 @@ errno_t vfs_close(vfs_node_t node) {
     if (node->type & file_proxy) return EOK;
     if (node->type & file_pipe) {
         pipe_specific_t *spec = node->handle;
+        callbackof(node, close)(node->handle);
+        if (node->refcount != 0) return EOK;
+        if (spec && spec->active > 0) {
+            spec->free_pending = true;
+            return EOK;
+        }
+        if (node->parent) list_delete(node->parent->child, node);
+        node->handle = NULL;
+        vfs_free(node);
+        return EOK;
+    }
+    if (node->type & file_socket) {
+        socket_specific_t *spec = node->handle;
         callbackof(node, close)(node->handle);
         if (node->refcount != 0) return EOK;
         if (spec && spec->active > 0) {
