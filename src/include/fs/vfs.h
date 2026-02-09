@@ -67,6 +67,7 @@ enum {
     file_pipe     = 0x100UL,  // 管道设备
     file_socket   = 0x200UL,  // 套接字设备
     file_epoll    = 0x400UL,  // epoll 设备
+    file_eventfd  = 0x8000UL, // eventfd 设备
     file_ptmx     = 0x800UL,  // ptmx 设备
     file_pts      = 0x1000UL, // pts 设备
     file_proxy    = 0x2000UL, // 代理节点

@@ -108,8 +108,8 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     if (!handle) return SYSCALL_FAULT_(EBADF);
 
     if (handle->node->type & file_pipe) {
-        logkf("[fd-dbg] pid=%d read(%d, size=%d) [pipe]\n",
-              get_current_task()->process->pid, fd, size);
+        // logkf("[fd-dbg] pid=%d read(%d, size=%d) [pipe]\n",
+        // get_current_task()->process->pid, fd, size);
 
         vfs_update(handle->node);
         if (handle->node->size == 0 && handle->flags & O_NONBLOCK) {
@@ -117,8 +117,8 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
         }
         size_t ret = vfs_read(handle->node, buffer, 0, size);
 
-        logkf("[fd-dbg] pid=%d read(%d) = %d\n",
-              get_current_task()->process->pid, fd, (int)ret);
+        // logkf("[fd-dbg] pid=%d read(%d) = %d\n",
+        //       get_current_task()->process->pid, fd, (int)ret);
 
         if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
         return ret;
@@ -299,9 +299,9 @@ syscall_(dup2, int fd, int newfd) {
 
     fd_t *new_handle = fd_dup(handle);
     if (new_handle == NULL) return SYSCALL_FAULT_(ENOMEM);
-    new_handle->fd              = newfd;
-    new_handle->flags          &= ~O_CLOEXEC;  // POSIX: dup2 clears close-on-exec
-    fdt->fds[newfd]             = new_handle;
+    new_handle->fd     = newfd;
+    new_handle->flags &= ~O_CLOEXEC; // POSIX: dup2 clears close-on-exec
+    fdt->fds[newfd]    = new_handle;
     return newfd;
 }
 
@@ -321,9 +321,9 @@ syscall_(dup, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
-    fd_t *new_handle           = fd_dup(handle);
-    new_handle->flags         &= ~O_CLOEXEC;  // POSIX: dup clears close-on-exec
-    return new_handle->fd      = add_fd(get_current_task()->process->fdts, new_handle);
+    fd_t *new_handle       = fd_dup(handle);
+    new_handle->flags     &= ~O_CLOEXEC; // POSIX: dup clears close-on-exec
+    return new_handle->fd  = add_fd(get_current_task()->process->fdts, new_handle);
 }
 
 syscall_(getcwd, char *buffer, size_t length) {
@@ -463,9 +463,6 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
 
     extern vfs_callback_t fs_callbacks[256];
 
-    logkf("[fd-dbg] pid=%d poll(nfds=%d, timeout=%d)\n",
-            get_current_task()->process->pid, nfds, (int)timeout);
-
     do {
         ready = 0;
         // 清零所有 revents
@@ -502,10 +499,8 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
         if (ready > 0 || sigexit) break;
 
         scheduler_yield();
-    } while (timeout != 0 && ((int)timeout == -1 || (nano_time() - start_time) < timeout * 1000000ULL));
-
-    logkf("[fd-dbg] pid=%d poll() = %d\n",
-            get_current_task()->process->pid, ready);
+    } while (timeout != 0 &&
+             ((int)timeout == -1 || (nano_time() - start_time) < timeout * 1000000ULL));
 
     if (!ready && sigexit) return (size_t)-EINTR;
     return ready;

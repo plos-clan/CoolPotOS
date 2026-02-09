@@ -229,8 +229,6 @@ syscall_(geteuid) {
 }
 
 syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusage) {
-    logkf("[fd-dbg] pid=%d waitpid(%d, options=0x%x)\n",
-          get_current_task()->process->pid, pid, options);
 
     if (get_current_task()->process->child_process->size == 0) return SYSCALL_FAULT_(ECHILD);
     if (pid == -1) goto wait;
@@ -240,8 +238,6 @@ wait:;
     pid_t ret_pid = 0;
     int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
 
-    logkf("[fd-dbg] pid=%d waitpid() = %d (status=0x%x)\n",
-          get_current_task()->process->pid, ret_pid, status0);
 
     if (ret_pid == 0) { return 0; }
     if (status) { *status = ((status0 & 0xFF) << 8); }

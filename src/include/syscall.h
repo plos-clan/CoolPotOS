@@ -410,6 +410,16 @@ syscall_(getsockopt, int sockfd, int level, int optname, void *optval,
 syscall_(getsockname, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 syscall_(getpeername, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 
+// epoll syscall
+syscall_(epoll_create1, int flags);
+syscall_(epoll_ctl, int epfd, int op, int fd, struct epoll_event *event);
+syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int timeout);
+syscall_(epoll_pwait, int epfd, struct epoll_event *events, int maxevents, int timeout,
+         sigset_t *sigmask, size_t sigsetsize);
+
+// eventfd syscall
+syscall_(eventfd2, uint64_t initval, int flags);
+
 // proc syscall
 syscall_(exit, int exit_code);
 syscall_(set_tid_address, int *tidptr);

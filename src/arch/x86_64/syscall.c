@@ -217,6 +217,11 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_GETSOCKOPT]   = (syscall_t)syscall_getsockopt,
     [SYSCALL_GETSOCKNAME]  = (syscall_t)syscall_getsockname,
     [SYSCALL_GETPEERNAME]  = (syscall_t)syscall_getpeername,
+    [SYSCALL_EPOLL_CREATE1] = (syscall_t)syscall_epoll_create1,
+    [SYSCALL_EPOLL_CTL]     = (syscall_t)syscall_epoll_ctl,
+    [SYSCALL_EPOLL_WAIT]    = (syscall_t)syscall_epoll_wait,
+    [SYSCALL_EPOLL_PWAIT]   = (syscall_t)syscall_epoll_pwait,
+    [SYSCALL_EVENTFD2]      = (syscall_t)syscall_eventfd2,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

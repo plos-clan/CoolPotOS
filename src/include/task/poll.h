@@ -30,6 +30,8 @@
 #define EPOLL_CTL_MOD 3
 
 #include "types.h"
+#include "lock.h"
+#include "fs/vfs.h"
 
 struct pollfd {
     int   fd;
@@ -37,6 +39,40 @@ struct pollfd {
     short revents;
 };
 
+// Linux-compatible epoll_event (packed on x86_64)
+struct epoll_event {
+    uint32_t events;
+    uint64_t data;
+} __attribute__((packed));
+
+// Internal: one monitored fd entry
+typedef struct epoll_entry {
+    int      fd;
+    uint32_t events;
+    uint64_t data;
+} epoll_entry_t;
+
+// Internal: epoll instance (stored in vfs_node->handle)
+#define EPOLL_MAX_ENTRIES 128
+
+typedef struct epoll_instance {
+    epoll_entry_t entries[EPOLL_MAX_ENTRIES];
+    int           count;
+    spin_t        lock;
+    vfs_node_t    node;
+} epoll_instance_t;
+
+// eventfd flags (Linux ABI)
+#define EFD_SEMAPHORE 00000001
+#define EFD_CLOEXEC   02000000  // == O_CLOEXEC
+#define EFD_NONBLOCK  00004000  // == O_NONBLOCK
+
+typedef struct eventfd_ctx {
+    uint64_t   count;
+    spin_t     lock;
+    vfs_node_t node;
+    int        flags;
+} eventfd_ctx_t;
 
 struct pollfd *select_add(struct pollfd **comp, size_t *compIndex, size_t *complength, int fd,
                           int events);
@@ -44,4 +80,6 @@ bool           select_bitmap(const uint8_t *map, int index);
 void           select_bitmap_set(uint8_t *map, int index);
 uint32_t       poll_to_epoll_comp(uint32_t poll_events);
 uint32_t       epoll_to_poll_comp(uint32_t epoll_events);
+void           epollfs_regist();
+void           eventfdfs_regist();
 
