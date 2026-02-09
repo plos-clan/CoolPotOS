@@ -192,6 +192,12 @@ errno_t vfs_mkdir(const char *name) {
             do_update(current);
         } else {
             do_update(current);
+            if (current->type & file_symlink) {
+                vfs_node_t target = vfs_resolve_symlink_target(current);
+                if (!target) goto err;
+                current = target;
+                do_update(current);
+            }
             if (!(current->type & file_dir)) goto err;
         }
     }

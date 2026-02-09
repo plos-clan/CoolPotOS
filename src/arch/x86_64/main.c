@@ -37,6 +37,7 @@
 #include "security.h"
 #include "syscall.h"
 #include "task/futex.h"
+#include "task/poll.h"
 #include "task/scheduler.h"
 #include "task/signal.h"
 #include "task/smp.h"
@@ -94,6 +95,8 @@ USED _Noreturn void kmain() {
     devtmpfs_regist();
     pipefs_regist();
     sockfs_regist();
+    epollfs_regist();
+    eventfdfs_regist();
 
     // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用
     extern intctl_t apic_controller;
