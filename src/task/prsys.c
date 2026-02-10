@@ -103,14 +103,15 @@ syscall_(getppid) {
 }
 
 syscall_(ssetmask, int how, sigset_t *nset, sigset_t *oset) {
-    if (oset) *oset = get_current_task()->blocked;
+    tcb_t thread = get_current_task();
+    if (oset) *oset = thread->blocked;
     if (nset) {
         uint64_t safe  = *nset;
         safe          &= ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
         switch (how) {
-        case SIG_BLOCK: get_current_task()->blocked |= safe; break;
-        case SIG_UNBLOCK: get_current_task()->blocked &= ~(safe); break;
-        case SIG_SETMASK: get_current_task()->blocked = safe; break;
+        case SIG_BLOCK: thread->blocked |= safe; break;
+        case SIG_UNBLOCK: thread->blocked &= ~(safe); break;
+        case SIG_SETMASK: thread->blocked = safe; break;
         default: return -EINVAL;
         }
     }
@@ -171,9 +172,9 @@ syscall_(sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timesp
         has_timeout = true;
     }
 
+    tcb_t thread = get_current_task();
     uint64_t start = nano_time();
     while (true) {
-        tcb_t    thread  = get_current_task();
         sigset_t pending = thread->signal & mask;
         if (pending) {
             int signum = pick_pending_signal(pending);
@@ -251,8 +252,9 @@ syscall_(geteuid) {
 }
 
 syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusage) {
-
-    if (get_current_task()->process->child_process->size == 0) return SYSCALL_FAULT_(ECHILD);
+    tcb_t current = get_current_task();
+    pcb_t process = current->process;
+    if (process->child_process->size == 0) return SYSCALL_FAULT_(ECHILD);
     if (pid == -1) goto wait;
     pcb_t wait_p = found_pcb(pid);
     if (wait_p == NULL) return SYSCALL_FAULT_(ECHILD);
@@ -303,6 +305,7 @@ syscall_(get_tid) {
 }
 
 syscall_(prctl, int option) {
+    tcb_t current = get_current_task();
     switch (option) {
     case PR_SET_NAME:
         if (arg2 == 0) return -1;
@@ -314,17 +317,17 @@ syscall_(prctl, int option) {
         name_buf[length] = '\0';
         char *copied = strdup(name_buf);
         if (copied == NULL) return -1;
-        free(get_current_task()->name);
-        get_current_task()->name = copied;
+        free(current->name);
+        current->name = copied;
         break;
     case PR_GET_NAME:
         if (arg2 == 0) return -1;
         char *proc_name = (char *)arg2;
         memset(proc_name, 0, 16);
-        if (get_current_task()->name) {
-            size_t copy_len = strlen(get_current_task()->name);
+        if (current->name) {
+            size_t copy_len = strlen(current->name);
             if (copy_len > 15) copy_len = 15;
-            memcpy(proc_name, get_current_task()->name, copy_len);
+            memcpy(proc_name, current->name, copy_len);
         }
         break;
     case PR_GET_DUMPABLE: return 0; //TODO CP_Kernel 不支持核心转储

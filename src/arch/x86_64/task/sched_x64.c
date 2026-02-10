@@ -319,9 +319,10 @@ static uint64_t build_user_stack(tcb_t task, uint64_t sp, uint64_t entry_point, 
 #define ulog(...) logkf(__VA_ARGS__);
 
 _Noreturn void arch_switch_to_user_mode() {
-    get_current_task()->context.regs.rflags = 0 << 12 | 0b10 | 1 << 9;
+    tcb_t current = get_current_task();
+    current->context.regs.rflags = 0 << 12 | 0b10 | 1 << 9;
 
-    pcb_t process = get_current_task()->process;
+    pcb_t process = current->process;
     if (process->exec == NULL) {
         ulog("process exec file handle is null.\n");
         goto err;
@@ -338,24 +339,24 @@ _Noreturn void arch_switch_to_user_mode() {
         goto err;
     }
 
-    get_current_task()->context.user_stack = page_alloc_random(
+    current->context.user_stack = page_alloc_random(
         process->directory, BIG_USER_STACK + PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    get_current_task()->context.user_stack_top =
-        get_current_task()->context.user_stack + BIG_USER_STACK;
-    uint64_t rsp = get_current_task()->context.user_stack_top;
+    current->context.user_stack_top =
+        current->context.user_stack + BIG_USER_STACK;
+    uint64_t rsp = current->context.user_stack_top;
 
     vma_t *stack_vma = vma_alloc();
 
-    stack_vma->vm_start  = get_current_task()->context.user_stack;
-    stack_vma->vm_end    = get_current_task()->context.user_stack_top;
+    stack_vma->vm_start  = current->context.user_stack;
+    stack_vma->vm_end    = current->context.user_stack_top;
     stack_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
 
     stack_vma->vm_type = VMA_TYPE_ANON;
     stack_vma->vm_name = strdup("[stack]");
 
     vma_t *region =
-        vma_find_intersection(&process->vma_manager, get_current_task()->context.user_stack,
-                              get_current_task()->context.user_stack_top);
+        vma_find_intersection(&process->vma_manager, current->context.user_stack,
+                              current->context.user_stack_top);
     if (!region) { vma_insert(&process->vma_manager, stack_vma); }
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
@@ -369,7 +370,7 @@ _Noreturn void arch_switch_to_user_mode() {
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n\r");
             arch_close_interrupt();
-            kill_proc(get_current_task()->process, -1, true);
+            kill_proc(process, -1, true);
             arch_open_interrupt();
             for (;;)
                 arch_wait_for_interrupt();
@@ -388,17 +389,17 @@ _Noreturn void arch_switch_to_user_mode() {
         ld_so_vma->vm_type = VMA_TYPE_ANON;
         ld_so_vma->vm_name = strdup("[libc]");
 
-        vma_t *region = vma_find_intersection(&get_current_task()->process->vma_manager,
+        vma_t *region = vma_find_intersection(&process->vma_manager,
                                               linker_start, linker_start + link_size);
-        if (!region) { vma_insert(&get_current_task()->process->vma_manager, ld_so_vma); }
+        if (!region) { vma_insert(&process->vma_manager, ld_so_vma); }
         // 如未实现 VMA 可以直接去掉这段代码
 
         logkf("task: linker main: %p - program main: %p\n", linker_main, entry);
-        rsp   = build_user_stack(get_current_task(), rsp, (uint64_t)entry, linker_start, link_data,
+        rsp   = build_user_stack(current, rsp, (uint64_t)entry, linker_start, link_data,
                                  link_size, data, load_start);
         entry = linker_main;
     } else {
-        rsp = build_user_stack(get_current_task(), rsp, (uint64_t)entry, 0, NULL, 0, data,
+        rsp = build_user_stack(current, rsp, (uint64_t)entry, 0, NULL, 0, data,
                                load_start);
     }
     free(data);
@@ -413,7 +414,7 @@ _Noreturn void arch_switch_to_user_mode() {
                      "iretq\n"
                      :
                      : "r"((uint64_t)GET_SEL(4 * 8, SA_RPL3)), "r"(rsp),
-                       "r"(get_current_task()->context.regs.rflags), "r"((uint64_t)0x23),
+                       "r"(current->context.regs.rflags), "r"((uint64_t)0x23),
                        "r"(entry), "r"((uint64_t)0x1b)
                      : "memory");
 err:
@@ -421,7 +422,7 @@ err:
     if (process->child_threads->size <= 1) {
         kill_proc(process, -1, true);
     } else
-        kill_thread(get_current_task());
+        kill_thread(current);
     while (true)
         arch_wait_for_interrupt();
 }

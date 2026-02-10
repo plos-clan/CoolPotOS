@@ -165,11 +165,12 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
 }
 
 int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
-    get_current_task()->status = T_WAIT;
+    tcb_t current = get_current_task();
+    current->status = T_WAIT;
     bool is_sti                = arch_check_interrupt();
     arch_open_interrupt();
 
-    pcb_t process = get_current_task()->process;
+    pcb_t process = current->process;
 
     ipc_message_t mesg     = NULL;
     int           exit_code = 0;
@@ -186,15 +187,15 @@ int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
         }
         if (mesg == NULL) {
             if (!is_sti) arch_close_interrupt();
-            get_current_task()->status = T_RUNNING;
+            current->status = T_RUNNING;
             *pid_ret                   = 0;
             return 0;
         }
     } else {
         while (1) {
-            change_task_weight(get_current_task(), NICE_TO_PRIO(10));
+            change_task_weight(current, NICE_TO_PRIO(10));
             mesg = ipc_recv_wait(process->ipc_queue, IPC_MSG_TYPE_EPID);
-            change_task_weight(get_current_task(), NICE_TO_PRIO(0));
+            change_task_weight(current, NICE_TO_PRIO(0));
             exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) |
                         (mesg->data[1] << 8) | mesg->data[0];
             if (pid == -1 || pid == mesg->pid) break;
@@ -208,7 +209,7 @@ int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
     free(mesg);
 
     if (!is_sti) arch_close_interrupt();
-    get_current_task()->status = T_RUNNING;
+    current->status = T_RUNNING;
     return exit_code;
 }
 

@@ -13,7 +13,8 @@ extern cow_arraylist *process_list;
 static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_stack) {
     cpu_local_t *current_cpu = arch_current_cpu();
 
-    pcb_t current_pcb = get_current_task()->process;
+    tcb_t current = get_current_task();
+    pcb_t current_pcb = current->process;
 
     pcb_t new_pcb = malloc(sizeof(struct process_control_block));
     memset(new_pcb, 0, sizeof(struct process_control_block));
@@ -32,7 +33,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
         free(new_pcb);
         return -ENOMEM;
     }
-    tcb_t parent_task = get_current_task();
+    tcb_t parent_task = current;
     tcb_t new_task    = malloc(STACK_SIZE);
     if (new_task == NULL) {
         vma_manager_exit_cleanup(&new_pcb->vma_manager);
@@ -349,7 +350,8 @@ shebang_retry:;
         }
     }
 
-    pcb_t process = get_current_task()->process;
+    tcb_t current = get_current_task();
+    pcb_t process = current->process;
 
     arch_close_interrupt();
     disable_scheduler();
@@ -395,17 +397,16 @@ shebang_retry:;
     // POSIX execve: reset signal handlers with user functions to SIG_DFL
     // SIG_IGN and SIG_DFL are preserved; blocked mask is preserved
     {
-        tcb_t task = get_current_task();
         for (int i = MINSIG; i <= MAXSIG; i++) {
-            if (task->actions[i].sa_handler != SIG_IGN &&
-                task->actions[i].sa_handler != SIG_DFL) {
-                task->actions[i].sa_handler = SIG_DFL;
-                task->actions[i].sa_flags   = 0;
-                task->actions[i].sa_mask    = 0;
-                task->actions[i].sa_restorer = NULL;
+            if (current->actions[i].sa_handler != SIG_IGN &&
+                current->actions[i].sa_handler != SIG_DFL) {
+                current->actions[i].sa_handler = SIG_DFL;
+                current->actions[i].sa_flags   = 0;
+                current->actions[i].sa_mask    = 0;
+                current->actions[i].sa_restorer = NULL;
             }
         }
-        task->signal = 0; // clear pending signals
+        current->signal = 0; // clear pending signals
     }
 
     // 根据 POSIX 的 execve 规范定义, 内核对象不变, 故懒分配器, IPC等不动
@@ -422,10 +423,10 @@ shebang_retry:;
 
     uint64_t stack = page_alloc_random(get_current_directory(), BIG_USER_STACK,
                                        PTE_PRESENT | PTE_WRITEABLE | PTE_USER);
-    get_current_task()->context.user_stack     = stack;
-    get_current_task()->context.user_stack_top = stack + BIG_USER_STACK;
-    get_current_task()->tid_directory          = NULL;
-    get_current_task()->tid_address            = 0;
+    current->context.user_stack     = stack;
+    current->context.user_stack_top = stack + BIG_USER_STACK;
+    current->tid_directory          = NULL;
+    current->tid_address            = 0;
 
     enable_scheduler();
     arch_open_interrupt();
