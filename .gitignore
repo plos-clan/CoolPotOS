@@ -5,18 +5,21 @@
 /compile_commands.json
 /tmp
 
+# Raw assets
+/assets/initramfs
+
 # Disk cache
 *.qcow2
 
-# IDE Config
+# IDE config
 .idea
 .vscode
 cmake-build-debug/
 
-# MacOS Cache
+# MacOS cache
 .DS_Store
 
-# Compiled Apps
+# Compiled apps
 assets/*.elf
 
 # CMake caches
@@ -31,6 +34,6 @@ assets/*.elf
 /cpkrnl_x64.elf
 /Makefile
 
-#AI Agent Cache
+# AI Agent Cache
 .codex
 AGENTS.md

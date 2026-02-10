@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_PID_NAME_LEN 5
+#define MAX_PID_NAME_LEN 21
 
 #define SCHED_NORMAL   0
 #define SCHED_FIFO     1

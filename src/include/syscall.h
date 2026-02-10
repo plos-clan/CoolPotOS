@@ -108,6 +108,7 @@
 #define FUTEX_UNLOCK_PI   7
 #define FUTEX_TRYLOCK_PI  8
 #define FUTEX_WAIT_BITSET 9
+#define FUTEX_WAKE_BITSET 10
 #define FUTEX_PRIVATE_FLAG 128
 #define FUTEX_CLOCK_REALTIME 256
 #define FUTEX_CMD_MASK 0x7f
@@ -375,8 +376,12 @@ syscall_(rmdir, char *name);
 syscall_(unlinkat, int dirfd, char *name);
 syscall_(access, char *filename);
 syscall_(mkdir, char *name, uint64_t mode);
+syscall_(mkdirat, int dirfd, char *name, uint64_t mode);
+syscall_(mknod, char *path, uint32_t mode, uint32_t dev);
 syscall_(readlink, char *path, char *buf, uint64_t size);
 syscall_(chmod, char *path, uint64_t mode);
+syscall_(fchmod, int fd, uint64_t mode);
+syscall_(fchmodat, int dirfd, char *path, uint64_t mode, int flags);
 syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count);
 syscall_(openat, int dirfd, char *name, uint64_t flags, uint64_t mode);
 syscall_(faccessat, int dirfd, char *pathname, uint64_t mode);
@@ -384,6 +389,9 @@ syscall_(faccessat2, int dirfd, char *pathname, uint64_t mode, uint64_t flag);
 syscall_(statfs, char *path, struct statfs *buf);
 syscall_(chroot, char *path);
 syscall_(chown, const char *filename, uint64_t uid, uint64_t gid);
+syscall_(fchown, int fd, uint64_t uid, uint64_t gid);
+syscall_(lchown, const char *filename, uint64_t uid, uint64_t gid);
+syscall_(fchownat, int dirfd, const char *path, uint64_t uid, uint64_t gid, int flags);
 syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags);
 syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
 syscall_(umask, uint64_t mask);
@@ -431,6 +439,7 @@ syscall_(yield);
 syscall_(setpgid, pid_t pid, pid_t pgid);
 syscall_(getpgid);
 syscall_(getsid, pid_t pid);
+syscall_(setsid);
 syscall_(getppid);
 syscall_(ssetmask, int how, sigset_t *nset, sigset_t *oset);
 syscall_(sigaltstack, altstack_t *old_stack, altstack_t *new_stack);

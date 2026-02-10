@@ -103,11 +103,11 @@
 
 // 内核编译配置选项
 #ifndef EEVDF_SCHEDULER
-#    define EEVDF_SCHEDULER 1 // 是否启用EEVDF调度器
+#    define EEVDF_SCHEDULER 0 // 是否启用EEVDF调度器
 #endif
 
 #ifndef HEAP_CHECK
-#    define HEAP_CHECK 0 // 启用内核堆双端越界检查
+#    define HEAP_CHECK 1 // 启用内核堆双端越界检查
 #endif
 
 #ifndef MODULE_CHECK

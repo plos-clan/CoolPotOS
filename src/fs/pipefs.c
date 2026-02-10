@@ -193,7 +193,7 @@ int pipefs_ioctl(void *file, ssize_t cmd, ssize_t arg) {
     (void)file;
     (void)arg;
     switch (cmd) {
-    default: return -ENOSYS;
+    default: return -ENOTTY;
     }
 }
 
@@ -212,10 +212,7 @@ bool pipefs_close(void *current) {
 
     spin_lock(pipe->lock);
 
-    extern void logkf(char *fmt, ...);
     if (spec->write) {
-        logkf("[pipe-dbg] close write end: write_fds=%d->%d, read_fds=%d\n",
-              pipe->write_fds, pipe->write_fds - 1, pipe->read_fds);
         if (pipe->write_fds > 0) pipe->write_fds--;
         if (pipe->write_fds == 0) {
             if (spec->active == 0) {
@@ -225,8 +222,6 @@ bool pipefs_close(void *current) {
             }
         }
     } else {
-        logkf("[pipe-dbg] close read end: read_fds=%d->%d, write_fds=%d\n",
-              pipe->read_fds, pipe->read_fds - 1, pipe->write_fds);
         if (pipe->read_fds > 0) pipe->read_fds--;
         if (pipe->read_fds == 0) {
             if (spec->active == 0) {

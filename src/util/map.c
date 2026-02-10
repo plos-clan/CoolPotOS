@@ -45,8 +45,10 @@ map *map_create(size_t capacity) {
 
 void map_set(map *map0, void *key, void *value) {
     spin_lock(map0->lock);
+    if ((double)(map0->size + 1) / (double)map0->capacity > LOAD_FACTOR_THRESHOLD) {
+        map_resize(map0);
+    }
     size_t index = hash_ptr(key) % map0->capacity;
-    if ((double)(map0->size / map0->capacity) > LOAD_FACTOR_THRESHOLD) { map_resize(map0); }
 
     map_entry *entry = map0->buckets[index];
     while (entry) {
@@ -63,6 +65,7 @@ void map_set(map *map0, void *key, void *value) {
     new_entry->value     = value;
     new_entry->next      = map0->buckets[index];
     map0->buckets[index] = new_entry;
+    map0->size++;
 
     spin_unlock(map0->lock);
 }
@@ -80,13 +83,13 @@ void map_remove(map *map0, void *key) {
                 map0->buckets[index] = entry->next;
 
             free(entry);
+            if (map0->size > 0) map0->size--;
             spin_unlock(map0->lock);
             return;
         }
         prev  = entry;
         entry = entry->next;
     }
-    map0->size--;
     spin_unlock(map0->lock);
 }
 

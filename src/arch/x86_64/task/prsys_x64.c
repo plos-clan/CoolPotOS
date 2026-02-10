@@ -21,6 +21,8 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->name   = strdup(current_pcb->name);
     new_pcb->status = T_START;
     new_pcb->tty    = current_pcb->tty;
+    new_pcb->pgid   = current_pcb->pgid;
+    new_pcb->sid    = current_pcb->sid;
 
     new_pcb->directory =
         is_vfork ? current_pcb->directory : clone_page_directory(current_pcb->directory, false);
@@ -59,6 +61,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->ppl_index     = cow_list_add(current_pcb->child_process, new_pcb);
     new_pcb->proc_root     = current_pcb->proc_root;
     new_pcb->proc_root->refcount++;
+    new_pcb->ctty_path     = current_pcb->ctty_path ? strdup(current_pcb->ctty_path) : NULL;
 
     new_task->cpu_id                 = current_cpu->id;
     new_task->status                 = T_START;
@@ -96,6 +99,10 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_task->affinity_mask   = parent_task->affinity_mask;
     new_task->context.fs      = parent_task->context.fs;
     new_task->context.fs_base = parent_task->context.fs_base;
+
+    // Inherit signal handlers and blocked mask from parent (POSIX fork semantics)
+    memcpy(new_task->actions, parent_task->actions, sizeof(parent_task->actions));
+    new_task->blocked = parent_task->blocked;
 
     new_task->process  = new_pcb;
     new_task->ct_index = cow_list_add(new_pcb->child_threads, new_task);
@@ -146,7 +153,12 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->context.regs.rflags    = reg->rflags;
     new_task->context.kernel_stack   = (uint64_t)new_task + STACK_SIZE;
     new_task->_start                 = parent_task->_start;
-    strcpy(new_task->name, parent_task->name);
+    new_task->name                   =
+        parent_task->name ? strdup(parent_task->name) : strdup("thread");
+    if (new_task->name == NULL) {
+        free(new_task);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
 
     new_task->context.regs.rip    = reg->rcx; // syscall 指令中 rcx 寄存器为 rip
     new_task->context.regs.rflags = reg->r11; // syscall 指令中 r11 寄存器为 rflags
@@ -176,6 +188,10 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
     new_task->context.fs      = parent_task->context.fs;
     new_task->context.fs_base = parent_task->context.fs_base;
 
+    // Inherit signal handlers and blocked mask from parent
+    memcpy(new_task->actions, parent_task->actions, sizeof(parent_task->actions));
+    new_task->blocked = parent_task->blocked;
+
     void *signal_stack  = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     void *syscall_stack = aligned_alloc(PAGE_SIZE, MAX_STACK_SIZE) + MAX_STACK_SIZE;
     memset((void *)(signal_stack - STACK_SIZE), 0, STACK_SIZE);
@@ -197,7 +213,11 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
         new_task->tid_address   = (uint64_t)child_tid;
         new_task->tid_directory = get_current_directory();
     }
+    arch_close_interrupt();
+    disable_scheduler();
     add_task_prio(new_task, parent_task->prio);
+    enable_scheduler();
+    arch_open_interrupt();
 
     return new_task->tid;
 }
@@ -231,6 +251,13 @@ syscall_(vfork) {
 syscall_(execve, char *path, char **argv, char **envp) {
     if (unlikely(path == NULL)) return SYSCALL_FAULT_(EINVAL);
     if (unlikely(argv == NULL)) return SYSCALL_FAULT_(EINVAL);
+
+    // If argv is empty ({NULL}), auto-fill argv[0] with the program path (Linux 5.18+ behavior)
+    char *auto_argv_buf[2] = {NULL, NULL};
+    if (argv[0] == NULL) {
+        auto_argv_buf[0] = path;
+        argv = auto_argv_buf;
+    }
 
     char      *norm_path     = vfs_cwd_path_build(path);
     char     **shebang_argv  = NULL; // heap-allocated argv (all entries are strdup'd)
@@ -327,15 +354,6 @@ shebang_retry:;
     arch_close_interrupt();
     disable_scheduler();
 
-    if (argv[0] == NULL) {
-        free(norm_path);
-        for (size_t i = 0; i < shebang_argc; i++) free(shebang_argv[i]);
-        free(shebang_argv);
-        enable_scheduler();
-        arch_open_interrupt();
-        return SYSCALL_FAULT_(EINVAL);
-    }
-
     char *old_cmdline = process->cmdline;
     process->cmdline  = build_proc_cmdline(argv, &process->cl_length);
     if (process->name != NULL) free(process->name);
@@ -374,6 +392,22 @@ shebang_retry:;
         }
     }
 
+    // POSIX execve: reset signal handlers with user functions to SIG_DFL
+    // SIG_IGN and SIG_DFL are preserved; blocked mask is preserved
+    {
+        tcb_t task = get_current_task();
+        for (int i = MINSIG; i <= MAXSIG; i++) {
+            if (task->actions[i].sa_handler != SIG_IGN &&
+                task->actions[i].sa_handler != SIG_DFL) {
+                task->actions[i].sa_handler = SIG_DFL;
+                task->actions[i].sa_flags   = 0;
+                task->actions[i].sa_mask    = 0;
+                task->actions[i].sa_restorer = NULL;
+            }
+        }
+        task->signal = 0; // clear pending signals
+    }
+
     // 根据 POSIX 的 execve 规范定义, 内核对象不变, 故懒分配器, IPC等不动
     //    lazy_free(process);
     //    process->virt_queue = create_llist_queue();
@@ -399,10 +433,6 @@ shebang_retry:;
 }
 
 syscall_(clone, uint64_t flags, uint64_t stack, int *parent_tid, int *child_tid, uint64_t tls) {
-    arch_close_interrupt();
-    disable_scheduler();
     uint64_t id = thread_clone(regs, flags, stack, parent_tid, child_tid, tls);
-    arch_open_interrupt();
-    enable_scheduler();
     return id;
 }

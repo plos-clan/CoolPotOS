@@ -263,8 +263,8 @@ static uint64_t __update_min_vruntime(uint64_t vruntime, cpu_local_t *cpu) {
 }
 
 static void update_min_vruntime(cpu_local_t *cpu) {
-    struct sched_entity *se =
-        container_of(eevdf_sched(cpu)->root->rb_node, struct sched_entity, run_node);
+    struct rb_node      *node = eevdf_sched(cpu)->root ? eevdf_sched(cpu)->root->rb_node : NULL;
+    struct sched_entity *se   = node ? container_of(node, struct sched_entity, run_node) : NULL;
     struct sched_entity *curr     = eevdf_sched(cpu)->current;
     uint64_t             vruntime = eevdf_sched(cpu)->min_vruntime;
 
@@ -410,21 +410,27 @@ void add_eevdf_entity_prio(tcb_t new_task, cpu_local_t *cpu, uint64_t prio) {
 }
 
 void remove_eevdf_entity(tcb_t thread, cpu_local_t *cpu) {
+    if (thread == NULL || cpu == NULL || thread->sched_handle == NULL) return;
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
     remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity, cpu);
     free(entity);
-    eevdf_sched(cpu)->task_count--;
+    thread->sched_handle = NULL;
+    if (eevdf_sched(cpu)->task_count > 0) eevdf_sched(cpu)->task_count--;
 }
 
 void wait_eevdf_entity(tcb_t thread, cpu_local_t *cpu) {
+    if (thread == NULL || cpu == NULL || thread->sched_handle == NULL) return;
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
+    if (!entity->on_rq) return;
     remove_sched_entity(((struct eevdf_t *)cpu->sched_handle)->root, entity, cpu);
     entity->wait_index = cow_list_add(((struct eevdf_t *)cpu->sched_handle)->wait_queue, entity);
-    eevdf_sched(cpu)->task_count--;
+    if (eevdf_sched(cpu)->task_count > 0) eevdf_sched(cpu)->task_count--;
 }
 
 void futex_eevdf_entity(tcb_t thread, cpu_local_t *cpu) {
+    if (thread == NULL || cpu == NULL || thread->sched_handle == NULL) return;
     struct sched_entity *entity = (struct sched_entity *)thread->sched_handle;
+    if (entity->on_rq) return;
     cow_list_remove(((struct eevdf_t *)cpu->sched_handle)->wait_queue, entity->wait_index);
     entity->handle = cpu->sched_handle;
     entity->on_rq = true;

@@ -67,17 +67,13 @@ static void kill_thread0(pcb_t parent, tcb_t task) {
 
 static void kill_proc0(pcb_t pcb) {
     cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
-    do {
-        if (pcb->child_threads->size == 0) break;
-        tcb_t thread = NULL;
-        cow_foreach(pcb->child_threads, thread) {
-            break;
-        }
-        if (thread == NULL || thread->status == T_OUT) break;
-        cow_list_remove(pcb->child_threads, thread->ct_index);
-        kill_thread0(pcb, thread);
+    while (pcb->child_threads->size > 0) {
+        tcb_t thread = (tcb_t)cow_list_get(pcb->child_threads, 0);
+        cow_list_remove(pcb->child_threads, 0);
+        if (thread == NULL) continue;
+        if (thread->status != T_OUT) { kill_thread0(pcb, thread); }
         free(thread);
-    } while (true);
+    }
 
     cow_list_destroy(pcb->child_threads);
     cow_list_remove(process_list, pcb->pl_index);
@@ -93,6 +89,7 @@ static void kill_proc0(pcb_t pcb) {
     vfs_close(pcb->cwd);
     vfs_close(pcb->exec);
     if (pcb->envp) free_envp(pcb->envp);
+    free(pcb->ctty_path);
     logkf("task: Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pid,
           pcb->vfork ? "true" : "false");
     if (!pcb->vfork) free_page_directory(pcb->directory);
@@ -101,30 +98,42 @@ static void kill_proc0(pcb_t pcb) {
 
 void kill_thread(tcb_t task) {
     if (task == NULL) return;
+    if (task->status == T_DEATH || task->status == T_OUT) return;
     task->status = T_DEATH;
     if (task->tid_directory != NULL) {
         page_directory_t *directory = get_current_directory();
         switch_context_directory(task->tid_directory);
-        futex_wake((void *)arch_virt_to_phys(task->tid_address), 1);
+        uint64_t futex_key = arch_virt_to_phys(task->tid_address);
+        if (task->tid_address != 0 && futex_key != 0) {
+            int *tid_addr = (int *)task->tid_address;
+            *tid_addr     = 0;
+        }
+        int woken = futex_key ? futex_wake((void *)futex_key, 1) : 0;
         switch_context_directory(directory);
+        task->tid_address   = 0;
+        task->tid_directory = NULL;
     }
     futex_free(task);
-    remove_task(task, get_cpu_local(task->cpu_id));
+    if (task->sched_handle != NULL) { remove_task(task, get_cpu_local(task->cpu_id)); }
 }
 
 void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
     if (pcb == NULL) return;
+    if (pcb->status == T_DEATH) return;
+    if (is_zombie && pcb->status == T_ZOMBIE) return;
     if (pcb->pid == kernel_process->pid) {
         kerror("Cannot kill System process.");
         return;
     }
-    if (pcb->tty->fgproc == pcb->pid) { pcb->tty->fgproc = 0; }
+    if (pcb->tty && pcb->tty->fgproc == pcb->pid) { pcb->tty->fgproc = 0; }
 
     if (is_zombie) {
         disable_scheduler();
         if (pcb->child_threads->size > 0) {
             tcb_t tcb = NULL;
             cow_foreach(pcb->child_threads, tcb) {
+                if (tcb == NULL) continue;
+                if (tcb->status == T_DEATH || tcb->status == T_OUT) continue;
                 kill_thread(tcb);
             }
         }
@@ -213,6 +222,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->umask         = new_pgb->parent ? new_pgb->parent->umask : 0022;
     new_pgb->child_threads = cow_list_create();
     new_pgb->tty           = new_pgb->parent->tty;
+    new_pgb->ctty_path     = new_pgb->parent->ctty_path ? strdup(new_pgb->parent->ctty_path) : NULL;
     new_pgb->fdts          = fds_init();
     new_pgb->ipc_queue     = ipc_queue_init();
     new_pgb->virt_queue    = create_llist_queue();
@@ -258,6 +268,7 @@ void setup_task() {
     kernel_process->child_threads = cow_list_create();
     kernel_process->directory     = get_kernel_pagedir();
     kernel_process->tty           = kernel_session;
+    kernel_process->ctty_path     = strdup("/dev/tty0");
     kernel_process->status        = T_RUNNING;
     kernel_process->exec          = NULL;
     kernel_process->virt_queue    = create_llist_queue();

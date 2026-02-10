@@ -1,4 +1,5 @@
 #include "driver/char/ps2_kbd.h"
+#include "driver/evdev.h"
 #include "driver/input_device.h"
 #include "driver/tty.h"
 #include "intctl.h"
@@ -126,12 +127,20 @@ static void ps2_key_handle(uint64_t irq, void *arg, struct pt_regs *regs) {
     char    out      = 0;
 #if defined(__x86_64__) || defined(__amd64__)
     scancode = io_in8(0x60);
-    if (scancode == 0xE0)
-        out = keyboard_scancode(scancode, io_in8(0x60), 0);
-    else if (scancode == 0xE1)
+    if (scancode == 0xE0) {
+        uint8_t sc2 = io_in8(0x60);
+        send_input_event(ps2_kbd_device, EV_KEY,
+                         (uint64_t)(sc2 & 0x7F) | EVDEV_EXT_FLAG,
+                         (sc2 & 0x80) ? EV_RELEASE : EV_PRESS);
+        out = keyboard_scancode(scancode, sc2, 0);
+    } else if (scancode == 0xE1) {
         out = keyboard_scancode(scancode, io_in8(0x60), io_in8(0x60));
-    else
+    } else {
+        send_input_event(ps2_kbd_device, EV_KEY,
+                         (uint64_t)(scancode & 0x7F),
+                         (scancode & 0x80) ? EV_RELEASE : EV_PRESS);
         out = keyboard_scancode(scancode, 0, 0);
+    }
 #endif
     char *c;
     switch ((uint8_t)out) {

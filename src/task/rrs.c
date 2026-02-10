@@ -10,11 +10,13 @@ void add_rrs_entity(tcb_t thread, cpu_local_t *local) {
 }
 
 void remove_rrs_entity(tcb_t thread, cpu_local_t *local) {
+    if (thread == NULL || local == NULL || thread->sched_handle == NULL) return;
     rrs_t               *scheduler = local->sched_handle;
     struct sched_entity *entity    = thread->sched_handle;
     list_remove_node(scheduler->sched_queue, entity->node);
     if (scheduler->curr == entity) scheduler->curr = scheduler->idle;
     free(entity);
+    thread->sched_handle = NULL;
 }
 
 tcb_t rrs_pick_next_task(cpu_local_t *local) {

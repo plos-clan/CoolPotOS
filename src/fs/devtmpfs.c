@@ -1,7 +1,10 @@
 #include "fs/devtmpfs.h"
+#include "boot.h"
 #include "cow_arraylist.h"
 #include "driver/blk_device.h"
 #include "driver/drm/drm_device.h"
+#include "driver/evdev.h"
+#include "driver/fb.h"
 #include "driver/tty.h"
 #include "errno.h"
 #include "lib/sprintf.h"
@@ -14,7 +17,7 @@ static _Atomic volatile size_t dev_id_now   = 0;
 
 static void load_tty_device(vfs_node_t node) {
     extern tty_t *kernel_session;
-    create_device_node(node, "tty0", device_stream, kernel_session,
+    create_device_node(node, "tty0", device_stream, kernel_session, 0,
                        (void *)kernel_session->ops.ioctl, (void *)kernel_session->ops.read,
                        (void *)kernel_session->ops.write, (void *)kernel_session->ops.poll, NULL,
                        (void *)kernel_session->ops.size_t);
@@ -24,7 +27,7 @@ static void load_blk_device(vfs_node_t node) {
     extern cow_arraylist *block_device_list;
     blk_device_t         *device = NULL;
     cow_foreach(block_device_list, device) {
-        create_device_node(node, device->name, device_block, device, (void *)blk_ioctl,
+        create_device_node(node, device->name, device_block, device, 0, (void *)blk_ioctl,
                            (void *)blk_device_read, (void *)blk_device_write, (void *)blk_poll,
                            NULL, (void *)blk_size_t);
     }
@@ -40,8 +43,9 @@ static void load_drm_device(vfs_node_t node) {
     extern cow_arraylist *drm_devices;
     drmd_device_t        *device = NULL;
     cow_foreach(drm_devices, device) {
-        create_device_node(drm_dir, device->name, device_stream, device->ptr, device->ioctl,
-                           device->read, device->write, device->poll, device->map, drm_size_t);
+        create_device_node(drm_dir, device->name, device_stream, device->ptr, device->dev,
+                           device->ioctl, device->read, device->write, device->poll, device->map,
+                           drm_size_t);
     }
 
     vfs_close(drm_dir);
@@ -62,6 +66,8 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
     load_tty_device(node);
     load_blk_device(node);
     load_drm_device(node);
+    fb_setup(node);
+    evdev_setup(node);
 
     return EOK;
 }
@@ -81,7 +87,14 @@ errno_t devtmpfs_symlink(void *parent, const char *name, vfs_node_t node) {
 }
 
 errno_t devtmpfs_free(void *handle) {
+    if (handle == NULL) return EOK;
     dtmp_handle_t *file = handle;
+    if (file->type == dtp_file_device && file->is_per_open) {
+        if (file->close_t != NULL && file->device_handle != NULL) {
+            file->close_t(file->device_handle);
+            file->device_handle = NULL;
+        }
+    }
     if (file->type != dtp_file_file) {
         free(file);
         return EOK;
@@ -115,7 +128,12 @@ errno_t devtmpfs_delete(void *parent, vfs_node_t node) {
     return EOK;
 }
 
-void devtmpfs_open(void *parent, const char *name, vfs_node_t node) {}
+void devtmpfs_open(void *parent, const char *name, vfs_node_t node) {
+    dtmp_handle_t *f = (dtmp_handle_t *)node->handle;
+    if (f && f->type == dtp_file_device && f->open_t) {
+        f->open_t(parent, name, node);
+    }
+}
 
 errno_t devtmpfs_rename(void *current, const char *new_name) {
     dtmp_handle_t *f = (dtmp_handle_t *)current;
@@ -135,6 +153,13 @@ vfs_node_t devtmpfs_dup(vfs_node_t node) {
     copy->owner       = node->owner;
     copy->child       = node->child;
     copy->realsize    = node->realsize;
+
+    // For devices with open_t callback, call it to initialize per-open instance
+    dtmp_handle_t *dtmp = (dtmp_handle_t *)node->handle;
+    if (dtmp && dtmp->type == dtp_file_device && dtmp->open_t) {
+        dtmp->open_t(node->parent ? node->parent->handle : NULL, node->name, copy);
+    }
+
     return copy;
 }
 
@@ -173,6 +198,10 @@ void *devtmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t pr
 }
 
 bool devtmpfs_close(void *file) {
+    dtmp_handle_t *f = (dtmp_handle_t *)file;
+    if (f && f->type == dtp_file_device && f->close_t && f->device_handle) {
+        f->close_t(f->device_handle);
+    }
     return false;
 }
 
@@ -189,43 +218,67 @@ errno_t devtmpfs_stat(void *file, vfs_node_t node) {
     dtmp_handle_t *file0 = (dtmp_handle_t *)file;
     if (file0 == NULL) return -ENOENT;
     if (file0->type == dtp_file_device) {
-        node->type = file0->dev_type == device_stream ? file_stream : file_block;
+        // Only set type if open_t didn't set a specific type (e.g. file_ptmx)
+        if (!(node->type & (file_ptmx | file_pts))) {
+            node->type = file0->dev_type == device_stream ? file_stream : file_block;
+        }
+        if (file0->size_t) node->size = file0->size_t(file0->device_handle);
         return EOK;
     }
     node->type = file0->type == dtp_file_symlink ? file_symlink
                  : file0->type == dtp_file_dir   ? file_dir
                                                  : file_none;
-    node->size = file0->type == dtp_file_dir ? 0 : file0->size_t(file0->device_handle);
+    node->size = file0->type == dtp_file_dir ? 0 : file0->size;
     return EOK;
 }
 
 errno_t create_device_node(vfs_node_t root, char *name, enum device_type type, void *handle,
-                           vfs_ioctl_t ioctl, vfs_read_t read, vfs_write_t write, vfs_poll_t poll,
-                           vfs_mapfile_t map, size_t (*size_t)(void *handle)) {
+                           uint64_t dev_number, vfs_ioctl_t ioctl, vfs_read_t read,
+                           vfs_write_t write, vfs_poll_t poll, vfs_mapfile_t map,
+                           size_t (*size_t)(void *handle)) {
+    return create_device_node_ex(root, name, type, handle, dev_number, NULL, NULL, ioctl, read, write,
+                                 poll, map, size_t);
+}
+
+errno_t create_device_node_ex(vfs_node_t root, char *name, enum device_type type, void *handle,
+                              uint64_t dev_number, void (*open_t)(void *, const char *, vfs_node_t),
+                              vfs_close_t close_t,
+                              vfs_ioctl_t ioctl, vfs_read_t read, vfs_write_t write,
+                              vfs_poll_t poll, vfs_mapfile_t map, size_t (*size_t)(void *handle)) {
     if (root == NULL) return -EINVAL;
     if (root->fsid != dev_tmpfs_id) return -ENODEV;
     char *full_path  = vfs_get_fullpath(root);
     char *creat_path = calloc(1, strlen(full_path) + strlen(name) + 5);
     sprintf(creat_path, "%s/%s", full_path, name);
-    if (vfs_mkdir(creat_path) != EOK) goto err;
+    if (vfs_mkfile(creat_path) != EOK) goto err;
     vfs_node_t node = vfs_open(creat_path);
     if (node == NULL) goto err;
     dtmp_handle_t *fs_handle = node->handle;
     not_null_assert(fs_handle, "devtmpfs: create device handle null.");
-    fs_handle->dev_type      = type;
-    fs_handle->type          = dtp_file_device;
-    fs_handle->ioctl_t       = ioctl;
-    fs_handle->read_t        = read;
-    fs_handle->write_t       = write;
-    fs_handle->mapfile_t     = map;
-    fs_handle->poll_t        = poll;
-    fs_handle->device_handle = handle;
-    fs_handle->size_t        = size_t;
-    logkf("devtmpfs: create device at %s\n\r", creat_path);
-    node->size = size_t(handle);
-    node->dev  = dev_id_now++;
+    fs_handle->dev_type  = type;
+    fs_handle->type      = dtp_file_device;
+    fs_handle->open_t    = open_t;
+    fs_handle->close_t   = close_t;
+    fs_handle->is_per_open = false;
+    fs_handle->ioctl_t   = ioctl;
+    fs_handle->read_t    = read;
+    fs_handle->write_t   = write;
+    fs_handle->mapfile_t = map;
+    fs_handle->poll_t    = poll;
+    // Only set device_handle if open_t hasn't already set it
+    // For devices with open_t (like ptmx), open_t will set device_handle per-open
+    // For devices without open_t, set it to the provided handle or self-reference
+    if (!open_t) {
+        fs_handle->device_handle = handle == NULL ? fs_handle : handle;
+    } else {
+        // Leave NULL for now; open_t will set it during stat
+        fs_handle->device_handle = NULL;
+    }
+    fs_handle->size_t = size_t;
+    node->size = size_t ? size_t(open_t ? NULL : handle) : 0;
+    node->dev  = dev_number ? dev_number : dev_id_now++;
     node->rdev = node->dev;
-    vfs_update(node);
+    node->type = fs_handle->dev_type == device_stream ? file_stream : file_block;
     vfs_close(node);
     free(creat_path);
     free(full_path);
@@ -265,6 +318,26 @@ errno_t devtmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t
     return 0;
 }
 
+size_t devtmpfs_readlink(vfs_node_t node, void *addr, size_t offset, size_t size) {
+    if (node == NULL || addr == NULL || size == 0) return 0;
+    const char *target = node->linkto_path;
+    if (target == NULL && node->linkto != NULL) {
+        target = vfs_get_fullpath(node->linkto);
+        if (target == NULL) return 0;
+    }
+    if (target == NULL) return 0;
+    size_t len = strlen(target);
+    if (offset >= len) {
+        if (target != node->linkto_path) free((void *)target);
+        return 0;
+    }
+    size_t to_copy = len - offset;
+    if (to_copy > size) to_copy = size;
+    memcpy(addr, target + offset, to_copy);
+    if (target != node->linkto_path) free((void *)target);
+    return to_copy;
+}
+
 errno_t devtmpfs_ioctl(void *file, size_t req, void *arg) {
     dtmp_handle_t *handle = file;
     if (handle->ioctl_t == NULL) return -ENOSYS;
@@ -280,7 +353,7 @@ static struct vfs_callback devtmpfs_callbacks = {
     .open     = devtmpfs_open,
     .read     = devtmpfs_read,
     .write    = devtmpfs_write,
-    .readlink = (vfs_readlink_t)dummy,
+    .readlink = devtmpfs_readlink,
     .mkfile   = devtmpfs_mkfile,
     .link     = (vfs_mk_t)dummy,
     .symlink  = devtmpfs_symlink,
