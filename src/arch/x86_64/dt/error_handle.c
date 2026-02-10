@@ -10,12 +10,13 @@ extern void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved
 
 #define HANDLE_USER_EXCEPTION(exc)                                                                 \
     do {                                                                                           \
-        if (get_current_task() != NULL) {                                                          \
-            pcb_t process = get_current_task()->process;                                           \
+        tcb_t current_task = get_current_task();                                                   \
+        if (current_task != NULL) {                                                                \
+            pcb_t process = current_task->process;                                                 \
             if (process->pid != 0) {                                                               \
                 logkf(#exc ": error_code %x at %p\n\r", error_code, frame->rip);                   \
                 logkf("current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,      \
-                      get_current_task()->name, get_current_task()->tid);                          \
+                      current_task->name, current_task->tid);                                      \
                 kill_proc(process, -1, true);                                                      \
                 arch_open_interrupt();                                                             \
                 while (true)                                                                       \

@@ -15,12 +15,14 @@ const char *get_vma_permissions(vma_t *vma) {
 
 char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
     vma_t *vma = task->vma_manager.vma_list;
+    tcb_t current = get_current_task();
+    fdt_t *fdt = current->process->fdts;
     string_builder_t *builder = create_string_builder(4096);
 
     while (vma) {
         vfs_node_t node = NULL;
         if (vma->vm_fd != -1) {
-            fd_t *fd_handle = get_fd(get_current_task()->process->fdts, vma->vm_fd);
+            fd_t *fd_handle = get_fd(fdt, vma->vm_fd);
             node            = fd_handle->node;
         }
 

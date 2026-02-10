@@ -83,10 +83,12 @@ static int epollfs_poll(void *file, size_t events) {
 
     extern vfs_callback_t fs_callbacks[256];
     int out = 0;
+    tcb_t current = get_current_task();
+    fdt_t *fdt = current->process->fdts;
 
     spin_lock(ep->lock);
     for (int i = 0; i < ep->count; i++) {
-        fd_t *handle = get_fd(get_current_task()->process->fdts, ep->entries[i].fd);
+        fd_t *handle = get_fd(fdt, ep->entries[i].fd);
         if (!handle) continue;
         vfs_node_t node = handle->node;
         if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
@@ -247,7 +249,8 @@ syscall_(epoll_ctl, int epfd, int op, int fd, struct epoll_event *event) {
 syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int timeout) {
     if (maxevents <= 0 || !events) return SYSCALL_FAULT_(EINVAL);
 
-    fdt_t *fdt      = get_current_task()->process->fdts;
+    tcb_t current = get_current_task();
+    fdt_t *fdt = current->process->fdts;
     fd_t  *ep_handle = get_fd(fdt, epfd);
     if (!ep_handle) return SYSCALL_FAULT_(EBADF);
     if (!(ep_handle->node->type & file_epoll)) return SYSCALL_FAULT_(EINVAL);
@@ -288,7 +291,7 @@ syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int ti
 
         if (ready > 0) return (uint64_t)ready;
 
-        if (signals_pending_quick(get_current_task())) return SYSCALL_FAULT_(EINTR);
+        if (signals_pending_quick(current)) return SYSCALL_FAULT_(EINTR);
 
         if (timeout == 0) break;
 
@@ -328,6 +331,7 @@ static size_t eventfdfs_read(void *file, void *addr, size_t offset, size_t size)
     (void)offset;
     eventfd_ctx_t *ctx = (eventfd_ctx_t *)file;
     if (!ctx || size < sizeof(uint64_t)) return (size_t)-1;
+    tcb_t current = get_current_task();
 
     for (;;) {
         spin_lock(ctx->lock);
@@ -348,7 +352,7 @@ static size_t eventfdfs_read(void *file, void *addr, size_t offset, size_t size)
 
         if (ctx->flags & EFD_NONBLOCK) return (size_t)-1;
 
-        if (signals_pending_quick(get_current_task())) return (size_t)-1;
+        if (signals_pending_quick(current)) return (size_t)-1;
 
         scheduler_yield();
     }
@@ -358,6 +362,7 @@ static size_t eventfdfs_write(void *file, const void *addr, size_t offset, size_
     (void)offset;
     eventfd_ctx_t *ctx = (eventfd_ctx_t *)file;
     if (!ctx || size < sizeof(uint64_t)) return (size_t)-1;
+    tcb_t current = get_current_task();
 
     uint64_t val = *(const uint64_t *)addr;
     if (val == UINT64_MAX) return (size_t)-1;
@@ -373,7 +378,7 @@ static size_t eventfdfs_write(void *file, const void *addr, size_t offset, size_
 
         if (ctx->flags & EFD_NONBLOCK) return (size_t)-1;
 
-        if (signals_pending_quick(get_current_task())) return (size_t)-1;
+        if (signals_pending_quick(current)) return (size_t)-1;
 
         scheduler_yield();
     }

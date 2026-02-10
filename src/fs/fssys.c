@@ -79,12 +79,13 @@ static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
 
 syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
     if (unlikely(path0 == NULL)) return SYSCALL_FAULT_(EINVAL);
+    pcb_t process = get_current_task()->process;
 
     char *normalized_path = vfs_cwd_path_build(path0);
 
     // /dev/tty should resolve to the process's controlling terminal
     if (strcmp(normalized_path, "/dev/tty") == 0) {
-        pcb_t proc = get_current_task()->process;
+        pcb_t proc = process;
         if (proc->ctty_path) {
             free(normalized_path);
             normalized_path = strdup(proc->ctty_path);
@@ -104,7 +105,7 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
             else {
                 if (flags & O_CREAT) {
                     uint16_t final_mode  = (uint16_t)(mode & 0777);
-                    final_mode          &= (uint16_t)~(get_current_task()->process->umask & 0777);
+                    final_mode          &= (uint16_t)~(process->umask & 0777);
                     vfs_chmod(node, final_mode);
                 }
                 goto next;
@@ -128,7 +129,7 @@ next:;
     fd_handle->offset = flags & O_APPEND ? node->size : 0;
     fd_handle->node   = node;
     fd_handle->flags  = flags;
-    int index         = add_fd(get_current_task()->process->fdts, fd_handle);
+    int index         = add_fd(process->fdts, fd_handle);
     fd_handle->fd     = index;
     if (index == -1) {
         logkf("sys_open: open %s failed.\n", normalized_path);
@@ -143,10 +144,11 @@ next:;
 
 syscall_(close, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
-    fd_t *handle = (fd_t *)get_fd(get_current_task()->process->fdts, fd);
+    fdt_t *fdt = get_current_task()->process->fdts;
+    fd_t *handle = (fd_t *)get_fd(fdt, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     vfs_close(handle->node);
-    remove_fd(get_current_task()->process->fdts, fd);
+    remove_fd(fdt, fd);
     return EOK;
 }
 
@@ -378,11 +380,11 @@ static uint64_t dup_with_minfd(fd_t *handle, int min_fd, bool cloexec) {
 
 syscall_(dup2, int fd, int newfd) {
     if (unlikely(newfd < 0)) return SYSCALL_FAULT_(EINVAL);
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    fdt_t *fdt = get_current_task()->process->fdts;
+    fd_t *handle = get_fd(fdt, fd);
     if (unlikely(handle == NULL)) return SYSCALL_FAULT_(EBADF);
     if (fd == newfd) return newfd;
 
-    fdt_t *fdt = get_current_task()->process->fdts;
     if (ensure_fdt_capacity(fdt, newfd) < 0) return SYSCALL_FAULT_(ENOMEM);
 
     fd_t *old_handle = fdt->fds[newfd];
@@ -414,11 +416,12 @@ syscall_(dup3, int oldfd, int newfd, int flags) {
 
 syscall_(dup, int fd) {
     if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    fdt_t *fdt = get_current_task()->process->fdts;
+    fd_t *handle = get_fd(fdt, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
     fd_t *new_handle       = fd_dup(handle);
     new_handle->flags     &= ~O_CLOEXEC; // POSIX: dup clears close-on-exec
-    return new_handle->fd  = add_fd(get_current_task()->process->fdts, new_handle);
+    return new_handle->fd  = add_fd(fdt, new_handle);
 }
 
 syscall_(getcwd, char *buffer, size_t length) {
@@ -558,6 +561,8 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
     int      ready      = 0;
     uint64_t start_time = nano_time();
     bool     sigexit    = false;
+    tcb_t current = get_current_task();
+    fdt_t *fdt = current->process->fdts;
 
     extern vfs_callback_t fs_callbacks[256];
 
@@ -570,7 +575,7 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
 
         // 检查每个文件描述符
         for (size_t i = 0; i < nfds; i++) {
-            fd_t *handle = get_fd(get_current_task()->process->fdts, fds_user[i].fd);
+            fd_t *handle = get_fd(fdt, fds_user[i].fd);
             if (handle == NULL) {
                 fds_user[i].revents = POLLNVAL;
                 ready++;
@@ -592,7 +597,7 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
             }
         }
 
-        sigexit = signals_pending_quick(get_current_task());
+        sigexit = signals_pending_quick(current);
 
         if (ready > 0 || sigexit) break;
 
@@ -689,8 +694,9 @@ syscall_(pwrite, int fd, uint8_t *buffer) {
 syscall_(copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
          uint64_t flags) {
     if (flags != 0) { return SYSCALL_FAULT_(EINVAL); }
-    fd_t *src_handle = get_fd(get_current_task()->process->fdts, fd_in);
-    fd_t *dst_handle = get_fd(get_current_task()->process->fdts, fd_out);
+    fdt_t *fdt = get_current_task()->process->fdts;
+    fd_t *src_handle = get_fd(fdt, fd_in);
+    fd_t *dst_handle = get_fd(fdt, fd_out);
     if (src_handle == NULL || dst_handle == NULL) { return SYSCALL_FAULT_(EBADF); }
     if (dst_handle->offset >= dst_handle->node->size && dst_handle->node->size > 0) return EOK;
     uint64_t src_offset = off_in ? *off_in : src_handle->offset;

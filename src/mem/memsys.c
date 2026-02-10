@@ -130,7 +130,9 @@ syscall_(munmap, uint64_t addr, size_t size) {
 
     if (check_user_overflow(addr, size)) { return -EFAULT; }
 
-    vma_manager_t *mgr  = &get_current_task()->process->vma_manager;
+    tcb_t current = get_current_task();
+    pcb_t process = current->process;
+    vma_manager_t *mgr = &process->vma_manager;
     vma_t         *vma  = mgr->vma_list;
     vma_t         *next = NULL;
 
@@ -168,7 +170,7 @@ syscall_(munmap, uint64_t addr, size_t size) {
         vma = next;
     }
 
-    unmap_virtual_page(get_current_task()->process, addr, size);
+    unmap_virtual_page(process, addr, size);
     unmap_page_range(get_current_directory(), addr, size);
     return EOK;
 }

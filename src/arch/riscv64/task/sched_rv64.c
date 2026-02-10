@@ -85,29 +85,29 @@ _Noreturn void arch_switch_to_user_mode() {
     uint64_t page_flags = ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_USER |
                           ARCH_PT_FLAG_EXEC | ARCH_PT_FLAG_READ;
 
-    get_current_task()->context.user_stack =
+    thread->context.user_stack =
         page_alloc_random(thread->process->directory, BIG_USER_STACK + PAGE_SIZE, page_flags);
-    get_current_task()->context.user_stack_top =
-        get_current_task()->context.user_stack + BIG_USER_STACK;
+    thread->context.user_stack_top =
+        thread->context.user_stack + BIG_USER_STACK;
 
     vma_t *stack_vma = vma_alloc();
 
-    stack_vma->vm_start  = get_current_task()->context.user_stack;
-    stack_vma->vm_end    = get_current_task()->context.user_stack_top;
+    stack_vma->vm_start  = thread->context.user_stack;
+    stack_vma->vm_end    = thread->context.user_stack_top;
     stack_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
 
     stack_vma->vm_type = VMA_TYPE_ANON;
     stack_vma->vm_name = strdup("[stack]");
 
     vma_t *region =
-        vma_find_intersection(&thread->process->vma_manager, get_current_task()->context.user_stack,
-                              get_current_task()->context.user_stack_top);
+        vma_find_intersection(&thread->process->vma_manager, thread->context.user_stack,
+                              thread->context.user_stack_top);
     if (!region) {
         vma_insert(&thread->process->vma_manager, stack_vma);
     }
 
     context->ctx->epc     = thread->_start;
-    context->ctx->sp      = get_current_task()->context.user_stack_top;
+    context->ctx->sp      = thread->context.user_stack_top;
     context->ctx->sstatus = (2UL << 32) | (1UL << 18) | (3UL << 13) | (1UL << 5) | (1UL << 0);
 
     __asm__ volatile("mv sp, %0\n\t"

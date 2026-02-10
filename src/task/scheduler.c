@@ -23,7 +23,8 @@ void disable_scheduler() {
 void scheduler_nano_sleep(uint64_t nano) {
     uint64_t targetTime        = nano_time();
     uint64_t after             = 0;
-    get_current_task()->status = T_WAIT;
+    tcb_t current = get_current_task();
+    current->status = T_WAIT;
     while (true) {
         uint64_t n = nano_time();
         if (n < targetTime) {
@@ -34,7 +35,7 @@ void scheduler_nano_sleep(uint64_t nano) {
             targetTime  = n;
         }
         if (after >= nano) {
-            get_current_task()->status = T_RUNNING;
+            current->status = T_RUNNING;
             return;
         }
         if (nano > 10) {
