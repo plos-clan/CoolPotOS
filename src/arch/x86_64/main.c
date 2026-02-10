@@ -7,11 +7,13 @@
 #include "driver/char/ps2_kbd.h"
 #include "driver/drm/drm_device.h"
 #include "driver/drm/plainfb.h"
+#include "driver/fb.h"
 #include "driver/gop.h"
 #include "driver/input_device.h"
 #include "driver/nvme.h"
 #include "driver/pci/pci.h"
 #include "driver/power/power.h"
+#include "driver/pty.h"
 #include "driver/serial.h"
 #include "driver/tty.h"
 #include "driver/urandom.h"
@@ -21,8 +23,9 @@
 #include "fs/cpio.h"
 #include "fs/devtmpfs.h"
 #include "fs/pipefs.h"
-#include "fs/sockfs.h"
 #include "fs/procfs.h"
+#include "fs/sockfs.h"
+#include "fs/sysfs.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "fsgsbase.h"
@@ -97,6 +100,7 @@ USED _Noreturn void kmain() {
     sockfs_regist();
     epollfs_regist();
     eventfdfs_regist();
+    sysfs_regist();
 
     // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用
     extern intctl_t apic_controller;
@@ -138,7 +142,7 @@ USED _Noreturn void kmain() {
 
     // usb_kservice_setup();
 
-    launch_init_process();
+    launch_init_process();  // ptmx_init() is called inside this function
 
     //    for (int i = 0; i < 10; i++) {
     //        create_kernel_thread("test_thread",(void*)test_proc,NULL,NULL, NICE_TO_PRIO(0));

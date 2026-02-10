@@ -1,5 +1,6 @@
 #define ALL_IMPLEMENTATION
 #include "errno.h"
+#include "fs/devtmpfs.h"
 #include "fs/fds.h"
 #include "fs/pipefs.h"
 #include "fs/sockfs.h"
@@ -12,12 +13,83 @@
 #include "term/klog.h"
 #include "timer.h"
 
+static void free_private_open_node(vfs_node_t node) {
+    if (node == NULL) return;
+    node->child = list_free(node->child);
+    if (node->name) free(node->name);
+    if (node->linkto_path) free(node->linkto_path);
+    free(node);
+}
+
+static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
+    if (node == NULL || node->fsid != dev_tmpfs_id) return node;
+
+    dtmp_handle_t *template = (dtmp_handle_t *)node->handle;
+    if (template == NULL || template->type != dtp_file_device || template->open_t == NULL) {
+        return node;
+    }
+
+    vfs_node_t private_node = vfs_node_alloc(node->parent, node->name);
+    if (private_node == NULL) return NULL;
+    if (node->parent) { list_delete(node->parent->child, private_node); }
+
+    private_node->root        = node->root;
+    private_node->fsid        = node->fsid;
+    private_node->type        = file_none;
+    private_node->size        = node->size;
+    private_node->realsize    = node->realsize;
+    private_node->owner       = node->owner;
+    private_node->group       = node->group;
+    private_node->permissions = node->permissions;
+    private_node->mode        = node->mode;
+    private_node->dev         = node->dev;
+    private_node->rdev        = node->rdev;
+    private_node->flags       = node->flags | VFS_NODE_FLAG_PRIVATE_FD;
+
+    dtmp_handle_t *private_handle = calloc(1, sizeof(dtmp_handle_t));
+    if (private_handle == NULL) {
+        free_private_open_node(private_node);
+        return NULL;
+    }
+    memcpy(private_handle, template, sizeof(dtmp_handle_t));
+    private_handle->node          = private_node;
+    private_handle->device_handle = NULL;
+    private_handle->is_per_open   = true;
+    private_node->handle          = private_handle;
+
+    private_handle->open_t(private_node->parent ? private_node->parent->handle : NULL,
+                           private_node->name, private_node);
+
+    if (!(private_node->type & (file_ptmx | file_pts))) {
+        private_node->type = private_handle->dev_type == device_stream ? file_stream : file_block;
+    }
+    if (private_handle->size_t) {
+        private_node->size = private_handle->size_t(private_handle->device_handle);
+    }
+
+    if (private_handle->device_handle == NULL) {
+        free(private_handle);
+        private_node->handle = NULL;
+        free_private_open_node(private_node);
+        return NULL;
+    }
+
+    return private_node;
+}
+
 syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
     if (unlikely(path0 == NULL)) return SYSCALL_FAULT_(EINVAL);
 
     char *normalized_path = vfs_cwd_path_build(path0);
 
-    // logkf("sys_open: open %s\n", normalized_path);
+    // /dev/tty should resolve to the process's controlling terminal
+    if (strcmp(normalized_path, "/dev/tty") == 0) {
+        pcb_t proc = get_current_task()->process;
+        if (proc->ctty_path) {
+            free(normalized_path);
+            normalized_path = strdup(proc->ctty_path);
+        }
+    }
 
     vfs_node_t node = vfs_open(normalized_path);
     if (node == NULL) {
@@ -42,7 +114,15 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
             free(normalized_path);
         return SYSCALL_FAULT_(ENOENT);
     }
+
 next:;
+    vfs_node_t private_node = devtmpfs_make_per_open_node(node);
+    if (private_node == NULL) {
+        free(normalized_path);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
+    node = private_node;
+
     fd_t *fd_handle = calloc(1, sizeof(fd_t));
     not_null_assert(fd_handle, "sys_open: null alloc fd");
     fd_handle->offset = flags & O_APPEND ? node->size : 0;
@@ -92,6 +172,12 @@ syscall_(write, int fd, uint8_t *buffer, size_t size) {
         if (ret == (size_t)-1) return SYSCALL_FAULT_(EPIPE);
         return ret;
     }
+    // Streaming devices (terminals, PTY, eventfd) don't use file offsets
+    if (handle->node->type & (file_stream | file_ptmx | file_pts | file_eventfd)) {
+        size_t ret = vfs_write(handle->node, buffer, 0, size);
+        if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
+        return ret;
+    }
     size_t ret = vfs_write(handle->node, buffer, handle->offset, size);
     if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
     if (handle->node->size != (uint64_t)-1) handle->offset += ret;
@@ -126,6 +212,12 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
     if (handle->node->type & file_socket) {
         size_t ret = vfs_read(handle->node, buffer, 0, size);
         if (ret == (size_t)-1) return SYSCALL_FAULT_(EPIPE);
+        return ret;
+    }
+    // Streaming devices (terminals, PTY, eventfd) don't use file offsets
+    if (handle->node->type & (file_stream | file_ptmx | file_pts | file_eventfd)) {
+        size_t ret = vfs_read(handle->node, buffer, 0, size);
+        if (ret == (size_t)-1) return SYSCALL_FAULT_(EIO);
         return ret;
     }
     if (handle->node->size != (uint64_t)-1) {
@@ -205,6 +297,8 @@ static inline void vfs_fill_stat(vfs_node_t node, struct stat *buf) {
                                   : node->type == file_socket ? S_IFSOCK
                                   : node->type == file_none   ? S_IFREG
                                   : node->type == file_stream ? S_IFCHR
+                                  : node->type == file_ptmx   ? S_IFCHR
+                                  : node->type == file_pts    ? S_IFCHR
                                                               : S_IFREG);
     buf->st_nlink = 1;
     buf->st_dev   = (long)node->dev;
@@ -237,10 +331,11 @@ syscall_(lstat, char *fn, struct stat *buf) {
 }
 
 syscall_(ioctl, int fd, size_t options, void *arg2) {
-    if (unlikely(fd < 0 || arg2 == NULL)) return SYSCALL_FAULT_(EINVAL);
+    if (unlikely(fd < 0)) return SYSCALL_FAULT_(EINVAL);
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
     if (handle == NULL) return SYSCALL_FAULT_(EBADF);
-    return vfs_ioctl(handle->node, options, arg2);
+    errno_t ret = vfs_ioctl(handle->node, options, arg2);
+    return ret;
 }
 
 static int ensure_fdt_capacity(fdt_t *fdt, int expect_fd) {
@@ -444,12 +539,15 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
 
     if (type == NULL) return SYSCALL_FAULT_(EINVAL);
 
-    char *ndev_name = vfs_cwd_path_build(dev_name);
+    char   *ndev_name = vfs_cwd_path_build(dev_name);
+    errno_t mret      = EOK;
 mount:
-    if (vfs_mount((const char *)ndev_name, type, dir) != EOK) {
+    mret = vfs_mount((const char *)ndev_name, type, dir);
+    if (mret != EOK) {
         free(ndir_name);
         free(ndev_name);
-        return SYSCALL_FAULT_(ENOENT);
+        if (mret < 0) return (uint64_t)mret;
+        return SYSCALL_FAULT_(EIO);
     }
     free(ndir_name);
     free(ndev_name);
@@ -521,6 +619,8 @@ syscall_(fstat, int fd, struct stat *buf) {
                                     : node->type == file_socket ? S_IFSOCK
                                     : node->type == file_none   ? S_IFREG
                                     : node->type == file_stream ? S_IFCHR
+                                    : node->type == file_ptmx   ? S_IFCHR
+                                    : node->type == file_pts    ? S_IFCHR
                                                                 : 0);
     buf->st_nlink   = 1;
     buf->st_dev     = node->dev;
@@ -1031,6 +1131,36 @@ syscall_(mkdir, char *name, uint64_t mode) {
     return ret;
 }
 
+syscall_(mkdirat, int dirfd, char *name, uint64_t mode) {
+    if (name == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (check_user_overflow((uint64_t)name, strlen(name))) return SYSCALL_FAULT_(EFAULT);
+    char *path = at_resolve_pathname(dirfd, name);
+    if (!path) return SYSCALL_FAULT_(ENOENT);
+    size_t ret = vfs_mkdir(path) == EOK ? EOK : -1;
+    if (ret == EOK) {
+        vfs_node_t node = vfs_open(path);
+        if (node) {
+            uint16_t final_mode  = (uint16_t)(mode & 0777);
+            final_mode          &= (uint16_t)~(get_current_task()->process->umask & 0777);
+            vfs_chmod(node, final_mode);
+            vfs_close(node);
+        }
+    }
+    free(path);
+    return ret;
+}
+
+syscall_(mknod, char *path, uint32_t mode, uint32_t dev) {
+    if (path == NULL) return SYSCALL_FAULT_(EINVAL);
+    char    *npath       = vfs_cwd_path_build(path);
+    uint16_t final_mode  = (uint16_t)(mode & 07777);
+    final_mode          &= (uint16_t)~(get_current_task()->process->umask & 0777);
+    final_mode          |= (uint16_t)(mode & S_IFMT);
+    errno_t ret          = vfs_mknod(npath, final_mode, (int)dev);
+    free(npath);
+    return ret == EOK ? EOK : SYSCALL_FAULT_(-ret);
+}
+
 syscall_(readlink, char *path, char *buf, uint64_t size) {
     if (path == NULL || buf == NULL || size == 0) { return SYSCALL_FAULT_(EINVAL); }
     if (check_user_overflow((uint64_t)buf, size)) { return SYSCALL_FAULT_(EFAULT); }
@@ -1050,6 +1180,29 @@ syscall_(chmod, char *path, uint64_t mode) {
     }
     char      *npath = vfs_cwd_path_build(path);
     vfs_node_t node  = vfs_open(npath);
+    free(npath);
+    if (node == NULL) return SYSCALL_FAULT_(ENOENT);
+    errno_t ret = vfs_chmod(node, (uint16_t)(mode & 0777));
+    vfs_close(node);
+    if (ret < 0) return SYSCALL_FAULT_(-ret);
+    return EOK;
+}
+
+syscall_(fchmod, int fd, uint64_t mode) {
+    fd_t *fdt = get_fd(get_current_task()->process->fdts, fd);
+    if (!fdt || !fdt->node) return SYSCALL_FAULT_(EBADF);
+    errno_t ret = vfs_chmod(fdt->node, (uint16_t)(mode & 0777));
+    if (ret < 0) return SYSCALL_FAULT_(-ret);
+    return EOK;
+}
+
+syscall_(fchmodat, int dirfd, char *path, uint64_t mode, int flags) {
+    if (unlikely(!path || check_user_overflow((uint64_t)path, strlen(path)))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    char *npath = at_resolve_pathname(dirfd, path);
+    if (!npath) return SYSCALL_FAULT_(ENOENT);
+    vfs_node_t node = (flags & 0x100) ? vfs_open_nofollow(npath) : vfs_open(npath);
     free(npath);
     if (node == NULL) return SYSCALL_FAULT_(ENOENT);
     errno_t ret = vfs_chmod(node, (uint16_t)(mode & 0777));
@@ -1185,6 +1338,27 @@ syscall_(chroot, char *path) {
 
 syscall_(chown, const char *filename, uint64_t uid, uint64_t gid) {
     return vfs_chown(filename, uid, gid);
+}
+
+syscall_(fchown, int fd, uint64_t uid, uint64_t gid) {
+    fd_t *fdt = get_fd(get_current_task()->process->fdts, fd);
+    if (!fdt || !fdt->node) return SYSCALL_FAULT_(EBADF);
+    return EOK;
+}
+
+syscall_(lchown, const char *filename, uint64_t uid, uint64_t gid) {
+    return vfs_chown(filename, uid, gid);
+}
+
+syscall_(fchownat, int dirfd, const char *path, uint64_t uid, uint64_t gid, int flags) {
+    if (unlikely(!path || check_user_overflow((uint64_t)path, strlen(path)))) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    char *npath = at_resolve_pathname(dirfd, (char *)path);
+    if (!npath) return SYSCALL_FAULT_(ENOENT);
+    int ret = vfs_chown(npath, uid, gid);
+    free(npath);
+    return ret;
 }
 
 syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags) {

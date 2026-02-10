@@ -183,6 +183,12 @@ void launch_init_process() {
         kerror("Cannot mount devtmpfs");
         return;
     }
+    vfs_close(dev);
+
+    // Initialize ptmx after devtmpfs is mounted
+    extern void ptmx_init();
+    ptmx_init();
+
     pcb_t init_process          = found_pcb(init_pid);
     init_process->exec          = node;
     const char *init_envp_src[] = {

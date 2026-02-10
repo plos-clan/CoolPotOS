@@ -11,7 +11,8 @@
 
 syscall_(exit, int exit_code) {
     tcb_t exit_thread = get_current_task();
-    logkf("sys_exit: Thread %s exit with code %d.\n", exit_thread->name, exit_code);
+    logkf("sys_exit: pid=%d tid=%d thread=%s exit code=%d.\n", exit_thread->process->pid,
+          exit_thread->tid, exit_thread->name, exit_code);
     pcb_t process = exit_thread->process;
     if (process->child_threads->size <= 1) {
         kill_proc(process, exit_code, true);
@@ -78,7 +79,22 @@ syscall_(getpgid) {
 syscall_(getsid, pid_t pid) {
     pcb_t process = pid == 0 ? get_current_task()->process : found_pcb(pid);
     if (process == NULL || process->status == T_DEATH) { return SYSCALL_FAULT_(ESRCH); }
-    return process->pgid;
+    return process->sid;
+}
+
+syscall_(setsid) {
+    pcb_t process = get_current_task()->process;
+    // If already a process group leader, fail
+    if (process->pid == process->pgid) {
+        return SYSCALL_FAULT_(EPERM);
+    }
+    // Create new session: become session leader and process group leader
+    process->sid  = process->pid;
+    process->pgid = process->pid;
+    // Detach from controlling terminal
+    process->tty = NULL;
+    if (process->ctty_path) { free(process->ctty_path); process->ctty_path = NULL; }
+    return process->sid;
 }
 
 syscall_(getppid) {
@@ -197,13 +213,19 @@ syscall_(sigqueueinfo, pid_t pid, int sig, siginfo_t *info) {
 syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     if (mask == NULL) return SYSCALL_FAULT_(EINVAL);
     if (sigsetsize < sizeof(sigset_t)) return SYSCALL_FAULT_(EINVAL);
-    sigset_t old = get_current_task()->blocked;
+    tcb_t    task = get_current_task();
+    sigset_t old  = task->blocked;
+    sigset_t temp = (uint64_t)*mask & ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
 
-    get_current_task()->blocked = (uint64_t)*mask;
-    while (!(get_current_task()->signal & ~get_current_task()->blocked)) {
+    task->blocked = temp;
+    while (!(task->signal & ~task->blocked)) {
         scheduler_yield();
     }
-    get_current_task()->blocked = old;
+
+    // Don't restore old mask here. Save it for sigreturn to restore.
+    // This ensures do_signal() can deliver the signal with the temporary mask.
+    task->saved_sigmask     = old;
+    task->has_saved_sigmask = true;
     return SYSCALL_FAULT_(EINTR);
 }
 
@@ -247,20 +269,31 @@ wait:;
 
 syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout) {
     tcb_t thread = get_current_task();
-re_futex: //TODO PRIVATE 标志暂时不支持
-    switch (op) {
+    (void)time;
+    (void)timeout;
+    if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
+    if (((uint64_t)uaddr & 0x3) != 0) return SYSCALL_FAULT_(EINVAL);
+    uint64_t futex_key = arch_virt_to_phys((uint64_t)uaddr);
+    if (futex_key == 0) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    int cmd = op & ~(FUTEX_PRIVATE_FLAG | FUTEX_CLOCK_REALTIME);
+    switch (cmd) {
     case FUTEX_WAIT:
-        if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
+    case FUTEX_WAIT_BITSET: {
         int observed = *uaddr;
         if (observed != val) { return SYSCALL_FAULT_(EAGAIN); }
         thread->status = T_FUTEX; // 挂起当前线程
-        futex_add((void *)arch_virt_to_phys((uint64_t)uaddr), thread);
+        futex_add((void *)futex_key, thread);
         scheduler_yield();
         return EOK;
+    }
     case FUTEX_WAKE:
-        if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
-        futex_wake((void *)arch_virt_to_phys((uint64_t)uaddr), val);
-        return EOK;
+    case FUTEX_WAKE_BITSET:
+        if (val < 0) return SYSCALL_FAULT_(EINVAL);
+        int woken = futex_wake((void *)futex_key, val);
+        return woken;
     default: return SYSCALL_FAULT_(EINVAL);
     }
 }
@@ -274,14 +307,25 @@ syscall_(prctl, int option) {
     case PR_SET_NAME:
         if (arg2 == 0) return -1;
         char *new_name = (char *)arg2;
-        int   length   = strlen(new_name);
-        if (length > 16) return -1;
-        memcpy(get_current_task()->name, new_name, length);
+        size_t length  = strlen(new_name);
+        if (length > 16) length = 16;
+        char   name_buf[17];
+        memcpy(name_buf, new_name, length);
+        name_buf[length] = '\0';
+        char *copied = strdup(name_buf);
+        if (copied == NULL) return -1;
+        free(get_current_task()->name);
+        get_current_task()->name = copied;
         break;
     case PR_GET_NAME:
         if (arg2 == 0) return -1;
         char *proc_name = (char *)arg2;
-        memcpy(proc_name, get_current_task()->name, 16);
+        memset(proc_name, 0, 16);
+        if (get_current_task()->name) {
+            size_t copy_len = strlen(get_current_task()->name);
+            if (copy_len > 15) copy_len = 15;
+            memcpy(proc_name, get_current_task()->name, copy_len);
+        }
         break;
     case PR_GET_DUMPABLE: return 0; //TODO CP_Kernel 不支持核心转储
     case PR_SET_DUMPABLE: return -1;

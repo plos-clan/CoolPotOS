@@ -108,7 +108,8 @@ void set_cpu_idle_task(tcb_t thread, cpu_local_t *cpu) {
 }
 
 void remove_task(tcb_t thread, cpu_local_t *cpu) {
-    cpu->task_count--;
+    if (thread == NULL || cpu == NULL || thread->sched_handle == NULL) return;
+    if (cpu->task_count > 0) cpu->task_count--;
     if (thread->status == T_FUTEX) {
         bool int_enable = arch_check_interrupt();
         arch_close_interrupt();
@@ -180,4 +181,12 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     next_thread->status    = T_START;
     cpu->current_task      = next_thread;
     arch_task_switch(current_thread, next_thread, regs);
+}
+
+USED void foreach_all_process() {
+    extern cow_arraylist *process_list;
+    pcb_t                 proc = NULL;
+    cow_foreach(process_list, proc) {
+        logkf("process name: %s, pid: %d\n", proc->name, proc->pid);
+    }
 }

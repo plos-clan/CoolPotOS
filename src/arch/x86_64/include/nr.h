@@ -75,7 +75,10 @@
 #define SYSCALL_SYMLINK       88
 #define SYSCALL_READLINK      89
 #define SYSCALL_CHMOD         90
+#define SYSCALL_FCHMOD        91
 #define SYSCALL_CHOWN         92
+#define SYSCALL_FCHOWN        93
+#define SYSCALL_LCHOWN        94
 #define SYSCALL_UMASK         95
 #define SYSCALL_GETRLIMIT     97
 #define SYSCALL_GETRUSAGE     98
@@ -91,6 +94,7 @@
 #define SYSCALL_GETEGID       108
 #define SYSCALL_SETPGID       109
 #define SYSCALL_GETPPID       110
+#define SYSCALL_SETSID        112
 #define SYSCALL_GETGROUPS     115
 #define SYSCALL_GETRESUID     118
 #define SYSCALL_GETRESGID     120
@@ -100,6 +104,7 @@
 #define SYSCALL_SIGQUEUEINFO  129
 #define SYSCALL_SIGSUSPEND    130
 #define SYSCALL_SIGALTSTACK   131
+#define SYSCALL_MKNOD         133
 #define SYSCALL_STATFS        137
 #define SYSCALL_PRCTL         157
 #define SYSCALL_ARCH_PRCTL    158
@@ -120,10 +125,13 @@
 #define SYSCALL_C_GETRES      229
 #define SYSCALL_C_NANOSLEEP   230
 #define SYSCALL_OPENAT        257
+#define SYSCALL_MKDIRAT       258
+#define SYSCALL_FCHOWNAT      260
 #define SYSCALL_FUTIMESAT     261
 #define SYSCALL_NEWFSTATAT    262
 #define SYSCALL_UNLINKAT      263
 #define SYSCALL_FACCESSAT     269
+#define SYSCALL_FCHMODAT      268
 #define SYSCALL_PSELECT6      270
 #define SYSCALL_EPOLL_WAIT    232
 #define SYSCALL_EPOLL_CTL     233

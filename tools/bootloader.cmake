@@ -18,8 +18,8 @@ endif ()
 
 set(FETCHCONTENT_QUIET FALSE)
 set(LIMINE_REPO_URL "https://codeberg.org/Limine/Limine.git")
+set(LIMINE_NAME limine)
 set(LIMINE_BRANCH "v9.x-binary")
-set(LIMINE_NAME limine_v9_binary)
 
 FetchContent_Declare(
         ${LIMINE_NAME}

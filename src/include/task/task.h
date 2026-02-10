@@ -94,6 +94,7 @@ typedef enum {
 struct process_control_block {
     pid_t          pid;           // 进程ID
     pid_t          pgid;          // 进程组ID
+    pid_t          sid;            // 会话ID
     char          *name;          // 进程名
     char          *cmdline;       // 命令行完整形参
     size_t         cl_length;     // 命令行形参长度
@@ -110,6 +111,7 @@ struct process_control_block {
 
     ipc_queue_t *ipc_queue;   // 进程消息队列
     tty_t       *tty;         // 进程占用的TTY会话
+    char        *ctty_path;   // 控制终端路径 (如 "/dev/pts/3")
     vfs_node_t   cwd;         // 进程工作目录
     vfs_node_t   exec;        // 可执行文件句柄
     vfs_node_t   procfs_node; // 进程信息虚拟文件系统节点
@@ -152,6 +154,8 @@ struct thread_control_block {
     sigaction_t actions[MAXSIG]; // 信号处理器回调
     uint64_t    signal;          // 信号位图
     uint64_t    blocked;         // 屏蔽位图
+    uint64_t    saved_sigmask;   // sigsuspend 保存的原始信号掩码
+    bool        has_saved_sigmask; // 是否需要恢复 saved_sigmask
     altstack_t  alt_stack;       // 信号备用栈
 
     size_t cpu_id; // 线程所属CPUID

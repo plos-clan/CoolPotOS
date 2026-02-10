@@ -3,6 +3,7 @@
 #include "errno.h"
 #include "task/signal_arch.h"
 #include "task/task.h"
+#include "term/klog.h"
 
 signal_internal_t signal_internal_decisions[MAXSIG] = {0};
 
@@ -139,6 +140,7 @@ void do_signal(struct syscall_regs *regs) {
             continue;
         }
 
+        task->signal &= ~SIGMASK(sig);
         arch_signal_setup(task, sig, action, regs);
         return;
     }

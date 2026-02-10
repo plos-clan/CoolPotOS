@@ -35,7 +35,12 @@ bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct sysca
     frame->rsp = task->syscall_stack_user; // original user RSP
 
     // Save signal mask and call_in_signal state
-    frame->saved_blocked = task->blocked;
+    if (task->has_saved_sigmask) {
+        frame->saved_blocked = task->saved_sigmask;
+        task->has_saved_sigmask = false;
+    } else {
+        frame->saved_blocked = task->blocked;
+    }
     frame->saved_call_in_signal = task->call_in_signal;
     frame->signum = (uint32_t)signum;
     frame->_pad0 = 0;

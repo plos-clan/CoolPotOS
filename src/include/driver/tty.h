@@ -71,9 +71,11 @@
 #define ECHOE  0000020
 #define ECHOK  0000040
 #define ECHONL 0000100
-#define NOFLSH 0000200
-#define TOSTOP 0000400
-#define IEXTEN 0100000
+#define NOFLSH  0000200
+#define TOSTOP  0000400
+#define ECHOCTL 0001000
+#define ECHOKE  0004000
+#define IEXTEN  0100000
 
 #define KDGETMODE   0x4B3B // 获取终端模式命令
 #define KDSETMODE   0x4B3A // 设置终端模式命令

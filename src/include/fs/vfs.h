@@ -17,6 +17,7 @@
 
 #define FS_VIRTUAL_FLAGS  0b0010 // 虚拟文件系统
 #define FS_NO_MOUNT_FLAGS 0b100  // 不需要主动挂载
+#define VFS_NODE_FLAG_PRIVATE_FD (1ULL << 63)
 
 #include "list.h"
 #include "llist.h"
@@ -155,6 +156,8 @@ errno_t vfs_mkdir(const char *name);
  * @return 非0代表创建失败
  */
 errno_t vfs_mkfile(const char *name);
+
+errno_t vfs_mknod(const char *name, uint16_t mode, int dev);
 
 /**
  * 注册文件系统回调指针
