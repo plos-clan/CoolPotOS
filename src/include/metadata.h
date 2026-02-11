@@ -107,7 +107,7 @@
 #endif
 
 #ifndef HEAP_CHECK
-#    define HEAP_CHECK 1 // 启用内核堆双端越界检查
+#    define HEAP_CHECK 0 // 启用内核堆双端越界检查
 #endif
 
 #ifndef MODULE_CHECK

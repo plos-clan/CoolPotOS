@@ -14,9 +14,9 @@ const char *get_vma_permissions(vma_t *vma) {
 }
 
 char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
-    vma_t *vma = task->vma_manager.vma_list;
-    tcb_t current = get_current_task();
-    fdt_t *fdt = current->process->fdts;
+    vma_t            *vma     = task->vma_manager.vma_list;
+    tcb_t             current = get_current_task();
+    fdt_t            *fdt     = current->process->fdts;
     string_builder_t *builder = create_string_builder(4096);
 
     while (vma) {
@@ -50,7 +50,7 @@ char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
     return data;
 }
 
-size_t proc_pmaps_stat(proc_handle_t *handle){
+size_t proc_pmaps_stat(proc_handle_t *handle) {
     pcb_t task;
     if (handle->task == NULL) {
         task = get_current_task()->process;
@@ -63,7 +63,7 @@ size_t proc_pmaps_stat(proc_handle_t *handle){
     return content_len;
 }
 
-size_t proc_pmaps_read(proc_handle_t *handle,void *addr, size_t offset, size_t size){
+size_t proc_pmaps_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     pcb_t task;
     if (handle->task == NULL) {
         task = get_current_task()->process;
@@ -80,6 +80,6 @@ size_t proc_pmaps_read(proc_handle_t *handle,void *addr, size_t offset, size_t s
     size_t to_copy = MIN(content_len, size);
     memcpy(addr, content + offset, to_copy);
     free(content);
-    if(to_copy < size) ((char *)addr)[to_copy] = '\0';
+    if (to_copy < size) ((char *)addr)[to_copy] = '\0';
     return to_copy;
 }

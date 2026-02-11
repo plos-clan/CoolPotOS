@@ -273,7 +273,7 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
                                                    regs->r8, regs->r9, regs);
         arch_close_interrupt();
     } else {
-        if (unlikely(syscall_id != 12)) logkf("Syscall(%d) cannot implemented.\n", syscall_id);
+        logkf("Syscall(%d) cannot implemented.\n", syscall_id);
         regs->rax = -ENOSYS;
     }
 

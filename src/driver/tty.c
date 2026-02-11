@@ -301,7 +301,7 @@ void init_tty_session() {
 }
 
 void init_console_symlink() {
-    char *console = boot_get_cmdline_param("console");
+    const char *console = boot_get_cmdline_param("console");
     if (console == NULL) console = "tty0";
 
     char buf[50];
