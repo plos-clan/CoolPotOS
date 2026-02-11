@@ -1,6 +1,6 @@
 #include "errno.h"
-#include "mem/frame.h"
 #include "krlibc.h"
+#include "mem/frame.h"
 #include "syscall.h"
 #include "task/futex.h"
 #include "task/scheduler.h"
@@ -85,15 +85,16 @@ syscall_(getsid, pid_t pid) {
 syscall_(setsid) {
     pcb_t process = get_current_task()->process;
     // If already a process group leader, fail
-    if (process->pid == process->pgid) {
-        return SYSCALL_FAULT_(EPERM);
-    }
+    if (process->pid == process->pgid) { return SYSCALL_FAULT_(EPERM); }
     // Create new session: become session leader and process group leader
     process->sid  = process->pid;
     process->pgid = process->pid;
     // Detach from controlling terminal
     process->tty = NULL;
-    if (process->ctty_path) { free(process->ctty_path); process->ctty_path = NULL; }
+    if (process->ctty_path) {
+        free(process->ctty_path);
+        process->ctty_path = NULL;
+    }
     return process->sid;
 }
 
@@ -164,7 +165,7 @@ syscall_(sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timesp
     sigset_t mask = *set;
     if (mask == 0) return SYSCALL_FAULT_(EINVAL);
 
-    uint64_t timeout_ns = 0;
+    uint64_t timeout_ns  = 0;
     bool     has_timeout = false;
     if (timeout) {
         if (timeout->tv_nsec >= 1000000000ULL) return SYSCALL_FAULT_(EINVAL);
@@ -172,8 +173,8 @@ syscall_(sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timesp
         has_timeout = true;
     }
 
-    tcb_t thread = get_current_task();
-    uint64_t start = nano_time();
+    tcb_t    thread = get_current_task();
+    uint64_t start  = nano_time();
     while (true) {
         sigset_t pending = thread->signal & mask;
         if (pending) {
@@ -262,7 +263,6 @@ wait:;
     pid_t ret_pid = 0;
     int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
 
-
     if (ret_pid == 0) { return 0; }
     if (status) { *status = ((status0 & 0xFF) << 8); }
     if (rusage) { memset(rusage, 0, sizeof(struct rusage)); }
@@ -276,9 +276,7 @@ syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout)
     if (uaddr == NULL) return SYSCALL_FAULT_(EINVAL);
     if (((uint64_t)uaddr & 0x3) != 0) return SYSCALL_FAULT_(EINVAL);
     uint64_t futex_key = arch_virt_to_phys((uint64_t)uaddr);
-    if (futex_key == 0) {
-        return SYSCALL_FAULT_(EFAULT);
-    }
+    if (futex_key == 0) { return SYSCALL_FAULT_(EFAULT); }
 
     int cmd = op & ~(FUTEX_PRIVATE_FLAG | FUTEX_CLOCK_REALTIME);
     switch (cmd) {
@@ -308,21 +306,21 @@ syscall_(prctl, int option) {
     tcb_t current = get_current_task();
     switch (option) {
     case PR_SET_NAME:
-        if (arg2 == 0) return -1;
-        char *new_name = (char *)arg2;
-        size_t length  = strlen(new_name);
+        if (arg1 == 0) return -1;
+        char  *new_name = (char *)arg1;
+        size_t length   = strlen(new_name);
         if (length > 16) length = 16;
-        char   name_buf[17];
+        char name_buf[17];
         memcpy(name_buf, new_name, length);
         name_buf[length] = '\0';
-        char *copied = strdup(name_buf);
+        char *copied     = strdup(name_buf);
         if (copied == NULL) return -1;
         free(current->name);
         current->name = copied;
         break;
     case PR_GET_NAME:
-        if (arg2 == 0) return -1;
-        char *proc_name = (char *)arg2;
+        if (arg1 == 0) return -1;
+        char *proc_name = (char *)arg1;
         memset(proc_name, 0, 16);
         if (current->name) {
             size_t copy_len = strlen(current->name);
@@ -428,8 +426,8 @@ syscall_(kill, int pid, int sig) {
         // Send to all processes (simplified: skip kernel process)
         extern cow_arraylist *process_list;
         extern pcb_t          kernel_process;
-        pcb_t process = NULL;
-        int   sent    = 0;
+        pcb_t                 process = NULL;
+        int                   sent    = 0;
         cow_foreach(process_list, process) {
             if (process->pid == kernel_process->pid) continue;
             if (send_signal_to_process(process, sig) == 0) sent++;
