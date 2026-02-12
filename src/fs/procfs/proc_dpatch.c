@@ -53,7 +53,8 @@ void load_procfs_root() {
     create_procfs_node("meminfo", proc_meminfo_read, proc_meminfo_stat);
     create_procfs_node("cpuinfo", proc_cpuinfo_read, proc_cpuinfo_stat);
     create_procfs_node("stat", proc_stat_read, proc_stat_stat);
-
+    create_procfs_node("uptime", proc_uptime_read, proc_uptime_stat);
+    create_procfs_node("loadavg", proc_loadavg_read, proc_loadavg_stat);
     create_procfs_handle("proc_cmdline",proc_pcmdline_read,proc_pcmdline_stat);
     create_procfs_handle("proc_maps",proc_pmaps_read,proc_pmaps_stat);
     create_procfs_handle("proc_stat",proc_pstat_read,proc_pstat_stat);

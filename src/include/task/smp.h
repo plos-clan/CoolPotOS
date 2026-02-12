@@ -21,6 +21,7 @@ typedef struct cpu_local_info {
     arch_cpu_t        arch_data;    // 架构私有数据
     size_t            task_count;   // 任务数量
     uint64_t          jiffies;      // 时钟计数器计数 (不包含 yield)
+    uint64_t          idle_jiffies; // 空闲时钟计数
     bool              is_yield;     // 此次调度是否为 yield
 } __attribute__((packed)) cpu_local_t;
 

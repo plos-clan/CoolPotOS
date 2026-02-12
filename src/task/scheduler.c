@@ -164,7 +164,12 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     cpu_local_t *cpu = arch_current_cpu();
     if (unlikely(cpu == NULL)) return;
 
-    if (!cpu->is_yield) { cpu->jiffies++; }
+    if (!cpu->is_yield) {
+        cpu->jiffies++;
+        if (cpu->current_task == cpu->idle_task) {
+            cpu->idle_jiffies++;
+        }
+    }
     cpu->is_yield = false;
 
     tcb_t current_thread = get_current_task();

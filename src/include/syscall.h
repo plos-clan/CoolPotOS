@@ -332,6 +332,22 @@ struct tms {
     long tms_cstime;
 };
 
+// Linux capability 版本号
+#define _LINUX_CAPABILITY_VERSION_1 0x19980330
+#define _LINUX_CAPABILITY_VERSION_2 0x20071026
+#define _LINUX_CAPABILITY_VERSION_3 0x20080522
+
+typedef struct {
+    uint32_t version;
+    int      pid;
+} cap_user_header_t;
+
+typedef struct {
+    uint32_t effective;
+    uint32_t permitted;
+    uint32_t inheritable;
+} cap_user_data_t;
+
 void arch_enable_syscall();
 
 // fs syscall
@@ -467,6 +483,8 @@ syscall_(prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim,
 syscall_(getresgid, int *rgid, int *egid, int *sgid);
 syscall_(getresuid, int *ruid, int *euid, int *suid);
 syscall_(kill, int pid, int sig);
+syscall_(capget, cap_user_header_t *header, cap_user_data_t *data);
+syscall_(capset, cap_user_header_t *header, cap_user_data_t *data);
 
 // mem syscall
 syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
