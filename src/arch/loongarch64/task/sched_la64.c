@@ -17,3 +17,7 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs){
 
 _Noreturn void arch_switch_to_user_mode() {
 }
+
+void arch_context_free(tcb_t thread) {
+    //TODO
+}

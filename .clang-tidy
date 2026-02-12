@@ -11,7 +11,6 @@ Checks: >
   bugprone-*,
   modernize-*,
   clang-analyzer-*,
-  -readability-braces-around-statements,
   -readability-identifier-length,
   -readability-magic-numbers,
   -readability-implicit-bool-conversion,
@@ -21,4 +20,18 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -modernize-use-nullptr,
 
-FormatStyle: none
+FormatStyle: file
+
+CheckOptions:
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: "0"
+  - key: readability-function-size.LineThreshold
+    value: "120"
+  - key: readability-function-size.StatementThreshold
+    value: "60"
+  - key: readability-function-size.BranchThreshold
+    value: "25"
+  - key: readability-function-size.NestingThreshold
+    value: "4"
+  - key: readability-function-size.VariableThreshold
+    value: "30"

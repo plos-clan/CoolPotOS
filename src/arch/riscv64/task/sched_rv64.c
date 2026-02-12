@@ -17,6 +17,10 @@ void arch_send_scheduler() {
     //TODO
 }
 
+void arch_context_free(tcb_t thread) {
+    //TODO
+}
+
 void arch_context_init_thread(tcb_t new_task, void *args) {
     uint64_t stack_top = (uint64_t)((uint64_t)new_task + STACK_SIZE);
     memset(&new_task->context, 0, sizeof(struct arch_context_));

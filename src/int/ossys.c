@@ -76,7 +76,8 @@ syscall_(nano_sleep, void *time_handle) {
     memcpy(&k_req, time_handle, sizeof(k_req));
     if (unlikely(k_req.tv_nsec >= 1000000000L)) return SYSCALL_FAULT_(EINVAL);
     uint64_t nsec = k_req.tv_sec * 1000000000 + k_req.tv_nsec;
-    scheduler_nano_sleep(nsec);
+    int ret = scheduler_nano_sleep(nsec);
+    if (ret < 0) return SYSCALL_FAULT_(EINTR);
     return EOK;
 }
 

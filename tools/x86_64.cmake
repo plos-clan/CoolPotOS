@@ -51,7 +51,8 @@ target_include_directories(kernel PUBLIC
 )
 
 target_link_libraries(kernel PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libllvm_x64.a
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/libllvm_x64.a
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/liballoc-x86_64.a
 )
 
 set_target_properties(kernel PROPERTIES OUTPUT_NAME "cpkrnl_x64.elf")
