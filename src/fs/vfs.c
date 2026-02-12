@@ -802,6 +802,10 @@ void *general_map(vfs_read_t read_callback, void *file, uint64_t addr, uint64_t 
     ssize_t ret = read_callback(file, (void *)addr, offset, len);
     if (ret < 0) return (void *)-ENOMEM;
 
+    if ((uint64_t)ret < len) {
+        memset((void *)(addr + (uint64_t)ret), 0, len - (uint64_t)ret);
+    }
+
     return (void *)addr;
 }
 
