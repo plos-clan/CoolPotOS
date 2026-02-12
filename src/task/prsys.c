@@ -448,3 +448,47 @@ syscall_(getrusage, int who, struct rusage *usage) {
     if (usage) { memset(usage, 0, sizeof(struct rusage)); }
     return EOK;
 }
+
+syscall_(capget, cap_user_header_t *header, cap_user_data_t *data) {
+    if (header == NULL) return SYSCALL_FAULT_(EFAULT);
+    uint32_t ver = header->version;
+    if (ver != _LINUX_CAPABILITY_VERSION_1 &&
+        ver != _LINUX_CAPABILITY_VERSION_2 &&
+        ver != _LINUX_CAPABILITY_VERSION_3) {
+        header->version = _LINUX_CAPABILITY_VERSION_3;
+        return SYSCALL_FAULT_(EINVAL);
+    }
+    if (data == NULL) return EOK;
+    pcb_t process;
+    if (header->pid == 0) {
+        process = get_current_task()->process;
+    } else {
+        process = found_pcb(header->pid);
+        if (process == NULL) return SYSCALL_FAULT_(ESRCH);
+    }
+    uint32_t all_caps = (process->uid == 0) ? 0xFFFFFFFF : 0;
+    data[0].effective   = all_caps;
+    data[0].permitted   = all_caps;
+    data[0].inheritable = 0;
+    if (ver != _LINUX_CAPABILITY_VERSION_1) {
+        data[1].effective   = all_caps;
+        data[1].permitted   = all_caps;
+        data[1].inheritable = 0;
+    }
+    return EOK;
+}
+
+syscall_(capset, cap_user_header_t *header, cap_user_data_t *data) {
+    if (header == NULL) return SYSCALL_FAULT_(EFAULT);
+    uint32_t ver = header->version;
+    if (ver != _LINUX_CAPABILITY_VERSION_1 &&
+        ver != _LINUX_CAPABILITY_VERSION_2 &&
+        ver != _LINUX_CAPABILITY_VERSION_3) {
+        header->version = _LINUX_CAPABILITY_VERSION_3;
+        return SYSCALL_FAULT_(EINVAL);
+    }
+    if (data == NULL) return SYSCALL_FAULT_(EFAULT);
+    pcb_t process = get_current_task()->process;
+    if (process->uid != 0) return SYSCALL_FAULT_(EPERM);
+    return EOK;
+}

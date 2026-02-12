@@ -88,6 +88,8 @@
 #define SYSCALL_SYSLOG        103
 #define SYSCALL_GETGID        104
 #define SYSCALL_GETSID        124
+#define SYSCALL_CAPGET        125
+#define SYSCALL_CAPSET        126
 #define SYSCALL_SETUID        105
 #define SYSCALL_SETGID        106
 #define SYSCALL_GETEUID       107
