@@ -132,7 +132,7 @@ USED _Noreturn void kmain() {
     procfs_setup();
     ksuccess("Kernel load done!");
     arch_open_interrupt();
-    enable_scheduler();
+    scheduler_enable();
     start_all_kernel_module();
 
     extern void mount_modfs();

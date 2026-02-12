@@ -53,7 +53,7 @@ _Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
     idle_thread->tid      = alloc_tid();
     idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
     idle_thread->status   = T_RUNNING;
-    set_cpu_idle_task(idle_thread, arch_current_cpu());
+    scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     arch_context_init(idle_thread,&idle_thread->context);
 
     timer_init_hart(hartid);
@@ -73,7 +73,7 @@ void arch_bsp_cpu_init() {
     __asm__ volatile("mv gp, %0" : : "r"(cpuid_to_hartids[0]));
     cpu_local_infos[0].enable       = true;
     __asm__ volatile("mv tp, %0\n\t" ::"r"(&cpu_local_infos[0]));
-    set_bsp_cpu_info(arch_current_cpu());
+    scheduler_set_bsp_cpu(arch_current_cpu());
     timer_init_hart(cpuid_to_hartid(0));
 }
 

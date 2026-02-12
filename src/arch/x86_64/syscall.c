@@ -21,7 +21,7 @@ __attribute__((naked)) void asm_syscall_handle() {
                      "mov [rax+0x08], rsp\n\t"
                      "cmp QWORD PTR [rax+0x18], 0\n\t"
                      "je normal\n\t"
-                     "signal:\n\t" //信号处理
+                     "signal:\n\t" // 信号处理
                      "mov rsp, [rax+0x10]\n\t"
                      "jmp next\n\t"
                      "normal:\n\t" // 默认处理
@@ -97,7 +97,12 @@ void arch_enable_syscall() {
     wrmsr(MSR_SYSCALL_MASK, (1 << 9));
 }
 
+syscall_(brk_dump) {
+    return SYSCALL_FAULT_(ENOSYS);
+}
+
 syscall_t syscall_handlers[MAX_SYSCALLS] = {
+    [12]                    = (syscall_t)syscall_brk_dump, // brk no impl
     [SYSCALL_EXIT]          = (syscall_t)syscall_exit,
     [SYSCALL_OPEN]          = (syscall_t)syscall_open,
     [SYSCALL_CLOSE]         = (syscall_t)syscall_close,
@@ -271,15 +276,22 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
 
     if (likely(syscall_id < MAX_SYSCALLS && syscall_handlers[syscall_id] != NULL)) {
         arch_open_interrupt();
-        regs->rax = (syscall_handlers[syscall_id])(regs->rdi, regs->rsi, regs->rdx, regs->r10,
-                                                   regs->r8, regs->r9, regs);
+        regs->rax = (syscall_handlers[syscall_id])(regs->rdi,
+                                                   regs->rsi,
+                                                   regs->rdx,
+                                                   regs->r10,
+                                                   regs->r8,
+                                                   regs->r9,
+                                                   regs);
         arch_close_interrupt();
     } else {
         logkf("Syscall(%d) cannot implemented.\n", syscall_id);
         regs->rax = -ENOSYS;
     }
 
-    if (syscall_id != SYSCALL_SIGRET) { do_signal(regs); }
+    if (syscall_id != SYSCALL_SIGRET) {
+        do_signal(regs);
+    }
 
     // If sigsuspend set saved_sigmask and do_signal didn't invoke a handler, restore it now
     if (thread->has_saved_sigmask) {

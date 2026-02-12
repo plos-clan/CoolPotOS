@@ -80,8 +80,9 @@ void arch_context_init(tcb_t thread, struct arch_context_ *context) {
     context->gs_base = read_gsbase();
     context->fs = context->gs = 0;
 
-    context->context.fcw   = 0x37F;
-    context->context.mxscr = 0x1F80;
+    context->context = aligned_alloc(16, sizeof(struct fpu_context));
+    context->context->fcw   = 0x37F;
+    context->context->mxscr = 0x1F80;
 }
 
 void arch_context_init_thread(tcb_t new_task, void *args) {
@@ -91,7 +92,7 @@ void arch_context_init_thread(tcb_t new_task, void *args) {
     new_task->context.kernel_stack   = (uint64_t)stack_top;
     new_task->context.user_stack     = new_task->context.kernel_stack;
 
-    new_task->context.regs.rip    = (uint64_t)new_task->_start;
+    new_task->context.regs.rip    = new_task->_start;
     new_task->context.regs.rdi    = (uint64_t)args; // first argument in rdi
     new_task->context.regs.rflags = 0x202;
 
@@ -104,8 +105,9 @@ void arch_context_init_thread(tcb_t new_task, void *args) {
     new_task->context.gs_base = read_gsbase();
     new_task->context.fs = new_task->context.gs = 0;
 
-    new_task->context.context.fcw   = 0x37F;
-    new_task->context.context.mxscr = 0x1F80;
+    new_task->context.context = aligned_alloc(16, sizeof(struct fpu_context));
+    new_task->context.context->fcw   = 0x37F;
+    new_task->context.context->mxscr = 0x1F80;
 }
 
 void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
@@ -120,8 +122,8 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
 
     set_kernel_stack(next->context.kernel_stack);
 
-    save_fpu_context(&current->context.context);
-    restore_fpu_context(&next->context.context);
+    save_fpu_context(current->context.context);
+    restore_fpu_context(next->context.context);
 
     current->context.regs.r15    = regs->r15;
     current->context.regs.r14    = regs->r14;
@@ -425,4 +427,8 @@ err:
         kill_thread(current);
     while (true)
         arch_wait_for_interrupt();
+}
+
+void arch_context_free(tcb_t thread) {
+    free(thread->context.context);
 }

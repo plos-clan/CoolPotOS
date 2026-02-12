@@ -58,6 +58,7 @@ static void kill_thread0(pcb_t parent, tcb_t task) {
     task->status = T_OUT;
     free((void *)(task->syscall_stack - MAX_STACK_SIZE));
     free((void *)(task->signal_stack - STACK_SIZE));
+    arch_context_free(task);
     page_directory_t *src_dir = get_current_directory();
     switch_context_directory(task->process->directory);
     int *tid_addr = (int *)task->tid_address;
@@ -86,6 +87,7 @@ static void kill_proc0(pcb_t pcb) {
     ipc_queue_release(pcb->ipc_queue);
     free_llist_queue(pcb->virt_queue, NULL, NULL);
     free(pcb->cmdline);
+    free(pcb->name);
     vfs_close(pcb->cwd);
     vfs_close(pcb->exec);
     if (pcb->envp) free_envp(pcb->envp);
@@ -114,7 +116,7 @@ void kill_thread(tcb_t task) {
         task->tid_directory = NULL;
     }
     futex_free(task);
-    if (task->sched_handle != NULL) { remove_task(task, get_cpu_local(task->cpu_id)); }
+    if (task->sched_handle != NULL) { scheduler_remove_task(task, get_cpu_local(task->cpu_id)); }
 }
 
 void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
@@ -128,7 +130,7 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
     if (pcb->tty && pcb->tty->fgproc == pcb->pid) { pcb->tty->fgproc = 0; }
 
     if (is_zombie) {
-        disable_scheduler();
+        scheduler_disable();
         if (pcb->child_threads->size > 0) {
             tcb_t tcb = NULL;
             cow_foreach(pcb->child_threads, tcb) {
@@ -156,7 +158,7 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
             }
         }
 
-        enable_scheduler();
+        scheduler_enable();
     } else {
         cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
         pcb->status = T_DEATH;
@@ -193,9 +195,9 @@ int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
         }
     } else {
         while (1) {
-            change_task_weight(current, NICE_TO_PRIO(10));
+            scheduler_change_weight(current, NICE_TO_PRIO(10));
             mesg = ipc_recv_wait(process->ipc_queue, IPC_MSG_TYPE_EPID);
-            change_task_weight(current, NICE_TO_PRIO(0));
+            scheduler_change_weight(current, NICE_TO_PRIO(0));
             exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8) |
                         mesg->data[0];
             if (pid == -1 || pid == mesg->pid) break;
@@ -253,7 +255,7 @@ pid_t create_kernel_thread(const char *name, int (*func)(void *arg), void *arg, 
     thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
     thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, MAX_STACK_SIZE) + MAX_STACK_SIZE;
     arch_context_init_thread(thread, arg);
-    add_task_prio(thread, thread->prio);
+    scheduler_add_task(thread, thread->prio);
     return thread->tid;
 }
 

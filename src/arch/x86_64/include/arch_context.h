@@ -5,7 +5,7 @@
 
 struct arch_context_ {
     struct pt_regs regs;
-    fpu_context_t  context;
+    fpu_context_t *context;
     uint64_t       kernel_stack;
     uint64_t       user_stack;
     uint64_t       user_stack_top;

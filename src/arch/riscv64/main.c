@@ -60,7 +60,7 @@ USED _Noreturn void kmain() {
     smp_init();
     // cpio_init();
     ksuccess("Kernel load done!");
-    enable_scheduler();
+    scheduler_enable();
     arch_open_interrupt();
 
    // launch_init_process();

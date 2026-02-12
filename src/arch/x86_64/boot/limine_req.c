@@ -148,7 +148,7 @@ void smp_cpu_init(uint64_t *cpu_count, uint64_t *bsp_cpu_id, cpu_local_t *cpu_lo
         cpu_local_infos[i].id       = cpu->lapic_id;
         *bsp_cpu_id                 = mp_response->bsp_lapic_id;
         if (cpu->lapic_id == mp_response->bsp_lapic_id) {
-            set_bsp_cpu_info(&cpu_local_infos[i]);
+            scheduler_set_bsp_cpu(&cpu_local_infos[i]);
             continue;
         }
         cpu->goto_address = (limine_goto_address)arch_ap_cpu_entry;

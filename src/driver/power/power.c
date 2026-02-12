@@ -22,7 +22,7 @@ void power_off() {
         return;
     }
     arch_close_interrupt();
-    disable_scheduler();
+    scheduler_disable();
     status = AcpiEnterSleepState(ACPI_STATE_S5);
     kerror("ACPI: Failed to enter S5: %s", AcpiFormatException(status));
     for (;;)

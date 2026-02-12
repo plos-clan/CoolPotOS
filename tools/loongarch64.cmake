@@ -52,9 +52,9 @@ set_target_properties(kernel PROPERTIES OUTPUT_NAME "cpkrnl_la64.elf")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(RUN_ARG "")
-else()
+else ()
     set(RUN_ARG "-s -S")
-endif()
+endif ()
 
 add_custom_target(run
         DEPENDS kernel

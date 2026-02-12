@@ -17,6 +17,7 @@ target_link_options(kernel PRIVATE
         -target riscv64-freestanding
         -T ${CMAKE_CURRENT_SOURCE_DIR}/src/arch/riscv64/linker.ld
         -nostdlib
+        -mabi=lp64d
         -fuse-ld=lld
 )
 
@@ -46,7 +47,7 @@ target_include_directories(kernel PUBLIC
 )
 
 target_link_libraries(kernel PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgcc_rv64.a
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/libgcc_rv64.a
 )
 
 set_target_properties(kernel PROPERTIES OUTPUT_NAME "cpkrnl_rv64.elf")
@@ -54,9 +55,9 @@ set_target_properties(kernel PROPERTIES OUTPUT_NAME "cpkrnl_rv64.elf")
 # === Run target for RISC-V (no ISO needed for now, direct QEMU) ===
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(RUN_ARG)
-else()
+else ()
     set(RUN_ARG -s -S)
-endif()
+endif ()
 
 add_custom_target(run
         DEPENDS kernel

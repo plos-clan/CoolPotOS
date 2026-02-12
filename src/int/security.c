@@ -36,7 +36,7 @@ _Noreturn USED void __stack_chk_fail() {
     logkf("!!! STACK SMASHING DETECTED !!!\n");
     logkf("A stack buffer overflow has corrupted the stack canary.\n\r");
     logkf("***************************************************\n\r");
-    disable_scheduler();
+    scheduler_disable();
     arch_close_interrupt();
 
     for (;;)

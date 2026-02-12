@@ -47,7 +47,6 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->exec->refcount++;
 
     new_pcb->cmdline       = strdup(current_pcb->cmdline);
-    new_pcb->child_process = cow_list_create();
     new_pcb->ipc_queue     = ipc_queue_init();
     new_pcb->cwd           = current_pcb->cwd;
     new_pcb->cwd->refcount++;
@@ -95,7 +94,8 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_task->context.regs.rsp    = user_stack == 0 ? reg->rsp : user_stack;
     new_task->context.regs.rcx    = reg->rcx;
 
-    memcpy(&new_task->context.context, &parent_task->context.context, sizeof(fpu_context_t));
+    new_task->context.context = aligned_alloc(16, sizeof(struct fpu_context));
+    memcpy(new_task->context.context, parent_task->context.context, sizeof(fpu_context_t));
 
     new_task->affinity_mask   = parent_task->affinity_mask;
     new_task->context.fs      = parent_task->context.fs;
@@ -119,8 +119,8 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_task->signal_stack  = (uint64_t)signal_stack;
     new_task->syscall_stack = (uint64_t)syscall_stack;
 
-    add_task_prio(new_task, NICE_TO_PRIO(0));
-    enable_scheduler();
+    scheduler_add_task(new_task, NICE_TO_PRIO(0));
+    scheduler_enable();
     arch_open_interrupt();
     procfs_on_new_task(new_pcb);
 
@@ -215,9 +215,9 @@ uint64_t thread_clone(struct syscall_regs *reg, uint64_t flags, uint64_t stack, 
         new_task->tid_directory = get_current_directory();
     }
     arch_close_interrupt();
-    disable_scheduler();
-    add_task_prio(new_task, parent_task->prio);
-    enable_scheduler();
+    scheduler_disable();
+    scheduler_add_task(new_task, parent_task->prio);
+    scheduler_enable();
     arch_open_interrupt();
 
     return new_task->tid;
@@ -354,7 +354,7 @@ shebang_retry:;
     pcb_t process = current->process;
 
     arch_close_interrupt();
-    disable_scheduler();
+    scheduler_disable();
 
     char *old_cmdline = process->cmdline;
     process->cmdline  = build_proc_cmdline(argv, &process->cl_length);
@@ -428,7 +428,7 @@ shebang_retry:;
     current->tid_directory          = NULL;
     current->tid_address            = 0;
 
-    enable_scheduler();
+    scheduler_enable();
     arch_open_interrupt();
     arch_switch_to_user_mode();
 }
