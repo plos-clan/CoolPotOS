@@ -156,6 +156,7 @@ void lazy_infoalloc(pcb_t process, uint64_t vaddr, size_t length, uint64_t page_
         unmap_virtual_page(process, vaddr, length);
         unmap_page_range(get_current_directory(), vaddr, length);
         page_map_range_to_random(get_current_directory(), vaddr, length, page_flags);
+        memset((void *)vaddr, 0, length);
     } else {
         mm_virtual_page_t *virt_page = malloc(sizeof(mm_virtual_page_t));
         not_null_assert(virt_page, "Out of memory for virtual page allocation");
