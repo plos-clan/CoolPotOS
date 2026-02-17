@@ -1,6 +1,6 @@
-#include "driver/usb/usb_mem.h"
 #include "driver/usb/xhci/core/xhci.h"
 #include "driver/usb/xhci/regs/int.h"
+#include "driver/usb/usb_mem.h"
 #include "term/klog.h"
 
 void xhci_setup_command_ring(Xhci *xhci) {
@@ -9,9 +9,9 @@ void xhci_setup_command_ring(Xhci *xhci) {
 }
 
 static void xhci_setup_scratchpads(Xhci *xhci, uint32_t count) {
-    uint64_t sp_arr_phys = 0;
-    void *sp_arr_virt = usb_alloc_dma_pages(1, &sp_arr_phys);
-    uint64_t *sp_arr_ptr = (uint64_t *)sp_arr_virt;
+    uint64_t  sp_arr_phys = 0;
+    void     *sp_arr_virt = usb_alloc_dma_pages(1, &sp_arr_phys);
+    uint64_t *sp_arr_ptr  = (uint64_t *)sp_arr_virt;
 
     for (uint32_t i = 0; i < count; i++) {
         uint64_t buf_phys = 0;
@@ -25,8 +25,8 @@ static void xhci_setup_scratchpads(Xhci *xhci, uint32_t count) {
 void xhci_setup_dcbaa(Xhci *xhci, uint8_t max_slots) {
     (void)max_slots;
     uint64_t dcbaa_phys = 0;
-    void *dcbaa_virt = usb_alloc_dma_pages(1, &dcbaa_phys);
-    xhci->dcbaa_virt = (uint64_t *)dcbaa_virt;
+    void    *dcbaa_virt = usb_alloc_dma_pages(1, &dcbaa_phys);
+    xhci->dcbaa_virt    = (uint64_t *)dcbaa_virt;
 
     uint32_t sp_count = capability_max_scratchpad_bufs(xhci->cap);
     if (sp_count > 0) {
@@ -39,17 +39,17 @@ void xhci_setup_dcbaa(Xhci *xhci, uint8_t max_slots) {
 
 void xhci_setup_interrupter(Xhci *xhci) {
     uint64_t erst_phys = 0;
-    void *erst_virt = usb_alloc_dma_pages(1, &erst_phys);
+    void    *erst_virt = usb_alloc_dma_pages(1, &erst_phys);
 
-    uint32_t rt_off = capability_rts_off(xhci->cap);
+    uint32_t  rt_off  = capability_rts_off(xhci->cap);
     uintptr_t rt_base = xhci->cap.base_addr + (uintptr_t)rt_off;
 
-    Interrupter ir = interrupter_new(rt_base, 0);
+    Interrupter ir   = interrupter_new(rt_base, 0);
     xhci->event_ring = event_ring_new(interrupter_erdp_addr(ir));
 
     ErstEntry *entry = (ErstEntry *)erst_virt;
     entry->base_addr = (uint64_t)xhci->event_ring.phys_addr;
-    entry->size = xhci->event_ring.capacity;
+    entry->size      = xhci->event_ring.capacity;
 
     interrupter_set_erstsz(ir, 1);
     interrupter_set_erdp(ir, xhci->event_ring.phys_addr);

@@ -6,7 +6,7 @@ bool usb_device_submit_control(UsbDevice *dev, ControlTransferArgs args) {
     }
 
     ControlTransferArgs final_args = args;
-    final_args.slot_id = dev->slot_id;
+    final_args.slot_id             = dev->slot_id;
     return host_submit_control(&dev->host, final_args);
 }
 
@@ -16,7 +16,7 @@ bool usb_device_submit_transfer(UsbDevice *dev, GeneralTransferArgs args) {
     }
 
     GeneralTransferArgs final_args = args;
-    final_args.slot_id = dev->slot_id;
+    final_args.slot_id             = dev->slot_id;
     return host_submit_transfer(&dev->host, final_args);
 }
 

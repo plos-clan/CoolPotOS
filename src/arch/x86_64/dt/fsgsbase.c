@@ -3,9 +3,9 @@
 #include "io.h"
 #include "term/klog.h"
 
-uint64_t (*read_fsbase)() = read_fsbase_msr;
+uint64_t (*read_fsbase)()            = read_fsbase_msr;
 void (*write_fsbase)(uint64_t value) = write_fsbase_msr;
-uint64_t (*read_gsbase)() = read_gsbase_msr;
+uint64_t (*read_gsbase)()            = read_gsbase_msr;
 void (*write_gsbase)(uint64_t value) = write_gsbase_msr;
 
 uint64_t read_fsbase_msr() {

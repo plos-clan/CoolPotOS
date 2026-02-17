@@ -2,10 +2,10 @@
 #include "lock.h"
 #include "term/klog.h"
 
-static char kmsg_buf[KMSG_SIZE];
+static char   kmsg_buf[KMSG_SIZE];
 static size_t kmsg_head = 0;
 static size_t kmsg_tail = 0;
-spin_t kmsg_lock = SPIN_INIT;
+spin_t        kmsg_lock = SPIN_INIT;
 
 void kmsg_empty(void) {
     kmsg_head = 0;
@@ -15,7 +15,7 @@ void kmsg_empty(void) {
 
 void kmsg_putc(char c) {
     kmsg_buf[kmsg_head] = c;
-    kmsg_head = (kmsg_head + 1) % KMSG_SIZE;
+    kmsg_head           = (kmsg_head + 1) % KMSG_SIZE;
     if (kmsg_head == kmsg_tail) {
         kmsg_tail = (kmsg_tail + 1) % KMSG_SIZE;
     }
@@ -31,7 +31,7 @@ void kmsg_write(const char *s) {
 int kmsg_getc(void) {
     if (kmsg_head == kmsg_tail)
         return -1;
-    char c = kmsg_buf[kmsg_tail];
+    char c    = kmsg_buf[kmsg_tail];
     kmsg_tail = (kmsg_tail + 1) % KMSG_SIZE;
     return c;
 }
@@ -73,12 +73,12 @@ size_t kmsg_read_all(uint8_t *buffer, size_t length) {
     spin_lock(kmsg_lock);
 
     size_t read_count = 0;
-    size_t data_len = kmsg_length();
+    size_t data_len   = kmsg_length();
 
     size_t count_to_read = (length < data_len) ? length : data_len;
 
     while (read_count < count_to_read) {
-        int c = kmsg_getc_at(read_count);
+        int c                = kmsg_getc_at(read_count);
         buffer[read_count++] = (uint8_t)c;
     }
 

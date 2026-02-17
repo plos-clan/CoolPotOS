@@ -27,11 +27,11 @@ cow_arraylist *cow_list_create() {
     cow_arraylist *list = (cow_arraylist *)malloc(sizeof(cow_arraylist));
     if (list == NULL)
         return NULL;
-    list->size = 0;
-    list->block_count = 0;
+    list->size            = 0;
+    list->block_count     = 0;
     list->blocks_capacity = 4;
-    list->lock = SPIN_INIT;
-    list->blocks = (cow_block **)calloc(list->blocks_capacity, sizeof(cow_block *));
+    list->lock            = SPIN_INIT;
+    list->blocks          = (cow_block **)calloc(list->blocks_capacity, sizeof(cow_block *));
     if ((void *)list->blocks == NULL) {
         free(list);
         return NULL;
@@ -60,7 +60,7 @@ void *cow_list_get(cow_arraylist *list, size_t index) {
         return NULL;
     }
 
-    size_t block_index = index / BLOCK_SIZE;
+    size_t block_index   = index / BLOCK_SIZE;
     size_t element_index = index % BLOCK_SIZE;
 
     cow_block *block = list->blocks[block_index];
@@ -73,7 +73,7 @@ int cow_list_set(cow_arraylist *list, size_t index, void *element) {
         return -1;
     }
 
-    size_t block_index = index / BLOCK_SIZE;
+    size_t block_index   = index / BLOCK_SIZE;
     size_t element_index = index % BLOCK_SIZE;
     spin_lock(list->lock);
 
@@ -87,7 +87,7 @@ int cow_list_set(cow_arraylist *list, size_t index, void *element) {
     memcpy(new_block, old_block, sizeof(cow_block));
     __atomic_store_n((size_t *)&new_block->ref_count, 1, __ATOMIC_RELEASE);
     new_block->elements[element_index] = element;
-    list->blocks[block_index] = new_block;
+    list->blocks[block_index]          = new_block;
     block_release(old_block);
     spin_unlock(list->lock);
     return 0;
@@ -98,13 +98,13 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
 
     spin_lock(list->lock);
 
-    size_t old_size = list->size;
-    new_size = old_size + 1;
+    size_t old_size        = list->size;
+    new_size               = old_size + 1;
     size_t old_block_count = list->block_count;
     size_t new_block_count = calculate_block_count(new_size);
     // 数组扩容措施
     if (new_block_count > list->blocks_capacity) {
-        size_t new_capacity = list->blocks_capacity * 2;
+        size_t      new_capacity = list->blocks_capacity * 2;
         cow_block **new_blocks_array =
             (cow_block **)realloc((void *)list->blocks, new_capacity * sizeof(cow_block *));
 
@@ -113,14 +113,14 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
             return 0;
         }
 
-        list->blocks = new_blocks_array;
+        list->blocks          = new_blocks_array;
         list->blocks_capacity = new_capacity;
     }
 
-    size_t target_block_index = new_block_count - 1;
+    size_t target_block_index   = new_block_count - 1;
     size_t target_element_index = old_size % BLOCK_SIZE;
 
-    cow_block *target_block = list->blocks[target_block_index];
+    cow_block *target_block         = list->blocks[target_block_index];
     cow_block *old_block_to_release = NULL;
 
     // 处理块复制或新块分配
@@ -136,7 +136,7 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
         __atomic_store_n((size_t *)&target_block->ref_count, 1, __ATOMIC_RELEASE);
 
         list->blocks[old_block_count] = target_block;
-        list->block_count = new_block_count;
+        list->block_count             = new_block_count;
     } else {
         // 在旧块中追加，需要 COW 复制
         old_block_to_release = target_block;
@@ -175,19 +175,19 @@ void *cow_list_remove(cow_arraylist *list, size_t index) {
 
     spin_lock(list->lock);
 
-    size_t old_size = list->size;
+    size_t old_size          = list->size;
     size_t final_block_count = calculate_block_count(old_size - 1);
 
     // 保存要移除的元素
-    size_t block_idx_rem = index / BLOCK_SIZE;
+    size_t block_idx_rem   = index / BLOCK_SIZE;
     size_t element_idx_rem = index % BLOCK_SIZE;
-    removed_element = list->blocks[block_idx_rem]->elements[element_idx_rem];
+    removed_element        = list->blocks[block_idx_rem]->elements[element_idx_rem];
 
     // 迭代并进行块级 COW 复制和数据移动 (O(N/B) 次块复制)
     for (size_t i = index; i < old_size - 1; i++) {
-        size_t src_block_idx = (i + 1) / BLOCK_SIZE;
-        size_t src_element_idx = (i + 1) % BLOCK_SIZE;
-        size_t dest_block_idx = i / BLOCK_SIZE;
+        size_t src_block_idx    = (i + 1) / BLOCK_SIZE;
+        size_t src_element_idx  = (i + 1) % BLOCK_SIZE;
+        size_t dest_block_idx   = i / BLOCK_SIZE;
         size_t dest_element_idx = i % BLOCK_SIZE;
 
         // 只有当目标块变化时才需要 COW 复制 (或者在起点)
@@ -217,12 +217,12 @@ void *cow_list_remove(cow_arraylist *list, size_t index) {
 
     // 处理最后一个元素所在的块：清空最后一个元素并处理块释放
     size_t last_element_pos = old_size - 1;
-    size_t last_block_idx = last_element_pos / BLOCK_SIZE;
+    size_t last_block_idx   = last_element_pos / BLOCK_SIZE;
     size_t last_element_idx = last_element_pos % BLOCK_SIZE;
 
     if (final_block_count < list->block_count) {
         // 块被清空，需要释放整个块
-        cow_block *last_block = list->blocks[list->block_count - 1];
+        cow_block *last_block               = list->blocks[list->block_count - 1];
         list->blocks[list->block_count - 1] = NULL;
         list->block_count--;
 

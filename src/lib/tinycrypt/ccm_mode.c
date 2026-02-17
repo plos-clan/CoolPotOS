@@ -35,7 +35,8 @@
 #include <lib/tinycrypt/utils.h>
 
 int tc_ccm_config(
-    TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce, unsigned int nlen, unsigned int mlen) {
+    TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce, unsigned int nlen, unsigned int mlen
+) {
 
     /* input sanity check: */
     if (c == (TCCcmMode_t)0 || sched == (TCAesKeySched_t)0 || nonce == (uint8_t *)0) {
@@ -46,7 +47,7 @@ int tc_ccm_config(
         return TC_CRYPTO_FAIL; /* The allowed mac sizes are: 4, 6, 8, 10, 12, 14, 16.*/
     }
 
-    c->mlen = mlen;
+    c->mlen  = mlen;
     c->sched = sched;
     c->nonce = nonce;
 
@@ -57,7 +58,8 @@ int tc_ccm_config(
  * Variation of CBC-MAC mode used in CCM.
  */
 static void ccm_cbc_mac(
-    uint8_t *T, const uint8_t *data, unsigned int dlen, unsigned int flag, TCAesKeySched_t sched) {
+    uint8_t *T, const uint8_t *data, unsigned int dlen, unsigned int flag, TCAesKeySched_t sched
+) {
 
     unsigned int i;
 
@@ -87,11 +89,12 @@ static void ccm_cbc_mac(
  */
 static int ccm_ctr_mode(
     uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen, uint8_t *ctr,
-    const TCAesKeySched_t sched) {
+    const TCAesKeySched_t sched
+) {
 
-    uint8_t buffer[TC_AES_BLOCK_SIZE];
-    uint8_t nonce[TC_AES_BLOCK_SIZE];
-    uint16_t block_num;
+    uint8_t      buffer[TC_AES_BLOCK_SIZE];
+    uint8_t      nonce[TC_AES_BLOCK_SIZE];
+    uint16_t     block_num;
     unsigned int i;
 
     /* input sanity check: */
@@ -127,7 +130,8 @@ static int ccm_ctr_mode(
 
 int tc_ccm_generation_encryption(
     uint8_t *out, unsigned int olen, const uint8_t *associated_data, unsigned int alen,
-    const uint8_t *payload, unsigned int plen, TCCcmMode_t c) {
+    const uint8_t *payload, unsigned int plen, TCCcmMode_t c
+) {
 
     /* input sanity check: */
     if ((out == (uint8_t *)0) || (c == (TCCcmMode_t)0) || ((plen > 0) && (payload == (uint8_t *)0))
@@ -138,8 +142,8 @@ int tc_ccm_generation_encryption(
         return TC_CRYPTO_FAIL;
     }
 
-    uint8_t b[Nb * Nk];
-    uint8_t tag[Nb * Nk];
+    uint8_t      b[Nb * Nk];
+    uint8_t      tag[Nb * Nk];
     unsigned int i;
 
     /* GENERATING THE AUTHENTICATION TAG: */
@@ -164,7 +168,7 @@ int tc_ccm_generation_encryption(
     /* ENCRYPTION: */
 
     /* formatting the sequence b for encryption: */
-    b[0] = 1; /* q - 1 = 2 - 1 = 1 */
+    b[0]  = 1; /* q - 1 = 2 - 1 = 1 */
     b[14] = b[15] = TC_ZERO_BYTE;
 
     /* encrypting payload using ctr mode: */
@@ -184,7 +188,8 @@ int tc_ccm_generation_encryption(
 
 int tc_ccm_decryption_verification(
     uint8_t *out, unsigned int olen, const uint8_t *associated_data, unsigned int alen,
-    const uint8_t *payload, unsigned int plen, TCCcmMode_t c) {
+    const uint8_t *payload, unsigned int plen, TCCcmMode_t c
+) {
 
     /* input sanity check: */
     if ((out == (uint8_t *)0) || (c == (TCCcmMode_t)0) || ((plen > 0) && (payload == (uint8_t *)0))
@@ -195,8 +200,8 @@ int tc_ccm_decryption_verification(
         return TC_CRYPTO_FAIL;
     }
 
-    uint8_t b[Nb * Nk];
-    uint8_t tag[Nb * Nk];
+    uint8_t      b[Nb * Nk];
+    uint8_t      tag[Nb * Nk];
     unsigned int i;
 
     /* DECRYPTION: */

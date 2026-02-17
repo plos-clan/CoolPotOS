@@ -121,20 +121,20 @@
 // Linux-compatible input_event structure (24 bytes on 64-bit)
 struct input_event {
     struct timeval time;
-    uint16_t type;
-    uint16_t code;
-    int32_t value;
+    uint16_t       type;
+    uint16_t       code;
+    int32_t        value;
 };
 
 #define EVDEV_BUF_SIZE 256
 
 typedef struct evdev_ctx {
     struct input_event buf[EVDEV_BUF_SIZE];
-    size_t head;
-    size_t tail;
-    size_t count;
-    int open_count;
-    spin_t lock;
+    size_t             head;
+    size_t             tail;
+    size_t             count;
+    int                open_count;
+    spin_t             lock;
 } evdev_ctx_t;
 
 // IOCTL decoding helpers (Linux _IOC encoding)

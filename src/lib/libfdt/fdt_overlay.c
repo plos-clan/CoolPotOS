@@ -27,7 +27,7 @@
  */
 static uint32_t overlay_get_target_phandle(const void *fdto, int fragment) {
     const fdt32_t *val;
-    int len;
+    int            len;
 
     val = fdt_getprop(fdto, fragment, "target", &len);
     if (!val)
@@ -40,10 +40,11 @@ static uint32_t overlay_get_target_phandle(const void *fdto, int fragment) {
 }
 
 int fdt_overlay_target_offset(
-    const void *fdt, const void *fdto, int fragment_offset, char const **pathp) {
-    uint32_t phandle;
-    const char *path = NULL;
-    int path_len = 0, ret;
+    const void *fdt, const void *fdto, int fragment_offset, char const **pathp
+) {
+    uint32_t    phandle;
+    const char *path     = NULL;
+    int         path_len = 0, ret;
 
     /* Try first to do a phandle based lookup */
     phandle = overlay_get_target_phandle(fdto, fragment_offset);
@@ -98,7 +99,7 @@ int fdt_overlay_target_offset(
  */
 static int overlay_phandle_add_offset(void *fdt, int node, const char *name, uint32_t delta) {
     fdt32_t *valp, val;
-    int len;
+    int      len;
 
     valp = fdt_getprop_w(fdt, node, name, &len);
     if (!valp)
@@ -199,11 +200,11 @@ overlay_update_local_node_references(void *fdto, int tree_node, int fixup_node, 
 
     fdt_for_each_property_offset(fixup_prop, fdto, fixup_node) {
         const fdt32_t *fixup_val;
-        const char *name;
-        char *tree_val;
-        int fixup_len;
-        int tree_len;
-        int i;
+        const char    *name;
+        char          *tree_val;
+        int            fixup_len;
+        int            tree_len;
+        int            i;
 
         fixup_val = fdt_getprop_by_offset(fdto, fixup_prop, &name, &fixup_len);
         if (!fixup_val)
@@ -236,7 +237,7 @@ overlay_update_local_node_references(void *fdto, int tree_node, int fixup_node, 
 
     fdt_for_each_subnode(fixup_child, fdto, fixup_node) {
         const char *fixup_child_name = fdt_get_name(fdto, fixup_child, NULL);
-        int tree_child;
+        int         tree_child;
 
         tree_child = fdt_subnode_offset(fdto, tree_node, fixup_child_name);
         if (tree_child == -FDT_ERR_NOTFOUND)
@@ -312,9 +313,10 @@ static int overlay_update_local_references(void *fdto, uint32_t delta) {
  */
 static int overlay_fixup_one_phandle(
     void *fdt, void *fdto, int symbols_off, const char *path, uint32_t path_len, const char *name,
-    uint32_t name_len, int poffset, uint32_t phandle) {
+    uint32_t name_len, int poffset, uint32_t phandle
+) {
     fdt32_t phandle_prop;
-    int fixup_off;
+    int     fixup_off;
 
     if (symbols_off < 0)
         return symbols_off;
@@ -327,7 +329,8 @@ static int overlay_fixup_one_phandle(
 
     phandle_prop = cpu_to_fdt32(phandle);
     return fdt_setprop_inplace_namelen_partial(
-        fdto, fixup_off, name, name_len, poffset, &phandle_prop, sizeof(phandle_prop));
+        fdto, fixup_off, name, name_len, poffset, &phandle_prop, sizeof(phandle_prop)
+    );
 };
 
 /**
@@ -352,11 +355,11 @@ static int overlay_fixup_one_phandle(
 static int overlay_fixup_phandle(void *fdt, void *fdto, int symbols_off, int property) {
     const char *value;
     const char *label;
-    int len;
+    int         len;
     const char *symbol_path;
-    int prop_len;
-    int symbol_off;
-    uint32_t phandle;
+    int         prop_len;
+    int         symbol_off;
+    uint32_t    phandle;
 
     value = fdt_getprop_by_offset(fdto, property, &label, &len);
     if (!value) {
@@ -381,10 +384,10 @@ static int overlay_fixup_phandle(void *fdt, void *fdto, int symbols_off, int pro
     do {
         const char *path, *name, *fixup_end;
         const char *fixup_str = value;
-        uint32_t path_len, name_len;
-        uint32_t fixup_len;
-        char *sep, *endptr;
-        int poffset, ret;
+        uint32_t    path_len, name_len;
+        uint32_t    fixup_len;
+        char       *sep, *endptr;
+        int         poffset, ret;
 
         fixup_end = memchr(value, '\0', len);
         if (!fixup_end)
@@ -395,7 +398,7 @@ static int overlay_fixup_phandle(void *fdt, void *fdto, int symbols_off, int pro
         value += fixup_len + 1;
 
         path = fixup_str;
-        sep = memchr(fixup_str, ':', fixup_len);
+        sep  = memchr(fixup_str, ':', fixup_len);
         if (!sep || *sep != ':')
             return -FDT_ERR_BADOVERLAY;
 
@@ -405,7 +408,7 @@ static int overlay_fixup_phandle(void *fdt, void *fdto, int symbols_off, int pro
 
         fixup_len -= path_len + 1;
         name = sep + 1;
-        sep = memchr(name, ':', fixup_len);
+        sep  = memchr(name, ':', fixup_len);
         if (!sep || *sep != ':')
             return -FDT_ERR_BADOVERLAY;
 
@@ -418,7 +421,8 @@ static int overlay_fixup_phandle(void *fdt, void *fdto, int symbols_off, int pro
             return -FDT_ERR_BADOVERLAY;
 
         ret = overlay_fixup_one_phandle(
-            fdt, fdto, symbols_off, path, path_len, name, name_len, poffset, phandle);
+            fdt, fdto, symbols_off, path, path_len, name, name_len, poffset, phandle
+        );
         if (ret)
             return ret;
     } while (len > 0);
@@ -482,7 +486,7 @@ static int overlay_fixup_phandles(void *fdt, void *fdto) {
  */
 static int overlay_adjust_local_conflicting_phandle(void *fdto, int node, uint32_t fdt_phandle) {
     const fdt32_t *php;
-    int len, ret;
+    int            len, ret;
 
     php = fdt_getprop(fdto, node, "phandle", &len);
     if (php && len == sizeof(*php)) {
@@ -516,18 +520,19 @@ static int overlay_adjust_local_conflicting_phandle(void *fdto, int node, uint32
  *      Negative error code on failure
  */
 static int overlay_update_node_conflicting_references(
-    void *fdto, int tree_node, int fixup_node, uint32_t fdt_phandle, uint32_t fdto_phandle) {
+    void *fdto, int tree_node, int fixup_node, uint32_t fdt_phandle, uint32_t fdto_phandle
+) {
     int fixup_prop;
     int fixup_child;
     int ret;
 
     fdt_for_each_property_offset(fixup_prop, fdto, fixup_node) {
         const fdt32_t *fixup_val;
-        const char *name;
-        char *tree_val;
-        int fixup_len;
-        int tree_len;
-        int i;
+        const char    *name;
+        char          *tree_val;
+        int            fixup_len;
+        int            tree_len;
+        int            i;
 
         fixup_val = fdt_getprop_by_offset(fdto, fixup_prop, &name, &fixup_len);
         if (!fixup_val)
@@ -559,7 +564,7 @@ static int overlay_update_node_conflicting_references(
 
     fdt_for_each_subnode(fixup_child, fdto, fixup_node) {
         const char *fixup_child_name = fdt_get_name(fdto, fixup_child, NULL);
-        int tree_child;
+        int         tree_child;
 
         tree_child = fdt_subnode_offset(fdto, tree_node, fixup_child_name);
 
@@ -569,7 +574,8 @@ static int overlay_update_node_conflicting_references(
             return tree_child;
 
         ret = overlay_update_node_conflicting_references(
-            fdto, tree_child, fixup_child, fdt_phandle, fdto_phandle);
+            fdto, tree_child, fixup_child, fdt_phandle, fdto_phandle
+        );
         if (ret)
             return ret;
     }
@@ -590,7 +596,8 @@ static int overlay_update_node_conflicting_references(
  *      Negative error code on failure
  */
 static int overlay_update_local_conflicting_references(
-    void *fdto, uint32_t fdt_phandle, uint32_t fdto_phandle) {
+    void *fdto, uint32_t fdt_phandle, uint32_t fdto_phandle
+) {
     int fixups;
 
     fixups = fdt_path_offset(fdto, "/__local_fixups__");
@@ -616,9 +623,9 @@ static int overlay_update_local_conflicting_references(
 static int
 overlay_prevent_phandle_overwrite_node(void *fdt, int fdtnode, void *fdto, int fdtonode) {
     uint32_t fdt_phandle, fdto_phandle;
-    int fdtochild;
+    int      fdtochild;
 
-    fdt_phandle = fdt_get_phandle(fdt, fdtnode);
+    fdt_phandle  = fdt_get_phandle(fdt, fdtnode);
     fdto_phandle = fdt_get_phandle(fdto, fdtonode);
 
     if (fdt_phandle && fdto_phandle) {
@@ -635,8 +642,8 @@ overlay_prevent_phandle_overwrite_node(void *fdt, int fdtnode, void *fdto, int f
 
     fdt_for_each_subnode(fdtochild, fdto, fdtonode) {
         const char *name = fdt_get_name(fdto, fdtochild, NULL);
-        int fdtchild;
-        int ret;
+        int         fdtchild;
+        int         ret;
 
         fdtchild = fdt_subnode_offset(fdt, fdtnode, name);
         if (fdtchild == -FDT_ERR_NOTFOUND)
@@ -726,8 +733,8 @@ static int overlay_apply_node(void *fdt, int target, void *fdto, int node) {
     fdt_for_each_property_offset(property, fdto, node) {
         const char *name;
         const void *prop;
-        int prop_len;
-        int ret;
+        int         prop_len;
+        int         ret;
 
         prop = fdt_getprop_by_offset(fdto, property, &name, &prop_len);
         if (prop_len == -FDT_ERR_NOTFOUND)
@@ -742,8 +749,8 @@ static int overlay_apply_node(void *fdt, int target, void *fdto, int node) {
 
     fdt_for_each_subnode(subnode, fdto, node) {
         const char *name = fdt_get_name(fdto, subnode, NULL);
-        int nnode;
-        int ret;
+        int         nnode;
+        int         ret;
 
         nnode = fdt_add_subnode(fdt, target, name);
         if (nnode == -FDT_ERR_EXISTS) {
@@ -810,7 +817,7 @@ static int overlay_merge(void *fdt, void *fdto) {
 }
 
 static int get_path_len(const void *fdt, int nodeoffset) {
-    int len = 0, namelen;
+    int         len = 0, namelen;
     const char *name;
 
     FDT_RO_PROBE(fdt);
@@ -853,16 +860,16 @@ static int get_path_len(const void *fdt, int nodeoffset) {
  *      Negative error code on failure
  */
 static int overlay_symbol_update(void *fdt, void *fdto) {
-    int root_sym, ov_sym, prop, path_len, fragment, target;
-    int len, frag_name_len, ret, rel_path_len;
+    int         root_sym, ov_sym, prop, path_len, fragment, target;
+    int         len, frag_name_len, ret, rel_path_len;
     const char *s, *e;
     const char *path;
     const char *name;
     const char *frag_name;
     const char *rel_path;
     const char *target_path;
-    char *buf;
-    void *p;
+    char       *buf;
+    void       *p;
 
     ov_sym = fdt_subnode_offset(fdto, 0, "__symbols__");
 
@@ -904,18 +911,18 @@ static int overlay_symbol_update(void *fdt, void *fdto) {
             continue;
         }
 
-        frag_name = path + 1;
+        frag_name     = path + 1;
         frag_name_len = s - path - 1;
 
         /* verify format; safe since "s" lies in \0 terminated prop */
         len = sizeof("/__overlay__/") - 1;
         if ((e - s) > len && (memcmp(s, "/__overlay__/", len) == 0)) {
             /* /<fragment-name>/__overlay__/<relative-subnode-path> */
-            rel_path = s + len;
+            rel_path     = s + len;
             rel_path_len = e - rel_path - 1;
         } else if ((e - s) == len && (memcmp(s, "/__overlay__", len - 1) == 0)) {
             /* /<fragment-name>/__overlay__ */
-            rel_path = "";
+            rel_path     = "";
             rel_path_len = 0;
         } else {
             /* Symbol refers to something that won't end
@@ -985,7 +992,7 @@ static int overlay_symbol_update(void *fdt, void *fdto) {
 
 int fdt_overlay_apply(void *fdt, void *fdto) {
     uint32_t delta;
-    int ret;
+    int      ret;
 
     FDT_RO_PROBE(fdt);
     FDT_RO_PROBE(fdto);

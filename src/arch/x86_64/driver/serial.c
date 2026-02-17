@@ -5,8 +5,8 @@
 #include "mem/heap.h"
 #include "term/klog.h"
 
-static bool s_port[4] = {false, false, false, false};
-static uint16_t com_ports[4] = {SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4};
+static bool     s_port[4]    = { false, false, false, false };
+static uint16_t com_ports[4] = { SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4 };
 
 static size_t extract_number_serial(const char *str) {
     size_t len = strlen(str);
@@ -31,12 +31,12 @@ static size_t extract_number_serial(const char *str) {
         return -1;
     }
 
-    int result = 0;
-    const char *p = str + start_index;
+    int         result = 0;
+    const char *p      = str + start_index;
 
     while (isdigit((unsigned char)*p)) {
         int digit = *p - '0';
-        result = result * 10 + digit;
+        result    = result * 10 + digit;
         p++;
     }
 
@@ -128,7 +128,8 @@ static void init_serial_port(uint16_t port) {
     io_out8(port + SERIAL_REG_MCR, 0x0f); // Quit loopback mode
     logkf(
         "serial: Local port: %s, Baud rate: %d, Status: 0x%02x\n", PORT_TO_COM(port),
-        SERIAL_BAUD_RATE, io_in8(port + SERIAL_REG_LSR));
+        SERIAL_BAUD_RATE, io_in8(port + SERIAL_REG_LSR)
+    );
 }
 
 char read_serial(uint16_t port) {
@@ -181,14 +182,14 @@ int init_serial() {
             init_serial_port(com_ports[i]);
             valid_ports++;
 
-            tty_device_t *device = alloc_tty_device(TTY_DEVICE_SERIAL);
-            struct tty_serial_ *data = malloc(sizeof(struct tty_serial_));
+            tty_device_t       *device = alloc_tty_device(TTY_DEVICE_SERIAL);
+            struct tty_serial_ *data   = malloc(sizeof(struct tty_serial_));
 
-            data->port = com_ports[i];
+            data->port           = com_ports[i];
             device->private_data = data;
-            device->ops.flush = serial_flush;
-            device->ops.write = serial_write;
-            device->ops.read = serial_read;
+            device->ops.flush    = serial_flush;
+            device->ops.write    = serial_write;
+            device->ops.read     = serial_read;
 
             char name[20];
             sprintf(name, "ttyS%d", i);

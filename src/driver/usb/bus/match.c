@@ -15,8 +15,8 @@ void usb_device_match_drivers(UsbDevice *dev) {
         }
 
         for (size_t j = 0; j < usb_drivers.len; j++) {
-            ProbeFn probe_fn = usb_drivers.data[j];
-            UsbDriver *driver = probe_fn(iface);
+            ProbeFn    probe_fn = usb_drivers.data[j];
+            UsbDriver *driver   = probe_fn(iface);
             if (driver) {
                 iface->driver = driver;
                 kinfo("Interface bound to driver successfully");

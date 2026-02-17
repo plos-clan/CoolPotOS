@@ -112,7 +112,7 @@ typedef struct page {
     };
 
     unsigned char order;
-    uint32_t compound_nr;
+    uint32_t      compound_nr;
 
     // 新增：所属的 zone
     unsigned char zone_id;
@@ -136,15 +136,15 @@ typedef struct zone_stats {
 
 typedef struct free_area {
     struct page *free_list;
-    uint64_t nr_free;
+    uint64_t     nr_free;
 } free_area_t;
 
 typedef struct per_cpu_pages {
     struct page *pages[PCPU_CACHE_HIGH];
-    int count;
-    int low;   // 低水位
-    int high;  // 高水位
-    int batch; // 批量操作数量
+    int          count;
+    int          low;   // 低水位
+    int          high;  // 高水位
+    int          batch; // 批量操作数量
 
     uint64_t alloc_hits;
     uint64_t alloc_misses;
@@ -165,7 +165,7 @@ typedef struct zone {
 
     // Zone 类型
     enum zone_type type;
-    const char *name;
+    const char    *name;
 
     // 统计信息
     zone_stats_t vm_stat;
@@ -182,15 +182,15 @@ typedef struct zone {
 
 typedef struct zonelist {
     zone_t *zones[__MAX_NR_ZONES]; // 按优先级排序的 zone 列表
-    int nr_zones;                  // zone 数量
+    int     nr_zones;              // zone 数量
 } zonelist_t;
 
-extern page_t *mem_map;
+extern page_t  *mem_map;
 extern uint64_t max_pfn;
 extern uint64_t min_pfn;
-extern zone_t *zones[__MAX_NR_ZONES];
-extern int nr_zones;
-extern int nr_cpu;
+extern zone_t  *zones[__MAX_NR_ZONES];
+extern int      nr_zones;
+extern int      nr_cpu;
 
 // 获取页面所属的 zone
 #define page_zone(page) (zones[(page)->zone_id])
@@ -226,7 +226,7 @@ static inline bool put_page_testzero(page_t *page) {
 
 // 复合页操作
 static inline void set_compound_order(page_t *page, uint32_t order) {
-    page->order = order;
+    page->order       = order;
     page->compound_nr = 1U << order;
 }
 
@@ -264,7 +264,7 @@ void __free_pages(page_t *page, uint32_t order);
 
 // Zone 查询
 zone_t *get_zone(enum zone_type type);
-bool zone_has_memory(zone_t *zone);
+bool    zone_has_memory(zone_t *zone);
 
 // Zonelist 构建
 void build_zonelist(zonelist_t *zl, uint32_t gfp_flags);
@@ -272,4 +272,4 @@ void build_zonelist(zonelist_t *zl, uint32_t gfp_flags);
 void init_frame_buddy(uint64_t memory_size);
 
 uintptr_t buddy_alloc_frames(size_t count);
-void buddy_free_frames(uintptr_t addr, size_t count);
+void      buddy_free_frames(uintptr_t addr, size_t count);

@@ -5,8 +5,8 @@
 
 volatile bool smp_enable = false;
 
-uint64_t cpu_count = 0;
-uint64_t bsp_cpu_id = 0;
+uint64_t    cpu_count  = 0;
+uint64_t    bsp_cpu_id = 0;
 cpu_local_t cpu_local_infos[MAX_CPU];
 
 extern void
@@ -25,14 +25,14 @@ cpu_local_t *get_cpu_local(size_t id) {
 }
 
 cpu_local_t *get_min_task_count_cpu() {
-    cpu_local_t *local = NULL;
-    size_t old_count = SIZE_MAX;
+    cpu_local_t *local     = NULL;
+    size_t       old_count = SIZE_MAX;
     for (size_t i = 0; i < cpu_count; i++) {
         if (!cpu_local_infos[i].enable)
             continue;
         if (cpu_local_infos[i].task_count < old_count) {
             old_count = cpu_local_infos[i].task_count;
-            local = &cpu_local_infos[i];
+            local     = &cpu_local_infos[i];
         }
     }
     return local;

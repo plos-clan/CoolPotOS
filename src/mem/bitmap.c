@@ -2,16 +2,16 @@
 #include "krlibc.h"
 
 void bitmap_init(Bitmap *bitmap, uint8_t *buffer, size_t size) {
-    bitmap->buffer = buffer;
-    bitmap->length = size * 8;
+    bitmap->buffer          = buffer;
+    bitmap->length          = size * 8;
     bitmap->bitmap_refcount = 1;
-    bitmap->lock = SPIN_INIT;
+    bitmap->lock            = SPIN_INIT;
     memset(buffer, 0, size);
 }
 
 bool bitmap_get(const Bitmap *bitmap, size_t index) {
     size_t word_index = index / 8;
-    size_t bit_index = index % 8;
+    size_t bit_index  = index % 8;
     if (unlikely(word_index > bitmap->length))
         return false;
     return (bitmap->buffer[word_index] >> bit_index) & 1;
@@ -19,7 +19,7 @@ bool bitmap_get(const Bitmap *bitmap, size_t index) {
 
 void bitmap_set(Bitmap *bitmap, size_t index, bool value) {
     size_t word_index = index / 8;
-    size_t bit_index = index % 8;
+    size_t bit_index  = index % 8;
     if (unlikely(word_index > bitmap->length))
         return;
     if (value) {
@@ -37,7 +37,7 @@ void bitmap_set_range(Bitmap *bitmap, size_t start, size_t end, bool value) {
     spin_lock(bitmap->lock);
 
     size_t start_word = (start + 7) / 8;
-    size_t end_word = end / 8;
+    size_t end_word   = end / 8;
 
     for (size_t i = start; i < MIN(start_word * 8, end); i++) {
         bitmap_set(bitmap, i, value);
@@ -65,7 +65,7 @@ void bitmap_set_range(Bitmap *bitmap, size_t start, size_t end, bool value) {
 size_t bitmap_find_range_from(Bitmap *bitmap, size_t length, bool value, size_t start_from) {
     spin_lock(bitmap->lock);
 
-    size_t count = 0, start_index = 0;
+    size_t  count = 0, start_index = 0;
     uint8_t byte_match = value ? (uint8_t)-1 : 0;
 
     for (size_t byte_idx = start_from / 8; byte_idx < bitmap->length / 8; byte_idx++) {

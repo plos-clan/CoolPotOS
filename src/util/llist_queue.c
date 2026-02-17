@@ -42,14 +42,14 @@ void list_remove_node(list_queue_t *queue, list_node_t *node_to_remove) {
         return;
 
     spin_lock(queue->lock); // 加锁保护链表结构
-    list_node_t *current = queue->head;
+    list_node_t *current  = queue->head;
     list_node_t *previous = NULL;
 
     while (current != NULL) {
         if (current == node_to_remove) {
             if (previous == NULL) {
                 list_node_t *new_head = current->next;
-                queue->head = new_head;
+                queue->head           = new_head;
             } else {
                 previous->next = current->next;
             }
@@ -60,7 +60,7 @@ void list_remove_node(list_queue_t *queue, list_node_t *node_to_remove) {
             return;
         }
         previous = current;
-        current = current->next;
+        current  = current->next;
     }
     spin_unlock(queue->lock);
 }
@@ -88,8 +88,8 @@ void free_llist_queue(list_queue_t *queue, data_free_func_t data_free_func, void
 }
 
 list_queue_t *copy_list_queue(
-    list_queue_t *src_queue, void *(*copy)(void *),
-    void (*index_clone)(void *, list_node_t *index)) {
+    list_queue_t *src_queue, void *(*copy)(void *), void (*index_clone)(void *, list_node_t *index)
+) {
     if (!src_queue || !copy)
         return NULL;
     spin_lock(src_queue->lock);

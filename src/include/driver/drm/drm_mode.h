@@ -27,12 +27,12 @@
 
 #include "types.h"
 
-typedef size_t __kernel_size_t;
-typedef uint8_t __u8;
+typedef size_t   __kernel_size_t;
+typedef uint8_t  __u8;
 typedef uint16_t __u16;
-typedef int32_t __s32;
+typedef int32_t  __s32;
 typedef uint32_t __u32;
-typedef int64_t __s64;
+typedef int64_t  __s64;
 typedef uint64_t __u64;
 
 #if defined(__cplusplus)
@@ -215,7 +215,7 @@ struct drm_mode_modeinfo {
 
     __u32 flags;
     __u32 type;
-    char name[DRM_DISPLAY_MODE_LEN];
+    char  name[DRM_DISPLAY_MODE_LEN];
 };
 
 struct drm_mode_card_res {
@@ -245,8 +245,8 @@ struct drm_mode_crtc {
     __u32 x; /**< x Position on the framebuffer */
     __u32 y; /**< y Position on the framebuffer */
 
-    __u32 gamma_size;
-    __u32 mode_valid;
+    __u32                    gamma_size;
+    __u32                    mode_valid;
     struct drm_mode_modeinfo mode;
 };
 
@@ -315,13 +315,13 @@ struct drm_mode_get_encoder {
 /* Try to match DRM_MODE_CONNECTOR_X as closely as possible. */
 enum drm_mode_subconnector {
     DRM_MODE_SUBCONNECTOR_Automatic = 0,
-    DRM_MODE_SUBCONNECTOR_Unknown = 0,
-    DRM_MODE_SUBCONNECTOR_DVID = 3,
-    DRM_MODE_SUBCONNECTOR_DVIA = 4,
+    DRM_MODE_SUBCONNECTOR_Unknown   = 0,
+    DRM_MODE_SUBCONNECTOR_DVID      = 3,
+    DRM_MODE_SUBCONNECTOR_DVIA      = 4,
     DRM_MODE_SUBCONNECTOR_Composite = 5,
-    DRM_MODE_SUBCONNECTOR_SVIDEO = 6,
+    DRM_MODE_SUBCONNECTOR_SVIDEO    = 6,
     DRM_MODE_SUBCONNECTOR_Component = 8,
-    DRM_MODE_SUBCONNECTOR_SCART = 9,
+    DRM_MODE_SUBCONNECTOR_SCART     = 9,
 };
 
 #define DRM_MODE_CONNECTOR_Unknown 0
@@ -396,7 +396,7 @@ struct drm_mode_get_connector {
 
 struct drm_mode_property_enum {
     __u64 value;
-    char name[DRM_PROP_NAME_LEN];
+    char  name[DRM_PROP_NAME_LEN];
 };
 
 struct drm_mode_get_property {
@@ -405,7 +405,7 @@ struct drm_mode_get_property {
 
     __u32 prop_id;
     __u32 flags;
-    char name[DRM_PROP_NAME_LEN];
+    char  name[DRM_PROP_NAME_LEN];
 
     __u32 count_values;
     /* This is only used to count enum values, not blobs. The _blobs is
@@ -543,7 +543,7 @@ struct drm_mode_fb_dirty_cmd {
 };
 
 struct drm_mode_mode_cmd {
-    __u32 connector_id;
+    __u32                    connector_id;
     struct drm_mode_modeinfo mode;
 };
 

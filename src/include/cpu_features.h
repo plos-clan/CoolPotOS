@@ -12,12 +12,12 @@
 
 typedef struct {
     string_builder_t *features;
-    char *vendor_id;
-    char *model_name;
-    unsigned int virt_bits;
-    unsigned int phys_bits;
+    char             *vendor_id;
+    char             *model_name;
+    unsigned int      virt_bits;
+    unsigned int      phys_bits;
 } cpu_features_t;
 
-void arch_cpuid_feature_info(cpu_features_t *cpu_features); // 架构具体实现
+void            arch_cpuid_feature_info(cpu_features_t *cpu_features); // 架构具体实现
 cpu_features_t *get_global_features();
-void cpu_features_setup();
+void            cpu_features_setup();

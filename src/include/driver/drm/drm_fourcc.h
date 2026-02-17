@@ -474,13 +474,16 @@ extern "C" {
  */
 #define DRM_FORMAT_S010                                                                            \
     fourcc_code(                                                                                   \
-        'S', '0', '1', '0') /* 2x2 subsampled Cb (1) and Cr (2) planes 10 bits per channel */
+        'S', '0', '1', '0'                                                                         \
+    ) /* 2x2 subsampled Cb (1) and Cr (2) planes 10 bits per channel */
 #define DRM_FORMAT_S210                                                                            \
     fourcc_code(                                                                                   \
-        'S', '2', '1', '0') /* 2x1 subsampled Cb (1) and Cr (2) planes 10 bits per channel */
+        'S', '2', '1', '0'                                                                         \
+    ) /* 2x1 subsampled Cb (1) and Cr (2) planes 10 bits per channel */
 #define DRM_FORMAT_S410                                                                            \
     fourcc_code(                                                                                   \
-        'S', '4', '1', '0') /* non-subsampled Cb (1) and Cr (2) planes 10 bits per channel */
+        'S', '4', '1', '0'                                                                         \
+    ) /* non-subsampled Cb (1) and Cr (2) planes 10 bits per channel */
 
 /*
  * 3 plane YCbCr LSB aligned
@@ -493,13 +496,16 @@ extern "C" {
  */
 #define DRM_FORMAT_S012                                                                            \
     fourcc_code(                                                                                   \
-        'S', '0', '1', '2') /* 2x2 subsampled Cb (1) and Cr (2) planes 12 bits per channel */
+        'S', '0', '1', '2'                                                                         \
+    ) /* 2x2 subsampled Cb (1) and Cr (2) planes 12 bits per channel */
 #define DRM_FORMAT_S212                                                                            \
     fourcc_code(                                                                                   \
-        'S', '2', '1', '2') /* 2x1 subsampled Cb (1) and Cr (2) planes 12 bits per channel */
+        'S', '2', '1', '2'                                                                         \
+    ) /* 2x1 subsampled Cb (1) and Cr (2) planes 12 bits per channel */
 #define DRM_FORMAT_S412                                                                            \
     fourcc_code(                                                                                   \
-        'S', '4', '1', '2') /* non-subsampled Cb (1) and Cr (2) planes 12 bits per channel */
+        'S', '4', '1', '2'                                                                         \
+    ) /* non-subsampled Cb (1) and Cr (2) planes 12 bits per channel */
 
 /*
  * 3 plane YCbCr
@@ -509,13 +515,16 @@ extern "C" {
  */
 #define DRM_FORMAT_S016                                                                            \
     fourcc_code(                                                                                   \
-        'S', '0', '1', '6') /* 2x2 subsampled Cb (1) and Cr (2) planes 16 bits per channel */
+        'S', '0', '1', '6'                                                                         \
+    ) /* 2x2 subsampled Cb (1) and Cr (2) planes 16 bits per channel */
 #define DRM_FORMAT_S216                                                                            \
     fourcc_code(                                                                                   \
-        'S', '2', '1', '6') /* 2x1 subsampled Cb (1) and Cr (2) planes 16 bits per channel */
+        'S', '2', '1', '6'                                                                         \
+    ) /* 2x1 subsampled Cb (1) and Cr (2) planes 16 bits per channel */
 #define DRM_FORMAT_S416                                                                            \
     fourcc_code(                                                                                   \
-        'S', '4', '1', '6') /* non-subsampled Cb (1) and Cr (2) planes 16 bits per channel */
+        'S', '4', '1', '6'                                                                         \
+    ) /* non-subsampled Cb (1) and Cr (2) planes 16 bits per channel */
 
 /*
  * 3 plane YCbCr
@@ -1100,7 +1109,8 @@ extern "C" {
 #define DRM_FORMAT_MOD_NVIDIA_BLOCK_LINEAR_2D(c, s, g, k, h)                                       \
     fourcc_mod_code(                                                                               \
         NVIDIA, (0x10 | ((h) & 0xf) | (((k) & 0xff) << 12) | (((g) & 0x3) << 20)                   \
-                 | (((s) & 0x1) << 22) | (((c) & 0x7) << 23)))
+                 | (((s) & 0x1) << 22) | (((c) & 0x7) << 23))                                      \
+    )
 
 /* To grandfather in prior block linear format modifiers to the above layout,
  * the page kind "0", which corresponds to "pitch/linear" and hence is unusable
@@ -1536,7 +1546,8 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
     fourcc_mod_code(                                                                               \
         AMLOGIC, ((__layout) & __fourcc_mod_amlogic_layout_mask)                                   \
                      | (((__options) & __fourcc_mod_amlogic_options_mask)                          \
-                        << __fourcc_mod_amlogic_options_shift))
+                        << __fourcc_mod_amlogic_options_shift)                                     \
+    )
 
 /* Amlogic FBC Layouts */
 

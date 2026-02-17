@@ -1,14 +1,14 @@
-#include "io.h"
-#include "krlibc.h"
-#include "ptrace.h"
 #include "rv64_irq.h"
-#include "task/scheduler.h"
+#include "ptrace.h"
 #include "term/klog.h"
+#include "task/scheduler.h"
+#include "krlibc.h"
+#include "io.h"
 
 bool is_debug = false;
 
 void page_fault_(struct pt_regs *regs, enum page_fault_type type) {
-    char *type_msg;
+    char    *type_msg;
     uint64_t faulting_address = csr_read(stval);
     switch (type) {
     case LOAD_PAGE:

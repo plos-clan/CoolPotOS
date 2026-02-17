@@ -10,17 +10,17 @@ typedef struct {
 } __attribute__((packed)) HpetTimer;
 
 typedef struct {
-    uint64_t generalCapabilities;
-    uint64_t reserved0;
-    uint64_t generalConfiguration;
-    uint64_t reserved1;
-    uint64_t generalIntrruptStatus;
-    uint8_t reserved3[0xc8];
-    uint64_t mainCounterValue;
-    uint64_t reserved4;
+    uint64_t  generalCapabilities;
+    uint64_t  reserved0;
+    uint64_t  generalConfiguration;
+    uint64_t  reserved1;
+    uint64_t  generalIntrruptStatus;
+    uint8_t   reserved3[0xc8];
+    uint64_t  mainCounterValue;
+    uint64_t  reserved4;
     HpetTimer timers[];
 } __attribute__((packed)) volatile HpetInfo;
 
 uint64_t elapsed();
-void nsleep(uint64_t nano);
-void hpet_init();
+void     nsleep(uint64_t nano);
+void     hpet_init();

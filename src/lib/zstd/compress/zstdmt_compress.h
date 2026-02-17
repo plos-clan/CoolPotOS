@@ -47,7 +47,7 @@ extern "C" {
 /* ===   Memory management   === */
 typedef struct ZSTDMT_CCtx_s ZSTDMT_CCtx;
 /* Requires ZSTD_MULTITHREAD to be defined during compilation, otherwise it will return NULL. */
-ZSTDMT_CCtx *
+ZSTDMT_CCtx        *
 ZSTDMT_createCCtx_advanced(unsigned nbWorkers, ZSTD_customMem cMem, ZSTD_threadPool *pool);
 size_t ZSTDMT_freeCCtx(ZSTDMT_CCtx *mtctx);
 
@@ -67,7 +67,8 @@ size_t ZSTDMT_nextInputSizeHint(const ZSTDMT_CCtx *mtctx);
  *  @return : 0, or an error code */
 size_t ZSTDMT_initCStream_internal(
     ZSTDMT_CCtx *mtctx, const void *dict, size_t dictSize, ZSTD_dictContentType_e dictContentType,
-    const ZSTD_CDict *cdict, ZSTD_CCtx_params params, unsigned long long pledgedSrcSize);
+    const ZSTD_CDict *cdict, ZSTD_CCtx_params params, unsigned long long pledgedSrcSize
+);
 
 /*! ZSTDMT_compressStream_generic() :
  *  Combines ZSTDMT_compressStream() with optional ZSTDMT_flushStream() or ZSTDMT_endStream()
@@ -77,7 +78,8 @@ size_t ZSTDMT_initCStream_internal(
  *           or an error code
  *  note : needs to be init using any ZSTD_initCStream*() variant */
 size_t ZSTDMT_compressStream_generic(
-    ZSTDMT_CCtx *mtctx, ZSTD_outBuffer *output, ZSTD_inBuffer *input, ZSTD_EndDirective endOp);
+    ZSTDMT_CCtx *mtctx, ZSTD_outBuffer *output, ZSTD_inBuffer *input, ZSTD_EndDirective endOp
+);
 
 /*! ZSTDMT_toFlushNow()
  *  Tell how many bytes are ready to be flushed immediately.

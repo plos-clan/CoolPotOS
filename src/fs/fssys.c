@@ -40,18 +40,18 @@ static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
         list_delete(node->parent->child, private_node);
     }
 
-    private_node->root = node->root;
-    private_node->fsid = node->fsid;
-    private_node->type = file_none;
-    private_node->size = node->size;
-    private_node->realsize = node->realsize;
-    private_node->owner = node->owner;
-    private_node->group = node->group;
+    private_node->root        = node->root;
+    private_node->fsid        = node->fsid;
+    private_node->type        = file_none;
+    private_node->size        = node->size;
+    private_node->realsize    = node->realsize;
+    private_node->owner       = node->owner;
+    private_node->group       = node->group;
     private_node->permissions = node->permissions;
-    private_node->mode = node->mode;
-    private_node->dev = node->dev;
-    private_node->rdev = node->rdev;
-    private_node->flags = node->flags | VFS_NODE_FLAG_PRIVATE_FD;
+    private_node->mode        = node->mode;
+    private_node->dev         = node->dev;
+    private_node->rdev        = node->rdev;
+    private_node->flags       = node->flags | VFS_NODE_FLAG_PRIVATE_FD;
 
     dtmp_handle_t *private_handle = calloc(1, sizeof(dtmp_handle_t));
     if (private_handle == NULL) {
@@ -59,14 +59,14 @@ static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
         return NULL;
     }
     memcpy(private_handle, template, sizeof(dtmp_handle_t));
-    private_handle->node = private_node;
+    private_handle->node          = private_node;
     private_handle->device_handle = NULL;
-    private_handle->is_per_open = true;
-    private_node->handle = private_handle;
+    private_handle->is_per_open   = true;
+    private_node->handle          = private_handle;
 
     private_handle->open_t(
-        private_node->parent ? private_node->parent->handle : NULL, private_node->name,
-        private_node);
+        private_node->parent ? private_node->parent->handle : NULL, private_node->name, private_node
+    );
 
     if (!(private_node->type & (file_ptmx | file_pts))) {
         private_node->type = private_handle->dev_type == device_stream ? file_stream : file_block;
@@ -136,10 +136,10 @@ next:;
     fd_t *fd_handle = calloc(1, sizeof(fd_t));
     not_null_assert(fd_handle, "sys_open: null alloc fd");
     fd_handle->offset = flags & O_APPEND ? node->size : 0;
-    fd_handle->node = node;
-    fd_handle->flags = flags;
-    int index = add_fd(process->fdts, fd_handle);
-    fd_handle->fd = index;
+    fd_handle->node   = node;
+    fd_handle->flags  = flags;
+    int index         = add_fd(process->fdts, fd_handle);
+    fd_handle->fd     = index;
     if (index == -1) {
         logkf("sys_open: open %s failed.\n", normalized_path);
         vfs_close(node);
@@ -154,8 +154,8 @@ next:;
 syscall_(close, int fd) {
     if (unlikely(fd < 0))
         return SYSCALL_FAULT_(EINVAL);
-    fdt_t *fdt = get_current_task()->process->fdts;
-    fd_t *handle = (fd_t *)get_fd(fdt, fd);
+    fdt_t *fdt    = get_current_task()->process->fdts;
+    fd_t  *handle = (fd_t *)get_fd(fdt, fd);
     if (handle == NULL)
         return SYSCALL_FAULT_(EBADF);
     vfs_close(handle->node);
@@ -164,7 +164,7 @@ syscall_(close, int fd) {
 }
 
 static volatile bool is_debug;
-void debug_read(int fd) {
+void                 debug_read(int fd) {
     char buffer[512];
     syscall_read(fd, (uint8_t *)buffer, 512, 0, 0, 0, NULL);
     if (fd)
@@ -268,8 +268,8 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
         return SYSCALL_FAULT_(EINVAL);
     if (iovcnt == 0)
         return EOK;
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
-    size_t total = 0;
+    fd_t  *handle = get_fd(get_current_task()->process->fdts, fd);
+    size_t total  = 0;
     for (int i = 0; i < iovcnt; i++) {
         size_t status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
         if (status == (size_t)-1)
@@ -288,7 +288,7 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
     if (iovcnt0 == 0)
         return EOK;
     size_t iovcnt = iovcnt0;
-    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    fd_t  *handle = get_fd(get_current_task()->process->fdts, fd);
     if (iovcnt == 0)
         return 0;
     if (handle == NULL)
@@ -331,9 +331,9 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
 }
 
 static inline void vfs_fill_stat(vfs_node_t node, struct stat *buf) {
-    buf->st_gid = (int)node->group;
-    buf->st_uid = (int)node->owner;
-    buf->st_ino = node->inode;
+    buf->st_gid  = (int)node->group;
+    buf->st_uid  = (int)node->owner;
+    buf->st_ino  = node->inode;
     buf->st_size = (long long int)node->size;
     buf->st_mode = node->mode
                    | (node->type == file_symlink  ? S_IFLNK
@@ -346,14 +346,14 @@ static inline void vfs_fill_stat(vfs_node_t node, struct stat *buf) {
                       : node->type == file_pts    ? S_IFCHR
                                                   : S_IFREG);
     buf->st_nlink = 1;
-    buf->st_dev = (long)node->dev;
-    buf->st_rdev = (long)node->rdev;
+    buf->st_dev   = (long)node->dev;
+    buf->st_rdev  = (long)node->rdev;
 }
 
 syscall_(stat, char *fn, struct stat *buf) {
     if (unlikely(fn == NULL || buf == NULL))
         return SYSCALL_FAULT_(EINVAL);
-    char *path = vfs_cwd_path_build(fn);
+    char      *path = vfs_cwd_path_build(fn);
     vfs_node_t node = vfs_open(path);
 
     if (node == NULL) {
@@ -368,7 +368,7 @@ syscall_(stat, char *fn, struct stat *buf) {
 syscall_(lstat, char *fn, struct stat *buf) {
     if (unlikely(fn == NULL || buf == NULL))
         return SYSCALL_FAULT_(EINVAL);
-    char *path = vfs_cwd_path_build(fn);
+    char      *path = vfs_cwd_path_build(fn);
     vfs_node_t node = vfs_open_nofollow(path);
     free(path);
     if (node == NULL) {
@@ -401,7 +401,7 @@ static int ensure_fdt_capacity(fdt_t *fdt, int expect_fd) {
         if (!new_fds)
             return -ENOMEM;
         memset(&new_fds[old_len], 0, (new_len - old_len) * sizeof(fd_t *));
-        fdt->fds = new_fds;
+        fdt->fds        = new_fds;
         fdt->fds_length = new_len;
     }
     return EOK;
@@ -439,8 +439,8 @@ static uint64_t dup_with_minfd(fd_t *handle, int min_fd, bool cloexec) {
 syscall_(dup2, int fd, int newfd) {
     if (unlikely(newfd < 0))
         return SYSCALL_FAULT_(EINVAL);
-    fdt_t *fdt = get_current_task()->process->fdts;
-    fd_t *handle = get_fd(fdt, fd);
+    fdt_t *fdt    = get_current_task()->process->fdts;
+    fd_t  *handle = get_fd(fdt, fd);
     if (unlikely(handle == NULL))
         return SYSCALL_FAULT_(EBADF);
     if (fd == newfd)
@@ -484,8 +484,8 @@ syscall_(dup3, int oldfd, int newfd, int flags) {
 syscall_(dup, int fd) {
     if (unlikely(fd < 0))
         return SYSCALL_FAULT_(EINVAL);
-    fdt_t *fdt = get_current_task()->process->fdts;
-    fd_t *handle = get_fd(fdt, fd);
+    fdt_t *fdt    = get_current_task()->process->fdts;
+    fd_t  *handle = get_fd(fdt, fd);
     if (handle == NULL)
         return SYSCALL_FAULT_(EBADF);
     fd_t *new_handle = fd_dup(handle);
@@ -498,8 +498,8 @@ syscall_(getcwd, char *buffer, size_t length) {
         return SYSCALL_FAULT_(EINVAL);
     if (unlikely(length == 0))
         return EOK;
-    pcb_t process = get_current_task()->process;
-    char *cwd = vfs_get_fullpath(process->cwd);
+    pcb_t  process  = get_current_task()->process;
+    char  *cwd      = vfs_get_fullpath(process->cwd);
     size_t cwd_leng = strlen(cwd);
     if (length > cwd_leng)
         length = cwd_leng;
@@ -519,7 +519,7 @@ syscall_(chdir, char *s) {
         path = strdup(s);
     } else {
         bpath = vfs_get_fullpath(process->cwd);
-        path = pathacat(bpath, s);
+        path  = pathacat(bpath, s);
     }
 
     char *normalized_path = normalize_path(path);
@@ -586,8 +586,8 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
     if (dir_name == NULL)
         return SYSCALL_FAULT_(EINVAL);
 
-    char *ndir_name = vfs_cwd_path_build(dir_name);
-    vfs_node_t dir = vfs_open((const char *)ndir_name);
+    char      *ndir_name = vfs_cwd_path_build(dir_name);
+    vfs_node_t dir       = vfs_open((const char *)ndir_name);
     if (!dir) {
         free(ndir_name);
         return SYSCALL_FAULT_(ENOENT);
@@ -598,16 +598,16 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
             free(ndir_name);
             return SYSCALL_FAULT_(EINVAL);
         }
-        char *old_root_p = vfs_cwd_path_build(dev_name);
-        vfs_node_t old_root = vfs_open(old_root_p);
+        char      *old_root_p = vfs_cwd_path_build(dev_name);
+        vfs_node_t old_root   = vfs_open(old_root_p);
         free(old_root_p);
         if (old_root == NULL || !old_root->is_mount)
             return SYSCALL_FAULT_(EINVAL);
         if (dir != rootdir)
             list_append(dir->parent->child, old_root);
-        char *nb = old_root->name;
+        char *nb       = old_root->name;
         old_root->name = dir->name;
-        dir->name = nb;
+        dir->name      = nb;
         list_append(old_root->parent->child, dir);
 
         list_delete(old_root->parent->child, old_root);
@@ -617,8 +617,8 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
             rootdir = old_root;
 
         vfs_node_t parent = dir->parent;
-        dir->parent = old_root->parent;
-        old_root->parent = parent;
+        dir->parent       = old_root->parent;
+        old_root->parent  = parent;
 
         vfs_close(old_root);
         vfs_close(dir);
@@ -628,8 +628,8 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
     if (type == NULL)
         return SYSCALL_FAULT_(EINVAL);
 
-    char *ndev_name = vfs_cwd_path_build(dev_name);
-    errno_t mret = EOK;
+    char   *ndev_name = vfs_cwd_path_build(dev_name);
+    errno_t mret      = EOK;
 mount:
     mret = vfs_mount((const char *)ndev_name, type, dir);
     if (mret != EOK) {
@@ -645,15 +645,14 @@ mount:
 }
 
 syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
-    int ready = 0;
+    int      ready      = 0;
     uint64_t start_time = nano_time();
-    bool sigexit = false;
-    tcb_t current = get_current_task();
-    fdt_t *fdt = current->process->fdts;
+    bool     sigexit    = false;
+    tcb_t    current    = get_current_task();
+    fdt_t   *fdt        = current->process->fdts;
 
     extern vfs_callback_t fs_callbacks[256];
 
-    arch_open_interrupt();
     do {
         ready = 0;
         // 清零所有 revents
@@ -693,7 +692,6 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
         scheduler_yield();
     } while (timeout != 0
              && ((int)timeout == -1 || (nano_time() - start_time) < timeout * 1000000ULL));
-    arch_close_interrupt();
 
     if (!ready && sigexit)
         return (size_t)-EINTR;
@@ -708,10 +706,10 @@ syscall_(fstat, int fd, struct stat *buf) {
     if (unlikely(handle == NULL))
         return SYSCALL_FAULT_(EBADF);
     vfs_node_t node = handle->node;
-    buf->st_gid = (int)node->group;
-    buf->st_uid = (int)node->owner;
-    buf->st_size = node->size == (uint64_t)-1 ? 0 : (long long int)node->size;
-    buf->st_mode = node->type
+    buf->st_gid     = (int)node->group;
+    buf->st_uid     = (int)node->owner;
+    buf->st_size    = node->size == (uint64_t)-1 ? 0 : (long long int)node->size;
+    buf->st_mode    = node->type
                    | (node->type == file_symlink  ? S_IFLNK
                       : node->type == file_dir    ? S_IFDIR
                       : node->type == file_block  ? S_IFBLK
@@ -722,21 +720,22 @@ syscall_(fstat, int fd, struct stat *buf) {
                       : node->type == file_pts    ? S_IFCHR
                                                   : 0);
     buf->st_nlink = 1;
-    buf->st_dev = node->dev;
-    buf->st_rdev = node->rdev;
-    buf->st_ctim = buf->st_atim = buf->st_ctim = buf->st_mtim = (struct timespec){
-        .tv_sec = node->createtime / 1000000000ULL, .tv_nsec = node->createtime % 1000000000ULL};
+    buf->st_dev   = node->dev;
+    buf->st_rdev  = node->rdev;
+    buf->st_ctim = buf->st_atim = buf->st_ctim = buf->st_mtim =
+        (struct timespec){ .tv_sec  = node->createtime / 1000000000ULL,
+                           .tv_nsec = node->createtime % 1000000000ULL };
     buf->st_blksize = PAGE_SIZE;
-    buf->st_blocks = (node->size + PAGE_SIZE - 1) / PAGE_SIZE;
-    buf->st_ino = node->inode;
+    buf->st_blocks  = (node->size + PAGE_SIZE - 1) / PAGE_SIZE;
+    buf->st_ino     = node->inode;
     return EOK;
 }
 
 syscall_(umount2, char *path0) {
-    char *path = normalize_path(path0);
-    int flags = arg1;
+    char   *path   = normalize_path(path0);
+    int     flags  = arg1;
     errno_t status = vfs_unmount(path);
-    long ret = status;
+    long    ret    = status;
     if (status != EOK)
         ret = SYSCALL_FAULT_(EBUSY);
     free(path);
@@ -796,13 +795,14 @@ syscall_(pwrite, int fd, uint8_t *buffer) {
 
 syscall_(
     copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
-    uint64_t flags) {
+    uint64_t flags
+) {
     if (flags != 0) {
         return SYSCALL_FAULT_(EINVAL);
     }
-    fdt_t *fdt = get_current_task()->process->fdts;
-    fd_t *src_handle = get_fd(fdt, fd_in);
-    fd_t *dst_handle = get_fd(fdt, fd_out);
+    fdt_t *fdt        = get_current_task()->process->fdts;
+    fd_t  *src_handle = get_fd(fdt, fd_in);
+    fd_t  *dst_handle = get_fd(fdt, fd_out);
     if (src_handle == NULL || dst_handle == NULL) {
         return SYSCALL_FAULT_(EBADF);
     }
@@ -811,9 +811,9 @@ syscall_(
     uint64_t src_offset = off_in ? *off_in : src_handle->offset;
     uint64_t dst_offset = off_out ? *off_out : dst_handle->offset;
 
-    uint64_t length = src_handle->node->size > len ? len : src_handle->node->size;
-    uint8_t *buffer = (uint8_t *)malloc(length);
-    size_t copy_total = 0;
+    uint64_t length     = src_handle->node->size > len ? len : src_handle->node->size;
+    uint8_t *buffer     = (uint8_t *)malloc(length);
+    size_t   copy_total = 0;
     if (vfs_read(src_handle->node, buffer, src_offset, length) == (size_t)-1) {
         goto errno_;
     }
@@ -843,9 +843,9 @@ syscall_(rename, char *oldpath, char *newpath) {
     if (check_user_overflow((uint64_t)newpath, strlen(newpath))) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    char *noldpath = vfs_cwd_path_build(oldpath);
-    char *nnewpath = vfs_cwd_path_build(newpath);
-    vfs_node_t oldnode = vfs_open(noldpath);
+    char      *noldpath = vfs_cwd_path_build(oldpath);
+    char      *nnewpath = vfs_cwd_path_build(newpath);
+    vfs_node_t oldnode  = vfs_open(noldpath);
     if (!oldnode) {
         free(noldpath);
         free(nnewpath);
@@ -855,8 +855,8 @@ syscall_(rename, char *oldpath, char *newpath) {
     if (newnode) {
         vfs_delete(newnode);
     }
-    size_t ret = vfs_rename(oldnode, nnewpath) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
-    char *parent = get_parent_path(nnewpath);
+    size_t     ret        = vfs_rename(oldnode, nnewpath) == EOK ? EOK : SYSCALL_FAULT_(ENOENT);
+    char      *parent     = get_parent_path(nnewpath);
     vfs_node_t parent_dir = vfs_open(parent);
     if (!parent_dir) {
         free(parent);
@@ -880,8 +880,8 @@ syscall_(symlink, char *name, char *new) {
     if (check_user_overflow((uint64_t)new, strlen(new))) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    char *linkpath = vfs_cwd_path_build(new);
-    errno_t ret = vfs_symlink(linkpath, name);
+    char   *linkpath = vfs_cwd_path_build(new);
+    errno_t ret      = vfs_symlink(linkpath, name);
     free(linkpath);
     return ret < 0 ? SYSCALL_FAULT_(-ret) : ret;
 }
@@ -895,14 +895,15 @@ syscall_(link, char *name, char *new) {
     if (check_user_overflow((uint64_t)new, strlen(new))) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    char *linkpath = vfs_cwd_path_build(new);
-    errno_t ret = vfs_link(linkpath, name);
+    char   *linkpath = vfs_cwd_path_build(new);
+    errno_t ret      = vfs_link(linkpath, name);
     free(linkpath);
     return ret < 0 ? SYSCALL_FAULT_(-ret) : ret;
 }
 
 syscall_(
-    select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except, struct timeval *timeout) {
+    select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except, struct timeval *timeout
+) {
     if (read && check_user_overflow((uint64_t)read, sizeof(struct pollfd))) {
         return SYSCALL_FAULT_(EFAULT);
     }
@@ -912,8 +913,8 @@ syscall_(
     if (except && check_user_overflow((uint64_t)except, sizeof(struct pollfd))) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    size_t complength = sizeof(struct pollfd);
-    struct pollfd *comp = (struct pollfd *)malloc(complength);
+    size_t         complength = sizeof(struct pollfd);
+    struct pollfd *comp       = (struct pollfd *)malloc(complength);
     memset(comp, 0, complength);
     size_t compIndex = 0;
     if (read) {
@@ -983,7 +984,8 @@ syscall_(
 
 syscall_(
     pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-    struct timespec *timeout, WeirdPselect6 *weirdPselect6) {
+    struct timespec *timeout, WeirdPselect6 *weirdPselect6
+) {
     if (readfds && check_user_overflow((uint64_t)readfds, sizeof(fd_set) * nfds)) {
         return SYSCALL_FAULT_(EFAULT);
     }
@@ -993,8 +995,8 @@ syscall_(
     if (exceptfds && check_user_overflow((uint64_t)exceptfds, sizeof(fd_set) * nfds)) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    size_t sigsetsize = weirdPselect6->ss_len;
-    sigset_t *sigmask = weirdPselect6->ss;
+    size_t    sigsetsize = weirdPselect6->ss_len;
+    sigset_t *sigmask    = weirdPselect6->ss;
     if (sigsetsize < sizeof(sigset_t)) {
         return SYSCALL_FAULT_(EINVAL);
     }
@@ -1004,15 +1006,16 @@ syscall_(
     }
     struct timeval timeoutConv;
     if (timeout) {
-        timeoutConv = (struct timeval){.tv_sec = (long)timeout->tv_sec,
-                                       .tv_usec = (long)(timeout->tv_nsec + 1000l) / 1000};
+        timeoutConv = (struct timeval){ .tv_sec  = (long)timeout->tv_sec,
+                                        .tv_usec = (long)(timeout->tv_nsec + 1000l) / 1000 };
     } else {
-        timeoutConv = (struct timeval){.tv_sec = (long)-1, .tv_usec = (long)-1};
+        timeoutConv = (struct timeval){ .tv_sec = (long)-1, .tv_usec = (long)-1 };
     }
 
     size_t ret = syscall_select(
         (uint64_t)nfds, (uint8_t *)readfds, (uint8_t *)writefds, (uint8_t *)exceptfds, &timeoutConv,
-        0, 0);
+        0, 0
+    );
     if (sigmask) {
         syscall_ssetmask(SIG_SETMASK, &origmask, NULL, 0, 0, 0, regs);
     }
@@ -1038,7 +1041,7 @@ syscall_(getdents, int fd, struct dirent *dents, size_t size) {
         return SYSCALL_FAULT_(ENOTDIR);
     }
     size_t max_dents_num = size / sizeof(struct dirent);
-    size_t read_count = 0;
+    size_t read_count    = 0;
     if (max_dents_num == 0) {
         return 0;
     }
@@ -1061,12 +1064,12 @@ syscall_(getdents, int fd, struct dirent *dents, size_t size) {
             break;
         }
         vfs_node_t child_node = (vfs_node_t)it->data;
-        handle->dir_last = child_node;
+        handle->dir_last      = child_node;
         if (child_node->type & file_delete) {
             continue;
         }
-        dents[read_count].d_ino = (long)child_node->inode;
-        dents[read_count].d_off = (long)handle->offset;
+        dents[read_count].d_ino    = (long)child_node->inode;
+        dents[read_count].d_off    = (long)handle->offset;
         dents[read_count].d_reclen = sizeof(struct dirent);
         if (child_node->type & file_symlink) {
             dents[read_count].d_type = DT_LNK;
@@ -1118,28 +1121,28 @@ syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct
     if ((int64_t)ret < 0)
         return ret;
 
-    buff->stx_mask = mask;
-    buff->stx_blksize = simple.st_blksize;
-    buff->stx_attributes = 0;
-    buff->stx_nlink = simple.st_nlink;
-    buff->stx_uid = simple.st_uid;
-    buff->stx_gid = simple.st_gid;
-    buff->stx_mode = simple.st_mode;
-    buff->stx_ino = simple.st_ino;
-    buff->stx_size = simple.st_size;
-    buff->stx_blocks = simple.st_blocks;
+    buff->stx_mask            = mask;
+    buff->stx_blksize         = simple.st_blksize;
+    buff->stx_attributes      = 0;
+    buff->stx_nlink           = simple.st_nlink;
+    buff->stx_uid             = simple.st_uid;
+    buff->stx_gid             = simple.st_gid;
+    buff->stx_mode            = simple.st_mode;
+    buff->stx_ino             = simple.st_ino;
+    buff->stx_size            = simple.st_size;
+    buff->stx_blocks          = simple.st_blocks;
     buff->stx_attributes_mask = 0;
 
-    buff->stx_atime.tv_sec = (long)simple.st_atim.tv_sec;
+    buff->stx_atime.tv_sec  = (long)simple.st_atim.tv_sec;
     buff->stx_atime.tv_nsec = simple.st_atim.tv_nsec;
 
-    buff->stx_btime.tv_sec = (long)simple.st_ctim.tv_sec;
+    buff->stx_btime.tv_sec  = (long)simple.st_ctim.tv_sec;
     buff->stx_btime.tv_nsec = simple.st_ctim.tv_nsec;
 
-    buff->stx_ctime.tv_sec = (long)simple.st_ctim.tv_sec;
+    buff->stx_ctime.tv_sec  = (long)simple.st_ctim.tv_sec;
     buff->stx_ctime.tv_nsec = simple.st_ctim.tv_nsec;
 
-    buff->stx_mtime.tv_sec = (long)simple.st_mtim.tv_sec;
+    buff->stx_mtime.tv_sec  = (long)simple.st_mtim.tv_sec;
     buff->stx_mtime.tv_nsec = simple.st_mtim.tv_nsec;
     return EOK;
 }
@@ -1147,8 +1150,8 @@ syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct
 syscall_(pipe2, int *pipefd, uint64_t flags) {
     /* fs/pipefs.c */
     extern vfs_node_t pipefs_root;
-    extern int pipefd_id;
-    extern int pipefs_id;
+    extern int        pipefd_id;
+    extern int        pipefs_id;
 
     if (pipefs_root == NULL)
         return SYSCALL_FAULT_(ENOSYS);
@@ -1157,53 +1160,53 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
     sprintf(buf, "pipe%d", pipefd_id++);
 
     vfs_node_t node_input = vfs_node_alloc(pipefs_root, buf);
-    node_input->type = file_pipe;
-    node_input->fsid = pipefs_id;
-    pipefs_root->mode = 0700;
+    node_input->type      = file_pipe;
+    node_input->fsid      = pipefs_id;
+    pipefs_root->mode     = 0700;
 
     sprintf(buf, "pipe%d", pipefd_id++);
     vfs_node_t node_output = vfs_node_alloc(pipefs_root, buf);
-    node_output->type = file_pipe;
-    node_output->fsid = pipefs_id;
-    pipefs_root->mode = 0700;
+    node_output->type      = file_pipe;
+    node_output->fsid      = pipefs_id;
+    pipefs_root->mode      = 0700;
 
     pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));
     memset(info, 0, sizeof(pipe_info_t));
-    info->buf = calloc(1, PIPE_BUFF);
-    info->read_fds = 1;
+    info->buf       = calloc(1, PIPE_BUFF);
+    info->read_fds  = 1;
     info->write_fds = 1;
-    info->ptr = 0;
-    info->lock = SPIN_INIT;
+    info->ptr       = 0;
+    info->lock      = SPIN_INIT;
 
     pipe_specific_t *read_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
-    read_spec->write = false;
-    read_spec->info = info;
-    read_spec->node = node_input;
-    read_spec->active = 0;
-    read_spec->free_pending = false;
+    read_spec->write           = false;
+    read_spec->info            = info;
+    read_spec->node            = node_input;
+    read_spec->active          = 0;
+    read_spec->free_pending    = false;
 
     pipe_specific_t *write_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
-    write_spec->write = true;
-    write_spec->info = info;
-    write_spec->node = node_output;
-    write_spec->active = 0;
-    write_spec->free_pending = false;
+    write_spec->write           = true;
+    write_spec->info            = info;
+    write_spec->node            = node_output;
+    write_spec->active          = 0;
+    write_spec->free_pending    = false;
 
-    node_input->handle = read_spec;
+    node_input->handle  = read_spec;
     node_output->handle = write_spec;
 
-    fdt_t *fd_table = get_current_task()->process->fdts;
-    fd_t *handle_in = malloc(sizeof(fd_t));
-    handle_in->node = node_input;
+    fdt_t *fd_table   = get_current_task()->process->fdts;
+    fd_t  *handle_in  = malloc(sizeof(fd_t));
+    handle_in->node   = node_input;
     handle_in->offset = 0;
-    handle_in->flags = flags;
-    handle_in->fd = add_fd(fd_table, handle_in);
+    handle_in->flags  = flags;
+    handle_in->fd     = add_fd(fd_table, handle_in);
 
-    fd_t *handle_out = malloc(sizeof(fd_t));
-    handle_out->node = node_output;
+    fd_t *handle_out   = malloc(sizeof(fd_t));
+    handle_out->node   = node_output;
     handle_out->offset = 0;
-    handle_out->flags = flags;
-    handle_out->fd = add_fd(fd_table, handle_out);
+    handle_out->flags  = flags;
+    handle_out->fd     = add_fd(fd_table, handle_out);
 
     pipefd[0] = (int)handle_in->fd;
     pipefd[1] = (int)handle_out->fd;
@@ -1218,8 +1221,8 @@ syscall_(pipe, int *pipefd) {
 syscall_(unlink, char *name) {
     if (name == NULL)
         return SYSCALL_FAULT_(EINVAL);
-    char *npath = vfs_cwd_path_build(name);
-    vfs_node_t node = vfs_open_nofollow(npath);
+    char      *npath = vfs_cwd_path_build(name);
+    vfs_node_t node  = vfs_open_nofollow(npath);
     if (node == NULL)
         return SYSCALL_FAULT_(ENOENT);
     if (node->type != file_none && node->type != file_symlink) {
@@ -1242,8 +1245,8 @@ syscall_(unlink, char *name) {
 syscall_(rmdir, char *name) {
     if (name == NULL)
         return SYSCALL_FAULT_(EINVAL);
-    char *n_name = vfs_cwd_path_build(name);
-    vfs_node_t node = vfs_open_nofollow(n_name);
+    char      *n_name = vfs_cwd_path_build(name);
+    vfs_node_t node   = vfs_open_nofollow(n_name);
     if (node == NULL)
         return SYSCALL_FAULT_(ENOENT);
     if (node->type != file_dir) {
@@ -1291,8 +1294,8 @@ syscall_(access, char *filename) {
 syscall_(mkdir, char *name, uint64_t mode) {
     if (name == NULL)
         return SYSCALL_FAULT_(EINVAL);
-    char *npath = vfs_cwd_path_build(name);
-    size_t ret = vfs_mkdir(npath) == EOK ? EOK : -1;
+    char  *npath = vfs_cwd_path_build(name);
+    size_t ret   = vfs_mkdir(npath) == EOK ? EOK : -1;
     if (ret == EOK) {
         vfs_node_t node = vfs_open(npath);
         if (node) {
@@ -1331,7 +1334,7 @@ syscall_(mkdirat, int dirfd, char *name, uint64_t mode) {
 syscall_(mknod, char *path, uint32_t mode, uint32_t dev) {
     if (path == NULL)
         return SYSCALL_FAULT_(EINVAL);
-    char *npath = vfs_cwd_path_build(path);
+    char    *npath      = vfs_cwd_path_build(path);
     uint16_t final_mode = (uint16_t)(mode & 07777);
     final_mode &= (uint16_t)~(get_current_task()->process->umask & 0777);
     final_mode |= (uint16_t)(mode & S_IFMT);
@@ -1348,8 +1351,8 @@ syscall_(readlink, char *path, char *buf, uint64_t size) {
         return SYSCALL_FAULT_(EFAULT);
     }
 
-    char *npath = vfs_cwd_path_build(path);
-    vfs_node_t node = vfs_open_nofollow(npath);
+    char      *npath = vfs_cwd_path_build(path);
+    vfs_node_t node  = vfs_open_nofollow(npath);
     free(npath);
     if (node == NULL) {
         return SYSCALL_FAULT_(ENOENT);
@@ -1364,8 +1367,8 @@ syscall_(chmod, char *path, uint64_t mode) {
     if (unlikely(!path || check_user_overflow((uint64_t)path, strlen(path)))) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    char *npath = vfs_cwd_path_build(path);
-    vfs_node_t node = vfs_open(npath);
+    char      *npath = vfs_cwd_path_build(path);
+    vfs_node_t node  = vfs_open(npath);
     free(npath);
     if (node == NULL)
         return SYSCALL_FAULT_(ENOENT);
@@ -1405,14 +1408,14 @@ syscall_(fchmodat, int dirfd, char *path, uint64_t mode, int flags) {
 }
 
 syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
-    pcb_t process = get_current_task()->process;
+    pcb_t process    = get_current_task()->process;
     fd_t *out_handle = get_fd(process->fdts, out_fd);
-    fd_t *in_handle = get_fd(process->fdts, in_fd);
+    fd_t *in_handle  = get_fd(process->fdts, in_fd);
     if (out_handle == NULL || in_handle == NULL)
         return SYSCALL_FAULT_(EBADF);
 
     uint64_t current_offset = offset_ptr == NULL ? in_handle->offset : *offset_ptr;
-    size_t total_sent = 0;
+    size_t   total_sent     = 0;
 
     size_t remaining = count;
 
@@ -1459,9 +1462,9 @@ syscall_(sendfile, int out_fd, int in_fd, uint64_t *offset_ptr, size_t count) {
 }
 
 syscall_(umask, uint64_t mask) {
-    pcb_t process = get_current_task()->process;
-    uint16_t old = process->umask;
-    process->umask = (uint16_t)(mask & 0777);
+    pcb_t    process = get_current_task()->process;
+    uint16_t old     = process->umask;
+    process->umask   = (uint16_t)(mask & 0777);
     return old;
 }
 
@@ -1522,7 +1525,7 @@ syscall_(statfs, char *path, struct statfs *buf) {
     vfs_filesystem_t filesystem = get_filesystem_node(node);
     if (filesystem == NULL)
         return SYSCALL_FAULT_(EINVAL);
-    buf->f_type = filesystem->magic;
+    buf->f_type    = filesystem->magic;
     buf->f_namelen = 255;
     return EOK;
 }
@@ -1530,9 +1533,9 @@ syscall_(statfs, char *path, struct statfs *buf) {
 syscall_(chroot, char *path) {
     if (path == NULL)
         return SYSCALL_FAULT_(EINVAL);
-    char *npath = vfs_cwd_path_build(path);
-    pcb_t process = get_current_task()->process;
-    vfs_node_t node = vfs_open(npath);
+    char      *npath   = vfs_cwd_path_build(path);
+    pcb_t      process = get_current_task()->process;
+    vfs_node_t node    = vfs_open(npath);
     free(npath);
     if (node == NULL)
         return SYSCALL_FAULT_(ENOENT);

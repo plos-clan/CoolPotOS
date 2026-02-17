@@ -77,7 +77,8 @@ static const unsigned int MAX_OUT = (1 << 19);
  */
 static void update(
     TCHmacPrng_t prng, const uint8_t *data, unsigned int datalen, const uint8_t *additional_data,
-    unsigned int additional_datalen) {
+    unsigned int additional_datalen
+) {
     const uint8_t separator0 = 0x00;
     const uint8_t separator1 = 0x01;
 
@@ -149,7 +150,8 @@ int tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, unsigne
 
 int tc_hmac_prng_reseed(
     TCHmacPrng_t prng, const uint8_t *seed, unsigned int seedlen, const uint8_t *additional_input,
-    unsigned int additionallen) {
+    unsigned int additionallen
+) {
 
     /* input sanity check: */
     if (prng == (TCHmacPrng_t)0 || seed == (const uint8_t *)0 || seedlen < MIN_SLEN

@@ -17,7 +17,8 @@ extern void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved
                 logkf(#exc ": error_code %x at %p\n\r", error_code, frame->rip);                   \
                 logkf(                                                                             \
                     "current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,        \
-                    current_task->name, current_task->tid);                                        \
+                    current_task->name, current_task->tid                                          \
+                );                                                                                 \
                 kill_proc(process, -1, true);                                                      \
                 arch_open_interrupt();                                                             \
                 while (true)                                                                       \
@@ -144,12 +145,12 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
     uint64_t faulting_address;
     __asm__ volatile("mov %%cr2, %0" : "=r"(faulting_address));
     tcb_t current_task = get_current_task();
-    char *error_msg = !(error_code & 0x1) ? "NotPresent"
-                      : error_code & 0x2  ? "WriteError"
-                      : error_code & 0x4  ? "UserMode"
-                      : error_code & 0x8  ? "ReservedBitsSet"
-                      : error_code & 0x10 ? "DecodeAddress"
-                                          : "Unknown";
+    char *error_msg    = !(error_code & 0x1) ? "NotPresent"
+                         : error_code & 0x2  ? "WriteError"
+                         : error_code & 0x4  ? "UserMode"
+                         : error_code & 0x8  ? "ReservedBitsSet"
+                         : error_code & 0x10 ? "DecodeAddress"
+                                             : "Unknown";
     if (likely(current_task != NULL)) {
         if (current_task->process == NULL) {
             logkf("ERROR: HANDLE NULL TO #PF CURRENT TASK\n\r");
@@ -168,7 +169,8 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
         logkf(
             "page_fault %s process(%s:%d) thread %s:%d (%p)->%p\n", error_msg,
             current_task->process->name, current_task->process->pid, current_task->name,
-            current_task->tid, faulting_address, frame->rip);
+            current_task->tid, faulting_address, frame->rip
+        );
         pcb_t process = current_task->process;
         if (process->pid != 0)
             kill_proc(process, -1, true);
@@ -181,7 +183,8 @@ msg:;
     if (current_task != NULL) {
         printk(
             "Current process(%s:%d) thread %s:%d\n", current_task->process->name,
-            current_task->process->pid, current_task->name, current_task->tid);
+            current_task->process->pid, current_task->name, current_task->tid
+        );
     }
     print_kernel_backtrace(frame, saved_rbp);
 wfi:

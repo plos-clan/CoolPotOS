@@ -8,17 +8,17 @@
 
 typedef struct task_block_list {
     struct task_block_list *next;
-    tcb_t thread;
+    tcb_t                   thread;
 } task_block_list_t;
 
 typedef struct pipe_info {
     uint32_t ptr;
-    char *buf;
-    int assigned;
+    char    *buf;
+    int      assigned;
 
-    int write_fds;
-    int read_fds;
-    int active;
+    int  write_fds;
+    int  read_fds;
+    int  active;
     bool free_pending;
 
     spin_t lock;
@@ -29,11 +29,11 @@ typedef struct pipe_info {
 
 typedef struct pipe_specific pipe_specific_t;
 struct pipe_specific {
-    bool write;
+    bool         write;
     pipe_info_t *info;
-    vfs_node_t node;
-    int active;
-    bool free_pending;
+    vfs_node_t   node;
+    int          active;
+    bool         free_pending;
 };
 
 void pipefs_regist();

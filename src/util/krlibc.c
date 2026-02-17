@@ -29,21 +29,21 @@ int memcmp(const void *a_, const void *b_, size_t size) {
 
 void *memset(void *dest, int c, size_t n) {
     unsigned char *s = dest;
-    size_t k = 0;
+    size_t         k = 0;
 
     if (!n)
         return dest;
-    s[0] = c;
+    s[0]     = c;
     s[n - 1] = c;
     if (n <= 2)
         return dest;
-    s[1] = c;
-    s[2] = c;
+    s[1]     = c;
+    s[2]     = c;
     s[n - 2] = c;
     s[n - 3] = c;
     if (n <= 6)
         return dest;
-    s[3] = c;
+    s[3]     = c;
     s[n - 4] = c;
     if (n <= 8)
         return dest;
@@ -59,20 +59,20 @@ void *memset(void *dest, int c, size_t n) {
 
     u32 c32 = ((u32)-1) / 255 * (unsigned char)c;
 
-    *(u32 *)(s + 0) = c32;
+    *(u32 *)(s + 0)     = c32;
     *(u32 *)(s + n - 4) = c32;
     if (n <= 8)
         return dest;
-    *(u32 *)(s + 4) = c32;
-    *(u32 *)(s + 8) = c32;
+    *(u32 *)(s + 4)      = c32;
+    *(u32 *)(s + 8)      = c32;
     *(u32 *)(s + n - 12) = c32;
-    *(u32 *)(s + n - 8) = c32;
+    *(u32 *)(s + n - 8)  = c32;
     if (n <= 24)
         return dest;
-    *(u32 *)(s + 12) = c32;
-    *(u32 *)(s + 16) = c32;
-    *(u32 *)(s + 20) = c32;
-    *(u32 *)(s + 24) = c32;
+    *(u32 *)(s + 12)     = c32;
+    *(u32 *)(s + 16)     = c32;
+    *(u32 *)(s + 20)     = c32;
+    *(u32 *)(s + 24)     = c32;
     *(u32 *)(s + n - 28) = c32;
     *(u32 *)(s + n - 24) = c32;
     *(u32 *)(s + n - 20) = c32;
@@ -84,8 +84,8 @@ void *memset(void *dest, int c, size_t n) {
 
     u64 c64 = c32 | ((u64)c32 << 32);
     for (; n >= 32; n -= 32, s += 32) {
-        *(u64 *)(s + 0) = c64;
-        *(u64 *)(s + 8) = c64;
+        *(u64 *)(s + 0)  = c64;
+        *(u64 *)(s + 8)  = c64;
         *(u64 *)(s + 16) = c64;
         *(u64 *)(s + 24) = c64;
     }
@@ -103,7 +103,7 @@ void *memset(void *dest, int c, size_t n) {
 #ifndef ARCH_HAS_OPTIMIZED_MEMSET
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
-    unsigned char *d = dest;
+    unsigned char       *d = dest;
     const unsigned char *s = src;
 
 #    ifdef __GNUC__
@@ -117,16 +117,16 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 #        endif
 
     typedef uint32_t __attribute__((__may_alias__)) u32;
-    uint32_t w, x;
+    uint32_t                                        w, x;
 
     for (; (uintptr_t)s % 4 && n; n--)
         *d++ = *s++;
 
     if ((uintptr_t)d % 4 == 0) {
         for (; n >= 16; s += 16, d += 16, n -= 16) {
-            *(u32 *)(d + 0) = *(u32 *)(s + 0);
-            *(u32 *)(d + 4) = *(u32 *)(s + 4);
-            *(u32 *)(d + 8) = *(u32 *)(s + 8);
+            *(u32 *)(d + 0)  = *(u32 *)(s + 0);
+            *(u32 *)(d + 4)  = *(u32 *)(s + 4);
+            *(u32 *)(d + 8)  = *(u32 *)(s + 8);
             *(u32 *)(d + 12) = *(u32 *)(s + 12);
         }
         if (n & 8) {
@@ -153,50 +153,50 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     if (n >= 32)
         switch ((uintptr_t)d % 4) {
         case 1:
-            w = *(u32 *)s;
+            w    = *(u32 *)s;
             *d++ = *s++;
             *d++ = *s++;
             *d++ = *s++;
             n -= 3;
             for (; n >= 17; s += 16, d += 16, n -= 16) {
-                x = *(u32 *)(s + 1);
-                *(u32 *)(d + 0) = (w LS 24) | (x RS 8);
-                w = *(u32 *)(s + 5);
-                *(u32 *)(d + 4) = (x LS 24) | (w RS 8);
-                x = *(u32 *)(s + 9);
-                *(u32 *)(d + 8) = (w LS 24) | (x RS 8);
-                w = *(u32 *)(s + 13);
+                x                = *(u32 *)(s + 1);
+                *(u32 *)(d + 0)  = (w LS 24) | (x RS 8);
+                w                = *(u32 *)(s + 5);
+                *(u32 *)(d + 4)  = (x LS 24) | (w RS 8);
+                x                = *(u32 *)(s + 9);
+                *(u32 *)(d + 8)  = (w LS 24) | (x RS 8);
+                w                = *(u32 *)(s + 13);
                 *(u32 *)(d + 12) = (x LS 24) | (w RS 8);
             }
             break;
         case 2:
-            w = *(u32 *)s;
+            w    = *(u32 *)s;
             *d++ = *s++;
             *d++ = *s++;
             n -= 2;
             for (; n >= 18; s += 16, d += 16, n -= 16) {
-                x = *(u32 *)(s + 2);
-                *(u32 *)(d + 0) = (w LS 16) | (x RS 16);
-                w = *(u32 *)(s + 6);
-                *(u32 *)(d + 4) = (x LS 16) | (w RS 16);
-                x = *(u32 *)(s + 10);
-                *(u32 *)(d + 8) = (w LS 16) | (x RS 16);
-                w = *(u32 *)(s + 14);
+                x                = *(u32 *)(s + 2);
+                *(u32 *)(d + 0)  = (w LS 16) | (x RS 16);
+                w                = *(u32 *)(s + 6);
+                *(u32 *)(d + 4)  = (x LS 16) | (w RS 16);
+                x                = *(u32 *)(s + 10);
+                *(u32 *)(d + 8)  = (w LS 16) | (x RS 16);
+                w                = *(u32 *)(s + 14);
                 *(u32 *)(d + 12) = (x LS 16) | (w RS 16);
             }
             break;
         case 3:
-            w = *(u32 *)s;
+            w    = *(u32 *)s;
             *d++ = *s++;
             n -= 1;
             for (; n >= 19; s += 16, d += 16, n -= 16) {
-                x = *(u32 *)(s + 3);
-                *(u32 *)(d + 0) = (w LS 8) | (x RS 24);
-                w = *(u32 *)(s + 7);
-                *(u32 *)(d + 4) = (x LS 8) | (w RS 24);
-                x = *(u32 *)(s + 11);
-                *(u32 *)(d + 8) = (w LS 8) | (x RS 24);
-                w = *(u32 *)(s + 15);
+                x                = *(u32 *)(s + 3);
+                *(u32 *)(d + 0)  = (w LS 8) | (x RS 24);
+                w                = *(u32 *)(s + 7);
+                *(u32 *)(d + 4)  = (x LS 8) | (w RS 24);
+                x                = *(u32 *)(s + 11);
+                *(u32 *)(d + 8)  = (w LS 8) | (x RS 24);
+                w                = *(u32 *)(s + 15);
                 *(u32 *)(d + 12) = (x LS 8) | (w RS 24);
             }
             break;
@@ -254,7 +254,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 
 #ifndef ARCH_HAS_OPTIMIZED_MEMMOVE
 void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cognitive-complexity)
-    char *d = dest;
+    char       *d = dest;
     const char *s = src;
 
     if (d == s)
@@ -294,12 +294,12 @@ void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cogn
 
 void *memchr(const void *src, int c, size_t n) {
     const unsigned char *s = src;
-    c = (unsigned char)c;
+    c                      = (unsigned char)c;
     for (; ((uintptr_t)s & ALIGN) && n && *s != c; s++, n--)
         ;
     if (n && *s != c) {
         size_t *w = 0;
-        size_t k = ONES * c;
+        size_t  k = ONES * c;
         for (w = (void *)s; n >= SS && !HASZERO(*w ^ k); w++, n -= SS)
             ;
         for (s = (const void *)w; n && *s != c; s++, n--)
@@ -325,7 +325,7 @@ size_t strnlen(const char *s, size_t n) {
 
 size_t strlen(const char *s) {
     const char *a = s;
-    size_t *w = NULL;
+    size_t     *w = NULL;
     for (; (uintptr_t)s % ALIGN; s++)
         if (!*s)
             return s - a;
@@ -445,20 +445,21 @@ char *strtok(char *str, const char *delim) {
 
 int64_t strtol(
     const char *str, char **endptr,
-    int base) { // NOLINT(*-function-cognitive-complexity)
-    const char *s = str;
-    uint64_t acc = 0;
-    char c = '\0';
-    uint64_t cutoff = 0;
-    uint64_t neg = 0;
-    uint64_t any = 0;
-    uint64_t cutlim = 0;
+    int base
+) { // NOLINT(*-function-cognitive-complexity)
+    const char *s      = str;
+    uint64_t    acc    = 0;
+    char        c      = '\0';
+    uint64_t    cutoff = 0;
+    uint64_t    neg    = 0;
+    uint64_t    any    = 0;
+    uint64_t    cutlim = 0;
     do {
         c = *s++;
     } while (isspace((unsigned char)c));
     if (c == '-') {
         neg = 1;
-        c = *s++;
+        c   = *s++;
     } else {
         neg = 0;
         if (c == '+')
@@ -525,7 +526,7 @@ char *strdup(const char *str) {
         return NULL;
 
     char *strat = (char *)str;
-    int len = 0;
+    int   len   = 0;
     while (*str++ != '\0')
         len++;
     char *ret = (char *)malloc(len + 1);
@@ -607,9 +608,9 @@ static char *fourbyte_strstr(const unsigned char *h, const unsigned char *n) {
 
 static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
     const unsigned char *z;
-    size_t l, ip, jp, k, p, ms, p0, mem, mem0;
-    size_t byteset[32 / sizeof(size_t)] = {0};
-    size_t shift[256];
+    size_t               l, ip, jp, k, p, ms, p0, mem, mem0;
+    size_t               byteset[32 / sizeof(size_t)] = { 0 };
+    size_t               shift[256];
 
     /* Computing length of needle and fill shift table */
     for (l = 0; n[l] && h[l]; l++)
@@ -668,7 +669,7 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
     /* Periodic needle? */
     if (memcmp(n, n + p, ms + 1)) {
         mem0 = 0;
-        p = MAX(ms, l - ms - 1) + 1;
+        p    = MAX(ms, l - ms - 1) + 1;
     } else
         mem0 = l - p;
     mem = 0;
@@ -681,8 +682,8 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         /* Update incremental end-of-haystack pointer */
         if (z - h < l) {
             /* Fast estimate for MIN(l,63) */
-            size_t grow = l | 63;
-            const unsigned char *z2 = memchr(z, 0, grow);
+            size_t               grow = l | 63;
+            const unsigned char *z2   = memchr(z, 0, grow);
             if (z2) {
                 z = z2;
                 if (z - h < l)
@@ -778,7 +779,7 @@ unsigned long strtoul(const char *restrict cp, char **restrict endp, int base) {
 }
 
 int atoi(const char *pstr) {
-    int Ret_Integer = 0;
+    int Ret_Integer  = 0;
     int Integer_sign = 1;
 
     if (pstr == NULL) {
@@ -812,8 +813,8 @@ char *normalize_path(const char *path) {
     if (!path)
         return NULL;
 
-    size_t len = strlen(path);
-    char *result = malloc(len + 1);
+    size_t len    = strlen(path);
+    char  *result = malloc(len + 1);
     if (!result)
         return NULL;
 
@@ -933,7 +934,7 @@ char *build_proc_cmdline(char **argv, size_t *out_len) {
         return NULL;
     }
     size_t total_length = 0;
-    int i = 0;
+    int    i            = 0;
     while (argv[i] != NULL) {
         total_length += strlen(argv[i]) + 1;
         i++;
@@ -949,7 +950,7 @@ char *build_proc_cmdline(char **argv, size_t *out_len) {
         return NULL;
     }
     char *current_ptr = cmdline_buf;
-    i = 0;
+    i                 = 0;
     while (argv[i] != NULL) {
         size_t len = strlen(argv[i]);
         memcpy(current_ptr, argv[i], len);
@@ -978,12 +979,12 @@ char **restore_argv(const char *cmdline_buf, size_t len, int *out_argc) {
     char **argv = (char **)malloc(sizeof(char *) * (argc + 1));
     if (!argv)
         return NULL;
-    const char *ptr = cmdline_buf;
-    const char *end = cmdline_buf + len;
-    int index = 0;
+    const char *ptr   = cmdline_buf;
+    const char *end   = cmdline_buf + len;
+    int         index = 0;
     while (ptr < end && index < argc) {
         size_t str_len = strlen(ptr);
-        argv[index] = (char *)malloc(str_len + 1);
+        argv[index]    = (char *)malloc(str_len + 1);
         if (argv[index] == NULL) {
             kerror("malloc failed");
             return NULL;

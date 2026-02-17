@@ -29,7 +29,7 @@ static int expand_fds_table(fdt_t *fdt) {
         return -1;
     }
 
-    fdt->fds = new_fds;
+    fdt->fds            = new_fds;
     size_t new_elements = new_len - old_len;
     memset(&fdt->fds[old_len], 0, new_elements * sizeof(fd_t *));
 
@@ -90,15 +90,15 @@ fd_t *fd_dup(fd_t *src) {
     fd_t *new = (fd_t *)malloc(sizeof(fd_t));
     not_null_assert(new, "fd_dup out of memory.");
     src->node->refcount++;
-    new->node = src->node;
-    new->offset = src->offset;
-    new->dir_last = src->dir_last;
-    new->flags = src->flags;
-    new->fd = src->fd;
+    new->node       = src->node;
+    new->offset     = src->offset;
+    new->dir_last   = src->dir_last;
+    new->flags      = src->flags;
+    new->fd         = src->fd;
     vfs_node_t node = new->node;
     if (node->type & file_pipe) {
         pipe_specific_t *spec = node->handle;
-        pipe_info_t *pipe = spec->info;
+        pipe_info_t     *pipe = spec->info;
         spin_lock(pipe->lock);
         if (spec->write) {
             pipe->write_fds++;
@@ -131,7 +131,7 @@ fdt_t *copy_fdt(fdt_t *src_fdt) {
     new_fdt->fds_length = src_fdt->fds_length;
 
     size_t array_size = new_fdt->fds_length * sizeof(fd_t *);
-    new_fdt->fds = (fd_t **)malloc(array_size);
+    new_fdt->fds      = (fd_t **)malloc(array_size);
     if (new_fdt->fds == NULL) {
         free(new_fdt);
         return NULL;
@@ -148,9 +148,9 @@ fdt_t *copy_fdt(fdt_t *src_fdt) {
 }
 
 fdt_t *fds_init() {
-    fdt_t *fdt = malloc(sizeof(fdt_t));
+    fdt_t *fdt      = malloc(sizeof(fdt_t));
     fdt->fds_length = FD_INITIAL_CAPACITY;
-    fdt->fds = (fd_t **)malloc(fdt->fds_length * sizeof(fd_t *));
+    fdt->fds        = (fd_t **)malloc(fdt->fds_length * sizeof(fd_t *));
     if (fdt->fds) {
         memset(fdt->fds, 0, fdt->fds_length * sizeof(fd_t *));
     } else {

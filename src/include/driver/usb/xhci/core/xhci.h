@@ -1,27 +1,27 @@
 #pragma once
 
-#include "driver/usb/bus/device.h"
+#include "types.h"
 #include "driver/usb/bus/host.h"
+#include "driver/usb/bus/device.h"
+#include "driver/usb/xhci/regs/cap.h"
+#include "driver/usb/xhci/regs/op.h"
+#include "driver/usb/xhci/regs/db.h"
+#include "driver/usb/xhci/regs/port.h"
 #include "driver/usb/xhci/core/ctx.h"
 #include "driver/usb/xhci/core/ring.h"
 #include "driver/usb/xhci/core/slot.h"
-#include "driver/usb/xhci/regs/cap.h"
-#include "driver/usb/xhci/regs/db.h"
-#include "driver/usb/xhci/regs/op.h"
-#include "driver/usb/xhci/regs/port.h"
-#include "types.h"
 
 #define XHCI_MAX_SLOTS 256
 
 typedef struct Xhci {
-    Capability cap;
+    Capability  cap;
     Operational op;
-    int ctx_size;
-    uint64_t *dcbaa_virt;
+    int         ctx_size;
+    uint64_t   *dcbaa_virt;
     CommandRing cmd_ring;
-    EventRing event_ring;
-    Doorbell doorbell;
-    Slot slots[XHCI_MAX_SLOTS];
+    EventRing   event_ring;
+    Doorbell    doorbell;
+    Slot        slots[XHCI_MAX_SLOTS];
 } Xhci;
 
 extern const HostControllerOps xhci_host_ops;

@@ -34,7 +34,7 @@
 
 /* 访问宽度枚举 */
 typedef enum {
-    UART_ACCESS_8BIT = 1,  // 8位访问
+    UART_ACCESS_8BIT  = 1, // 8位访问
     UART_ACCESS_16BIT = 2, // 16位访问
     UART_ACCESS_32BIT = 4  // 32位访问
 } uart_access_width_t;
@@ -42,38 +42,39 @@ typedef enum {
 /* 地址空间类型 */
 typedef enum {
     UART_ADDR_SPACE_MEMORY = 0, // 内存映射IO
-    UART_ADDR_SPACE_IO = 1      // 端口IO（x86）
+    UART_ADDR_SPACE_IO     = 1  // 端口IO（x86）
 } uart_addr_space_t;
 
 /* UART配置结构体 */
 typedef struct {
     uint32_t baudrate;
-    uint8_t data_bits;
-    uint8_t stop_bits;
-    uint8_t parity;
-    bool fifo_enable;
+    uint8_t  data_bits;
+    uint8_t  stop_bits;
+    uint8_t  parity;
+    bool     fifo_enable;
 } uart_config_t;
 
 /* UART设备结构体（支持GAS）*/
 typedef struct {
-    volatile void *base_addr;         // 基地址
-    uart_addr_space_t addr_space;     // 地址空间类型
+    volatile void      *base_addr;    // 基地址
+    uart_addr_space_t   addr_space;   // 地址空间类型
     uart_access_width_t access_width; // 访问宽度
-    uint32_t reg_shift;               // 寄存器偏移位移（字节间距 = 1 << reg_shift）
-    uint32_t reg_stride;              // 寄存器步进（优先使用）
-    uint32_t clock_freq;              // 时钟频率
-    uart_config_t config;             // 配置参数
+    uint32_t            reg_shift;    // 寄存器偏移位移（字节间距 = 1 << reg_shift）
+    uint32_t            reg_stride;   // 寄存器步进（优先使用）
+    uint32_t            clock_freq;   // 时钟频率
+    uart_config_t       config;       // 配置参数
 } uart_device_t;
 
 /* 函数声明 */
 void uart_init(uart_device_t *uart, volatile void *base_addr, uart_config_t *config);
 void uart_init_gas(
     uart_device_t *uart, volatile void *base_addr, uint32_t reg_shift,
-    uart_access_width_t access_width, uart_config_t *config);
+    uart_access_width_t access_width, uart_config_t *config
+);
 void uart_set_baudrate(uart_device_t *uart, uint32_t baudrate);
 void uart_putc(uart_device_t *uart, char c);
 char uart_getc(uart_device_t *uart);
 bool uart_data_available(uart_device_t *uart);
 bool uart_is_transmit_empty(uart_device_t *uart);
 void uart_puts(uart_device_t *uart, const char *str);
-int uart_try_getc(uart_device_t *uart, char *c);
+int  uart_try_getc(uart_device_t *uart, char *c);

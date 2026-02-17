@@ -6,26 +6,26 @@
 #include "term/klog.h"
 
 vfs_node_t sockfs_root = NULL;
-int sockfs_id = 0;
-static int sockfd_id = 0;
+int        sockfs_id   = 0;
+static int sockfd_id   = 0;
 
 // --- Ring buffer operations ---
 
 void ringbuf_init(sock_ringbuf_t *rb, size_t capacity) {
-    rb->buf = calloc(1, capacity);
+    rb->buf      = calloc(1, capacity);
     rb->capacity = capacity;
-    rb->head = 0;
-    rb->tail = 0;
-    rb->count = 0;
+    rb->head     = 0;
+    rb->tail     = 0;
+    rb->count    = 0;
 }
 
 size_t ringbuf_read(sock_ringbuf_t *rb, void *dst, size_t len) {
     if (rb->count == 0 || len == 0)
         return 0;
     size_t to_read = MIN(len, rb->count);
-    char *d = (char *)dst;
+    char  *d       = (char *)dst;
     for (size_t i = 0; i < to_read; i++) {
-        d[i] = rb->buf[rb->head];
+        d[i]     = rb->buf[rb->head];
         rb->head = (rb->head + 1) % rb->capacity;
     }
     rb->count -= to_read;
@@ -35,14 +35,14 @@ size_t ringbuf_read(sock_ringbuf_t *rb, void *dst, size_t len) {
 size_t ringbuf_write(sock_ringbuf_t *rb, const void *src, size_t len) {
     if (len == 0)
         return 0;
-    size_t avail = rb->capacity - rb->count;
+    size_t avail    = rb->capacity - rb->count;
     size_t to_write = MIN(len, avail);
     if (to_write == 0)
         return 0;
     const char *s = (const char *)src;
     for (size_t i = 0; i < to_write; i++) {
         rb->buf[rb->tail] = s[i];
-        rb->tail = (rb->tail + 1) % rb->capacity;
+        rb->tail          = (rb->tail + 1) % rb->capacity;
     }
     rb->count += to_write;
     return to_write;
@@ -52,11 +52,11 @@ size_t ringbuf_peek(sock_ringbuf_t *rb, void *dst, size_t len) {
     if (rb->count == 0 || len == 0)
         return 0;
     size_t to_read = MIN(len, rb->count);
-    char *d = (char *)dst;
-    size_t h = rb->head;
+    char  *d       = (char *)dst;
+    size_t h       = rb->head;
     for (size_t i = 0; i < to_read; i++) {
         d[i] = rb->buf[h];
-        h = (h + 1) % rb->capacity;
+        h    = (h + 1) % rb->capacity;
     }
     return to_read;
 }
@@ -153,9 +153,9 @@ static size_t sockfs_write(void *file, const void *addr, size_t offset, size_t s
     info->active++;
     spin_unlock(info->lock);
 
-    const uint8_t *src = (const uint8_t *)addr;
-    size_t total = 0;
-    size_t remaining = size;
+    const uint8_t *src       = (const uint8_t *)addr;
+    size_t         total     = 0;
+    size_t         remaining = size;
 
     while (remaining > 0) {
         spin_lock(target->lock);
@@ -226,7 +226,7 @@ static bool sockfs_close(void *current) {
         // Clean up bound VFS node
         if (info->is_bound && info->bound_node) {
             vfs_node_t bn = info->bound_node;
-            bn->handle = NULL;
+            bn->handle    = NULL;
             if (bn->parent)
                 list_delete(bn->parent->child, bn);
             vfs_free(bn);
@@ -286,34 +286,34 @@ static errno_t sockfs_free(void *handle) {
 static int sockfs_mount(const char *handle, vfs_node_t node) {
     if (sockfs_root != NULL)
         return -EBUSY;
-    node->fsid = sockfs_id;
-    sockfs_root = node;
+    node->fsid   = sockfs_id;
+    sockfs_root  = node;
     node->handle = calloc(1, sizeof(socket_specific_t));
     return EOK;
 }
 
 static struct vfs_callback sockfs_callbacks = {
-    .mount = sockfs_mount,
-    .unmount = (vfs_unmount_t)dummy,
-    .open = (vfs_open_t)sockfs_open,
-    .close = sockfs_close,
-    .read = sockfs_read,
-    .write = sockfs_write,
+    .mount    = sockfs_mount,
+    .unmount  = (vfs_unmount_t)dummy,
+    .open     = (vfs_open_t)sockfs_open,
+    .close    = sockfs_close,
+    .read     = sockfs_read,
+    .write    = sockfs_write,
     .readlink = (vfs_readlink_t)dummy,
-    .mkdir = (vfs_mk_t)dummy,
-    .mkfile = (vfs_mk_t)dummy,
-    .link = (vfs_mk_t)dummy,
-    .symlink = (vfs_mk_t)dummy,
-    .delete = (vfs_del_t)dummy,
-    .rename = (vfs_rename_t)dummy,
-    .map = (vfs_mapfile_t)dummy,
-    .stat = sockfs_stat,
-    .ioctl = (vfs_ioctl_t)dummy,
-    .poll = sockfs_poll,
-    .dup = (vfs_dup_t)dummy,
-    .free = sockfs_free,
-    .chmod = (vfs_chmod_t)dummy,
-    .mknod = (vfs_mknod_t)dummy,
+    .mkdir    = (vfs_mk_t)dummy,
+    .mkfile   = (vfs_mk_t)dummy,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .delete   = (vfs_del_t)dummy,
+    .rename   = (vfs_rename_t)dummy,
+    .map      = (vfs_mapfile_t)dummy,
+    .stat     = sockfs_stat,
+    .ioctl    = (vfs_ioctl_t)dummy,
+    .poll     = sockfs_poll,
+    .dup      = (vfs_dup_t)dummy,
+    .free     = sockfs_free,
+    .chmod    = (vfs_chmod_t)dummy,
+    .mknod    = (vfs_mknod_t)dummy,
 };
 
 void sockfs_regist() {
@@ -322,9 +322,9 @@ void sockfs_regist() {
         kerror("sockfs regist error.");
     }
     // Auto-create internal root node (not visible in VFS tree)
-    sockfs_root = vfs_node_alloc(rootdir, ".sockfs");
-    sockfs_root->type = file_dir;
-    sockfs_root->fsid = sockfs_id;
+    sockfs_root         = vfs_node_alloc(rootdir, ".sockfs");
+    sockfs_root->type   = file_dir;
+    sockfs_root->fsid   = sockfs_id;
     sockfs_root->handle = calloc(1, sizeof(socket_specific_t));
 }
 
@@ -335,18 +335,18 @@ vfs_node_t sockfs_create_node(socket_info_t *info) {
     char buf[16];
     sprintf(buf, "sock%d", sockfd_id++);
     vfs_node_t node = vfs_node_alloc(sockfs_root, buf);
-    node->type = file_socket;
-    node->fsid = sockfs_id;
-    node->mode = 0700;
+    node->type      = file_socket;
+    node->fsid      = sockfs_id;
+    node->mode      = 0700;
 
     socket_specific_t *spec = calloc(1, sizeof(socket_specific_t));
-    spec->info = info;
-    spec->node = node;
-    spec->active = 0;
-    spec->free_pending = false;
-    spec->shut_rd = false;
-    spec->shut_wr = false;
-    node->handle = spec;
+    spec->info              = info;
+    spec->node              = node;
+    spec->active            = 0;
+    spec->free_pending      = false;
+    spec->shut_rd           = false;
+    spec->shut_wr           = false;
+    node->handle            = spec;
 
     return node;
 }

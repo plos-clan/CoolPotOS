@@ -35,16 +35,17 @@ int g_ZSTD_threading_useless_symbol;
 
 static unsigned __stdcall worker(void *arg) {
     ZSTD_pthread_t *const thread = (ZSTD_pthread_t *)arg;
-    thread->arg = thread->start_routine(thread->arg);
+    thread->arg                  = thread->start_routine(thread->arg);
     return 0;
 }
 
 int ZSTD_pthread_create(
-    ZSTD_pthread_t *thread, const void *unused, void *(*start_routine)(void *), void *arg) {
+    ZSTD_pthread_t *thread, const void *unused, void *(*start_routine)(void *), void *arg
+) {
     (void)unused;
-    thread->arg = arg;
+    thread->arg           = arg;
     thread->start_routine = start_routine;
-    thread->handle = (HANDLE)_beginthreadex(NULL, 0, worker, thread, 0, NULL);
+    thread->handle        = (HANDLE)_beginthreadex(NULL, 0, worker, thread, 0, NULL);
 
     if (!thread->handle)
         return errno;

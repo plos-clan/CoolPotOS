@@ -1,25 +1,25 @@
 #include "driver/usb/class/hid/mouse.h"
-#include "driver/usb/bus/device.h"
 #include "driver/usb/class/hid/common.h"
 #include "driver/usb/class/hid/parser.h"
 #include "driver/usb/defs/defs.h"
+#include "driver/usb/bus/device.h"
 #include "krlibc.h"
 #include "mem/alloc/alloc.h"
 #include "term/klog.h"
 
 typedef struct MouseLayout {
-    bool has_axis_x;
-    bool has_axis_y;
-    bool has_axis_wheel;
-    HidField axis_x;
-    HidField axis_y;
-    HidField axis_wheel;
+    bool        has_axis_x;
+    bool        has_axis_y;
+    bool        has_axis_wheel;
+    HidField    axis_x;
+    HidField    axis_y;
+    HidField    axis_wheel;
     HidFieldVec buttons;
 } MouseLayout;
 
 typedef struct Mouse {
-    UsbDriver driver;
-    HidDevice hid;
+    UsbDriver   driver;
+    HidDevice   hid;
     MouseLayout layout;
 } Mouse;
 
@@ -93,15 +93,15 @@ static void mouse_scan_layout(Mouse *mouse) {
             if (field->usage_page == 0x01) {
                 switch (field->usage_min & 0xffff) {
                 case 0x30:
-                    mouse->layout.axis_x = *field;
+                    mouse->layout.axis_x     = *field;
                     mouse->layout.has_axis_x = true;
                     break;
                 case 0x31:
-                    mouse->layout.axis_y = *field;
+                    mouse->layout.axis_y     = *field;
                     mouse->layout.has_axis_y = true;
                     break;
                 case 0x38:
-                    mouse->layout.axis_wheel = *field;
+                    mouse->layout.axis_wheel     = *field;
                     mouse->layout.has_axis_wheel = true;
                     break;
                 default:
@@ -133,7 +133,7 @@ static Mouse *mouse_new(UsbInterface *iface, uint8_t ep_addr) {
     HidFieldVec_init(&mouse->layout.buttons);
     mouse_scan_layout(mouse);
 
-    mouse->driver.disconnect = mouse_disconnect;
+    mouse->driver.disconnect        = mouse_disconnect;
     mouse->driver.handle_completion = mouse_handle_completion;
 
     return mouse;

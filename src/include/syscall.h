@@ -14,21 +14,25 @@
 #define __SYSCALL_IMPL_0(NAME)                                                                     \
     uint64_t syscall_##NAME(                                                                       \
         uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,  \
-        struct syscall_regs *regs)
+        struct syscall_regs *regs                                                                  \
+    )
 
 #define __SYSCALL_IMPL_1(NAME, P1)                                                                 \
     uint64_t syscall_##NAME(                                                                       \
         P1, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,             \
-        struct syscall_regs *regs)
+        struct syscall_regs *regs                                                                  \
+    )
 
 #define __SYSCALL_IMPL_2(NAME, P1, P2)                                                             \
     uint64_t syscall_##NAME(                                                                       \
         P1, P2, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,                        \
-        struct syscall_regs *regs)
+        struct syscall_regs *regs                                                                  \
+    )
 
 #define __SYSCALL_IMPL_3(NAME, P1, P2, P3)                                                         \
     uint64_t syscall_##NAME(                                                                       \
-        P1, P2, P3, uint64_t arg3, uint64_t arg4, uint64_t arg5, struct syscall_regs *regs)
+        P1, P2, P3, uint64_t arg3, uint64_t arg4, uint64_t arg5, struct syscall_regs *regs         \
+    )
 
 #define __SYSCALL_IMPL_4(NAME, P1, P2, P3, P4)                                                     \
     uint64_t syscall_##NAME(P1, P2, P3, P4, uint64_t arg4, uint64_t arg5, struct syscall_regs *regs)
@@ -48,7 +52,8 @@
         uint64_t arg0 __attribute__((unused)), uint64_t arg1 __attribute__((unused)),              \
         uint64_t arg2 __attribute__((unused)), uint64_t arg3 __attribute__((unused)),              \
         uint64_t arg4 __attribute__((unused)), uint64_t arg5 __attribute__((unused)),              \
-        struct syscall_regs *regs __attribute__((unused)))
+        struct syscall_regs *regs __attribute__((unused))                                          \
+    )
 
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 
@@ -178,27 +183,27 @@
 #include "types.h"
 
 struct iovec {
-    void *iov_base;
+    void  *iov_base;
     size_t iov_len;
 };
 
 #include "fs/sockfs.h"
 
 struct stat {
-    long st_dev;
-    unsigned long st_ino;
-    unsigned long st_nlink;
-    int st_mode;
-    int st_uid;
-    int st_gid;
-    long st_rdev;
-    long long st_size;
-    long st_blksize;
+    long              st_dev;
+    unsigned long     st_ino;
+    unsigned long     st_nlink;
+    int               st_mode;
+    int               st_uid;
+    int               st_gid;
+    long              st_rdev;
+    long long         st_size;
+    long              st_blksize;
     unsigned long int st_blocks;
-    struct timespec st_atim;
-    struct timespec st_mtim;
-    struct timespec st_ctim;
-    char _pad[24];
+    struct timespec   st_atim;
+    struct timespec   st_mtim;
+    struct timespec   st_ctim;
+    char              _pad[24];
 };
 
 struct utsname {
@@ -216,21 +221,21 @@ typedef struct {
 
 typedef struct {
     sigset_t *ss;
-    size_t ss_len;
+    size_t    ss_len;
 } WeirdPselect6;
 
 struct dirent {
-    long d_ino;
-    long d_off;
+    long           d_ino;
+    long           d_off;
     unsigned short d_reclen;
-    unsigned char d_type;
-    char d_name[256];
+    unsigned char  d_type;
+    char           d_name[256];
 };
 
 struct statx_timestamp {
-    int64_t tv_sec;
+    int64_t  tv_sec;
     uint32_t tv_nsec;
-    int32_t __reserved;
+    int32_t  __reserved;
 };
 
 struct statx {
@@ -269,20 +274,20 @@ struct statx {
 };
 
 struct sysinfo {
-    int64_t uptime;                                        /* Seconds since boot */
-    uint64_t loads[3];                                     /* 1, 5, and 15 minute load averages */
-    uint64_t totalram;                                     /* Total usable main memory size */
-    uint64_t freeram;                                      /* Available memory size */
-    uint64_t sharedram;                                    /* Amount of shared memory */
-    uint64_t bufferram;                                    /* Memory used by buffers */
-    uint64_t totalswap;                                    /* Total swap space size */
-    uint64_t freeswap;                                     /* swap space still available */
-    uint16_t procs;                                        /* Number of current processes */
-    uint16_t pad;                                          /* Explicit padding for m68k */
-    uint64_t totalhigh;                                    /* Total high memory size */
-    uint64_t freehigh;                                     /* Available high memory size */
-    uint32_t mem_unit;                                     /* Memory unit size in bytes */
-    char _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
+    int64_t  uptime;    /* Seconds since boot */
+    uint64_t loads[3];  /* 1, 5, and 15 minute load averages */
+    uint64_t totalram;  /* Total usable main memory size */
+    uint64_t freeram;   /* Available memory size */
+    uint64_t sharedram; /* Amount of shared memory */
+    uint64_t bufferram; /* Memory used by buffers */
+    uint64_t totalswap; /* Total swap space size */
+    uint64_t freeswap;  /* swap space still available */
+    uint16_t procs;     /* Number of current processes */
+    uint16_t pad;       /* Explicit padding for m68k */
+    uint64_t totalhigh; /* Total high memory size */
+    uint64_t freehigh;  /* Available high memory size */
+    uint32_t mem_unit;  /* Memory unit size in bytes */
+    char     _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
 };
 
 typedef struct {
@@ -290,18 +295,18 @@ typedef struct {
 } __kernel_fsid_t;
 
 struct statfs {
-    uint64_t f_type;
-    uint64_t f_bsize;
-    uint64_t f_blocks;
-    uint64_t f_bfree;
-    uint64_t f_bavail;
-    uint64_t f_files;
-    uint64_t f_ffree;
+    uint64_t        f_type;
+    uint64_t        f_bsize;
+    uint64_t        f_blocks;
+    uint64_t        f_bfree;
+    uint64_t        f_bavail;
+    uint64_t        f_files;
+    uint64_t        f_ffree;
     __kernel_fsid_t f_fsid;
-    uint64_t f_namelen;
-    uint64_t f_frsize;
-    uint64_t f_flags;
-    uint64_t f_spare[4];
+    uint64_t        f_namelen;
+    uint64_t        f_frsize;
+    uint64_t        f_flags;
+    uint64_t        f_spare[4];
 };
 
 struct rlimit {
@@ -312,20 +317,20 @@ struct rlimit {
 struct rusage {
     struct timeval ru_utime;
     struct timeval ru_stime;
-    long ru_maxrss;
-    long ru_ixrss;
-    long ru_idrss;
-    long ru_isrss;
-    long ru_minflt;
-    long ru_majflt;
-    long ru_nswap;
-    long ru_inblock;
-    long ru_oublock;
-    long ru_msgsnd;
-    long ru_msgrcv;
-    long ru_nsignals;
-    long ru_nvcsw;
-    long ru_nivcsw;
+    long           ru_maxrss;
+    long           ru_ixrss;
+    long           ru_idrss;
+    long           ru_isrss;
+    long           ru_minflt;
+    long           ru_majflt;
+    long           ru_nswap;
+    long           ru_inblock;
+    long           ru_oublock;
+    long           ru_msgsnd;
+    long           ru_msgrcv;
+    long           ru_nsignals;
+    long           ru_nvcsw;
+    long           ru_nivcsw;
 };
 
 struct tms {
@@ -342,7 +347,7 @@ struct tms {
 
 typedef struct {
     uint32_t version;
-    int pid;
+    int      pid;
 } cap_user_header_t;
 
 typedef struct {
@@ -378,7 +383,8 @@ syscall_(pread, int fd, uint8_t *buffer);
 syscall_(pwrite, int fd, uint8_t *buffer);
 syscall_(
     copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
-    uint64_t flags);
+    uint64_t flags
+);
 syscall_(ftruncate);
 syscall_(rename, char *oldpath, char *newpath);
 syscall_(symlink, char *name, char *new);
@@ -386,7 +392,8 @@ syscall_(link, char *name, char *new);
 syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except, struct timeval *timeout);
 syscall_(
     pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-    struct timespec *timeout, WeirdPselect6 *weirdPselect6);
+    struct timespec *timeout, WeirdPselect6 *weirdPselect6
+);
 syscall_(getdents, int fd, struct dirent *dents, size_t size);
 syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags);
 syscall_(statx, int dirfd, char *pathname, uint64_t flags, uint64_t mask, struct statx *buff);
@@ -427,10 +434,12 @@ syscall_(accept, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
 syscall_(
     sendto, int sockfd, void *buf, size_t len, int flags, struct sockaddr *dest_addr,
-    uint64_t addrlen);
+    uint64_t addrlen
+);
 syscall_(
     recvfrom, int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr,
-    uint64_t *addrlen);
+    uint64_t *addrlen
+);
 syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(shutdown, int sockfd, int how);
@@ -445,7 +454,8 @@ syscall_(epoll_ctl, int epfd, int op, int fd, struct epoll_event *event);
 syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int timeout);
 syscall_(
     epoll_pwait, int epfd, struct epoll_event *events, int maxevents, int timeout,
-    sigset_t *sigmask, size_t sigsetsize);
+    sigset_t *sigmask, size_t sigsetsize
+);
 
 // eventfd syscall
 syscall_(eventfd2, uint64_t initval, int flags);
@@ -469,7 +479,8 @@ syscall_(sig_action, int sig, sigaction_t *action, sigaction_t *oldaction);
 syscall_(sigpending, sigset_t *set, size_t sigsetsize);
 syscall_(
     sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timespec *timeout,
-    size_t sigsetsize);
+    size_t sigsetsize
+);
 syscall_(sigqueueinfo, pid_t pid, int sig, siginfo_t *info);
 syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize);
 syscall_(signal, int sig, void *handler);
@@ -486,7 +497,8 @@ syscall_(prctl, int option);
 syscall_(clone, uint64_t flags, uint64_t stack, int *parent_tid, int *child_tid, uint64_t tls);
 syscall_(get_rlimit, uint64_t resource, struct rlimit *lim);
 syscall_(
-    prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim, struct rlimit *old_rlim);
+    prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim, struct rlimit *old_rlim
+);
 syscall_(getresgid, int *rgid, int *egid, int *sgid);
 syscall_(getresuid, int *ruid, int *euid, int *suid);
 syscall_(kill, int pid, int sig);
@@ -495,11 +507,13 @@ syscall_(capset, cap_user_header_t *header, cap_user_data_t *data);
 
 // mem syscall
 syscall_(
-    mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd, uint64_t offset);
+    mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd, uint64_t offset
+);
 syscall_(munmap, uint64_t addr, size_t size);
 syscall_(
     mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
-    uint64_t new_addr);
+    uint64_t new_addr
+);
 syscall_(madvise, uint64_t addr, size_t length, int advice);
 syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot);
 syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec);

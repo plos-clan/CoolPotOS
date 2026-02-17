@@ -160,4 +160,5 @@
 #include "ptrace.h"
 
 typedef uint64_t (*syscall_t)(
-    uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, struct syscall_regs *);
+    uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, struct syscall_regs *
+);

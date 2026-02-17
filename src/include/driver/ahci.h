@@ -162,12 +162,12 @@ struct blkio_req {
 };
 
 struct hba_cmdh {
-    uint16_t options;
-    uint16_t prdt_len;
+    uint16_t          options;
+    uint16_t          prdt_len;
     volatile uint32_t transferred_size;
-    uint32_t cmd_table_base;
-    uint32_t cmd_table_base_upper;
-    uint32_t reserved[4];
+    uint32_t          cmd_table_base;
+    uint32_t          cmd_table_base_upper;
+    uint32_t          reserved[4];
 } __HBA_PACKED__;
 
 struct hba_prdte {
@@ -175,14 +175,14 @@ struct hba_prdte {
     uint32_t data_base_upper;
     uint32_t reserved;
     uint32_t byte_count : 22;
-    uint32_t rsv1 : 9;
-    uint32_t i : 1;
+    uint32_t rsv1       : 9;
+    uint32_t i          : 1;
 } __HBA_PACKED__;
 
 struct hba_cmdt {
-    uint8_t command_fis[64];
-    uint8_t atapi_cmd[16];
-    uint8_t reserved[0x30];
+    uint8_t          command_fis[64];
+    uint8_t          atapi_cmd[16];
+    uint8_t          reserved[0x30];
     struct hba_prdte entries[HBA_MAX_PRDTE];
 } __HBA_PACKED__;
 
@@ -193,22 +193,22 @@ struct hba_port;
 struct ahci_hba;
 
 struct hba_device {
-    char serial_num[20];
-    char model[40];
+    char     serial_num[20];
+    char     model[40];
     uint32_t flags;
     uint64_t max_lba;
     uint32_t block_size;
     uint64_t wwn;
-    uint8_t cbd_size;
+    uint8_t  cbd_size;
     struct {
         uint8_t sense_key;
         uint8_t error;
         uint8_t status;
         uint8_t reserve;
     } last_result;
-    uint32_t alignment_offset;
-    uint32_t block_per_sec;
-    uint32_t capabilities;
+    uint32_t         alignment_offset;
+    uint32_t         block_per_sec;
+    uint32_t         capabilities;
     struct hba_port *port;
     struct ahci_hba *hba;
 
@@ -219,50 +219,50 @@ struct hba_device {
 
 struct hba_cmd_state {
     struct hba_cmdt *cmd_table;
-    void *state_ctx;
+    void            *state_ctx;
 };
 
 struct hba_cmd_context {
     struct hba_cmd_state *issued[32];
-    uint32_t tracked_ci;
+    uint32_t              tracked_ci;
 };
 
 struct hba_port {
-    volatile hba_reg_t *regs;
-    uint32_t ssts;
-    struct hba_cmdh *cmdlst;
+    volatile hba_reg_t    *regs;
+    uint32_t               ssts;
+    struct hba_cmdh       *cmdlst;
     struct hba_cmd_context cmdctx;
-    void *fis;
-    struct hba_device *device;
-    struct ahci_hba *hba;
+    void                  *fis;
+    struct hba_device     *device;
+    struct ahci_hba       *hba;
 };
 
 struct ahci_hba {
     volatile hba_reg_t *base;
-    uint32_t ports_num;
-    uint32_t ports_bmp;
-    uint32_t cmd_slots;
-    uint32_t version;
-    struct hba_port *ports[32];
+    uint32_t            ports_num;
+    uint32_t            ports_bmp;
+    uint32_t            cmd_slots;
+    uint32_t            version;
+    struct hba_port    *ports[32];
 };
 
 struct scsi_cdb12 {
-    uint8_t opcode;
-    uint8_t misc1;
+    uint8_t  opcode;
+    uint8_t  misc1;
     uint32_t lba_be;
     uint32_t length;
-    uint8_t misc2;
-    uint8_t ctrl;
+    uint8_t  misc2;
+    uint8_t  ctrl;
 } __attribute__((packed));
 
 struct scsi_cdb16 {
-    uint8_t opcode;
-    uint8_t misc1;
+    uint8_t  opcode;
+    uint8_t  misc1;
     uint32_t lba_be_hi;
     uint32_t lba_be_lo;
     uint32_t length;
-    uint8_t misc2;
-    uint8_t ctrl;
+    uint8_t  misc2;
+    uint8_t  ctrl;
 } __attribute__((packed));
 
 struct sata_fis_head {
@@ -295,21 +295,24 @@ void scsi_submit(struct hba_device *dev, struct blkio_req *io_req);
 void sata_submit(struct hba_device *dev, struct blkio_req *io_req);
 void sata_read_error(struct hba_port *port);
 void ahci_post(struct hba_port *port, struct hba_cmd_state *state, int slot);
-int ahci_try_send(struct hba_port *port, int slot);
+int  ahci_try_send(struct hba_port *port, int slot);
 void achi_register_ops(struct hba_port *port);
 void ahci_parsestr(char *str, uint16_t *reg_start, int size_word);
 void ahci_parse_dev_info(struct hba_device *dev_info, uint16_t *data);
-int __get_free_slot(struct hba_port *port);
-int hba_prepare_cmd(struct hba_port *port, struct hba_cmdt **cmdt, struct hba_cmdh **cmdh);
+int  __get_free_slot(struct hba_port *port);
+int  hba_prepare_cmd(struct hba_port *port, struct hba_cmdt **cmdt, struct hba_cmdh **cmdh);
 void __hba_reset_port(hba_reg_t *port_reg);
-int hba_bind_vbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, struct vecbuf *vbuf);
-int hba_bind_sbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, void *buf, uint32_t len);
+int  hba_bind_vbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, struct vecbuf *vbuf);
+int  hba_bind_sbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, void *buf, uint32_t len);
 void sata_create_fis(
-    struct sata_reg_fis *cmd_fis, uint8_t command, uint64_t lba, uint16_t sector_count);
-int ahci_init_device(struct hba_port *port);
+    struct sata_reg_fis *cmd_fis, uint8_t command, uint64_t lba, uint16_t sector_count
+);
+int  ahci_init_device(struct hba_port *port);
 void scsi_create_packet12(
-    struct scsi_cdb12 *cdb, uint8_t opcode, uint32_t lba, uint32_t alloc_size);
+    struct scsi_cdb12 *cdb, uint8_t opcode, uint32_t lba, uint32_t alloc_size
+);
 void scsi_create_packet16(
-    struct scsi_cdb16 *cdb, uint8_t opcode, uint64_t lba, uint32_t alloc_size);
+    struct scsi_cdb16 *cdb, uint8_t opcode, uint64_t lba, uint32_t alloc_size
+);
 void scsi_parse_capacity(struct hba_device *device, uint32_t *parameter);
 void ahci_setup();

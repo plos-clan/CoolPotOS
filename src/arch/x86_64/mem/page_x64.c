@@ -8,9 +8,9 @@
 
 #include <term/klog.h>
 
-extern page_directory_t kernel_page_dir;
+extern page_directory_t          kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
-static spin_t page_lock = SPIN_INIT;
+static spin_t                    page_lock         = SPIN_INIT;
 
 static void page_table_clear(page_table_t *table) {
     for (int i = 0; i < 512; i++) {
@@ -20,8 +20,8 @@ static void page_table_clear(page_table_t *table) {
 
 page_table_t *page_table_create(page_table_entry_t *entry) {
     if (entry->value == 0) {
-        uint64_t frame = alloc_frames(1);
-        entry->value = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
+        uint64_t frame      = alloc_frames(1);
+        entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
         page_table_t *table = phys_to_virt(entry->value & PTE_FRAME_MASK);
         page_table_clear(table);
         return table;
@@ -105,8 +105,9 @@ copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy, 
         }
 
         page_table_t *source_page_table_next = phys_to_virt(entry_value & PTE_FRAME_MASK);
-        page_table_t *new_page_table = copy_page_table_recursive(
-            source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256);
+        page_table_t *new_page_table         = copy_page_table_recursive(
+            source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256
+        );
         new_table->entries[i].value =
             virt_to_phys(new_page_table) | (entry_value & 0xFF000000000FFF);
     }
@@ -114,14 +115,14 @@ copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy, 
 }
 
 uint64_t arch_virt_to_phys(uint64_t va) {
-    uint64_t pml4_phys = get_cr3();
-    uint64_t *pml4 = phys_to_virt(pml4_phys);
+    uint64_t  pml4_phys = get_cr3();
+    uint64_t *pml4      = phys_to_virt(pml4_phys);
 
     size_t pml4_idx = (va >> 39) & ENTRY_MASK;
     size_t pdpt_idx = (va >> 30) & ENTRY_MASK;
-    size_t pd_idx = (va >> 21) & ENTRY_MASK;
-    size_t pt_idx = (va >> 12) & ENTRY_MASK;
-    size_t offset = va & 0xFFF;
+    size_t pd_idx   = (va >> 21) & ENTRY_MASK;
+    size_t pt_idx   = (va >> 12) & ENTRY_MASK;
+    size_t offset   = va & 0xFFF;
 
     uint64_t pml4e = pml4[pml4_idx];
     if (!(pml4e & PTE_PRESENT))
@@ -177,7 +178,7 @@ uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
 
     for (uint64_t i = 0; i < 4 - 1; i++) {
         uint64_t index = indexs[i];
-        uint64_t addr = pgdir[index];
+        uint64_t addr  = pgdir[index];
         if (ARCH_PT_IS_LARGE(addr)) {
             pgdir[index] &= ~PAGE_CALC_PAGE_TABLE_MASK(4);
             pgdir[index] |= flags;
@@ -256,7 +257,7 @@ void switch_page_directory0(page_directory_t *dir) {
 
 void arch_page_setup_l2() {
     page_directory_t *new_directory = clone_page_directory(&kernel_page_dir, true);
-    kernel_page_dir.table = new_directory->table;
+    kernel_page_dir.table           = new_directory->table;
     free(new_directory);
     switch_page_directory0(&kernel_page_dir);
     double_fault_page = get_cr3();
@@ -264,6 +265,6 @@ void arch_page_setup_l2() {
 
 void arch_page_setup() {
     page_table_t *kernel_page_table = phys_to_virt(get_cr3());
-    kernel_page_dir = (page_directory_t){.table = kernel_page_table};
-    double_fault_page = get_cr3();
+    kernel_page_dir                 = (page_directory_t){ .table = kernel_page_table };
+    double_fault_page               = get_cr3();
 }

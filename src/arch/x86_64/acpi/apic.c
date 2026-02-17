@@ -8,15 +8,15 @@
 #include "term/klog.h"
 #include "timer.h"
 
-bool x2apic_mode = false;
+bool     x2apic_mode = false;
 uint64_t lapic_address;
 
 uint64_t calibrated_timer_initial = 0;
 
 static struct ioapic_info found_ioapics[MAX_IOAPICS];
-static struct iso_info found_isos[MAX_ISO];
+static struct iso_info    found_isos[MAX_ISO];
 
-static size_t found_iso_count = 0;
+static size_t found_iso_count    = 0;
 static size_t found_ioapic_count = 0;
 
 void disable_pic() {
@@ -85,7 +85,7 @@ void ioapic_add(uint8_t vector, uint32_t irq) {
     if (!io)
         return;
 
-    uint32_t irq0 = irq - io->gsi_base;
+    uint32_t irq0     = irq - io->gsi_base;
     uint32_t ioredtbl = 0x10 + irq0 * 2;
     uint64_t redirect = vector | ((uint64_t)lapic_id() << 56);
 
@@ -139,12 +139,13 @@ static void apic_handle_ioapic(ACPI_MADT_IO_APIC *ioapic_madt) {
     page_map_range(get_kernel_pagedir(), mmio_virt, mmio_phys, PAGE_SIZE, KERNEL_PTE_FLAGS);
     ioapic->mmio_base = mmio_virt;
 
-    ioapic->gsi_base = ioapic_madt->GlobalIrqBase;
+    ioapic->gsi_base  = ioapic_madt->GlobalIrqBase;
     ioapic->irq_count = (ioapic_mmio_read(ioapic->mmio_base, 0x01) & 0x00FF0000) >> 16;
 
     kinfo(
         "IOAPIC found: MMIO %p, GSI base %d, IRQs %d", (void *)ioapic->mmio_base, ioapic->gsi_base,
-        ioapic->irq_count);
+        ioapic->irq_count
+    );
 
     ioapic->id = ioapic_madt->Id;
 }
@@ -153,7 +154,7 @@ static void apic_handle_override(ACPI_MADT_INTERRUPT_OVERRIDE *override_madt) {
     struct iso_info *override = &found_isos[found_iso_count];
     found_iso_count++;
     override->irq_source = override_madt->SourceIrq;
-    override->gsi = override_madt->GlobalIrq;
+    override->gsi        = override_madt->GlobalIrq;
 }
 
 void local_apic_init() {
@@ -175,7 +176,7 @@ void local_apic_init() {
     for (;;)
         if (nano_time() - b >= 1000000)
             break;
-    uint64_t lapic_timer = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
+    uint64_t lapic_timer     = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / SCHED_TIMER_SPEED);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
@@ -202,7 +203,7 @@ void ap_local_apic_init() {
 }
 
 void apic_init() {
-    ACPI_TABLE_MADT *madt = NULL;
+    ACPI_TABLE_MADT  *madt   = NULL;
     const ACPI_STATUS status = AcpiGetTable(ACPI_SIG_MADT, 1, (ACPI_TABLE_HEADER **)&madt);
     if (ACPI_FAILURE(status)) {
         kerror("Failed to get MADT table: %s", AcpiFormatException(status));
@@ -211,9 +212,9 @@ void apic_init() {
 
     lapic_address = (uint64_t)phys_to_virt(madt->Address);
     page_map_range(get_kernel_pagedir(), lapic_address, madt->Address, PAGE_SIZE, KERNEL_PTE_FLAGS);
-    x2apic_mode = x2apic_mode_supported();
+    x2apic_mode                    = x2apic_mode_supported();
     ACPI_SUBTABLE_HEADER *subtable = (ACPI_SUBTABLE_HEADER *)(madt + 1);
-    uintptr_t end = (uintptr_t)madt + madt->Header.Length;
+    uintptr_t             end      = (uintptr_t)madt + madt->Header.Length;
     while ((uintptr_t)subtable < end) {
         switch (subtable->Type) {
         case ACPI_MADT_TYPE_IO_APIC:;
@@ -262,8 +263,8 @@ int64_t apic_ack(uint64_t irq) {
 
 // export 供initctl 用
 intctl_t apic_controller = {
-    ._mask = apic_mask,
-    ._unmask = apic_unmask,
+    ._mask    = apic_mask,
+    ._unmask  = apic_unmask,
     ._install = apic_install,
     .send_eoi = apic_ack,
 };

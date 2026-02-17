@@ -16,7 +16,7 @@ static inline void mmio_out32(uintptr_t addr, uint32_t val) {
 #define OP_CONFIG_OFF 0x38
 
 Operational operational_new(uintptr_t base_addr) {
-    Operational op = {.base_addr = base_addr};
+    Operational op = { .base_addr = base_addr };
     return op;
 }
 
@@ -77,14 +77,14 @@ void operational_set_max_slots_enabled(Operational op, uint8_t num) {
 }
 
 void operational_set_dcbaap(Operational op, uint64_t phys_addr) {
-    uint32_t low = (uint32_t)(phys_addr & 0xffffffffu);
+    uint32_t low  = (uint32_t)(phys_addr & 0xffffffffu);
     uint32_t high = (uint32_t)(phys_addr >> 32);
     mmio_out32(op.base_addr + OP_DCBAAP_OFF, low);
     mmio_out32(op.base_addr + OP_DCBAAP_OFF + 4, high);
 }
 
 void operational_set_crcr(Operational op, uint64_t phys_addr) {
-    uint32_t low = (uint32_t)(phys_addr & 0xffffffffu) | 1u;
+    uint32_t low  = (uint32_t)(phys_addr & 0xffffffffu) | 1u;
     uint32_t high = (uint32_t)(phys_addr >> 32);
     mmio_out32(op.base_addr + OP_CRCR_OFF, low);
     mmio_out32(op.base_addr + OP_CRCR_OFF + 4, high);

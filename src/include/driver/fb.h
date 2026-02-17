@@ -31,7 +31,7 @@
 #include "types.h"
 
 struct fb_fix_screeninfo {
-    char id[16];           /* identification string eg "TT Builtin" */
+    char     id[16];       /* identification string eg "TT Builtin" */
     uint64_t smem_start;   /* Start of frame buffer mem */
                            /* (physical address) */
     uint32_t smem_len;     /* length of frame buffer mem */

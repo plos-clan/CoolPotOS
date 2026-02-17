@@ -7,8 +7,8 @@
  * Copyright 2012 Kim Phillips, Freescale Semiconductor.
  */
 
-#include "krlibc.h"
 #include "types.h"
+#include "krlibc.h"
 #include "types/limits.h"
 
 #ifdef __CHECKER__

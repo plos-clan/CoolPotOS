@@ -65,7 +65,7 @@ extern "C" {
 #define ZSTD_OPT_NUM (1 << 12)
 
 #define ZSTD_REP_NUM 3 /* number of repcodes */
-static UNUSED_ATTR const U32 repStartValue[ZSTD_REP_NUM] = {1, 4, 8};
+static UNUSED_ATTR const U32 repStartValue[ZSTD_REP_NUM] = { 1, 4, 8 };
 
 #define KB *(1 << 10)
 #define MB *(1 << 20)
@@ -79,8 +79,8 @@ static UNUSED_ATTR const U32 repStartValue[ZSTD_REP_NUM] = {1, 4, 8};
 #define BIT0 1
 
 #define ZSTD_WINDOWLOG_ABSOLUTEMIN 10
-static UNUSED_ATTR const size_t ZSTD_fcs_fieldSize[4] = {0, 2, 4, 8};
-static UNUSED_ATTR const size_t ZSTD_did_fieldSize[4] = {0, 1, 2, 4};
+static UNUSED_ATTR const size_t ZSTD_fcs_fieldSize[4] = { 0, 2, 4, 8 };
+static UNUSED_ATTR const size_t ZSTD_did_fieldSize[4] = { 0, 1, 2, 4 };
 
 #define ZSTD_FRAMEIDSIZE 4 /* magic number size */
 
@@ -121,26 +121,29 @@ typedef enum { set_basic, set_rle, set_compressed, set_repeat } symbolEncodingTy
 #define ZSTD_MAX_FSE_HEADERS_SIZE                                                                  \
     (((MaxML + 1) * MLFSELog + (MaxLL + 1) * LLFSELog + (MaxOff + 1) * OffFSELog + 7) / 8)
 
-static UNUSED_ATTR const U8 LL_bits[MaxLL + 1] = {0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0,
-                                                  0, 0, 0, 0, 1, 1,  1,  1,  2,  2,  3,  3,
-                                                  4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-static UNUSED_ATTR const S16 LL_defaultNorm[MaxLL + 1] = {4, 3, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,
-                                                          2, 1, 1, 1, 2, 2, 2, 2, 2,  2,  2,  2,
-                                                          2, 3, 2, 1, 1, 1, 1, 1, -1, -1, -1, -1};
+static UNUSED_ATTR const U8  LL_bits[MaxLL + 1]        = { 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0,
+                                                           0, 0, 0, 0, 1, 1,  1,  1,  2,  2,  3,  3,
+                                                           4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+static UNUSED_ATTR const S16 LL_defaultNorm[MaxLL + 1] = { 4, 3, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,
+                                                           2, 1, 1, 1, 2, 2, 2, 2, 2,  2,  2,  2,
+                                                           2, 3, 2, 1, 1, 1, 1, 1, -1, -1, -1, -1 };
 #define LL_DEFAULTNORMLOG 6 /* for static allocation */
 static UNUSED_ATTR const U32 LL_defaultNormLog = LL_DEFAULTNORMLOG;
 
-static UNUSED_ATTR const U8 ML_bits[MaxML + 1] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0,
-    0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+static UNUSED_ATTR const U8  ML_bits[MaxML + 1] = { 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0, 0,
+                                                    0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0, 0,
+                                                    0, 0, 0, 0, 1,  1,  1,  1,  2,  2,  3, 3, 4, 4,
+                                                    5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 static UNUSED_ATTR const S16 ML_defaultNorm[MaxML + 1] = {
     1, 4, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1};
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1
+};
 #define ML_DEFAULTNORMLOG 6 /* for static allocation */
 static UNUSED_ATTR const U32 ML_defaultNormLog = ML_DEFAULTNORMLOG;
 
-static UNUSED_ATTR const S16 OF_defaultNorm[DefaultMaxOff + 1] = {
-    1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1};
+static UNUSED_ATTR const S16 OF_defaultNorm[DefaultMaxOff + 1] = { 1, 1, 1, 1, 1,  1,  2,  2,  2, 1,
+                                                                   1, 1, 1, 1, 1,  1,  1,  1,  1, 1,
+                                                                   1, 1, 1, 1, -1, -1, -1, -1, -1 };
 #define OF_DEFAULTNORMLOG 5 /* for static allocation */
 static UNUSED_ATTR const U32 OF_defaultNormLog = OF_DEFAULTNORMLOG;
 
@@ -206,9 +209,9 @@ typedef enum {
  */
 MEM_STATIC FORCE_INLINE_ATTR void
 ZSTD_wildcopy(void *dst, const void *src, ptrdiff_t length, ZSTD_overlap_e const ovtype) {
-    ptrdiff_t diff = (BYTE *)dst - (const BYTE *)src;
-    const BYTE *ip = (const BYTE *)src;
-    BYTE *op = (BYTE *)dst;
+    ptrdiff_t   diff = (BYTE *)dst - (const BYTE *)src;
+    const BYTE *ip   = (const BYTE *)src;
+    BYTE       *op   = (BYTE *)dst;
     BYTE *const oend = op + length;
 
     if (ovtype == ZSTD_overlap_src_before_dst && diff < WILDCOPY_VECLEN) {
@@ -263,7 +266,7 @@ MEM_STATIC size_t ZSTD_limitCopy(void *dst, size_t dstCapacity, const void *src,
 /* Controls whether the input/output buffer is buffered or stable. */
 typedef enum {
     ZSTD_bm_buffered = 0, /* Buffer the input/output */
-    ZSTD_bm_stable = 1    /* ZSTD_inBuffer/ZSTD_outBuffer is stable */
+    ZSTD_bm_stable   = 1  /* ZSTD_inBuffer/ZSTD_outBuffer is stable */
 } ZSTD_bufferMode_e;
 
 /*-*******************************************
@@ -277,21 +280,21 @@ typedef struct seqDef_s {
 
 /* Controls whether seqStore has a single "long" litLength or matchLength. See seqStore_t. */
 typedef enum {
-    ZSTD_llt_none = 0,          /* no longLengthType */
+    ZSTD_llt_none          = 0, /* no longLengthType */
     ZSTD_llt_literalLength = 1, /* represents a long literal */
-    ZSTD_llt_matchLength = 2    /* represents a long match */
+    ZSTD_llt_matchLength   = 2  /* represents a long match */
 } ZSTD_longLengthType_e;
 
 typedef struct {
     seqDef *sequencesStart;
     seqDef *sequences; /* ptr to end of sequences */
-    BYTE *litStart;
-    BYTE *lit; /* ptr to end of literals */
-    BYTE *llCode;
-    BYTE *mlCode;
-    BYTE *ofCode;
-    size_t maxNbSeq;
-    size_t maxNbLit;
+    BYTE   *litStart;
+    BYTE   *lit; /* ptr to end of literals */
+    BYTE   *llCode;
+    BYTE   *mlCode;
+    BYTE   *ofCode;
+    size_t  maxNbSeq;
+    size_t  maxNbLit;
 
     /* longLengthPos and longLengthType to allow us to represent either a single litLength or
      * matchLength in the seqStore that has a value larger than U16 (if it exists). To do so, we
@@ -313,7 +316,7 @@ typedef struct {
 MEM_STATIC ZSTD_sequenceLength
 ZSTD_getSequenceLength(seqStore_t const *seqStore, seqDef const *seq) {
     ZSTD_sequenceLength seqLen;
-    seqLen.litLength = seq->litLength;
+    seqLen.litLength   = seq->litLength;
     seqLen.matchLength = seq->mlBase + MINMATCH;
     if (seqStore->longLengthPos == (U32)(seq - seqStore->sequencesStart)) {
         if (seqStore->longLengthType == ZSTD_llt_literalLength) {
@@ -333,18 +336,19 @@ ZSTD_getSequenceLength(seqStore_t const *seqStore, seqDef const *seq) {
  *          `decompressedBound != ZSTD_CONTENTSIZE_ERROR`
  */
 typedef struct {
-    size_t compressedSize;
+    size_t             compressedSize;
     unsigned long long decompressedBound;
 } ZSTD_frameSizeInfo; /* decompress & legacy */
 
 const seqStore_t *ZSTD_getSeqStore(const ZSTD_CCtx *ctx); /* compress & dictBuilder */
-void ZSTD_seqToCodes(const seqStore_t *seqStorePtr);      /* compress, dictBuilder, decodeCorpus
-                                                             (shouldn't get its definition from here) */
+void              ZSTD_seqToCodes(
+                 const seqStore_t *seqStorePtr
+             ); /* compress, dictBuilder, decodeCorpus (shouldn't get its definition from here) */
 
 /* custom memory allocation functions */
 void *ZSTD_customMalloc(size_t size, ZSTD_customMem customMem);
 void *ZSTD_customCalloc(size_t size, ZSTD_customMem customMem);
-void ZSTD_customFree(void *ptr, ZSTD_customMem customMem);
+void  ZSTD_customFree(void *ptr, ZSTD_customMem customMem);
 
 MEM_STATIC U32 ZSTD_highbit32(U32 val) /* compress, dictBuilder, decodeCorpus */
 {
@@ -368,10 +372,10 @@ MEM_STATIC U32 ZSTD_highbit32(U32 val) /* compress, dictBuilder, decodeCorpus */
 #elif defined(__ICCARM__)                  /* IAR Intrinsic */
         return 31 - __CLZ(val);
 #else                                      /* Software version */
-        static const U32 DeBruijnClz[32] = {0,  9,  1,  10, 13, 21, 2,  29, 11, 14, 16,
-                                            18, 22, 25, 3,  30, 8,  12, 20, 28, 15, 17,
-                                            24, 7,  19, 27, 23, 6,  26, 5,  4,  31};
-        U32 v = val;
+        static const U32 DeBruijnClz[32] = { 0,  9,  1,  10, 13, 21, 2,  29, 11, 14, 16,
+                                             18, 22, 25, 3,  30, 8,  12, 20, 28, 15, 17,
+                                             24, 7,  19, 27, 23, 6,  26, 5,  4,  31 };
+        U32              v               = val;
         v |= v >> 1;
         v |= v >> 2;
         v |= v >> 4;
@@ -406,10 +410,11 @@ MEM_STATIC unsigned ZSTD_countTrailingZeros(size_t val) {
 #elif defined(__GNUC__) && (__GNUC__ >= 4)
         return __builtin_ctzll((U64)val);
 #else
-        static const int DeBruijnBytePos[64] = {
-            0,  1,  2,  7,  3,  13, 8,  19, 4,  25, 14, 28, 9,  34, 20, 56, 5,  17, 26, 54, 15, 41,
-            29, 43, 10, 31, 38, 35, 21, 45, 49, 57, 63, 6,  12, 18, 24, 27, 33, 55, 16, 53, 40, 42,
-            30, 37, 44, 48, 62, 11, 23, 32, 52, 39, 36, 47, 61, 22, 51, 46, 60, 50, 59, 58};
+        static const int DeBruijnBytePos[64] = { 0,  1,  2,  7,  3,  13, 8,  19, 4,  25, 14, 28, 9,
+                                                 34, 20, 56, 5,  17, 26, 54, 15, 41, 29, 43, 10, 31,
+                                                 38, 35, 21, 45, 49, 57, 63, 6,  12, 18, 24, 27, 33,
+                                                 55, 16, 53, 40, 42, 30, 37, 44, 48, 62, 11, 23, 32,
+                                                 52, 39, 36, 47, 61, 22, 51, 46, 60, 50, 59, 58 };
         return DeBruijnBytePos[((U64)((val & -(long long)val) * 0x0218A392CDABBD3FULL)) >> 58];
 #endif
     } else { /* 32 bits */
@@ -425,9 +430,9 @@ MEM_STATIC unsigned ZSTD_countTrailingZeros(size_t val) {
 #elif defined(__GNUC__) && (__GNUC__ >= 3)
         return __builtin_ctz((U32)val);
 #else
-        static const int DeBruijnBytePos[32] = {0,  1,  28, 2,  29, 14, 24, 3,  30, 22, 20,
-                                                15, 25, 17, 4,  8,  31, 27, 13, 23, 21, 19,
-                                                16, 7,  26, 12, 18, 6,  11, 5,  10, 9};
+        static const int DeBruijnBytePos[32] = { 0,  1,  28, 2,  29, 14, 24, 3,  30, 22, 20,
+                                                 15, 25, 17, 4,  8,  31, 27, 13, 23, 21, 19,
+                                                 16, 7,  26, 12, 18, 6,  11, 5,  10, 9 };
         return DeBruijnBytePos[((U32)((val & -(S32)val) * 0x077CB531U)) >> 27];
 #endif
     }
@@ -438,12 +443,13 @@ MEM_STATIC unsigned ZSTD_countTrailingZeros(size_t val) {
  * Note : only works with regular variant;
  *        do not use with extDict variant ! */
 void ZSTD_invalidateRepCodes(
-    ZSTD_CCtx *cctx); /* zstdmt, adaptive_compression (shouldn't get this definition from here) */
+    ZSTD_CCtx *cctx
+); /* zstdmt, adaptive_compression (shouldn't get this definition from here) */
 
 typedef struct {
     blockType_e blockType;
-    U32 lastBlock;
-    U32 origSize;
+    U32         lastBlock;
+    U32         origSize;
 } blockProperties_t; /* declared here for decompress and fullbench */
 
 /*! ZSTD_getcBlockSize() :

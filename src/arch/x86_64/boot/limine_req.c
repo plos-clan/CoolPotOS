@@ -12,15 +12,16 @@ USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_M
 LIMINE_REQUEST LIMINE_BASE_REVISION(3);
 
 LIMINE_REQUEST struct limine_stack_size_request stack_request = {
-    .id = LIMINE_STACK_SIZE_REQUEST,
-    .revision = 0,
+    .id         = LIMINE_STACK_SIZE_REQUEST,
+    .revision   = 0,
     .stack_size = MAX_STACK_SIZE // 128K
 };
 
-LIMINE_REQUEST struct limine_hhdm_request hhdm_request = {.id = LIMINE_HHDM_REQUEST, .revision = 0};
+LIMINE_REQUEST struct limine_hhdm_request hhdm_request = { .id       = LIMINE_HHDM_REQUEST,
+                                                           .revision = 0 };
 
 LIMINE_REQUEST struct limine_memmap_request memmap_request = {
-    .id = LIMINE_MEMMAP_REQUEST,
+    .id       = LIMINE_MEMMAP_REQUEST,
     .revision = 0,
 };
 
@@ -29,14 +30,16 @@ LIMINE_REQUEST struct limine_executable_cmdline_request cmdline_request = {
 };
 
 LIMINE_REQUEST struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
+    .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0
+};
 
 LIMINE_REQUEST struct limine_module_request modules_request = {
-    .id = LIMINE_MODULE_REQUEST,
+    .id       = LIMINE_MODULE_REQUEST,
     .revision = 0,
 };
 
-LIMINE_REQUEST struct limine_rsdp_request rsdp_request = {.id = LIMINE_RSDP_REQUEST, .revision = 0};
+LIMINE_REQUEST struct limine_rsdp_request rsdp_request = { .id       = LIMINE_RSDP_REQUEST,
+                                                           .revision = 0 };
 
 uint64_t boot_get_hhdm_offset() {
     return hhdm_request.response->offset;
@@ -47,7 +50,7 @@ boot_memory_map_t limine_boot_memory_map;
 boot_memory_map_t *boot_get_memory_map() {
     for (size_t i = 0; i < memmap_request.response->entry_count; i++) {
         struct limine_memmap_entry *le = memmap_request.response->entries[i];
-        int mapped_type;
+        int                         mapped_type;
         switch (le->type) {
         case LIMINE_MEMMAP_USABLE:
             mapped_type = BOOT_MMAP_USABLE;
@@ -78,9 +81,9 @@ boot_memory_map_t *boot_get_memory_map() {
             break;
         }
         limine_boot_memory_map.entries[i] = (boot_memory_map_entry_t){
-            .base = le->base,
+            .base   = le->base,
             .length = le->length,
-            .type = mapped_type,
+            .type   = mapped_type,
         };
     }
 
@@ -101,10 +104,10 @@ boot_framebuffer_t limine_boot_fb[MAX_FRAMEBUFFER];
 boot_framebuffer_t *boot_get_framebuffer(size_t index) {
     limine_boot_fb[index].address =
         (uintptr_t)framebuffer_request.response->framebuffers[0]->address;
-    limine_boot_fb[index].width = framebuffer_request.response->framebuffers[0]->width;
+    limine_boot_fb[index].width  = framebuffer_request.response->framebuffers[0]->width;
     limine_boot_fb[index].height = framebuffer_request.response->framebuffers[0]->height;
-    limine_boot_fb[index].bpp = framebuffer_request.response->framebuffers[0]->bpp;
-    limine_boot_fb[index].pitch = framebuffer_request.response->framebuffers[0]->pitch;
+    limine_boot_fb[index].bpp    = framebuffer_request.response->framebuffers[0]->bpp;
+    limine_boot_fb[index].pitch  = framebuffer_request.response->framebuffers[0]->pitch;
     limine_boot_fb[index].red_mask_shift =
         framebuffer_request.response->framebuffers[0]->red_mask_shift;
     limine_boot_fb[index].red_mask_size =
@@ -129,7 +132,7 @@ void boot_get_modules(boot_module_t **modules, size_t *count) {
         strcpy(limine_boot_modules[i].path, modules_request.response->modules[i]->path);
         limine_boot_modules[i].data = modules_request.response->modules[i]->address;
         limine_boot_modules[i].size = modules_request.response->modules[i]->size;
-        modules[i] = &limine_boot_modules[i];
+        modules[i]                  = &limine_boot_modules[i];
         (*count)++;
     }
 }
@@ -139,7 +142,7 @@ uintptr_t boot_get_acpi_rsdp() {
 }
 
 LIMINE_REQUEST struct limine_smp_request mp_request = {
-    .id = LIMINE_SMP_REQUEST,
+    .id       = LIMINE_SMP_REQUEST,
     .revision = 0,
 #if defined(__x86_64__) || defined(__amd64__)
     .flags = LIMINE_SMP_X2APIC,
@@ -154,13 +157,13 @@ bool x2apic_mode_supported() {
 
 void smp_cpu_init(uint64_t *cpu_count, uint64_t *bsp_cpu_id, cpu_local_t *cpu_local_infos) {
     struct limine_smp_response *mp_response = mp_request.response;
-    *cpu_count = mp_response->cpu_count;
+    *cpu_count                              = mp_response->cpu_count;
 
     for (uint64_t i = 0; i < mp_response->cpu_count; i++) {
         struct limine_smp_info *cpu = mp_response->cpus[i];
-        cpu_local_infos[i].enable = true;
-        cpu_local_infos[i].id = cpu->lapic_id;
-        *bsp_cpu_id = mp_response->bsp_lapic_id;
+        cpu_local_infos[i].enable   = true;
+        cpu_local_infos[i].id       = cpu->lapic_id;
+        *bsp_cpu_id                 = mp_response->bsp_lapic_id;
         if (cpu->lapic_id == mp_response->bsp_lapic_id) {
             scheduler_set_bsp_cpu(&cpu_local_infos[i]);
             continue;

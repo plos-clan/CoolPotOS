@@ -104,7 +104,8 @@ extern "C" {
  */
 int uECC_sign(
     const uint8_t *p_private_key, const uint8_t *p_message_hash, unsigned p_hash_size,
-    uint8_t *p_signature, uECC_Curve curve);
+    uint8_t *p_signature, uECC_Curve curve
+);
 
 #ifdef ENABLE_TESTS
 /*
@@ -113,7 +114,8 @@ int uECC_sign(
  */
 int uECC_sign_with_k(
     const uint8_t *private_key, const uint8_t *message_hash, unsigned int hash_size, uECC_word_t *k,
-    uint8_t *signature, uECC_Curve curve);
+    uint8_t *signature, uECC_Curve curve
+);
 #endif
 
 /**
@@ -132,7 +134,8 @@ int uECC_sign_with_k(
  */
 int uECC_verify(
     const uint8_t *p_public_key, const uint8_t *p_message_hash, unsigned int p_hash_size,
-    const uint8_t *p_signature, uECC_Curve curve);
+    const uint8_t *p_signature, uECC_Curve curve
+);
 
 #ifdef __cplusplus
 }

@@ -42,7 +42,8 @@ unsigned HIST_isError(size_t code); /**< tells if a return value is an error cod
  */
 size_t HIST_count_wksp(
     unsigned *count, unsigned *maxSymbolValuePtr, const void *src, size_t srcSize, void *workSpace,
-    size_t workSpaceSize);
+    size_t workSpaceSize
+);
 
 /** HIST_countFast() :
  *  same as HIST_count(), but blindly trusts that all byte values within src are <=
@@ -59,7 +60,8 @@ HIST_countFast(unsigned *count, unsigned *maxSymbolValuePtr, const void *src, si
  */
 size_t HIST_countFast_wksp(
     unsigned *count, unsigned *maxSymbolValuePtr, const void *src, size_t srcSize, void *workSpace,
-    size_t workSpaceSize);
+    size_t workSpaceSize
+);
 
 /*! HIST_count_simple() :
  *  Same as HIST_countFast(), this function is unsafe,

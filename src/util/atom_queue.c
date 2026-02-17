@@ -14,7 +14,7 @@ static void store(uint64_t *addr, uint32_t value) {
 
 static bool cas(uint64_t *addr, uint64_t exp, uint64_t upd) {
     uint64_t expected_val = exp;
-    bool success =
+    bool     success =
         __atomic_compare_exchange_n(addr, &expected_val, upd, false, ATOMIC_ORDER, ATOMIC_ORDER);
     return success;
 }
@@ -25,7 +25,7 @@ atom_queue *create_atom_queue(uint64_t size) {
     }
     atom_queue *queue = (atom_queue *)malloc(sizeof(atom_queue));
     memset(queue, 0, sizeof(atom_queue));
-    queue->buf = (uint8_t *)malloc(size * sizeof(uint8_t));
+    queue->buf  = (uint8_t *)malloc(size * sizeof(uint8_t));
     queue->mask = size - 1;
     queue->head = 0;
     queue->tail = 0;

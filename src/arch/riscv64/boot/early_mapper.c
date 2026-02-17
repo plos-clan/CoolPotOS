@@ -35,7 +35,7 @@ typedef uint64_t pte_t;
 // 内核预留的页表空间（在数据段中）
 #define PAGE_TABLE_POOL_SIZE (4 * 1024 * 1024) // 4MB 用于页表
 static uint8_t page_table_pool[PAGE_TABLE_POOL_SIZE] __attribute__((aligned(PAGE_SIZE)));
-static size_t page_table_pool_used = 0;
+static size_t  page_table_pool_used = 0;
 
 // 辅助宏
 #ifndef ALIGN_UP
@@ -81,7 +81,7 @@ static pte_t *walk_page_table(pte_t *table, uintptr_t va, int level, int huge_le
         if (!new_table) {
             return NULL;
         }
-        *pte = PA_TO_PTE(new_table - KERNEL_VIRTUAL_BASE) | PTE_V;
+        *pte       = PA_TO_PTE(new_table - KERNEL_VIRTUAL_BASE) | PTE_V;
         next_table = (pte_t *)new_table;
     }
 
@@ -127,7 +127,7 @@ static int map_1g_page(pte_t *root_table, uintptr_t va, uintptr_t pa, uint64_t p
 
 static int map_region(pte_t *root_table, uintptr_t pa_start, uintptr_t pa_end, uint64_t perm) {
     uintptr_t current = ALIGN_UP(pa_start, SIZE_4K);
-    uintptr_t end = ALIGN_DOWN(pa_end, SIZE_4K);
+    uintptr_t end     = ALIGN_DOWN(pa_end, SIZE_4K);
 
     if (current >= end) {
         return 0;
@@ -178,11 +178,12 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
 
     // 首先映射内核已经占用的区域（确保内核代码可继续执行）
     uintptr_t kernel_low_start = 0x80000000UL;
-    uintptr_t kernel_low_end = 0x81000000UL; // 16MB内核区域
+    uintptr_t kernel_low_end   = 0x81000000UL; // 16MB内核区域
 
     if (map_region(
             (pte_t *)root_table, kernel_low_start, kernel_low_end,
-            PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D)
+            PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D
+        )
         < 0) {
         return -1;
     }
@@ -191,7 +192,8 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
 
     if (map_region(
             (pte_t *)root_table, dtb_paddr, dtb_paddr + SIZE_2M,
-            PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D)
+            PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D
+        )
         < 0) {
         return -1;
     }
@@ -199,7 +201,7 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
     for (size_t i = 0; i < mmap->entry_count; i++) {
         if (mmap->entries[i].type == BOOT_MMAP_USABLE && mmap->entries[i].length > 0) {
             uintptr_t start = mmap->entries[i].base;
-            uintptr_t end = start + mmap->entries[i].length;
+            uintptr_t end   = start + mmap->entries[i].length;
 
             // 只映射前4G内的区域
             uintptr_t map_end = end;
@@ -210,7 +212,8 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
                     // 映射内核前的部分
                     if (map_region(
                             (pte_t *)root_table, start, kernel_low_start,
-                            PTE_R | PTE_W | PTE_G | PTE_A | PTE_D)
+                            PTE_R | PTE_W | PTE_G | PTE_A | PTE_D
+                        )
                         < 0) {
                         return -1;
                     }
@@ -219,7 +222,8 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
                     // 映射内核后的部分
                     if (map_region(
                             (pte_t *)root_table, kernel_low_end, map_end,
-                            PTE_R | PTE_W | PTE_G | PTE_A | PTE_D)
+                            PTE_R | PTE_W | PTE_G | PTE_A | PTE_D
+                        )
                         < 0) {
                         return -1;
                     }
@@ -227,7 +231,8 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
             } else {
                 // 完全在内核区域之外
                 if (map_region(
-                        (pte_t *)root_table, start, map_end, PTE_R | PTE_W | PTE_G | PTE_A | PTE_D)
+                        (pte_t *)root_table, start, map_end, PTE_R | PTE_W | PTE_G | PTE_A | PTE_D
+                    )
                     < 0) {
                     return -1;
                 }
@@ -238,7 +243,7 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
     // 构造 SATP 寄存器的值
     // SATP format for SV48: [63:60]=MODE(9), [59:44]=ASID(0), [43:0]=PPN
     uint64_t ppn = (root_table - KERNEL_VIRTUAL_BASE) >> 12;
-    *satp_out = (9UL << 60) | ppn;
+    *satp_out    = (9UL << 60) | ppn;
 
     return 0;
 }

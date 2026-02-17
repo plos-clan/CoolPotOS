@@ -15,16 +15,17 @@ const char *zone_names[__MAX_NR_ZONES] = {
 #if defined(__x86_64__)
     "DMA",
 #endif
-    "DMA32", "Normal"};
+    "DMA32", "Normal"
+};
 
-page_t *mem_map = NULL;
-uint64_t max_pfn = 0;
-uint64_t min_pfn = 0;
-zone_t *zones[__MAX_NR_ZONES] = {NULL};
-int nr_zones = 0;
-static size_t total_frames = 0;
-Bitmap usable_regions;
-spin_t frame_op_lock = SPIN_INIT;
+page_t       *mem_map               = NULL;
+uint64_t      max_pfn               = 0;
+uint64_t      min_pfn               = 0;
+zone_t       *zones[__MAX_NR_ZONES] = { NULL };
+int           nr_zones              = 0;
+static size_t total_frames          = 0;
+Bitmap        usable_regions;
+spin_t        frame_op_lock        = SPIN_INIT;
 static size_t early_last_alloc_pos = 0;
 
 bool percpu_pagecache_initialized = false;
@@ -78,7 +79,7 @@ static enum zone_type gfp_zone(uint32_t gfp_flags) {
 // 构建 zone fallback 列表
 void build_zonelist(zonelist_t *zl, uint32_t gfp_flags) {
     enum zone_type start_zone = gfp_zone(gfp_flags);
-    int idx = 0;
+    int            idx        = 0;
 
     // 从首选 zone 开始，向低端 zone fallback
     for (int i = start_zone; i >= 0; i--) {
@@ -96,7 +97,7 @@ static inline uint64_t __find_buddy_pfn(uint64_t pfn, uint32_t order) {
 }
 
 static inline page_t *find_buddy_page(page_t *page, uint32_t order) {
-    uint64_t pfn = page_to_pfn(page);
+    uint64_t pfn       = page_to_pfn(page);
     uint64_t buddy_pfn = __find_buddy_pfn(pfn, order);
 
     if (buddy_pfn < min_pfn || buddy_pfn >= max_pfn)
@@ -162,7 +163,7 @@ static inline void prep_new_page(page_t *page, uint32_t order) {
 
         for (uint32_t i = 1; i < (1U << order); i++) {
             page_t *p = page + i;
-            p->flags = 0;
+            p->flags  = 0;
             SetPageCompound(p);
             atomic_set(&p->_refcount, 0);
             p->zone_id = page->zone_id; // 继承 zone_id
@@ -191,7 +192,7 @@ static page_t *__rmqueue_smallest(zone_t *zone, uint32_t order) {
 
     for (current_order = order; current_order < MAX_ORDER; current_order++) {
         free_area_t *area = &zone->free_area[current_order];
-        page_t *page = area->free_list;
+        page_t      *page = area->free_list;
 
         if (!page)
             continue;
@@ -286,7 +287,7 @@ static page_t *rmqueue(zone_t *zone, uint32_t order, uint32_t gfp_flags) {
 }
 
 page_t *alloc_pages(uint32_t gfp_flags, uint32_t order) {
-    page_t *page = NULL;
+    page_t    *page = NULL;
     zonelist_t zl;
 
     if (order >= MAX_ORDER)
@@ -298,7 +299,7 @@ page_t *alloc_pages(uint32_t gfp_flags, uint32_t order) {
     // 按优先级尝试从各个 zone 分配
     for (int i = 0; i < zl.nr_zones; i++) {
         zone_t *zone = zl.zones[i];
-        page = rmqueue(zone, order, gfp_flags);
+        page         = rmqueue(zone, order, gfp_flags);
         if (page) {
             prep_new_page(page, order);
             return page;
@@ -315,7 +316,7 @@ page_t *alloc_pages(uint32_t gfp_flags, uint32_t order) {
 
 static inline uint64_t __free_one_page(page_t *page, uint64_t pfn, zone_t *zone, uint32_t order) {
     uint64_t combined_pfn;
-    page_t *buddy;
+    page_t  *buddy;
 
     while (order < MAX_ORDER - 1) {
         buddy = find_buddy_page(page, order);
@@ -327,8 +328,8 @@ static inline uint64_t __free_one_page(page_t *page, uint64_t pfn, zone_t *zone,
         ClearPageBuddy(buddy);
 
         combined_pfn = pfn & ~(1UL << order);
-        page = pfn_to_page(combined_pfn);
-        pfn = combined_pfn;
+        page         = pfn_to_page(combined_pfn);
+        pfn          = combined_pfn;
         order++;
     }
 
@@ -344,8 +345,8 @@ static void free_pcppages_bulk(zone_t *zone, per_cpu_pages_t *pcp, int count) {
         pcp->count--;
         count--;
 
-        page_t *page = pcp->pages[pcp->count];
-        uint64_t pfn = page_to_pfn(page);
+        page_t  *page = pcp->pages[pcp->count];
+        uint64_t pfn  = page_to_pfn(page);
 
         __free_one_page(page, pfn, zone, 0);
 
@@ -418,13 +419,13 @@ void __free_pages(page_t *page, uint32_t order) {
 static void init_zone(zone_t *zone, enum zone_type type, uint64_t start_pfn, uint64_t end_pfn) {
     memset(zone, 0, sizeof(zone_t));
 
-    zone->type = type;
-    zone->name = zone_names[type];
+    zone->type           = type;
+    zone->name           = zone_names[type];
     zone->zone_start_pfn = start_pfn;
-    zone->zone_end_pfn = end_pfn;
-    zone->spanned_pages = end_pfn - start_pfn;
-    zone->present_pages = 0; // 稍后添加内存时更新
-    zone->managed_pages = 0;
+    zone->zone_end_pfn   = end_pfn;
+    zone->spanned_pages  = end_pfn - start_pfn;
+    zone->present_pages  = 0; // 稍后添加内存时更新
+    zone->managed_pages  = 0;
 
     zone->lock = SPIN_INIT;
 
@@ -436,8 +437,8 @@ static void init_zone(zone_t *zone, enum zone_type type, uint64_t start_pfn, uin
 
 uint64_t alloc_frames_early(size_t count) {
     spin_lock(frame_op_lock);
-    Bitmap *bitmap = &usable_regions;
-    size_t frame_index = bitmap_find_range_from(bitmap, count, true, early_last_alloc_pos);
+    Bitmap *bitmap      = &usable_regions;
+    size_t  frame_index = bitmap_find_range_from(bitmap, count, true, early_last_alloc_pos);
     bitmap_set_range(bitmap, frame_index, frame_index + count, false);
     early_last_alloc_pos = frame_index + count - 1;
     spin_unlock(frame_op_lock);
@@ -457,7 +458,7 @@ void zones_init(uint64_t memory_size) {
 
     // 分配 mem_map
     size_t mem_map_size = total_pages * sizeof(page_t);
-    mem_map = (page_t *)early_alloc(mem_map_size);
+    mem_map             = (page_t *)early_alloc(mem_map_size);
     memset(mem_map, 0, mem_map_size);
 
     // 初始化所有页
@@ -468,7 +469,7 @@ void zones_init(uint64_t memory_size) {
         page->magic = PAGE_MAGIC;
 
         // 设置 zone_id
-        uint64_t pfn = min_pfn + i;
+        uint64_t pfn  = min_pfn + i;
         page->zone_id = pfn_to_zone_type(pfn);
     }
 
@@ -478,7 +479,7 @@ void zones_init(uint64_t memory_size) {
     }
 
     // 初始化 zone（根据系统内存范围）
-    uint64_t dma_end = MIN(max_pfn, ZONE_DMA_END / PAGE_SIZE);
+    uint64_t dma_end   = MIN(max_pfn, ZONE_DMA_END / PAGE_SIZE);
     uint64_t dma32_end = MIN(max_pfn, ZONE_DMA32_END / PAGE_SIZE);
 
 #if defined(__x86_64__)
@@ -505,7 +506,7 @@ void add_memory_region(uintptr_t start, uintptr_t end, enum zone_type type) {
     }
 
     uint64_t start_pfn = start / PAGE_SIZE;
-    uint64_t end_pfn = end / PAGE_SIZE;
+    uint64_t end_pfn   = end / PAGE_SIZE;
 
     spin_lock(zone->lock);
 
@@ -522,7 +523,7 @@ void add_memory_region(uintptr_t start, uintptr_t end, enum zone_type type) {
 
         // 找到最大对齐块
         uint32_t order = 0;
-        uint64_t size = 1;
+        uint64_t size  = 1;
 
         while (order < MAX_ORDER - 1) {
             if ((pfn & ((1UL << (order + 1)) - 1)) != 0)
@@ -554,20 +555,21 @@ void percpu_pagecache_init() {
         if (!zone_has_memory(zone))
             continue;
 
-        size_t total_size = sizeof(per_cpu_pages_t) * get_cpu_count();
-        size_t page_size = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-        uint64_t pset_phy = alloc_frames(page_size);
+        size_t   total_size   = sizeof(per_cpu_pages_t) * get_cpu_count();
+        size_t   page_size    = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+        uint64_t pset_phy     = alloc_frames(page_size);
         zone->per_cpu_pageset = (per_cpu_pages_t *)driver_phys_to_virt(pset_phy);
         page_map_range(
             get_kernel_pagedir(), (uint64_t)zone->per_cpu_pageset, pset_phy, total_size,
-            KERNEL_PTE_FLAGS);
+            KERNEL_PTE_FLAGS
+        );
 
         for (int cpu = 0; cpu < get_cpu_count(); cpu++) {
             per_cpu_pages_t *pcp = zone_pcp(zone, cpu);
             memset(pcp, 0, sizeof(per_cpu_pages_t));
 
-            pcp->low = PCPU_CACHE_LOW;
-            pcp->high = PCPU_CACHE_HIGH;
+            pcp->low   = PCPU_CACHE_LOW;
+            pcp->high  = PCPU_CACHE_HIGH;
             pcp->batch = PCPU_BATCH;
         }
     }
@@ -609,14 +611,14 @@ static uintptr_t get_zone_boundary(enum zone_type type) {
 static void process_memory_region(uintptr_t start, uintptr_t end) {
     // 对齐
     start = (start + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-    end = end & ~(PAGE_SIZE - 1);
+    end   = end & ~(PAGE_SIZE - 1);
 
     if (start >= end)
         return;
 
     // 检查是否在 bitmap 中标记为可用
     size_t start_frame = start / PAGE_SIZE;
-    size_t end_frame = end / PAGE_SIZE;
+    size_t end_frame   = end / PAGE_SIZE;
 
     uintptr_t current = start;
 
@@ -655,7 +657,7 @@ void init_frame_buddy(uint64_t memory_size) {
     if (total_frames == 0)
         return;
 
-    size_t bitmap_size = (memory_size / PAGE_SIZE + 7) / 8;
+    size_t   bitmap_size    = (memory_size / PAGE_SIZE + 7) / 8;
     uint64_t bitmap_address = 0;
 
     for (uint64_t i = 0; i < memory_map->entry_count; i++) {
@@ -700,7 +702,7 @@ void init_frame_buddy(uint64_t memory_size) {
 #endif
 
     size_t bitmap_frame_start = bitmap_address / PAGE_SIZE;
-    size_t bitmap_frame_end = (bitmap_address + bitmap_size + PAGE_SIZE - 1) / PAGE_SIZE;
+    size_t bitmap_frame_end   = (bitmap_address + bitmap_size + PAGE_SIZE - 1) / PAGE_SIZE;
     bitmap_set_range(&usable_regions, bitmap_frame_start, bitmap_frame_end, false);
 
     zones_init(memory_size);
@@ -716,7 +718,7 @@ void init_frame_buddy(uint64_t memory_size) {
             continue;
 
         uint64_t addr = region->base;
-        uint64_t len = region->length;
+        uint64_t len  = region->length;
 
         if (addr == bitmap_address) {
             addr += (bitmap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
@@ -728,10 +730,11 @@ void init_frame_buddy(uint64_t memory_size) {
 
     frame_allocator.origin_frames = origin_frames;
     frame_allocator.usable_frames = origin_frames;
-    frame_allocator.total_frames = total_frames;
+    frame_allocator.total_frames  = total_frames;
     logkf(
         "buddy: total frames = %zu, usable_frames = %zu\n", total_frames,
-        frame_allocator.usable_frames);
+        frame_allocator.usable_frames
+    );
 }
 
 static size_t next_power_of_2(size_t n) {
@@ -759,7 +762,7 @@ static size_t log2_floor(size_t n) {
 // 分配页框
 uintptr_t buddy_alloc_frames(size_t count) {
     size_t required_pages = next_power_of_2(count);
-    size_t order = log2_floor(required_pages);
+    size_t order          = log2_floor(required_pages);
 
     page_t *page = alloc_pages(GFP_KERNEL_NORMAL, order);
     if (unlikely(page == NULL))
@@ -775,7 +778,7 @@ void buddy_free_frames(uintptr_t addr, size_t count) {
         return;
 
     size_t required_pages = next_power_of_2(count);
-    size_t order = log2_floor(required_pages);
+    size_t order          = log2_floor(required_pages);
 
     uint64_t idx = addr / PAGE_SIZE;
     if (bitmap_get(&usable_regions, idx) == false)

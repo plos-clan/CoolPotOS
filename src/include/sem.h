@@ -1,12 +1,12 @@
 #pragma once
 
-#include "lock.h"
 #include "types.h"
+#include "lock.h"
 
 typedef struct sem {
-    spin_t lock;
+    spin_t   lock;
     uint32_t cnt;
-    bool invalid;
+    bool     invalid;
 } sem_t;
 
 bool sem_wait(sem_t *sem, uint32_t timeout);

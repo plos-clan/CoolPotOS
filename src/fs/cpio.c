@@ -1,8 +1,8 @@
 #include "fs/cpio.h"
+#include "lib/zstd/zstd.h"
 #include "errno.h"
 #include "fs/vfs.h"
 #include "krlibc.h"
-#include "lib/zstd/zstd.h"
 #include "mem/heap.h"
 #include "mod/module.h"
 #include "term/klog.h"
@@ -13,8 +13,8 @@ static char *get_pdir_fpath(char *path) {
         return strdup("/");
     }
 
-    size_t len = strlen(path);
-    char *last_slash = strrchr(path, '/');
+    size_t len        = strlen(path);
+    char  *last_slash = strrchr(path, '/');
 
     if (last_slash == NULL) {
         return strdup(".");
@@ -107,25 +107,25 @@ void cpio_init(void) {
         return;
     }
 
-    compression_type_t type = get_compression_type(init_ramfs->data, init_ramfs->size);
-    uint8_t *data_d = NULL;
-    size_t size_d = 0;
-    bool is_free = false;
+    compression_type_t type    = get_compression_type(init_ramfs->data, init_ramfs->size);
+    uint8_t           *data_d  = NULL;
+    size_t             size_d  = 0;
+    bool               is_free = false;
 
     char *compress_type;
     switch (type) {
     case COMPRESSION_NONE:
-        data_d = init_ramfs->data;
-        size_d = init_ramfs->size;
-        is_free = false;
+        data_d        = init_ramfs->data;
+        size_d        = init_ramfs->size;
+        is_free       = false;
         compress_type = "cpio";
         break;
     case COMPRESSION_ZSTD:
-        size_d = ZSTD_getFrameContentSize(init_ramfs->data, init_ramfs->size);
+        size_d          = ZSTD_getFrameContentSize(init_ramfs->data, init_ramfs->size);
         void *dict_data = malloc(size_d);
         ZSTD_decompress(dict_data, size_d, init_ramfs->data, init_ramfs->size);
-        data_d = dict_data;
-        is_free = true;
+        data_d        = dict_data;
+        is_free       = true;
         compress_type = "zstd";
         break;
     default:
@@ -134,20 +134,20 @@ void cpio_init(void) {
     }
 
     struct cpio_newc_header_t hdr;
-    size_t offset = 0;
-    size_t file_num_all = 0;
+    size_t                    offset       = 0;
+    size_t                    file_num_all = 0;
     while (true) {
         memcpy(&hdr, data_d + offset, sizeof(hdr));
         offset += sizeof(hdr);
 
         size_t namesize = read_num(hdr.c_namesize);
-        char filename[namesize + 1];
+        char   filename[namesize + 1];
         filename[0] = '/';
         memcpy(filename + 1, data_d + offset, namesize);
         offset = (offset + namesize + 3) & ~3;
 
         size_t filesize = read_num(hdr.c_filesize);
-        char *filedata = malloc(filesize);
+        char  *filedata = malloc(filesize);
         memcpy(filedata, data_d + offset, filesize);
         offset = (offset + filesize + 3) & ~3;
 
@@ -161,7 +161,7 @@ void cpio_init(void) {
         }
 
         file_num_all++;
-        size_t mode = read_num(hdr.c_mode);
+        size_t  mode = read_num(hdr.c_mode);
         errno_t status;
         if (mode & 040000) {
             status = vfs_mkdir(filename);
@@ -171,14 +171,14 @@ void cpio_init(void) {
                 return;
             }
         } else if ((mode & 0120000) == 0120000) {
-            const size_t len = strlen(filename) + filesize;
-            char *all_path = malloc(len);
-            char *dirname = get_pdir_fpath(filename);
-            char *symlink_path = calloc(1, filesize + 1);
+            const size_t len          = strlen(filename) + filesize;
+            char        *all_path     = malloc(len);
+            char        *dirname      = get_pdir_fpath(filename);
+            char        *symlink_path = calloc(1, filesize + 1);
             strncpy(symlink_path, filedata, filesize);
             sprintf(all_path, "%s/%s", dirname, symlink_path);
             char *target_name = normalize_path(all_path);
-            status = vfs_symlink(filename, target_name);
+            status            = vfs_symlink(filename, target_name);
             free(all_path);
             free(target_name);
             free(dirname);
@@ -215,5 +215,6 @@ void cpio_init(void) {
         free(data_d);
 
     kinfo(
-        "Loaded initramfs size:%llu files:%llu compress: %s", size_d, file_num_all, compress_type);
+        "Loaded initramfs size:%llu files:%llu compress: %s", size_d, file_num_all, compress_type
+    );
 }

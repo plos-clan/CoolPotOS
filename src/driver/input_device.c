@@ -1,7 +1,7 @@
 #include "driver/input_device.h"
+#include "mem/heap.h"
 #include "cow_arraylist.h"
 #include "errno.h"
-#include "mem/heap.h"
 
 cow_arraylist *handlers;
 cow_arraylist *devices;
@@ -66,5 +66,5 @@ void send_input_event(indev_t *dev, intype type, uint64_t code, uint8_t value) {
 
 void init_input_manager() {
     handlers = cow_list_create();
-    devices = cow_list_create();
+    devices  = cow_list_create();
 }

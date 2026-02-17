@@ -10,7 +10,8 @@
 spin_t mm_op_lock = SPIN_INIT;
 
 syscall_(
-    mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd, uint64_t offset) {
+    mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd, uint64_t offset
+) {
 
     addr = addr & (~(PAGE_SIZE - 1));
 
@@ -25,8 +26,8 @@ syscall_(
     }
     pcb_t process = get_current_task()->process;
 
-    vma_manager_t *mgr = &process->vma_manager;
-    uint64_t start_addr = 0;
+    vma_manager_t *mgr        = &process->vma_manager;
+    uint64_t       start_addr = 0;
     if (flags & MAP_FIXED) {
         if (!addr)
             return SYSCALL_FAULT_(EINVAL);
@@ -65,7 +66,7 @@ syscall_(
         return SYSCALL_FAULT_(ENOMEM);
 
     vma->vm_start = start_addr;
-    vma->vm_end = start_addr + aligned_len;
+    vma->vm_end   = start_addr + aligned_len;
     vma->vm_flags = 0;
 
     if (prot & PROT_READ)
@@ -82,8 +83,8 @@ syscall_(
         vma->vm_flags |= VMA_ANON;
         vma->vm_fd = -1;
     } else {
-        vma->vm_type = VMA_TYPE_FILE;
-        vma->vm_fd = fd;
+        vma->vm_type   = VMA_TYPE_FILE;
+        vma->vm_fd     = fd;
         vma->vm_offset = (int64_t)offset;
     }
 
@@ -100,7 +101,8 @@ syscall_(
 
     if (!(flags & MAP_ANONYMOUS)) {
         uint64_t ret = (uint64_t)vfs_map(
-            get_fd(process->fdts, fd)->node, start_addr, aligned_len, prot, flags, offset);
+            get_fd(process->fdts, fd)->node, start_addr, aligned_len, prot, flags, offset
+        );
         spin_unlock(mm_op_lock);
         return ret;
     }
@@ -151,14 +153,14 @@ syscall_(munmap, uint64_t addr, size_t size) {
         return -EFAULT;
     }
 
-    tcb_t current = get_current_task();
-    pcb_t process = current->process;
-    vma_manager_t *mgr = &process->vma_manager;
-    vma_t *vma = mgr->vma_list;
-    vma_t *next = NULL;
+    tcb_t          current = get_current_task();
+    pcb_t          process = current->process;
+    vma_manager_t *mgr     = &process->vma_manager;
+    vma_t         *vma     = mgr->vma_list;
+    vma_t         *next    = NULL;
 
     uint64_t start = addr;
-    uint64_t end = addr + size;
+    uint64_t end   = addr + size;
 
     while (vma) {
         next = vma->vm_next;
@@ -200,7 +202,8 @@ syscall_(munmap, uint64_t addr, size_t size) {
 
 syscall_(
     mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
-    uint64_t new_addr) {
+    uint64_t new_addr
+) {
     old_addr = old_addr & (~(PAGE_SIZE - 1));
     new_addr = new_addr & (~(PAGE_SIZE - 1));
     old_size = (old_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
@@ -218,7 +221,8 @@ syscall_(
     // 如果新大小更小，直接截断
     if (new_size <= vma->vm_end - vma->vm_start) {
         unmap_page_range(
-            get_current_directory(), vma->vm_end, vma->vm_start + new_size - vma->vm_end);
+            get_current_directory(), vma->vm_end, vma->vm_start + new_size - vma->vm_end
+        );
         vma->vm_end = vma->vm_start + new_size;
         return old_addr;
     }
@@ -250,7 +254,8 @@ syscall_(
 
         page_map_range(
             get_current_directory(), vma->vm_end, old_addr_phys + vma->vm_end - vma->vm_start,
-            new_end - vma->vm_end, vma->vm_flags);
+            new_end - vma->vm_end, vma->vm_flags
+        );
 
         vma->vm_end = new_end;
         return old_addr;
@@ -271,7 +276,7 @@ syscall_(
 
         memcpy(new_vma, vma, sizeof(vma_t));
         new_vma->vm_start = start_addr;
-        new_vma->vm_end = start_addr + new_size;
+        new_vma->vm_end   = start_addr + new_size;
         new_vma->vm_flags = 0;
 
         if (vma_insert(mgr, new_vma) != 0) {
@@ -311,7 +316,7 @@ syscall_(
 }
 
 syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
-    addr = addr & (~(PAGE_SIZE - 1));
+    addr   = addr & (~(PAGE_SIZE - 1));
     length = (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
     if (check_user_overflow(addr, length)) {
@@ -365,8 +370,8 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
     }
 
     uint64_t start_page = addr & (~(PAGE_SIZE - 1));
-    uint64_t end_page = (addr + size - 1) & (~(PAGE_SIZE - 1));
-    uint64_t num_pages = ((end_page - start_page) / PAGE_SIZE) + 1;
+    uint64_t end_page   = (addr + size - 1) & (~(PAGE_SIZE - 1));
+    uint64_t num_pages  = ((end_page - start_page) / PAGE_SIZE) + 1;
 
     if (check_user_overflow(vec, num_pages)) {
         return SYSCALL_FAULT_(EFAULT);

@@ -1,7 +1,7 @@
 #include "kasan.h"
 #include "krlibc.h"
-#include "mem/frame.h"
 #include "mem/page.h"
+#include "mem/frame.h"
 #include "term/klog.h"
 
 #if KASAN_CHECK
@@ -18,8 +18,8 @@ typedef struct {
     uintptr_t end;
     uintptr_t shadow_base;
     uintptr_t shadow_end;
-    size_t shadow_size;
-    size_t shadow_map_size;
+    size_t    shadow_size;
+    size_t    shadow_map_size;
 } kasan_range_t;
 
 typedef struct {
@@ -27,15 +27,15 @@ typedef struct {
     uintptr_t end;
 } kasan_whitelist_t;
 
-static kasan_range_t kasan_ranges[KASAN_MAX_RANGES];
-static size_t kasan_range_count = 0;
+static kasan_range_t     kasan_ranges[KASAN_MAX_RANGES];
+static size_t            kasan_range_count = 0;
 static kasan_whitelist_t kasan_whitelist[KASAN_MAX_WHITELIST];
-static size_t kasan_whitelist_count = 0;
-static uintptr_t kasan_shadow_cursor = KASAN_SHADOW_BASE;
-static bool kasan_initialized = false;
-static bool kasan_active = false;
-static int kasan_heap_range = -1;
-static int kasan_disable_depth = 0;
+static size_t            kasan_whitelist_count = 0;
+static uintptr_t         kasan_shadow_cursor   = KASAN_SHADOW_BASE;
+static bool              kasan_initialized     = false;
+static bool              kasan_active          = false;
+static int               kasan_heap_range      = -1;
+static int               kasan_disable_depth   = 0;
 
 static inline uintptr_t align_up(uintptr_t v, uintptr_t a) {
     return (v + a - 1) & ~(a - 1);
@@ -68,27 +68,27 @@ static void kasan_add_whitelist(uintptr_t start, uintptr_t end) {
     if (kasan_whitelist_count >= KASAN_MAX_WHITELIST)
         return;
     kasan_whitelist[kasan_whitelist_count].start = start;
-    kasan_whitelist[kasan_whitelist_count].end = end;
+    kasan_whitelist[kasan_whitelist_count].end   = end;
     kasan_whitelist_count++;
 }
 
 static int kasan_add_range(uintptr_t start, uintptr_t end, bool poison_initial) {
     if (start >= end || kasan_range_count >= KASAN_MAX_RANGES)
         return -1;
-    size_t size = end - start;
-    size_t shadow_size = (size + KASAN_SHADOW_GRANULE - 1) >> KASAN_SHADOW_SCALE_SHIFT;
+    size_t    size        = end - start;
+    size_t    shadow_size = (size + KASAN_SHADOW_GRANULE - 1) >> KASAN_SHADOW_SCALE_SHIFT;
     uintptr_t shadow_base = align_up(kasan_shadow_cursor, PAGE_SIZE);
-    size_t shadow_map = align_up(shadow_size, PAGE_SIZE);
+    size_t    shadow_map  = align_up(shadow_size, PAGE_SIZE);
 
     page_map_range_to_random(get_kernel_pagedir(), shadow_base, shadow_map, KERNEL_PTE_FLAGS);
     kasan_memset_u8((uint8_t *)shadow_base, poison_initial ? KASAN_POISON : 0, shadow_size);
 
     kasan_ranges[kasan_range_count] = (kasan_range_t){
-        .start = start,
-        .end = end,
-        .shadow_base = shadow_base,
-        .shadow_end = shadow_base + shadow_map,
-        .shadow_size = shadow_size,
+        .start           = start,
+        .end             = end,
+        .shadow_base     = shadow_base,
+        .shadow_end      = shadow_base + shadow_map,
+        .shadow_size     = shadow_size,
         .shadow_map_size = shadow_map,
     };
     int idx = (int)kasan_range_count;
@@ -103,7 +103,8 @@ kasan_report(const char *reason, uintptr_t bad, size_t size, bool is_write, uint
     logkf("\n[KASAN] INVALID %s access\n", is_write ? "WRITE" : "READ");
     logkf(
         "[KASAN] addr=%p size=%llu shadow=0x%02X\n", (void *)bad, (unsigned long long)size,
-        shadow_val);
+        shadow_val
+    );
     if (reason)
         logkf("[KASAN] from=%s\n", reason);
     arch_close_interrupt();
@@ -113,11 +114,12 @@ kasan_report(const char *reason, uintptr_t bad, size_t size, bool is_write, uint
 }
 
 static void kasan_check_range_in_range(
-    const kasan_range_t *range, uintptr_t start, uintptr_t end, bool is_write, const char *reason) {
+    const kasan_range_t *range, uintptr_t start, uintptr_t end, bool is_write, const char *reason
+) {
     uintptr_t cur = start;
     while (cur < end) {
-        uintptr_t block = cur & ~(KASAN_SHADOW_GRANULE - 1);
-        uint8_t shadow = *(uint8_t *)kasan_shadow_addr(range, block);
+        uintptr_t block  = cur & ~(KASAN_SHADOW_GRANULE - 1);
+        uint8_t   shadow = *(uint8_t *)kasan_shadow_addr(range, block);
 
         if (shadow == 0) {
             cur = block + KASAN_SHADOW_GRANULE;
@@ -144,7 +146,7 @@ static void kasan_poison_range(const kasan_range_t *range, uintptr_t start, uint
     uintptr_t e = align_up(end, KASAN_SHADOW_GRANULE);
     for (uintptr_t addr = s; addr < e; addr += KASAN_SHADOW_GRANULE) {
         uint8_t *shadow = (uint8_t *)kasan_shadow_addr(range, addr);
-        *shadow = KASAN_POISON;
+        *shadow         = KASAN_POISON;
     }
 }
 
@@ -153,13 +155,13 @@ static void kasan_unpoison_range(const kasan_range_t *range, uintptr_t start, ui
         return;
 
     uintptr_t block_start = align_down(start, KASAN_SHADOW_GRANULE);
-    uintptr_t block_end = align_down(end, KASAN_SHADOW_GRANULE);
+    uintptr_t block_end   = align_down(end, KASAN_SHADOW_GRANULE);
 
     if (block_start == block_end) {
         uint8_t *shadow = (uint8_t *)kasan_shadow_addr(range, block_start);
         if ((start & (KASAN_SHADOW_GRANULE - 1)) == 0) {
             size_t tail = end - block_start;
-            *shadow = (tail >= KASAN_SHADOW_GRANULE) ? 0 : (uint8_t)tail;
+            *shadow     = (tail >= KASAN_SHADOW_GRANULE) ? 0 : (uint8_t)tail;
         } else {
             *shadow = 0;
         }
@@ -173,9 +175,9 @@ static void kasan_unpoison_range(const kasan_range_t *range, uintptr_t start, ui
     }
 
     if (end != block_end) {
-        size_t tail = end - block_end;
+        size_t   tail       = end - block_end;
         uint8_t *shadow_end = (uint8_t *)kasan_shadow_addr(range, block_end);
-        *shadow_end = (tail >= KASAN_SHADOW_GRANULE) ? 0 : (uint8_t)tail;
+        *shadow_end         = (tail >= KASAN_SHADOW_GRANULE) ? 0 : (uint8_t)tail;
     }
 }
 
@@ -198,10 +200,11 @@ void kasan_init(void) {
     }
 
     kasan_initialized = true;
-    kasan_active = true;
+    kasan_active      = true;
     logkf(
         "[KASAN] enabled. shadow_base=%p ranges=%llu whitelist=%llu\n", (void *)KASAN_SHADOW_BASE,
-        (unsigned long long)kasan_range_count, (unsigned long long)kasan_whitelist_count);
+        (unsigned long long)kasan_range_count, (unsigned long long)kasan_whitelist_count
+    );
 }
 
 bool kasan_is_active(void) {
@@ -239,8 +242,8 @@ void kasan_heap_extend(uintptr_t heap_start, size_t heap_size) {
         return;
     }
 
-    kasan_range_t *range = &kasan_ranges[kasan_heap_range];
-    uintptr_t new_end = heap_start + heap_size;
+    kasan_range_t *range   = &kasan_ranges[kasan_heap_range];
+    uintptr_t      new_end = heap_start + heap_size;
 
     if (heap_start != range->end) {
         kasan_add_range(heap_start, new_end, true);
@@ -257,10 +260,10 @@ void kasan_heap_extend(uintptr_t heap_start, size_t heap_size) {
     size_t new_shadow_map = align_up(new_shadow_size, PAGE_SIZE);
     if (new_shadow_map > range->shadow_map_size) {
         uintptr_t map_addr = range->shadow_base + range->shadow_map_size;
-        size_t map_len = new_shadow_map - range->shadow_map_size;
+        size_t    map_len  = new_shadow_map - range->shadow_map_size;
         page_map_range_to_random(get_kernel_pagedir(), map_addr, map_len, KERNEL_PTE_FLAGS);
         range->shadow_map_size = new_shadow_map;
-        range->shadow_end = range->shadow_base + range->shadow_map_size;
+        range->shadow_end      = range->shadow_base + range->shadow_map_size;
         if (kasan_shadow_cursor < range->shadow_end) {
             kasan_shadow_cursor = range->shadow_end;
         }
@@ -268,16 +271,17 @@ void kasan_heap_extend(uintptr_t heap_start, size_t heap_size) {
 
     kasan_memset_u8(
         (uint8_t *)(range->shadow_base + range->shadow_size), KASAN_POISON,
-        new_shadow_size - range->shadow_size);
+        new_shadow_size - range->shadow_size
+    );
     range->shadow_size = new_shadow_size;
-    range->end = new_end;
+    range->end         = new_end;
 }
 
 void kasan_poison(const void *addr, size_t size) {
     if (!kasan_initialized || size == 0 || addr == NULL)
         return;
     uintptr_t start = (uintptr_t)addr;
-    uintptr_t end = start + size;
+    uintptr_t end   = start + size;
     if (end < start)
         return;
 
@@ -295,7 +299,7 @@ void kasan_unpoison(const void *addr, size_t size) {
     if (!kasan_initialized || size == 0 || addr == NULL)
         return;
     uintptr_t start = (uintptr_t)addr;
-    uintptr_t end = start + size;
+    uintptr_t end   = start + size;
     if (end < start)
         return;
 
@@ -313,7 +317,7 @@ void kasan_check_range(const void *addr, size_t size, bool is_write, const char 
     if (!kasan_is_active() || size == 0 || addr == NULL)
         return;
     uintptr_t start = (uintptr_t)addr;
-    uintptr_t end = start + size;
+    uintptr_t end   = start + size;
     if (end < start) {
         kasan_report(reason, start, size, is_write, 0xFF);
         return;

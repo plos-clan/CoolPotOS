@@ -19,10 +19,10 @@
 #    include "io.h"
 #endif
 
-extern pcb_t kernel_process;
+extern pcb_t                 kernel_process;
 extern _Atomic volatile bool scheduler_status;
-extern tty_t *current_session;
-extern irq_action_t actions[ARCH_MAX_IRQ_NUM];
+extern tty_t                *current_session;
+extern irq_action_t          actions[ARCH_MAX_IRQ_NUM];
 
 typedef struct {
     UINT16 object_size;
@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
     ACPI_OSD_EXEC_CALLBACK func;
-    void *ctx;
+    void                  *ctx;
 } acpica_exec_ctx_t;
 
 static volatile UINT32 acpica_exec_count = 0;
@@ -82,7 +82,8 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEA
 }
 
 ACPI_STATUS AcpiOsPhysicalTableOverride(
-    ACPI_TABLE_HEADER *ExistingTable, ACPI_PHYSICAL_ADDRESS *NewAddress, UINT32 *NewTableLength) {
+    ACPI_TABLE_HEADER *ExistingTable, ACPI_PHYSICAL_ADDRESS *NewAddress, UINT32 *NewTableLength
+) {
     (void)ExistingTable;
     if (NewAddress) {
         *NewAddress = 0;
@@ -105,7 +106,7 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *OutHandle) {
         return AE_NO_MEMORY;
     }
 
-    *lock = SPIN_INIT;
+    *lock      = SPIN_INIT;
     *OutHandle = (ACPI_SPINLOCK)lock;
     return AE_OK;
 }
@@ -143,8 +144,8 @@ ACPI_STATUS AcpiOsCreateSemaphore(UINT32 MaxUnits, UINT32 InitialUnits, ACPI_SEM
         return AE_NO_MEMORY;
     }
 
-    sem->lock = SPIN_INIT;
-    sem->cnt = InitialUnits;
+    sem->lock    = SPIN_INIT;
+    sem->cnt     = InitialUnits;
     sem->invalid = false;
 
     *OutHandle = (ACPI_SEMAPHORE)sem;
@@ -218,7 +219,8 @@ void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS Where, ACPI_SIZE Length) {
     void *vaddr = phys_to_virt(Where);
     page_map_range(
         get_kernel_pagedir(), (uint64_t)vaddr & ~(PAGE_SIZE - 1), Where & ~(PAGE_SIZE - 1), Length,
-        KERNEL_PTE_FLAGS);
+        KERNEL_PTE_FLAGS
+    );
     return vaddr;
 }
 
@@ -250,7 +252,7 @@ AcpiOsCreateCache(char *CacheName, UINT16 ObjectSize, UINT16 MaxDepth, ACPI_CACH
     }
 
     cache->object_size = ObjectSize;
-    *ReturnCache = (ACPI_CACHE_T *)cache;
+    *ReturnCache       = (ACPI_CACHE_T *)cache;
     return AE_OK;
 }
 
@@ -283,7 +285,7 @@ ACPI_STATUS AcpiOsReleaseObject(ACPI_CACHE_T *Cache, void *Object) {
 
 typedef struct acpica_irq_handler_arg {
     ACPI_OSD_HANDLER irq_handler;
-    void *ctx;
+    void            *ctx;
 } acpica_irq_handler_arg_t;
 
 void acpica_irq_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
@@ -294,7 +296,8 @@ void acpica_irq_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
 }
 
 ACPI_STATUS AcpiOsInstallInterruptHandler(
-    UINT32 InterruptNumber, ACPI_OSD_HANDLER ServiceRoutine, void *Context) {
+    UINT32 InterruptNumber, ACPI_OSD_HANDLER ServiceRoutine, void *Context
+) {
     acpica_irq_handler_arg_t *arg;
 
     if (!ServiceRoutine) {
@@ -306,18 +309,19 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(
         return AE_NO_MEMORY;
     }
     arg->irq_handler = ServiceRoutine;
-    arg->ctx = Context;
+    arg->ctx         = Context;
 #if defined(__x86_64__) || defined(__amd64__)
     extern intctl_t apic_controller;
     irq_regist_irq(
         InterruptNumber + IRQ_BASE_VECTOR, acpica_irq_handler, InterruptNumber, arg,
-        &apic_controller, "acpica_irq_handler", 0, IO_APIC);
+        &apic_controller, "acpica_irq_handler", 0, IO_APIC
+    );
 #endif
     return AE_OK;
 }
 
 ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 InterruptNumber, ACPI_OSD_HANDLER ServiceRoutine) {
-    uint64_t vector = (uint64_t)InterruptNumber + IRQ_BASE_VECTOR;
+    uint64_t      vector = (uint64_t)InterruptNumber + IRQ_BASE_VECTOR;
     irq_action_t *action;
 
     if (!ServiceRoutine) {
@@ -343,12 +347,12 @@ ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 InterruptNumber, ACPI_OSD_HANDLE
         free(action->name);
     }
 
-    action->handler = NULL;
-    action->data = NULL;
+    action->handler        = NULL;
+    action->data           = NULL;
     action->irq_controller = NULL;
-    action->name = NULL;
-    action->flags = 0;
-    action->type = 0;
+    action->name           = NULL;
+    action->flags          = 0;
+    action->type           = 0;
     return AE_OK;
 }
 
@@ -380,7 +384,7 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Functio
     }
 
     ctx->func = Function;
-    ctx->ctx = Context;
+    ctx->ctx  = Context;
     __atomic_add_fetch(&acpica_exec_count, 1, __ATOMIC_RELAXED);
     create_kernel_thread("acpica_exec", acpica_exec_thread, ctx, NULL, NICE_TO_PRIO(0));
     return AE_OK;
@@ -558,11 +562,11 @@ AcpiOsWritePciConfiguration(ACPI_PCI_ID *PciId, UINT32 Reg, UINT64 Value, UINT32
     switch (Width) {
     case 8:
         shift = (Reg & 3U) * 8U;
-        data = (data & ~(0xFFU << shift)) | ((uint32_t)(Value & 0xFFU) << shift);
+        data  = (data & ~(0xFFU << shift)) | ((uint32_t)(Value & 0xFFU) << shift);
         break;
     case 16:
         shift = (Reg & 2U) * 8U;
-        data = (data & ~(0xFFFFU << shift)) | ((uint32_t)(Value & 0xFFFFU) << shift);
+        data  = (data & ~(0xFFFFU << shift)) | ((uint32_t)(Value & 0xFFFFU) << shift);
         break;
     case 32:
         data = (uint32_t)Value;
@@ -570,7 +574,8 @@ AcpiOsWritePciConfiguration(ACPI_PCI_ID *PciId, UINT32 Reg, UINT64 Value, UINT32
     case 64:
         pci_write(
             PciId->Bus, PciId->Device, PciId->Function, PciId->Segment, (Reg & ~0x3U) + 4,
-            (uint32_t)(Value >> 32));
+            (uint32_t)(Value >> 32)
+        );
         data = (uint32_t)Value;
         break;
     }
@@ -612,7 +617,7 @@ ACPI_STATUS AcpiOsEnterSleep(UINT8 SleepState, UINT32 RegaValue, UINT32 RegbValu
 }
 
 void AcpiOsPrintf(const char *Format, ...) {
-    char buffer[512];
+    char    buffer[512];
     va_list args;
 
     va_start(args, Format);
@@ -654,7 +659,7 @@ ACPI_STATUS AcpiOsGetLine(char *Buffer, UINT32 BufferLength, UINT32 *BytesRead) 
         }
     }
     Buffer[count] = '\0';
-    *BytesRead = count;
+    *BytesRead    = count;
     return AE_OK;
 }
 
@@ -684,7 +689,8 @@ void AcpiOsTracePoint(ACPI_TRACE_EVENT_TYPE Type, BOOLEAN Begin, UINT8 *Aml, cha
 }
 
 ACPI_STATUS AcpiOsGetTableByName(
-    char *Signature, UINT32 Instance, ACPI_TABLE_HEADER **Table, ACPI_PHYSICAL_ADDRESS *Address) {
+    char *Signature, UINT32 Instance, ACPI_TABLE_HEADER **Table, ACPI_PHYSICAL_ADDRESS *Address
+) {
     ACPI_STATUS st;
 
     if (!Signature || !Table) {
@@ -698,10 +704,11 @@ ACPI_STATUS AcpiOsGetTableByName(
 }
 
 ACPI_STATUS AcpiOsGetTableByIndex(
-    UINT32 Index, ACPI_TABLE_HEADER **Table, UINT32 *Instance, ACPI_PHYSICAL_ADDRESS *Address) {
-    ACPI_STATUS st;
+    UINT32 Index, ACPI_TABLE_HEADER **Table, UINT32 *Instance, ACPI_PHYSICAL_ADDRESS *Address
+) {
+    ACPI_STATUS        st;
     ACPI_TABLE_HEADER *hdr;
-    UINT32 inst = 1;
+    UINT32             inst = 1;
 
     if (!Table) {
         return AE_BAD_PARAMETER;
@@ -742,7 +749,7 @@ ACPI_STATUS AcpiOsGetTableByAddress(ACPI_PHYSICAL_ADDRESS Address, ACPI_TABLE_HE
 
     while (true) {
         ACPI_TABLE_HEADER *hdr;
-        ACPI_STATUS st = AcpiGetTableByIndex(index, &hdr);
+        ACPI_STATUS        st = AcpiGetTableByIndex(index, &hdr);
         if (ACPI_FAILURE(st)) {
             break;
         }

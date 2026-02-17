@@ -1,26 +1,26 @@
 #pragma once
 
-#include "mem/alloc/alloc.h"
 #include "types.h"
+#include "mem/alloc/alloc.h"
 
 #define USB_VEC_DEFINE(type, name)                                                                 \
     typedef struct name {                                                                          \
-        type *data;                                                                                \
+        type  *data;                                                                               \
         size_t len;                                                                                \
         size_t cap;                                                                                \
     } name;                                                                                        \
     static inline void name##_init(name *vec) {                                                    \
         vec->data = NULL;                                                                          \
-        vec->len = 0;                                                                              \
-        vec->cap = 0;                                                                              \
+        vec->len  = 0;                                                                             \
+        vec->cap  = 0;                                                                             \
     }                                                                                              \
     static inline void name##_free(name *vec) {                                                    \
         if (vec->data) {                                                                           \
             free(vec->data);                                                                       \
         }                                                                                          \
         vec->data = NULL;                                                                          \
-        vec->len = 0;                                                                              \
-        vec->cap = 0;                                                                              \
+        vec->len  = 0;                                                                             \
+        vec->cap  = 0;                                                                             \
     }                                                                                              \
     static inline void name##_clear(name *vec) {                                                   \
         vec->len = 0;                                                                              \
@@ -34,7 +34,7 @@
             return false;                                                                          \
         }                                                                                          \
         vec->data = new_data;                                                                      \
-        vec->cap = new_cap;                                                                        \
+        vec->cap  = new_cap;                                                                       \
         return true;                                                                               \
     }                                                                                              \
     static inline bool name##_push(name *vec, type value) {                                        \

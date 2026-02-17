@@ -37,14 +37,14 @@
 static void rekey(uint8_t *key, const uint8_t *new_key, unsigned int key_size) {
     const uint8_t inner_pad = (uint8_t)0x36;
     const uint8_t outer_pad = (uint8_t)0x5c;
-    unsigned int i;
+    unsigned int  i;
 
     for (i = 0; i < key_size; ++i) {
-        key[i] = inner_pad ^ new_key[i];
+        key[i]                        = inner_pad ^ new_key[i];
         key[i + TC_SHA256_BLOCK_SIZE] = outer_pad ^ new_key[i];
     }
     for (; i < TC_SHA256_BLOCK_SIZE; ++i) {
-        key[i] = inner_pad;
+        key[i]                        = inner_pad;
         key[i + TC_SHA256_BLOCK_SIZE] = outer_pad;
     }
 }
@@ -55,7 +55,7 @@ int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key, unsigned int key_size
         return TC_CRYPTO_FAIL;
     }
 
-    uint8_t dummy_key[TC_SHA256_BLOCK_SIZE];
+    uint8_t                     dummy_key[TC_SHA256_BLOCK_SIZE];
     struct tc_hmac_state_struct dummy_state;
 
     if (key_size <= TC_SHA256_BLOCK_SIZE) {

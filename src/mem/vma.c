@@ -1,6 +1,6 @@
 #include "mem/vma.h"
-#include "krlibc.h"
 #include "mem/heap.h"
+#include "krlibc.h"
 
 vma_t *vma_alloc(void) {
     vma_t *vma = (vma_t *)malloc(sizeof(vma_t));
@@ -8,7 +8,7 @@ vma_t *vma_alloc(void) {
         return NULL;
 
     memset(vma, 0, sizeof(vma_t));
-    vma->vm_fd = -1;
+    vma->vm_fd  = -1;
     vma->shm_id = -1;
     return vma;
 }
@@ -55,13 +55,13 @@ int vma_insert(vma_manager_t *mgr, vma_t *new_vma) {
         return -1;
     }
 
-    vma_t *vma = mgr->vma_list;
+    vma_t *vma  = mgr->vma_list;
     vma_t *prev = NULL;
 
     // 找到正确的插入位置
     while (vma && vma->vm_start < new_vma->vm_start) {
         prev = vma;
-        vma = vma->vm_next;
+        vma  = vma->vm_next;
     }
 
     // 插入VMA
@@ -113,10 +113,10 @@ int vma_split(vma_t *vma, unsigned long addr) {
         return -1;
 
     // 复制属性
-    *new_vma = *vma;
+    *new_vma          = *vma;
     new_vma->vm_start = addr;
-    new_vma->vm_next = vma->vm_next;
-    new_vma->vm_prev = vma;
+    new_vma->vm_next  = vma->vm_next;
+    new_vma->vm_prev  = vma;
 
     // 调整文件偏移量
     if (vma->vm_type == VMA_TYPE_FILE) {
@@ -124,7 +124,7 @@ int vma_split(vma_t *vma, unsigned long addr) {
     }
 
     // 更新原VMA
-    vma->vm_end = addr;
+    vma->vm_end  = addr;
     vma->vm_next = new_vma;
 
     // 更新链表
@@ -148,7 +148,7 @@ int vma_merge(vma_t *vma1, vma_t *vma2) {
     }
 
     // 合并VMA
-    vma1->vm_end = vma2->vm_end;
+    vma1->vm_end  = vma2->vm_end;
     vma1->vm_next = vma2->vm_next;
 
     if (vma2->vm_next) {
@@ -207,7 +207,7 @@ void vma_manager_exit_cleanup(vma_manager_t *mgr) {
 
     vma_t *vma = mgr->vma_list;
     vma_t *next;
-    int cleaned_count = 0;
+    int    cleaned_count = 0;
 
     // 遍历并清理所有VMA
     while (vma) {
@@ -237,7 +237,7 @@ void vma_manager_exit_cleanup(vma_manager_t *mgr) {
     // 重置管理器状态
     mgr->vma_list = NULL;
     mgr->vm_total = 0;
-    mgr->vm_used = 0;
+    mgr->vm_used  = 0;
 }
 
 bool vma_manager_clone(vma_manager_t *src_mgr, vma_manager_t *dst_mgr) {
@@ -251,7 +251,7 @@ bool vma_manager_clone(vma_manager_t *src_mgr, vma_manager_t *dst_mgr) {
     // 2. 复制管理器的基本信息
     dst_mgr->vma_list = NULL; // 链表头先设为 NULL
     dst_mgr->vm_total = src_mgr->vm_total;
-    dst_mgr->vm_used = 0; // vm_used 将在插入 VMA 时更新
+    dst_mgr->vm_used  = 0; // vm_used 将在插入 VMA 时更新
 
     vma_t *src_vma = src_mgr->vma_list;
     vma_t *new_vma = NULL;
@@ -271,19 +271,19 @@ bool vma_manager_clone(vma_manager_t *src_mgr, vma_manager_t *dst_mgr) {
 
         // 3.2. 复制 VMA 的基本属性
         // 复制除了指针以外的所有字段
-        new_vma->vm_start = src_vma->vm_start;
-        new_vma->vm_end = src_vma->vm_end;
-        new_vma->vm_flags = src_vma->vm_flags;
-        new_vma->vm_type = src_vma->vm_type;
-        new_vma->vm_fd = src_vma->vm_fd;
+        new_vma->vm_start  = src_vma->vm_start;
+        new_vma->vm_end    = src_vma->vm_end;
+        new_vma->vm_flags  = src_vma->vm_flags;
+        new_vma->vm_type   = src_vma->vm_type;
+        new_vma->vm_fd     = src_vma->vm_fd;
         new_vma->vm_offset = src_vma->vm_offset;
-        new_vma->shm_id = src_vma->shm_id;
+        new_vma->shm_id    = src_vma->shm_id;
 
         // 链表指针在 vma_alloc 中初始化为 NULL，在 vma_insert 中设置
 
         // 3.3. 深拷贝 vm_name
         if (src_vma->vm_name) {
-            size_t name_len = strlen(src_vma->vm_name) + 1;
+            size_t name_len  = strlen(src_vma->vm_name) + 1;
             new_vma->vm_name = (char *)malloc(name_len);
             if (!new_vma->vm_name) {
                 // 如果名称分配失败，清理并退出

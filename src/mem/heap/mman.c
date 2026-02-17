@@ -1,9 +1,9 @@
-#include "krlibc.h"
 #include "mem/alloc/alloc.h"
 #include "mem/alloc/area.h"
 #include "mem/alloc/block.h"
 #include "mem/alloc/freelist.h"
 #include "mem/alloc/large-blk.h"
+#include "krlibc.h"
 
 // mman_free 中使用的临时函数
 // 用于将内存块从空闲链表中分离
@@ -21,14 +21,14 @@ bool mman_init(mman_t man, void *ptr, size_t size) {
         return false;
     if (size != SIZE_2M && size != SIZE_4k)
         return false;
-    man->main.ptr = ptr;
+    man->main.ptr          = ptr;
     man->main.alloced_size = 0;
-    man->main.next = NULL;
-    man->size = size;
-    man->alloced_size = 0;
-    man->cb_reqmem = NULL;
-    man->cb_delmem = NULL;
-    man->large_blk = NULL;
+    man->main.next         = NULL;
+    man->size              = size;
+    man->alloced_size      = 0;
+    man->cb_reqmem         = NULL;
+    man->cb_delmem         = NULL;
+    man->large_blk         = NULL;
 #pragma unroll
     for (size_t i = 0; i < FREELIST_NUM; i++) {
         man->freed[i] = NULL;
@@ -95,10 +95,10 @@ static bool mman_reqmem(mman_t man, size_t size) {
     blk_setalloced(pool, blk_size(pool));
     blk_setfreed(ptr, blk_size(ptr));
 
-    pool->ptr = mem;
+    pool->ptr          = mem;
     pool->alloced_size = 0;
-    pool->next = man->main.next;
-    man->main.next = pool;
+    pool->next         = man->main.next;
+    man->main.next     = pool;
 
     freelist_put(&man->large_blk, ptr);
     return true;
@@ -116,7 +116,7 @@ static bool mman_delmem(mman_t man, mman_pool_t pool) {
     if (prev == NULL)
         return false; // error
 
-    prev->next = pool->next;
+    prev->next  = pool->next;
     size_t size = allocarea_size(pool->ptr);
     man->cb_delmem(pool->ptr, size);
     man->size -= size;
@@ -219,7 +219,7 @@ void mman_free(mman_t man, void *ptr) {
             return;
     }
 
-    size_t size = blk_size(ptr);
+    size_t      size = blk_size(ptr);
     mman_pool_t pool = blk_poolptr(ptr);
     pool->alloced_size -= size;
     man->alloced_size -= size;

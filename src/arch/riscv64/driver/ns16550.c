@@ -10,8 +10,8 @@ static inline uint32_t uart_calc_offset(uart_device_t *uart, uint8_t reg) {
 
 /* 读寄存器 - 支持不同访问宽度 */
 static uint32_t uart_read_reg(uart_device_t *uart, uint8_t reg) {
-    uint32_t offset = uart_calc_offset(uart, reg);
-    volatile void *addr = (volatile char *)uart->base_addr + offset;
+    uint32_t       offset = uart_calc_offset(uart, reg);
+    volatile void *addr   = (volatile char *)uart->base_addr + offset;
 
     switch (uart->access_width) {
     case UART_ACCESS_8BIT:
@@ -27,8 +27,8 @@ static uint32_t uart_read_reg(uart_device_t *uart, uint8_t reg) {
 
 /* 写寄存器 - 支持不同访问宽度 */
 static void uart_write_reg(uart_device_t *uart, uint8_t reg, uint32_t value) {
-    uint32_t offset = uart_calc_offset(uart, reg);
-    volatile void *addr = (volatile char *)uart->base_addr + offset;
+    uint32_t       offset = uart_calc_offset(uart, reg);
+    volatile void *addr   = (volatile char *)uart->base_addr + offset;
 
     switch (uart->access_width) {
     case UART_ACCESS_8BIT:
@@ -63,24 +63,25 @@ void uart_init(uart_device_t *uart, volatile void *base_addr, uart_config_t *con
  */
 void uart_init_gas(
     uart_device_t *uart, volatile void *base_addr, uint32_t reg_shift,
-    uart_access_width_t access_width, uart_config_t *config) {
+    uart_access_width_t access_width, uart_config_t *config
+) {
     if (uart == NULL || base_addr == NULL) {
         return;
     }
 
-    uart->base_addr = base_addr;
-    uart->addr_space = UART_ADDR_SPACE_MEMORY;
+    uart->base_addr    = base_addr;
+    uart->addr_space   = UART_ADDR_SPACE_MEMORY;
     uart->access_width = access_width;
-    uart->reg_shift = reg_shift;
-    uart->reg_stride = 0; // 优先使用reg_shift
-    uart->clock_freq = UART_CLOCK_FREQ;
+    uart->reg_shift    = reg_shift;
+    uart->reg_stride   = 0; // 优先使用reg_shift
+    uart->clock_freq   = UART_CLOCK_FREQ;
 
     /* 默认配置 */
     if (config == NULL) {
-        uart->config.baudrate = 115200;
-        uart->config.data_bits = UART_LCR_WLEN8;
-        uart->config.stop_bits = 0;
-        uart->config.parity = 0;
+        uart->config.baudrate    = 115200;
+        uart->config.data_bits   = UART_LCR_WLEN8;
+        uart->config.stop_bits   = 0;
+        uart->config.parity      = 0;
         uart->config.fifo_enable = true;
     } else {
         uart->config = *config;
@@ -100,7 +101,8 @@ void uart_init_gas(
     if (uart->config.fifo_enable) {
         uart_write_reg(
             uart, UART_FCR,
-            UART_FCR_ENABLE | UART_FCR_CLEAR_RX | UART_FCR_CLEAR_TX | UART_FCR_TRIGGER_14);
+            UART_FCR_ENABLE | UART_FCR_CLEAR_RX | UART_FCR_CLEAR_TX | UART_FCR_TRIGGER_14
+        );
     }
 
     /* 配置调制解调器控制寄存器 */

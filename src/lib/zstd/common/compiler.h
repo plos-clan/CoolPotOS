@@ -134,9 +134,9 @@
 
 #define PREFETCH_AREA(p, s)                                                                        \
     {                                                                                              \
-        const char *const _ptr = (const char *)(p);                                                \
-        size_t const _size = (size_t)(s);                                                          \
-        size_t _pos;                                                                               \
+        const char *const _ptr  = (const char *)(p);                                               \
+        size_t const      _size = (size_t)(s);                                                     \
+        size_t            _pos;                                                                    \
         for (_pos = 0; _pos < _size; _pos += CACHELINE_SIZE) {                                     \
             PREFETCH_L2(_ptr + _pos);                                                              \
         }                                                                                          \

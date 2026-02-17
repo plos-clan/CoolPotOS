@@ -10,8 +10,8 @@ static bool xhci_host_configure_endpoints(void *ctx, uint8_t slot_id, UsbEndpoin
 
 const HostControllerOps xhci_host_ops = {
     .configure_endpoints = xhci_host_configure_endpoints,
-    .submit_control = xhci_submit_control,
-    .submit_transfer = xhci_submit_transfer,
+    .submit_control      = xhci_submit_control,
+    .submit_transfer     = xhci_submit_transfer,
 };
 
 Xhci *xhci_new(uintptr_t base_addr) {
@@ -21,11 +21,11 @@ Xhci *xhci_new(uintptr_t base_addr) {
     }
     memset(xhci, 0, sizeof(Xhci));
 
-    xhci->cap = capability_new(base_addr);
+    xhci->cap         = capability_new(base_addr);
     uintptr_t op_base = base_addr + capability_length(xhci->cap);
     uintptr_t db_base = base_addr + capability_db_off(xhci->cap);
 
-    xhci->op = operational_new(op_base);
+    xhci->op       = operational_new(op_base);
     xhci->doorbell = doorbell_new(db_base);
     xhci->ctx_size = capability_context_64byte(xhci->cap) ? 64 : 32;
 
@@ -50,7 +50,7 @@ void xhci_poll(Xhci *xhci) {
 bool xhci_test_command_ring(Xhci *xhci) {
     kinfo("Testing command ring with no op");
 
-    Trb cmd = trb_new_no_op_cmd();
+    Trb      cmd  = trb_new_no_op_cmd();
     uint32_t code = 0;
     if (!xhci_send_command(xhci, cmd, &code, NULL)) {
         kerror("No op command timeout or error");
@@ -67,9 +67,9 @@ bool xhci_test_command_ring(Xhci *xhci) {
 }
 
 bool xhci_enable_slot(Xhci *xhci, uint8_t *slot_id) {
-    Trb cmd = trb_new_enable_slot();
+    Trb      cmd  = trb_new_enable_slot();
     uint32_t code = 0;
-    uint8_t sid = 0;
+    uint8_t  sid  = 0;
     if (!xhci_send_command(xhci, cmd, &code, &sid)) {
         return false;
     }
@@ -143,10 +143,10 @@ bool xhci_wait_event(Xhci *xhci, uint32_t type, const uint8_t *slot_filter, Trb 
 void xhci_handle_one_event(Xhci *xhci, Trb evt) {
     switch (trb_get_type(evt)) {
     case TRB_TRANSFER_EVENT: {
-        uint8_t slot_id = trb_slot_id(evt);
-        uint32_t code = trb_completion_code(evt);
-        uint32_t dci = trb_endpoint_id(evt);
-        uint32_t len = trb_transfer_length(evt);
+        uint8_t  slot_id = trb_slot_id(evt);
+        uint32_t code    = trb_completion_code(evt);
+        uint32_t dci     = trb_endpoint_id(evt);
+        uint32_t len     = trb_transfer_length(evt);
         xhci_complete_transfer(xhci, slot_id, dci, code, len);
         break;
     }

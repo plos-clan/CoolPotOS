@@ -44,9 +44,9 @@ static inline unsigned int fdt_data_size_(void *fdt) {
 }
 
 static int fdt_splice_(void *fdt, void *splicepoint, int oldlen, int newlen) {
-    char *p = splicepoint;
+    char        *p     = splicepoint;
     unsigned int dsize = fdt_data_size_(fdt);
-    size_t soff = p - (char *)fdt;
+    size_t       soff  = p - (char *)fdt;
 
     if ((oldlen < 0) || (soff + oldlen < soff) || (soff + oldlen > dsize))
         return -FDT_ERR_BADOFFSET;
@@ -90,7 +90,7 @@ static void fdt_del_last_string_(void *fdt, const char *s) {
 
 static int fdt_splice_string_(void *fdt, int newlen) {
     void *p = (char *)fdt + fdt_off_dt_strings(fdt) + fdt_size_dt_strings(fdt);
-    int err;
+    int   err;
 
     if ((err = fdt_splice_(fdt, p, 0, newlen)))
         return err;
@@ -109,7 +109,7 @@ static int fdt_splice_string_(void *fdt, int newlen) {
  * @return offset of string in the string table (whether found or added)
  */
 static int fdt_find_add_string_(void *fdt, const char *s, int *allocated) {
-    char *strtab = (char *)fdt + fdt_off_dt_strings(fdt);
+    char       *strtab = (char *)fdt + fdt_off_dt_strings(fdt);
     const char *p;
     char *new;
     int len = strlen(s) + 1;
@@ -136,17 +136,17 @@ static int fdt_find_add_string_(void *fdt, const char *s, int *allocated) {
 
 int fdt_add_mem_rsv(void *fdt, uint64_t address, uint64_t size) {
     struct fdt_reserve_entry *re;
-    int err;
+    int                       err;
 
     FDT_RW_PROBE(fdt);
 
-    re = fdt_mem_rsv_w_(fdt, fdt_num_mem_rsv(fdt));
+    re  = fdt_mem_rsv_w_(fdt, fdt_num_mem_rsv(fdt));
     err = fdt_splice_mem_rsv_(fdt, re, 0, 1);
     if (err)
         return err;
 
     re->address = cpu_to_fdt64(address);
-    re->size = cpu_to_fdt64(size);
+    re->size    = cpu_to_fdt64(size);
     return 0;
 }
 
@@ -162,7 +162,8 @@ int fdt_del_mem_rsv(void *fdt, int n) {
 }
 
 static int fdt_resize_property_(
-    void *fdt, int nodeoffset, const char *name, int len, struct fdt_property **prop) {
+    void *fdt, int nodeoffset, const char *name, int len, struct fdt_property **prop
+) {
     int oldlen;
     int err;
 
@@ -178,7 +179,8 @@ static int fdt_resize_property_(
 }
 
 static int fdt_add_property_(
-    void *fdt, int nodeoffset, const char *name, int len, struct fdt_property **prop) {
+    void *fdt, int nodeoffset, const char *name, int len, struct fdt_property **prop
+) {
     int proplen;
     int nextoffset;
     int namestroff;
@@ -192,7 +194,7 @@ static int fdt_add_property_(
     if (namestroff < 0)
         return namestroff;
 
-    *prop = fdt_offset_ptr_w_(fdt, nextoffset);
+    *prop   = fdt_offset_ptr_w_(fdt, nextoffset);
     proplen = sizeof(**prop) + FDT_TAGALIGN(len);
 
     err = fdt_splice_struct_(fdt, *prop, 0, proplen);
@@ -203,16 +205,16 @@ static int fdt_add_property_(
         return err;
     }
 
-    (*prop)->tag = cpu_to_fdt32(FDT_PROP);
+    (*prop)->tag     = cpu_to_fdt32(FDT_PROP);
     (*prop)->nameoff = cpu_to_fdt32(namestroff);
-    (*prop)->len = cpu_to_fdt32(len);
+    (*prop)->len     = cpu_to_fdt32(len);
     return 0;
 }
 
 int fdt_set_name(void *fdt, int nodeoffset, const char *name) {
     char *namep;
-    int oldlen, newlen;
-    int err;
+    int   oldlen, newlen;
+    int   err;
 
     FDT_RW_PROBE(fdt);
 
@@ -231,9 +233,10 @@ int fdt_set_name(void *fdt, int nodeoffset, const char *name) {
 }
 
 int fdt_setprop_placeholder(
-    void *fdt, int nodeoffset, const char *name, int len, void **prop_data) {
+    void *fdt, int nodeoffset, const char *name, int len, void **prop_data
+) {
     struct fdt_property *prop;
-    int err;
+    int                  err;
 
     FDT_RW_PROBE(fdt);
 
@@ -249,7 +252,7 @@ int fdt_setprop_placeholder(
 
 int fdt_setprop(void *fdt, int nodeoffset, const char *name, const void *val, int len) {
     void *prop_data;
-    int err;
+    int   err;
 
     err = fdt_setprop_placeholder(fdt, nodeoffset, name, len, &prop_data);
     if (err)
@@ -262,14 +265,14 @@ int fdt_setprop(void *fdt, int nodeoffset, const char *name, const void *val, in
 
 int fdt_appendprop(void *fdt, int nodeoffset, const char *name, const void *val, int len) {
     struct fdt_property *prop;
-    int err, oldlen, newlen;
+    int                  err, oldlen, newlen;
 
     FDT_RW_PROBE(fdt);
 
     prop = fdt_get_property_w(fdt, nodeoffset, name, &oldlen);
     if (prop) {
         newlen = len + oldlen;
-        err = fdt_splice_struct_(fdt, prop->data, FDT_TAGALIGN(oldlen), FDT_TAGALIGN(newlen));
+        err    = fdt_splice_struct_(fdt, prop->data, FDT_TAGALIGN(oldlen), FDT_TAGALIGN(newlen));
         if (err)
             return err;
         prop->len = cpu_to_fdt32(newlen);
@@ -285,7 +288,7 @@ int fdt_appendprop(void *fdt, int nodeoffset, const char *name, const void *val,
 
 int fdt_delprop(void *fdt, int nodeoffset, const char *name) {
     struct fdt_property *prop;
-    int len, proplen;
+    int                  len, proplen;
 
     FDT_RW_PROBE(fdt);
 
@@ -299,11 +302,11 @@ int fdt_delprop(void *fdt, int nodeoffset, const char *name) {
 
 int fdt_add_subnode_namelen(void *fdt, int parentoffset, const char *name, int namelen) {
     struct fdt_node_header *nh;
-    int offset, nextoffset;
-    int nodelen;
-    int err;
-    uint32_t tag;
-    fdt32_t *endtag;
+    int                     offset, nextoffset;
+    int                     nodelen;
+    int                     err;
+    uint32_t                tag;
+    fdt32_t                *endtag;
 
     FDT_RW_PROBE(fdt);
 
@@ -320,10 +323,10 @@ int fdt_add_subnode_namelen(void *fdt, int parentoffset, const char *name, int n
         return -FDT_ERR_INTERNAL;
     do {
         offset = nextoffset;
-        tag = fdt_next_tag(fdt, offset, &nextoffset);
+        tag    = fdt_next_tag(fdt, offset, &nextoffset);
     } while ((tag == FDT_PROP) || (tag == FDT_NOP));
 
-    nh = fdt_offset_ptr_w_(fdt, offset);
+    nh      = fdt_offset_ptr_w_(fdt, offset);
     nodelen = sizeof(*nh) + FDT_TAGALIGN(namelen + 1) + FDT_TAGSIZE;
 
     err = fdt_splice_struct_(fdt, nh, 0, nodelen);
@@ -333,7 +336,7 @@ int fdt_add_subnode_namelen(void *fdt, int parentoffset, const char *name, int n
     nh->tag = cpu_to_fdt32(FDT_BEGIN_NODE);
     memset(nh->name, 0, FDT_TAGALIGN(namelen + 1));
     memcpy(nh->name, name, namelen);
-    endtag = (fdt32_t *)((char *)nh + nodelen - FDT_TAGSIZE);
+    endtag  = (fdt32_t *)((char *)nh + nodelen - FDT_TAGSIZE);
     *endtag = cpu_to_fdt32(FDT_END_NODE);
 
     return offset;
@@ -360,7 +363,7 @@ fdt_packblocks_(const char *old, char *new, int mem_rsv_size, int struct_size, i
     int mem_rsv_off, struct_off, strings_off;
 
     mem_rsv_off = FDT_ALIGN(sizeof(struct fdt_header), 8);
-    struct_off = mem_rsv_off + mem_rsv_size;
+    struct_off  = mem_rsv_off + mem_rsv_size;
     strings_off = struct_off + struct_size;
 
     memmove(new + mem_rsv_off, old + fdt_off_mem_rsvmap(old), mem_rsv_size);
@@ -376,12 +379,12 @@ fdt_packblocks_(const char *old, char *new, int mem_rsv_size, int struct_size, i
 }
 
 int fdt_open_into(const void *fdt, void *buf, int bufsize) {
-    int err;
-    int mem_rsv_size, struct_size;
-    int newsize;
+    int         err;
+    int         mem_rsv_size, struct_size;
+    int         newsize;
     const char *fdtstart = fdt;
-    const char *fdtend = fdtstart + fdt_totalsize(fdt);
-    char *tmp;
+    const char *fdtend   = fdtstart + fdt_totalsize(fdt);
+    char       *tmp;
 
     FDT_RO_PROBE(fdt);
 

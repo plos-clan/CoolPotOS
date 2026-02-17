@@ -159,7 +159,7 @@ static inline void *freelists_aligned_match(freelists_t lists, size_t size, size
 static inline void freelist_put(freelist_t *list_p, freelist_t ptr) {
     ptr->next = *list_p;
     ptr->prev = NULL;
-    *list_p = ptr;
+    *list_p   = ptr;
     if (ptr->next)
         ptr->next->prev = ptr;
 }
@@ -174,8 +174,8 @@ static inline void freelist_put(freelist_t *list_p, freelist_t ptr) {
  *\return 是否成功
  */
 static inline bool freelists_put(freelists_t lists, void *_ptr) {
-    freelist_t ptr = _ptr;
-    size_t size = blk_size(ptr);
+    freelist_t ptr  = _ptr;
+    size_t     size = blk_size(ptr);
     if (size == 0)
         return true;
     int id = freelists_size2id(size);

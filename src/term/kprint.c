@@ -1,13 +1,13 @@
-#include "driver/tty.h"
-#include "krlibc.h"
+#include "term/klog.h"
 #include "lib/sprintf.h"
 #include "lock.h"
-#include "term/klog.h"
+#include "krlibc.h"
+#include "driver/tty.h"
 
 spin_t print_lock = SPIN_INIT;
 
-static char *const color_codes[] = {[BLACK] = "0", [RED] = "1",     [GREEN] = "2", [YELLOW] = "3",
-                                    [BLUE] = "4",  [MAGENTA] = "5", [CYAN] = "6",  [WHITE] = "7"};
+static char *const color_codes[] = { [BLACK] = "0", [RED] = "1",     [GREEN] = "2", [YELLOW] = "3",
+                                     [BLUE] = "4",  [MAGENTA] = "5", [CYAN] = "6",  [WHITE] = "7" };
 
 void add_color(char *dest, uint32_t color, int is_background) {
     strcat(dest, "\033[");
@@ -18,7 +18,7 @@ void add_color(char *dest, uint32_t color, int is_background) {
 
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     spin_lock(print_lock);
-    char buf[4096] = {0};
+    char buf[4096] = { 0 };
     add_color(buf, fcolor, false);
     add_color(buf, bcolor, true);
 
