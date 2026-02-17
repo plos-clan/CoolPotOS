@@ -52,8 +52,8 @@ void calibrate_tsc_with_hpet() {
     if (!arch_current_cpu()->arch_data.support_tsc)
         goto end;
     const uint64_t target_ns = 10 * 1000 * 1000;
-    uint64_t       tsc_start = read_tsc();
-    uint64_t       ns_start  = nano_time();
+    uint64_t tsc_start       = read_tsc();
+    uint64_t ns_start        = nano_time();
     nsleep(target_ns);
     uint64_t tsc_end   = read_tsc();
     uint64_t ns_end    = nano_time();
@@ -193,7 +193,7 @@ static uint64_t build_user_stack(
     uint64_t env_i  = 0;
     uint64_t argv_i = 0;
 
-    int    argc = 0;
+    int argc    = 0;
     char **argv = restore_argv(task->process->cmdline, task->process->cl_length, &argc);
 
     char **envp = task->process->envp;
@@ -347,7 +347,7 @@ _Noreturn void arch_switch_to_user_mode() {
         goto err;
     }
     uint64_t load_start = 0;
-    void    *entry      = load_executor_elf(data, process->directory, 0, &load_start, process);
+    void *entry         = load_executor_elf(data, process->directory, 0, &load_start, process);
     if (entry == NULL) {
         ulog("cannot load process exec file.\n");
         goto err;
@@ -377,9 +377,9 @@ _Noreturn void arch_switch_to_user_mode() {
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
         uint64_t linker_start = UINT64_MAX;
-        void    *linker_main  = NULL;
+        void *linker_main     = NULL;
         uint8_t *link_data    = NULL;
-        size_t   link_size    = 0;
+        size_t link_size      = 0;
 
         linker_main = load_interpreter_elf(
             data, get_current_directory(), &linker_start, &link_data, &link_size

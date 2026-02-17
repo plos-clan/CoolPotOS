@@ -27,8 +27,8 @@ void sata_submit(struct hba_device *dev, struct blkio_req *io_req) {
 
     header->options |= HBA_CMDH_WRITE * write;
 
-    uint16_t             count = ICEIL(io_req->len, port->device->block_size);
-    struct sata_reg_fis *fis   = (struct sata_reg_fis *)(&table->command_fis);
+    uint16_t count           = ICEIL(io_req->len, port->device->block_size);
+    struct sata_reg_fis *fis = (struct sata_reg_fis *)(&table->command_fis);
 
     if ((port->device->flags & HBA_DEV_FEXTLBA)) {
         // 如果该设备支持48位LBA寻址

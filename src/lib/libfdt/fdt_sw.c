@@ -101,7 +101,7 @@ static void *fdt_grab_space_(void *fdt, size_t len) {
 
 int fdt_create_with_flags(void *buf, int bufsize, uint32_t flags) {
     const int hdrsize = FDT_ALIGN(sizeof(struct fdt_header), sizeof(struct fdt_reserve_entry));
-    void     *fdt     = buf;
+    void *fdt         = buf;
 
     if (bufsize < hdrsize)
         return -FDT_ERR_NOSPACE;
@@ -137,7 +137,7 @@ int fdt_create(void *buf, int bufsize) {
 
 int fdt_resize(void *fdt, void *buf, int bufsize) {
     size_t headsize, tailsize;
-    char  *oldtail, *newtail;
+    char *oldtail, *newtail;
 
     FDT_SW_PROBE(fdt);
 
@@ -175,7 +175,7 @@ int fdt_resize(void *fdt, void *buf, int bufsize) {
 
 int fdt_add_reservemap_entry(void *fdt, uint64_t addr, uint64_t size) {
     struct fdt_reserve_entry *re;
-    int                       offset;
+    int offset;
 
     FDT_SW_PROBE_MEMRSV(fdt);
 
@@ -204,7 +204,7 @@ int fdt_finish_reservemap(void *fdt) {
 
 int fdt_begin_node(void *fdt, const char *name) {
     struct fdt_node_header *nh;
-    int                     namelen;
+    int namelen;
 
     FDT_SW_PROBE_STRUCT(fdt);
 
@@ -232,7 +232,7 @@ int fdt_end_node(void *fdt) {
 }
 
 static int fdt_add_string_(void *fdt, const char *s) {
-    char        *strtab     = (char *)fdt + fdt_totalsize(fdt);
+    char *strtab            = (char *)fdt + fdt_totalsize(fdt);
     unsigned int strtabsize = fdt_size_dt_strings(fdt);
     unsigned int len        = strlen(s) + 1;
     unsigned int struct_top, offset;
@@ -256,8 +256,8 @@ static void fdt_del_last_string_(void *fdt, const char *s) {
 }
 
 static int fdt_find_add_string_(void *fdt, const char *s, int *allocated) {
-    char       *strtab     = (char *)fdt + fdt_totalsize(fdt);
-    int         strtabsize = fdt_size_dt_strings(fdt);
+    char *strtab   = (char *)fdt + fdt_totalsize(fdt);
+    int strtabsize = fdt_size_dt_strings(fdt);
     const char *p;
 
     *allocated = 0;
@@ -273,8 +273,8 @@ static int fdt_find_add_string_(void *fdt, const char *s, int *allocated) {
 
 int fdt_property_placeholder(void *fdt, const char *name, int len, void **valp) {
     struct fdt_property *prop;
-    int                  nameoff;
-    int                  allocated;
+    int nameoff;
+    int allocated;
 
     FDT_SW_PROBE_STRUCT(fdt);
 
@@ -304,7 +304,7 @@ int fdt_property_placeholder(void *fdt, const char *name, int len, void **valp) 
 
 int fdt_property(void *fdt, const char *name, const void *val, int len) {
     void *ptr;
-    int   ret;
+    int ret;
 
     ret = fdt_property_placeholder(fdt, name, len, &ptr);
     if (ret)
@@ -314,11 +314,11 @@ int fdt_property(void *fdt, const char *name, const void *val, int len) {
 }
 
 int fdt_finish(void *fdt) {
-    char    *p = (char *)fdt;
+    char *p = (char *)fdt;
     fdt32_t *end;
-    int      oldstroffset, newstroffset;
+    int oldstroffset, newstroffset;
     uint32_t tag;
-    int      offset, nextoffset;
+    int offset, nextoffset;
 
     FDT_SW_PROBE_STRUCT(fdt);
 
@@ -339,7 +339,7 @@ int fdt_finish(void *fdt) {
     while ((tag = fdt_next_tag(fdt, offset, &nextoffset)) != FDT_END) {
         if (tag == FDT_PROP) {
             struct fdt_property *prop = fdt_offset_ptr_w_(fdt, offset);
-            int                  nameoff;
+            int nameoff;
 
             nameoff = fdt32_to_cpu(prop->nameoff);
             nameoff += fdt_size_dt_strings(fdt);

@@ -8,5 +8,5 @@ enum page_fault_type {
     INS_PAGE,       // 取指异常
 };
 
-int  trap_init(void);
+int trap_init(void);
 void page_fault_(struct pt_regs *regs, enum page_fault_type type);

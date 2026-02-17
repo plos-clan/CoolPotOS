@@ -13,13 +13,13 @@
 #define EARLY_MAP_BASE 0x80000000
 #define EARLY_MAP_END 0x88000000
 
-int                nr_cpu = 256;
-uint64_t           cpuid_to_hartids[MAX_CPU];
-atomic_t           started_cpu_count;
-extern uint64_t    bsp_hart_id;
-extern uintptr_t   opensbi_dtb_vaddr;
-extern uintptr_t   smp_entry;
-extern void        arch_cpu_init();
+int nr_cpu = 256;
+uint64_t cpuid_to_hartids[MAX_CPU];
+atomic_t started_cpu_count;
+extern uint64_t bsp_hart_id;
+extern uintptr_t opensbi_dtb_vaddr;
+extern uintptr_t smp_entry;
+extern void arch_cpu_init();
 extern cpu_local_t cpu_local_infos[MAX_CPU];
 
 extern pcb_t kernel_process;
@@ -101,7 +101,7 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
         if (!name)
             continue;
         if (strncmp(name, "cpu@", 4) == 0) {
-            int            reg_len;
+            int reg_len;
             const fdt32_t *reg =
                 (const fdt32_t *)fdt_getprop((void *)opensbi_dtb_vaddr, offset, "reg", &reg_len);
             if (reg && reg_len >= (int)sizeof(uint32_t)) {

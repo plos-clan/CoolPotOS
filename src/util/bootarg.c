@@ -2,7 +2,7 @@
 #include "krlibc.h"
 
 static boot_param_t params[MAX_PARAMS];
-static int          param_count = 0;
+static int param_count = 0;
 
 int boot_parse_cmdline(const char *cmdline) {
     param_count = 0;

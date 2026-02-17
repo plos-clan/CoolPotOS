@@ -44,10 +44,10 @@ void load_segment(
         for (size_t i = lo; i < hi; i += 0x1000) {
             page_map_to(directory, i, alloc_frames(1), flags);
         }
-    uint64_t          p_vaddr  = (uint64_t)phdr->p_vaddr + offset;
-    uint64_t          p_filesz = (uint64_t)phdr->p_filesz;
-    uint64_t          p_memsz  = (uint64_t)phdr->p_memsz;
-    page_directory_t *dir      = get_current_directory();
+    uint64_t p_vaddr      = (uint64_t)phdr->p_vaddr + offset;
+    uint64_t p_filesz     = (uint64_t)phdr->p_filesz;
+    uint64_t p_memsz      = (uint64_t)phdr->p_memsz;
+    page_directory_t *dir = get_current_directory();
     switch_context_directory(directory);
     memcpy((void *)p_vaddr, elf + phdr->p_offset, p_filesz);
 
@@ -117,8 +117,8 @@ void *load_executor_elf(
         logkf("exec: elf header check error.\n\r");
         return NULL;
     }
-    Elf64_Phdr       *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
-    page_directory_t *cur   = get_current_directory();
+    Elf64_Phdr *phdrs     = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
+    page_directory_t *cur = get_current_directory();
     switch_context_directory(dir);
     size_t load_size = 0;
     if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, &load_size)) {
@@ -151,8 +151,8 @@ void *load_interpreter_elf(
         logkf("exec: libc data is null.\n\r");
         return NULL;
     }
-    Elf64_Phdr *phdrs            = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
-    char       *interpreter_name = NULL;
+    Elf64_Phdr *phdrs      = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
+    char *interpreter_name = NULL;
     for (int i = 0; i < ehdr->e_phnum; ++i) {
         if (phdrs[i].p_type == PT_INTERP) {
             interpreter_name = ((char *)ehdr + phdrs[i].p_offset);
@@ -187,7 +187,7 @@ void *load_interpreter_elf(
 
 void launch_init_process() {
     const char *cmdline = boot_get_cmdline_param("init");
-    vfs_node_t  node    = vfs_open("/bin/sh");
+    vfs_node_t node     = vfs_open("/bin/sh");
     if (node == NULL) {
         kwarn("Cannot open init file.");
         return;

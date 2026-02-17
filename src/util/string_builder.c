@@ -27,7 +27,7 @@ bool string_builder_append(string_builder_t *buf, const char *format, ...) {
         return false;
 
     va_list args;
-    int     needed;
+    int needed;
 
     // 第一次调用计算所需空间
     va_start(args, format);

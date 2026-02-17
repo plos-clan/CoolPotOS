@@ -3,8 +3,8 @@
 #include "fs/procfs.h"
 
 proc_handle_node_t *dispatch_array[256];
-static size_t       dp_index = 0;
-extern vfs_node_t   procfs_root;
+static size_t dp_index = 0;
+extern vfs_node_t procfs_root;
 
 size_t procfs_node_read(size_t len, size_t offset, size_t size, char *addr, char *contect) {
     if (len == 0 || offset >= len) {

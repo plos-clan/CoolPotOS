@@ -10,8 +10,8 @@
 #include "term/klog.h"
 
 static pty_pair_t *pty_table[PTY_MAX_COUNT] = { NULL };
-static spin_t      pty_table_lock;
-static int         pty_next_index = 0;
+static spin_t pty_table_lock;
+static int pty_next_index = 0;
 
 // ===== Ring Buffer Operations =====
 
@@ -223,8 +223,8 @@ static size_t ptmx_write(void *file, const void *addr, size_t offset, size_t siz
         return -EIO;
     }
 
-    const char *input    = (const char *)addr;
-    size_t      nwritten = 0;
+    const char *input = (const char *)addr;
+    size_t nwritten   = 0;
 
     for (size_t i = 0; i < size; i++) {
         char c = input[i];
@@ -350,8 +350,8 @@ static errno_t ptmx_poll(void *file, size_t events) {
     if (!spec || !spec->active || !spec->pair)
         return 0;
 
-    pty_pair_t *pair    = spec->pair;
-    size_t      revents = 0;
+    pty_pair_t *pair = spec->pair;
+    size_t revents   = 0;
 
     spin_lock(pair->lock);
 
@@ -429,8 +429,8 @@ static size_t pts_write(void *file, const void *addr, size_t offset, size_t size
 
     // Output processing: OPOST + ONLCR (map NL to CR-NL on output)
     if ((pair->termios.c_oflag & OPOST) && (pair->termios.c_oflag & ONLCR)) {
-        const char *input    = (const char *)addr;
-        size_t      nwritten = 0;
+        const char *input = (const char *)addr;
+        size_t nwritten   = 0;
         for (size_t i = 0; i < size; i++) {
             if (input[i] == '\n') {
                 if (pty_ringbuf_write(&pair->slave_to_master, "\r\n", 2) < 2)

@@ -17,7 +17,7 @@
 _Atomic volatile bool scheduler_status = false;
 
 static cow_arraylist *sleep_list = NULL;
-static spin_t         sleep_lock = SPIN_INIT;
+static spin_t sleep_lock         = SPIN_INIT;
 
 static inline void sleep_block_task(tcb_t thread) {
     cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
@@ -227,7 +227,7 @@ void scheduler_change_weight(tcb_t thread, uint64_t prio) {
 
 tcb_t scheduler_pick_next(uint64_t cpu_id) {
     cpu_local_t *cpu_local = get_cpu_local(cpu_id);
-    tcb_t        next_thread =
+    tcb_t next_thread =
 #if EEVDF_SCHEDULER
         eevdf_pick_next_task(cpu_local);
 #else
@@ -288,7 +288,7 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
 
 USED void foreach_all_process() {
     extern cow_arraylist *process_list;
-    pcb_t                 proc = NULL;
+    pcb_t proc = NULL;
     cow_foreach(process_list, proc) {
         logkf("process name: %s, pid: %d\n", proc->name, proc->pid);
     }

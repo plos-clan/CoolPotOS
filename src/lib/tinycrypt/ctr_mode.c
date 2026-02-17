@@ -39,8 +39,8 @@ int tc_ctr_mode(
     const TCAesKeySched_t sched
 ) {
 
-    uint8_t      buffer[TC_AES_BLOCK_SIZE];
-    uint8_t      nonce[TC_AES_BLOCK_SIZE];
+    uint8_t buffer[TC_AES_BLOCK_SIZE];
+    uint8_t nonce[TC_AES_BLOCK_SIZE];
     unsigned int block_num;
     unsigned int i;
 

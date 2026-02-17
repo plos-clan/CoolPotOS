@@ -98,7 +98,7 @@ fd_t *fd_dup(fd_t *src) {
     vfs_node_t node = new->node;
     if (node->type & file_pipe) {
         pipe_specific_t *spec = node->handle;
-        pipe_info_t     *pipe = spec->info;
+        pipe_info_t *pipe     = spec->info;
         spin_lock(pipe->lock);
         if (spec->write) {
             pipe->write_fds++;

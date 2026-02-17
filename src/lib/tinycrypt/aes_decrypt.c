@@ -135,7 +135,7 @@ static inline void inv_shift_rows(uint8_t *s) {
 }
 
 int tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s) {
-    uint8_t      state[Nk * Nb];
+    uint8_t state[Nk * Nb];
     unsigned int i;
 
     if (out == (uint8_t *)0) {

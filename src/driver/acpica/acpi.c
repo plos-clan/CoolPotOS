@@ -35,7 +35,7 @@ error:
 }
 
 ACPI_STATUS acpi_table_find_by_signature(const char *signature, acpi_table_handle_t *out_table) {
-    size_t      i;
+    size_t i;
     ACPI_STATUS st;
 
     if (!signature || !out_table) {

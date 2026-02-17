@@ -5,9 +5,9 @@
 #include "mem/heap.h"
 #include "mem/page.h"
 
-extern page_directory_t          kernel_page_dir;
+extern page_directory_t kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
-static spin_t                    page_lock         = SPIN_INIT;
+static spin_t page_lock                            = SPIN_INIT;
 
 uint64_t get_arch_page_table_flags(uint64_t flags) {
     uint64_t result = ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_ACCESSED | ARCH_PT_FLAG_DIRTY;
@@ -28,7 +28,7 @@ void flush_tlb(uint64_t vaddr) {
 
 void switch_page_directory0(page_directory_t *dir) {
     page_table_t *physical_table = (page_table_t *)virt_to_phys(dir->table);
-    uint64_t      satp           = MAKE_SATP_PADDR(SATP_MODE_SV48, 0, (uint64_t)physical_table);
+    uint64_t satp                = MAKE_SATP_PADDR(SATP_MODE_SV48, 0, (uint64_t)physical_table);
     __asm__ volatile("csrw satp, %0" : : "r"(satp) : "memory");
     __asm__ volatile("sfence.vma" : : : "memory");
 }
@@ -36,8 +36,8 @@ void switch_page_directory0(page_directory_t *dir) {
 uint64_t arch_virt_to_phys(uint64_t vaddr) {
     if (!vaddr)
         return 0;
-    page_directory_t *curr  = get_current_directory();
-    uint64_t         *pgdir = (uint64_t *)curr->table;
+    page_directory_t *curr = get_current_directory();
+    uint64_t *pgdir        = (uint64_t *)curr->table;
 
     uint64_t indexs[ARCH_PT_LEVEL];
     for (uint64_t i = 0; i < ARCH_PT_LEVEL; i++) {
@@ -62,8 +62,8 @@ uint64_t arch_virt_to_phys(uint64_t vaddr) {
 }
 
 void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags) {
-    uint64_t *pgdir                 = (uint64_t *)directory->table;
-    uint64_t  indexs[ARCH_PT_LEVEL] = { 0 };
+    uint64_t *pgdir                = (uint64_t *)directory->table;
+    uint64_t indexs[ARCH_PT_LEVEL] = { 0 };
     for (uint64_t i = 0; i < ARCH_PT_LEVEL; i++) {
         indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
     }
@@ -94,8 +94,8 @@ void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, ui
 }
 
 void unmap_page(page_directory_t *directory, uint64_t vaddr) {
-    uint64_t *pgdir                 = (uint64_t *)directory->table;
-    uint64_t  indexs[ARCH_PT_LEVEL] = { 0 };
+    uint64_t *pgdir                = (uint64_t *)directory->table;
+    uint64_t indexs[ARCH_PT_LEVEL] = { 0 };
     for (uint64_t i = 0; i < ARCH_PT_LEVEL; i++) {
         indexs[i] = PAGE_CALC_PAGE_TABLE_INDEX(vaddr, i + 1);
     }
@@ -127,7 +127,7 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
 
     for (int level = 3; level >= 1; level--) {
         page_table_t *current = tables[level];
-        bool          empty   = true;
+        bool empty            = true;
 
         for (int i = 0; i < 512; i++) {
             if (current->entries[i].value != 0) {
@@ -212,13 +212,13 @@ copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy, 
             return source_table;
         }
 
-        uint64_t      frame          = alloc_frames(1);
+        uint64_t frame               = alloc_frames(1);
         page_table_t *new_page_table = (page_table_t *)phys_to_virt(frame);
         memcpy(new_page_table, source_table, PAGE_SIZE);
         return new_page_table;
     }
 
-    uint64_t      phy_frame = alloc_frames(1);
+    uint64_t phy_frame      = alloc_frames(1);
     page_table_t *new_table = (page_table_t *)phys_to_virt(phy_frame);
     for (uint64_t i = 0; i < (all_copy ? 512 : (level == ARCH_PT_LEVEL ? 256 : 512)); i++) {
         if (ARCH_PT_IS_LARGE(source_table->entries[i].value) && level != 1) {
@@ -272,9 +272,9 @@ void arch_page_setup_l2() {
 }
 
 void arch_page_setup() {
-    uint64_t      satp              = read_satp();
-    uint64_t      root_ppn          = satp & SATP_PPN_MASK;
-    uint64_t      page_table_base   = root_ppn << 12;
+    uint64_t satp                   = read_satp();
+    uint64_t root_ppn               = satp & SATP_PPN_MASK;
+    uint64_t page_table_base        = root_ppn << 12;
     page_table_t *kernel_page_table = (page_table_t *)phys_to_virt(page_table_base);
     kernel_page_dir                 = (page_directory_t){ .table = kernel_page_table };
     double_fault_page               = page_table_base;

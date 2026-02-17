@@ -3,7 +3,7 @@
 #include "krlibc.h"
 #include "term/klog.h"
 
-static int        sysfs_id   = 0;
+static int sysfs_id          = 0;
 static vfs_node_t sysfs_root = NULL;
 
 // 预建子目录
@@ -67,7 +67,7 @@ static size_t sysfs_write(void *file, const void *addr, size_t offset, size_t si
     size_t end = offset + size;
     if (end > handle->capacity) {
         size_t new_cap = end + 256;
-        char  *new_buf = realloc(handle->data, new_cap);
+        char *new_buf  = realloc(handle->data, new_cap);
         if (!new_buf)
             return 0;
         handle->data     = new_buf;
@@ -230,13 +230,13 @@ vfs_node_t sysfs_regist_dev(
 
     // 创建 uevent 文件
     if (uevent_content && strlen(uevent_content) > 0) {
-        vfs_node_t      uevent = sysfs_child_append(dev_root, "uevent", false);
-        sysfs_handle_t *h      = uevent->handle;
-        size_t          len    = strlen(uevent_content);
-        h->data                = strdup(uevent_content);
-        h->size                = len;
-        h->capacity            = len + 1;
-        uevent->size           = len;
+        vfs_node_t uevent = sysfs_child_append(dev_root, "uevent", false);
+        sysfs_handle_t *h = uevent->handle;
+        size_t len        = strlen(uevent_content);
+        h->data           = strdup(uevent_content);
+        h->size           = len;
+        h->capacity       = len + 1;
+        uevent->size      = len;
     }
 
     return dev_root;

@@ -14,14 +14,14 @@
 #define XHCI_MAX_SLOTS 256
 
 typedef struct Xhci {
-    Capability  cap;
+    Capability cap;
     Operational op;
-    int         ctx_size;
-    uint64_t   *dcbaa_virt;
+    int ctx_size;
+    uint64_t *dcbaa_virt;
     CommandRing cmd_ring;
-    EventRing   event_ring;
-    Doorbell    doorbell;
-    Slot        slots[XHCI_MAX_SLOTS];
+    EventRing event_ring;
+    Doorbell doorbell;
+    Slot slots[XHCI_MAX_SLOTS];
 } Xhci;
 
 extern const HostControllerOps xhci_host_ops;

@@ -92,9 +92,9 @@ static int ccm_ctr_mode(
     const TCAesKeySched_t sched
 ) {
 
-    uint8_t      buffer[TC_AES_BLOCK_SIZE];
-    uint8_t      nonce[TC_AES_BLOCK_SIZE];
-    uint16_t     block_num;
+    uint8_t buffer[TC_AES_BLOCK_SIZE];
+    uint8_t nonce[TC_AES_BLOCK_SIZE];
+    uint16_t block_num;
     unsigned int i;
 
     /* input sanity check: */
@@ -142,8 +142,8 @@ int tc_ccm_generation_encryption(
         return TC_CRYPTO_FAIL;
     }
 
-    uint8_t      b[Nb * Nk];
-    uint8_t      tag[Nb * Nk];
+    uint8_t b[Nb * Nk];
+    uint8_t tag[Nb * Nk];
     unsigned int i;
 
     /* GENERATING THE AUTHENTICATION TAG: */
@@ -200,8 +200,8 @@ int tc_ccm_decryption_verification(
         return TC_CRYPTO_FAIL;
     }
 
-    uint8_t      b[Nb * Nk];
-    uint8_t      tag[Nb * Nk];
+    uint8_t b[Nb * Nk];
+    uint8_t tag[Nb * Nk];
     unsigned int i;
 
     /* DECRYPTION: */

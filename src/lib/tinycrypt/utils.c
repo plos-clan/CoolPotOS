@@ -58,9 +58,9 @@ uint8_t _double_byte(uint8_t a) {
 }
 
 int _compare(const uint8_t *a, const uint8_t *b, size_t size) {
-    const uint8_t *tempa  = a;
-    const uint8_t *tempb  = b;
-    uint8_t        result = 0;
+    const uint8_t *tempa = a;
+    const uint8_t *tempb = b;
+    uint8_t result       = 0;
 
     for (unsigned int i = 0; i < size; i++) {
         result |= tempa[i] ^ tempb[i];

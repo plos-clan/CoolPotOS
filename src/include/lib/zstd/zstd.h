@@ -212,8 +212,8 @@ ZSTDLIB_API int ZSTD_defaultCLevel(
  *         use one different context per thread for parallel execution.
  */
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
-ZSTDLIB_API ZSTD_CCtx     *ZSTD_createCCtx(void);
-ZSTDLIB_API size_t         ZSTD_freeCCtx(ZSTD_CCtx *cctx); /* accept NULL pointer */
+ZSTDLIB_API ZSTD_CCtx *ZSTD_createCCtx(void);
+ZSTDLIB_API size_t ZSTD_freeCCtx(ZSTD_CCtx *cctx); /* accept NULL pointer */
 
 /*! ZSTD_compressCCtx() :
  *  Same as ZSTD_compress(), using an explicit ZSTD_CCtx.
@@ -235,8 +235,8 @@ ZSTDLIB_API size_t ZSTD_compressCCtx(
  *  This will make workload friendlier for system's memory.
  *  Use one context per thread for parallel execution. */
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
-ZSTDLIB_API ZSTD_DCtx     *ZSTD_createDCtx(void);
-ZSTDLIB_API size_t         ZSTD_freeDCtx(ZSTD_DCtx *dctx); /* accept NULL pointer */
+ZSTDLIB_API ZSTD_DCtx *ZSTD_createDCtx(void);
+ZSTDLIB_API size_t ZSTD_freeDCtx(ZSTD_DCtx *dctx); /* accept NULL pointer */
 
 /*! ZSTD_decompressDCtx() :
  *  Same as ZSTD_decompress(),
@@ -472,8 +472,8 @@ typedef enum {
 
 typedef struct {
     size_t error;
-    int    lowerBound;
-    int    upperBound;
+    int lowerBound;
+    int upperBound;
 } ZSTD_bounds;
 
 /*! ZSTD_cParam_getBounds() :
@@ -625,14 +625,14 @@ ZSTDLIB_API size_t ZSTD_DCtx_reset(ZSTD_DCtx *dctx, ZSTD_ResetDirective reset);
  ****************************/
 
 typedef struct ZSTD_inBuffer_s {
-    const void *src;  /**< start of input buffer */
-    size_t      size; /**< size of input buffer */
+    const void *src; /**< start of input buffer */
+    size_t size;     /**< size of input buffer */
     size_t
         pos; /**< position where reading stopped. Will be updated. Necessarily 0 <= pos <= size */
 } ZSTD_inBuffer;
 
 typedef struct ZSTD_outBuffer_s {
-    void  *dst;  /**< start of output buffer */
+    void *dst;   /**< start of output buffer */
     size_t size; /**< size of output buffer */
     size_t
         pos; /**< position where writing stopped. Will be updated. Necessarily 0 <= pos <= size */
@@ -704,7 +704,7 @@ typedef ZSTD_CCtx ZSTD_CStream; /**< CCtx and CStream are now effectively same o
 /* Continue to distinguish them for compatibility with older versions <= v1.2.0 */
 /*===== ZSTD_CStream management functions =====*/
 ZSTDLIB_API ZSTD_CStream *ZSTD_createCStream(void);
-ZSTDLIB_API size_t        ZSTD_freeCStream(ZSTD_CStream *zcs); /* accept NULL pointer */
+ZSTDLIB_API size_t ZSTD_freeCStream(ZSTD_CStream *zcs); /* accept NULL pointer */
 
 /*===== Streaming compression functions =====*/
 typedef enum {
@@ -837,7 +837,7 @@ typedef ZSTD_DCtx ZSTD_DStream; /**< DCtx and DStream are now effectively same o
 /* For compatibility with versions <= v1.2.0, prefer differentiating them. */
 /*===== ZSTD_DStream management functions =====*/
 ZSTDLIB_API ZSTD_DStream *ZSTD_createDStream(void);
-ZSTDLIB_API size_t        ZSTD_freeDStream(ZSTD_DStream *zds); /* accept NULL pointer */
+ZSTDLIB_API size_t ZSTD_freeDStream(ZSTD_DStream *zds); /* accept NULL pointer */
 
 /*===== Streaming decompression functions =====*/
 
@@ -1284,7 +1284,7 @@ typedef struct {
 
 typedef struct {
     ZSTD_compressionParameters cParams;
-    ZSTD_frameParameters       fParams;
+    ZSTD_frameParameters fParams;
 } ZSTD_parameters;
 
 typedef enum {
@@ -1661,8 +1661,8 @@ typedef void *(*ZSTD_allocFunction)(void *opaque, size_t size);
 typedef void (*ZSTD_freeFunction)(void *opaque, void *address);
 typedef struct {
     ZSTD_allocFunction customAlloc;
-    ZSTD_freeFunction  customFree;
-    void              *opaque;
+    ZSTD_freeFunction customFree;
+    void *opaque;
 } ZSTD_customMem;
 static
 #    ifdef __GNUC__
@@ -1672,9 +1672,9 @@ static
         NULL, NULL, NULL
     }; /**< this constant defers to stdlib's functions */
 
-ZSTDLIB_STATIC_API ZSTD_CCtx    *ZSTD_createCCtx_advanced(ZSTD_customMem customMem);
+ZSTDLIB_STATIC_API ZSTD_CCtx *ZSTD_createCCtx_advanced(ZSTD_customMem customMem);
 ZSTDLIB_STATIC_API ZSTD_CStream *ZSTD_createCStream_advanced(ZSTD_customMem customMem);
-ZSTDLIB_STATIC_API ZSTD_DCtx    *ZSTD_createDCtx_advanced(ZSTD_customMem customMem);
+ZSTDLIB_STATIC_API ZSTD_DCtx *ZSTD_createDCtx_advanced(ZSTD_customMem customMem);
 ZSTDLIB_STATIC_API ZSTD_DStream *ZSTD_createDStream_advanced(ZSTD_customMem customMem);
 
 ZSTDLIB_STATIC_API ZSTD_CDict *ZSTD_createCDict_advanced(
@@ -1693,9 +1693,9 @@ ZSTDLIB_STATIC_API ZSTD_CDict *ZSTD_createCDict_advanced(
  *  to use an internal thread pool).
  *  ZSTD_freeThreadPool frees a thread pool, accepts NULL pointer.
  */
-typedef struct POOL_ctx_s           ZSTD_threadPool;
+typedef struct POOL_ctx_s ZSTD_threadPool;
 ZSTDLIB_STATIC_API ZSTD_threadPool *ZSTD_createThreadPool(size_t numThreads);
-ZSTDLIB_STATIC_API void   ZSTD_freeThreadPool(ZSTD_threadPool *pool); /* accept NULL pointer */
+ZSTDLIB_STATIC_API void ZSTD_freeThreadPool(ZSTD_threadPool *pool); /* accept NULL pointer */
 ZSTDLIB_STATIC_API size_t ZSTD_CCtx_refThreadPool(ZSTD_CCtx *cctx, ZSTD_threadPool *pool);
 
 /*
@@ -2619,9 +2619,9 @@ typedef struct {
     unsigned long long frameContentSize; /* if == ZSTD_CONTENTSIZE_UNKNOWN, it means this field is
                                             not available. 0 means "empty" */
     unsigned long long windowSize;       /* can be very large, up to <= frameContentSize */
-    unsigned           blockSizeMax;
-    ZSTD_frameType_e   frameType; /* if == ZSTD_skippableFrame, frameContentSize is the size of
-                                     skippable content */
+    unsigned blockSizeMax;
+    ZSTD_frameType_e frameType; /* if == ZSTD_skippableFrame, frameContentSize is the size of
+                                   skippable content */
     unsigned headerSize;
     unsigned dictID;
     unsigned checksumFlag;

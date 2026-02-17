@@ -10,5 +10,5 @@ typedef struct {
     char value[50];
 } boot_param_t;
 
-int         boot_parse_cmdline(const char *cmdline);
+int boot_parse_cmdline(const char *cmdline);
 const char *boot_get_cmdline_param(const char *key);

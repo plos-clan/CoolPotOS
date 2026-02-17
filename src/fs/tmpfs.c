@@ -5,7 +5,7 @@
 #include "task/poll.h"
 #include "term/klog.h"
 
-static int         tmpfs_id      = 0;
+static int tmpfs_id              = 0;
 static _Atomic int mount_dev_now = 0;
 
 errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
@@ -80,11 +80,11 @@ size_t tmpfs_read(void *file, void *addr, size_t offset, size_t size) {
 }
 
 size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
-    tmpfs_file_t *f   = (tmpfs_file_t *)file;
-    size_t        end = offset + size;
+    tmpfs_file_t *f = (tmpfs_file_t *)file;
+    size_t end      = offset + size;
     if (end > f->capacity) {
         size_t new_cap = end + PAGE_SIZE;
-        char  *new_buf = realloc(f->data, new_cap);
+        char *new_buf  = realloc(f->data, new_cap);
         if (!new_buf)
             return 0;
         f->data     = new_buf;
@@ -132,8 +132,8 @@ errno_t tmpfs_rename(void *current, const char *new_name) {
 }
 
 int tmpfs_poll(void *file, size_t events) {
-    tmpfs_file_t *f       = (tmpfs_file_t *)file;
-    int           revents = 0;
+    tmpfs_file_t *f = (tmpfs_file_t *)file;
+    int revents     = 0;
     if (events & POLLIN)
         revents |= POLLIN;
     if (events & POLLOUT)
@@ -150,7 +150,7 @@ void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
 }
 
 vfs_node_t tmpfs_dup(vfs_node_t node) {
-    vfs_node_t    copy = vfs_node_alloc(node->parent, node->name);
+    vfs_node_t copy    = vfs_node_alloc(node->parent, node->name);
     tmpfs_file_t *file = node->handle;
     if (file != NULL)
         file->link_count++;

@@ -215,10 +215,10 @@ size_t HUF_decompress4X2_DCtx_wksp(
  *  or to save and regenerate 'CTable' using external methods.
  */
 unsigned HUF_optimalTableLog(unsigned maxTableLog, size_t srcSize, unsigned maxSymbolValue);
-size_t   HUF_buildCTable(
-      HUF_CElt *CTable, const unsigned *count, unsigned maxSymbolValue, unsigned maxNbBits
-  ); /* @return : maxNbBits; CTable and count can overlap. In which case, CTable will overwrite count
-        content */
+size_t HUF_buildCTable(
+    HUF_CElt *CTable, const unsigned *count, unsigned maxSymbolValue, unsigned maxNbBits
+); /* @return : maxNbBits; CTable and count can overlap. In which case, CTable will overwrite count
+      content */
 size_t HUF_writeCTable(
     void *dst, size_t maxDstSize, const HUF_CElt *CTable, unsigned maxSymbolValue, unsigned huffLog
 );

@@ -263,7 +263,7 @@ ZDICTLIB_API unsigned ZDICT_getDictID(
 ZDICTLIB_API size_t ZDICT_getDictHeaderSize(
     const void *dictBuffer, size_t dictSize
 ); /* returns dict header size; returns a ZSTD error code on failure */
-ZDICTLIB_API unsigned    ZDICT_isError(size_t errorCode);
+ZDICTLIB_API unsigned ZDICT_isError(size_t errorCode);
 ZDICTLIB_API const char *ZDICT_getErrorName(size_t errorCode);
 
 #ifdef ZDICT_STATIC_LINKING_ONLY

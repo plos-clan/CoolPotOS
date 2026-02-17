@@ -29,10 +29,10 @@
 
 typedef struct file_description {
     vfs_node_t node;
-    size_t     offset;
+    size_t offset;
     vfs_node_t dir_last;
-    uint64_t   flags;
-    int        fd;
+    uint64_t flags;
+    int fd;
 } fd_t;
 
 typedef struct file_description_table {
@@ -40,12 +40,12 @@ typedef struct file_description_table {
     size_t fds_length; // 文件描述符表长度
 } fdt_t;
 
-fd_t   *fd_dup(fd_t *src);
-fdt_t  *copy_fdt(fdt_t *src_fdt);
-int     find_free_fd(fdt_t *pcb);
+fd_t *fd_dup(fd_t *src);
+fdt_t *copy_fdt(fdt_t *src_fdt);
+int find_free_fd(fdt_t *pcb);
 errno_t remove_fd(fdt_t *fdt, int fd);
 errno_t set_fd(fdt_t *table, fd_t *handle, int fd);
-int     add_fd(fdt_t *fdt, fd_t *new_fd);
-fd_t   *get_fd(fdt_t *table, int fd);
-fdt_t  *fds_init();
-void    free_fdt(fdt_t *fdt);
+int add_fd(fdt_t *fdt, fd_t *new_fd);
+fd_t *get_fd(fdt_t *table, int fd);
+fdt_t *fds_init();
+void free_fdt(fdt_t *fdt);

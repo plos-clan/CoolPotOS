@@ -16,7 +16,7 @@ static void empty_func() {
 }
 vfs_node_t rootdir = NULL;
 
-struct vfs_callback   vfs_empty_callback;
+struct vfs_callback vfs_empty_callback;
 struct vfs_filesystem vfs_empty_filesystem;
 
 vfs_callback_t fs_callbacks[256] = {
@@ -24,7 +24,7 @@ vfs_callback_t fs_callbacks[256] = {
 };
 
 struct llist_header fs_metadata_list;
-static int          fs_nextid = 1;
+static int fs_nextid = 1;
 
 #define callbackof(node, _name_) (fs_callbacks[(node)->fsid]->_name_)
 
@@ -182,9 +182,9 @@ static vfs_node_t vfs_child_find(vfs_node_t parent, const char *name) {
 errno_t vfs_mkdir(const char *name) {
     if (name[0] != '/')
         return -EINVAL;
-    char      *path     = strdup(name + 1);
-    char      *save_ptr = path;
-    vfs_node_t current  = rootdir;
+    char *path         = strdup(name + 1);
+    char *save_ptr     = path;
+    vfs_node_t current = rootdir;
     for (const char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
         const vfs_node_t father = current;
         if (streq(buf, "."))
@@ -229,7 +229,7 @@ err:
 
 errno_t vfs_link(const char *name, const char *target_name) {
     vfs_node_t current = rootdir;
-    char      *path    = strdup(name + 1);
+    char *path         = strdup(name + 1);
 
     char *save_ptr = path;
     char *filename = path + strlen(path);
@@ -285,7 +285,7 @@ err:
 
 errno_t vfs_symlink(const char *name, const char *target_name) {
     vfs_node_t current = rootdir;
-    char      *path    = strdup(name + 1);
+    char *path         = strdup(name + 1);
 
     char *save_ptr = path;
     char *filename = path + strlen(path);
@@ -414,8 +414,8 @@ errno_t vfs_mknod(const char *name, uint16_t mode, int dev) {
         return -EEXIST;
     }
 
-    vfs_node_t node   = vfs_child_append(parent, filename, NULL);
-    errno_t    status = callbackof(parent, mknod)(parent->handle, filename, node, mode, dev);
+    vfs_node_t node = vfs_child_append(parent, filename, NULL);
+    errno_t status  = callbackof(parent, mknod)(parent->handle, filename, node, mode, dev);
     free(fullpath);
     return status;
 }
@@ -482,8 +482,8 @@ vfs_node_t vfs_open(const char *str) {
     if (unlikely(path == NULL))
         return NULL;
 
-    char      *save_ptr = path;
-    vfs_node_t current  = rootdir;
+    char *save_ptr     = path;
+    vfs_node_t current = rootdir;
 
     for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
         if (streq(buf, ".")) {
@@ -539,8 +539,8 @@ vfs_node_t vfs_open_nofollow(const char *str) {
     if (unlikely(path == NULL))
         return NULL;
 
-    char      *save_ptr = path;
-    vfs_node_t current  = rootdir;
+    char *save_ptr     = path;
+    vfs_node_t current = rootdir;
 
     for (char *buf = pathtok(&save_ptr); buf; buf = pathtok(&save_ptr)) {
         if (streq(buf, ".")) {
@@ -633,8 +633,8 @@ errno_t vfs_close(vfs_node_t node) {
     if (node->type & file_proxy)
         return EOK;
     if (node->type & file_pipe) {
-        pipe_specific_t *spec   = node->handle;
-        bool             active = spec ? spec->active > 0 : false;
+        pipe_specific_t *spec = node->handle;
+        bool active           = spec ? spec->active > 0 : false;
         callbackof(node, close)(node->handle);
         if (node->refcount != 0)
             return EOK;
@@ -688,7 +688,7 @@ errno_t vfs_close(vfs_node_t node) {
         vfs_free(node);
     } else {
         void *file_handle = node->handle;
-        bool  close_drop  = callbackof(node, close)(file_handle);
+        bool close_drop   = callbackof(node, close)(file_handle);
 
         if (node->flags & VFS_NODE_FLAG_PRIVATE_FD) {
             callbackof(node, free)(file_handle);

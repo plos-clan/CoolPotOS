@@ -77,10 +77,10 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
 }
 
 _Noreturn void arch_switch_to_user_mode() {
-    tcb_t                 thread    = get_current_task();
-    uint64_t              stack_top = (uint64_t)((uint64_t)thread + STACK_SIZE);
-    struct arch_context_ *context   = &thread->context;
-    context->ctx                    = (struct pt_regs *)stack_top - 1;
+    tcb_t thread                  = get_current_task();
+    uint64_t stack_top            = (uint64_t)((uint64_t)thread + STACK_SIZE);
+    struct arch_context_ *context = &thread->context;
+    context->ctx                  = (struct pt_regs *)stack_top - 1;
 
     context->ra = (uint64_t)ret_from_trap_handler;
     context->sp = (uint64_t)context->ctx;

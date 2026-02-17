@@ -59,11 +59,11 @@ void free_page_directory(page_directory_t *dir); // 释放页表: 架构具体�
  * @return 新页表 (需要释放)
  */
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
-void     page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
-void     unmap_page(page_directory_t *directory, uint64_t vaddr);
+void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t flags);
+void unmap_page(page_directory_t *directory, uint64_t vaddr);
 uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags);
 uint64_t get_arch_page_table_flags(uint64_t flags);
-void     arch_page_setup();
+void arch_page_setup();
 
 // 用于构建内核自己的页表, 不再复用引导器提供的页表
 void arch_page_setup_l2();

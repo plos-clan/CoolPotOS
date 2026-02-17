@@ -53,11 +53,11 @@ typedef struct page_directory {
     page_table_t *table;
 } page_directory_t;
 
-void     arch_page_setup();
-void     unmap_page(page_directory_t *directory, uint64_t vaddr);
-void     page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags);
+void arch_page_setup();
+void unmap_page(page_directory_t *directory, uint64_t vaddr);
+void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags);
 uint64_t get_arch_page_table_flags(uint64_t flags);
 uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags);
-void     free_page_directory(page_directory_t *dir);
+void free_page_directory(page_directory_t *dir);
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
-void              switch_page_directory0(page_directory_t *dir);
+void switch_page_directory0(page_directory_t *dir);

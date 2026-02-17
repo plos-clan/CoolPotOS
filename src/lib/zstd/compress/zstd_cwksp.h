@@ -147,9 +147,9 @@ typedef struct {
     void *tableValidEnd;
     void *allocStart;
 
-    BYTE                      allocFailed;
-    int                       workspaceOversizedDuration;
-    ZSTD_cwksp_alloc_phase_e  phase;
+    BYTE allocFailed;
+    int workspaceOversizedDuration;
+    ZSTD_cwksp_alloc_phase_e phase;
     ZSTD_cwksp_static_alloc_e isStatic;
 } ZSTD_cwksp;
 
@@ -296,7 +296,7 @@ ZSTD_cwksp_internal_advance_phase(ZSTD_cwksp *ws, ZSTD_cwksp_alloc_phase_e phase
                 );
             }
             { /* Align the start of the tables to 64 bytes. Use [0, 63] bytes */
-                void *const  alloc = ws->objectEnd;
+                void *const alloc = ws->objectEnd;
                 size_t const bytesToAlign =
                     ZSTD_cwksp_bytes_to_align_ptr(alloc, ZSTD_CWKSP_ALIGNMENT_BYTES);
                 void *const objectEnd = (BYTE *)alloc + bytesToAlign;
@@ -381,9 +381,9 @@ MEM_STATIC void *ZSTD_cwksp_reserve_aligned(ZSTD_cwksp *ws, size_t bytes) {
  */
 MEM_STATIC void *ZSTD_cwksp_reserve_table(ZSTD_cwksp *ws, size_t bytes) {
     const ZSTD_cwksp_alloc_phase_e phase = ZSTD_cwksp_alloc_aligned;
-    void                          *alloc;
-    void                          *end;
-    void                          *top;
+    void *alloc;
+    void *end;
+    void *top;
 
     if (ZSTD_isError(ZSTD_cwksp_internal_advance_phase(ws, phase))) {
         return NULL;
@@ -423,8 +423,8 @@ MEM_STATIC void *ZSTD_cwksp_reserve_table(ZSTD_cwksp *ws, size_t bytes) {
  */
 MEM_STATIC void *ZSTD_cwksp_reserve_object(ZSTD_cwksp *ws, size_t bytes) {
     size_t const roundedBytes = ZSTD_cwksp_align(bytes, sizeof(void *));
-    void        *alloc        = ws->objectEnd;
-    void        *end          = (BYTE *)alloc + roundedBytes;
+    void *alloc               = ws->objectEnd;
+    void *end                 = (BYTE *)alloc + roundedBytes;
 
 #if ZSTD_ADDRESS_SANITIZER && !defined(ZSTD_ASAN_DONT_POISON_WORKSPACE)
     /* over-reserve space */

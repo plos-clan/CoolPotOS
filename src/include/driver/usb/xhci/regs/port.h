@@ -14,16 +14,16 @@
 #define XHCI_PORT_SPEED_MASK 0xfu
 
 typedef struct Port {
-    int       id;
+    int id;
     uintptr_t base_addr;
 } Port;
 
-Port     port_new(uintptr_t op_base, int index);
-bool     port_is_connected(Port port);
-bool     port_is_enabled(Port port);
-bool     port_has_connect_change(Port port);
-bool     port_has_reset_change(Port port);
-bool     port_is_in_reset(Port port);
+Port port_new(uintptr_t op_base, int index);
+bool port_is_connected(Port port);
+bool port_is_enabled(Port port);
+bool port_has_connect_change(Port port);
+bool port_has_reset_change(Port port);
+bool port_is_in_reset(Port port);
 uint32_t port_speed_id(Port port);
-bool     port_reset(Port port);
-void     port_update_portsc(Port port, uint32_t mask);
+bool port_reset(Port port);
+void port_update_portsc(Port port, uint32_t mask);

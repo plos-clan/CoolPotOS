@@ -64,8 +64,8 @@ int tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k) {
     const unsigned int rconst[11] = { 0x00000000, 0x01000000, 0x02000000, 0x04000000,
                                       0x08000000, 0x10000000, 0x20000000, 0x40000000,
                                       0x80000000, 0x1b000000, 0x36000000 };
-    unsigned int       i;
-    unsigned int       t;
+    unsigned int i;
+    unsigned int t;
 
     if (s == (TCAesKeySched_t)0) {
         return TC_CRYPTO_FAIL;
@@ -162,7 +162,7 @@ static inline void shift_rows(uint8_t *s) {
 }
 
 int tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s) {
-    uint8_t      state[Nk * Nb];
+    uint8_t state[Nk * Nb];
     unsigned int i;
 
     if (out == (uint8_t *)0) {

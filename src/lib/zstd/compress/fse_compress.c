@@ -66,16 +66,16 @@ size_t FSE_buildCTable_wksp(
     FSE_CTable *ct, const short *normalizedCounter, unsigned maxSymbolValue, unsigned tableLog,
     void *workSpace, size_t wkspSize
 ) {
-    U32 const   tableSize = 1 << tableLog;
-    U32 const   tableMask = tableSize - 1;
-    void *const ptr       = ct;
-    U16 *const  tableU16  = ((U16 *)ptr) + 2;
-    void *const FSCT      = ((U32 *)ptr) + 1 /* header */ + (tableLog ? tableSize >> 1 : 1);
+    U32 const tableSize = 1 << tableLog;
+    U32 const tableMask = tableSize - 1;
+    void *const ptr     = ct;
+    U16 *const tableU16 = ((U16 *)ptr) + 2;
+    void *const FSCT    = ((U32 *)ptr) + 1 /* header */ + (tableLog ? tableSize >> 1 : 1);
     FSE_symbolCompressionTransform *const symbolTT = (FSE_symbolCompressionTransform *)(FSCT);
-    U32 const                             step     = FSE_TABLESTEP(tableSize);
-    U32 const                             maxSV1   = maxSymbolValue + 1;
+    U32 const step                                 = FSE_TABLESTEP(tableSize);
+    U32 const maxSV1                               = maxSymbolValue + 1;
 
-    U16                     *cumul = (U16 *)workSpace; /* size = maxSV1 */
+    U16 *cumul = (U16 *)workSpace; /* size = maxSV1 */
     FSE_FUNCTION_TYPE *const tableSymbol =
         (FSE_FUNCTION_TYPE *)(cumul + (maxSV1 + 1)); /* size = tableSize */
 
@@ -124,11 +124,11 @@ size_t FSE_buildCTable_wksp(
             tableSymbol + tableSize; /* size = tableSize + 8 (may write beyond tableSize) */
         {
             U64 const add = 0x0101010101010101ull;
-            size_t    pos = 0;
-            U64       sv  = 0;
-            U32       s;
+            size_t pos    = 0;
+            U64 sv        = 0;
+            U32 s;
             for (s = 0; s < maxSV1; ++s, sv += add) {
-                int       i;
+                int i;
                 int const n = normalizedCounter[s];
                 MEM_write64(spread + pos, sv);
                 for (i = 8; i < n; i += 8) {
@@ -143,8 +143,8 @@ size_t FSE_buildCTable_wksp(
          * reduce branch misses.
          */
         {
-            size_t       position = 0;
-            size_t       s;
+            size_t position = 0;
+            size_t s;
             size_t const unroll = 2;         /* Experimentally determined optimal unroll */
             assert(tableSize % unroll == 0); /* FSE_MIN_TABLELOG is 5 */
             for (s = 0; s < (size_t)tableSize; s += unroll) {
@@ -161,7 +161,7 @@ size_t FSE_buildCTable_wksp(
         U32 position = 0;
         U32 symbol;
         for (symbol = 0; symbol < maxSV1; symbol++) {
-            int       nbOccurrences;
+            int nbOccurrences;
             int const freq = normalizedCounter[symbol];
             for (nbOccurrences = 0; nbOccurrences < freq; nbOccurrences++) {
                 tableSymbol[position] = (FSE_FUNCTION_TYPE)symbol;
@@ -249,18 +249,18 @@ static size_t FSE_writeNCount_generic(
     void *header, size_t headerBufferSize, const short *normalizedCounter, unsigned maxSymbolValue,
     unsigned tableLog, unsigned writeIsSafe
 ) {
-    BYTE *const    ostart = (BYTE *)header;
-    BYTE          *out    = ostart;
-    BYTE *const    oend   = ostart + headerBufferSize;
-    int            nbBits;
-    const int      tableSize = 1 << tableLog;
-    int            remaining;
-    int            threshold;
-    U32            bitStream    = 0;
-    int            bitCount     = 0;
-    unsigned       symbol       = 0;
+    BYTE *const ostart = (BYTE *)header;
+    BYTE *out          = ostart;
+    BYTE *const oend   = ostart + headerBufferSize;
+    int nbBits;
+    const int tableSize = 1 << tableLog;
+    int remaining;
+    int threshold;
+    U32 bitStream               = 0;
+    int bitCount                = 0;
+    unsigned symbol             = 0;
     unsigned const alphabetSize = maxSymbolValue + 1;
-    int            previousIs0  = 0;
+    int previousIs0             = 0;
 
     /* Table Size */
     bitStream += (tableLog - FSE_MIN_TABLELOG) << bitCount;
@@ -306,8 +306,8 @@ static size_t FSE_writeNCount_generic(
             }
         }
         {
-            int       count = normalizedCounter[symbol++];
-            int const max   = (2 * threshold - 1) - remaining;
+            int count     = normalizedCounter[symbol++];
+            int const max = (2 * threshold - 1) - remaining;
             remaining -= count < 0 ? -count : count;
             count++; /* +1 for extra accuracy */
             if (count >= threshold)
@@ -425,13 +425,13 @@ static size_t FSE_normalizeM2(
     short lowProbCount
 ) {
     short const NOT_YET_ASSIGNED = -2;
-    U32         s;
-    U32         distributed = 0;
-    U32         ToDistribute;
+    U32 s;
+    U32 distributed = 0;
+    U32 ToDistribute;
 
     /* Init */
     U32 const lowThreshold = (U32)(total >> tableLog);
-    U32       lowOne       = (U32)((total * 3) >> (tableLog + 1));
+    U32 lowOne             = (U32)((total * 3) >> (tableLog + 1));
 
     for (s = 0; s <= maxSymbolValue; s++) {
         if (count[s] == 0) {
@@ -536,15 +536,15 @@ size_t FSE_normalizeCount(
 
     {
         static U32 const rtbTable[] = { 0, 473195, 504333, 520860, 550000, 700000, 750000, 830000 };
-        short const      lowProbCount = useLowProbCount ? -1 : 1;
-        U64 const        scale        = 62 - tableLog;
-        U64 const        step = ZSTD_div64((U64)1 << 62, (U32)total); /* <== here, one division ! */
-        U64 const        vStep             = 1ULL << (scale - 20);
-        int              stillToDistribute = 1 << tableLog;
-        unsigned         s;
-        unsigned         largest      = 0;
-        short            largestP     = 0;
-        U32              lowThreshold = (U32)(total >> tableLog);
+        short const lowProbCount    = useLowProbCount ? -1 : 1;
+        U64 const scale             = 62 - tableLog;
+        U64 const step        = ZSTD_div64((U64)1 << 62, (U32)total); /* <== here, one division ! */
+        U64 const vStep       = 1ULL << (scale - 20);
+        int stillToDistribute = 1 << tableLog;
+        unsigned s;
+        unsigned largest = 0;
+        short largestP   = 0;
+        U32 lowThreshold = (U32)(total >> tableLog);
 
         for (s = 0; s <= maxSymbolValue; s++) {
             if (count[s] == total)
@@ -603,12 +603,12 @@ size_t FSE_buildCTable_raw(FSE_CTable *ct, unsigned nbBits) {
     const unsigned tableSize      = 1 << nbBits;
     const unsigned tableMask      = tableSize - 1;
     const unsigned maxSymbolValue = tableMask;
-    void *const    ptr            = ct;
-    U16 *const     tableU16       = ((U16 *)ptr) + 2;
-    void *const    FSCT =
+    void *const ptr               = ct;
+    U16 *const tableU16           = ((U16 *)ptr) + 2;
+    void *const FSCT =
         ((U32 *)ptr) + 1 /* header */ + (tableSize >> 1); /* assumption : tableLog >= 1 */
     FSE_symbolCompressionTransform *const symbolTT = (FSE_symbolCompressionTransform *)(FSCT);
-    unsigned                              s;
+    unsigned s;
 
     /* Sanity checks */
     if (nbBits < 1)
@@ -636,9 +636,9 @@ size_t FSE_buildCTable_raw(FSE_CTable *ct, unsigned nbBits) {
 
 /* fake FSE_CTable, for rle input (always same symbol) */
 size_t FSE_buildCTable_rle(FSE_CTable *ct, BYTE symbolValue) {
-    void                           *ptr      = ct;
-    U16                            *tableU16 = ((U16 *)ptr) + 2;
-    void                           *FSCTptr  = (U32 *)ptr + 2;
+    void *ptr                                = ct;
+    U16 *tableU16                            = ((U16 *)ptr) + 2;
+    void *FSCTptr                            = (U32 *)ptr + 2;
     FSE_symbolCompressionTransform *symbolTT = (FSE_symbolCompressionTransform *)FSCTptr;
 
     /* header */
@@ -662,10 +662,10 @@ static size_t FSE_compress_usingCTable_generic(
 ) {
     const BYTE *const istart = (const BYTE *)src;
     const BYTE *const iend   = istart + srcSize;
-    const BYTE       *ip     = iend;
+    const BYTE *ip           = iend;
 
     BIT_CStream_t bitC;
-    FSE_CState_t  CState1, CState2;
+    FSE_CState_t CState1, CState2;
 
     /* init */
     if (srcSize <= 2)
@@ -746,14 +746,14 @@ size_t FSE_compress_wksp(
     unsigned tableLog, void *workSpace, size_t wkspSize
 ) {
     BYTE *const ostart = (BYTE *)dst;
-    BYTE       *op     = ostart;
+    BYTE *op           = ostart;
     BYTE *const oend   = ostart + dstSize;
 
-    unsigned     count[FSE_MAX_SYMBOL_VALUE + 1];
-    S16          norm[FSE_MAX_SYMBOL_VALUE + 1];
-    FSE_CTable  *CTable            = (FSE_CTable *)workSpace;
+    unsigned count[FSE_MAX_SYMBOL_VALUE + 1];
+    S16 norm[FSE_MAX_SYMBOL_VALUE + 1];
+    FSE_CTable *CTable             = (FSE_CTable *)workSpace;
     size_t const CTableSize        = FSE_CTABLE_SIZE_U32(tableLog, maxSymbolValue);
-    void        *scratchBuffer     = (void *)(CTable + CTableSize);
+    void *scratchBuffer            = (void *)(CTable + CTableSize);
     size_t const scratchBufferSize = wkspSize - (CTableSize * sizeof(FSE_CTable));
 
     /* init conditions */
@@ -813,7 +813,7 @@ size_t FSE_compress_wksp(
 typedef struct {
     FSE_CTable CTable_max[FSE_CTABLE_SIZE_U32(FSE_MAX_TABLELOG, FSE_MAX_SYMBOL_VALUE)];
     union {
-        U32  hist_wksp[HIST_WKSP_SIZE_U32];
+        U32 hist_wksp[HIST_WKSP_SIZE_U32];
         BYTE scratchBuffer[1 << FSE_MAX_TABLELOG];
     } workspace;
 } fseWkspMax_t;

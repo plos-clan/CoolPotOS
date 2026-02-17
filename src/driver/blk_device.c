@@ -25,9 +25,9 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     uint64_t sector_count    = end_sector - start_sector + 1;
     uint64_t offset_in_block = offset % device->block_size;
 
-    size_t   total_size = sector_count * device->block_size;
-    size_t   page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-    uint64_t phys       = alloc_frames(page_size);
+    size_t total_size = sector_count * device->block_size;
+    size_t page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+    uint64_t phys     = alloc_frames(page_size);
     page_map_range(
         get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys, page_size * PAGE_SIZE,
         KERNEL_PTE_FLAGS
@@ -114,9 +114,9 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     uint64_t sector_count    = end_sector - start_sector + 1;
     uint64_t offset_in_block = offset % device->block_size;
 
-    size_t   total_size = sector_count * device->block_size;
-    size_t   page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-    uint64_t phys       = alloc_frames(page_size);
+    size_t total_size = sector_count * device->block_size;
+    size_t page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+    uint64_t phys     = alloc_frames(page_size);
     page_map_range(
         get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys, page_size * PAGE_SIZE,
         KERNEL_PTE_FLAGS
@@ -143,9 +143,9 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
         return total_copied;
     }
 
-    uint64_t       total_written = 0;
-    uint64_t       remaining     = length;
-    const uint8_t *src           = (const uint8_t *)buffer;
+    uint64_t total_written = 0;
+    uint64_t remaining     = length;
+    const uint8_t *src     = (const uint8_t *)buffer;
 
     while (remaining > 0) {
         // 计算本次操作的扇区数和长度

@@ -17,7 +17,7 @@ bool hid_device_new(HidDevice *dev, UsbInterface *iface, uint8_t ep_addr) {
 
     uint64_t desc_pages = ((uint64_t)desc_len + 4095) / 4096;
     uint64_t desc_phys  = 0;
-    void    *desc_virt  = usb_alloc_dma_pages(desc_pages, &desc_phys);
+    void *desc_virt     = usb_alloc_dma_pages(desc_pages, &desc_phys);
     if (!desc_virt) {
         return false;
     }
@@ -50,7 +50,7 @@ bool hid_device_new(HidDevice *dev, UsbInterface *iface, uint8_t ep_addr) {
             continue;
         }
         HidReport *report = &dev->descriptor.reports.values[i];
-        uint32_t   bytes  = hid_report_size_bytes(report, HID_KIND_INPUT);
+        uint32_t bytes    = hid_report_size_bytes(report, HID_KIND_INPUT);
         if (bytes > max_report_size) {
             max_report_size = bytes;
         }
@@ -58,7 +58,7 @@ bool hid_device_new(HidDevice *dev, UsbInterface *iface, uint8_t ep_addr) {
 
     uint64_t pages_needed = ((uint64_t)max_report_size + 4095) / 4096;
     uint64_t buf_phys     = 0;
-    void    *buf_virt     = usb_alloc_dma_pages(pages_needed, &buf_phys);
+    void *buf_virt        = usb_alloc_dma_pages(pages_needed, &buf_phys);
 
     dev->buf_virt        = (uint8_t *)buf_virt;
     dev->buf_phys        = buf_phys;

@@ -211,7 +211,7 @@ int tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length) {
 }
 
 int tc_cmac_final(uint8_t *tag, TCCmacState_t s) {
-    uint8_t     *k;
+    uint8_t *k;
     unsigned int i;
 
     /* input sanity check: */

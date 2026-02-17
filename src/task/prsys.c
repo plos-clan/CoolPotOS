@@ -78,8 +78,8 @@ syscall_(setpgid, pid_t pid, pid_t pgid) {
 }
 
 syscall_(getpgid) {
-    size_t pid     = arg0;
-    pcb_t  process = pid == 0 ? get_current_task()->process : found_pcb(pid);
+    size_t pid    = arg0;
+    pcb_t process = pid == 0 ? get_current_task()->process : found_pcb(pid);
     if (process == NULL || process->status == T_DEATH) {
         return SYSCALL_FAULT_(ESRCH);
     }
@@ -205,8 +205,8 @@ syscall_(
     if (mask == 0)
         return SYSCALL_FAULT_(EINVAL);
 
-    uint64_t timeout_ns  = 0;
-    bool     has_timeout = false;
+    uint64_t timeout_ns = 0;
+    bool has_timeout    = false;
     if (timeout) {
         if (timeout->tv_nsec >= 1000000000ULL)
             return SYSCALL_FAULT_(EINVAL);
@@ -214,8 +214,8 @@ syscall_(
         has_timeout = true;
     }
 
-    tcb_t    thread = get_current_task();
-    uint64_t start  = nano_time();
+    tcb_t thread   = get_current_task();
+    uint64_t start = nano_time();
     while (true) {
         sigset_t pending = thread->signal & mask;
         if (pending) {
@@ -264,7 +264,7 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
         return SYSCALL_FAULT_(EINVAL);
     if (sigsetsize < sizeof(sigset_t))
         return SYSCALL_FAULT_(EINVAL);
-    tcb_t    task = get_current_task();
+    tcb_t task    = get_current_task();
     sigset_t old  = task->blocked;
     sigset_t temp = (uint64_t)*mask & ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
 
@@ -315,7 +315,7 @@ syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusag
         return SYSCALL_FAULT_(ECHILD);
 wait:;
     pid_t ret_pid = 0;
-    int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
+    int status0   = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
 
     if (ret_pid == 0) {
         return 0;
@@ -376,8 +376,8 @@ syscall_(prctl, int option) {
     case PR_SET_NAME:
         if (arg1 == 0)
             return -1;
-        char  *new_name = (char *)arg1;
-        size_t length   = strlen(new_name);
+        char *new_name = (char *)arg1;
+        size_t length  = strlen(new_name);
         if (length > 16)
             length = 16;
         char name_buf[17];
@@ -508,9 +508,9 @@ syscall_(kill, int pid, int sig) {
     } else if (pid == -1) {
         // Send to all processes (simplified: skip kernel process)
         extern cow_arraylist *process_list;
-        extern pcb_t          kernel_process;
-        pcb_t                 process = NULL;
-        int                   sent    = 0;
+        extern pcb_t kernel_process;
+        pcb_t process = NULL;
+        int sent      = 0;
         cow_foreach(process_list, process) {
             if (process->pid == kernel_process->pid)
                 continue;

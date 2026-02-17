@@ -8,13 +8,13 @@
 #include "term/klog.h"
 #include "timer.h"
 
-bool     x2apic_mode = false;
+bool x2apic_mode = false;
 uint64_t lapic_address;
 
 uint64_t calibrated_timer_initial = 0;
 
 static struct ioapic_info found_ioapics[MAX_IOAPICS];
-static struct iso_info    found_isos[MAX_ISO];
+static struct iso_info found_isos[MAX_ISO];
 
 static size_t found_iso_count    = 0;
 static size_t found_ioapic_count = 0;
@@ -203,7 +203,7 @@ void ap_local_apic_init() {
 }
 
 void apic_init() {
-    ACPI_TABLE_MADT  *madt   = NULL;
+    ACPI_TABLE_MADT *madt    = NULL;
     const ACPI_STATUS status = AcpiGetTable(ACPI_SIG_MADT, 1, (ACPI_TABLE_HEADER **)&madt);
     if (ACPI_FAILURE(status)) {
         kerror("Failed to get MADT table: %s", AcpiFormatException(status));
@@ -214,7 +214,7 @@ void apic_init() {
     page_map_range(get_kernel_pagedir(), lapic_address, madt->Address, PAGE_SIZE, KERNEL_PTE_FLAGS);
     x2apic_mode                    = x2apic_mode_supported();
     ACPI_SUBTABLE_HEADER *subtable = (ACPI_SUBTABLE_HEADER *)(madt + 1);
-    uintptr_t             end      = (uintptr_t)madt + madt->Header.Length;
+    uintptr_t end                  = (uintptr_t)madt + madt->Header.Length;
     while ((uintptr_t)subtable < end) {
         switch (subtable->Type) {
         case ACPI_MADT_TYPE_IO_APIC:;

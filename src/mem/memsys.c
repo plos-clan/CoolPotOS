@@ -26,8 +26,8 @@ syscall_(
     }
     pcb_t process = get_current_task()->process;
 
-    vma_manager_t *mgr        = &process->vma_manager;
-    uint64_t       start_addr = 0;
+    vma_manager_t *mgr  = &process->vma_manager;
+    uint64_t start_addr = 0;
     if (flags & MAP_FIXED) {
         if (!addr)
             return SYSCALL_FAULT_(EINVAL);
@@ -153,11 +153,11 @@ syscall_(munmap, uint64_t addr, size_t size) {
         return -EFAULT;
     }
 
-    tcb_t          current = get_current_task();
-    pcb_t          process = current->process;
-    vma_manager_t *mgr     = &process->vma_manager;
-    vma_t         *vma     = mgr->vma_list;
-    vma_t         *next    = NULL;
+    tcb_t current      = get_current_task();
+    pcb_t process      = current->process;
+    vma_manager_t *mgr = &process->vma_manager;
+    vma_t *vma         = mgr->vma_list;
+    vma_t *next        = NULL;
 
     uint64_t start = addr;
     uint64_t end   = addr + size;

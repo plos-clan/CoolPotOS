@@ -17,7 +17,7 @@ bool usb_device_enumerate(UsbDevice *dev) {
     }
 
     uint64_t desc_phys = 0;
-    void    *desc_virt = usb_alloc_dma_pages(1, &desc_phys);
+    void *desc_virt    = usb_alloc_dma_pages(1, &desc_phys);
     if (!desc_virt) {
         return false;
     }
@@ -43,7 +43,7 @@ bool usb_device_enumerate(UsbDevice *dev) {
     kinfo("USB Device: %04x:%04x", dev->desc.id_vendor, dev->desc.id_product);
 
     uint64_t header_phys = 0;
-    void    *header_virt = usb_alloc_dma_pages(1, &header_phys);
+    void *header_virt    = usb_alloc_dma_pages(1, &header_phys);
     if (!header_virt) {
         usb_free_dma_pages(desc_virt, 1);
         return false;
@@ -67,13 +67,13 @@ bool usb_device_enumerate(UsbDevice *dev) {
         return false;
     }
 
-    ConfigurationDescriptor *header     = (ConfigurationDescriptor *)header_virt;
-    uint16_t                 total_len  = header->total_length;
-    uint8_t                  config_val = header->configuration_value;
+    ConfigurationDescriptor *header = (ConfigurationDescriptor *)header_virt;
+    uint16_t total_len              = header->total_length;
+    uint8_t config_val              = header->configuration_value;
 
     uint64_t pages_needed = ((uint64_t)total_len + 4095) / 4096;
     uint64_t config_phys  = 0;
-    void    *config_virt  = usb_alloc_dma_pages(pages_needed, &config_phys);
+    void *config_virt     = usb_alloc_dma_pages(pages_needed, &config_phys);
     if (!config_virt) {
         usb_free_dma_pages(header_virt, 1);
         usb_free_dma_pages(desc_virt, 1);
@@ -156,9 +156,9 @@ usb_device_parse_config_tree(UsbDevice *dev, const uint8_t *config_raw, uint16_t
     uint16_t offset = 0;
 
     while (offset < total_len) {
-        const uint8_t *ptr       = config_raw + offset;
-        uint8_t        desc_len  = ptr[0];
-        uint8_t        desc_type = ptr[1];
+        const uint8_t *ptr = config_raw + offset;
+        uint8_t desc_len   = ptr[0];
+        uint8_t desc_type  = ptr[1];
 
         if ((uint16_t)(offset + desc_len) > total_len) {
             break;
@@ -186,10 +186,10 @@ usb_device_parse_config_tree(UsbDevice *dev, const uint8_t *config_raw, uint16_t
 }
 
 static void usb_device_parse_interface_descriptor(UsbDevice *dev, const uint8_t *ptr) {
-    const InterfaceDescriptor *desc  = (const InterfaceDescriptor *)ptr;
-    UsbInterface               iface = { 0 };
-    iface.desc                       = *desc;
-    iface.device                     = dev;
+    const InterfaceDescriptor *desc = (const InterfaceDescriptor *)ptr;
+    UsbInterface iface              = { 0 };
+    iface.desc                      = *desc;
+    iface.device                    = dev;
 
     UsbInterfaceVec_push(&dev->interfaces, iface);
 }
@@ -204,10 +204,10 @@ static void usb_device_parse_hid_descriptor(UsbDevice *dev, const uint8_t *ptr) 
 
     uint32_t pos = sizeof(HidDescriptorHeader);
     for (uint8_t i = 0; i < header->num_descriptors; i++) {
-        uint8_t  desc_type = ptr[pos];
-        uint16_t len_lo    = (uint16_t)ptr[pos + 1];
-        uint16_t len_hi    = (uint16_t)ptr[pos + 2];
-        uint16_t desc_len  = len_lo | (uint16_t)(len_hi << 8);
+        uint8_t desc_type = ptr[pos];
+        uint16_t len_lo   = (uint16_t)ptr[pos + 1];
+        uint16_t len_hi   = (uint16_t)ptr[pos + 2];
+        uint16_t desc_len = len_lo | (uint16_t)(len_hi << 8);
 
         if (desc_type == USB_DESC_REPORT) {
             iface->extra_data.hid_report_desc_len = desc_len;
@@ -240,7 +240,7 @@ static void usb_device_parse_endpoint_descriptor(UsbDevice *dev, const uint8_t *
     }
 
     const EndpointDescriptor *desc = (const EndpointDescriptor *)ptr;
-    UsbEndpoint               ep   = { 0 };
+    UsbEndpoint ep                 = { 0 };
     ep.desc                        = *desc;
 
     UsbEndpointVec_push(&iface->endpoints, ep);

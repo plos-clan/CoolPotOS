@@ -59,11 +59,11 @@
 #include "krlibc.h"
 
 int default_CSPRNG(uint8_t *dest, unsigned int size) {
-    char  *ptr  = (char *)dest;
+    char *ptr   = (char *)dest;
     size_t left = (size_t)size;
     while (left > 0) {
         uint64_t timestamp = nano_time(); // 获取当前时间戳（64位）
-        size_t   to_copy   = (left < sizeof(uint64_t)) ? left : sizeof(uint64_t);
+        size_t to_copy     = (left < sizeof(uint64_t)) ? left : sizeof(uint64_t);
         memcpy(ptr, &timestamp, to_copy);
         left -= to_copy;
         ptr += to_copy;

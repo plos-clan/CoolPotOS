@@ -32,8 +32,8 @@ errno_t create_session_terminal(tty_t *session) {
         return -ENODEV;
     if (session->device->type != TTY_DEVICE_GRAPHI)
         return -EINVAL;
-    struct tty_graphics_    *framebuffer = session->device->private_data;
-    struct flanterm_context *fl_context  = flanterm_fb_init(
+    struct tty_graphics_ *framebuffer   = session->device->private_data;
+    struct flanterm_context *fl_context = flanterm_fb_init(
         NULL, NULL, framebuffer->address, framebuffer->width, framebuffer->height,
         framebuffer->pitch, framebuffer->red_mask_size, framebuffer->red_mask_shift,
         framebuffer->green_mask_size, framebuffer->green_mask_shift, framebuffer->blue_mask_size,

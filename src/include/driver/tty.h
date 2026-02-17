@@ -120,15 +120,15 @@ struct vt_state {
 };
 
 struct vt_mode {
-    char  mode;   // 终端模式
-    char  waitv;  // 垂直同步
+    char mode;    // 终端模式
+    char waitv;   // 垂直同步
     short relsig; // 释放信号
     short acqsig; // 获取信号
     short frsig;  // 强制释放信号
 };
 
 typedef struct tty_virtual_device tty_device_t;
-typedef struct tty_session        tty_t;
+typedef struct tty_session tty_t;
 
 typedef struct tty_device_ops {
     size_t (*write)(tty_device_t *device, const char *buf, size_t count);
@@ -138,18 +138,18 @@ typedef struct tty_device_ops {
 } tty_device_ops_t;
 
 struct tty_graphics_ {
-    void    *address;
+    void *address;
     uint64_t width;
     uint64_t height;
     uint64_t pitch;
     uint16_t bpp;
-    uint8_t  memory_model;
-    uint8_t  red_mask_size;
-    uint8_t  red_mask_shift;
-    uint8_t  green_mask_size;
-    uint8_t  green_mask_shift;
-    uint8_t  blue_mask_size;
-    uint8_t  blue_mask_shift;
+    uint8_t memory_model;
+    uint8_t red_mask_size;
+    uint8_t red_mask_shift;
+    uint8_t green_mask_size;
+    uint8_t green_mask_shift;
+    uint8_t blue_mask_size;
+    uint8_t blue_mask_shift;
 };
 
 struct tty_serial_ {
@@ -158,9 +158,9 @@ struct tty_serial_ {
 
 typedef struct tty_virtual_device { // TTY 设备
     enum tty_device_type type;
-    tty_device_ops_t     ops;          // 图形设备不具备 read write 操作
-    void                *private_data; // 实际设备
-    char                 name[32];
+    tty_device_ops_t ops; // 图形设备不具备 read write 操作
+    void *private_data;   // 实际设备
+    char name[32];
 
     struct llist_header node;
 } tty_device_t;
@@ -173,12 +173,12 @@ struct winsize {
 };
 
 typedef struct termios {
-    uint32_t c_iflag;    /* input mode flags */
-    uint32_t c_oflag;    /* output mode flags */
-    uint32_t c_cflag;    /* control mode flags */
-    uint32_t c_lflag;    /* local mode flags */
-    uint8_t  c_line;     /* line discipline */
-    uint8_t  c_cc[NCCS]; /* control characters */
+    uint32_t c_iflag;   /* input mode flags */
+    uint32_t c_oflag;   /* output mode flags */
+    uint32_t c_cflag;   /* control mode flags */
+    uint32_t c_lflag;   /* local mode flags */
+    uint8_t c_line;     /* line discipline */
+    uint8_t c_cc[NCCS]; /* control characters */
 } termios_t;
 
 typedef struct tty_session_ops {
@@ -191,25 +191,25 @@ typedef struct tty_session_ops {
 } tty_session_ops_t;
 
 typedef struct tty_session { // 一个 TTY 会话
-    void               *terminal;
-    termios_t           termios;
-    tty_session_ops_t   ops;
-    pid_t               fgproc; // 前台进程组ID
-    tty_device_t       *device; // 会话所属的TTY设备
-    atom_queue         *queue;  // 输入缓冲队列
-    struct vt_mode      vt_mode;
-    int                 tty_mode;
-    int                 tty_kbmode;
+    void *terminal;
+    termios_t termios;
+    tty_session_ops_t ops;
+    pid_t fgproc;         // 前台进程组ID
+    tty_device_t *device; // 会话所属的TTY设备
+    atom_queue *queue;    // 输入缓冲队列
+    struct vt_mode vt_mode;
+    int tty_mode;
+    int tty_kbmode;
     struct llist_header list_node;
 } tty_t;
 
 extern tty_t *kernel_session;
 
-int           kernel_getch();
+int kernel_getch();
 tty_device_t *get_tty_device(const char *name);
 tty_device_t *alloc_tty_device(enum tty_device_type type);
-errno_t       register_tty_device(tty_device_t *device);
-errno_t       delete_tty_device(tty_device_t *device);
-void          init_tty();
-void          init_tty_session();
-void          init_console_symlink();
+errno_t register_tty_device(tty_device_t *device);
+errno_t delete_tty_device(tty_device_t *device);
+void init_tty();
+void init_tty_session();
+void init_console_symlink();

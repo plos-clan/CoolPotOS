@@ -9,7 +9,7 @@
 #include "term/klog.h"
 
 extern vfs_node_t sockfs_root;
-extern int        sockfs_id;
+extern int sockfs_id;
 
 static socket_info_t *alloc_socket_info(int domain, int type, int protocol) {
     socket_info_t *info = calloc(1, sizeof(socket_info_t));
@@ -387,9 +387,9 @@ syscall_(
         return SYSCALL_FAULT_(ENOTCONN);
 
     // Write data to target's recv_buf
-    const uint8_t *src       = (const uint8_t *)buf;
-    size_t         total     = 0;
-    size_t         remaining = len;
+    const uint8_t *src = (const uint8_t *)buf;
+    size_t total       = 0;
+    size_t remaining   = len;
 
     while (remaining > 0) {
         spin_lock(target->lock);

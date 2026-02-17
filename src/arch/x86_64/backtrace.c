@@ -8,17 +8,17 @@
 
 typedef struct {
     const char *name;
-    uint64_t    addr;
+    uint64_t addr;
 } ksym_t;
 
 LIMINE_REQUEST struct limine_kernel_file_request kfile_request = {
     .id = LIMINE_KERNEL_FILE_REQUEST,
 };
-extern char     _kernel_start[];
-ksym_t         *kallsyms          = NULL;
-size_t          kallsyms_num      = 0;
-void           *eh_frame_start    = NULL;
-size_t          eh_frame_size     = 0;
+extern char _kernel_start[];
+ksym_t *kallsyms                  = NULL;
+size_t kallsyms_num               = 0;
+void *eh_frame_start              = NULL;
+size_t eh_frame_size              = 0;
 static uint64_t kernel_text_start = 0;
 static uint64_t kernel_text_end   = 0;
 
@@ -72,7 +72,7 @@ static void get_stack_bounds(uint64_t rsp, uint64_t *stack_low, uint64_t *stack_
 
 static int
 backtrace_from_rbp(uint64_t rbp, uint64_t stack_low, uint64_t stack_high, int max_frames) {
-    int      count    = 0;
+    int count         = 0;
     uint64_t sym_addr = 0;
 
     while (count < max_frames) {
@@ -123,15 +123,15 @@ void sort_kallsyms(void) {
 
 void kallsyms_init_from_elf() {
     struct limine_kernel_file_response *response = kfile_request.response;
-    Elf64_Ehdr                         *ehdr     = (Elf64_Ehdr *)response->kernel_file->address;
+    Elf64_Ehdr *ehdr                             = (Elf64_Ehdr *)response->kernel_file->address;
     if (ehdr->e_ident[0] != 0x7f || memcmp(ehdr->e_ident + 1, "ELF", 3) != 0) {
         return;
     }
     Elf64_Sym *symtab = NULL;
-    char      *strtab = NULL;
+    char *strtab      = NULL;
 
-    Elf64_Shdr *shdrs    = (Elf64_Shdr *)((char *)ehdr + ehdr->e_shoff);
-    char       *shstrtab = (char *)ehdr + shdrs[ehdr->e_shstrndx].sh_offset;
+    Elf64_Shdr *shdrs = (Elf64_Shdr *)((char *)ehdr + ehdr->e_shoff);
+    char *shstrtab    = (char *)ehdr + shdrs[ehdr->e_shstrndx].sh_offset;
 
     size_t symtabsz = 0;
 
@@ -172,9 +172,9 @@ void kallsyms_init_from_elf() {
     kallsyms = calloc(num_symbols, sizeof(ksym_t));
 
     for (size_t i = 0; i < num_symbols; i++) {
-        Elf64_Sym *sym      = &symtab[i];
-        char      *sym_name = &strtab[sym->st_name];
-        uint64_t   type     = ELF64_ST_TYPE(sym->st_info);
+        Elf64_Sym *sym = &symtab[i];
+        char *sym_name = &strtab[sym->st_name];
+        uint64_t type  = ELF64_ST_TYPE(sym->st_info);
         if (sym->st_shndx == SHN_UNDEF)
             continue;
         if (type == STT_FUNC) {
@@ -212,8 +212,8 @@ const char *kallsyms_lookup(uint64_t addr, uint64_t *sym_addr) {
 void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp) {
     printk("Call Trace:\n");
 
-    uint64_t    sym_addr = 0;
-    const char *name     = kallsyms_lookup(frame->rip, &sym_addr);
+    uint64_t sym_addr = 0;
+    const char *name  = kallsyms_lookup(frame->rip, &sym_addr);
     if (name) {
         printk("  [<0x%lx>] %s+0x%lx (RIP)\n", frame->rip, name, frame->rip - sym_addr);
     } else {
@@ -221,7 +221,7 @@ void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp) {
     }
 
     const int max_frames = 20;
-    int       count      = 0;
+    int count            = 0;
 
     uint64_t stack_low  = 0;
     uint64_t stack_high = 0;

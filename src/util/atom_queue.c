@@ -14,7 +14,7 @@ static void store(uint64_t *addr, uint32_t value) {
 
 static bool cas(uint64_t *addr, uint64_t exp, uint64_t upd) {
     uint64_t expected_val = exp;
-    bool     success =
+    bool success =
         __atomic_compare_exchange_n(addr, &expected_val, upd, false, ATOMIC_ORDER, ATOMIC_ORDER);
     return success;
 }

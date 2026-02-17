@@ -6,7 +6,7 @@
 #include "term/klog.h"
 #include "timer.h"
 
-HpetInfo       *hpet_addr;
+HpetInfo *hpet_addr;
 static uint64_t hpetPeriod   = 0;
 static uint64_t fms_per_tick = 0;
 
@@ -42,7 +42,7 @@ void nsleep(uint64_t nano) {
 
 void hpet_init() {
     ACPI_TABLE_HPET *hpet_table = NULL;
-    ACPI_STATUS      status     = AcpiGetTable(ACPI_SIG_HPET, 1, (ACPI_TABLE_HEADER **)&hpet_table);
+    ACPI_STATUS status          = AcpiGetTable(ACPI_SIG_HPET, 1, (ACPI_TABLE_HEADER **)&hpet_table);
     if (ACPI_FAILURE(status)) {
         kerror("ACPI: HPET table not found.");
         return;

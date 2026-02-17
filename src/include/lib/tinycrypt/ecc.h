@@ -86,7 +86,7 @@ extern "C" {
 #endif
 
 /* defining data types to store word and bit counts: */
-typedef int8_t  wordcount_t;
+typedef int8_t wordcount_t;
 typedef int16_t bitcount_t;
 /* defining data type for comparison result: */
 typedef int8_t cmpresult_t;
@@ -112,7 +112,7 @@ typedef const struct uECC_Curve_t *uECC_Curve;
 struct uECC_Curve_t {
     wordcount_t num_words;
     wordcount_t num_bytes;
-    bitcount_t  num_n_bits;
+    bitcount_t num_n_bits;
     uECC_word_t p[NUM_ECC_WORDS];
     uECC_word_t n[NUM_ECC_WORDS];
     uECC_word_t G[NUM_ECC_WORDS * 2];

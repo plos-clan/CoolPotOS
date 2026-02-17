@@ -47,15 +47,15 @@ typedef enum {
 } HidKind;
 
 typedef struct HidField {
-    uint8_t  report_id;
-    HidKind  kind;
+    uint8_t report_id;
+    HidKind kind;
     uint32_t bit_offset;
     uint32_t bit_size;
     uint32_t report_count;
-    int32_t  logical_min;
-    int32_t  logical_max;
-    int32_t  physical_min;
-    int32_t  physical_max;
+    int32_t logical_min;
+    int32_t logical_max;
+    int32_t physical_min;
+    int32_t physical_max;
     uint32_t flags;
     uint16_t usage_page;
     uint32_t usage_min;
@@ -64,30 +64,30 @@ typedef struct HidField {
 
 USB_VEC_DEFINE(HidField, HidFieldVec);
 
-bool     hid_field_is_const(const HidField *field);
-bool     hid_field_is_variable(const HidField *field);
-bool     hid_field_is_array(const HidField *field);
-bool     hid_field_is_relative(const HidField *field);
-bool     hid_field_is_range(const HidField *field);
+bool hid_field_is_const(const HidField *field);
+bool hid_field_is_variable(const HidField *field);
+bool hid_field_is_array(const HidField *field);
+bool hid_field_is_relative(const HidField *field);
+bool hid_field_is_range(const HidField *field);
 uint32_t hid_field_value(const HidField *field, const uint8_t *data, uint32_t idx);
-int32_t  hid_field_value_signed(const HidField *field, const uint8_t *data, uint32_t idx);
+int32_t hid_field_value_signed(const HidField *field, const uint8_t *data, uint32_t idx);
 
 typedef struct HidReport {
-    uint8_t     id;
-    uint32_t    size_bits[3];
+    uint8_t id;
+    uint32_t size_bits[3];
     HidFieldVec fields;
 } HidReport;
 
 uint32_t hid_report_size_bytes(const HidReport *report, HidKind kind);
 
 typedef struct HidReportMap {
-    bool      used[256];
+    bool used[256];
     HidReport values[256];
-    uint16_t  len;
+    uint16_t len;
 } HidReportMap;
 
-void       hid_report_map_init(HidReportMap *map);
-void       hid_report_map_free(HidReportMap *map);
+void hid_report_map_init(HidReportMap *map);
+void hid_report_map_free(HidReportMap *map);
 HidReport *hid_report_map_get(HidReportMap *map, uint8_t report_id);
 HidReport *hid_report_map_ensure(HidReportMap *map, uint8_t report_id, HidReport *templ);
 
@@ -98,7 +98,7 @@ typedef struct HidDescriptor {
 void hid_descriptor_free(HidDescriptor *desc);
 
 typedef struct LocalItem {
-    bool     is_range;
+    bool is_range;
     uint32_t min;
     uint32_t max;
 } LocalItem;
@@ -111,25 +111,25 @@ typedef struct LocalState {
 
 typedef struct GlobalState {
     uint16_t usage_page;
-    int32_t  logical_min;
-    int32_t  logical_max;
-    int32_t  physical_min;
-    int32_t  physical_max;
+    int32_t logical_min;
+    int32_t logical_max;
+    int32_t physical_min;
+    int32_t physical_max;
     uint32_t report_size;
     uint32_t report_count;
-    uint8_t  report_id;
+    uint8_t report_id;
 } GlobalState;
 
 USB_VEC_DEFINE(GlobalState, GlobalStateVec);
 
 typedef struct HidParser {
     const uint8_t *data;
-    uint16_t       length;
-    uint16_t       offset;
-    GlobalState    global;
+    uint16_t length;
+    uint16_t offset;
+    GlobalState global;
     GlobalStateVec global_stack;
-    LocalState     local;
-    HidDescriptor  descriptor;
+    LocalState local;
+    HidDescriptor descriptor;
 } HidParser;
 
 void hid_parser_init(HidParser *parser, const uint8_t *data, uint16_t length);

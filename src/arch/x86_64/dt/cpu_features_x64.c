@@ -236,7 +236,7 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
     if (featuresEcx & CPUID_ECX_RDRAND)
         status &= string_builder_append(cpu_features->features, "rdrand ");
 
-    int         cpuid_level;
+    int cpuid_level;
     static char x86_vendor_id[16] = { 0 };
     cpuid_raw(
         0x00000000, (uint32_t *)&cpuid_level, (uint32_t *)&x86_vendor_id[0],

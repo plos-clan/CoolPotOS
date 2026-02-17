@@ -19,9 +19,9 @@ typedef enum {
 } TransferStatus;
 
 typedef struct {
-    uint8_t        ep_addr;
+    uint8_t ep_addr;
     TransferStatus status;
-    uint32_t       residual_length;
+    uint32_t residual_length;
 } CompletionEvent;
 
 typedef struct UsbDriver {

@@ -43,8 +43,8 @@ errno_t lazy_tryalloc(pcb_t pcb, uint64_t address) {
     if (virt_page == NULL) {
         return -1;
     } else {
-        size_t   fault_index = (address - virt_page->start) / PAGE_SIZE;
-        uint64_t page_addr   = virt_page->start + fault_index * PAGE_SIZE;
+        size_t fault_index = (address - virt_page->start) / PAGE_SIZE;
+        uint64_t page_addr = virt_page->start + fault_index * PAGE_SIZE;
 
         uint64_t phys = alloc_frames(1);
         page_map_to(get_current_directory(), page_addr, phys, virt_page->pte_flags);
@@ -88,8 +88,8 @@ void unmap_virtual_page(pcb_t process, uint64_t vaddr, size_t length) {
         spin_lock(process->virt_queue->lock);
         qlist_foreach(process->virt_queue, node) {
             mm_virtual_page_t *virtual_page = (mm_virtual_page_t *)node->data;
-            uint64_t           start        = virtual_page->start;
-            uint64_t           end          = virtual_page->start + virtual_page->count * PAGE_SIZE;
+            uint64_t start                  = virtual_page->start;
+            uint64_t end                    = virtual_page->start + virtual_page->count * PAGE_SIZE;
 
             if (end > vaddr && start < vaddr_end) {
                 vpage = virtual_page;

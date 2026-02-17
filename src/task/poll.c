@@ -84,8 +84,8 @@ void select_bitmap_set(uint8_t *map, int index) {
 // ============================================================
 
 static vfs_node_t epollfs_root = NULL;
-static int        epollfs_id   = 0;
-static int        epollfd_id   = 0;
+static int epollfs_id          = 0;
+static int epollfd_id          = 0;
 
 // --- epollfs VFS callbacks ---
 
@@ -105,9 +105,9 @@ static int epollfs_poll(void *file, size_t events) {
         return 0;
 
     extern vfs_callback_t fs_callbacks[256];
-    int                   out     = 0;
-    tcb_t                 current = get_current_task();
-    fdt_t                *fdt     = current->process->fdts;
+    int out       = 0;
+    tcb_t current = get_current_task();
+    fdt_t *fdt    = current->process->fdts;
 
     spin_lock(ep->lock);
     for (int i = 0; i < ep->count; i++) {
@@ -201,7 +201,7 @@ syscall_(epoll_create1, int flags) {
     handle->flags  = flags & O_CLOEXEC ? O_CLOEXEC : 0;
 
     fdt_t *fdt = get_current_task()->process->fdts;
-    int    fd  = add_fd(fdt, handle);
+    int fd     = add_fd(fdt, handle);
     handle->fd = fd;
 
     return (uint64_t)fd;
@@ -288,9 +288,9 @@ syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int ti
     if (maxevents <= 0 || !events)
         return SYSCALL_FAULT_(EINVAL);
 
-    tcb_t  current   = get_current_task();
-    fdt_t *fdt       = current->process->fdts;
-    fd_t  *ep_handle = get_fd(fdt, epfd);
+    tcb_t current   = get_current_task();
+    fdt_t *fdt      = current->process->fdts;
+    fd_t *ep_handle = get_fd(fdt, epfd);
     if (!ep_handle)
         return SYSCALL_FAULT_(EBADF);
     if (!(ep_handle->node->type & file_epoll))
@@ -301,8 +301,8 @@ syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int ti
         return SYSCALL_FAULT_(EBADF);
 
     extern vfs_callback_t fs_callbacks[256];
-    uint64_t              start_time = nano_time();
-    int                   ready      = 0;
+    uint64_t start_time = nano_time();
+    int ready           = 0;
 
     do {
         ready = 0;
@@ -314,7 +314,7 @@ syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int ti
                 continue;
 
             vfs_node_t node = handle->node;
-            uint32_t   revents;
+            uint32_t revents;
 
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
                 // Filesystem doesn't implement poll - assume ready
@@ -351,7 +351,7 @@ syscall_(
     epoll_pwait, int epfd, struct epoll_event *events, int maxevents, int timeout,
     sigset_t *sigmask, size_t sigsetsize
 ) {
-    tcb_t    thread   = get_current_task();
+    tcb_t thread      = get_current_task();
     sigset_t old_mask = thread->blocked;
 
     if (sigmask && sigsetsize == sizeof(sigset_t)) {
@@ -372,8 +372,8 @@ syscall_(
 // ============================================================
 
 static vfs_node_t eventfdfs_root = NULL;
-static int        eventfdfs_id   = 0;
-static int        eventfd_nid    = 0;
+static int eventfdfs_id          = 0;
+static int eventfd_nid           = 0;
 
 static size_t eventfdfs_read(void *file, void *addr, size_t offset, size_t size) {
     (void)offset;
@@ -534,7 +534,7 @@ syscall_(eventfd2, uint64_t initval, int flags) {
         handle->flags |= O_NONBLOCK;
 
     fdt_t *fdt = get_current_task()->process->fdts;
-    int    fd  = add_fd(fdt, handle);
+    int fd     = add_fd(fdt, handle);
     handle->fd = fd;
 
     return (uint64_t)fd;

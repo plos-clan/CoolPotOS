@@ -175,7 +175,7 @@ FSE_PUBLIC_API size_t FSE_writeNCount(
 typedef unsigned
     FSE_CTable; /* don't allocate that. It's only meant to be more restrictive than void* */
 FSE_PUBLIC_API FSE_CTable *FSE_createCTable(unsigned maxSymbolValue, unsigned tableLog);
-FSE_PUBLIC_API void        FSE_freeCTable(FSE_CTable *ct);
+FSE_PUBLIC_API void FSE_freeCTable(FSE_CTable *ct);
 
 /*! FSE_buildCTable():
     Builds `ct`, which must be already allocated, using FSE_createCTable().
@@ -267,7 +267,7 @@ FSE_PUBLIC_API size_t FSE_readNCount_bmi2(
 typedef unsigned
     FSE_DTable; /* don't allocate that. It's just a way to be more restrictive than void* */
 FSE_PUBLIC_API FSE_DTable *FSE_createDTable(unsigned tableLog);
-FSE_PUBLIC_API void        FSE_freeDTable(FSE_DTable *dt);
+FSE_PUBLIC_API void FSE_freeDTable(FSE_DTable *dt);
 
 /*! FSE_buildDTable():
     Builds 'dt', which must be already allocated, using FSE_createDTable().
@@ -439,10 +439,10 @@ typedef enum {
    Hence their body are included in next section.
 */
 typedef struct {
-    ptrdiff_t   value;
+    ptrdiff_t value;
     const void *stateTable;
     const void *symbolTT;
-    unsigned    stateLog;
+    unsigned stateLog;
 } FSE_CState_t;
 
 static void FSE_initCState(FSE_CState_t *CStatePtr, const FSE_CTable *ct);
@@ -497,7 +497,7 @@ If there is an error, it returns an errorCode (which can be tested using FSE_isE
  *  FSE symbol decompression API
  *******************************************/
 typedef struct {
-    size_t      state;
+    size_t state;
     const void *table; /* precise table may vary, depending on U16 */
 } FSE_DState_t;
 
@@ -572,8 +572,8 @@ typedef struct {
 
 MEM_STATIC void FSE_initCState(FSE_CState_t *statePtr, const FSE_CTable *ct) {
     const void *ptr      = ct;
-    const U16  *u16ptr   = (const U16 *)ptr;
-    const U32   tableLog = MEM_read16(ptr);
+    const U16 *u16ptr    = (const U16 *)ptr;
+    const U32 tableLog   = MEM_read16(ptr);
     statePtr->value      = (ptrdiff_t)1 << tableLog;
     statePtr->stateTable = u16ptr + 2;
     statePtr->symbolTT   = ct + 1 + (tableLog ? (1 << (tableLog - 1)) : 1);
@@ -589,7 +589,7 @@ MEM_STATIC void FSE_initCState2(FSE_CState_t *statePtr, const FSE_CTable *ct, U3
         const FSE_symbolCompressionTransform symbolTT =
             ((const FSE_symbolCompressionTransform *)(statePtr->symbolTT))[symbol];
         const U16 *stateTable = (const U16 *)(statePtr->stateTable);
-        U32        nbBitsOut  = (U32)((symbolTT.deltaNbBits + (1 << 15)) >> 16);
+        U32 nbBitsOut         = (U32)((symbolTT.deltaNbBits + (1 << 15)) >> 16);
         statePtr->value       = (nbBitsOut << 16) - symbolTT.deltaNbBits;
         statePtr->value = stateTable[(statePtr->value >> nbBitsOut) + symbolTT.deltaFindState];
     }
@@ -599,7 +599,7 @@ MEM_STATIC void FSE_encodeSymbol(BIT_CStream_t *bitC, FSE_CState_t *statePtr, un
     FSE_symbolCompressionTransform const symbolTT =
         ((const FSE_symbolCompressionTransform *)(statePtr->symbolTT))[symbol];
     const U16 *const stateTable = (const U16 *)(statePtr->stateTable);
-    U32 const        nbBitsOut  = (U32)((statePtr->value + symbolTT.deltaNbBits) >> 16);
+    U32 const nbBitsOut         = (U32)((statePtr->value + symbolTT.deltaNbBits) >> 16);
     BIT_addBits(bitC, statePtr->value, nbBitsOut);
     statePtr->value = stateTable[(statePtr->value >> nbBitsOut) + symbolTT.deltaFindState];
 }
@@ -654,12 +654,12 @@ typedef struct {
 
 typedef struct {
     unsigned short newState;
-    unsigned char  symbol;
-    unsigned char  nbBits;
+    unsigned char symbol;
+    unsigned char nbBits;
 } FSE_decode_t; /* size == U32 */
 
 MEM_STATIC void FSE_initDState(FSE_DState_t *DStatePtr, BIT_DStream_t *bitD, const FSE_DTable *dt) {
-    const void                   *ptr     = dt;
+    const void *ptr                       = dt;
     const FSE_DTableHeader *const DTableH = (const FSE_DTableHeader *)ptr;
     DStatePtr->state                      = BIT_readBits(bitD, DTableH->tableLog);
     BIT_reloadDStream(bitD);
@@ -672,17 +672,17 @@ MEM_STATIC BYTE FSE_peekSymbol(const FSE_DState_t *DStatePtr) {
 }
 
 MEM_STATIC void FSE_updateState(FSE_DState_t *DStatePtr, BIT_DStream_t *bitD) {
-    FSE_decode_t const DInfo   = ((const FSE_decode_t *)(DStatePtr->table))[DStatePtr->state];
-    U32 const          nbBits  = DInfo.nbBits;
-    size_t const       lowBits = BIT_readBits(bitD, nbBits);
-    DStatePtr->state           = DInfo.newState + lowBits;
+    FSE_decode_t const DInfo = ((const FSE_decode_t *)(DStatePtr->table))[DStatePtr->state];
+    U32 const nbBits         = DInfo.nbBits;
+    size_t const lowBits     = BIT_readBits(bitD, nbBits);
+    DStatePtr->state         = DInfo.newState + lowBits;
 }
 
 MEM_STATIC BYTE FSE_decodeSymbol(FSE_DState_t *DStatePtr, BIT_DStream_t *bitD) {
-    FSE_decode_t const DInfo   = ((const FSE_decode_t *)(DStatePtr->table))[DStatePtr->state];
-    U32 const          nbBits  = DInfo.nbBits;
-    BYTE const         symbol  = DInfo.symbol;
-    size_t const       lowBits = BIT_readBits(bitD, nbBits);
+    FSE_decode_t const DInfo = ((const FSE_decode_t *)(DStatePtr->table))[DStatePtr->state];
+    U32 const nbBits         = DInfo.nbBits;
+    BYTE const symbol        = DInfo.symbol;
+    size_t const lowBits     = BIT_readBits(bitD, nbBits);
 
     DStatePtr->state = DInfo.newState + lowBits;
     return symbol;
@@ -691,10 +691,10 @@ MEM_STATIC BYTE FSE_decodeSymbol(FSE_DState_t *DStatePtr, BIT_DStream_t *bitD) {
 /*! FSE_decodeSymbolFast() :
     unsafe, only works if no symbol has a probability > 50% */
 MEM_STATIC BYTE FSE_decodeSymbolFast(FSE_DState_t *DStatePtr, BIT_DStream_t *bitD) {
-    FSE_decode_t const DInfo   = ((const FSE_decode_t *)(DStatePtr->table))[DStatePtr->state];
-    U32 const          nbBits  = DInfo.nbBits;
-    BYTE const         symbol  = DInfo.symbol;
-    size_t const       lowBits = BIT_readBitsFast(bitD, nbBits);
+    FSE_decode_t const DInfo = ((const FSE_decode_t *)(DStatePtr->table))[DStatePtr->state];
+    U32 const nbBits         = DInfo.nbBits;
+    BYTE const symbol        = DInfo.symbol;
+    size_t const lowBits     = BIT_readBitsFast(bitD, nbBits);
 
     DStatePtr->state = DInfo.newState + lowBits;
     return symbol;

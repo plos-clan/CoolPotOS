@@ -117,7 +117,7 @@ void *malloc(size_t size) {
 #    if HEAP_CHECK
     size             = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
-    void  *ptr       = mpool_alloc(&pool, true_size);
+    void *ptr        = mpool_alloc(&pool, true_size);
     if (!ptr) {
         logkf("\nkernel malloc null\n");
         arch_close_interrupt();
@@ -177,7 +177,7 @@ void *realloc(void *ptr, size_t newsize) {
     kasan_push_disable();
 #    endif
 #    if HEAP_CHECK
-    void  *old_raw        = NULL;
+    void *old_raw         = NULL;
     size_t old_block_size = 0;
     if (ptr != NULL) {
         old_raw        = check_magic(ptr, false);
@@ -195,7 +195,7 @@ void *realloc(void *ptr, size_t newsize) {
     kasan_mark_alloc((uint8_t *)ptr - sizeof(start_magic) - sizeof(size_t), ptr, newsize);
 #        endif
 #    else
-    void  *old_raw        = ptr;
+    void *old_raw         = ptr;
     size_t old_block_size = (old_raw != NULL) ? mpool_msize(&pool, old_raw) : 0;
     ptr                   = mpool_realloc(&pool, ptr, newsize);
 #    endif
@@ -215,7 +215,7 @@ void *aligned_alloc(size_t align, size_t size) {
 #    if HEAP_CHECK
     size             = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
-    void  *ptr       = mpool_aligned_alloc(&pool, true_size, align);
+    void *ptr        = mpool_aligned_alloc(&pool, true_size, align);
     ptr              = set_magic(ptr, size, true);
 #        if KASAN_CHECK
     kasan_pop_disable();
@@ -229,15 +229,15 @@ void *aligned_alloc(size_t align, size_t size) {
 }
 
 size_t malloc_usable_size(void *ptr) {
-    bool   is_sti = alloc_enter();
-    size_t size   = mpool_msize(&pool, ptr);
+    bool is_sti = alloc_enter();
+    size_t size = mpool_msize(&pool, ptr);
     alloc_exit(is_sti);
     return size;
 }
 
 void *memalign(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, align);
+    void *ptr         = mpool_aligned_alloc(&pool, size, align);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif
@@ -247,7 +247,7 @@ void *memalign(size_t align, size_t size) {
 
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, alignment);
+    void *ptr         = mpool_aligned_alloc(&pool, size, alignment);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif
@@ -260,7 +260,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size) {
 
 void *valloc(size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
+    void *ptr         = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif
@@ -270,7 +270,7 @@ void *valloc(size_t size) {
 
 void *pvalloc(size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
+    void *ptr         = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif

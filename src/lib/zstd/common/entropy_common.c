@@ -79,15 +79,15 @@ size_t FSE_readNCount_body(
 ) {
     const BYTE *const istart = (const BYTE *)headerBuffer;
     const BYTE *const iend   = istart + hbSize;
-    const BYTE       *ip     = istart;
-    int               nbBits;
-    int               remaining;
-    int               threshold;
-    U32               bitStream;
-    int               bitCount;
-    unsigned          charnum   = 0;
-    unsigned const    maxSV1    = *maxSVPtr + 1;
-    int               previous0 = 0;
+    const BYTE *ip           = istart;
+    int nbBits;
+    int remaining;
+    int threshold;
+    U32 bitStream;
+    int bitCount;
+    unsigned charnum      = 0;
+    unsigned const maxSV1 = *maxSVPtr + 1;
+    int previous0         = 0;
 
     if (hbSize < 8) {
         /* This function only works when hbSize >= 8 */
@@ -173,7 +173,7 @@ size_t FSE_readNCount_body(
         }
         {
             int const max = (2 * threshold - 1) - remaining;
-            int       count;
+            int count;
 
             if ((bitStream & (threshold - 1)) < (U32)max) {
                 count = bitStream & (threshold - 1);
@@ -302,10 +302,10 @@ FORCE_INLINE_TEMPLATE size_t HUF_readStats_body(
     BYTE *huffWeight, size_t hwSize, U32 *rankStats, U32 *nbSymbolsPtr, U32 *tableLogPtr,
     const void *src, size_t srcSize, void *workSpace, size_t wkspSize, int bmi2
 ) {
-    U32         weightTotal;
+    U32 weightTotal;
     const BYTE *ip = (const BYTE *)src;
-    size_t      iSize;
-    size_t      oSize;
+    size_t iSize;
+    size_t oSize;
 
     if (!srcSize)
         return ERROR(srcSize_wrong);

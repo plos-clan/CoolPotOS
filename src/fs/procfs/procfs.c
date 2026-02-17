@@ -8,10 +8,10 @@
 #include "task/smp.h"
 #include "term/klog.h"
 
-static int procfs_id     = 0;
-static int proc_self_id  = 0;
-vfs_node_t procfs_root   = NULL;
-spin_t     procfs_oplock = SPIN_INIT;
+static int procfs_id    = 0;
+static int proc_self_id = 0;
+vfs_node_t procfs_root  = NULL;
+spin_t procfs_oplock    = SPIN_INIT;
 
 extern cow_arraylist *process_list;
 
@@ -111,7 +111,7 @@ size_t procfs_self_readlink(vfs_node_t file, void *addr, size_t offset, size_t s
     if (offset >= strlen(file->linkto->name))
         return 0;
     logkf("procfs: readlink offset:%llu size:%llu", offset, size);
-    char   *ptr = file->linkto->name + offset;
+    char *ptr   = file->linkto->name + offset;
     ssize_t len = strlen(ptr);
     len         = MIN(len, (ssize_t)size);
     memcpy(addr, ptr, len);
@@ -207,7 +207,7 @@ void procfs_on_new_task(pcb_t task) {
     sprintf(name, "%d", task->pid);
 
     char *root_path = vfs_get_fullpath(procfs_root);
-    char  fname[strlen(root_path) + 1 + MAX_PID_NAME_LEN];
+    char fname[strlen(root_path) + 1 + MAX_PID_NAME_LEN];
     sprintf(fname, "%s/%d", root_path, task->pid);
     vfs_node_t pro = vfs_open(fname);
     free(root_path);
@@ -255,7 +255,7 @@ void procfs_on_exit_task(pcb_t task) {
     spin_lock(procfs_oplock);
 
     char *root_path = vfs_get_fullpath(procfs_root);
-    char  name[strlen(root_path) + 1 + MAX_PID_NAME_LEN];
+    char name[strlen(root_path) + 1 + MAX_PID_NAME_LEN];
     sprintf(name, "%s/%d", root_path, task->pid);
     free(root_path);
 

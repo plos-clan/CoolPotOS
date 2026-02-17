@@ -8,7 +8,7 @@
 #define PCI_DATA_PORT 0xCFC
 
 extern pci_device_t *pci_devices[PCI_DEVICE_MAX];
-extern uint32_t      pci_device_number;
+extern uint32_t pci_device_number;
 
 uint32_t pci_read0(uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset) {
     uint32_t id = (1U << 31) | ((b & 0xff) << 16) | ((d & 0x1f) << 11) | ((f & 0x07) << 8)
@@ -62,7 +62,7 @@ void pci_scan_device_legacy(uint32_t bus, uint32_t equipment, uint32_t f) {
     printk("Found PCI device: %#08lx name: %s\n", device->class_code, device->name);
 
     for (int i = 0; i < 6; i++) {
-        int      offset  = 0x10 + i * 4;
+        int offset       = 0x10 + i * 4;
         uint32_t bar_low = device->op->read(bus, equipment, f, 0, offset);
 
         device->bars[i].mmio    = false;

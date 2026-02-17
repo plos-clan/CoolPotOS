@@ -14,9 +14,9 @@ void nvme_interrupt_handler(uint64_t irq_num, void *data, struct pt_regs *r);
 
 // Memory allocation (DMA-capable)
 void *cpkrnl_dma_alloc(size_t size, uint64_t *phys_addr) {
-    size_t   num_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-    uint64_t phys      = alloc_frames(num_pages);
-    void    *addr      = driver_phys_to_virt(phys);
+    size_t num_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    uint64_t phys    = alloc_frames(num_pages);
+    void *addr       = driver_phys_to_virt(phys);
     page_map_range(get_current_directory(), (uint64_t)addr, phys, size, KERNEL_PTE_FLAGS);
     if (addr) {
         if (phys_addr)
@@ -253,7 +253,7 @@ nvme_bind_queue_interrupt(nvme_controller_t *ctrl, nvme_queue_t *queue, uint16_t
     logkf("nvme: bind queue int irq:%llu vector:%llu\n\r", vector, vector + IRQ_BASE_VECTOR);
     // 注册中断处理程序
 #if defined(__x86_64__)
-    uint64_t          cpu_id = queue->queue_id ? (queue->queue_id - 1) : 0;
+    uint64_t cpu_id = queue->queue_id ? (queue->queue_id - 1) : 0;
     struct msi_desc_t desc;
     memset(&desc, 0, sizeof(struct msi_desc_t));
     desc.irq_num                    = vector + IRQ_BASE_VECTOR;
@@ -398,8 +398,8 @@ static int nvme_process_queue_completions(nvme_controller_t *ctrl, nvme_queue_t 
         // Read memory barrier
         g_nvme_platform_ops->rmb();
 
-        nvme_cqe_t *cqe   = &queue->cq[queue->cq_head];
-        uint16_t    phase = (cqe->status >> 0) & 1;
+        nvme_cqe_t *cqe = &queue->cq[queue->cq_head];
+        uint16_t phase  = (cqe->status >> 0) & 1;
 
         // Check phase bit
         if (phase != queue->cq_phase) {
@@ -409,7 +409,7 @@ static int nvme_process_queue_completions(nvme_controller_t *ctrl, nvme_queue_t 
         // Extract status
         uint16_t status_code = (cqe->status >> 1) & 0xFF;
         uint16_t status_type = (cqe->status >> 9) & 0x7;
-        bool     success     = (status_code == 0 && status_type == 0);
+        bool success         = (status_code == 0 && status_type == 0);
 
         if (!success) {
             g_nvme_platform_ops->log(
@@ -475,8 +475,8 @@ static uint16_t nvme_alloc_cid(nvme_controller_t *ctrl, nvme_request_t *req) {
 
 // Execute admin command (synchronous helper)
 typedef struct {
-    bool     done;
-    bool     success;
+    bool done;
+    bool success;
     uint32_t result;
 } admin_sync_ctx_t;
 
@@ -491,7 +491,7 @@ static int nvme_admin_cmd_sync(
     nvme_controller_t *ctrl, nvme_sqe_t *cmd, uint32_t *result, uint32_t timeout_ms
 ) {
     admin_sync_ctx_t sync_ctx = { 0 };
-    nvme_request_t  *req      = g_nvme_platform_ops->dma_alloc(sizeof(nvme_request_t), NULL);
+    nvme_request_t *req       = g_nvme_platform_ops->dma_alloc(sizeof(nvme_request_t), NULL);
 
     req->callback = admin_sync_callback;
     req->ctx      = &sync_ctx;
@@ -535,7 +535,7 @@ static int nvme_admin_cmd_sync(
 // Identify Controller
 static int nvme_identify_controller(nvme_controller_t *ctrl, nvme_identify_ctrl_t *id_ctrl) {
     uint64_t buffer_phys;
-    void    *buffer = g_nvme_platform_ops->dma_alloc(PAGE_SIZE, &buffer_phys);
+    void *buffer = g_nvme_platform_ops->dma_alloc(PAGE_SIZE, &buffer_phys);
     if (!buffer) {
         return -1;
     }
@@ -559,7 +559,7 @@ static int nvme_identify_controller(nvme_controller_t *ctrl, nvme_identify_ctrl_
 static int
 nvme_identify_namespace(nvme_controller_t *ctrl, uint32_t nsid, nvme_identify_ns_t *id_ns) {
     uint64_t buffer_phys;
-    void    *buffer = g_nvme_platform_ops->dma_alloc(PAGE_SIZE, &buffer_phys);
+    void *buffer = g_nvme_platform_ops->dma_alloc(PAGE_SIZE, &buffer_phys);
     if (!buffer) {
         return -1;
     }
@@ -689,7 +689,7 @@ static nvme_prp_list_t *nvme_alloc_prp_list(nvme_controller_t *ctrl, uint64_t *p
         ctrl->prp_list_next_free = 0; // 循环使用
     }
 
-    uint32_t         idx  = ctrl->prp_list_next_free++;
+    uint32_t idx          = ctrl->prp_list_next_free++;
     nvme_prp_list_t *list = &ctrl->prp_list_pool[idx];
 
     if (phys_addr) {
@@ -741,7 +741,7 @@ nvme_setup_prp(nvme_controller_t *ctrl, nvme_sqe_t *cmd, uint64_t phys_addr, uin
 
     // 情况 3: 多页传输（需要 PRP List）
 
-    uint64_t         prp_list_phys;
+    uint64_t prp_list_phys;
     nvme_prp_list_t *prp_list = nvme_alloc_prp_list(ctrl, &prp_list_phys);
     if (!prp_list) {
         g_nvme_platform_ops->log("NVMe: Failed to allocate PRP list\n");
@@ -931,7 +931,7 @@ void nvme_io_callback(void *ctx, bool success, uint32_t result) {
 
 typedef struct nvme_ns {
     nvme_controller_t *ctrl;
-    nvme_namespace_t  *ns;
+    nvme_namespace_t *ns;
 } nvme_ns_t;
 
 size_t nvme_read(void *data, uint8_t *buffer, size_t size, size_t lba) {
@@ -952,7 +952,7 @@ size_t nvme_read(void *data, uint8_t *buffer, size_t size, size_t lba) {
         printk("NVMe: submit command failure!\n");
         return 0;
     }
-    bool     timeout    = true;
+    bool timeout        = true;
     uint64_t timeout_ns = nano_time() + 500ULL * 1000000ULL;
     while (nano_time() < timeout_ns) {
         if (cb_ctx->completed) {
@@ -999,7 +999,7 @@ size_t nvme_write(void *data, uint8_t *buffer, size_t size, size_t lba) {
         printk("NVMe: submit command failure!\n");
         return 0;
     }
-    bool     timeout    = true;
+    bool timeout        = true;
     uint64_t timeout_ns = nano_time() + 500ULL * 1000000ULL;
     while (nano_time() < timeout_ns) {
         if (cb_ctx->completed) {

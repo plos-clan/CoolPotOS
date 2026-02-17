@@ -96,7 +96,7 @@ static inline void *blk_next(void *ptr) {
 typedef void (*blk_detach_t)(void *data, void *ptr);
 
 static inline void *blk_mergeprev(void *ptr, blk_detach_t detach, void *data) {
-    void  *prev = blk_prev(ptr);
+    void *prev  = blk_prev(ptr);
     size_t size = blk_size(ptr) + blk_size(prev) + 2 * sizeof(size_t);
     if (detach)
         detach(data, prev);
@@ -104,7 +104,7 @@ static inline void *blk_mergeprev(void *ptr, blk_detach_t detach, void *data) {
     return prev;
 }
 static inline void *blk_mergenext(void *ptr, blk_detach_t detach, void *data) {
-    void  *next = blk_next(ptr);
+    void *next  = blk_next(ptr);
     size_t size = blk_size(ptr) + blk_size(next) + 2 * sizeof(size_t);
     if (detach)
         detach(data, next);
@@ -120,8 +120,8 @@ static inline void *blk_mergenext(void *ptr, blk_detach_t detach, void *data) {
  *\return 新的块指针
  */
 static inline void *blk_trymerge(void *ptr, blk_detach_t detach, void *data) {
-    bool   is_2M = blk_area_is_2M(ptr);
-    size_t size  = blk_size(ptr);
+    bool is_2M  = blk_area_is_2M(ptr);
+    size_t size = blk_size(ptr);
     if (!blk_nonext(ptr, size) && (blk_nexthead(ptr, size) & FREE_FLAG)) { //
         ptr = blk_mergenext(ptr, detach, data);
     }
@@ -141,7 +141,7 @@ static inline void *blk_trymerge(void *ptr, blk_detach_t detach, void *data) {
  *\return 第二个块的指针
  */
 static inline void *blk_split(void *ptr, size_t size) {
-    bool   is_2M   = blk_area_is_2M(ptr);
+    bool is_2M     = blk_area_is_2M(ptr);
     size_t oldsize = blk_size(ptr);
     blk_setsize(ptr, size);
     if (is_2M)

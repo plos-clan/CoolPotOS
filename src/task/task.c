@@ -13,12 +13,12 @@
 #include "task/smp.h"
 #include "term/klog.h"
 
-pcb_t                  kernel_process;
-tcb_t                  bsp_idle_thread;
-cow_arraylist         *process_list;
+pcb_t kernel_process;
+tcb_t bsp_idle_thread;
+cow_arraylist *process_list;
 _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
-extern volatile bool   smp_enable;
+extern volatile bool smp_enable;
 
 USED void foreach_task() {
     pcb_t process = NULL;
@@ -194,8 +194,8 @@ int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
 
     pcb_t process = current->process;
 
-    ipc_message_t mesg      = NULL;
-    int           exit_code = 0;
+    ipc_message_t mesg = NULL;
+    int exit_code      = 0;
     if (nohang) {
         size_t tries = process->ipc_queue->size;
         for (size_t i = 0; i < tries; i++) {

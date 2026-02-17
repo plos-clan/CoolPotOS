@@ -29,8 +29,8 @@ static uint64_t prng_state = 0;
 
 static uint64_t prng_next(void) {
     if (prng_state == 0) {
-        uint64_t     seed = rdtsc_read() ^ (uint64_t)(uintptr_t)&prng_state;
-        cpu_local_t *cpu  = arch_current_cpu();
+        uint64_t seed    = rdtsc_read() ^ (uint64_t)(uintptr_t)&prng_state;
+        cpu_local_t *cpu = arch_current_cpu();
         if (cpu) {
             seed ^= ((uint64_t)cpu->id << 32);
         }
@@ -58,7 +58,7 @@ bool arch_get_random_bytes(uint8_t *buf, size_t size) {
 
     while (size > 0) {
         uint64_t val = 0;
-        bool     ok  = false;
+        bool ok      = false;
 
         if (have_rdseed) {
             for (int i = 0; i < 8 && !ok; i++) {

@@ -12,16 +12,16 @@ extern uint64_t (*read_gsbase)();
 extern void (*write_gsbase)(uint64_t value);
 
 uint64_t read_fsbase_msr();
-void     write_fsbase_msr(uint64_t value);
+void write_fsbase_msr(uint64_t value);
 uint64_t read_gsbase_msr();
-void     write_gsbase_msr(uint64_t value);
+void write_gsbase_msr(uint64_t value);
 
 uint64_t rdfsbase();
-void     wrfsbase(uint64_t value);
+void wrfsbase(uint64_t value);
 uint64_t rdgsbase();
-void     wrgsbase(uint64_t value);
+void wrgsbase(uint64_t value);
 uint64_t read_kgsbase();
-void     write_kgsbase(uint64_t value);
+void write_kgsbase(uint64_t value);
 
 uint32_t has_fsgsbase();
 uint64_t fsgsbase_init();

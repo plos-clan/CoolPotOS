@@ -32,7 +32,7 @@ typedef struct __attribute__((packed)) Trb {
 } Trb;
 
 uint32_t trb_get_type(Trb trb);
-uint8_t  trb_slot_id(Trb trb);
+uint8_t trb_slot_id(Trb trb);
 uint32_t trb_endpoint_id(Trb trb);
 uint32_t trb_completion_code(Trb trb);
 uint32_t trb_transfer_length(Trb trb);

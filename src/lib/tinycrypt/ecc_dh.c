@@ -134,13 +134,13 @@ int uECC_shared_secret(
     uECC_word_t _public[NUM_ECC_WORDS * 2];
     uECC_word_t _private[NUM_ECC_WORDS];
 
-    uECC_word_t  tmp[NUM_ECC_WORDS];
+    uECC_word_t tmp[NUM_ECC_WORDS];
     uECC_word_t *p2[2]     = { _private, tmp };
     uECC_word_t *initial_Z = 0;
-    uECC_word_t  carry;
-    wordcount_t  num_words = curve->num_words;
-    wordcount_t  num_bytes = curve->num_bytes;
-    int          r;
+    uECC_word_t carry;
+    wordcount_t num_words = curve->num_words;
+    wordcount_t num_bytes = curve->num_bytes;
+    int r;
 
     /* Converting buffers to correct bit order: */
     uECC_vli_bytesToNative(_private, private_key, BITS_TO_BYTES(curve->num_n_bits));

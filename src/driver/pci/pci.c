@@ -7,7 +7,7 @@
 #include "term/klog.h"
 
 struct {
-    uint32_t    classcode;
+    uint32_t classcode;
     const char *name;
 } pci_classnames[] = {
     { 0x000000, "Non-VGA-Compatible Unclassified Device"      },
@@ -141,17 +141,17 @@ struct {
 };
 
 ACPI_MCFG_ALLOCATION *mcfg_entries[PCI_MCFG_MAX_ENTRIES_LEN];
-uint64_t              mcfg_entries_len = 0;
-pci_device_t         *pci_devices[PCI_DEVICE_MAX];
-uint32_t              pci_device_number = 0;
-static bool           pci_use_mcfg      = false;
-static uint64_t       mcfg_virt_bases[PCI_MCFG_MAX_ENTRIES_LEN];
+uint64_t mcfg_entries_len = 0;
+pci_device_t *pci_devices[PCI_DEVICE_MAX];
+uint32_t pci_device_number = 0;
+static bool pci_use_mcfg   = false;
+static uint64_t mcfg_virt_bases[PCI_MCFG_MAX_ENTRIES_LEN];
 
 #if defined(__x86_64__) || defined(__amd64__)
 uint32_t pci_read0(uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset);
-void     pci_write0(
-        uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset, uint32_t value
-    );
+void pci_write0(
+    uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset, uint32_t value
+);
 #endif
 
 void mcfg_addr_to_entries(ACPI_TABLE_MCFG *mcfg, ACPI_MCFG_ALLOCATION **entries, uint64_t *num) {
@@ -207,10 +207,10 @@ uint64_t get_mmio_address(uint32_t pci_address, uint16_t offset) {
         return 0;
     }
 
-    uint16_t segment  = (pci_address >> 16) & 0xFFFF;
-    uint8_t  bus      = (pci_address >> 8) & 0xFF;
-    uint8_t  device   = (pci_address >> 3) & 0x1F;
-    uint8_t  function = pci_address & 0x07;
+    uint16_t segment = (pci_address >> 16) & 0xFFFF;
+    uint8_t bus      = (pci_address >> 8) & 0xFF;
+    uint8_t device   = (pci_address >> 3) & 0x1F;
+    uint8_t function = pci_address & 0x07;
 
     uint64_t idx;
     if (!mcfg_find_entry(segment, bus, &idx)) {
@@ -354,14 +354,14 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
     }
     uint16_t device_id = (uint16_t)(id_value >> 16);
 
-    uint32_t class_reg        = pci_read(bus, device, function, segment_group, PCI_CONF_REVISION);
-    uint8_t  device_revision  = (uint8_t)(class_reg & 0xFF);
-    uint8_t  device_interface = (uint8_t)((class_reg >> 8) & 0xFF);
-    uint8_t  device_subclass  = (uint8_t)((class_reg >> 16) & 0xFF);
-    uint8_t  device_class     = (uint8_t)((class_reg >> 24) & 0xFF);
+    uint32_t class_reg       = pci_read(bus, device, function, segment_group, PCI_CONF_REVISION);
+    uint8_t device_revision  = (uint8_t)(class_reg & 0xFF);
+    uint8_t device_interface = (uint8_t)((class_reg >> 8) & 0xFF);
+    uint8_t device_subclass  = (uint8_t)((class_reg >> 16) & 0xFF);
+    uint8_t device_class     = (uint8_t)((class_reg >> 24) & 0xFF);
 
-    uint32_t header_reg  = pci_read(bus, device, function, segment_group, 0x0c);
-    uint8_t  header_type = (uint8_t)((header_reg >> 16) & 0x7F);
+    uint32_t header_reg = pci_read(bus, device, function, segment_group, 0x0c);
+    uint8_t header_type = (uint8_t)((header_reg >> 16) & 0x7F);
 
     pci_device_t *pci_device = (pci_device_t *)malloc(sizeof(pci_device_t));
     memset(pci_device, 0, sizeof(pci_device_t));
@@ -419,8 +419,8 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
         pci_device->capability_point = capability_point;
 
         for (int i = 0; i < 6; i++) {
-            int      offset = 0x10 + i * 4;
-            uint32_t bar    = pci_device->op->read(
+            int offset   = 0x10 + i * 4;
+            uint32_t bar = pci_device->op->read(
                 pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment, offset
             );
 
@@ -577,8 +577,8 @@ void pci_scan_segment(uint16_t segment_group) {
 }
 
 void pci_init() {
-    ACPI_TABLE_MCFG *mcfg   = NULL;
-    ACPI_STATUS      status = AcpiGetTable(ACPI_SIG_MCFG, 1, (ACPI_TABLE_HEADER **)&mcfg);
+    ACPI_TABLE_MCFG *mcfg = NULL;
+    ACPI_STATUS status    = AcpiGetTable(ACPI_SIG_MCFG, 1, (ACPI_TABLE_HEADER **)&mcfg);
     if (ACPI_FAILURE(status)) {
         kwarn("MCFG table not found (System switch to Legacy PCI model).");
         arch_pci_legacy_enum();
@@ -614,8 +614,8 @@ void pci_init() {
 
     for (uint64_t i = 0; i < mcfg_entries_len; i++) {
         uint16_t segment_group = mcfg_entries[i]->PciSegment;
-        uint8_t  start_bus     = mcfg_entries[i]->StartBusNumber;
-        uint8_t  end_bus       = mcfg_entries[i]->EndBusNumber;
+        uint8_t start_bus      = mcfg_entries[i]->StartBusNumber;
+        uint8_t end_bus        = mcfg_entries[i]->EndBusNumber;
         if (mcfg_entries[i]->Address == 0) {
             continue;
         }

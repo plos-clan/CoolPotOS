@@ -6,7 +6,7 @@
 #    include "io.h"
 #endif
 
-uint64_t        rtc_irq          = 0;
+uint64_t rtc_irq                 = 0;
 static uint64_t rtc_io_port_cmd  = 0; // 0x70
 static uint64_t rtc_io_port_data = 0; // 0x71
 
@@ -70,7 +70,7 @@ uint32_t get_hour() {
         ;
     uint8_t hour     = cmos_read(RTC_HOURS);
     uint8_t status_b = cmos_read(RTC_STATUS_B);
-    int     is_pm    = hour & 0x80;
+    int is_pm        = hour & 0x80;
     if (!(status_b & 0x04)) {
         hour = bcd_to_bin(hour & 0x7F);
     } else {
@@ -114,10 +114,10 @@ uint32_t get_sec() {
 #endif
 
 int64_t mktime_universal() {
-    int     current_year  = (int)get_full_year();
-    int     current_month = (int)get_mon();
-    int     current_day   = (int)get_day_of_month();
-    int64_t total_days    = 0;
+    int current_year   = (int)get_full_year();
+    int current_month  = (int)get_mon();
+    int current_day    = (int)get_day_of_month();
+    int64_t total_days = 0;
     for (int year = EPOCH_YEAR; year < current_year; year++) {
         total_days += DAYS_PER_YEAR;
         if (is_leap_year(year)) {

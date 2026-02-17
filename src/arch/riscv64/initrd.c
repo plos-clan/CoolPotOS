@@ -4,12 +4,12 @@
 #include "mem/page.h"
 #include "term/klog.h"
 
-extern uint64_t      fdt_get_initrd(const void *fdt, size_t *out_size);
-extern void         *opensbi_dtb_vaddr;
+extern uint64_t fdt_get_initrd(const void *fdt, size_t *out_size);
+extern void *opensbi_dtb_vaddr;
 extern boot_module_t opensbi_modules[MAX_LOAD_MODULE];
 
 void initrd_setup() {
-    size_t   size;
+    size_t size;
     uint64_t buffer = fdt_get_initrd(opensbi_dtb_vaddr, &size);
     if (buffer == 0) {
         kerror("cannot find initrd file.");

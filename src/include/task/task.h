@@ -62,7 +62,7 @@
 #define CLONE_IO 0x80000000           /* Clone io context */
 
 typedef struct process_control_block *pcb_t;
-typedef struct thread_control_block  *tcb_t;
+typedef struct thread_control_block *tcb_t;
 
 #include "arch_context.h"
 #include "cow_arraylist.h"
@@ -92,95 +92,95 @@ typedef enum {
 } task_status;
 
 struct process_control_block {
-    pid_t          pid;           // 进程ID
-    pid_t          pgid;          // 进程组ID
-    pid_t          sid;           // 会话ID
-    char          *name;          // 进程名
-    char          *cmdline;       // 命令行完整形参
-    size_t         cl_length;     // 命令行形参长度
-    pcb_t          parent;        // 父进程
-    size_t         pl_index;      // 进程列表索引
-    size_t         ppl_index;     // 子进程列表索引
+    pid_t pid;                    // 进程ID
+    pid_t pgid;                   // 进程组ID
+    pid_t sid;                    // 会话ID
+    char *name;                   // 进程名
+    char *cmdline;                // 命令行完整形参
+    size_t cl_length;             // 命令行形参长度
+    pcb_t parent;                 // 父进程
+    size_t pl_index;              // 进程列表索引
+    size_t ppl_index;             // 子进程列表索引
     cow_arraylist *child_threads; // 子线程
     cow_arraylist *child_process; // 子进程
-    task_status    status;        // 进程状态
+    task_status status;           // 进程状态
 
-    page_directory_t *directory;   // 进程页表
-    vma_manager_t     vma_manager; // VMA 内存管理器
-    list_queue_t     *virt_queue;  // 懒分配器队列
+    page_directory_t *directory; // 进程页表
+    vma_manager_t vma_manager;   // VMA 内存管理器
+    list_queue_t *virt_queue;    // 懒分配器队列
 
-    ipc_queue_t *ipc_queue;   // 进程消息队列
-    tty_t       *tty;         // 进程占用的TTY会话
-    char        *ctty_path;   // 控制终端路径 (如 "/dev/pts/3")
-    vfs_node_t   cwd;         // 进程工作目录
-    vfs_node_t   exec;        // 可执行文件句柄
-    vfs_node_t   procfs_node; // 进程信息虚拟文件系统节点
-    vfs_node_t   proc_root;   // 进程根节点
-    fdt_t       *fdts;        // 文件描述符表
-    char       **envp;        // 进程环境变量
-    size_t       envc;        // 进程环境变量长度
-    bool         vfork;       // 是否是 vfork 出来的进程
+    ipc_queue_t *ipc_queue; // 进程消息队列
+    tty_t *tty;             // 进程占用的TTY会话
+    char *ctty_path;        // 控制终端路径 (如 "/dev/pts/3")
+    vfs_node_t cwd;         // 进程工作目录
+    vfs_node_t exec;        // 可执行文件句柄
+    vfs_node_t procfs_node; // 进程信息虚拟文件系统节点
+    vfs_node_t proc_root;   // 进程根节点
+    fdt_t *fdts;            // 文件描述符表
+    char **envp;            // 进程环境变量
+    size_t envc;            // 进程环境变量长度
+    bool vfork;             // 是否是 vfork 出来的进程
 
     int_timer_internal_t itimer_real;
 
-    int      uid; // 用户会话ID
-    int      euid;
-    int      ruid;
-    int      egid;
-    int      rgid;
-    int      sgid;
+    int uid; // 用户会话ID
+    int euid;
+    int ruid;
+    int egid;
+    int rgid;
+    int sgid;
     uint16_t umask;
 };
 
 struct thread_control_block {
-    uint64_t             syscall_stack;      // 系统调用栈顶地址
-    uint64_t             syscall_stack_user; // 用户态下系统调用栈缓存
-    uint64_t             signal_stack;       // 信号栈顶地址
-    uint64_t             call_in_signal;     // 是否在信号处理过程
-    struct arch_context_ context;            // 任务上下文
+    uint64_t syscall_stack;       // 系统调用栈顶地址
+    uint64_t syscall_stack_user;  // 用户态下系统调用栈缓存
+    uint64_t signal_stack;        // 信号栈顶地址
+    uint64_t call_in_signal;      // 是否在信号处理过程
+    struct arch_context_ context; // 任务上下文
 
-    uint64_t          tid_address;   //
+    uint64_t tid_address;            //
     page_directory_t *tid_directory; //
-    char             *name;          // 线程名
-    pid_t             tid;           // 线程ID
-    pcb_t             process;       // 所属进程
-    uint64_t          prio;          // 任务优先级
-    void             *sched_handle;  // 调度器句柄
-    size_t            ct_index;      // 子线程列表索引
-    task_status       status;        // 线程状态
-    uint64_t          _start;        // 线程入口函数
-    uint64_t          affinity_mask; // 线程亲和性掩码
+    char *name;                      // 线程名
+    pid_t tid;                       // 线程ID
+    pcb_t process;                   // 所属进程
+    uint64_t prio;                   // 任务优先级
+    void *sched_handle;              // 调度器句柄
+    size_t ct_index;                 // 子线程列表索引
+    task_status status;              // 线程状态
+    uint64_t _start;                 // 线程入口函数
+    uint64_t affinity_mask;          // 线程亲和性掩码
 
-    sigaction_t actions[MAXSIG];   // 信号处理器回调
-    uint64_t    signal;            // 信号位图
-    uint64_t    blocked;           // 屏蔽位图
-    uint64_t    saved_sigmask;     // sigsuspend 保存的原始信号掩码
-    bool        has_saved_sigmask; // 是否需要恢复 saved_sigmask
-    altstack_t  alt_stack;         // 信号备用栈
+    sigaction_t actions[MAXSIG]; // 信号处理器回调
+    uint64_t signal;             // 信号位图
+    uint64_t blocked;            // 屏蔽位图
+    uint64_t saved_sigmask;      // sigsuspend 保存的原始信号掩码
+    bool has_saved_sigmask;      // 是否需要恢复 saved_sigmask
+    altstack_t alt_stack;        // 信号备用栈
 
-    size_t   cpu_id; // 线程所属CPUID
-    size_t   futex_index;
+    size_t cpu_id; // 线程所属CPUID
+    size_t futex_index;
     uint64_t sleep_deadline; // nanosleep 唤醒时间 (nano_time)
 };
 
 pid_t alloc_pid();
 pid_t alloc_tid();
 tcb_t get_current_task();
-void  arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs);
-void  arch_context_init(
-     tcb_t                 thread,
-     struct arch_context_ *context
- ); // 该函数仅适用于 idle 任务的上下文初始化
-void           arch_context_init_thread(tcb_t thread, void *arg); // 用于初始化线程上下文
-_Noreturn void arch_switch_to_user_mode();                        // 架构实现切换至用户态
-void           arch_context_free(tcb_t thread);                   // 架构实现释放上下文
-pid_t          create_process(const char *name, pcb_t parent, uint64_t flags);
-pid_t          create_kernel_thread(
-             const char *name, int (*func)(void *arg), void *arg, pcb_t process, uint64_t prio
-         );
-int   waitpid(pid_t pid, pid_t *pid_ret, bool nohang);
-void  kill_thread(tcb_t task);
-void  kill_proc(pcb_t pcb, int exit_code, bool is_zombie);
-bool  signals_pending_quick(tcb_t task); // signal.c
+void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs);
+void arch_context_init(
+    tcb_t thread,
+    struct arch_context_ *context
+);                                                      // 该函数仅适用于 idle 任务的上下文初始化
+void arch_context_init_thread(tcb_t thread, void *arg); // 用于初始化线程上下文
+_Noreturn void arch_switch_to_user_mode();              // 架构实现切换至用户态
+void arch_context_free(tcb_t thread);                   // 架构实现释放上下文
+pid_t create_process(const char *name, pcb_t parent, uint64_t flags);
+pid_t create_kernel_thread(
+    const char *name, int (*func)(void *arg), void *arg, pcb_t process, uint64_t prio
+);
+int waitpid(pid_t pid, pid_t *pid_ret, bool nohang);
+void kill_thread(tcb_t task);
+void kill_proc(pcb_t pcb, int exit_code, bool is_zombie);
+bool signals_pending_quick(tcb_t task); // signal.c
 pcb_t found_pcb(pid_t pid);
-void  setup_task();
+void setup_task();

@@ -94,12 +94,12 @@ static inline void write_satp(uint64_t satp) {
     __asm__ volatile("sfence.vma" : : : "memory");
 }
 
-void     arch_page_setup();
-void     switch_page_directory0(page_directory_t *dir);
+void arch_page_setup();
+void switch_page_directory0(page_directory_t *dir);
 uint64_t get_arch_page_table_flags(uint64_t flags);
-void     page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags);
-void     unmap_page(page_directory_t *directory, uint64_t vaddr);
+void page_map_to(page_directory_t *directory, uint64_t vaddr, uint64_t paddr, uint64_t flags);
+void unmap_page(page_directory_t *directory, uint64_t vaddr);
 uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags);
-void     free_page_directory(page_directory_t *dir);
+void free_page_directory(page_directory_t *dir);
 page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy);
-void              arch_page_setup_l2();
+void arch_page_setup_l2();

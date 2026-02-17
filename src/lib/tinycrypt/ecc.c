@@ -210,8 +210,8 @@ cmpresult_t uECC_vli_cmp(const uECC_word_t *left, const uECC_word_t *right, word
 
 /* Computes vli = vli >> 1. */
 static void uECC_vli_rshift1(uECC_word_t *vli, wordcount_t num_words) {
-    uECC_word_t *end   = vli;
-    uECC_word_t  carry = 0;
+    uECC_word_t *end  = vli;
+    uECC_word_t carry = 0;
 
     vli += num_words;
     while (vli-- > end) {
@@ -297,13 +297,13 @@ void uECC_vli_modSub(
 void uECC_vli_mmod(
     uECC_word_t *result, uECC_word_t *product, const uECC_word_t *mod, wordcount_t num_words
 ) {
-    uECC_word_t  mod_multiple[2 * NUM_ECC_WORDS];
-    uECC_word_t  tmp[2 * NUM_ECC_WORDS];
+    uECC_word_t mod_multiple[2 * NUM_ECC_WORDS];
+    uECC_word_t tmp[2 * NUM_ECC_WORDS];
     uECC_word_t *v[2] = { tmp, product };
-    uECC_word_t  index;
+    uECC_word_t index;
 
     /* Shift mod so its highest set bit is at the maximum position. */
-    bitcount_t  shift      = (num_words * 2 * uECC_WORD_BITS) - uECC_vli_numBits(mod, num_words);
+    bitcount_t shift       = (num_words * 2 * uECC_WORD_BITS) - uECC_vli_numBits(mod, num_words);
     wordcount_t word_shift = shift / uECC_WORD_BITS;
     wordcount_t bit_shift  = shift % uECC_WORD_BITS;
     uECC_word_t carry      = 0;
@@ -483,7 +483,7 @@ uECC_Curve uECC_secp256r1(void) {
 
 void vli_mmod_fast_secp256r1(unsigned int *result, unsigned int *product) {
     unsigned int tmp[NUM_ECC_WORDS];
-    int          carry;
+    int carry;
 
     /* t */
     uECC_vli_set(result, product, NUM_ECC_WORDS);
@@ -687,7 +687,7 @@ void EccPoint_mult(
     uECC_word_t Rx[2][NUM_ECC_WORDS];
     uECC_word_t Ry[2][NUM_ECC_WORDS];
     uECC_word_t z[NUM_ECC_WORDS];
-    bitcount_t  i;
+    bitcount_t i;
     uECC_word_t nb;
     wordcount_t num_words = curve->num_words;
 
@@ -742,10 +742,10 @@ regularize_k(const uECC_word_t *const k, uECC_word_t *k0, uECC_word_t *k1, uECC_
 uECC_word_t
 EccPoint_compute_public_key(uECC_word_t *result, uECC_word_t *private_key, uECC_Curve curve) {
 
-    uECC_word_t  tmp1[NUM_ECC_WORDS];
-    uECC_word_t  tmp2[NUM_ECC_WORDS];
+    uECC_word_t tmp1[NUM_ECC_WORDS];
+    uECC_word_t tmp2[NUM_ECC_WORDS];
     uECC_word_t *p2[2] = { tmp1, tmp2 };
-    uECC_word_t  carry;
+    uECC_word_t carry;
 
     /* Regularize the bitcount for the private key so that attackers cannot
      * use a side channel attack to learn the number of leading zeros. */
@@ -781,7 +781,7 @@ void uECC_vli_bytesToNative(unsigned int *native, const uint8_t *bytes, int num_
 int uECC_generate_random_int(uECC_word_t *random, const uECC_word_t *top, wordcount_t num_words) {
     uECC_word_t mask = (uECC_word_t)-1;
     uECC_word_t tries;
-    bitcount_t  num_bits = uECC_vli_numBits(top, num_words);
+    bitcount_t num_bits = uECC_vli_numBits(top, num_words);
 
     if (!g_rng_function) {
         return 0;

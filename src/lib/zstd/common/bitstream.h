@@ -55,16 +55,16 @@ extern "C" {
  * So the first bit sequence you add will be the last to be read, like a LIFO stack.
  */
 typedef struct {
-    size_t   bitContainer;
+    size_t bitContainer;
     unsigned bitPos;
-    char    *startPtr;
-    char    *ptr;
-    char    *endPtr;
+    char *startPtr;
+    char *ptr;
+    char *endPtr;
 } BIT_CStream_t;
 
 MEM_STATIC size_t BIT_initCStream(BIT_CStream_t *bitC, void *dstBuffer, size_t dstCapacity);
-MEM_STATIC void   BIT_addBits(BIT_CStream_t *bitC, size_t value, unsigned nbBits);
-MEM_STATIC void   BIT_flushBits(BIT_CStream_t *bitC);
+MEM_STATIC void BIT_addBits(BIT_CStream_t *bitC, size_t value, unsigned nbBits);
+MEM_STATIC void BIT_flushBits(BIT_CStream_t *bitC);
 MEM_STATIC size_t BIT_closeCStream(BIT_CStream_t *bitC);
 
 /* Start with initCStream, providing the size of buffer to write into.
@@ -89,8 +89,8 @@ MEM_STATIC size_t BIT_closeCStream(BIT_CStream_t *bitC);
  *  bitStream decoding API (read backward)
  **********************************************/
 typedef struct {
-    size_t      bitContainer;
-    unsigned    bitsConsumed;
+    size_t bitContainer;
+    unsigned bitsConsumed;
     const char *ptr;
     const char *start;
     const char *limitPtr;
@@ -107,7 +107,7 @@ typedef enum {
 MEM_STATIC size_t BIT_initDStream(BIT_DStream_t *bitD, const void *srcBuffer, size_t srcSize);
 MEM_STATIC size_t BIT_readBits(BIT_DStream_t *bitD, unsigned nbBits);
 MEM_STATIC BIT_DStream_status BIT_reloadDStream(BIT_DStream_t *bitD);
-MEM_STATIC unsigned           BIT_endOfDStream(const BIT_DStream_t *bitD);
+MEM_STATIC unsigned BIT_endOfDStream(const BIT_DStream_t *bitD);
 
 /* Start by invoking BIT_initDStream().
  *  A chunk of the bitStream is then stored into a local register.
@@ -158,7 +158,7 @@ MEM_STATIC unsigned BIT_highbit32(U32 val) {
         static const unsigned DeBruijnClz[32] = { 0,  9,  1,  10, 13, 21, 2,  29, 11, 14, 16,
                                                   18, 22, 25, 3,  30, 8,  12, 20, 28, 15, 17,
                                                   24, 7,  19, 27, 23, 6,  26, 5,  4,  31 };
-        U32                   v               = val;
+        U32 v                                 = val;
         v |= v >> 1;
         v |= v >> 2;
         v |= v >> 4;
@@ -453,8 +453,8 @@ MEM_STATIC BIT_DStream_status BIT_reloadDStream(BIT_DStream_t *bitD) {
     }
     /* start < ptr < limitPtr */
     {
-        U32                nbBytes = bitD->bitsConsumed >> 3;
-        BIT_DStream_status result  = BIT_DStream_unfinished;
+        U32 nbBytes               = bitD->bitsConsumed >> 3;
+        BIT_DStream_status result = BIT_DStream_unfinished;
         if (bitD->ptr - nbBytes < bitD->start) {
             nbBytes = (U32)(bitD->ptr - bitD->start); /* ptr > start */
             result  = BIT_DStream_endOfBuffer;

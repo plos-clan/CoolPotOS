@@ -5,7 +5,7 @@
 #include "mem/heap.h"
 #include "term/klog.h"
 
-static bool     s_port[4]    = { false, false, false, false };
+static bool s_port[4]        = { false, false, false, false };
 static uint16_t com_ports[4] = { SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4 };
 
 static size_t extract_number_serial(const char *str) {
@@ -31,8 +31,8 @@ static size_t extract_number_serial(const char *str) {
         return -1;
     }
 
-    int         result = 0;
-    const char *p      = str + start_index;
+    int result    = 0;
+    const char *p = str + start_index;
 
     while (isdigit((unsigned char)*p)) {
         int digit = *p - '0';
@@ -182,8 +182,8 @@ int init_serial() {
             init_serial_port(com_ports[i]);
             valid_ports++;
 
-            tty_device_t       *device = alloc_tty_device(TTY_DEVICE_SERIAL);
-            struct tty_serial_ *data   = malloc(sizeof(struct tty_serial_));
+            tty_device_t *device     = alloc_tty_device(TTY_DEVICE_SERIAL);
+            struct tty_serial_ *data = malloc(sizeof(struct tty_serial_));
 
             data->port           = com_ports[i];
             device->private_data = data;
