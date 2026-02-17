@@ -9,18 +9,18 @@
 #include "term/klog.h"
 
 extern vfs_node_t sockfs_root;
-extern int sockfs_id;
+extern int        sockfs_id;
 
 static socket_info_t *alloc_socket_info(int domain, int type, int protocol) {
     socket_info_t *info = calloc(1, sizeof(socket_info_t));
     if (!info)
         return NULL;
-    info->domain = domain;
-    info->type = type & ~(SOCK_NONBLOCK | SOCK_CLOEXEC);
+    info->domain   = domain;
+    info->type     = type & ~(SOCK_NONBLOCK | SOCK_CLOEXEC);
     info->protocol = protocol;
-    info->state = SS_UNCONNECTED;
+    info->state    = SS_UNCONNECTED;
     info->refcount = 1;
-    info->lock = SPIN_INIT;
+    info->lock     = SPIN_INIT;
     ringbuf_init(&info->recv_buf, SOCK_BUFF);
     return info;
 }
@@ -30,15 +30,15 @@ static int sock_create_fd(socket_info_t *info, int flags) {
     if (!node)
         return -ENOMEM;
 
-    fd_t *handle = calloc(1, sizeof(fd_t));
-    handle->node = node;
+    fd_t *handle   = calloc(1, sizeof(fd_t));
+    handle->node   = node;
     handle->offset = 0;
-    handle->flags = 0;
+    handle->flags  = 0;
     if (flags & SOCK_NONBLOCK)
         handle->flags |= O_NONBLOCK;
     if (flags & SOCK_CLOEXEC)
         handle->flags |= O_CLOEXEC;
-    int fd = add_fd(get_current_task()->process->fdts, handle);
+    int fd     = add_fd(get_current_task()->process->fdts, handle);
     handle->fd = fd;
     return fd;
 }
@@ -102,8 +102,8 @@ syscall_(socketpair, int domain, int type, int protocol, int *sv) {
     }
 
     // Cross-link peers
-    info0->peer = info1;
-    info1->peer = info0;
+    info0->peer  = info1;
+    info1->peer  = info0;
     info0->state = SS_CONNECTED;
     info1->state = SS_CONNECTED;
 
@@ -168,9 +168,9 @@ syscall_(bind, int sockfd, struct sockaddr *addr, uint64_t addrlen) {
     spin_lock(info->lock);
     strncpy(info->bound_path, path, UNIX_PATH_MAX - 1);
     info->bound_path[UNIX_PATH_MAX - 1] = '\0';
-    info->is_bound = true;
-    info->bound_node = node;
-    info->state = SS_BOUND;
+    info->is_bound                      = true;
+    info->bound_node                    = node;
+    info->state                         = SS_BOUND;
     // Store info pointer in the VFS node so connect() can find it
     node->handle = spec;
     spin_unlock(info->lock);
@@ -197,10 +197,10 @@ syscall_(listen, int sockfd, int backlog) {
         backlog = 128;
 
     spin_lock(info->lock);
-    info->backlog = backlog;
+    info->backlog       = backlog;
     info->pending_queue = calloc(backlog, sizeof(socket_info_t *));
     info->pending_count = 0;
-    info->state = SS_LISTENING;
+    info->state         = SS_LISTENING;
     spin_unlock(info->lock);
     return EOK;
 }
@@ -233,11 +233,11 @@ syscall_(accept, int sockfd, struct sockaddr *addr, uint64_t *addrlen) {
                 return SYSCALL_FAULT_(ENOMEM);
 
             // Cross-link
-            server_info->peer = client_info;
+            server_info->peer  = client_info;
             server_info->state = SS_CONNECTED;
 
             spin_lock(client_info->lock);
-            client_info->peer = server_info;
+            client_info->peer  = server_info;
             client_info->state = SS_CONNECTED;
             spin_unlock(client_info->lock);
 
@@ -290,7 +290,7 @@ syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen) {
             return SYSCALL_FAULT_(ECONNREFUSED);
 
         spin_lock(info->lock);
-        info->peer = target_spec->info;
+        info->peer  = target_spec->info;
         info->state = SS_CONNECTED;
         spin_unlock(info->lock);
         return EOK;
@@ -353,7 +353,8 @@ syscall_(shutdown, int sockfd, int how) {
 
 syscall_(
     sendto, int sockfd, void *buf, size_t len, int flags, struct sockaddr *dest_addr,
-    uint64_t addrlen) {
+    uint64_t addrlen
+) {
     socket_specific_t *spec = get_sock_spec(sockfd);
     if (!spec)
         return SYSCALL_FAULT_(ENOTSOCK);
@@ -386,9 +387,9 @@ syscall_(
         return SYSCALL_FAULT_(ENOTCONN);
 
     // Write data to target's recv_buf
-    const uint8_t *src = (const uint8_t *)buf;
-    size_t total = 0;
-    size_t remaining = len;
+    const uint8_t *src       = (const uint8_t *)buf;
+    size_t         total     = 0;
+    size_t         remaining = len;
 
     while (remaining > 0) {
         spin_lock(target->lock);
@@ -413,7 +414,8 @@ syscall_(
 
 syscall_(
     recvfrom, int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr,
-    uint64_t *addrlen) {
+    uint64_t *addrlen
+) {
     socket_specific_t *spec = get_sock_spec(sockfd);
     if (!spec)
         return SYSCALL_FAULT_(ENOTSOCK);
@@ -437,7 +439,7 @@ syscall_(
                 struct sockaddr_un *sun = (struct sockaddr_un *)src_addr;
                 memset(sun, 0, sizeof(struct sockaddr_un));
                 sun->sun_family = AF_UNIX;
-                *addrlen = sizeof(struct sockaddr_un);
+                *addrlen        = sizeof(struct sockaddr_un);
             }
             return to_read;
         }
@@ -462,7 +464,8 @@ syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags) {
         if (iov->iov_len == 0)
             continue;
         size_t ret = syscall_sendto(
-            sockfd, iov->iov_base, iov->iov_len, flags, msg->msg_name, msg->msg_namelen, regs);
+            sockfd, iov->iov_base, iov->iov_len, flags, msg->msg_name, msg->msg_namelen, regs
+        );
         if ((int64_t)ret < 0)
             return total > 0 ? total : ret;
         total += ret;
@@ -486,7 +489,7 @@ syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags) {
             break; // short read
     }
     msg->msg_controllen = 0;
-    msg->msg_flags = 0;
+    msg->msg_flags      = 0;
     return total;
 }
 
@@ -516,7 +519,7 @@ syscall_(getsockopt, int sockfd, int level, int optname, void *optval, uint64_t 
         int val = 0;
         switch (optname) {
         case SO_ERROR:
-            val = info->so_error;
+            val            = info->so_error;
             info->so_error = 0;
             break;
         case SO_TYPE:

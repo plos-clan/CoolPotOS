@@ -121,7 +121,8 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
     if (cond) {                                                                                    \
         RAWLOG(                                                                                    \
             3, "%s:%d: ERROR!: check %s failed, returning %s", __FILE__, __LINE__,                 \
-            ERR_QUOTE(cond), ERR_QUOTE(ERROR(err)));                                               \
+            ERR_QUOTE(cond), ERR_QUOTE(ERROR(err))                                                 \
+        );                                                                                         \
         _FORCE_HAS_FORMAT_STRING(__VA_ARGS__);                                                     \
         RAWLOG(3, ": " __VA_ARGS__);                                                               \
         RAWLOG(3, "\n");                                                                           \
@@ -137,7 +138,8 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
     do {                                                                                           \
         RAWLOG(                                                                                    \
             3, "%s:%d: ERROR!: unconditional check failed, returning %s", __FILE__, __LINE__,      \
-            ERR_QUOTE(ERROR(err)));                                                                \
+            ERR_QUOTE(ERROR(err))                                                                  \
+        );                                                                                         \
         _FORCE_HAS_FORMAT_STRING(__VA_ARGS__);                                                     \
         RAWLOG(3, ": " __VA_ARGS__);                                                               \
         RAWLOG(3, "\n");                                                                           \
@@ -155,7 +157,8 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
         if (ERR_isError(err_code)) {                                                               \
             RAWLOG(                                                                                \
                 3, "%s:%d: ERROR!: forwarding error in %s: %s", __FILE__, __LINE__,                \
-                ERR_QUOTE(err), ERR_getErrorName(err_code));                                       \
+                ERR_QUOTE(err), ERR_getErrorName(err_code)                                         \
+            );                                                                                     \
             _FORCE_HAS_FORMAT_STRING(__VA_ARGS__);                                                 \
             RAWLOG(3, ": " __VA_ARGS__);                                                           \
             RAWLOG(3, "\n");                                                                       \

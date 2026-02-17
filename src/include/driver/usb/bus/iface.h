@@ -1,15 +1,15 @@
 #pragma once
 
-#include "driver/usb/bus/driver.h"
 #include "driver/usb/defs/defs.h"
 #include "driver/usb/defs/types.h"
 #include "driver/usb/usb_vec.h"
+#include "driver/usb/bus/driver.h"
 
 struct UsbDevice;
 
 typedef struct UsbEndpoint {
-    EndpointDescriptor desc;
-    bool has_ss_desc;
+    EndpointDescriptor            desc;
+    bool                          has_ss_desc;
     SsEndpointCompanionDescriptor ss_desc;
 } UsbEndpoint;
 
@@ -20,11 +20,11 @@ typedef struct UsbExtraData {
 } UsbExtraData;
 
 typedef struct UsbInterface {
-    struct UsbDevice *device;
+    struct UsbDevice   *device;
     InterfaceDescriptor desc;
-    UsbDriver *driver;
-    UsbEndpointVec endpoints;
-    UsbExtraData extra_data;
+    UsbDriver          *driver;
+    UsbEndpointVec      endpoints;
+    UsbExtraData        extra_data;
 } UsbInterface;
 
 USB_VEC_DEFINE(UsbInterface, UsbInterfaceVec);

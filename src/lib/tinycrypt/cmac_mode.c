@@ -211,7 +211,7 @@ int tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length) {
 }
 
 int tc_cmac_final(uint8_t *tag, TCCmacState_t s) {
-    uint8_t *k;
+    uint8_t     *k;
     unsigned int i;
 
     /* input sanity check: */
@@ -228,7 +228,7 @@ int tc_cmac_final(uint8_t *tag, TCCmacState_t s) {
 
         _set(&s->leftover[s->leftover_offset], 0, remaining);
         s->leftover[s->leftover_offset] = TC_CMAC_PADDING;
-        k = (uint8_t *)s->K2;
+        k                               = (uint8_t *)s->K2;
     }
     for (i = 0; i < TC_AES_BLOCK_SIZE; ++i) {
         s->iv[i] ^= s->leftover[i] ^ k[i];

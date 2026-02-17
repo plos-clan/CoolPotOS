@@ -236,15 +236,16 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
     if (featuresEcx & CPUID_ECX_RDRAND)
         status &= string_builder_append(cpu_features->features, "rdrand ");
 
-    int cpuid_level;
-    static char x86_vendor_id[16] = {0};
+    int         cpuid_level;
+    static char x86_vendor_id[16] = { 0 };
     cpuid_raw(
         0x00000000, (uint32_t *)&cpuid_level, (uint32_t *)&x86_vendor_id[0],
-        (uint32_t *)&x86_vendor_id[8], (uint32_t *)&x86_vendor_id[4]);
+        (uint32_t *)&x86_vendor_id[8], (uint32_t *)&x86_vendor_id[4]
+    );
     cpu_features->vendor_id = strdup(x86_vendor_id);
 
     cpu_features->model_name = calloc(49, sizeof(char));
-    uint32_t *v = (uint32_t *)cpu_features->model_name;
+    uint32_t *v              = (uint32_t *)cpu_features->model_name;
     cpuid_raw(0x80000002, &v[0], &v[1], &v[2], &v[3]);
     cpuid_raw(0x80000003, &v[4], &v[5], &v[6], &v[7]);
     cpuid_raw(0x80000004, &v[8], &v[9], &v[10], &v[11]);

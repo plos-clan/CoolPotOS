@@ -181,7 +181,7 @@ static list_t list_append(list_t list, void *data) {
             current = current->next;
         }
         current->next = node;
-        node->prev = current;
+        node->prev    = current;
     }
 
     return list;
@@ -269,7 +269,7 @@ static list_t list_delete(list_t list, void *data) {
 
     if (list->data == data) {
         list_t temp = list;
-        list = list->next;
+        list        = list->next;
         free(temp);
         return list;
     }
@@ -293,7 +293,7 @@ static list_t list_delete_with(list_t list, void *data, free_t callback) {
 
     if (list->data == data) {
         list_t temp = list;
-        list = list->next;
+        list        = list->next;
         if (callback)
             callback(temp->data);
         free(temp);
@@ -321,7 +321,7 @@ static list_t list_delete_node(list_t list, list_t node) {
 
     if (list == node) {
         list_t temp = list;
-        list = list->next;
+        list        = list->next;
         free(temp);
         return list;
     }
@@ -339,7 +339,7 @@ static list_t list_delete_node_with(list_t list, list_t node, free_t callback) {
 
     if (list == node) {
         list_t temp = list;
-        list = list->next;
+        list        = list->next;
         if (callback)
             callback(temp->data);
         free(temp);
@@ -356,7 +356,7 @@ static list_t list_delete_node_with(list_t list, list_t node, free_t callback) {
 }
 
 static size_t list_length(list_t list) {
-    size_t count = 0;
+    size_t count   = 0;
     list_t current = list;
     while (current != NULL) {
         count++;

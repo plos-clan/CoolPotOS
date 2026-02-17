@@ -17,7 +17,7 @@ bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t mod
         kerror("module file too small to contain signature info.");
         return false;
     }
-    size_t data_len_to_hash = module_size - sizeof(struct module_signature);
+    size_t                         data_len_to_hash = module_size - sizeof(struct module_signature);
     const struct module_signature *sig_info =
         (const struct module_signature *)(module_buffer + data_len_to_hash);
     if (sig_info->magic != CPOS_SIG_MAGIC) {
@@ -31,10 +31,11 @@ bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t mod
     if (sig_info->sig_len != ECC_SIG_LEN) {
         kerror(
             "invalid signature length: %u. Expected %u for ECC P-256.", sig_info->sig_len,
-            ECC_SIG_LEN);
+            ECC_SIG_LEN
+        );
         return false;
     }
-    uint8_t calculated_hash[HASH_LEN];
+    uint8_t                       calculated_hash[HASH_LEN];
     struct tc_sha256_state_struct s;
     if (tc_sha256_init(&s) != TC_CRYPTO_SUCCESS) {
         kerror("SHA256 initialization failed.");
@@ -75,7 +76,8 @@ bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t mod
     } else {
         kerror(
             "%s: module signature verification failed (err=%d): signature not trusted.", mod->path,
-            result);
+            result
+        );
         return false;
     }
 #endif

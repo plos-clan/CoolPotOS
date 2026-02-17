@@ -6,8 +6,8 @@
 #include "term/klog.h"
 
 vfs_node_t pipefs_root = NULL;
-int pipefs_id = 0;
-int pipefd_id = 0;
+int        pipefs_id   = 0;
+int        pipefd_id   = 0;
 
 void pipefs_open(void *parent, const char *name, vfs_node_t node) {
     (void)parent;
@@ -141,10 +141,10 @@ size_t pipefs_write(void *file, const void *addr, size_t offset, size_t size) {
     pipe_info_t *pipe = spec->info;
     if (!pipe)
         return (size_t)-1;
-    const uint8_t *src = (const uint8_t *)addr;
-    size_t ret = 0;
-    size_t chunks = size / PIPE_BUFF;
-    size_t remainder = size % PIPE_BUFF;
+    const uint8_t *src       = (const uint8_t *)addr;
+    size_t         ret       = 0;
+    size_t         chunks    = size / PIPE_BUFF;
+    size_t         remainder = size % PIPE_BUFF;
 
     spin_lock(pipe->lock);
     spec->active++;
@@ -309,8 +309,8 @@ int pipefs_poll(void *file, size_t events) {
 int pipefs_mount(const char *handle, vfs_node_t node) {
     if (pipefs_root != NULL)
         return -EBUSY;
-    node->fsid = pipefs_id;
-    pipefs_root = node;
+    node->fsid   = pipefs_id;
+    pipefs_root  = node;
     node->handle = calloc(1, sizeof(pipe_specific_t));
     return EOK;
 }
@@ -332,27 +332,27 @@ errno_t pipefs_free(void *handle) {
 }
 
 static struct vfs_callback pipefs_callbacks = {
-    .mount = pipefs_mount,
-    .unmount = (vfs_unmount_t)dummy,
-    .open = (vfs_open_t)pipefs_open,
-    .close = pipefs_close,
-    .read = pipefs_read,
-    .write = pipefs_write,
+    .mount    = pipefs_mount,
+    .unmount  = (vfs_unmount_t)dummy,
+    .open     = (vfs_open_t)pipefs_open,
+    .close    = pipefs_close,
+    .read     = pipefs_read,
+    .write    = pipefs_write,
     .readlink = (vfs_readlink_t)dummy,
-    .mkdir = (vfs_mk_t)dummy,
-    .mkfile = (vfs_mk_t)dummy,
-    .link = (vfs_mk_t)dummy,
-    .symlink = (vfs_mk_t)dummy,
-    .delete = (vfs_del_t)dummy,
-    .rename = (vfs_rename_t)dummy,
-    .map = (vfs_mapfile_t)dummy,
-    .stat = pipefs_stat,
-    .ioctl = (vfs_ioctl_t)pipefs_ioctl,
-    .poll = pipefs_poll,
-    .dup = (vfs_dup_t)dummy,
-    .free = pipefs_free,
-    .chmod = (vfs_chmod_t)dummy,
-    .mknod = (vfs_mknod_t)dummy,
+    .mkdir    = (vfs_mk_t)dummy,
+    .mkfile   = (vfs_mk_t)dummy,
+    .link     = (vfs_mk_t)dummy,
+    .symlink  = (vfs_mk_t)dummy,
+    .delete   = (vfs_del_t)dummy,
+    .rename   = (vfs_rename_t)dummy,
+    .map      = (vfs_mapfile_t)dummy,
+    .stat     = pipefs_stat,
+    .ioctl    = (vfs_ioctl_t)pipefs_ioctl,
+    .poll     = pipefs_poll,
+    .dup      = (vfs_dup_t)dummy,
+    .free     = pipefs_free,
+    .chmod    = (vfs_chmod_t)dummy,
+    .mknod    = (vfs_mknod_t)dummy,
 };
 
 void pipefs_regist() {

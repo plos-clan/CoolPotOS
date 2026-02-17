@@ -22,8 +22,8 @@ void terminal_width_height(tty_t *session, size_t *width, size_t *height) {
     tty_device_t *device = session->device;
     if (device->type == TTY_DEVICE_GRAPHI) {
         struct tty_graphics_ *graphics = device->private_data;
-        *width = graphics->width;
-        *height = graphics->height;
+        *width                         = graphics->width;
+        *height                        = graphics->height;
     }
 }
 
@@ -32,14 +32,15 @@ errno_t create_session_terminal(tty_t *session) {
         return -ENODEV;
     if (session->device->type != TTY_DEVICE_GRAPHI)
         return -EINVAL;
-    struct tty_graphics_ *framebuffer = session->device->private_data;
-    struct flanterm_context *fl_context = flanterm_fb_init(
+    struct tty_graphics_    *framebuffer = session->device->private_data;
+    struct flanterm_context *fl_context  = flanterm_fb_init(
         NULL, NULL, framebuffer->address, framebuffer->width, framebuffer->height,
         framebuffer->pitch, framebuffer->red_mask_size, framebuffer->red_mask_shift,
         framebuffer->green_mask_size, framebuffer->green_mask_shift, framebuffer->blue_mask_size,
         framebuffer->blue_mask_shift, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0,
-        0, 256);
-    session->terminal = fl_context;
+        0, 256
+    );
+    session->terminal  = fl_context;
     session->ops.flush = terminal_flush;
     session->ops.write = terminal_write;
     return EOK;

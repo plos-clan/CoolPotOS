@@ -11,10 +11,10 @@
 #include "lib/libfdt/libfdt_internal.h"
 
 int fdt_setprop_inplace_namelen_partial(
-    void *fdt, int nodeoffset, const char *name, int namelen, uint32_t idx, const void *val,
-    int len) {
+    void *fdt, int nodeoffset, const char *name, int namelen, uint32_t idx, const void *val, int len
+) {
     void *propval;
-    int proplen;
+    int   proplen;
 
     propval = fdt_getprop_namelen_w(fdt, nodeoffset, name, namelen, &proplen);
     if (!propval)
@@ -29,7 +29,7 @@ int fdt_setprop_inplace_namelen_partial(
 
 int fdt_setprop_inplace(void *fdt, int nodeoffset, const char *name, const void *val, int len) {
     const void *propval;
-    int proplen;
+    int         proplen;
 
     propval = fdt_getprop(fdt, nodeoffset, name, &proplen);
     if (!propval)
@@ -50,7 +50,7 @@ static void fdt_nop_region_(void *start, int len) {
 
 int fdt_nop_property(void *fdt, int nodeoffset, const char *name) {
     struct fdt_property *prop;
-    int len;
+    int                  len;
 
     prop = fdt_get_property_w(fdt, nodeoffset, name, &len);
     if (!prop)

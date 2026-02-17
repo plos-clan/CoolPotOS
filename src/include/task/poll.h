@@ -29,12 +29,12 @@
 #define EPOLL_CTL_DEL 2
 #define EPOLL_CTL_MOD 3
 
-#include "fs/vfs.h"
-#include "lock.h"
 #include "types.h"
+#include "lock.h"
+#include "fs/vfs.h"
 
 struct pollfd {
-    int fd;
+    int   fd;
     short events;
     short revents;
 };
@@ -47,7 +47,7 @@ struct epoll_event {
 
 // Internal: one monitored fd entry
 typedef struct epoll_entry {
-    int fd;
+    int      fd;
     uint32_t events;
     uint64_t data;
 } epoll_entry_t;
@@ -57,9 +57,9 @@ typedef struct epoll_entry {
 
 typedef struct epoll_instance {
     epoll_entry_t entries[EPOLL_MAX_ENTRIES];
-    int count;
-    spin_t lock;
-    vfs_node_t node;
+    int           count;
+    spin_t        lock;
+    vfs_node_t    node;
 } epoll_instance_t;
 
 // eventfd flags (Linux ABI)
@@ -68,17 +68,17 @@ typedef struct epoll_instance {
 #define EFD_NONBLOCK 00004000 // == O_NONBLOCK
 
 typedef struct eventfd_ctx {
-    uint64_t count;
-    spin_t lock;
+    uint64_t   count;
+    spin_t     lock;
     vfs_node_t node;
-    int flags;
+    int        flags;
 } eventfd_ctx_t;
 
-struct pollfd *
+struct pollfd      *
 select_add(struct pollfd **comp, size_t *compIndex, size_t *complength, int fd, int events);
 bool select_bitmap(const uint8_t *map, int index);
 void select_bitmap_set(uint8_t *map, int index);
 uint32_t poll_to_epoll_comp(uint32_t poll_events);
 uint32_t epoll_to_poll_comp(uint32_t epoll_events);
-void epollfs_regist();
-void eventfdfs_regist();
+void     epollfs_regist();
+void     eventfdfs_regist();

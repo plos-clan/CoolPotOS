@@ -41,7 +41,8 @@ typedef enum { not_streaming = 0, is_streaming = 1 } streaming_operation;
  */
 size_t ZSTD_decompressBlock_internal(
     ZSTD_DCtx *dctx, void *dst, size_t dstCapacity, const void *src, size_t srcSize,
-    const int frame, const streaming_operation streaming);
+    const int frame, const streaming_operation streaming
+);
 
 /* ZSTD_buildFSETable() :
  * generate FSE decoding table for one symbol (ll, ml or off)
@@ -54,6 +55,7 @@ size_t ZSTD_decompressBlock_internal(
 void ZSTD_buildFSETable(
     ZSTD_seqSymbol *dt, const short *normalizedCounter, unsigned maxSymbolValue,
     const U32 *baseValue, const U8 *nbAdditionalBits, unsigned tableLog, void *wksp,
-    size_t wkspSize, int bmi2);
+    size_t wkspSize, int bmi2
+);
 
 #endif /* ZSTD_DEC_BLOCK_H */

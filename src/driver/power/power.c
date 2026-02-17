@@ -61,7 +61,8 @@ static void init_fixed_power_button() {
     ACPI_STATUS status;
     AcpiClearEvent(ACPI_EVENT_POWER_BUTTON);
     status = AcpiInstallFixedEventHandler(
-        ACPI_EVENT_POWER_BUTTON, AcpiFixedEventPowerButtonHandler, NULL);
+        ACPI_EVENT_POWER_BUTTON, AcpiFixedEventPowerButtonHandler, NULL
+    );
     if (ACPI_FAILURE(status)) {
         kerror("Failed to install fixed power button handler: %s", AcpiFormatException(status));
         return;

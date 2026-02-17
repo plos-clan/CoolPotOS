@@ -7,7 +7,7 @@
 #include "term/klog.h"
 
 module_t boot_modules[MAX_LOAD_MODULE];
-size_t modules_count = 0;
+size_t   modules_count = 0;
 
 void extract_name(const char *input, char *output, size_t output_size) {
     const char *name = strrchr(input, '/');
@@ -76,7 +76,7 @@ void mount_modfs() {
     }
 
     for (size_t i = 0; i < modules_count; i++) {
-        char path[50];
+        char     path[50];
         module_t module0 = boot_modules[i];
         sprintf(path, "/mod/%s", module0.name);
         vfs_mkfile(path);

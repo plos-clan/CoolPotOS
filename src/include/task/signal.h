@@ -65,26 +65,26 @@
 #include "types.h"
 
 typedef struct signal_block signal_block_t;
-typedef uint64_t sigset_t;
+typedef uint64_t            sigset_t;
 typedef void (*sighandler_t)(void);
 
 typedef struct sigaction {
-    sighandler_t sa_handler;
+    sighandler_t  sa_handler;
     unsigned long sa_flags;
     void (*sa_restorer)(void);
     sigset_t sa_mask;
 } sigaction_t;
 
 typedef struct {
-    void *sp;
+    void  *sp;
     size_t size;
-    int flags;
+    int    flags;
 } altstack_t; // 信号备用栈
 
 struct signal_block {
     void (*signal_handlers[MAX_SIGNALS])(int); // 每个信号对应的用户处理器
-    uint64_t pending_signals;                  // 用 bitmap 表示待处理信号
-    uint64_t blocked;                          // 屏蔽的信号
+    uint64_t    pending_signals;               // 用 bitmap 表示待处理信号
+    uint64_t    blocked;                       // 屏蔽的信号
     sigaction_t actions[MAXSIG];
 } __attribute__((packed));
 
@@ -106,7 +106,7 @@ typedef struct {
 
         // Kill
         struct {
-            int32_t si_pid;  // Sending process ID
+            int32_t  si_pid; // Sending process ID
             uint32_t si_uid; // Real user ID of sending process
         } _kill;
 
@@ -119,24 +119,24 @@ typedef struct {
 
         // POSIX.1b signals
         struct {
-            int32_t si_pid;    // Sending process ID
-            uint32_t si_uid;   // Real user ID of sending process
-            int32_t si_sigval; // Signal value
+            int32_t  si_pid;    // Sending process ID
+            uint32_t si_uid;    // Real user ID of sending process
+            int32_t  si_sigval; // Signal value
         } _rt;
 
         // SIGCHLD
         struct {
-            int32_t si_pid;    // Sending process ID
-            uint32_t si_uid;   // Real user ID of sending process
-            int32_t si_status; // Exit value or signal
-            int32_t si_utime;  // User time consumed
-            int32_t si_stime;  // System time consumed
+            int32_t  si_pid;    // Sending process ID
+            uint32_t si_uid;    // Real user ID of sending process
+            int32_t  si_status; // Exit value or signal
+            int32_t  si_utime;  // User time consumed
+            int32_t  si_stime;  // System time consumed
         } _sigchld;
 
         // SIGILL, SIGFPE, SIGSEGV, SIGBUS
         struct {
-            uintptr_t si_addr;   // Faulting instruction or data address
-            int32_t si_addr_lsb; // LSB of the address (if applicable)
+            uintptr_t si_addr;     // Faulting instruction or data address
+            int32_t   si_addr_lsb; // LSB of the address (if applicable)
         } _sigfault;
 
         // SIGPOLL
@@ -148,8 +148,8 @@ typedef struct {
         // SIGSYS
         struct {
             uintptr_t si_call_addr; // Calling user insn
-            int32_t si_syscall;     // Number of syscall
-            uint32_t si_arch;       // Architecture
+            int32_t   si_syscall;   // Number of syscall
+            uint32_t  si_arch;      // Architecture
         } _sigsys;
     } _sifields;
 } siginfo_t;
@@ -159,5 +159,5 @@ typedef struct process_control_block *pcb_t;
 
 void signal_init();
 void do_signal(struct syscall_regs *regs);
-int send_signal_to_process(pcb_t process, int sig);
-int send_signal_to_pgroup(pid_t pgid, int sig);
+int  send_signal_to_process(pcb_t process, int sig);
+int  send_signal_to_pgroup(pid_t pgid, int sig);

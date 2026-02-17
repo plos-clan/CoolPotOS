@@ -172,7 +172,8 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
         logkf(
             "libx64: head %x %c %c %c %d.\n\r", ehdr->e_ident[EI_MAG0],
             ehdr->e_ident[EI_MAG1] != ELFMAG1, ehdr->e_ident[EI_MAG2],
-            ehdr->e_ident[EI_MAG3] != ELFMAG3, ehdr->e_version);
+            ehdr->e_ident[EI_MAG3] != ELFMAG3, ehdr->e_version
+        );
         return false;
     }
     if (ehdr->e_ehsize != sizeof(Elf64_Ehdr) || ehdr->e_phentsize != sizeof(Elf64_Phdr)) {

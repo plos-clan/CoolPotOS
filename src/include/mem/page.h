@@ -42,9 +42,11 @@
 page_directory_t *get_kernel_pagedir();
 
 void page_map_range_to(
-    page_directory_t *directory, uint64_t frame, uint64_t length, uint64_t flags);
+    page_directory_t *directory, uint64_t frame, uint64_t length, uint64_t flags
+);
 void page_map_range(
-    page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t length, uint64_t flags);
+    page_directory_t *directory, uint64_t addr, uint64_t frame, uint64_t length, uint64_t flags
+);
 
 /**
  * 分配一块随机的内核区可用地址
@@ -62,7 +64,8 @@ uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_
  * @param flags 映射标志
  */
 void page_map_range_to_random(
-    page_directory_t *directory, uint64_t addr, uint64_t length, uint64_t flags);
+    page_directory_t *directory, uint64_t addr, uint64_t length, uint64_t flags
+);
 
 /**
  * 解除一段地址映射
@@ -95,7 +98,8 @@ page_directory_t *switch_context_directory(page_directory_t *directory);
 uint64_t arch_virt_to_phys(uint64_t va);
 
 uint64_t map_change_attribute_range(
-    page_directory_t *directory, uint64_t vaddr, uint64_t len, uint64_t flags);
+    page_directory_t *directory, uint64_t vaddr, uint64_t len, uint64_t flags
+);
 
 void switch_page_directory(page_directory_t *dir); // 切换页表: 架构具体实现
 

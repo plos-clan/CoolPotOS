@@ -5,7 +5,7 @@
 #include "term/klog.h"
 
 id_allocator_t *intctl_irq_alloc;
-irq_action_t actions[ARCH_MAX_IRQ_NUM];
+irq_action_t    actions[ARCH_MAX_IRQ_NUM];
 
 static _Atomic volatile uint64_t irq_count = 0;
 
@@ -35,15 +35,15 @@ void do_irq(struct pt_regs *regs, uint64_t irq_num) {
 
 void irq_regist_irq(
     uint64_t irq_num, void (*handler)(uint64_t irq_num, void *data, struct pt_regs *regs),
-    uint64_t arg, void *data, intctl_t *controller, char *name, uint64_t flags,
-    enum irq_type type) {
+    uint64_t arg, void *data, intctl_t *controller, char *name, uint64_t flags, enum irq_type type
+) {
     irq_action_t *action = &actions[irq_num];
 
-    action->handler = handler;
-    action->data = data;
+    action->handler        = handler;
+    action->data           = data;
     action->irq_controller = controller;
-    action->name = strdup(name);
-    action->type = type;
+    action->name           = strdup(name);
+    action->type           = type;
 
     if (action->irq_controller && action->irq_controller->_install) {
         action->irq_controller->_install(irq_num, arg, flags);

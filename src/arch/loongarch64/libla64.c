@@ -1,7 +1,7 @@
-#include "exec/elf.h"
-#include "io.h"
 #include "krlibc.h"
+#include "io.h"
 #include "timer.h"
+#include "exec/elf.h"
 
 void arch_pause() {
     __asm__ volatile("nop");
@@ -32,7 +32,8 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
         return false;
     }
 
-    if (ehdr->e_ident[4] != 2 // 64-bit
+    if (
+        ehdr->e_ident[4] != 2 // 64-bit
                               // TODO loongarch64
     ) {
         return false;

@@ -9,18 +9,18 @@
 #include "task/task.h"
 #include "term/klog.h"
 
-static pty_pair_t *pty_table[PTY_MAX_COUNT] = {NULL};
-static spin_t pty_table_lock;
-static int pty_next_index = 0;
+static pty_pair_t *pty_table[PTY_MAX_COUNT] = { NULL };
+static spin_t      pty_table_lock;
+static int         pty_next_index = 0;
 
 // ===== Ring Buffer Operations =====
 
 void pty_ringbuf_init(pty_ringbuf_t *rb, size_t capacity) {
-    rb->buf = (char *)malloc(capacity);
+    rb->buf      = (char *)malloc(capacity);
     rb->capacity = capacity;
-    rb->head = 0;
-    rb->tail = 0;
-    rb->count = 0;
+    rb->head     = 0;
+    rb->tail     = 0;
+    rb->count    = 0;
 }
 
 void pty_ringbuf_destroy(pty_ringbuf_t *rb) {
@@ -38,13 +38,13 @@ size_t pty_ringbuf_write(pty_ringbuf_t *rb, const void *src, size_t len) {
     if (!rb->buf || !src)
         return 0;
 
-    size_t space = rb->capacity - rb->count;
+    size_t space    = rb->capacity - rb->count;
     size_t to_write = len < space ? len : space;
 
     const char *csrc = (const char *)src;
     for (size_t i = 0; i < to_write; i++) {
         rb->buf[rb->tail] = csrc[i];
-        rb->tail = (rb->tail + 1) % rb->capacity;
+        rb->tail          = (rb->tail + 1) % rb->capacity;
         rb->count++;
     }
 
@@ -59,7 +59,7 @@ size_t pty_ringbuf_read(pty_ringbuf_t *rb, void *dst, size_t len) {
 
     char *cdst = (char *)dst;
     for (size_t i = 0; i < to_read; i++) {
-        cdst[i] = rb->buf[rb->head];
+        cdst[i]  = rb->buf[rb->head];
         rb->head = (rb->head + 1) % rb->capacity;
         rb->count--;
     }
@@ -86,9 +86,9 @@ pty_pair_t *pty_alloc() {
     for (int i = 0; i < PTY_MAX_COUNT; i++) {
         int check_idx = (pty_next_index + i) % PTY_MAX_COUNT;
         if (pty_table[check_idx] == NULL) {
-            index = check_idx;
+            index            = check_idx;
             pty_table[index] = pair;
-            pty_next_index = (index + 1) % PTY_MAX_COUNT;
+            pty_next_index   = (index + 1) % PTY_MAX_COUNT;
             break;
         }
     }
@@ -100,48 +100,48 @@ pty_pair_t *pty_alloc() {
         return NULL;
     }
 
-    pair->index = index;
-    pair->locked = 0;
+    pair->index       = index;
+    pair->locked      = 0;
     pair->master_open = 0;
-    pair->slave_open = 0;
-    pair->refcount = 0;
-    pair->lock = false;
+    pair->slave_open  = 0;
+    pair->refcount    = 0;
+    pair->lock        = false;
 
     pty_ringbuf_init(&pair->master_to_slave, PTY_BUF_SIZE);
     pty_ringbuf_init(&pair->slave_to_master, PTY_BUF_SIZE);
 
     pair->master_node = NULL;
-    pair->slave_node = NULL;
+    pair->slave_node  = NULL;
 
     // Default termios (sane defaults matching Linux)
     pair->termios.c_iflag = ICRNL | IXON;
     pair->termios.c_oflag = OPOST | ONLCR;
     pair->termios.c_cflag = CS8 | CREAD | HUPCL;
     pair->termios.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
-    pair->termios.c_line = 0;
+    pair->termios.c_line  = 0;
     memset(pair->termios.c_cc, 0, sizeof(pair->termios.c_cc));
-    pair->termios.c_cc[VINTR] = 003;    // ^C
-    pair->termios.c_cc[VQUIT] = 034;    // ^\
+    pair->termios.c_cc[VINTR]    = 003; // ^C
+    pair->termios.c_cc[VQUIT]    = 034; // ^\
     pair->termios.c_cc[VERASE]   = 0177; // DEL
-    pair->termios.c_cc[VKILL] = 025;    // ^U
-    pair->termios.c_cc[VEOF] = 004;     // ^D
-    pair->termios.c_cc[VSTART] = 021;   // ^Q
-    pair->termios.c_cc[VSTOP] = 023;    // ^S
-    pair->termios.c_cc[VSUSP] = 032;    // ^Z
+    pair->termios.c_cc[VKILL]    = 025; // ^U
+    pair->termios.c_cc[VEOF]     = 004; // ^D
+    pair->termios.c_cc[VSTART]   = 021; // ^Q
+    pair->termios.c_cc[VSTOP]    = 023; // ^S
+    pair->termios.c_cc[VSUSP]    = 032; // ^Z
     pair->termios.c_cc[VREPRINT] = 022; // ^R
     pair->termios.c_cc[VDISCARD] = 017; // ^O
-    pair->termios.c_cc[VWERASE] = 027;  // ^W
-    pair->termios.c_cc[VLNEXT] = 026;   // ^V
-    pair->termios.c_cc[VMIN] = 1;
+    pair->termios.c_cc[VWERASE]  = 027; // ^W
+    pair->termios.c_cc[VLNEXT]   = 026; // ^V
+    pair->termios.c_cc[VMIN]     = 1;
 
     // Default window size
-    pair->winsize.ws_row = 24;
-    pair->winsize.ws_col = 80;
+    pair->winsize.ws_row    = 24;
+    pair->winsize.ws_col    = 80;
     pair->winsize.ws_xpixel = 0;
     pair->winsize.ws_ypixel = 0;
 
     pair->foreground_pgid = 0;
-    pair->session_id = 0;
+    pair->session_id      = 0;
 
     return pair;
 }
@@ -223,8 +223,8 @@ static size_t ptmx_write(void *file, const void *addr, size_t offset, size_t siz
         return -EIO;
     }
 
-    const char *input = (const char *)addr;
-    size_t nwritten = 0;
+    const char *input    = (const char *)addr;
+    size_t      nwritten = 0;
 
     for (size_t i = 0; i < size; i++) {
         char c = input[i];
@@ -256,7 +256,7 @@ static size_t ptmx_write(void *file, const void *addr, size_t offset, size_t siz
             } else if ((unsigned char)c < 0x20 && c != '\t') {
                 // Echo control characters as ^X if ECHOCTL is set
                 if (pair->termios.c_lflag & ECHOCTL) {
-                    char ctrl[2] = {'^', c + '@'};
+                    char ctrl[2] = { '^', c + '@' };
                     pty_ringbuf_write(&pair->slave_to_master, ctrl, 2);
                 }
             } else {
@@ -297,6 +297,7 @@ static bool ptmx_close(void *file) {
         }
     }
 
+    free(spec);
     return true;
 }
 
@@ -349,8 +350,8 @@ static errno_t ptmx_poll(void *file, size_t events) {
     if (!spec || !spec->active || !spec->pair)
         return 0;
 
-    pty_pair_t *pair = spec->pair;
-    size_t revents = 0;
+    pty_pair_t *pair    = spec->pair;
+    size_t      revents = 0;
 
     spin_lock(pair->lock);
 
@@ -428,8 +429,8 @@ static size_t pts_write(void *file, const void *addr, size_t offset, size_t size
 
     // Output processing: OPOST + ONLCR (map NL to CR-NL on output)
     if ((pair->termios.c_oflag & OPOST) && (pair->termios.c_oflag & ONLCR)) {
-        const char *input = (const char *)addr;
-        size_t nwritten = 0;
+        const char *input    = (const char *)addr;
+        size_t      nwritten = 0;
         for (size_t i = 0; i < size; i++) {
             if (input[i] == '\n') {
                 if (pty_ringbuf_write(&pair->slave_to_master, "\r\n", 2) < 2)
@@ -483,9 +484,9 @@ static errno_t pts_ioctl(void *file, size_t req, void *arg) {
         memcpy(&pair->winsize, arg, sizeof(struct winsize));
         return EOK;
     case TIOCSCTTY: {
-        tcb_t thread = get_current_task();
-        pcb_t proc = thread->process;
-        pair->session_id = proc->sid;
+        tcb_t thread          = get_current_task();
+        pcb_t proc            = thread->process;
+        pair->session_id      = proc->sid;
         pair->foreground_pgid = proc->pgid;
         if (proc->ctty_path)
             free(proc->ctty_path);
@@ -590,9 +591,9 @@ static void ptmx_device_open(void *parent, const char *name, vfs_node_t node) {
         return;
     }
 
-    spec->pair = pair;
+    spec->pair      = pair;
     spec->is_master = true;
-    spec->active = true;
+    spec->active    = true;
 
     spin_lock(pair->lock);
     pair->master_open++;
@@ -620,7 +621,8 @@ static void ptmx_device_open(void *parent, const char *name, vfs_node_t node) {
             pts_root, pts_name, device_stream, NULL, 0,
             pts_device_open, // Pass open_t callback!
             ptmx_device_close, pts_device_ioctl, pts_device_read, pts_device_write,
-            ptmx_device_poll, NULL, ptmx_size_func);
+            ptmx_device_poll, NULL, ptmx_size_func
+        );
         vfs_close(pts_root);
 
         if (err == EOK) {
@@ -671,9 +673,9 @@ static void pts_device_open(void *parent, const char *name, vfs_node_t node) {
         return;
     }
 
-    spec->pair = pair;
+    spec->pair      = pair;
     spec->is_master = false;
-    spec->active = true;
+    spec->active    = true;
 
     spin_lock(pair->lock);
     pair->slave_open++;
@@ -706,7 +708,8 @@ void ptmx_init() {
         dev_root, "ptmx", device_stream, NULL, 0,
         ptmx_device_open, // Pass open_t here!
         ptmx_device_close, ptmx_device_ioctl, ptmx_device_read, ptmx_device_write, ptmx_device_poll,
-        NULL, ptmx_size_func);
+        NULL, ptmx_size_func
+    );
 
     vfs_close(dev_root);
 

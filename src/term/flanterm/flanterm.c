@@ -68,41 +68,42 @@ static const uint32_t col256[] = {
     0xffd7af, 0xffd7d7, 0xffd7ff, 0xffff00, 0xffff5f, 0xffff87, 0xffffaf, 0xffffd7, 0xffffff,
     0x080808, 0x121212, 0x1c1c1c, 0x262626, 0x303030, 0x3a3a3a, 0x444444, 0x4e4e4e, 0x585858,
     0x626262, 0x6c6c6c, 0x767676, 0x808080, 0x8a8a8a, 0x949494, 0x9e9e9e, 0xa8a8a8, 0xb2b2b2,
-    0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada, 0xe4e4e4, 0xeeeeee};
+    0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada, 0xe4e4e4, 0xeeeeee
+};
 
 #define CHARSET_DEFAULT 0
 #define CHARSET_DEC_SPECIAL 1
 
 void flanterm_context_reinit(struct flanterm_context *ctx) {
-    ctx->tab_size = 8;
-    ctx->autoflush = true;
-    ctx->cursor_enabled = true;
-    ctx->scroll_enabled = true;
-    ctx->control_sequence = false;
-    ctx->escape = false;
-    ctx->osc = false;
-    ctx->osc_escape = false;
-    ctx->rrr = false;
-    ctx->discard_next = false;
-    ctx->bold = false;
-    ctx->bg_bold = false;
-    ctx->reverse_video = false;
-    ctx->dec_private = false;
-    ctx->insert_mode = false;
-    ctx->unicode_remaining = 0;
-    ctx->g_select = 0;
-    ctx->charsets[0] = CHARSET_DEFAULT;
-    ctx->charsets[1] = CHARSET_DEC_SPECIAL;
-    ctx->current_charset = 0;
-    ctx->escape_offset = 0;
-    ctx->esc_values_i = 0;
-    ctx->saved_cursor_x = 0;
-    ctx->saved_cursor_y = 0;
-    ctx->current_primary = (size_t)-1;
-    ctx->current_bg = (size_t)-1;
-    ctx->scroll_top_margin = 0;
+    ctx->tab_size             = 8;
+    ctx->autoflush            = true;
+    ctx->cursor_enabled       = true;
+    ctx->scroll_enabled       = true;
+    ctx->control_sequence     = false;
+    ctx->escape               = false;
+    ctx->osc                  = false;
+    ctx->osc_escape           = false;
+    ctx->rrr                  = false;
+    ctx->discard_next         = false;
+    ctx->bold                 = false;
+    ctx->bg_bold              = false;
+    ctx->reverse_video        = false;
+    ctx->dec_private          = false;
+    ctx->insert_mode          = false;
+    ctx->unicode_remaining    = 0;
+    ctx->g_select             = 0;
+    ctx->charsets[0]          = CHARSET_DEFAULT;
+    ctx->charsets[1]          = CHARSET_DEC_SPECIAL;
+    ctx->current_charset      = 0;
+    ctx->escape_offset        = 0;
+    ctx->esc_values_i         = 0;
+    ctx->saved_cursor_x       = 0;
+    ctx->saved_cursor_y       = 0;
+    ctx->current_primary      = (size_t)-1;
+    ctx->current_bg           = (size_t)-1;
+    ctx->scroll_top_margin    = 0;
     ctx->scroll_bottom_margin = ctx->rows;
-    ctx->oob_output = FLANTERM_OOB_OUTPUT_ONLCR;
+    ctx->oob_output           = FLANTERM_OOB_OUTPUT_ONLCR;
 }
 
 void flanterm_write(struct flanterm_context *ctx, const char *buf, size_t count) {
@@ -130,10 +131,10 @@ static void sgr(struct flanterm_context *ctx) {
                 ctx->reverse_video = false;
                 ctx->swap_palette(ctx);
             }
-            ctx->bold = false;
-            ctx->bg_bold = false;
+            ctx->bold            = false;
+            ctx->bg_bold         = false;
             ctx->current_primary = (size_t)-1;
-            ctx->current_bg = (size_t)-1;
+            ctx->current_bg      = (size_t)-1;
             ctx->set_text_bg_default(ctx);
             ctx->set_text_fg_default(ctx);
             continue;
@@ -212,7 +213,7 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 30 && ctx->esc_values[i] <= 37) {
-            offset = 30;
+            offset               = 30;
             ctx->current_primary = ctx->esc_values[i] - offset;
 
             if (ctx->reverse_video) {
@@ -229,7 +230,7 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 40 && ctx->esc_values[i] <= 47) {
-            offset = 40;
+            offset          = 40;
             ctx->current_bg = ctx->esc_values[i] - offset;
 
             if (ctx->reverse_video) {
@@ -246,7 +247,7 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 90 && ctx->esc_values[i] <= 97) {
-            offset = 90;
+            offset               = 90;
             ctx->current_primary = ctx->esc_values[i] - offset;
 
             if (ctx->reverse_video) {
@@ -259,7 +260,7 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 100 && ctx->esc_values[i] <= 107) {
-            offset = 100;
+            offset          = 100;
             ctx->current_bg = ctx->esc_values[i] - offset;
 
             if (ctx->reverse_video) {
@@ -476,8 +477,8 @@ static void osc_parse(struct flanterm_context *ctx, uint8_t c) {
 
 cleanup:
     ctx->osc_escape = false;
-    ctx->osc = false;
-    ctx->escape = false;
+    ctx->osc        = false;
+    ctx->escape     = false;
 }
 
 static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
@@ -537,7 +538,7 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         goto cleanup;
     }
 
-    bool r = ctx->scroll_enabled;
+    bool r              = ctx->scroll_enabled;
     ctx->scroll_enabled = false;
     size_t x, y;
     ctx->get_cursor_pos(ctx, &x, &y);
@@ -549,9 +550,9 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     case 'A': {
         if (ctx->esc_values[0] > y)
             ctx->esc_values[0] = y;
-        size_t orig_y = y;
-        size_t dest_y = y - ctx->esc_values[0];
-        bool will_be_in_scroll_region = false;
+        size_t orig_y                   = y;
+        size_t dest_y                   = y - ctx->esc_values[0];
+        bool   will_be_in_scroll_region = false;
         if ((ctx->scroll_top_margin >= dest_y && ctx->scroll_top_margin <= orig_y)
             || (ctx->scroll_bottom_margin >= dest_y && ctx->scroll_bottom_margin <= orig_y)) {
             will_be_in_scroll_region = true;
@@ -569,9 +570,9 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     case 'B': {
         if (y + ctx->esc_values[0] > ctx->rows - 1)
             ctx->esc_values[0] = (ctx->rows - 1) - y;
-        size_t orig_y = y;
-        size_t dest_y = y + ctx->esc_values[0];
-        bool will_be_in_scroll_region = false;
+        size_t orig_y                   = y;
+        size_t dest_y                   = y + ctx->esc_values[0];
+        bool   will_be_in_scroll_region = false;
         if ((ctx->scroll_top_margin >= orig_y && ctx->scroll_top_margin <= dest_y)
             || (ctx->scroll_bottom_margin >= orig_y && ctx->scroll_bottom_margin <= dest_y)) {
             will_be_in_scroll_region = true;
@@ -634,7 +635,7 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     }
     case 'L': {
         size_t old_scroll_top_margin = ctx->scroll_top_margin;
-        ctx->scroll_top_margin = y;
+        ctx->scroll_top_margin       = y;
         size_t count = ctx->esc_values[0] > ctx->rows ? ctx->rows : ctx->esc_values[0];
         for (size_t i = 0; i < count; i++) {
             ctx->revscroll(ctx);
@@ -665,8 +666,8 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         switch (ctx->esc_values[0]) {
         case 0: {
             size_t rows_remaining = ctx->rows - (y + 1);
-            size_t cols_diff = ctx->cols - (x + 1);
-            size_t to_clear = rows_remaining * ctx->cols + cols_diff + 1;
+            size_t cols_diff      = ctx->cols - (x + 1);
+            size_t to_clear       = rows_remaining * ctx->cols + cols_diff + 1;
             for (size_t i = 0; i < to_clear; i++) {
                 ctx->raw_putchar(ctx, ' ');
             }
@@ -758,7 +759,7 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         if (ctx->esc_values[1] == 0) {
             ctx->esc_values[1] = 1;
         }
-        ctx->scroll_top_margin = 0;
+        ctx->scroll_top_margin    = 0;
         ctx->scroll_bottom_margin = ctx->rows;
         if (ctx->esc_values_i > 0) {
             ctx->scroll_top_margin = ctx->esc_values[0] - 1;
@@ -768,7 +769,7 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         }
         if (ctx->scroll_top_margin >= ctx->rows || ctx->scroll_bottom_margin > ctx->rows
             || ctx->scroll_top_margin >= (ctx->scroll_bottom_margin - 1)) {
-            ctx->scroll_top_margin = 0;
+            ctx->scroll_top_margin    = 0;
             ctx->scroll_bottom_margin = ctx->rows;
         }
         ctx->set_cursor_pos(ctx, 0, 0);
@@ -786,16 +787,16 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
 
 cleanup:
     ctx->control_sequence = false;
-    ctx->escape = false;
+    ctx->escape           = false;
 }
 
 static void restore_state(struct flanterm_context *ctx) {
-    ctx->bold = ctx->saved_state_bold;
-    ctx->bg_bold = ctx->saved_state_bg_bold;
-    ctx->reverse_video = ctx->saved_state_reverse_video;
+    ctx->bold            = ctx->saved_state_bold;
+    ctx->bg_bold         = ctx->saved_state_bg_bold;
+    ctx->reverse_video   = ctx->saved_state_reverse_video;
     ctx->current_charset = ctx->saved_state_current_charset;
     ctx->current_primary = ctx->saved_state_current_primary;
-    ctx->current_bg = ctx->saved_state_current_bg;
+    ctx->current_bg      = ctx->saved_state_current_bg;
 
     ctx->restore_state(ctx);
 }
@@ -803,12 +804,12 @@ static void restore_state(struct flanterm_context *ctx) {
 static void save_state(struct flanterm_context *ctx) {
     ctx->save_state(ctx);
 
-    ctx->saved_state_bold = ctx->bold;
-    ctx->saved_state_bg_bold = ctx->bg_bold;
-    ctx->saved_state_reverse_video = ctx->reverse_video;
+    ctx->saved_state_bold            = ctx->bold;
+    ctx->saved_state_bg_bold         = ctx->bg_bold;
+    ctx->saved_state_reverse_video   = ctx->reverse_video;
     ctx->saved_state_current_charset = ctx->current_charset;
     ctx->saved_state_current_primary = ctx->current_primary;
-    ctx->saved_state_current_bg = ctx->current_bg;
+    ctx->saved_state_current_bg      = ctx->current_bg;
 }
 
 static void escape_parse(struct flanterm_context *ctx, uint8_t c) {
@@ -830,13 +831,13 @@ static void escape_parse(struct flanterm_context *ctx, uint8_t c) {
     switch (c) {
     case ']':
         ctx->osc_escape = false;
-        ctx->osc = true;
+        ctx->osc        = true;
         return;
     case '[':
         for (size_t i = 0; i < FLANTERM_MAX_ESC_VALUES; i++)
             ctx->esc_values[i] = 0;
-        ctx->esc_values_i = 0;
-        ctx->rrr = false;
+        ctx->esc_values_i     = 0;
+        ctx->rrr              = false;
         ctx->control_sequence = true;
         return;
     case '7':
@@ -987,148 +988,148 @@ int mk_wcwidth(uint32_t ucs) {
     /* sorted list of non-overlapping intervals of non-spacing characters */
     /* generated by "uniset +cat=Me +cat=Mn +cat=Cf -00AD +1160-11FF +200B c" */
     static const struct interval combining[] = {
-        {0x0300,  0x036F },
-        {0x0483,  0x0486 },
-        {0x0488,  0x0489 },
-        {0x0591,  0x05BD },
-        {0x05BF,  0x05BF },
-        {0x05C1,  0x05C2 },
-        {0x05C4,  0x05C5 },
-        {0x05C7,  0x05C7 },
-        {0x0600,  0x0603 },
-        {0x0610,  0x0615 },
-        {0x064B,  0x065E },
-        {0x0670,  0x0670 },
-        {0x06D6,  0x06E4 },
-        {0x06E7,  0x06E8 },
-        {0x06EA,  0x06ED },
-        {0x070F,  0x070F },
-        {0x0711,  0x0711 },
-        {0x0730,  0x074A },
-        {0x07A6,  0x07B0 },
-        {0x07EB,  0x07F3 },
-        {0x0901,  0x0902 },
-        {0x093C,  0x093C },
-        {0x0941,  0x0948 },
-        {0x094D,  0x094D },
-        {0x0951,  0x0954 },
-        {0x0962,  0x0963 },
-        {0x0981,  0x0981 },
-        {0x09BC,  0x09BC },
-        {0x09C1,  0x09C4 },
-        {0x09CD,  0x09CD },
-        {0x09E2,  0x09E3 },
-        {0x0A01,  0x0A02 },
-        {0x0A3C,  0x0A3C },
-        {0x0A41,  0x0A42 },
-        {0x0A47,  0x0A48 },
-        {0x0A4B,  0x0A4D },
-        {0x0A70,  0x0A71 },
-        {0x0A81,  0x0A82 },
-        {0x0ABC,  0x0ABC },
-        {0x0AC1,  0x0AC5 },
-        {0x0AC7,  0x0AC8 },
-        {0x0ACD,  0x0ACD },
-        {0x0AE2,  0x0AE3 },
-        {0x0B01,  0x0B01 },
-        {0x0B3C,  0x0B3C },
-        {0x0B3F,  0x0B3F },
-        {0x0B41,  0x0B43 },
-        {0x0B4D,  0x0B4D },
-        {0x0B56,  0x0B56 },
-        {0x0B82,  0x0B82 },
-        {0x0BC0,  0x0BC0 },
-        {0x0BCD,  0x0BCD },
-        {0x0C3E,  0x0C40 },
-        {0x0C46,  0x0C48 },
-        {0x0C4A,  0x0C4D },
-        {0x0C55,  0x0C56 },
-        {0x0CBC,  0x0CBC },
-        {0x0CBF,  0x0CBF },
-        {0x0CC6,  0x0CC6 },
-        {0x0CCC,  0x0CCD },
-        {0x0CE2,  0x0CE3 },
-        {0x0D41,  0x0D43 },
-        {0x0D4D,  0x0D4D },
-        {0x0DCA,  0x0DCA },
-        {0x0DD2,  0x0DD4 },
-        {0x0DD6,  0x0DD6 },
-        {0x0E31,  0x0E31 },
-        {0x0E34,  0x0E3A },
-        {0x0E47,  0x0E4E },
-        {0x0EB1,  0x0EB1 },
-        {0x0EB4,  0x0EB9 },
-        {0x0EBB,  0x0EBC },
-        {0x0EC8,  0x0ECD },
-        {0x0F18,  0x0F19 },
-        {0x0F35,  0x0F35 },
-        {0x0F37,  0x0F37 },
-        {0x0F39,  0x0F39 },
-        {0x0F71,  0x0F7E },
-        {0x0F80,  0x0F84 },
-        {0x0F86,  0x0F87 },
-        {0x0F90,  0x0F97 },
-        {0x0F99,  0x0FBC },
-        {0x0FC6,  0x0FC6 },
-        {0x102D,  0x1030 },
-        {0x1032,  0x1032 },
-        {0x1036,  0x1037 },
-        {0x1039,  0x1039 },
-        {0x1058,  0x1059 },
-        {0x1160,  0x11FF },
-        {0x135F,  0x135F },
-        {0x1712,  0x1714 },
-        {0x1732,  0x1734 },
-        {0x1752,  0x1753 },
-        {0x1772,  0x1773 },
-        {0x17B4,  0x17B5 },
-        {0x17B7,  0x17BD },
-        {0x17C6,  0x17C6 },
-        {0x17C9,  0x17D3 },
-        {0x17DD,  0x17DD },
-        {0x180B,  0x180D },
-        {0x18A9,  0x18A9 },
-        {0x1920,  0x1922 },
-        {0x1927,  0x1928 },
-        {0x1932,  0x1932 },
-        {0x1939,  0x193B },
-        {0x1A17,  0x1A18 },
-        {0x1B00,  0x1B03 },
-        {0x1B34,  0x1B34 },
-        {0x1B36,  0x1B3A },
-        {0x1B3C,  0x1B3C },
-        {0x1B42,  0x1B42 },
-        {0x1B6B,  0x1B73 },
-        {0x1DC0,  0x1DCA },
-        {0x1DFE,  0x1DFF },
-        {0x200B,  0x200F },
-        {0x202A,  0x202E },
-        {0x2060,  0x2063 },
-        {0x206A,  0x206F },
-        {0x20D0,  0x20EF },
-        {0x302A,  0x302F },
-        {0x3099,  0x309A },
-        {0xA806,  0xA806 },
-        {0xA80B,  0xA80B },
-        {0xA825,  0xA826 },
-        {0xFB1E,  0xFB1E },
-        {0xFE00,  0xFE0F },
-        {0xFE20,  0xFE23 },
-        {0xFEFF,  0xFEFF },
-        {0xFFF9,  0xFFFB },
-        {0x10A01, 0x10A03},
-        {0x10A05, 0x10A06},
-        {0x10A0C, 0x10A0F},
-        {0x10A38, 0x10A3A},
-        {0x10A3F, 0x10A3F},
-        {0x1D167, 0x1D169},
-        {0x1D173, 0x1D182},
-        {0x1D185, 0x1D18B},
-        {0x1D1AA, 0x1D1AD},
-        {0x1D242, 0x1D244},
-        {0xE0001, 0xE0001},
-        {0xE0020, 0xE007F},
-        {0xE0100, 0xE01EF}
+        { 0x0300,  0x036F  },
+        { 0x0483,  0x0486  },
+        { 0x0488,  0x0489  },
+        { 0x0591,  0x05BD  },
+        { 0x05BF,  0x05BF  },
+        { 0x05C1,  0x05C2  },
+        { 0x05C4,  0x05C5  },
+        { 0x05C7,  0x05C7  },
+        { 0x0600,  0x0603  },
+        { 0x0610,  0x0615  },
+        { 0x064B,  0x065E  },
+        { 0x0670,  0x0670  },
+        { 0x06D6,  0x06E4  },
+        { 0x06E7,  0x06E8  },
+        { 0x06EA,  0x06ED  },
+        { 0x070F,  0x070F  },
+        { 0x0711,  0x0711  },
+        { 0x0730,  0x074A  },
+        { 0x07A6,  0x07B0  },
+        { 0x07EB,  0x07F3  },
+        { 0x0901,  0x0902  },
+        { 0x093C,  0x093C  },
+        { 0x0941,  0x0948  },
+        { 0x094D,  0x094D  },
+        { 0x0951,  0x0954  },
+        { 0x0962,  0x0963  },
+        { 0x0981,  0x0981  },
+        { 0x09BC,  0x09BC  },
+        { 0x09C1,  0x09C4  },
+        { 0x09CD,  0x09CD  },
+        { 0x09E2,  0x09E3  },
+        { 0x0A01,  0x0A02  },
+        { 0x0A3C,  0x0A3C  },
+        { 0x0A41,  0x0A42  },
+        { 0x0A47,  0x0A48  },
+        { 0x0A4B,  0x0A4D  },
+        { 0x0A70,  0x0A71  },
+        { 0x0A81,  0x0A82  },
+        { 0x0ABC,  0x0ABC  },
+        { 0x0AC1,  0x0AC5  },
+        { 0x0AC7,  0x0AC8  },
+        { 0x0ACD,  0x0ACD  },
+        { 0x0AE2,  0x0AE3  },
+        { 0x0B01,  0x0B01  },
+        { 0x0B3C,  0x0B3C  },
+        { 0x0B3F,  0x0B3F  },
+        { 0x0B41,  0x0B43  },
+        { 0x0B4D,  0x0B4D  },
+        { 0x0B56,  0x0B56  },
+        { 0x0B82,  0x0B82  },
+        { 0x0BC0,  0x0BC0  },
+        { 0x0BCD,  0x0BCD  },
+        { 0x0C3E,  0x0C40  },
+        { 0x0C46,  0x0C48  },
+        { 0x0C4A,  0x0C4D  },
+        { 0x0C55,  0x0C56  },
+        { 0x0CBC,  0x0CBC  },
+        { 0x0CBF,  0x0CBF  },
+        { 0x0CC6,  0x0CC6  },
+        { 0x0CCC,  0x0CCD  },
+        { 0x0CE2,  0x0CE3  },
+        { 0x0D41,  0x0D43  },
+        { 0x0D4D,  0x0D4D  },
+        { 0x0DCA,  0x0DCA  },
+        { 0x0DD2,  0x0DD4  },
+        { 0x0DD6,  0x0DD6  },
+        { 0x0E31,  0x0E31  },
+        { 0x0E34,  0x0E3A  },
+        { 0x0E47,  0x0E4E  },
+        { 0x0EB1,  0x0EB1  },
+        { 0x0EB4,  0x0EB9  },
+        { 0x0EBB,  0x0EBC  },
+        { 0x0EC8,  0x0ECD  },
+        { 0x0F18,  0x0F19  },
+        { 0x0F35,  0x0F35  },
+        { 0x0F37,  0x0F37  },
+        { 0x0F39,  0x0F39  },
+        { 0x0F71,  0x0F7E  },
+        { 0x0F80,  0x0F84  },
+        { 0x0F86,  0x0F87  },
+        { 0x0F90,  0x0F97  },
+        { 0x0F99,  0x0FBC  },
+        { 0x0FC6,  0x0FC6  },
+        { 0x102D,  0x1030  },
+        { 0x1032,  0x1032  },
+        { 0x1036,  0x1037  },
+        { 0x1039,  0x1039  },
+        { 0x1058,  0x1059  },
+        { 0x1160,  0x11FF  },
+        { 0x135F,  0x135F  },
+        { 0x1712,  0x1714  },
+        { 0x1732,  0x1734  },
+        { 0x1752,  0x1753  },
+        { 0x1772,  0x1773  },
+        { 0x17B4,  0x17B5  },
+        { 0x17B7,  0x17BD  },
+        { 0x17C6,  0x17C6  },
+        { 0x17C9,  0x17D3  },
+        { 0x17DD,  0x17DD  },
+        { 0x180B,  0x180D  },
+        { 0x18A9,  0x18A9  },
+        { 0x1920,  0x1922  },
+        { 0x1927,  0x1928  },
+        { 0x1932,  0x1932  },
+        { 0x1939,  0x193B  },
+        { 0x1A17,  0x1A18  },
+        { 0x1B00,  0x1B03  },
+        { 0x1B34,  0x1B34  },
+        { 0x1B36,  0x1B3A  },
+        { 0x1B3C,  0x1B3C  },
+        { 0x1B42,  0x1B42  },
+        { 0x1B6B,  0x1B73  },
+        { 0x1DC0,  0x1DCA  },
+        { 0x1DFE,  0x1DFF  },
+        { 0x200B,  0x200F  },
+        { 0x202A,  0x202E  },
+        { 0x2060,  0x2063  },
+        { 0x206A,  0x206F  },
+        { 0x20D0,  0x20EF  },
+        { 0x302A,  0x302F  },
+        { 0x3099,  0x309A  },
+        { 0xA806,  0xA806  },
+        { 0xA80B,  0xA80B  },
+        { 0xA825,  0xA826  },
+        { 0xFB1E,  0xFB1E  },
+        { 0xFE00,  0xFE0F  },
+        { 0xFE20,  0xFE23  },
+        { 0xFEFF,  0xFEFF  },
+        { 0xFFF9,  0xFFFB  },
+        { 0x10A01, 0x10A03 },
+        { 0x10A05, 0x10A06 },
+        { 0x10A0C, 0x10A0F },
+        { 0x10A38, 0x10A3A },
+        { 0x10A3F, 0x10A3F },
+        { 0x1D167, 0x1D169 },
+        { 0x1D173, 0x1D182 },
+        { 0x1D185, 0x1D18B },
+        { 0x1D1AA, 0x1D1AD },
+        { 0x1D242, 0x1D244 },
+        { 0xE0001, 0xE0001 },
+        { 0xE0020, 0xE007F },
+        { 0xE0100, 0xE01EF }
     };
 
     /* test for 8-bit control characters */
@@ -1487,13 +1488,13 @@ static int unicode_to_cp437(uint64_t code_point) {
 
 void flanterm_putchar(struct flanterm_context *ctx, uint8_t c) {
     if (ctx->discard_next || (c == 0x18 || c == 0x1a)) {
-        ctx->discard_next = false;
-        ctx->escape = false;
-        ctx->control_sequence = false;
+        ctx->discard_next      = false;
+        ctx->escape            = false;
+        ctx->control_sequence  = false;
         ctx->unicode_remaining = 0;
-        ctx->osc = false;
-        ctx->osc_escape = false;
-        ctx->g_select = 0;
+        ctx->osc               = false;
+        ctx->osc_escape        = false;
+        ctx->g_select          = 0;
         return;
     }
 
@@ -1529,13 +1530,13 @@ unicode_error:
     if (c >= 0xc0 && c <= 0xf7) {
         if (c >= 0xc0 && c <= 0xdf) {
             ctx->unicode_remaining = 1;
-            ctx->code_point = (uint64_t)(c & 0x1f) << 6;
+            ctx->code_point        = (uint64_t)(c & 0x1f) << 6;
         } else if (c >= 0xe0 && c <= 0xef) {
             ctx->unicode_remaining = 2;
-            ctx->code_point = (uint64_t)(c & 0x0f) << (6 * 2);
+            ctx->code_point        = (uint64_t)(c & 0x0f) << (6 * 2);
         } else if (c >= 0xf0 && c <= 0xf7) {
             ctx->unicode_remaining = 3;
-            ctx->code_point = (uint64_t)(c & 0x07) << (6 * 3);
+            ctx->code_point        = (uint64_t)(c & 0x07) << (6 * 3);
         }
         return;
     }
@@ -1568,7 +1569,7 @@ unicode_error:
         return;
     case 0x1b:
         ctx->escape_offset = 0;
-        ctx->escape = true;
+        ctx->escape        = true;
         return;
     case '\t':
         if ((x / ctx->tab_size + 1) >= ctx->cols) {
@@ -1659,7 +1660,8 @@ void flanterm_set_autoflush(struct flanterm_context *ctx, bool state) {
 
 void flanterm_set_callback(
     struct flanterm_context *ctx,
-    void (*callback)(struct flanterm_context *, uint64_t, uint64_t, uint64_t, uint64_t)) {
+    void (*callback)(struct flanterm_context *, uint64_t, uint64_t, uint64_t, uint64_t)
+) {
     ctx->callback = callback;
 }
 

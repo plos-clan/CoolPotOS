@@ -12,8 +12,9 @@
 syscall_(exit, int exit_code) {
     tcb_t exit_thread = get_current_task();
     logkf(
-        "sys_exit: %s pid=%d tid=%d thread=%s exit code=%d.\n", exit_thread->process->name,
-        exit_thread->process->pid, exit_thread->tid, exit_thread->name, exit_code);
+        "sys_exit: pid=%d tid=%d thread=%s exit code=%d.\n", exit_thread->process->pid,
+        exit_thread->tid, exit_thread->name, exit_code
+    );
     pcb_t process = exit_thread->process;
     if (process->child_threads->size <= 1) {
         kill_proc(process, exit_code, true);
@@ -26,8 +27,8 @@ syscall_(exit, int exit_code) {
 }
 
 syscall_(set_tid_address, int *tidptr) {
-    tcb_t thread = get_current_task();
-    thread->tid_address = (uint64_t)tidptr;
+    tcb_t thread          = get_current_task();
+    thread->tid_address   = (uint64_t)tidptr;
     thread->tid_directory = get_current_directory();
     return thread->tid;
 }
@@ -35,7 +36,8 @@ syscall_(set_tid_address, int *tidptr) {
 syscall_(getpid) {
     if (unlikely(
             arg0 == UINT64_MAX || arg1 == UINT64_MAX || arg2 == UINT64_MAX || arg3 == UINT64_MAX
-            || arg4 == UINT64_MAX))
+            || arg4 == UINT64_MAX
+        ))
         return 1;
     return get_current_task()->process->pid;
 }
@@ -76,8 +78,8 @@ syscall_(setpgid, pid_t pid, pid_t pgid) {
 }
 
 syscall_(getpgid) {
-    size_t pid = arg0;
-    pcb_t process = pid == 0 ? get_current_task()->process : found_pcb(pid);
+    size_t pid     = arg0;
+    pcb_t  process = pid == 0 ? get_current_task()->process : found_pcb(pid);
     if (process == NULL || process->status == T_DEATH) {
         return SYSCALL_FAULT_(ESRCH);
     }
@@ -99,7 +101,7 @@ syscall_(setsid) {
         return SYSCALL_FAULT_(EPERM);
     }
     // Create new session: become session leader and process group leader
-    process->sid = process->pid;
+    process->sid  = process->pid;
     process->pgid = process->pid;
     // Detach from controlling terminal
     process->tty = NULL;
@@ -192,7 +194,8 @@ syscall_(sigpending, sigset_t *set, size_t sigsetsize) {
 
 syscall_(
     sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timespec *timeout,
-    size_t sigsetsize) {
+    size_t sigsetsize
+) {
     if (set == NULL)
         return SYSCALL_FAULT_(EINVAL);
     if (sigsetsize < sizeof(sigset_t))
@@ -202,17 +205,17 @@ syscall_(
     if (mask == 0)
         return SYSCALL_FAULT_(EINVAL);
 
-    uint64_t timeout_ns = 0;
-    bool has_timeout = false;
+    uint64_t timeout_ns  = 0;
+    bool     has_timeout = false;
     if (timeout) {
         if (timeout->tv_nsec >= 1000000000ULL)
             return SYSCALL_FAULT_(EINVAL);
-        timeout_ns = timeout->tv_sec * 1000000000ULL + timeout->tv_nsec;
+        timeout_ns  = timeout->tv_sec * 1000000000ULL + timeout->tv_nsec;
         has_timeout = true;
     }
 
-    tcb_t thread = get_current_task();
-    uint64_t start = nano_time();
+    tcb_t    thread = get_current_task();
+    uint64_t start  = nano_time();
     while (true) {
         sigset_t pending = thread->signal & mask;
         if (pending) {
@@ -261,8 +264,8 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
         return SYSCALL_FAULT_(EINVAL);
     if (sigsetsize < sizeof(sigset_t))
         return SYSCALL_FAULT_(EINVAL);
-    tcb_t task = get_current_task();
-    sigset_t old = task->blocked;
+    tcb_t    task = get_current_task();
+    sigset_t old  = task->blocked;
     sigset_t temp = (uint64_t)*mask & ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
 
     task->blocked = temp;
@@ -272,7 +275,7 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
 
     // Don't restore old mask here. Save it for sigreturn to restore.
     // This ensures do_signal() can deliver the signal with the temporary mask.
-    task->saved_sigmask = old;
+    task->saved_sigmask     = old;
     task->has_saved_sigmask = true;
     return SYSCALL_FAULT_(EINTR);
 }
@@ -312,7 +315,7 @@ syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusag
         return SYSCALL_FAULT_(ECHILD);
 wait:;
     pid_t ret_pid = 0;
-    int status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
+    int   status0 = waitpid(pid, &ret_pid, (options & WNOHANG) != 0);
 
     if (ret_pid == 0) {
         return 0;
@@ -373,14 +376,14 @@ syscall_(prctl, int option) {
     case PR_SET_NAME:
         if (arg1 == 0)
             return -1;
-        char *new_name = (char *)arg1;
-        size_t length = strlen(new_name);
+        char  *new_name = (char *)arg1;
+        size_t length   = strlen(new_name);
         if (length > 16)
             length = 16;
         char name_buf[17];
         memcpy(name_buf, new_name, length);
         name_buf[length] = '\0';
-        char *copied = strdup(name_buf);
+        char *copied     = strdup(name_buf);
         if (copied == NULL)
             return -1;
         free(current->name);
@@ -439,7 +442,7 @@ syscall_(get_rlimit, uint64_t resource, struct rlimit *lim) {
         };
         break;
     case RLIMIT_CORE:
-        *lim = (struct rlimit){0, 0};
+        *lim = (struct rlimit){ 0, 0 };
         break;
 
     default:
@@ -449,7 +452,8 @@ syscall_(get_rlimit, uint64_t resource, struct rlimit *lim) {
 }
 
 syscall_(
-    prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim, struct rlimit *old_rlim) {
+    prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim, struct rlimit *old_rlim
+) {
     if (new_rlim && check_user_overflow((uint64_t)new_rlim, sizeof(struct rlimit))) {
         return (uint64_t)-EFAULT;
     }
@@ -464,17 +468,17 @@ syscall_(
 
 syscall_(getresgid, int *rgid, int *egid, int *sgid) {
     pcb_t process = get_current_task()->process;
-    *rgid = process->rgid;
-    *egid = process->egid;
-    *sgid = process->sgid;
+    *rgid         = process->rgid;
+    *egid         = process->egid;
+    *sgid         = process->sgid;
     return EOK;
 }
 
 syscall_(getresuid, int *ruid, int *euid, int *suid) {
     pcb_t process = get_current_task()->process;
-    *ruid = process->ruid;
-    *euid = process->euid;
-    *suid = process->uid;
+    *ruid         = process->ruid;
+    *euid         = process->euid;
+    *suid         = process->uid;
     return EOK;
 }
 
@@ -504,9 +508,9 @@ syscall_(kill, int pid, int sig) {
     } else if (pid == -1) {
         // Send to all processes (simplified: skip kernel process)
         extern cow_arraylist *process_list;
-        extern pcb_t kernel_process;
-        pcb_t process = NULL;
-        int sent = 0;
+        extern pcb_t          kernel_process;
+        pcb_t                 process = NULL;
+        int                   sent    = 0;
         cow_foreach(process_list, process) {
             if (process->pid == kernel_process->pid)
                 continue;
@@ -553,13 +557,13 @@ syscall_(capget, cap_user_header_t *header, cap_user_data_t *data) {
         if (process == NULL)
             return SYSCALL_FAULT_(ESRCH);
     }
-    uint32_t all_caps = (process->uid == 0) ? 0xFFFFFFFF : 0;
-    data[0].effective = all_caps;
-    data[0].permitted = all_caps;
+    uint32_t all_caps   = (process->uid == 0) ? 0xFFFFFFFF : 0;
+    data[0].effective   = all_caps;
+    data[0].permitted   = all_caps;
     data[0].inheritable = 0;
     if (ver != _LINUX_CAPABILITY_VERSION_1) {
-        data[1].effective = all_caps;
-        data[1].permitted = all_caps;
+        data[1].effective   = all_caps;
+        data[1].permitted   = all_caps;
         data[1].inheritable = 0;
     }
     return EOK;

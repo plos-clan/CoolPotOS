@@ -8,7 +8,7 @@ struct fdt_serial_device {
     uint32_t reg_shift;
     uint32_t clock_freq;
     uint32_t reg_io_width;
-    int found;
+    int      found;
 };
 
 int init_serial();

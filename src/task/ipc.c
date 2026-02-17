@@ -3,11 +3,11 @@
 
 ipc_queue_t *ipc_queue_init() {
     ipc_queue_t *queue = malloc(sizeof(ipc_queue_t));
-    queue->lock = SPIN_INIT;
-    queue->capacity = IPC_QUEUE_CAPACITY;
-    queue->head = 0;
-    queue->tail = 0;
-    queue->size = 0;
+    queue->lock        = SPIN_INIT;
+    queue->capacity    = IPC_QUEUE_CAPACITY;
+    queue->head        = 0;
+    queue->tail        = 0;
+    queue->size        = 0;
     return queue;
 }
 
@@ -18,7 +18,7 @@ static void *ipc_queue_dequeue(ipc_queue_t *queue) {
         spin_unlock(queue->lock);
         return NULL;
     }
-    item = queue->items[queue->head];
+    item        = queue->items[queue->head];
     queue->head = (queue->head + 1) % queue->capacity;
     queue->size--;
     spin_unlock(queue->lock);
@@ -31,9 +31,9 @@ static size_t ipc_queue_enqueue(ipc_queue_t *queue, void *item) {
     if (queue->size == queue->capacity) {
         return index;
     }
-    index = queue->tail;
+    index                     = queue->tail;
     queue->items[queue->tail] = item;
-    queue->tail = (queue->tail + 1) % queue->capacity;
+    queue->tail               = (queue->tail + 1) % queue->capacity;
     queue->size++;
     return index;
 }
@@ -42,7 +42,7 @@ void ipc_send(ipc_queue_t *queue, ipc_message_t message) {
     if (queue == NULL || message == NULL) {
         return;
     }
-    size_t index = ipc_queue_enqueue(queue, message);
+    size_t index   = ipc_queue_enqueue(queue, message);
     message->index = index;
     spin_unlock(queue->lock);
 }
@@ -100,7 +100,7 @@ void ipc_queue_release(ipc_queue_t *queue) {
     }
     spin_lock(queue->lock);
     size_t current_index = queue->head;
-    size_t count = queue->size;
+    size_t count         = queue->size;
     for (size_t i = 0; i < count; i++) {
         ipc_message_t *message = (ipc_message_t *)queue->items[current_index];
 

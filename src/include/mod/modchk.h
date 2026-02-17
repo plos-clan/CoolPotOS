@@ -15,11 +15,11 @@
 #include "types.h"
 
 struct module_signature {
-    uint32_t magic;                 // CPOS_SIG_MAGIC
-    uint8_t hash_algo;              // HASH_SHA256
-    uint8_t sig_len;                // ECC_SIG_LEN
-    uint8_t reserved[2];            // 对齐/保留
-    uint8_t signature[ECC_SIG_LEN]; // R||S (64 bytes)
-} __attribute__((packed));          // 确保结构体没有填充
+    uint32_t magic;                  // CPOS_SIG_MAGIC
+    uint8_t  hash_algo;              // HASH_SHA256
+    uint8_t  sig_len;                // ECC_SIG_LEN
+    uint8_t  reserved[2];            // 对齐/保留
+    uint8_t  signature[ECC_SIG_LEN]; // R||S (64 bytes)
+} __attribute__((packed));           // 确保结构体没有填充
 
 bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t module_size);

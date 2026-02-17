@@ -13,13 +13,13 @@
 #define EARLY_MAP_BASE 0x80000000
 #define EARLY_MAP_END 0x88000000
 
-int nr_cpu = 256;
-uint64_t cpuid_to_hartids[MAX_CPU];
-atomic_t started_cpu_count;
-extern uint64_t bsp_hart_id;
-extern uintptr_t opensbi_dtb_vaddr;
-extern uintptr_t smp_entry;
-extern void arch_cpu_init();
+int                nr_cpu = 256;
+uint64_t           cpuid_to_hartids[MAX_CPU];
+atomic_t           started_cpu_count;
+extern uint64_t    bsp_hart_id;
+extern uintptr_t   opensbi_dtb_vaddr;
+extern uintptr_t   smp_entry;
+extern void        arch_cpu_init();
 extern cpu_local_t cpu_local_infos[MAX_CPU];
 
 extern pcb_t kernel_process;
@@ -44,18 +44,18 @@ _Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
     __asm__ volatile("mv gp, %0" : : "r"(hartid));
     trap_init();
     arch_cpu_init();
-    size_t cpuid = hartid_to_cpuid(hartid);
-    cpu_local_infos[cpuid].enable = true;
+    size_t cpuid                      = hartid_to_cpuid(hartid);
+    cpu_local_infos[cpuid].enable     = true;
     cpu_local_infos[cpuid].task_count = 0;
-    cpu_local_infos[cpuid].directory = get_kernel_pagedir();
-    cpu_local_infos[cpuid].id = cpuid;
+    cpu_local_infos[cpuid].directory  = get_kernel_pagedir();
+    cpu_local_infos[cpuid].id         = cpuid;
     __asm__ volatile("mv tp, %0\n\t" ::"r"(&cpu_local_infos[cpuid]));
 
-    tcb_t idle_thread = malloc(STACK_SIZE);
-    idle_thread->process = kernel_process;
-    idle_thread->tid = alloc_tid();
+    tcb_t idle_thread     = malloc(STACK_SIZE);
+    idle_thread->process  = kernel_process;
+    idle_thread->tid      = alloc_tid();
     idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
-    idle_thread->status = T_RUNNING;
+    idle_thread->status   = T_RUNNING;
     scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     arch_context_init(idle_thread, &idle_thread->context);
 
@@ -85,9 +85,9 @@ extern void _opensbi_start();
 extern void apu_start();
 
 void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_local_infos) {
-    uint64_t cpu_count = 0;
+    uint64_t cpu_count            = 0;
     cpuid_to_hartids[cpu_count++] = bsp_hart_id;
-    *bsp_cpu_id = 0;
+    *bsp_cpu_id                   = 0;
     atomic_inc(&started_cpu_count);
 
     struct {
@@ -101,7 +101,7 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
         if (!name)
             continue;
         if (strncmp(name, "cpu@", 4) == 0) {
-            int reg_len;
+            int            reg_len;
             const fdt32_t *reg =
                 (const fdt32_t *)fdt_getprop((void *)opensbi_dtb_vaddr, offset, "reg", &reg_len);
             if (reg && reg_len >= (int)sizeof(uint32_t)) {
@@ -109,7 +109,7 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
                 if (hartid == bsp_hart_id) {
                     continue;
                 }
-                uint64_t cpu_id = cpu_count++;
+                uint64_t cpu_id          = cpu_count++;
                 cpuid_to_hartids[cpu_id] = hartid;
 
                 apu_arg[cpu_id].sp = (uint64_t)aligned_alloc(PAGE_SIZE, 32768);
@@ -117,7 +117,8 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
                     MAKE_SATP_PADDR(SATP_MODE_SV48, 0, virt_to_phys(get_kernel_pagedir()->table));
                 uint64_t rv = sbi_ecall(
                     0x48534D, 0, hartid, virt_to_phys(apu_start), virt_to_phys(&apu_arg[cpu_id]), 0,
-                    0, 0);
+                    0, 0
+                );
                 (void)rv;
                 continue;
             }

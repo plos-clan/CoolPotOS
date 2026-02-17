@@ -5,7 +5,7 @@ static inline void mmio_out32(uintptr_t addr, uint32_t val) {
 }
 
 Doorbell doorbell_new(uintptr_t base_addr) {
-    Doorbell db = {.base_addr = base_addr};
+    Doorbell db = { .base_addr = base_addr };
     return db;
 }
 

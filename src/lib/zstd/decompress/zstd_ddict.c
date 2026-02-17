@@ -28,13 +28,13 @@
  *  Types
  *********************************************************/
 struct ZSTD_DDict_s {
-    void *dictBuffer;
-    const void *dictContent;
-    size_t dictSize;
+    void                 *dictBuffer;
+    const void           *dictContent;
+    size_t                dictSize;
     ZSTD_entropyDTables_t entropy;
-    U32 dictID;
-    U32 entropyPresent;
-    ZSTD_customMem cMem;
+    U32                   dictID;
+    U32                   entropyPresent;
+    ZSTD_customMem        cMem;
 }; /* typedef'd to ZSTD_DDict within "zstd.h" */
 
 const void *ZSTD_DDict_dictContent(const ZSTD_DDict *ddict) {
@@ -51,22 +51,22 @@ void ZSTD_copyDDictParameters(ZSTD_DCtx *dctx, const ZSTD_DDict *ddict) {
     DEBUGLOG(4, "ZSTD_copyDDictParameters");
     assert(dctx != NULL);
     assert(ddict != NULL);
-    dctx->dictID = ddict->dictID;
-    dctx->prefixStart = ddict->dictContent;
-    dctx->virtualStart = ddict->dictContent;
-    dctx->dictEnd = (const BYTE *)ddict->dictContent + ddict->dictSize;
+    dctx->dictID         = ddict->dictID;
+    dctx->prefixStart    = ddict->dictContent;
+    dctx->virtualStart   = ddict->dictContent;
+    dctx->dictEnd        = (const BYTE *)ddict->dictContent + ddict->dictSize;
     dctx->previousDstEnd = dctx->dictEnd;
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
     dctx->dictContentBeginForFuzzing = dctx->prefixStart;
-    dctx->dictContentEndForFuzzing = dctx->previousDstEnd;
+    dctx->dictContentEndForFuzzing   = dctx->previousDstEnd;
 #endif
     if (ddict->entropyPresent) {
-        dctx->litEntropy = 1;
-        dctx->fseEntropy = 1;
-        dctx->LLTptr = ddict->entropy.LLTable;
-        dctx->MLTptr = ddict->entropy.MLTable;
-        dctx->OFTptr = ddict->entropy.OFTable;
-        dctx->HUFptr = ddict->entropy.hufTable;
+        dctx->litEntropy     = 1;
+        dctx->fseEntropy     = 1;
+        dctx->LLTptr         = ddict->entropy.LLTable;
+        dctx->MLTptr         = ddict->entropy.MLTable;
+        dctx->OFTptr         = ddict->entropy.OFTable;
+        dctx->HUFptr         = ddict->entropy.hufTable;
         dctx->entropy.rep[0] = ddict->entropy.rep[0];
         dctx->entropy.rep[1] = ddict->entropy.rep[1];
         dctx->entropy.rep[2] = ddict->entropy.rep[2];
@@ -78,7 +78,7 @@ void ZSTD_copyDDictParameters(ZSTD_DCtx *dctx, const ZSTD_DDict *ddict) {
 
 static size_t
 ZSTD_loadEntropy_intoDDict(ZSTD_DDict *ddict, ZSTD_dictContentType_e dictContentType) {
-    ddict->dictID = 0;
+    ddict->dictID         = 0;
     ddict->entropyPresent = 0;
     if (dictContentType == ZSTD_dct_rawContent)
         return 0;
@@ -101,23 +101,25 @@ ZSTD_loadEntropy_intoDDict(ZSTD_DDict *ddict, ZSTD_dictContentType_e dictContent
     /* load entropy tables */
     RETURN_ERROR_IF(
         ZSTD_isError(ZSTD_loadDEntropy(&ddict->entropy, ddict->dictContent, ddict->dictSize)),
-        dictionary_corrupted, "");
+        dictionary_corrupted, ""
+    );
     ddict->entropyPresent = 1;
     return 0;
 }
 
 static size_t ZSTD_initDDict_internal(
     ZSTD_DDict *ddict, const void *dict, size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod,
-    ZSTD_dictContentType_e dictContentType) {
+    ZSTD_dictContentType_e dictContentType
+) {
     if ((dictLoadMethod == ZSTD_dlm_byRef) || (!dict) || (!dictSize)) {
-        ddict->dictBuffer = NULL;
+        ddict->dictBuffer  = NULL;
         ddict->dictContent = dict;
         if (!dict)
             dictSize = 0;
     } else {
         void *const internalBuffer = ZSTD_customMalloc(dictSize, ddict->cMem);
-        ddict->dictBuffer = internalBuffer;
-        ddict->dictContent = internalBuffer;
+        ddict->dictBuffer          = internalBuffer;
+        ddict->dictContent         = internalBuffer;
         if (!internalBuffer)
             return ERROR(memory_allocation);
         ZSTD_memcpy(internalBuffer, dict, dictSize);
@@ -134,7 +136,8 @@ static size_t ZSTD_initDDict_internal(
 
 ZSTD_DDict *ZSTD_createDDict_advanced(
     const void *dict, size_t dictSize, ZSTD_dictLoadMethod_e dictLoadMethod,
-    ZSTD_dictContentType_e dictContentType, ZSTD_customMem customMem) {
+    ZSTD_dictContentType_e dictContentType, ZSTD_customMem customMem
+) {
     if ((!customMem.customAlloc) ^ (!customMem.customFree))
         return NULL;
 
@@ -160,7 +163,7 @@ ZSTD_DDict *ZSTD_createDDict_advanced(
  *   `dict` content is copied inside DDict.
  *   Consequently, `dict` can be released after `ZSTD_DDict` creation */
 ZSTD_DDict *ZSTD_createDDict(const void *dict, size_t dictSize) {
-    ZSTD_customMem const allocator = {NULL, NULL, NULL};
+    ZSTD_customMem const allocator = { NULL, NULL, NULL };
     return ZSTD_createDDict_advanced(dict, dictSize, ZSTD_dlm_byCopy, ZSTD_dct_auto, allocator);
 }
 
@@ -169,14 +172,16 @@ ZSTD_DDict *ZSTD_createDDict(const void *dict, size_t dictSize) {
  *  Dictionary content is simply referenced, it will be accessed during decompression.
  *  Warning : dictBuffer must outlive DDict (DDict must be freed before dictBuffer) */
 ZSTD_DDict *ZSTD_createDDict_byReference(const void *dictBuffer, size_t dictSize) {
-    ZSTD_customMem const allocator = {NULL, NULL, NULL};
+    ZSTD_customMem const allocator = { NULL, NULL, NULL };
     return ZSTD_createDDict_advanced(
-        dictBuffer, dictSize, ZSTD_dlm_byRef, ZSTD_dct_auto, allocator);
+        dictBuffer, dictSize, ZSTD_dlm_byRef, ZSTD_dct_auto, allocator
+    );
 }
 
 const ZSTD_DDict *ZSTD_initStaticDDict(
     void *sBuffer, size_t sBufferSize, const void *dict, size_t dictSize,
-    ZSTD_dictLoadMethod_e dictLoadMethod, ZSTD_dictContentType_e dictContentType) {
+    ZSTD_dictLoadMethod_e dictLoadMethod, ZSTD_dictContentType_e dictContentType
+) {
     size_t const neededSpace =
         sizeof(ZSTD_DDict) + (dictLoadMethod == ZSTD_dlm_byRef ? 0 : dictSize);
     ZSTD_DDict *const ddict = (ZSTD_DDict *)sBuffer;
@@ -191,7 +196,8 @@ const ZSTD_DDict *ZSTD_initStaticDDict(
         dict = ddict + 1;
     }
     if (ZSTD_isError(
-            ZSTD_initDDict_internal(ddict, dict, dictSize, ZSTD_dlm_byRef, dictContentType)))
+            ZSTD_initDDict_internal(ddict, dict, dictSize, ZSTD_dlm_byRef, dictContentType)
+        ))
         return NULL;
     return ddict;
 }

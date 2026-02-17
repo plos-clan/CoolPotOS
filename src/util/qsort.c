@@ -5,13 +5,14 @@
 #include "krlibc.h"
 
 static inline int a_ctz_64(uint64_t x) {
-    static const char debruijn64[64] = {
-        0,  1,  2,  53, 3,  7,  54, 27, 4,  38, 41, 8,  34, 55, 48, 28, 62, 5,  39, 46, 44, 42,
-        22, 9,  24, 35, 59, 56, 49, 18, 29, 11, 63, 52, 6,  26, 37, 40, 33, 47, 61, 45, 43, 21,
-        23, 58, 17, 10, 51, 25, 36, 32, 60, 20, 57, 16, 50, 31, 19, 15, 30, 14, 13, 12};
-    static const char debruijn32[32] = {0,  1,  23, 2,  29, 24, 19, 3,  30, 27, 25,
-                                        11, 20, 8,  4,  13, 31, 22, 28, 18, 26, 10,
-                                        7,  12, 21, 17, 9,  6,  16, 5,  15, 14};
+    static const char debruijn64[64] = { 0,  1,  2,  53, 3,  7,  54, 27, 4,  38, 41, 8,  34,
+                                         55, 48, 28, 62, 5,  39, 46, 44, 42, 22, 9,  24, 35,
+                                         59, 56, 49, 18, 29, 11, 63, 52, 6,  26, 37, 40, 33,
+                                         47, 61, 45, 43, 21, 23, 58, 17, 10, 51, 25, 36, 32,
+                                         60, 20, 57, 16, 50, 31, 19, 15, 30, 14, 13, 12 };
+    static const char debruijn32[32] = { 0,  1,  23, 2,  29, 24, 19, 3,  30, 27, 25,
+                                         11, 20, 8,  4,  13, 31, 22, 28, 18, 26, 10,
+                                         7,  12, 21, 17, 9,  6,  16, 5,  15, 14 };
     if (sizeof(long) < 8) {
         uint32_t y = x;
         if (!y) {
@@ -24,9 +25,9 @@ static inline int a_ctz_64(uint64_t x) {
 }
 
 static inline int a_ctz_l(unsigned long x) {
-    static const char debruijn32[32] = {0,  1,  23, 2,  29, 24, 19, 3,  30, 27, 25,
-                                        11, 20, 8,  4,  13, 31, 22, 28, 18, 26, 10,
-                                        7,  12, 21, 17, 9,  6,  16, 5,  15, 14};
+    static const char debruijn32[32] = { 0,  1,  23, 2,  29, 24, 19, 3,  30, 27, 25,
+                                         11, 20, 8,  4,  13, 31, 22, 28, 18, 26, 10,
+                                         7,  12, 21, 17, 9,  6,  16, 5,  15, 14 };
     if (sizeof(long) == 8)
         return a_ctz_64(x);
     return debruijn32[(x & -x) * 0x076be629 >> 27];
@@ -44,8 +45,8 @@ static inline int pntz(size_t p[2]) {
 
 static void cycle(size_t width, unsigned char *ar[], int n) {
     unsigned char tmp[256];
-    size_t l;
-    int i;
+    size_t        l;
+    int           i;
 
     if (n < 2) {
         return;
@@ -89,7 +90,7 @@ static inline void shr(size_t p[2], int n) {
 static void sift(unsigned char *head, size_t width, cmpfun cmp, int pshift, size_t lp[]) {
     unsigned char *rt, *lf;
     unsigned char *ar[14 * sizeof(size_t) + 1];
-    int i = 1;
+    int            i = 1;
 
     ar[0] = head;
     while (pshift > 1) {
@@ -101,11 +102,11 @@ static void sift(unsigned char *head, size_t width, cmpfun cmp, int pshift, size
         }
         if ((*cmp)(lf, rt) >= 0) {
             ar[i++] = lf;
-            head = lf;
+            head    = lf;
             pshift -= 1;
         } else {
             ar[i++] = rt;
-            head = rt;
+            head    = rt;
             pshift -= 2;
         }
     }
@@ -113,13 +114,13 @@ static void sift(unsigned char *head, size_t width, cmpfun cmp, int pshift, size
 }
 
 static void trinkle(
-    unsigned char *head, size_t width, cmpfun cmp, size_t pp[2], int pshift, int trusty,
-    size_t lp[]) {
+    unsigned char *head, size_t width, cmpfun cmp, size_t pp[2], int pshift, int trusty, size_t lp[]
+) {
     unsigned char *stepson, *rt, *lf;
-    size_t p[2];
+    size_t         p[2];
     unsigned char *ar[14 * sizeof(size_t) + 1];
-    int i = 1;
-    int trail;
+    int            i = 1;
+    int            trail;
 
     p[0] = pp[0];
     p[1] = pp[1];
@@ -139,8 +140,8 @@ static void trinkle(
         }
 
         ar[i++] = stepson;
-        head = stepson;
-        trail = pntz(p);
+        head    = stepson;
+        trail   = pntz(p);
         shr(p, trail);
         pshift += trail;
         trusty = 0;
@@ -152,12 +153,12 @@ static void trinkle(
 }
 
 void qsort(void *base, size_t nel, size_t width, cmpfun cmp) {
-    size_t lp[12 * sizeof(size_t)];
-    size_t i, size = width * nel;
+    size_t         lp[12 * sizeof(size_t)];
+    size_t         i, size = width * nel;
     unsigned char *head, *high;
-    size_t p[2] = {1, 0};
-    int pshift = 1;
-    int trail;
+    size_t         p[2]   = { 1, 0 };
+    int            pshift = 1;
+    int            trail;
 
     if (!size)
         return;

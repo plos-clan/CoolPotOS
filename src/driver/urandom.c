@@ -40,15 +40,15 @@ size_t urandom_read(void *id, uint8_t *addr, size_t size, size_t lba) {
 
 void urandom_init() {
     blk_device_t *urandom_device = malloc(sizeof(blk_device_t));
-    urandom_device->size = 0;
-    urandom_device->max_size = 1;
-    urandom_device->block_size = 1;
-    urandom_device->type = BLK_STREAM_DEVICE;
-    urandom_device->ops.ioctl = urandom_ioctl;
-    urandom_device->ops.read = urandom_read;
-    urandom_device->ops.write = urandom_write;
-    urandom_device->ops.poll = urandom_poll;
-    urandom_device->handle = urandom_device;
+    urandom_device->size         = 0;
+    urandom_device->max_size     = 1;
+    urandom_device->block_size   = 1;
+    urandom_device->type         = BLK_STREAM_DEVICE;
+    urandom_device->ops.ioctl    = urandom_ioctl;
+    urandom_device->ops.read     = urandom_read;
+    urandom_device->ops.write    = urandom_write;
+    urandom_device->ops.poll     = urandom_poll;
+    urandom_device->handle       = urandom_device;
     strcpy(urandom_device->name, "urandom");
     register_device(urandom_device);
 }

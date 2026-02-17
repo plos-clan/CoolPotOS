@@ -21,8 +21,9 @@ struct msi_msg_t *msi_arch_get_msg(struct msi_desc_t *msi_desc) {
                     | ((assert == 0) ? 0 : (1 << 14))))
     msi_desc->msg.address_hi = msi_desc->processor & 0xFFFFFF00;
     msi_desc->msg.address_lo = ia64_pci_get_arch_msi_message_address(msi_desc->processor);
-    msi_desc->msg.data = ia64_pci_get_arch_msi_message_data(
-        msi_desc->irq_num, msi_desc->processor, msi_desc->edge_trigger, msi_desc->assert);
+    msi_desc->msg.data       = ia64_pci_get_arch_msi_message_data(
+        msi_desc->irq_num, msi_desc->processor, msi_desc->edge_trigger, msi_desc->assert
+    );
     msi_desc->msg.vector_control = 0;
 #endif
     return &(msi_desc->msg);
@@ -30,11 +31,11 @@ struct msi_msg_t *msi_arch_get_msg(struct msi_desc_t *msi_desc) {
 
 static inline struct pci_msi_cap_t
 __msi_read_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
-    struct pci_msi_cap_t cap_list = {0};
-    pci_device_t *ptr = msi_desc->pci_dev;
-    uint32_t dw0;
-    dw0 = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off);
-    cap_list.cap_id = dw0 & 0xff;
+    struct pci_msi_cap_t cap_list = { 0 };
+    pci_device_t        *ptr      = msi_desc->pci_dev;
+    uint32_t             dw0;
+    dw0               = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off);
+    cap_list.cap_id   = dw0 & 0xff;
     cap_list.next_off = (dw0 >> 8) & 0xff;
     cap_list.msg_ctrl = (dw0 >> 16) & 0xffff;
 
@@ -47,14 +48,14 @@ __msi_read_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
             ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off + 0x8);
     } else {
         cap_list.msg_addr_hi = 0;
-        msg_data_off = 0x8;
+        msg_data_off         = 0x8;
     }
 
     cap_list.msg_data =
         ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off + msg_data_off)
         & 0xffff;
 
-    cap_list.mask = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off + 0x10);
+    cap_list.mask    = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off + 0x10);
     cap_list.pending = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off + 0x14);
 
     return cap_list;
@@ -69,11 +70,11 @@ __msi_read_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
  */
 static inline struct pci_msix_cap_t
 __msi_read_msix_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
-    struct pci_msix_cap_t cap_list = {0};
-    pci_device_t *ptr = msi_desc->pci_dev;
-    uint32_t dw0;
-    dw0 = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off);
-    cap_list.cap_id = dw0 & 0xff;
+    struct pci_msix_cap_t cap_list = { 0 };
+    pci_device_t         *ptr      = msi_desc->pci_dev;
+    uint32_t              dw0;
+    dw0               = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off);
+    cap_list.cap_id   = dw0 & 0xff;
     cap_list.next_off = (dw0 >> 8) & 0xff;
     cap_list.msg_ctrl = (dw0 >> 16) & 0xffff;
 
@@ -91,9 +92,9 @@ __msi_read_msix_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
  */
 static inline int __msix_map_table(pci_device_t *pci_dev, struct pci_msix_cap_t *msix_cap) {
     // msix table相对于bar寄存器中存储的地址的offset
-    pci_dev->msix_offset = msix_cap->dword1 & (~0x7);
+    pci_dev->msix_offset     = msix_cap->dword1 & (~0x7);
     pci_dev->msix_table_size = (msix_cap->msg_ctrl & 0x7ff) + 1;
-    pci_dev->msix_mmio_size = pci_dev->msix_table_size * 16 + pci_dev->msix_offset;
+    pci_dev->msix_mmio_size  = pci_dev->msix_table_size * 16 + pci_dev->msix_offset;
 
     // 获取BAR的物理地址并映射到虚拟地址空间
     uint32_t bir = msix_cap->dword1 & 0x7;
@@ -112,7 +113,8 @@ static inline int __msix_map_table(pci_device_t *pci_dev, struct pci_msix_cap_t 
     pci_dev->msix_mmio_vaddr = (uint64_t)phys_to_virt((uint64_t)bar_physical_address);
     page_map_range(
         get_kernel_pagedir(), pci_dev->msix_mmio_vaddr, bar_physical_address,
-        pci_dev->bars[bir].size, KERNEL_PTE_FLAGS);
+        pci_dev->bars[bir].size, KERNEL_PTE_FLAGS
+    );
 
     return 0;
 }
@@ -143,8 +145,8 @@ static inline void __msix_set_entry(struct msi_desc_t *msi_desc) {
  * @param msi_index 表项号
  */
 static inline void __msix_clear_entry(pci_device_t *pci_dev, uint16_t msi_index) {
-    uint64_t table_base = pci_dev->msix_mmio_vaddr + pci_dev->msix_offset;
-    volatile uint64_t *entry_ptr = (volatile uint64_t *)(table_base + msi_index * 16);
+    uint64_t           table_base = pci_dev->msix_mmio_vaddr + pci_dev->msix_offset;
+    volatile uint64_t *entry_ptr  = (volatile uint64_t *)(table_base + msi_index * 16);
 
     // 清除MSI-X表项
     entry_ptr[0] = 0;
@@ -164,10 +166,10 @@ static inline void __msix_clear_entry(pci_device_t *pci_dev, uint16_t msi_index)
  */
 int pci_enable_msi(struct msi_desc_t *msi_desc) {
     pci_device_t *ptr = msi_desc->pci_dev;
-    uint32_t cap_ptr;
-    uint32_t tmp;
-    uint16_t message_control;
-    uint64_t message_addr;
+    uint32_t      cap_ptr;
+    uint32_t      tmp;
+    uint16_t      message_control;
+    uint64_t      message_addr;
 
     if (msi_desc->pci.msi_attribute.is_msix) {
         cap_ptr = pci_enumerate_capability_list(ptr, 0x11);
@@ -207,7 +209,8 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
             // 使能msi-x
             tmp = ptr->op->read(
                 ptr->bus, ptr->slot, ptr->func, ptr->segment,
-                cap_ptr + 0x2); // 读取cap+0x2处的值
+                cap_ptr + 0x2
+            ); // 读取cap+0x2处的值
             tmp &= ~(1U << 14);
             tmp |= (1U << 15);
             ptr->op->write(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_ptr + 0x2, tmp);
@@ -218,7 +221,8 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
     } else {
         tmp = ptr->op->read(
             ptr->bus, ptr->slot, ptr->func, ptr->segment,
-            cap_ptr); // 读取cap+0x0处的值
+            cap_ptr
+        ); // 读取cap+0x0处的值
         message_control = (tmp >> 16) & 0xffff;
 
         // 写入message address
@@ -227,12 +231,14 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
              | msi_desc->msg.address_lo); // 获取message address
         ptr->op->write(
             ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_ptr + 0x4,
-            (uint32_t)(message_addr & 0xffffffff));
+            (uint32_t)(message_addr & 0xffffffff)
+        );
 
         if (message_control & (1 << 7)) // 64位
             ptr->op->write(
                 ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_ptr + 0x8,
-                (uint32_t)((message_addr >> 32) & 0xffffffff));
+                (uint32_t)((message_addr >> 32) & 0xffffffff)
+            );
 
         // 写入message data
 
@@ -245,7 +251,8 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
         // 使能msi
         tmp = ptr->op->read(
             ptr->bus, ptr->slot, ptr->func, ptr->segment,
-            cap_ptr + 0x2); // 读取cap+0x2处的值
+            cap_ptr + 0x2
+        ); // 读取cap+0x2处的值
         tmp |= 1;
         tmp &= ~(7 << 4);
         ptr->op->write(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_ptr + 0x2, tmp);

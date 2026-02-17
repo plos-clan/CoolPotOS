@@ -20,33 +20,33 @@ struct block_device_ops {
 };
 
 struct hd_geometry {
-    unsigned char heads;      // 磁头数 (Heads)
-    unsigned char sectors;    // 每磁道的扇区数 (Sectors per track)
+    unsigned char  heads;     // 磁头数 (Heads)
+    unsigned char  sectors;   // 每磁道的扇区数 (Sectors per track)
     unsigned short cylinders; // 柱面数 (Cylinders)
-    unsigned long start;      // 该分区在磁盘上的起始偏移量 (以扇区为单位)
+    unsigned long  start;     // 该分区在磁盘上的起始偏移量 (以扇区为单位)
 };
 
 struct block_device {
-    void *handle;
+    void  *handle;
     size_t device_id;
     size_t size;       // 块设备大小
     size_t block_size; // 块大小
     size_t max_size;   // 最大读取缓冲区
-    char name[20];
+    char   name[20];
 
     struct hd_geometry geometry;
 
-    enum blk_type type;
+    enum blk_type           type;
     struct block_device_ops ops;
 };
 
-size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t length);
-size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset, size_t length);
-size_t blk_size_t(blk_device_t *device);
+size_t  blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t length);
+size_t  blk_device_write(blk_device_t *device, const void *buffer, size_t offset, size_t length);
+size_t  blk_size_t(blk_device_t *device);
 errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg);
 errno_t blk_poll(blk_device_t *device, size_t events);
 
 errno_t delete_blk_device(size_t blk_id);
-size_t register_device(blk_device_t *device);
+size_t  register_device(blk_device_t *device);
 
 void init_block_device_manager();

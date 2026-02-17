@@ -1,7 +1,7 @@
 #include "driver/drm/drm_core.h"
 #include "driver/drm/drm.h"
-#include "krlibc.h"
 #include "mem/heap.h"
+#include "krlibc.h"
 
 // Utility function to find a free slot in an array
 uint32_t drm_find_free_slot(void **array, uint32_t size) {
@@ -16,12 +16,12 @@ uint32_t drm_find_free_slot(void **array, uint32_t size) {
 // Resource manager initialization and cleanup
 void drm_resource_manager_init(drm_resource_manager_t *mgr) {
     memset(mgr, 0, sizeof(drm_resource_manager_t));
-    mgr->lock = SPIN_INIT;
-    mgr->next_connector_id = 1;
-    mgr->next_crtc_id = 1;
-    mgr->next_encoder_id = 1;
+    mgr->lock                = SPIN_INIT;
+    mgr->next_connector_id   = 1;
+    mgr->next_crtc_id        = 1;
+    mgr->next_encoder_id     = 1;
     mgr->next_framebuffer_id = 1;
-    mgr->next_plane_id = 1;
+    mgr->next_plane_id       = 1;
 }
 
 void drm_resource_manager_cleanup(drm_resource_manager_t *mgr) {
@@ -88,11 +88,11 @@ drm_connector_alloc(drm_resource_manager_t *mgr, uint32_t type, void *driver_dat
     }
 
     memset(connector, 0, sizeof(drm_connector_t));
-    connector->id = mgr->next_connector_id++;
-    connector->type = type;
-    connector->connection = DRM_MODE_CONNECTED;
+    connector->id          = mgr->next_connector_id++;
+    connector->type        = type;
+    connector->connection  = DRM_MODE_CONNECTED;
     connector->driver_data = driver_data;
-    connector->refcount = 1;
+    connector->refcount    = 1;
 
     mgr->connectors[slot] = connector;
     spin_unlock(mgr->lock);
@@ -148,9 +148,9 @@ drm_crtc_t *drm_crtc_alloc(drm_resource_manager_t *mgr, void *driver_data) {
     }
 
     memset(crtc, 0, sizeof(drm_crtc_t));
-    crtc->id = mgr->next_crtc_id++;
+    crtc->id          = mgr->next_crtc_id++;
     crtc->driver_data = driver_data;
-    crtc->refcount = 1;
+    crtc->refcount    = 1;
 
     mgr->crtcs[slot] = crtc;
     spin_unlock(mgr->lock);
@@ -206,10 +206,10 @@ drm_encoder_t *drm_encoder_alloc(drm_resource_manager_t *mgr, uint32_t type, voi
     }
 
     memset(encoder, 0, sizeof(drm_encoder_t));
-    encoder->id = mgr->next_encoder_id++;
-    encoder->type = type;
+    encoder->id          = mgr->next_encoder_id++;
+    encoder->type        = type;
     encoder->driver_data = driver_data;
-    encoder->refcount = 1;
+    encoder->refcount    = 1;
 
     mgr->encoders[slot] = encoder;
     spin_unlock(mgr->lock);
@@ -265,9 +265,9 @@ drm_framebuffer_t *drm_framebuffer_alloc(drm_resource_manager_t *mgr, void *driv
     }
 
     memset(fb, 0, sizeof(drm_framebuffer_t));
-    fb->id = mgr->next_framebuffer_id++;
+    fb->id          = mgr->next_framebuffer_id++;
     fb->driver_data = driver_data;
-    fb->refcount = 1;
+    fb->refcount    = 1;
 
     mgr->framebuffers[slot] = fb;
     spin_unlock(mgr->lock);
@@ -323,9 +323,9 @@ drm_plane_t *drm_plane_alloc(drm_resource_manager_t *mgr, void *driver_data) {
     }
 
     memset(plane, 0, sizeof(drm_plane_t));
-    plane->id = mgr->next_plane_id++;
+    plane->id          = mgr->next_plane_id++;
     plane->driver_data = driver_data;
-    plane->refcount = 1;
+    plane->refcount    = 1;
 
     mgr->planes[slot] = plane;
     spin_unlock(mgr->lock);

@@ -61,7 +61,8 @@
 #include <lib/tinycrypt/utils.h>
 
 int uECC_make_key_with_d(
-    uint8_t *public_key, uint8_t *private_key, unsigned int *d, uECC_Curve curve) {
+    uint8_t *public_key, uint8_t *private_key, unsigned int *d, uECC_Curve curve
+) {
 
     uECC_word_t _private[NUM_ECC_WORDS];
     uECC_word_t _public[NUM_ECC_WORDS * 2];
@@ -78,7 +79,8 @@ int uECC_make_key_with_d(
         uECC_vli_nativeToBytes(private_key, BITS_TO_BYTES(curve->num_n_bits), _private);
         uECC_vli_nativeToBytes(public_key, curve->num_bytes, _public);
         uECC_vli_nativeToBytes(
-            public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words);
+            public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words
+        );
 
         /* erasing temporary buffer used to store secret: */
         _set_secure(_private, 0, NUM_ECC_BYTES);
@@ -113,7 +115,8 @@ int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve) {
             uECC_vli_nativeToBytes(private_key, BITS_TO_BYTES(curve->num_n_bits), _private);
             uECC_vli_nativeToBytes(public_key, curve->num_bytes, _public);
             uECC_vli_nativeToBytes(
-                public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words);
+                public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words
+            );
 
             /* erasing temporary buffer that stored secret: */
             _set_secure(_private, 0, NUM_ECC_BYTES);
@@ -125,18 +128,19 @@ int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve) {
 }
 
 int uECC_shared_secret(
-    const uint8_t *public_key, const uint8_t *private_key, uint8_t *secret, uECC_Curve curve) {
+    const uint8_t *public_key, const uint8_t *private_key, uint8_t *secret, uECC_Curve curve
+) {
 
     uECC_word_t _public[NUM_ECC_WORDS * 2];
     uECC_word_t _private[NUM_ECC_WORDS];
 
-    uECC_word_t tmp[NUM_ECC_WORDS];
-    uECC_word_t *p2[2] = {_private, tmp};
+    uECC_word_t  tmp[NUM_ECC_WORDS];
+    uECC_word_t *p2[2]     = { _private, tmp };
     uECC_word_t *initial_Z = 0;
-    uECC_word_t carry;
-    wordcount_t num_words = curve->num_words;
-    wordcount_t num_bytes = curve->num_bytes;
-    int r;
+    uECC_word_t  carry;
+    wordcount_t  num_words = curve->num_words;
+    wordcount_t  num_bytes = curve->num_bytes;
+    int          r;
 
     /* Converting buffers to correct bit order: */
     uECC_vli_bytesToNative(_private, private_key, BITS_TO_BYTES(curve->num_n_bits));

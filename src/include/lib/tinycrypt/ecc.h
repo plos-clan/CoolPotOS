@@ -86,7 +86,7 @@ extern "C" {
 #endif
 
 /* defining data types to store word and bit counts: */
-typedef int8_t wordcount_t;
+typedef int8_t  wordcount_t;
 typedef int16_t bitcount_t;
 /* defining data type for comparison result: */
 typedef int8_t cmpresult_t;
@@ -112,7 +112,7 @@ typedef const struct uECC_Curve_t *uECC_Curve;
 struct uECC_Curve_t {
     wordcount_t num_words;
     wordcount_t num_bytes;
-    bitcount_t num_n_bits;
+    bitcount_t  num_n_bits;
     uECC_word_t p[NUM_ECC_WORDS];
     uECC_word_t n[NUM_ECC_WORDS];
     uECC_word_t G[NUM_ECC_WORDS * 2];
@@ -158,16 +158,16 @@ static const struct uECC_Curve_t curve_secp256r1 = {
     NUM_ECC_WORDS,
     NUM_ECC_BYTES,
     256,
- /* num_n_bits */
-    {BYTES_TO_WORDS_8(FF, FF, FF, FF, FF, FF, FF, FF),
+    /* num_n_bits */
+    { BYTES_TO_WORDS_8(FF, FF, FF, FF, FF, FF, FF, FF),
      BYTES_TO_WORDS_8(FF, FF, FF, FF, 00, 00, 00, 00),
      BYTES_TO_WORDS_8(00, 00, 00, 00, 00, 00, 00, 00),
-     BYTES_TO_WORDS_8(01, 00, 00, 00, FF, FF, FF, FF)},
-    {BYTES_TO_WORDS_8(51, 25, 63, FC, C2, CA, B9, F3),
+     BYTES_TO_WORDS_8(01, 00, 00, 00, FF, FF, FF, FF) },
+    { BYTES_TO_WORDS_8(51, 25, 63, FC, C2, CA, B9, F3),
      BYTES_TO_WORDS_8(84, 9E, 17, A7, AD, FA, E6, BC),
      BYTES_TO_WORDS_8(FF, FF, FF, FF, FF, FF, FF, FF),
-     BYTES_TO_WORDS_8(00, 00, 00, 00, FF, FF, FF, FF)},
-    {BYTES_TO_WORDS_8(96, C2, 98, D8, 45, 39, A1, F4),
+     BYTES_TO_WORDS_8(00, 00, 00, 00, FF, FF, FF, FF) },
+    { BYTES_TO_WORDS_8(96, C2, 98, D8, 45, 39, A1, F4),
      BYTES_TO_WORDS_8(A0, 33, EB, 2D, 81, 7D, 03, 77),
      BYTES_TO_WORDS_8(F2, 40, A4, 63, E5, E6, BC, F8),
      BYTES_TO_WORDS_8(47, 42, 2C, E1, F2, D1, 17, 6B),
@@ -175,11 +175,11 @@ static const struct uECC_Curve_t curve_secp256r1 = {
      BYTES_TO_WORDS_8(F5, 51, BF, 37, 68, 40, B6, CB),
      BYTES_TO_WORDS_8(CE, 5E, 31, 6B, 57, 33, CE, 2B),
      BYTES_TO_WORDS_8(16, 9E, 0F, 7C, 4A, EB, E7, 8E),
-     BYTES_TO_WORDS_8(9B, 7F, 1A, FE, E2, 42, E3, 4F)},
-    {BYTES_TO_WORDS_8(4B, 60, D2, 27, 3E, 3C, CE, 3B),
+     BYTES_TO_WORDS_8(9B, 7F, 1A, FE, E2, 42, E3, 4F) },
+    { BYTES_TO_WORDS_8(4B, 60, D2, 27, 3E, 3C, CE, 3B),
      BYTES_TO_WORDS_8(F6, B0, 53, CC, B0, 06, 1D, 65),
      BYTES_TO_WORDS_8(BC, 86, 98, 76, 55, BD, EB, B3),
-     BYTES_TO_WORDS_8(E7, 93, 3A, AA, D8, 35, C6, 5A)},
+     BYTES_TO_WORDS_8(E7, 93, 3A, AA, D8, 35, C6, 5A) },
     &double_jacobian_default,
     &x_side_default,
     &vli_mmod_fast_secp256r1
@@ -291,7 +291,8 @@ regularize_k(const uECC_word_t *const k, uECC_word_t *k0, uECC_word_t *k1, uECC_
  */
 void EccPoint_mult(
     uECC_word_t *result, const uECC_word_t *point, const uECC_word_t *scalar,
-    const uECC_word_t *initial_Z, bitcount_t num_bits, uECC_Curve curve);
+    const uECC_word_t *initial_Z, bitcount_t num_bits, uECC_Curve curve
+);
 
 /*
  * @brief Constant-time comparison to zero - secure way to compare long integers
@@ -341,7 +342,8 @@ uECC_vli_cmp_unsafe(const uECC_word_t *left, const uECC_word_t *right, wordcount
  */
 void uECC_vli_modSub(
     uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, const uECC_word_t *mod,
-    wordcount_t num_words);
+    wordcount_t num_words
+);
 
 /*
  * @brief Computes P' = (x1', y1', Z3), P + Q = (x3, y3, Z3) or
@@ -383,7 +385,8 @@ uECC_word_t uECC_vli_testBit(const uECC_word_t *vli, bitcount_t bit);
  * @warning Currently only designed to work for curve_p or curve_n.
  */
 void uECC_vli_mmod(
-    uECC_word_t *result, uECC_word_t *product, const uECC_word_t *mod, wordcount_t num_words);
+    uECC_word_t *result, uECC_word_t *product, const uECC_word_t *mod, wordcount_t num_words
+);
 
 /*
  * @brief Computes modular product (using curve->mmod_fast)
@@ -393,7 +396,8 @@ void uECC_vli_mmod(
  * @param curve IN -- elliptic curve
  */
 void uECC_vli_modMult_fast(
-    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, uECC_Curve curve);
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, uECC_Curve curve
+);
 
 /*
  * @brief Computes result = left - right.
@@ -405,7 +409,8 @@ void uECC_vli_modMult_fast(
  * @return borrow
  */
 uECC_word_t uECC_vli_sub(
-    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words);
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words
+);
 
 /*
  * @brief Constant-time comparison function(secure way to compare long ints)
@@ -427,7 +432,8 @@ uECC_vli_equal(const uECC_word_t *left, const uECC_word_t *right, wordcount_t nu
  */
 void uECC_vli_modMult(
     uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, const uECC_word_t *mod,
-    wordcount_t num_words);
+    wordcount_t num_words
+);
 
 /*
  * @brief Computes (1 / input) % mod
@@ -439,7 +445,8 @@ void uECC_vli_modMult(
  * @param num_words -- number of words
  */
 void uECC_vli_modInv(
-    uECC_word_t *result, const uECC_word_t *input, const uECC_word_t *mod, wordcount_t num_words);
+    uECC_word_t *result, const uECC_word_t *input, const uECC_word_t *mod, wordcount_t num_words
+);
 
 /*
  * @brief Sets dest = src.
@@ -461,7 +468,8 @@ void uECC_vli_set(uECC_word_t *dest, const uECC_word_t *src, wordcount_t num_wor
  */
 void uECC_vli_modAdd(
     uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, const uECC_word_t *mod,
-    wordcount_t num_words);
+    wordcount_t num_words
+);
 
 /*
  * @brief Counts the number of bits required to represent vli.

@@ -68,8 +68,8 @@
 #ifndef __TC_HMAC_PRNG_H__
 #define __TC_HMAC_PRNG_H__
 
-#include <lib/tinycrypt/hmac.h>
 #include <lib/tinycrypt/sha256.h>
+#include <lib/tinycrypt/hmac.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,7 +136,8 @@ int tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, unsigne
  */
 int tc_hmac_prng_reseed(
     TCHmacPrng_t prng, const uint8_t *seed, unsigned int seedlen, const uint8_t *additional_input,
-    unsigned int additionallen);
+    unsigned int additionallen
+);
 
 /**
  *  @brief HMAC-PRNG generate procedure

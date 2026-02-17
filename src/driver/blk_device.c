@@ -20,28 +20,29 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
         return device->ops.read(device->handle, buffer, offset, length);
     }
 
-    uint64_t start_sector = offset / device->block_size;
-    uint64_t end_sector = (offset + length - 1) / device->block_size;
-    uint64_t sector_count = end_sector - start_sector + 1;
+    uint64_t start_sector    = offset / device->block_size;
+    uint64_t end_sector      = (offset + length - 1) / device->block_size;
+    uint64_t sector_count    = end_sector - start_sector + 1;
     uint64_t offset_in_block = offset % device->block_size;
 
-    size_t total_size = sector_count * device->block_size;
-    size_t page_size = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-    uint64_t phys = alloc_frames(page_size);
+    size_t   total_size = sector_count * device->block_size;
+    size_t   page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+    uint64_t phys       = alloc_frames(page_size);
     page_map_range(
         get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys, page_size * PAGE_SIZE,
-        KERNEL_PTE_FLAGS);
+        KERNEL_PTE_FLAGS
+    );
     uint8_t *kbuf = driver_phys_to_virt(phys);
 
     if ((offset_in_block == 0) && ((length % device->block_size) == 0)) {
-        uint64_t total_copied = 0;
+        uint64_t total_copied      = 0;
         uint64_t remaining_sectors = sector_count;
         while (remaining_sectors > 0) {
             uint64_t to_copy_sectors =
                 MIN(remaining_sectors, device->max_size / device->block_size);
 
             size_t read_length = start_sector + total_copied / device->block_size;
-            read_length = read_length == 0 ? device->block_size : read_length;
+            read_length        = read_length == 0 ? device->block_size : read_length;
 
             device->ops.read(device->handle, kbuf, to_copy_sectors, read_length);
             uint64_t to_copy_bytes = to_copy_sectors * device->block_size;
@@ -54,18 +55,18 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     }
 
     uint64_t total_read = 0;
-    uint64_t remaining = length;
-    uint8_t *dest = (uint8_t *)buffer;
+    uint64_t remaining  = length;
+    uint8_t *dest       = (uint8_t *)buffer;
 
     while (remaining > 0) {
         // 计算本次操作的扇区数和长度
         uint64_t chunk_sectors = sector_count;
-        uint64_t chunk_size = remaining;
+        uint64_t chunk_size    = remaining;
 
         // 限制单次I/O大小
         if (chunk_sectors * device->block_size > device->max_size) {
             chunk_sectors = device->max_size / device->block_size;
-            chunk_size = chunk_sectors * device->block_size - offset_in_block;
+            chunk_size    = chunk_sectors * device->block_size - offset_in_block;
             if (chunk_size > remaining) {
                 chunk_size = remaining;
             }
@@ -75,7 +76,8 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
         if (device->ops.read(device->handle, kbuf, chunk_sectors, start_sector) != chunk_sectors) {
             printk("Read block device failed!!!\n");
             unmap_page_range(
-                get_kernel_pagedir(), (uint64_t)kbuf, sector_count * device->block_size);
+                get_kernel_pagedir(), (uint64_t)kbuf, sector_count * device->block_size
+            );
             return (uint64_t)-1;
         }
 
@@ -107,21 +109,22 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
         return device->ops.write(device->handle, (uint8_t *)buffer, offset, length);
     }
 
-    uint64_t start_sector = offset / device->block_size;
-    uint64_t end_sector = (offset + length - 1) / device->block_size;
-    uint64_t sector_count = end_sector - start_sector + 1;
+    uint64_t start_sector    = offset / device->block_size;
+    uint64_t end_sector      = (offset + length - 1) / device->block_size;
+    uint64_t sector_count    = end_sector - start_sector + 1;
     uint64_t offset_in_block = offset % device->block_size;
 
-    size_t total_size = sector_count * device->block_size;
-    size_t page_size = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-    uint64_t phys = alloc_frames(page_size);
+    size_t   total_size = sector_count * device->block_size;
+    size_t   page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+    uint64_t phys       = alloc_frames(page_size);
     page_map_range(
         get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys, page_size * PAGE_SIZE,
-        KERNEL_PTE_FLAGS);
+        KERNEL_PTE_FLAGS
+    );
     uint8_t *tmp = driver_phys_to_virt(phys);
 
     if ((offset_in_block == 0) && ((length % device->block_size) == 0)) {
-        uint64_t total_copied = 0;
+        uint64_t total_copied      = 0;
         uint64_t remaining_sectors = sector_count;
         while (remaining_sectors > 0) {
             uint64_t to_copy_sectors =
@@ -130,7 +133,7 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
             memcpy(tmp, buffer + total_copied, to_copy_bytes);
 
             size_t write_length = start_sector + total_copied / device->block_size;
-            write_length = write_length == 0 ? device->block_size : write_length;
+            write_length        = write_length == 0 ? device->block_size : write_length;
 
             device->ops.write(device->handle, tmp, write_length, to_copy_sectors);
             total_copied += to_copy_bytes;
@@ -140,19 +143,19 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
         return total_copied;
     }
 
-    uint64_t total_written = 0;
-    uint64_t remaining = length;
-    const uint8_t *src = (const uint8_t *)buffer;
+    uint64_t       total_written = 0;
+    uint64_t       remaining     = length;
+    const uint8_t *src           = (const uint8_t *)buffer;
 
     while (remaining > 0) {
         // 计算本次操作的扇区数和长度
         uint64_t chunk_sectors = sector_count;
-        uint64_t chunk_size = remaining;
+        uint64_t chunk_size    = remaining;
 
         // 限制单次I/O大小
         if (chunk_sectors * device->block_size > device->max_size) {
             chunk_sectors = device->max_size / device->block_size;
-            chunk_size = chunk_sectors * device->block_size - offset_in_block;
+            chunk_size    = chunk_sectors * device->block_size - offset_in_block;
             if (chunk_size > remaining) {
                 chunk_size = remaining;
             }
@@ -164,7 +167,8 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
                 != chunk_sectors) {
                 printk("Read block device failed!!!\n");
                 unmap_page_range(
-                    get_kernel_pagedir(), (uint64_t)tmp, sector_count * device->block_size);
+                    get_kernel_pagedir(), (uint64_t)tmp, sector_count * device->block_size
+                );
                 return (uint64_t)-1;
             }
         }
@@ -178,7 +182,8 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
         if (device->ops.write(device->handle, tmp, chunk_sectors, start_sector) != chunk_sectors) {
             printk("Write block device failed!!!\n");
             unmap_page_range(
-                get_kernel_pagedir(), (uint64_t)tmp, sector_count * device->block_size);
+                get_kernel_pagedir(), (uint64_t)tmp, sector_count * device->block_size
+            );
             return (uint64_t)-1;
         }
 

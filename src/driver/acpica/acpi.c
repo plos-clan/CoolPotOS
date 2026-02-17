@@ -35,7 +35,7 @@ error:
 }
 
 ACPI_STATUS acpi_table_find_by_signature(const char *signature, acpi_table_handle_t *out_table) {
-    size_t i;
+    size_t      i;
     ACPI_STATUS st;
 
     if (!signature || !out_table) {
@@ -50,7 +50,7 @@ ACPI_STATUS acpi_table_find_by_signature(const char *signature, acpi_table_handl
         return AE_BAD_PARAMETER;
     }
     out_table->signature[4] = '\0';
-    out_table->instance = 1;
+    out_table->instance     = 1;
 
     st = AcpiGetTable(out_table->signature, out_table->instance, &out_table->hdr);
     if (ACPI_FAILURE(st)) {

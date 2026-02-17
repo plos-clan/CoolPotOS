@@ -19,15 +19,15 @@ typedef size_t (*stat_entry_t)(proc_handle_t *handle);
 typedef size_t (*read_entry_t)(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 
 struct proc_handle {
-    char name[64];
-    char content[256];
+    char       name[64];
+    char       content[256];
     vfs_node_t node;
-    pcb_t task;
+    pcb_t      task;
 };
 
 typedef struct proc_handle_node {
-    char *name;
-    uint64_t hash;
+    char        *name;
+    uint64_t     hash;
     read_entry_t read_entry;
     stat_entry_t stat_entry;
 } proc_handle_node_t;
@@ -36,8 +36,8 @@ typedef struct procfs_self_handle {
     vfs_node_t self;
 } procfs_self_handle_t;
 
-void load_procfs_root();
-void procfs_stat_dispatch(proc_handle_t *handle, vfs_node_t node);
+void   load_procfs_root();
+void   procfs_stat_dispatch(proc_handle_t *handle, vfs_node_t node);
 size_t procfs_read_dispatch(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 
 size_t proc_filesystems_stat(proc_handle_t *handle);

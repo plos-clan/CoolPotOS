@@ -36,9 +36,10 @@
 
 int tc_cbc_mode_encrypt(
     uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen, const uint8_t *iv,
-    const TCAesKeySched_t sched) {
+    const TCAesKeySched_t sched
+) {
 
-    uint8_t buffer[TC_AES_BLOCK_SIZE];
+    uint8_t      buffer[TC_AES_BLOCK_SIZE];
     unsigned int n, m;
 
     /* input sanity check: */
@@ -69,11 +70,12 @@ int tc_cbc_mode_encrypt(
 
 int tc_cbc_mode_decrypt(
     uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen, const uint8_t *iv,
-    const TCAesKeySched_t sched) {
+    const TCAesKeySched_t sched
+) {
 
-    uint8_t buffer[TC_AES_BLOCK_SIZE];
+    uint8_t        buffer[TC_AES_BLOCK_SIZE];
     const uint8_t *p;
-    unsigned int n, m;
+    unsigned int   n, m;
 
     /* sanity check the inputs */
     if (out == (uint8_t *)0 || in == (const uint8_t *)0 || sched == (TCAesKeySched_t)0 || inlen == 0

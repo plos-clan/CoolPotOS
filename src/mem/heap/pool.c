@@ -1,9 +1,9 @@
-#include "krlibc.h"
 #include "mem/alloc/alloc.h"
 #include "mem/alloc/area.h"
 #include "mem/alloc/block.h"
 #include "mem/alloc/freelist.h"
 #include "term/klog.h"
+#include "krlibc.h"
 
 // mpool_free 中使用的临时函数
 // 用于将内存块从空闲链表中分离
@@ -21,11 +21,11 @@ bool mpool_init(mpool_t pool, void *ptr, size_t size) {
         return false;
     if (size & (2 * sizeof(size_t) - 1))
         return false;
-    pool->ptr = ptr;
-    pool->size = size;
+    pool->ptr          = ptr;
+    pool->size         = size;
     pool->alloced_size = 0;
-    pool->cb_delmem = NULL;
-    pool->large_blk = NULL;
+    pool->cb_delmem    = NULL;
+    pool->large_blk    = NULL;
 #pragma unroll
     for (size_t i = 0; i < FREELIST_NUM; i++) {
         pool->freed[i] = NULL;

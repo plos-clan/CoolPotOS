@@ -3,7 +3,7 @@
 #include "mem/page.h"
 
 uint64_t reserved_memory = 0;
-uint64_t bad_memory = 0;
+uint64_t bad_memory      = 0;
 
 uint64_t get_reserved_memory() {
     return reserved_memory;

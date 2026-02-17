@@ -18,7 +18,8 @@ bool gen_processor(string_builder_t *builder, cpu_local_t *info) {
     status &= string_builder_append(builder, "flags           : %s\n", flags);
     status &= string_builder_append(
         builder, "address sizes   : %d bits physical, %d bits virtual\n", features->phys_bits,
-        features->virt_bits);
+        features->virt_bits
+    );
 
     free(flags);
     return status;
@@ -26,14 +27,14 @@ bool gen_processor(string_builder_t *builder, cpu_local_t *info) {
 
 char *proc_gen_cpuinfo(size_t *context_len) {
     string_builder_t *builder = create_string_builder(4096);
-    bool status = true;
+    bool              status  = true;
     for (size_t i = 0; i < get_cpu_count(); i++) {
         status &= gen_processor(builder, get_cpu_local(i));
         if (!status)
             break;
     }
     *context_len = builder->size;
-    char *data = builder->data;
+    char *data   = builder->data;
     free(builder);
     return data;
 }
@@ -46,6 +47,6 @@ size_t proc_cpuinfo_stat(proc_handle_t *handle) {
 
 size_t proc_cpuinfo_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t fs_size;
-    char *contect = proc_gen_cpuinfo(&fs_size);
+    char  *contect = proc_gen_cpuinfo(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, contect);
 }

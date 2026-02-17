@@ -1,6 +1,6 @@
-#include "krlibc.h"
-#include "task/signal.h"
 #include "task/signal_arch.h"
+#include "task/signal.h"
+#include "krlibc.h"
 #include "term/klog.h"
 
 bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct syscall_regs *regs) {
@@ -16,35 +16,35 @@ bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct sysca
     struct signal_frame *frame = (struct signal_frame *)user_rsp;
 
     // Save all registers from the syscall regs
-    frame->r15 = regs->r15;
-    frame->r14 = regs->r14;
-    frame->r13 = regs->r13;
-    frame->r12 = regs->r12;
-    frame->r11 = regs->r11;
-    frame->r10 = regs->r10;
-    frame->r9 = regs->r9;
-    frame->r8 = regs->r8;
-    frame->rbx = regs->rbx;
-    frame->rcx = regs->rcx;
-    frame->rdx = regs->rdx;
-    frame->rsi = regs->rsi;
-    frame->rdi = regs->rdi;
-    frame->rbp = regs->rbp;
-    frame->rax = regs->rax;
-    frame->rip = regs->rcx;                // rcx holds original RIP (from sysret convention)
-    frame->rflags = regs->r11;             // r11 holds original RFLAGS
-    frame->rsp = task->syscall_stack_user; // original user RSP
+    frame->r15    = regs->r15;
+    frame->r14    = regs->r14;
+    frame->r13    = regs->r13;
+    frame->r12    = regs->r12;
+    frame->r11    = regs->r11;
+    frame->r10    = regs->r10;
+    frame->r9     = regs->r9;
+    frame->r8     = regs->r8;
+    frame->rbx    = regs->rbx;
+    frame->rcx    = regs->rcx;
+    frame->rdx    = regs->rdx;
+    frame->rsi    = regs->rsi;
+    frame->rdi    = regs->rdi;
+    frame->rbp    = regs->rbp;
+    frame->rax    = regs->rax;
+    frame->rip    = regs->rcx;                // rcx holds original RIP (from sysret convention)
+    frame->rflags = regs->r11;                // r11 holds original RFLAGS
+    frame->rsp    = task->syscall_stack_user; // original user RSP
 
     // Save signal mask and call_in_signal state
     if (task->has_saved_sigmask) {
-        frame->saved_blocked = task->saved_sigmask;
+        frame->saved_blocked    = task->saved_sigmask;
         task->has_saved_sigmask = false;
     } else {
         frame->saved_blocked = task->blocked;
     }
     frame->saved_call_in_signal = task->call_in_signal;
-    frame->signum = (uint32_t)signum;
-    frame->_pad0 = 0;
+    frame->signum               = (uint32_t)signum;
+    frame->_pad0                = 0;
 
     // Save FPU state
     save_fpu_context(&frame->fpu_state);
@@ -129,8 +129,8 @@ uint64_t arch_signal_sigreturn(struct syscall_regs *regs) {
     regs->r12 = frame->r12;
     regs->r11 = frame->rflags; // sysretq loads RFLAGS from R11
     regs->r10 = frame->r10;
-    regs->r9 = frame->r9;
-    regs->r8 = frame->r8;
+    regs->r9  = frame->r9;
+    regs->r8  = frame->r8;
     regs->rbx = frame->rbx;
     regs->rcx = frame->rip; // sysretq loads RIP from RCX
     regs->rdx = frame->rdx;
@@ -142,7 +142,7 @@ uint64_t arch_signal_sigreturn(struct syscall_regs *regs) {
     task->syscall_stack_user = frame->rsp;
 
     // Restore signal mask and call_in_signal
-    task->blocked = frame->saved_blocked;
+    task->blocked        = frame->saved_blocked;
     task->call_in_signal = frame->saved_call_in_signal;
 
     // Restore FPU state

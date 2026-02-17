@@ -17,17 +17,17 @@ char *proc_gen_meminfo(size_t *context_len) {
     if (unlikely(builder == NULL))
         return NULL;
 
-    const uint64_t mem_total_kb = get_origin_frames() * 4;
-    const uint64_t mem_free_kb = get_usable_frames() * 4;
+    const uint64_t mem_total_kb     = get_origin_frames() * 4;
+    const uint64_t mem_free_kb      = get_usable_frames() * 4;
     const uint64_t mem_available_kb = mem_free_kb;
-    const uint64_t mem_used_kb = mem_total_kb - mem_free_kb;
-    const uint64_t bad_kb = get_bad_memory() / 1024;
+    const uint64_t mem_used_kb      = mem_total_kb - mem_free_kb;
+    const uint64_t bad_kb           = get_bad_memory() / 1024;
 
     logkf("proc_meminfo: %llu %llu %llu\n\r", mem_total_kb, mem_free_kb, mem_used_kb);
 
-    const uint64_t zero_kb = 0;
-    const uint64_t swap_total_kb = 0;
-    const uint64_t swap_free_kb = 0;
+    const uint64_t zero_kb         = 0;
+    const uint64_t swap_total_kb   = 0;
+    const uint64_t swap_free_kb    = 0;
     const uint64_t commit_limit_kb = mem_total_kb + swap_total_kb;
     const uint64_t committed_as_kb = mem_used_kb;
 
@@ -137,7 +137,7 @@ char *proc_gen_meminfo(size_t *context_len) {
         goto err;
 
     *context_len = builder->size;
-    char *data = builder->data;
+    char *data   = builder->data;
     free(builder);
     return data;
 err:
@@ -148,14 +148,14 @@ err:
 
 size_t proc_meminfo_stat(proc_handle_t *handle) {
     size_t content_len = 0;
-    char *content = proc_gen_meminfo(&content_len);
+    char  *content     = proc_gen_meminfo(&content_len);
     free(content);
     return content_len;
 }
 
 size_t proc_meminfo_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t content_len = 0;
-    char *content = proc_gen_meminfo(&content_len);
+    char  *content     = proc_gen_meminfo(&content_len);
 
     if (!content || content_len == 0) {
         if (content)
@@ -168,7 +168,7 @@ size_t proc_meminfo_read(proc_handle_t *handle, void *addr, size_t offset, size_
         return 0;
     }
 
-    content_len = MIN(content_len, offset + size);
+    content_len    = MIN(content_len, offset + size);
     size_t to_copy = MIN(content_len, size);
 
     memcpy(addr, content + offset, to_copy);

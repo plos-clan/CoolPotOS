@@ -16,7 +16,7 @@ string_builder_t *create_string_builder(size_t initial_capacity) {
         return NULL;
     }
 
-    buf->size = 0;
+    buf->size     = 0;
     buf->capacity = initial_capacity;
 
     return buf;
@@ -27,7 +27,7 @@ bool string_builder_append(string_builder_t *buf, const char *format, ...) {
         return false;
 
     va_list args;
-    int needed;
+    int     needed;
 
     // 第一次调用计算所需空间
     va_start(args, format);
@@ -62,7 +62,7 @@ bool string_builder_append(string_builder_t *buf, const char *format, ...) {
         if (!new_data)
             return false;
 
-        buf->data = new_data;
+        buf->data     = new_data;
         buf->capacity = new_capacity;
     }
 

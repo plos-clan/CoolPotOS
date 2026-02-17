@@ -18,9 +18,9 @@ typedef struct Keyboard {
     UsbDriver driver;
     HidDevice hid;
     KeyLayout layout;
-    indev_t *input_dev;
-    bool caps_locked;
-    bool pressed[256];
+    indev_t  *input_dev;
+    bool      caps_locked;
+    bool      pressed[256];
 } Keyboard;
 
 static const char *usb_kbd_escape_from_usage(uint16_t usage) {
@@ -144,7 +144,7 @@ static void keyboard_handle_completion(UsbDriver *driver, CompletionEvent event)
     const uint8_t *data = kbd->hid.buf_virt;
 
     bool shift = false;
-    bool ctrl = false;
+    bool ctrl  = false;
     bool now_pressed[256];
     memset(now_pressed, 0, sizeof(now_pressed));
 
@@ -280,12 +280,12 @@ static Keyboard *keyboard_new(UsbInterface *iface, uint8_t ep_addr) {
 
     kbd->input_dev = alloc_input_dev();
     if (kbd->input_dev) {
-        kbd->input_dev->id = INPUT_KEYBOARD_ID;
+        kbd->input_dev->id   = INPUT_KEYBOARD_ID;
         kbd->input_dev->name = strdup("");
         register_input_device(kbd->input_dev);
     }
 
-    kbd->driver.disconnect = keyboard_disconnect;
+    kbd->driver.disconnect        = keyboard_disconnect;
     kbd->driver.handle_completion = keyboard_handle_completion;
 
     return kbd;

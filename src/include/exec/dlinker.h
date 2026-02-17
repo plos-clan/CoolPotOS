@@ -14,15 +14,15 @@ typedef struct {
 } dlfunc_t;
 
 typedef struct kernel_mode {
-    size_t data_len;
-    void *data;
-    dlinit_t entry;
-    dlinit_t task_entry;
-    int entry_exit_code;
+    size_t     data_len;
+    void      *data;
+    dlinit_t   entry;
+    dlinit_t   task_entry;
+    int        entry_exit_code;
     dlfunc_t **export_funcs;
-    size_t export_count;
-    size_t lists_index;
-    char *name;
+    size_t     export_count;
+    size_t     lists_index;
+    char      *name;
 } kernel_mode_t;
 
 void start_all_kernel_module();

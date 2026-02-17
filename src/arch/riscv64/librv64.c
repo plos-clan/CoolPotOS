@@ -32,7 +32,8 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
         return false;
     }
 
-    if (ehdr->e_ident[4] != 2 || // 64-bit
+    if (
+        ehdr->e_ident[4] != 2 || // 64-bit
         ehdr->e_machine != 0xF3  // riscv64
     ) {
         return false;

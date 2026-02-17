@@ -39,8 +39,8 @@
 #ifndef __TC_UTILS_H__
 #define __TC_UTILS_H__
 
-#include "krlibc.h"
 #include "types.h"
+#include "krlibc.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,12 +1,12 @@
-#include "apic.h"
 #include "description_table.h"
-#include "task/smp.h"
 #include "term/klog.h"
+#include "task/smp.h"
+#include "apic.h"
 
-gdt_entries_t gdt_entries;
+gdt_entries_t       gdt_entries;
 struct gdt_register gdt_pointer;
-tss_t tss0;
-tss_stack_t tss_stack;
+tss_t               tss0;
+tss_stack_t         tss_stack;
 
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"
@@ -25,7 +25,7 @@ void gdt_setup() {
 
     gdt_pointer = ((struct gdt_register){
         .size = ((uint16_t)((uint32_t)sizeof(gdt_entries_t) - 1U)),
-        .ptr = &gdt_entries,
+        .ptr  = &gdt_entries,
     });
 
     __asm__ volatile("lgdt %[ptr]\n\t"
@@ -45,14 +45,14 @@ void gdt_setup() {
 }
 
 void tss_setup() {
-    uint64_t address = ((uint64_t)(&tss0));
-    uint64_t low_base = (((address & 0xffffffU)) << 16U);
-    uint64_t mid_base = (((((address >> 24U)) & 0xffU)) << 56U);
-    uint64_t high_base = (address >> 32U);
+    uint64_t address     = ((uint64_t)(&tss0));
+    uint64_t low_base    = (((address & 0xffffffU)) << 16U);
+    uint64_t mid_base    = (((((address >> 24U)) & 0xffU)) << 56U);
+    uint64_t high_base   = (address >> 32U);
     uint64_t access_byte = (((uint64_t)(0x89U)) << 40U);
-    uint64_t limit = ((uint64_t)((uint32_t)(sizeof(tss_t) - 1U)));
-    gdt_entries[5] = (((low_base | mid_base) | limit) | access_byte);
-    gdt_entries[6] = high_base;
+    uint64_t limit       = ((uint64_t)((uint32_t)(sizeof(tss_t) - 1U)));
+    gdt_entries[5]       = (((low_base | mid_base) | limit) | access_byte);
+    gdt_entries[6]       = high_base;
 
     tss0.ist[0] = ((uint64_t)&tss_stack) + sizeof(tss_stack_t);
 

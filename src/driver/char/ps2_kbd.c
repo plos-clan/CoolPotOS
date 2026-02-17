@@ -12,10 +12,10 @@
 #endif
 
 static uint64_t ps2_kbd_irq = -1;
-indev_t *ps2_kbd_device;
-bool ctrled = false;
-bool shifted = false;
-bool capsLocked = false;
+indev_t        *ps2_kbd_device;
+bool            ctrled     = false;
+bool            shifted    = false;
+bool            capsLocked = false;
 
 char character_table[140] = {
     0,    27,   '1',  '2', '3', '4', '5', '6', '7',  '8',  '9',  '0',  '-',  '=',  0,    9,
@@ -66,8 +66,8 @@ char shifted_cap_character_table[140] = {
 };
 
 char *character_array[2][2] = {
-    {character_table,     shifted_character_table    },
-    {cap_character_table, shifted_cap_character_table}
+    { character_table,     shifted_character_table     },
+    { cap_character_table, shifted_cap_character_table }
 };
 
 extern tty_t *current_session;
@@ -143,21 +143,23 @@ uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode
 
 static void ps2_key_handle(uint64_t irq, void *arg, struct pt_regs *regs) {
     uint8_t scancode = 0;
-    char out = 0;
+    char    out      = 0;
 #if defined(__x86_64__) || defined(__amd64__)
     scancode = io_in8(0x60);
     if (scancode == 0xE0) {
         uint8_t sc2 = io_in8(0x60);
         send_input_event(
             ps2_kbd_device, EV_KEY, (uint64_t)(sc2 & 0x7F) | EVDEV_EXT_FLAG,
-            (sc2 & 0x80) ? EV_RELEASE : EV_PRESS);
+            (sc2 & 0x80) ? EV_RELEASE : EV_PRESS
+        );
         out = keyboard_scancode(scancode, sc2, 0);
     } else if (scancode == 0xE1) {
         out = keyboard_scancode(scancode, io_in8(0x60), io_in8(0x60));
     } else {
         send_input_event(
             ps2_kbd_device, EV_KEY, (uint64_t)(scancode & 0x7F),
-            (scancode & 0x80) ? EV_RELEASE : EV_PRESS);
+            (scancode & 0x80) ? EV_RELEASE : EV_PRESS
+        );
         out = keyboard_scancode(scancode, 0, 0);
     }
 #endif
@@ -216,11 +218,12 @@ void ps2k_create_device() {
     extern intctl_t apic_controller;
     irq_regist_irq(
         ps2_kbd_irq + IRQ_BASE_VECTOR, ps2_key_handle, ps2_kbd_irq, NULL, &apic_controller,
-        "ps2_keyboard", 0, IO_APIC);
+        "ps2_keyboard", 0, IO_APIC
+    );
 #endif
     irq_set_alloc(ps2_kbd_irq);
-    ps2_kbd_device = alloc_input_dev();
-    ps2_kbd_device->id = INPUT_KEYBOARD_ID;
+    ps2_kbd_device       = alloc_input_dev();
+    ps2_kbd_device->id   = INPUT_KEYBOARD_ID;
     ps2_kbd_device->name = strdup("");
     register_input_device(ps2_kbd_device);
 }
@@ -254,16 +257,17 @@ ACPI_STATUS resource_callback(ACPI_RESOURCE *Resource, void *Context) {
 }
 
 ACPI_STATUS device_found_callback(
-    ACPI_HANDLE ObjectHandle, UINT32 NestingLevel, void *Context, void **ReturnValue) {
-    ACPI_STATUS status;
-    ps2_resource_t res = {0};
-    ACPI_BUFFER buffer = {ACPI_ALLOCATE_BUFFER, NULL};
+    ACPI_HANDLE ObjectHandle, UINT32 NestingLevel, void *Context, void **ReturnValue
+) {
+    ACPI_STATUS    status;
+    ps2_resource_t res    = { 0 };
+    ACPI_BUFFER    buffer = { ACPI_ALLOCATE_BUFFER, NULL };
     status = AcpiEvaluateObjectTyped(ObjectHandle, "_STA", NULL, &buffer, ACPI_TYPE_INTEGER);
     if (ACPI_FAILURE(status)) {
         return AE_ERROR;
     }
-    ACPI_OBJECT *obj = buffer.Pointer;
-    UINT64 sta_value = obj->Integer.Value;
+    ACPI_OBJECT *obj       = buffer.Pointer;
+    UINT64       sta_value = obj->Integer.Value;
     AcpiOsFree(buffer.Pointer);
     if ((sta_value & 0x3) != 0x3) {
         return AE_OK;

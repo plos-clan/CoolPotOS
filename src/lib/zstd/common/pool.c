@@ -26,21 +26,21 @@
 /* A job is a function and an opaque argument */
 typedef struct POOL_job_s {
     POOL_function function;
-    void *opaque;
+    void         *opaque;
 } POOL_job;
 
 struct POOL_ctx_s {
     ZSTD_customMem customMem;
     /* Keep track of the threads */
     ZSTD_pthread_t *threads;
-    size_t threadCapacity;
-    size_t threadLimit;
+    size_t          threadCapacity;
+    size_t          threadLimit;
 
     /* The queue is a circular buffer */
     POOL_job *queue;
-    size_t queueHead;
-    size_t queueTail;
-    size_t queueSize;
+    size_t    queueHead;
+    size_t    queueTail;
+    size_t    queueSize;
 
     /* The number of threads working on jobs */
     size_t numThreadsBusy;
@@ -84,7 +84,7 @@ static void *POOL_thread(void *opaque) {
         /* Pop a job off the queue */
         {
             POOL_job const job = ctx->queue[ctx->queueHead];
-            ctx->queueHead = (ctx->queueHead + 1) % ctx->queueSize;
+            ctx->queueHead     = (ctx->queueHead + 1) % ctx->queueSize;
             ctx->numThreadsBusy++;
             ctx->queueEmpty = (ctx->queueHead == ctx->queueTail);
             /* Unlock the mutex, signal a pusher, and run the job */
@@ -130,11 +130,11 @@ POOL_ctx *POOL_create_advanced(size_t numThreads, size_t queueSize, ZSTD_customM
      * empty and full queues.
      */
     ctx->queueSize = queueSize + 1;
-    ctx->queue = (POOL_job *)ZSTD_customMalloc(ctx->queueSize * sizeof(POOL_job), customMem);
+    ctx->queue     = (POOL_job *)ZSTD_customMalloc(ctx->queueSize * sizeof(POOL_job), customMem);
     ctx->queueHead = 0;
     ctx->queueTail = 0;
     ctx->numThreadsBusy = 0;
-    ctx->queueEmpty = 1;
+    ctx->queueEmpty     = 1;
     {
         int error = 0;
         error |= ZSTD_pthread_mutex_init(&ctx->queueMutex, NULL);
@@ -150,7 +150,7 @@ POOL_ctx *POOL_create_advanced(size_t numThreads, size_t queueSize, ZSTD_customM
     ctx->threads =
         (ZSTD_pthread_t *)ZSTD_customMalloc(numThreads * sizeof(ZSTD_pthread_t), customMem);
     ctx->threadCapacity = 0;
-    ctx->customMem = customMem;
+    ctx->customMem      = customMem;
     /* Check for errors */
     if (!ctx->threads || !ctx->queue) {
         POOL_free(ctx);
@@ -167,7 +167,7 @@ POOL_ctx *POOL_create_advanced(size_t numThreads, size_t queueSize, ZSTD_customM
             }
         }
         ctx->threadCapacity = numThreads;
-        ctx->threadLimit = numThreads;
+        ctx->threadLimit    = numThreads;
     }
     return ctx;
 }
@@ -227,7 +227,8 @@ static int POOL_resize_internal(POOL_ctx *ctx, size_t numThreads) {
     /* numThreads > threadCapacity */
     {
         ZSTD_pthread_t *const threadPool = (ZSTD_pthread_t *)ZSTD_customMalloc(
-            numThreads * sizeof(ZSTD_pthread_t), ctx->customMem);
+            numThreads * sizeof(ZSTD_pthread_t), ctx->customMem
+        );
         if (!threadPool)
             return 1;
         /* replace existing thread pool */
@@ -247,7 +248,7 @@ static int POOL_resize_internal(POOL_ctx *ctx, size_t numThreads) {
     }
     /* successfully expanded */
     ctx->threadCapacity = numThreads;
-    ctx->threadLimit = numThreads;
+    ctx->threadLimit    = numThreads;
     return 0;
 }
 
@@ -278,14 +279,14 @@ static int isQueueFull(POOL_ctx const *ctx) {
 }
 
 static void POOL_add_internal(POOL_ctx *ctx, POOL_function function, void *opaque) {
-    POOL_job const job = {function, opaque};
+    POOL_job const job = { function, opaque };
     assert(ctx != NULL);
     if (ctx->shutdown)
         return;
 
-    ctx->queueEmpty = 0;
+    ctx->queueEmpty            = 0;
     ctx->queue[ctx->queueTail] = job;
-    ctx->queueTail = (ctx->queueTail + 1) % ctx->queueSize;
+    ctx->queueTail             = (ctx->queueTail + 1) % ctx->queueSize;
     ZSTD_pthread_cond_signal(&ctx->queuePopCond);
 }
 

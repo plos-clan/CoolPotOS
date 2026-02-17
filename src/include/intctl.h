@@ -39,23 +39,24 @@ typedef struct intctl {
 } intctl_t;
 
 typedef struct irq_action {
-    char *name;
-    void *data;
+    char     *name;
+    void     *data;
     intctl_t *irq_controller;
     void (*handler)(uint64_t irq_num, void *data, struct pt_regs *regs);
-    uint64_t flags;
+    uint64_t      flags;
     enum irq_type type;
-    size_t int_count[MAX_CPU];
+    size_t        int_count[MAX_CPU];
 } irq_action_t;
 
 void intctl_init();
 
 void irq_regist_irq(
     uint64_t irq_num, void (*handler)(uint64_t irq_num, void *data, struct pt_regs *regs),
-    uint64_t arg, void *data, intctl_t *controller, char *name, uint64_t flags, enum irq_type type);
+    uint64_t arg, void *data, intctl_t *controller, char *name, uint64_t flags, enum irq_type type
+);
 void do_irq(struct pt_regs *regs, uint64_t irq_num);
 
 uint64_t get_all_irq_count();
-int irq_allocate_irqnum();
-void irq_deallocate_irqnum(int irq_num);
-void irq_set_alloc(size_t irq_num); // 用于设备已经注册的IRQ设置占用, 防止自动分配覆盖IRQ
+int      irq_allocate_irqnum();
+void     irq_deallocate_irqnum(int irq_num);
+void     irq_set_alloc(size_t irq_num); // 用于设备已经注册的IRQ设置占用, 防止自动分配覆盖IRQ

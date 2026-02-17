@@ -10,7 +10,7 @@ static inline void mmio_out32(uintptr_t addr, uint32_t val) {
 
 Port port_new(uintptr_t op_base, int index) {
     Port port = {
-        .id = index + 1,
+        .id        = index + 1,
         .base_addr = op_base + 0x400 + (uintptr_t)(index * 16),
     };
     return port;
@@ -53,7 +53,7 @@ bool port_reset(Port port) {
 }
 
 void port_update_portsc(Port port, uint32_t mask) {
-    uint32_t val = port_read_portsc(port);
+    uint32_t val       = port_read_portsc(port);
     uint32_t write_val = (val & ~XHCI_PORT_RW1C_MASK) | mask;
     mmio_out32(port.base_addr, write_val);
 }
