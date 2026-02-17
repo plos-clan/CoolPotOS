@@ -32,23 +32,23 @@
 extern "C" {
 #    endif
 
-#    define FLANTERM_CB_DEC 10
-#    define FLANTERM_CB_BELL 20
-#    define FLANTERM_CB_PRIVATE_ID 30
+#    define FLANTERM_CB_DEC           10
+#    define FLANTERM_CB_BELL          20
+#    define FLANTERM_CB_PRIVATE_ID    30
 #    define FLANTERM_CB_STATUS_REPORT 40
-#    define FLANTERM_CB_POS_REPORT 50
-#    define FLANTERM_CB_KBD_LEDS 60
-#    define FLANTERM_CB_MODE 70
-#    define FLANTERM_CB_LINUX 80
+#    define FLANTERM_CB_POS_REPORT    50
+#    define FLANTERM_CB_KBD_LEDS      60
+#    define FLANTERM_CB_MODE          70
+#    define FLANTERM_CB_LINUX         80
 
-#    define FLANTERM_OOB_OUTPUT_OCRNL (1 << 0)
-#    define FLANTERM_OOB_OUTPUT_OFDEL (1 << 1)
-#    define FLANTERM_OOB_OUTPUT_OFILL (1 << 2)
-#    define FLANTERM_OOB_OUTPUT_OLCUC (1 << 3)
-#    define FLANTERM_OOB_OUTPUT_ONLCR (1 << 4)
+#    define FLANTERM_OOB_OUTPUT_OCRNL  (1 << 0)
+#    define FLANTERM_OOB_OUTPUT_OFDEL  (1 << 1)
+#    define FLANTERM_OOB_OUTPUT_OFILL  (1 << 2)
+#    define FLANTERM_OOB_OUTPUT_OLCUC  (1 << 3)
+#    define FLANTERM_OOB_OUTPUT_ONLCR  (1 << 4)
 #    define FLANTERM_OOB_OUTPUT_ONLRET (1 << 5)
-#    define FLANTERM_OOB_OUTPUT_ONOCR (1 << 6)
-#    define FLANTERM_OOB_OUTPUT_OPOST (1 << 7)
+#    define FLANTERM_OOB_OUTPUT_ONOCR  (1 << 6)
+#    define FLANTERM_OOB_OUTPUT_OPOST  (1 << 7)
 
 #    ifdef FLANTERM_IN_FLANTERM
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #define KERNEL_MODULES_SPACE_START 0xffffffffb0000000
-#define KERNEL_MODULES_SPACE_END 0xffffffffc0000000
+#define KERNEL_MODULES_SPACE_END   0xffffffffc0000000
 
 #include "elf_load.h"
 #include "types.h"

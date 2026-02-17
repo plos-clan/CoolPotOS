@@ -107,10 +107,11 @@ void xhci_complete_transfer(
     }
 
     usb_device_dispatch_completion(
-        slot->usb_device, (CompletionEvent){
-                              .status          = status,
-                              .residual_length = len,
-                              .ep_addr = is_in ? (uint8_t)(ep_num | USB_REQ_DIR_IN) : ep_num,
-                          }
+        slot->usb_device,
+        (CompletionEvent){
+            .status          = status,
+            .residual_length = len,
+            .ep_addr         = is_in ? (uint8_t)(ep_num | USB_REQ_DIR_IN) : ep_num,
+        }
     );
 }

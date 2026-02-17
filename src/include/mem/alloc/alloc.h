@@ -5,11 +5,11 @@
 // 内存分配时大小和返回指针的对齐 (按照两倍字长)
 #define MALLOC_PADDING(size) (((size) + 2 * sizeof(size_t) - 1) & ~(2 * sizeof(size_t) - 1))
 
-#define SIZE_4k ((size_t)4096)
+#define SIZE_4k  ((size_t)4096)
 #define SIZE_16k ((size_t)16384)
-#define SIZE_4M ((size_t)(4 * 1024 * 1024))
-#define SIZE_2M ((size_t)(2 * 1024 * 1024))
-#define SIZE_1G ((size_t)(1024 * 1024 * 1024))
+#define SIZE_4M  ((size_t)(4 * 1024 * 1024))
+#define SIZE_2M  ((size_t)(2 * 1024 * 1024))
+#define SIZE_1G  ((size_t)(1024 * 1024 * 1024))
 
 #ifndef ALLOC_LARGE_BLK_SIZE
 #    define ALLOC_LARGE_BLK_SIZE ((size_t)16384)

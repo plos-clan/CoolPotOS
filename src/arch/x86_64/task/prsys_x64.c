@@ -138,7 +138,11 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
 }
 
 uint64_t thread_clone(
-    struct syscall_regs *reg, uint64_t flags, uint64_t stack, int *parent_tid, int *child_tid,
+    struct syscall_regs *reg,
+    uint64_t flags,
+    uint64_t stack,
+    int *parent_tid,
+    int *child_tid,
     uint64_t tls
 ) {
 

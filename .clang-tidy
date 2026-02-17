@@ -13,13 +13,14 @@ Checks: >
   -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-math-missing-parentheses,
-  -readability-uppercase-literal-suffix
+  -readability-uppercase-literal-suffix,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  -readability-function-cognitive-complexity,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 
 FormatStyle: file
 
 CheckOptions:
-  - key: readability-braces-around-statements.ShortStatementLines
-    value: "0"
   - key: readability-function-size.LineThreshold
     value: "120"
   - key: readability-function-size.StatementThreshold
@@ -30,3 +31,4 @@ CheckOptions:
     value: "4"
   - key: readability-function-size.VariableThreshold
     value: "30"
+...

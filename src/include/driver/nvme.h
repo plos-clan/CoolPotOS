@@ -1,56 +1,56 @@
 #pragma once
 
 // NVMe 寄存器偏移 (Controller Registers)
-#define NVME_REG_CAP 0x00   // Controller Capabilities
-#define NVME_REG_VS 0x08    // Version
+#define NVME_REG_CAP   0x00 // Controller Capabilities
+#define NVME_REG_VS    0x08 // Version
 #define NVME_REG_INTMS 0x0C // Interrupt Mask Set
 #define NVME_REG_INTMC 0x10 // Interrupt Mask Clear
-#define NVME_REG_CC 0x14    // Controller Configuration
-#define NVME_REG_CSTS 0x1C  // Controller Status
-#define NVME_REG_AQA 0x24   // Admin Queue Attributes
-#define NVME_REG_ASQ 0x28   // Admin Submission Queue
-#define NVME_REG_ACQ 0x30   // Admin Completion Queue
+#define NVME_REG_CC    0x14 // Controller Configuration
+#define NVME_REG_CSTS  0x1C // Controller Status
+#define NVME_REG_AQA   0x24 // Admin Queue Attributes
+#define NVME_REG_ASQ   0x28 // Admin Submission Queue
+#define NVME_REG_ACQ   0x30 // Admin Completion Queue
 
 // Doorbell registers (stride calculated from CAP)
 #define NVME_REG_DBS 0x1000
 
 // Controller Configuration bits
-#define NVME_CC_ENABLE (1 << 0)
-#define NVME_CC_CSS_NVM (0 << 4)
-#define NVME_CC_MPS_SHIFT 7
-#define NVME_CC_AMS_RR (0 << 11)
-#define NVME_CC_SHN_NONE (0 << 14)
+#define NVME_CC_ENABLE     (1 << 0)
+#define NVME_CC_CSS_NVM    (0 << 4)
+#define NVME_CC_MPS_SHIFT  7
+#define NVME_CC_AMS_RR     (0 << 11)
+#define NVME_CC_SHN_NONE   (0 << 14)
 #define NVME_CC_SHN_NORMAL (1 << 14)
-#define NVME_CC_IOSQES (6 << 16) // 2^6 = 64 bytes
-#define NVME_CC_IOCQES (4 << 20) // 2^4 = 16 bytes
+#define NVME_CC_IOSQES     (6 << 16) // 2^6 = 64 bytes
+#define NVME_CC_IOCQES     (4 << 20) // 2^4 = 16 bytes
 
 // Controller Status bits
-#define NVME_CSTS_RDY (1 << 0)
-#define NVME_CSTS_CFS (1 << 1)
-#define NVME_CSTS_SHST_MASK (3 << 2)
+#define NVME_CSTS_RDY         (1 << 0)
+#define NVME_CSTS_CFS         (1 << 1)
+#define NVME_CSTS_SHST_MASK   (3 << 2)
 #define NVME_CSTS_SHST_NORMAL (0 << 2)
 
 // Admin Commands
-#define NVME_ADMIN_DELETE_SQ 0x00
-#define NVME_ADMIN_CREATE_SQ 0x01
-#define NVME_ADMIN_DELETE_CQ 0x04
-#define NVME_ADMIN_CREATE_CQ 0x05
-#define NVME_ADMIN_IDENTIFY 0x06
+#define NVME_ADMIN_DELETE_SQ    0x00
+#define NVME_ADMIN_CREATE_SQ    0x01
+#define NVME_ADMIN_DELETE_CQ    0x04
+#define NVME_ADMIN_CREATE_CQ    0x05
+#define NVME_ADMIN_IDENTIFY     0x06
 #define NVME_ADMIN_SET_FEATURES 0x09
 #define NVME_ADMIN_GET_FEATURES 0x0A
 
 // NVM Commands
 #define NVME_CMD_FLUSH 0x00
 #define NVME_CMD_WRITE 0x01
-#define NVME_CMD_READ 0x02
+#define NVME_CMD_READ  0x02
 
 // Queue sizes
 #define NVME_ADMIN_QUEUE_SIZE 64
-#define NVME_IO_QUEUE_SIZE 256
+#define NVME_IO_QUEUE_SIZE    256
 
-#define NVME_PAGE_SIZE 4096
-#define NVME_PAGE_MASK (NVME_PAGE_SIZE - 1)
-#define NVME_PRP_ENTRY_SIZE 8
+#define NVME_PAGE_SIZE            4096
+#define NVME_PAGE_MASK            (NVME_PAGE_SIZE - 1)
+#define NVME_PRP_ENTRY_SIZE       8
 #define NVME_MAX_PRP_LIST_ENTRIES (NVME_PAGE_SIZE / NVME_PRP_ENTRY_SIZE) // 512 entries
 
 #include "driver/pci/pci.h"
@@ -345,12 +345,24 @@ extern nvme_platform_ops_t *g_nvme_platform_ops;
 // Public API
 void nvme_probe(pci_device_t *device);
 int nvme_read_async(
-    nvme_controller_t *ctrl, uint32_t nsid, uint64_t lba, uint32_t block_count, void *buffer,
-    uint64_t buffer_phys, nvme_io_callback_t callback, void *ctx
+    nvme_controller_t *ctrl,
+    uint32_t nsid,
+    uint64_t lba,
+    uint32_t block_count,
+    void *buffer,
+    uint64_t buffer_phys,
+    nvme_io_callback_t callback,
+    void *ctx
 );
 int nvme_write_async(
-    nvme_controller_t *ctrl, uint32_t nsid, uint64_t lba, uint32_t block_count, const void *buffer,
-    uint64_t buffer_phys, nvme_io_callback_t callback, void *ctx
+    nvme_controller_t *ctrl,
+    uint32_t nsid,
+    uint64_t lba,
+    uint32_t block_count,
+    const void *buffer,
+    uint64_t buffer_phys,
+    nvme_io_callback_t callback,
+    void *ctx
 );
 void nvme_process_completions(nvme_controller_t *ctrl);
 int nvme_get_namespace_info(

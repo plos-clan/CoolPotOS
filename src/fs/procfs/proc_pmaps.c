@@ -27,9 +27,15 @@ char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
         }
 
         string_builder_append(
-            builder, "%012lx-%012lx %s %08lx %02x:%02x %lu", vma->vm_start, vma->vm_end,
-            get_vma_permissions(vma), vma->vm_offset, node ? (node->rdev >> 8) & 0xFF : 0,
-            node ? node->rdev & 0xFF : 0, node ? node->inode : 0
+            builder,
+            "%012lx-%012lx %s %08lx %02x:%02x %lu",
+            vma->vm_start,
+            vma->vm_end,
+            get_vma_permissions(vma),
+            vma->vm_offset,
+            node ? (node->rdev >> 8) & 0xFF : 0,
+            node ? node->rdev & 0xFF : 0,
+            node ? node->inode : 0
         );
 
         const char *pathname = vma->vm_name;

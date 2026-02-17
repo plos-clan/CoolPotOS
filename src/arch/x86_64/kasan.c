@@ -7,11 +7,11 @@
 #if KASAN_CHECK
 
 #    define KASAN_SHADOW_SCALE_SHIFT 3
-#    define KASAN_SHADOW_GRANULE (1UL << KASAN_SHADOW_SCALE_SHIFT)
+#    define KASAN_SHADOW_GRANULE     (1UL << KASAN_SHADOW_SCALE_SHIFT)
 
-#    define KASAN_MAX_RANGES 8
+#    define KASAN_MAX_RANGES    8
 #    define KASAN_MAX_WHITELIST 8
-#    define KASAN_POISON 0xFF
+#    define KASAN_POISON        0xFF
 
 typedef struct {
     uintptr_t start;
@@ -102,7 +102,9 @@ kasan_report(const char *reason, uintptr_t bad, size_t size, bool is_write, uint
     kasan_disable_depth++;
     logkf("\n[KASAN] INVALID %s access\n", is_write ? "WRITE" : "READ");
     logkf(
-        "[KASAN] addr=%p size=%llu shadow=0x%02X\n", (void *)bad, (unsigned long long)size,
+        "[KASAN] addr=%p size=%llu shadow=0x%02X\n",
+        (void *)bad,
+        (unsigned long long)size,
         shadow_val
     );
     if (reason)
@@ -202,8 +204,10 @@ void kasan_init(void) {
     kasan_initialized = true;
     kasan_active      = true;
     logkf(
-        "[KASAN] enabled. shadow_base=%p ranges=%llu whitelist=%llu\n", (void *)KASAN_SHADOW_BASE,
-        (unsigned long long)kasan_range_count, (unsigned long long)kasan_whitelist_count
+        "[KASAN] enabled. shadow_base=%p ranges=%llu whitelist=%llu\n",
+        (void *)KASAN_SHADOW_BASE,
+        (unsigned long long)kasan_range_count,
+        (unsigned long long)kasan_whitelist_count
     );
 }
 
@@ -270,7 +274,8 @@ void kasan_heap_extend(uintptr_t heap_start, size_t heap_size) {
     }
 
     kasan_memset_u8(
-        (uint8_t *)(range->shadow_base + range->shadow_size), KASAN_POISON,
+        (uint8_t *)(range->shadow_base + range->shadow_size),
+        KASAN_POISON,
         new_shadow_size - range->shadow_size
     );
     range->shadow_size = new_shadow_size;

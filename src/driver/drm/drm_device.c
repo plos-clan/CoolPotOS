@@ -10,8 +10,15 @@ void drm_device_setup() {
 }
 
 uint64_t drm_device_install(
-    int type, void *ptr, char *name, uint64_t parent, void *ioctl, void *poll, void *read,
-    void *write, void *map
+    int type,
+    void *ptr,
+    char *name,
+    uint64_t parent,
+    void *ioctl,
+    void *poll,
+    void *read,
+    void *write,
+    void *map
 ) {
     drmd_device_t *device = malloc(sizeof(drmd_device_t));
     device->ptr           = ptr;

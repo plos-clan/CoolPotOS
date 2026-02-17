@@ -1,22 +1,22 @@
 #pragma once
 
-#define AT_FDCWD (-100)
+#define AT_FDCWD            (-100)
 #define AT_SYMLINK_NOFOLLOW 0x100
 
-#define S_IFMT 00170000
+#define S_IFMT   00170000
 #define S_IFSOCK 0140000
-#define S_IFLNK 0120000
-#define S_IFREG 0100000
-#define S_IFBLK 0060000
-#define S_IFDIR 0040000
-#define S_IFCHR 0020000
-#define S_IFIFO 0010000
-#define S_ISUID 0004000
-#define S_ISGID 0002000
-#define S_ISVTX 0001000
+#define S_IFLNK  0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
 
-#define FS_VIRTUAL_FLAGS 0b0010 // 虚拟文件系统
-#define FS_NO_MOUNT_FLAGS 0b100 // 不需要主动挂载
+#define FS_VIRTUAL_FLAGS         0b0010 // 虚拟文件系统
+#define FS_NO_MOUNT_FLAGS        0b100  // 不需要主动挂载
 #define VFS_NODE_FLAG_PRIVATE_FD (1ULL << 63)
 
 #include "list.h"
@@ -272,8 +272,13 @@ int vfs_chown(const char *path, uint64_t uid, uint64_t gid);
 size_t vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
 void *general_map(
-    vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
-    uint64_t flags, uint64_t offset
+    vfs_read_t read_callback,
+    void *file,
+    uint64_t addr,
+    uint64_t len,
+    uint64_t prot,
+    uint64_t flags,
+    uint64_t offset
 ); // 文件映射
 
 /**

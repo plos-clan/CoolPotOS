@@ -30,7 +30,8 @@ bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t mod
     }
     if (sig_info->sig_len != ECC_SIG_LEN) {
         kerror(
-            "invalid signature length: %u. Expected %u for ECC P-256.", sig_info->sig_len,
+            "invalid signature length: %u. Expected %u for ECC P-256.",
+            sig_info->sig_len,
             ECC_SIG_LEN
         );
         return false;
@@ -75,7 +76,8 @@ bool mod_check_signature(module_t *mod, const uint8_t *module_buffer, size_t mod
         return true;
     } else {
         kerror(
-            "%s: module signature verification failed (err=%d): signature not trusted.", mod->path,
+            "%s: module signature verification failed (err=%d): signature not trusted.",
+            mod->path,
             result
         );
         return false;

@@ -294,9 +294,19 @@ void evdev_setup(vfs_node_t dev_root) {
 
     // Create /dev/input/event0 device node
     create_device_node_ex(
-        input_dir, "event0", device_stream, &evdev_ctx, 0, evdev_open, evdev_close,
-        (vfs_ioctl_t)evdev_ioctl, (vfs_read_t)evdev_read, (vfs_write_t)evdev_write,
-        (vfs_poll_t)evdev_poll, NULL, NULL
+        input_dir,
+        "event0",
+        device_stream,
+        &evdev_ctx,
+        0,
+        evdev_open,
+        evdev_close,
+        (vfs_ioctl_t)evdev_ioctl,
+        (vfs_read_t)evdev_read,
+        (vfs_write_t)evdev_write,
+        (vfs_poll_t)evdev_poll,
+        NULL,
+        NULL
     );
 
     vfs_close(input_dir);

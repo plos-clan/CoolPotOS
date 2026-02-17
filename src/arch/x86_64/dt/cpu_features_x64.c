@@ -239,8 +239,11 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
     int cpuid_level;
     static char x86_vendor_id[16] = { 0 };
     cpuid_raw(
-        0x00000000, (uint32_t *)&cpuid_level, (uint32_t *)&x86_vendor_id[0],
-        (uint32_t *)&x86_vendor_id[8], (uint32_t *)&x86_vendor_id[4]
+        0x00000000,
+        (uint32_t *)&cpuid_level,
+        (uint32_t *)&x86_vendor_id[0],
+        (uint32_t *)&x86_vendor_id[8],
+        (uint32_t *)&x86_vendor_id[4]
     );
     cpu_features->vendor_id = strdup(x86_vendor_id);
 

@@ -44,8 +44,10 @@ static void apu_gdt_setup() {
                      "mov %[dseg], %%es\n\t"
                      "mov %[dseg], %%ss\n\t"
                      :
-                     : [ptr] "m"(this_cpu->arch_data.gdt_pointer), [dseg] "rm"((uint16_t)0x10U),
-                       "a"(&_setcs_helper), "b"((uint16_t)0x8U)
+                     : [ptr] "m"(this_cpu->arch_data.gdt_pointer),
+                       [dseg] "rm"((uint16_t)0x10U),
+                       "a"(&_setcs_helper),
+                       "b"((uint16_t)0x8U)
                      : "memory");
 
     write_gsbase((uint64_t)this_cpu);

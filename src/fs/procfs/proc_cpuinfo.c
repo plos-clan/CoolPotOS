@@ -17,7 +17,9 @@ bool gen_processor(string_builder_t *builder, cpu_local_t *info) {
     status &= string_builder_append(builder, "model name      : %s\n", features->model_name);
     status &= string_builder_append(builder, "flags           : %s\n", flags);
     status &= string_builder_append(
-        builder, "address sizes   : %d bits physical, %d bits virtual\n", features->phys_bits,
+        builder,
+        "address sizes   : %d bits physical, %d bits virtual\n",
+        features->phys_bits,
         features->virt_bits
     );
 

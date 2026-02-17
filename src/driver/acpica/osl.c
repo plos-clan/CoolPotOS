@@ -218,7 +218,10 @@ void AcpiOsFree(void *Memory) {
 void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS Where, ACPI_SIZE Length) {
     void *vaddr = phys_to_virt(Where);
     page_map_range(
-        get_kernel_pagedir(), (uint64_t)vaddr & ~(PAGE_SIZE - 1), Where & ~(PAGE_SIZE - 1), Length,
+        get_kernel_pagedir(),
+        (uint64_t)vaddr & ~(PAGE_SIZE - 1),
+        Where & ~(PAGE_SIZE - 1),
+        Length,
         KERNEL_PTE_FLAGS
     );
     return vaddr;
@@ -313,8 +316,14 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(
 #if defined(__x86_64__) || defined(__amd64__)
     extern intctl_t apic_controller;
     irq_regist_irq(
-        InterruptNumber + IRQ_BASE_VECTOR, acpica_irq_handler, InterruptNumber, arg,
-        &apic_controller, "acpica_irq_handler", 0, IO_APIC
+        InterruptNumber + IRQ_BASE_VECTOR,
+        acpica_irq_handler,
+        InterruptNumber,
+        arg,
+        &apic_controller,
+        "acpica_irq_handler",
+        0,
+        IO_APIC
     );
 #endif
     return AE_OK;
@@ -573,7 +582,11 @@ AcpiOsWritePciConfiguration(ACPI_PCI_ID *PciId, UINT32 Reg, UINT64 Value, UINT32
         break;
     case 64:
         pci_write(
-            PciId->Bus, PciId->Device, PciId->Function, PciId->Segment, (Reg & ~0x3U) + 4,
+            PciId->Bus,
+            PciId->Device,
+            PciId->Function,
+            PciId->Segment,
+            (Reg & ~0x3U) + 4,
             (uint32_t)(Value >> 32)
         );
         data = (uint32_t)Value;

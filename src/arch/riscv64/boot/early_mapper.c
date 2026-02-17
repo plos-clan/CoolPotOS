@@ -1,7 +1,7 @@
 #include "boot.h"
 #include "krlibc.h"
 
-#define PAGE_SIZE 4096
+#define PAGE_SIZE     4096
 #define PTE_PER_TABLE 512
 
 // SV48 页表项标志位
@@ -17,16 +17,16 @@
 typedef uint64_t pte_t;
 
 // 页面大小常量
-#define SIZE_4K (1UL << 12)
-#define SIZE_2M (1UL << 21)
-#define SIZE_1G (1UL << 30)
+#define SIZE_4K   (1UL << 12)
+#define SIZE_2M   (1UL << 21)
+#define SIZE_1G   (1UL << 30)
 #define SIZE_512G (1UL << 39)
 
 // 获取虚拟地址在各级页表中的索引
 #define VPN(va, level) (((va) >> (12 + 9 * (level))) & 0x1FF)
 
 // 物理地址和PTE之间的转换
-#define PA_TO_PTE(pa) (((pa) >> 12) << 10)
+#define PA_TO_PTE(pa)  (((pa) >> 12) << 10)
 #define PTE_TO_PA(pte) (((pte) >> 10) << 12)
 
 // 高半核地址偏移
@@ -181,7 +181,9 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
     uintptr_t kernel_low_end   = 0x81000000UL; // 16MB内核区域
 
     if (map_region(
-            (pte_t *)root_table, kernel_low_start, kernel_low_end,
+            (pte_t *)root_table,
+            kernel_low_start,
+            kernel_low_end,
             PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D
         )
         < 0) {
@@ -191,7 +193,9 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
     uintptr_t dtb_paddr = (uintptr_t)opensbi_dtb_vaddr - KERNEL_VIRTUAL_BASE;
 
     if (map_region(
-            (pte_t *)root_table, dtb_paddr, dtb_paddr + SIZE_2M,
+            (pte_t *)root_table,
+            dtb_paddr,
+            dtb_paddr + SIZE_2M,
             PTE_R | PTE_W | PTE_X | PTE_G | PTE_A | PTE_D
         )
         < 0) {
@@ -211,7 +215,9 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
                 if (start < kernel_low_start) {
                     // 映射内核前的部分
                     if (map_region(
-                            (pte_t *)root_table, start, kernel_low_start,
+                            (pte_t *)root_table,
+                            start,
+                            kernel_low_start,
                             PTE_R | PTE_W | PTE_G | PTE_A | PTE_D
                         )
                         < 0) {
@@ -221,7 +227,9 @@ int setup_sv48_page_table(boot_memory_map_t *mmap, uint64_t *satp_out) {
                 if (map_end > kernel_low_end) {
                     // 映射内核后的部分
                     if (map_region(
-                            (pte_t *)root_table, kernel_low_end, map_end,
+                            (pte_t *)root_table,
+                            kernel_low_end,
+                            map_end,
                             PTE_R | PTE_W | PTE_G | PTE_A | PTE_D
                         )
                         < 0) {

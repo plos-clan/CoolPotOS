@@ -721,7 +721,8 @@ size_t drm_read(void *data, void *buf, uint64_t offset, uint64_t len) {
     dev->drm_events[0] = NULL;
 
     memmove(
-        &dev->drm_events[0], &dev->drm_events[1],
+        &dev->drm_events[0],
+        &dev->drm_events[1],
         sizeof(struct k_drm_event *) * (DRM_MAX_EVENTS_COUNT - 1)
     );
 

@@ -3,25 +3,25 @@
 #include "types.h"
 
 #define TRB_CYCLE (1u << 0)
-#define TRB_ENT (1u << 1)
-#define TRB_ISP (1u << 2)
-#define TRB_NS (1u << 3)
+#define TRB_ENT   (1u << 1)
+#define TRB_ISP   (1u << 2)
+#define TRB_NS    (1u << 3)
 #define TRB_CHAIN (1u << 4)
-#define TRB_IOC (1u << 5)
-#define TRB_IDT (1u << 6)
+#define TRB_IOC   (1u << 5)
+#define TRB_IDT   (1u << 6)
 
-#define TRB_NORMAL 1
-#define TRB_SETUP_STAGE 2
-#define TRB_DATA_STAGE 3
-#define TRB_STATUS_STAGE 4
-#define TRB_LINK 6
-#define TRB_ENABLE_SLOT 9
-#define TRB_DISABLE_SLOT 10
-#define TRB_ADDRESS_DEVICE 11
+#define TRB_NORMAL             1
+#define TRB_SETUP_STAGE        2
+#define TRB_DATA_STAGE         3
+#define TRB_STATUS_STAGE       4
+#define TRB_LINK               6
+#define TRB_ENABLE_SLOT        9
+#define TRB_DISABLE_SLOT       10
+#define TRB_ADDRESS_DEVICE     11
 #define TRB_CONFIGURE_ENDPOINT 12
-#define TRB_NO_OP_CMD 23
-#define TRB_TRANSFER_EVENT 32
-#define TRB_CMD_COMPLETION 33
+#define TRB_NO_OP_CMD          23
+#define TRB_TRANSFER_EVENT     32
+#define TRB_CMD_COMPLETION     33
 #define TRB_PORT_STATUS_CHANGE 34
 
 typedef struct __attribute__((packed)) Trb {

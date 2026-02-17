@@ -27,5 +27,5 @@
         __asm__ volatile("csrc " #csr ", %0" : : "r"(__v) : "memory");                             \
     })
 
-#define SSTATUS_GET_FS(sstatus) (((sstatus) >> 13) & 0b11)
+#define SSTATUS_GET_FS(sstatus)     (((sstatus) >> 13) & 0b11)
 #define SSTATUS_SET_FS(sstatus, fs) ((sstatus) |= (((uint64_t)(fs) & 0b11) << 13))

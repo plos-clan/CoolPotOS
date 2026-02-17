@@ -59,13 +59,17 @@ void scsi_submit(struct hba_device *dev, struct blkio_req *io_req) {
 
     if (port->device->cbd_size == SCSI_CDB16) {
         scsi_create_packet16(
-            (struct scsi_cdb16 *)cdb, write ? SCSI_WRITE_BLOCKS_16 : SCSI_READ_BLOCKS_16,
-            io_req->lba, count
+            (struct scsi_cdb16 *)cdb,
+            write ? SCSI_WRITE_BLOCKS_16 : SCSI_READ_BLOCKS_16,
+            io_req->lba,
+            count
         );
     } else {
         scsi_create_packet12(
-            (struct scsi_cdb12 *)cdb, write ? SCSI_WRITE_BLOCKS_12 : SCSI_READ_BLOCKS_12,
-            io_req->lba & (uint32_t)-1, count
+            (struct scsi_cdb12 *)cdb,
+            write ? SCSI_WRITE_BLOCKS_12 : SCSI_READ_BLOCKS_12,
+            io_req->lba & (uint32_t)-1,
+            count
         );
     }
 

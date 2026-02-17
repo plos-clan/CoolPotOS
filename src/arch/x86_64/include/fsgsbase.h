@@ -1,7 +1,7 @@
 #pragma once
 
-#define IA32_FS_BASE 0xc0000100
-#define IA32_GS_BASE 0xc0000101
+#define IA32_FS_BASE        0xc0000100
+#define IA32_GS_BASE        0xc0000101
 #define IA32_KERNEL_GS_BASE 0xc0000102
 
 #include "types.h"

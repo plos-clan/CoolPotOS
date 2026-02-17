@@ -55,7 +55,7 @@ void *memcpy(void *, const void *, size_t);
 #    ifndef FLANTERM_FB_BUMP_ALLOC_POOL_SIZE
 #        define FLANTERM_FB_BUMP_ALLOC_POOL_SIZE 873000
 
-#        define FLANTERM_FB_WIDTH_LIMIT 1920
+#        define FLANTERM_FB_WIDTH_LIMIT  1920
 #        define FLANTERM_FB_HEIGHT_LIMIT 1200
 #    endif
 
@@ -532,7 +532,8 @@ static void flanterm_fb_revscroll(struct flanterm_context *_ctx) {
     struct flanterm_fb_context *ctx = (void *)_ctx;
 
     for (size_t i = (_ctx->scroll_bottom_margin - 1) * _ctx->cols - 1;
-         i >= _ctx->scroll_top_margin * _ctx->cols; i--) {
+         i >= _ctx->scroll_top_margin * _ctx->cols;
+         i--) {
         if (i == (size_t)-1) {
             break;
         }
@@ -560,7 +561,8 @@ static void flanterm_fb_scroll(struct flanterm_context *_ctx) {
     struct flanterm_fb_context *ctx = (void *)_ctx;
 
     for (size_t i = (_ctx->scroll_top_margin + 1) * _ctx->cols;
-         i < _ctx->scroll_bottom_margin * _ctx->cols; i++) {
+         i < _ctx->scroll_bottom_margin * _ctx->cols;
+         i++) {
         struct flanterm_fb_char *c;
         struct flanterm_fb_queue_item *q = ctx->map[i];
         if (q != NULL) {
@@ -756,8 +758,10 @@ static void flanterm_fb_double_buffer_flush(struct flanterm_context *_ctx) {
         || _ctx->cursor_enabled == false) {
         if (ctx->old_cursor_x < _ctx->cols && ctx->old_cursor_y < _ctx->rows) {
             ctx->plot_char(
-                _ctx, &ctx->grid[ctx->old_cursor_x + ctx->old_cursor_y * _ctx->cols],
-                ctx->old_cursor_x, ctx->old_cursor_y
+                _ctx,
+                &ctx->grid[ctx->old_cursor_x + ctx->old_cursor_y * _ctx->cols],
+                ctx->old_cursor_x,
+                ctx->old_cursor_y
             );
         }
     }
@@ -846,14 +850,33 @@ static void flanterm_fb_deinit(struct flanterm_context *_ctx, void (*_free)(void
 }
 
 struct flanterm_context *flanterm_fb_init(
-    void *(*_malloc)(size_t), void (*_free)(void *, size_t), uint32_t *framebuffer, size_t width,
-    size_t height, size_t pitch, uint8_t red_mask_size, uint8_t red_mask_shift,
-    uint8_t green_mask_size, uint8_t green_mask_shift, uint8_t blue_mask_size,
-    uint8_t blue_mask_shift, uint32_t *canvas, uint32_t *ansi_colours,
-    uint32_t *ansi_bright_colours, uint32_t *default_bg, uint32_t *default_fg,
-    uint32_t *default_bg_bright, uint32_t *default_fg_bright, void *font, size_t font_width,
-    size_t font_height, size_t font_spacing, size_t font_scale_x, size_t font_scale_y,
-    size_t margin, uint32_t num_glyph
+    void *(*_malloc)(size_t),
+    void (*_free)(void *, size_t),
+    uint32_t *framebuffer,
+    size_t width,
+    size_t height,
+    size_t pitch,
+    uint8_t red_mask_size,
+    uint8_t red_mask_shift,
+    uint8_t green_mask_size,
+    uint8_t green_mask_shift,
+    uint8_t blue_mask_size,
+    uint8_t blue_mask_shift,
+    uint32_t *canvas,
+    uint32_t *ansi_colours,
+    uint32_t *ansi_bright_colours,
+    uint32_t *default_bg,
+    uint32_t *default_fg,
+    uint32_t *default_bg_bright,
+    uint32_t *default_fg_bright,
+    void *font,
+    size_t font_width,
+    size_t font_height,
+    size_t font_spacing,
+    size_t font_scale_x,
+    size_t font_scale_y,
+    size_t margin,
+    uint32_t num_glyph
 ) {
     if (font_scale_x == 0 || font_scale_y == 0) {
         font_scale_x = 1;

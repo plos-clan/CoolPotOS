@@ -8,7 +8,7 @@
 #define EXPORT_SYMBOL(mode, FUNC) dlfunc_register(mode, #FUNC, (void *)(FUNC))
 
 #define EXPORT_INITIAL_CAPACITY 4
-#define EXPORT_GROWTH_FACTOR 2
+#define EXPORT_GROWTH_FACTOR    2
 
 cow_arraylist *kmod_lists;
 uint64_t kernel_modules_load_offset = 0;
@@ -224,7 +224,8 @@ dlinit_t load_dynamic(kernel_mode_t *mode, Elf64_Phdr *phdrs, Elf64_Ehdr *ehdr, 
             *reloc_addr = (uint64_t)resolve_symbol(symtab, sym_idx) + offset;
         } else if (type == R_RISCV_COPY) {
             memcpy(
-                reloc_addr, (void *)((uint64_t)resolve_symbol(symtab, sym_idx) + offset),
+                reloc_addr,
+                (void *)((uint64_t)resolve_symbol(symtab, sym_idx) + offset),
                 symtab[sym_idx].st_size
             );
         } else if (type == R_RISCV_RELATIVE) {
@@ -269,8 +270,13 @@ void dlinker_load(kernel_mode_t *module) {
 
     Elf64_Phdr *phdrs = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     if (!mmap_phdr_segment(
-            ehdr, phdrs, get_kernel_pagedir(), false,
-            KERNEL_MODULES_SPACE_START + kernel_modules_load_offset, NULL, &load_size
+            ehdr,
+            phdrs,
+            get_kernel_pagedir(),
+            false,
+            KERNEL_MODULES_SPACE_START + kernel_modules_load_offset,
+            NULL,
+            &load_size
         )) {
         printk("Cannot mmap elf segment.\n");
         return;
@@ -284,7 +290,8 @@ void dlinker_load(kernel_mode_t *module) {
     }
 
     kinfo(
-        "Loaded module %s at %#018lx", module->name,
+        "Loaded module %s at %#018lx",
+        module->name,
         KERNEL_MODULES_SPACE_START + kernel_modules_load_offset
     );
 

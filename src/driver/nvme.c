@@ -114,12 +114,20 @@ static void nvme_dump_status(nvme_controller_t *ctrl) {
 
     g_nvme_platform_ops->log("NVMe: CSTS=0x%08x CC=0x%08x\n", csts, cc);
     g_nvme_platform_ops->log(
-        "  RDY=%d CFS=%d SHST=%d NSSRO=%d\n", !!(csts & NVME_CSTS_RDY), !!(csts & NVME_CSTS_CFS),
-        (csts >> 2) & 0x3, !!(csts & (1 << 4))
+        "  RDY=%d CFS=%d SHST=%d NSSRO=%d\n",
+        !!(csts & NVME_CSTS_RDY),
+        !!(csts & NVME_CSTS_CFS),
+        (csts >> 2) & 0x3,
+        !!(csts & (1 << 4))
     );
     g_nvme_platform_ops->log(
-        "  EN=%d CSS=%d MPS=%d AMS=%d SHN=%d IOSQES=%d IOCQES=%d\n", !!(cc & NVME_CC_ENABLE),
-        (cc >> 4) & 0x7, (cc >> 7) & 0xF, (cc >> 11) & 0x7, (cc >> 14) & 0x3, (cc >> 16) & 0xF,
+        "  EN=%d CSS=%d MPS=%d AMS=%d SHN=%d IOSQES=%d IOCQES=%d\n",
+        !!(cc & NVME_CC_ENABLE),
+        (cc >> 4) & 0x7,
+        (cc >> 7) & 0xF,
+        (cc >> 11) & 0x7,
+        (cc >> 14) & 0x3,
+        (cc >> 16) & 0xF,
         (cc >> 20) & 0xF
     );
 }
@@ -273,8 +281,14 @@ nvme_bind_queue_interrupt(nvme_controller_t *ctrl, nvme_queue_t *queue, uint16_t
 
     extern intctl_t apic_controller;
     irq_regist_irq(
-        vector + IRQ_BASE_VECTOR, nvme_interrupt_handler, vector, queue, &apic_controller, "NVMe",
-        IRQ_FLAGS_MSIX, PCI_MSI
+        vector + IRQ_BASE_VECTOR,
+        nvme_interrupt_handler,
+        vector,
+        queue,
+        &apic_controller,
+        "NVMe",
+        IRQ_FLAGS_MSIX,
+        PCI_MSI
     );
 #endif
 
@@ -344,7 +358,9 @@ static int nvme_init_queue(
         (volatile uint32_t *)(ctrl->bar0 + doorbell_offset + ctrl->doorbell_stride);
 
     g_nvme_platform_ops->log(
-        "NVMe: Queue %d doorbells - SQ offset=0x%x CQ offset=0x%x\n", queue_id, doorbell_offset,
+        "NVMe: Queue %d doorbells - SQ offset=0x%x CQ offset=0x%x\n",
+        queue_id,
+        doorbell_offset,
         doorbell_offset + ctrl->doorbell_stride
     );
 
@@ -413,8 +429,11 @@ static int nvme_process_queue_completions(nvme_controller_t *ctrl, nvme_queue_t 
 
         if (!success) {
             g_nvme_platform_ops->log(
-                "NVMe: Command failed - CID=%d Status=0x%04x (SC=%d SCT=%d)\n", cqe->cid,
-                cqe->status, status_code, status_type
+                "NVMe: Command failed - CID=%d Status=0x%04x (SC=%d SCT=%d)\n",
+                cqe->cid,
+                cqe->status,
+                status_code,
+                status_type
             );
         }
 
@@ -506,7 +525,9 @@ static int nvme_admin_cmd_sync(
     cmd->cdw0 = (cmd->cdw0 & 0x0000FFFF) | (cid << 16);
 
     g_nvme_platform_ops->log(
-        "NVMe: Submitting admin command - opcode=%d cid=%d cdw0=0x%08x\n", cmd->cdw0 & 0xFF, cid,
+        "NVMe: Submitting admin command - opcode=%d cid=%d cdw0=0x%08x\n",
+        cmd->cdw0 & 0xFF,
+        cid,
         cmd->cdw0
     );
 
@@ -598,7 +619,9 @@ static int nvme_create_io_cq(nvme_controller_t *ctrl, nvme_queue_t *queue) {
     cmd.cdw11 = cdw11;
 
     g_nvme_platform_ops->log(
-        "NVMe: Creating I/O CQ %d (depth=%d, phys=0x%llx)\n", queue->queue_id, queue->queue_depth,
+        "NVMe: Creating I/O CQ %d (depth=%d, phys=0x%llx)\n",
+        queue->queue_id,
+        queue->queue_depth,
         queue->cq_phys
     );
 
@@ -614,7 +637,9 @@ static int nvme_create_io_sq(nvme_controller_t *ctrl, nvme_queue_t *queue) {
     cmd.cdw11      = (queue->queue_id << 16) | 0x1; // CQID, PC=1
 
     g_nvme_platform_ops->log(
-        "NVMe: Creating I/O SQ %d (depth=%d, phys=0x%llx)\n", queue->queue_id, queue->queue_depth,
+        "NVMe: Creating I/O SQ %d (depth=%d, phys=0x%llx)\n",
+        queue->queue_id,
+        queue->queue_depth,
         queue->sq_phys
     );
 
@@ -628,7 +653,8 @@ static int nvme_check_pci_config(pci_device_t *device) {
     // Check BAR0
     if (!device->bars[0].address || device->bars[0].size < 0x2000) {
         g_nvme_platform_ops->log(
-            "NVMe: Invalid BAR0 (addr=0x%llx size=0x%llx)\n", device->bars[0].address,
+            "NVMe: Invalid BAR0 (addr=0x%llx size=0x%llx)\n",
+            device->bars[0].address,
             device->bars[0].size
         );
         return -1;
@@ -759,7 +785,8 @@ nvme_setup_prp(nvme_controller_t *ctrl, nvme_sqe_t *cmd, uint64_t phys_addr, uin
     for (uint32_t page = 1; page < num_pages; page++) {
         if (prp_idx >= NVME_MAX_PRP_LIST_ENTRIES) {
             g_nvme_platform_ops->log(
-                "NVMe: PRP list overflow! pages=%u max_entries=%u\n", num_pages,
+                "NVMe: PRP list overflow! pages=%u max_entries=%u\n",
+                num_pages,
                 NVME_MAX_PRP_LIST_ENTRIES
             );
             return -1;
@@ -779,8 +806,14 @@ nvme_setup_prp(nvme_controller_t *ctrl, nvme_sqe_t *cmd, uint64_t phys_addr, uin
 
 // 优化的异步读取（支持 PRP）
 int nvme_read_async(
-    nvme_controller_t *ctrl, uint32_t nsid, uint64_t lba, uint32_t block_count, void *buffer,
-    uint64_t buffer_phys, nvme_io_callback_t callback, void *ctx
+    nvme_controller_t *ctrl,
+    uint32_t nsid,
+    uint64_t lba,
+    uint32_t block_count,
+    void *buffer,
+    uint64_t buffer_phys,
+    nvme_io_callback_t callback,
+    void *ctx
 ) {
     if (!ctrl->initialized || nsid == 0 || nsid > ctrl->num_namespaces) {
         g_nvme_platform_ops->log("NVMe: Invalid namespace %u\n", nsid);
@@ -847,8 +880,14 @@ int nvme_read_async(
 
 // 优化的异步写入（支持 PRP）
 int nvme_write_async(
-    nvme_controller_t *ctrl, uint32_t nsid, uint64_t lba, uint32_t block_count, const void *buffer,
-    uint64_t buffer_phys, nvme_io_callback_t callback, void *ctx
+    nvme_controller_t *ctrl,
+    uint32_t nsid,
+    uint64_t lba,
+    uint32_t block_count,
+    const void *buffer,
+    uint64_t buffer_phys,
+    nvme_io_callback_t callback,
+    void *ctx
 ) {
     if (!ctrl->initialized || nsid == 0 || nsid > ctrl->num_namespaces) {
         g_nvme_platform_ops->log("NVMe: Invalid namespace %u\n", nsid);
@@ -945,8 +984,14 @@ size_t nvme_read(void *data, uint8_t *buffer, size_t size, size_t lba) {
     bool en                     = arch_check_interrupt();
     arch_open_interrupt();
     int r = nvme_read_async(
-        ns->ctrl, ns->ns->nsid, lba, size, buffer, arch_virt_to_phys((uint64_t)buffer),
-        nvme_io_callback, cb_ctx
+        ns->ctrl,
+        ns->ns->nsid,
+        lba,
+        size,
+        buffer,
+        arch_virt_to_phys((uint64_t)buffer),
+        nvme_io_callback,
+        cb_ctx
     );
     if (r < 0) {
         printk("NVMe: submit command failure!\n");
@@ -992,8 +1037,14 @@ size_t nvme_write(void *data, uint8_t *buffer, size_t size, size_t lba) {
     cb_ctx->success             = false;
     arch_open_interrupt();
     int r = nvme_write_async(
-        ns->ctrl, ns->ns->nsid, lba, size, buffer, arch_virt_to_phys((uint64_t)buffer),
-        nvme_io_callback, cb_ctx
+        ns->ctrl,
+        ns->ns->nsid,
+        lba,
+        size,
+        buffer,
+        arch_virt_to_phys((uint64_t)buffer),
+        nvme_io_callback,
+        cb_ctx
     );
     if (r < 0) {
         printk("NVMe: submit command failure!\n");
@@ -1051,7 +1102,10 @@ void nvme_probe(pci_device_t *device) {
     ctrl->pci_dev = device;
     ctrl->bar0    = phys_to_virt(device->bars[0].address);
     page_map_range(
-        get_kernel_pagedir(), (uint64_t)ctrl->bar0, device->bars[0].address, device->bars[0].size,
+        get_kernel_pagedir(),
+        (uint64_t)ctrl->bar0,
+        device->bars[0].address,
+        device->bars[0].size,
         KERNEL_PTE_FLAGS
     );
 
@@ -1159,7 +1213,9 @@ void nvme_probe(pci_device_t *device) {
             ctrl->namespaces[i - 1].valid = true;
 
             g_nvme_platform_ops->log(
-                "NVMe: NS%d: %lld blocks x %d bytes\n", i, id_ns.nsze,
+                "NVMe: NS%d: %lld blocks x %d bytes\n",
+                i,
+                id_ns.nsze,
                 ctrl->namespaces[i - 1].block_size
             );
 

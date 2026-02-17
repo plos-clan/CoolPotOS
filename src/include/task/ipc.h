@@ -1,12 +1,12 @@
 #pragma once
 
-#define IPC_MSG_TYPE_NONE 0
-#define IPC_MSG_TYPE_EXIT 1     // 进程终止
+#define IPC_MSG_TYPE_NONE     0
+#define IPC_MSG_TYPE_EXIT     1 // 进程终止
 #define IPC_MSG_TYPE_KEYBOARD 2 // 键盘输入
-#define IPC_MSG_TYPE_MOUSE 3    // 鼠标输入
-#define IPC_MSG_TYPE_TIMER 4    // 时钟计数
-#define IPC_MSG_TYPE_EPID 5     // 子进程退出信号
-#define IPC_MSG_TYPE_EXEC 6     // execve 调用信号
+#define IPC_MSG_TYPE_MOUSE    3 // 鼠标输入
+#define IPC_MSG_TYPE_TIMER    4 // 时钟计数
+#define IPC_MSG_TYPE_EPID     5 // 子进程退出信号
+#define IPC_MSG_TYPE_EXEC     6 // execve 调用信号
 
 #define IPC_QUEUE_CAPACITY 256
 

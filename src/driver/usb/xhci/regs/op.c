@@ -11,7 +11,7 @@ static inline void mmio_out32(uintptr_t addr, uint32_t val) {
 #define OP_USBCMD_OFF 0x00
 #define OP_USBSTS_OFF 0x04
 #define OP_DNCTRL_OFF 0x14
-#define OP_CRCR_OFF 0x18
+#define OP_CRCR_OFF   0x18
 #define OP_DCBAAP_OFF 0x30
 #define OP_CONFIG_OFF 0x38
 

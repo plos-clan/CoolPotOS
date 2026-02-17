@@ -794,7 +794,12 @@ syscall_(pwrite, int fd, uint8_t *buffer) {
 }
 
 syscall_(
-    copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
+    copy_file_range,
+    int fd_in,
+    uint64_t *off_in,
+    int fd_out,
+    uint64_t *off_out,
+    size_t len,
     uint64_t flags
 ) {
     if (flags != 0) {
@@ -983,8 +988,13 @@ syscall_(
 }
 
 syscall_(
-    pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-    struct timespec *timeout, WeirdPselect6 *weirdPselect6
+    pselect6,
+    uint64_t nfds,
+    fd_set *readfds,
+    fd_set *writefds,
+    fd_set *exceptfds,
+    struct timespec *timeout,
+    WeirdPselect6 *weirdPselect6
 ) {
     if (readfds && check_user_overflow((uint64_t)readfds, sizeof(fd_set) * nfds)) {
         return SYSCALL_FAULT_(EFAULT);
@@ -1013,8 +1023,13 @@ syscall_(
     }
 
     size_t ret = syscall_select(
-        (uint64_t)nfds, (uint8_t *)readfds, (uint8_t *)writefds, (uint8_t *)exceptfds, &timeoutConv,
-        0, 0
+        (uint64_t)nfds,
+        (uint8_t *)readfds,
+        (uint8_t *)writefds,
+        (uint8_t *)exceptfds,
+        &timeoutConv,
+        0,
+        0
     );
     if (sigmask) {
         syscall_ssetmask(SIG_SETMASK, &origmask, NULL, 0, 0, 0, regs);

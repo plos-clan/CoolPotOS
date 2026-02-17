@@ -2,11 +2,11 @@
 
 #define MAX_PID_NAME_LEN 21
 
-#define SCHED_NORMAL 0
-#define SCHED_FIFO 1
-#define SCHED_RR 2
-#define SCHED_BATCH 3
-#define SCHED_IDLE 5
+#define SCHED_NORMAL   0
+#define SCHED_FIFO     1
+#define SCHED_RR       2
+#define SCHED_BATCH    3
+#define SCHED_IDLE     5
 #define SCHED_DEADLINE 6
 
 #include "fs/vfs.h"

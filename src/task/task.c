@@ -99,7 +99,9 @@ static void kill_proc0(pcb_t pcb) {
         free_envp(pcb->envp);
     free(pcb->ctty_path);
     logkf(
-        "task: Freeing process %s (PID: %d) vfork: %s\n", pcb->name, pcb->pid,
+        "task: Freeing process %s (PID: %d) vfork: %s\n",
+        pcb->name,
+        pcb->pid,
         pcb->vfork ? "true" : "false"
     );
     if (!pcb->vfork)

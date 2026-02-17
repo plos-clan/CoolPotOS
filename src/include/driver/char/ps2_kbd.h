@@ -2,15 +2,15 @@
 
 #define PS2K_PNP_ID "PNP0303"
 
-#define SCANCODE_ENTER 28
-#define SCANCODE_BACK 14
+#define SCANCODE_ENTER   28
+#define SCANCODE_BACK    14
 #define SCANCODE_SHIFT_L 42
 #define SCANCODE_SHIFT_R 0x36
-#define SCANCODE_CAPS 58
-#define SCANCODE_UP 0x48
+#define SCANCODE_CAPS    58
+#define SCANCODE_UP      0x48
 
 #define CHARACTER_ENTER '\n'
-#define CHARACTER_BACK '\b'
+#define CHARACTER_BACK  '\b'
 
 #include "types.h"
 

@@ -4,7 +4,7 @@
 #include "lock.h"
 #include "driver/tty.h"
 
-#define PTY_BUF_SIZE 4096
+#define PTY_BUF_SIZE  4096
 #define PTY_MAX_COUNT 256
 
 // PTY ring buffer for bidirectional communication

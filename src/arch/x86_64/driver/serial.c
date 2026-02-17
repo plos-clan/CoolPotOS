@@ -127,8 +127,10 @@ static void init_serial_port(uint16_t port) {
     }
     io_out8(port + SERIAL_REG_MCR, 0x0f); // Quit loopback mode
     logkf(
-        "serial: Local port: %s, Baud rate: %d, Status: 0x%02x\n", PORT_TO_COM(port),
-        SERIAL_BAUD_RATE, io_in8(port + SERIAL_REG_LSR)
+        "serial: Local port: %s, Baud rate: %d, Status: 0x%02x\n",
+        PORT_TO_COM(port),
+        SERIAL_BAUD_RATE,
+        io_in8(port + SERIAL_REG_LSR)
     );
 }
 

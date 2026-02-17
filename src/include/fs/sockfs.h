@@ -6,38 +6,38 @@
 #define SOCK_BUFF 16384
 
 // Address families
-#define AF_UNIX 1
+#define AF_UNIX  1
 #define AF_LOCAL AF_UNIX
 
 // Socket types
-#define SOCK_STREAM 1
-#define SOCK_DGRAM 2
+#define SOCK_STREAM   1
+#define SOCK_DGRAM    2
 #define SOCK_NONBLOCK 04000
-#define SOCK_CLOEXEC 02000000
+#define SOCK_CLOEXEC  02000000
 
 // Shutdown how
-#define SHUT_RD 0
-#define SHUT_WR 1
+#define SHUT_RD   0
+#define SHUT_WR   1
 #define SHUT_RDWR 2
 
 // Socket options
 #define SOL_SOCKET 1
 
-#define SO_DEBUG 1
+#define SO_DEBUG     1
 #define SO_REUSEADDR 2
-#define SO_TYPE 3
-#define SO_ERROR 4
+#define SO_TYPE      3
+#define SO_ERROR     4
 #define SO_DONTROUTE 5
 #define SO_BROADCAST 6
-#define SO_SNDBUF 7
-#define SO_RCVBUF 8
+#define SO_SNDBUF    7
+#define SO_RCVBUF    8
 #define SO_KEEPALIVE 9
-#define SO_DOMAIN 39
-#define SO_PASSCRED 16
-#define SO_PEERCRED 17
+#define SO_DOMAIN    39
+#define SO_PASSCRED  16
+#define SO_PEERCRED  17
 
 // MSG flags
-#define MSG_PEEK 0x02
+#define MSG_PEEK     0x02
 #define MSG_DONTWAIT 0x40
 
 // UNIX_PATH_MAX

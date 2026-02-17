@@ -152,7 +152,10 @@ int init_serial() {
     serial_initialized = true;
     uint64_t virt      = (uint64_t)phys_to_virt(fdt_serial.base_addr);
     page_map_range(
-        get_kernel_pagedir(), virt, fdt_serial.base_addr, PAGE_SIZE,
+        get_kernel_pagedir(),
+        virt,
+        fdt_serial.base_addr,
+        PAGE_SIZE,
         ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_ACCESSED
             | ARCH_PT_FLAG_DIRTY
     );

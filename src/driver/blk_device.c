@@ -29,7 +29,10 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     size_t page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
     uint64_t phys     = alloc_frames(page_size);
     page_map_range(
-        get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys, page_size * PAGE_SIZE,
+        get_current_directory(),
+        (uint64_t)driver_phys_to_virt(phys),
+        phys,
+        page_size * PAGE_SIZE,
         KERNEL_PTE_FLAGS
     );
     uint8_t *kbuf = driver_phys_to_virt(phys);
@@ -118,7 +121,10 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     size_t page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
     uint64_t phys     = alloc_frames(page_size);
     page_map_range(
-        get_current_directory(), (uint64_t)driver_phys_to_virt(phys), phys, page_size * PAGE_SIZE,
+        get_current_directory(),
+        (uint64_t)driver_phys_to_virt(phys),
+        phys,
+        page_size * PAGE_SIZE,
         KERNEL_PTE_FLAGS
     );
     uint8_t *tmp = driver_phys_to_virt(phys);

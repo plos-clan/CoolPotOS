@@ -2,16 +2,16 @@
 
 #include "types.h"
 
-#define XHCI_PORT_CCS (1u << 0)
-#define XHCI_PORT_PED (1u << 1)
-#define XHCI_PORT_PR (1u << 4)
-#define XHCI_PORT_PLS (0xfu << 5)
-#define XHCI_PORT_PP (1u << 9)
-#define XHCI_PORT_CSC (1u << 17)
-#define XHCI_PORT_PRC (1u << 21)
-#define XHCI_PORT_RW1C_MASK 0xfe0000u
+#define XHCI_PORT_CCS         (1u << 0)
+#define XHCI_PORT_PED         (1u << 1)
+#define XHCI_PORT_PR          (1u << 4)
+#define XHCI_PORT_PLS         (0xfu << 5)
+#define XHCI_PORT_PP          (1u << 9)
+#define XHCI_PORT_CSC         (1u << 17)
+#define XHCI_PORT_PRC         (1u << 21)
+#define XHCI_PORT_RW1C_MASK   0xfe0000u
 #define XHCI_PORT_SPEED_SHIFT 10
-#define XHCI_PORT_SPEED_MASK 0xfu
+#define XHCI_PORT_SPEED_MASK  0xfu
 
 typedef struct Port {
     int id;

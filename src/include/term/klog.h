@@ -2,14 +2,14 @@
 
 #define KMSG_SIZE (1 << 17) // 内核日志环形缓冲区大小 (128k)
 
-#define BLACK 0   // 黑
-#define RED 1     // 红
-#define GREEN 2   // 绿
-#define YELLOW 3  // 黄
-#define BLUE 4    // 蓝
+#define BLACK   0 // 黑
+#define RED     1 // 红
+#define GREEN   2 // 绿
+#define YELLOW  3 // 黄
+#define BLUE    4 // 蓝
 #define MAGENTA 5 // 品红
-#define CYAN 6    // 青
-#define WHITE 7   // 白
+#define CYAN    6 // 青
+#define WHITE   7 // 白
 
 #define ksuccess(...)                                                                              \
     do {                                                                                           \

@@ -13,22 +13,22 @@
 #define FLAG_BITS ((size_t)7) // 所有标志位
 
 // 两倍字长对齐和 16k 对齐
-#define PADDING(size) (((size) + 2 * sizeof(size_t) - 1) & ~(2 * sizeof(size_t) - 1))
-#define PADDING_4k(size) (((size) + SIZE_4k - 1) & ~(size_t)(SIZE_4k - 1))
+#define PADDING(size)     (((size) + 2 * sizeof(size_t) - 1) & ~(2 * sizeof(size_t) - 1))
+#define PADDING_4k(size)  (((size) + SIZE_4k - 1) & ~(size_t)(SIZE_4k - 1))
 #define PADDING_16k(size) (((size) + SIZE_16k - 1) & ~(size_t)(SIZE_16k - 1))
-#define PADDING_2M(size) (((size) + SIZE_2M - 1) & ~(size_t)(SIZE_2M - 1))
-#define PADDING_1G(size) (((size) + SIZE_1G - 1) & ~(size_t)(SIZE_1G - 1))
+#define PADDING_2M(size)  (((size) + SIZE_2M - 1) & ~(size_t)(SIZE_2M - 1))
+#define PADDING_1G(size)  (((size) + SIZE_1G - 1) & ~(size_t)(SIZE_1G - 1))
 
-#define blk_prevtail(ptr) (((size_t *)ptr)[-2])               // 上一个块的尾部标记
-#define blk_head(ptr) (((size_t *)ptr)[-1])                   // 块头部标记
-#define blk_tail(ptr, size) (((size_t *)(ptr + size))[0])     // 块尾部标记
+#define blk_prevtail(ptr)       (((size_t *)ptr)[-2])         // 上一个块的尾部标记
+#define blk_head(ptr)           (((size_t *)ptr)[-1])         // 块头部标记
+#define blk_tail(ptr, size)     (((size_t *)(ptr + size))[0]) // 块尾部标记
 #define blk_nexthead(ptr, size) (((size_t *)(ptr + size))[1]) // 下一个块的头部标记
 
-#define blk_noprev(ptr) ((bool)(blk_prevtail(ptr) & AREA_FLAG))             // 是否有上一个块
+#define blk_noprev(ptr)       ((bool)(blk_prevtail(ptr) & AREA_FLAG))       // 是否有上一个块
 #define blk_nonext(ptr, size) ((bool)(blk_nexthead(ptr, size) & AREA_FLAG)) // 是否有下一个块
 
-#define blk_freed(ptr) (blk_head(ptr) & FREE_FLAG) // 是否已释放
-#define blk_alloced(ptr) (!blk_freed(ptr))         // 是否已分配
+#define blk_freed(ptr)   (blk_head(ptr) & FREE_FLAG) // 是否已释放
+#define blk_alloced(ptr) (!blk_freed(ptr))           // 是否已分配
 
 static inline void blk_setalloced(void *ptr, size_t size) {
     blk_head(ptr) &= ~FREE_FLAG;

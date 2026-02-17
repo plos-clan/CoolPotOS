@@ -1,65 +1,65 @@
 #pragma once
 
-#define PR_SET_PDEATHSIG 1
-#define PR_GET_PDEATHSIG 2
-#define PR_GET_DUMPABLE 3
-#define PR_SET_DUMPABLE 4
-#define PR_GET_UNALIGN 5
-#define PR_SET_UNALIGN 6
-#define PR_GET_KEEPCAPS 7
-#define PR_SET_KEEPCAPS 8
-#define PR_GET_FPEMU 9
-#define PR_SET_FPEMU 10
-#define PR_GET_FPEXC 11
-#define PR_SET_FPEXC 12
-#define PR_GET_TIMING 13
-#define PR_SET_TIMING 14
-#define PR_SET_NAME 15
-#define PR_GET_NAME 16
-#define PR_GET_ENDIAN 19
-#define PR_SET_ENDIAN 20
-#define PR_GET_SECCOMP 21
-#define PR_SET_SECCOMP 22
-#define PR_CAPBSET_READ 23
-#define PR_CAPBSET_DROP 24
-#define PR_SET_NO_NEW_PRIVS 38
-#define PR_GET_NO_NEW_PRIVS 39
-#define PR_MCE_KILL 33
-#define PR_MCE_KILL_GET 34
-#define PR_SET_MM 35
-#define PR_SET_PTRACER 0x59616d61 // 'Yama' magic value
-#define PR_SET_THP_DISABLE 41
-#define PR_GET_THP_DISABLE 42
+#define PR_SET_PDEATHSIG            1
+#define PR_GET_PDEATHSIG            2
+#define PR_GET_DUMPABLE             3
+#define PR_SET_DUMPABLE             4
+#define PR_GET_UNALIGN              5
+#define PR_SET_UNALIGN              6
+#define PR_GET_KEEPCAPS             7
+#define PR_SET_KEEPCAPS             8
+#define PR_GET_FPEMU                9
+#define PR_SET_FPEMU                10
+#define PR_GET_FPEXC                11
+#define PR_SET_FPEXC                12
+#define PR_GET_TIMING               13
+#define PR_SET_TIMING               14
+#define PR_SET_NAME                 15
+#define PR_GET_NAME                 16
+#define PR_GET_ENDIAN               19
+#define PR_SET_ENDIAN               20
+#define PR_GET_SECCOMP              21
+#define PR_SET_SECCOMP              22
+#define PR_CAPBSET_READ             23
+#define PR_CAPBSET_DROP             24
+#define PR_SET_NO_NEW_PRIVS         38
+#define PR_GET_NO_NEW_PRIVS         39
+#define PR_MCE_KILL                 33
+#define PR_MCE_KILL_GET             34
+#define PR_SET_MM                   35
+#define PR_SET_PTRACER              0x59616d61 // 'Yama' magic value
+#define PR_SET_THP_DISABLE          41
+#define PR_GET_THP_DISABLE          42
 #define PR_TASK_PERF_EVENTS_DISABLE 31
-#define PR_TASK_PERF_EVENTS_ENABLE 32
-#define PR_GET_SPECULATION_CTRL 52
-#define PR_SET_SPECULATION_CTRL 53
+#define PR_TASK_PERF_EVENTS_ENABLE  32
+#define PR_GET_SPECULATION_CTRL     52
+#define PR_SET_SPECULATION_CTRL     53
 
-#define CLONE_VM 0x00000100      /* set if VM shared between processes */
-#define CLONE_FS 0x00000200      /* set if fs info shared between processes */
-#define CLONE_FILES 0x00000400   /* set if open files shared between processes */
-#define CLONE_SIGHAND 0x00000800 /* set if signal handlers and blocked signals shared */
-#define CLONE_PIDFD 0x00001000   /* set if a pidfd should be placed in parent */
-#define CLONE_PTRACE 0x00002000  /* set if we want to let tracing continue on the child too */
-#define CLONE_VFORK 0x00004000   /* set if the parent wants the child to wake it up on mm_release */
-#define CLONE_PARENT 0x00008000  /* set if we want to have the same parent as the cloner */
-#define CLONE_THREAD 0x00010000  /* Same thread group? */
-#define CLONE_NEWNS 0x00020000   /* New mount namespace group */
-#define CLONE_SYSVSEM 0x00040000 /* share system V SEM_UNDO semantics */
-#define CLONE_SETTLS 0x00080000  /* create a new TLS for the child */
-#define CLONE_PARENT_SETTID 0x00100000  /* set the TID in the parent */
+#define CLONE_VM             0x00000100 /* set if VM shared between processes */
+#define CLONE_FS             0x00000200 /* set if fs info shared between processes */
+#define CLONE_FILES          0x00000400 /* set if open files shared between processes */
+#define CLONE_SIGHAND        0x00000800 /* set if signal handlers and blocked signals shared */
+#define CLONE_PIDFD          0x00001000 /* set if a pidfd should be placed in parent */
+#define CLONE_PTRACE         0x00002000 /* set if we want to let tracing continue on the child too */
+#define CLONE_VFORK          0x00004000 /* set if the parent wants the child to wake it up on mm_release */
+#define CLONE_PARENT         0x00008000 /* set if we want to have the same parent as the cloner */
+#define CLONE_THREAD         0x00010000 /* Same thread group? */
+#define CLONE_NEWNS          0x00020000 /* New mount namespace group */
+#define CLONE_SYSVSEM        0x00040000 /* share system V SEM_UNDO semantics */
+#define CLONE_SETTLS         0x00080000 /* create a new TLS for the child */
+#define CLONE_PARENT_SETTID  0x00100000 /* set the TID in the parent */
 #define CLONE_CHILD_CLEARTID 0x00200000 /* clear the TID in the child */
-#define CLONE_DETACHED 0x00400000       /* Unused, ignored */
+#define CLONE_DETACHED       0x00400000 /* Unused, ignored */
 #define CLONE_UNTRACED                                                                             \
     0x00800000 /* set if the tracing process can't force CLONE_PTRACE on this clone */
 #define CLONE_CHILD_SETTID 0x01000000 /* set the TID in the child */
-#define CLONE_NEWCGROUP 0x02000000    /* New cgroup namespace */
-#define CLONE_NEWUTS 0x04000000       /* New utsname namespace */
-#define CLONE_NEWIPC 0x08000000       /* New ipc namespace */
-#define CLONE_NEWUSER 0x10000000      /* New user namespace */
-#define CLONE_NEWPID 0x20000000       /* New pid namespace */
-#define CLONE_NEWNET 0x40000000       /* New network namespace */
-#define CLONE_IO 0x80000000           /* Clone io context */
+#define CLONE_NEWCGROUP    0x02000000 /* New cgroup namespace */
+#define CLONE_NEWUTS       0x04000000 /* New utsname namespace */
+#define CLONE_NEWIPC       0x08000000 /* New ipc namespace */
+#define CLONE_NEWUSER      0x10000000 /* New user namespace */
+#define CLONE_NEWPID       0x20000000 /* New pid namespace */
+#define CLONE_NEWNET       0x40000000 /* New network namespace */
+#define CLONE_IO           0x80000000 /* Clone io context */
 
 typedef struct process_control_block *pcb_t;
 typedef struct thread_control_block *tcb_t;

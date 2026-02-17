@@ -2,12 +2,12 @@
 #include "mem/heap.h"
 #include "term/klog.h"
 
-#define WT size_t
-#define WS (sizeof(WT))
-#define SS (sizeof(size_t))
-#define ALIGN (sizeof(size_t) - 1)
-#define ONES ((size_t)-1 / UCHAR_MAX)
-#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
+#define WT         size_t
+#define WS         (sizeof(WT))
+#define SS         (sizeof(size_t))
+#define ALIGN      (sizeof(size_t) - 1)
+#define ONES       ((size_t)-1 / UCHAR_MAX)
+#define HIGHS      (ONES * (UCHAR_MAX / 2 + 1))
 #define HASZERO(x) ((x) - ONES & ~(x) & HIGHS)
 #define BITOP(a, b, op)                                                                            \
     ((a)[(size_t)(b) / (8 * sizeof *(a))] op(size_t) 1 << ((size_t)(b) % (8 * sizeof *(a))))
@@ -319,8 +319,8 @@ size_t strnlen(const char *s, size_t n) {
 
 #define ALIGN (sizeof(size_t))
 
-#define ONES ((size_t)-1 / UCHAR_MAX)
-#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
+#define ONES       ((size_t)-1 / UCHAR_MAX)
+#define HIGHS      (ONES * (UCHAR_MAX / 2 + 1))
 #define HASZERO(x) ((x) - ONES & ~(x) & HIGHS)
 
 size_t strlen(const char *s) {
@@ -444,7 +444,8 @@ char *strtok(char *str, const char *delim) {
 }
 
 int64_t strtol(
-    const char *str, char **endptr,
+    const char *str,
+    char **endptr,
     int base
 ) { // NOLINT(*-function-cognitive-complexity)
     const char *s   = str;

@@ -15,7 +15,8 @@ const char *zone_names[__MAX_NR_ZONES] = {
 #if defined(__x86_64__)
     "DMA",
 #endif
-    "DMA32", "Normal"
+    "DMA32",
+    "Normal"
 };
 
 page_t *mem_map               = NULL;
@@ -560,7 +561,10 @@ void percpu_pagecache_init() {
         uint64_t pset_phy     = alloc_frames(page_size);
         zone->per_cpu_pageset = (per_cpu_pages_t *)driver_phys_to_virt(pset_phy);
         page_map_range(
-            get_kernel_pagedir(), (uint64_t)zone->per_cpu_pageset, pset_phy, total_size,
+            get_kernel_pagedir(),
+            (uint64_t)zone->per_cpu_pageset,
+            pset_phy,
+            total_size,
             KERNEL_PTE_FLAGS
         );
 
@@ -732,7 +736,8 @@ void init_frame_buddy(uint64_t memory_size) {
     frame_allocator.usable_frames = origin_frames;
     frame_allocator.total_frames  = total_frames;
     logkf(
-        "buddy: total frames = %zu, usable_frames = %zu\n", total_frames,
+        "buddy: total frames = %zu, usable_frames = %zu\n",
+        total_frames,
         frame_allocator.usable_frames
     );
 }

@@ -5,7 +5,7 @@
 #include "term/klog.h"
 
 #define PCI_COMMAND_PORT 0xCF8
-#define PCI_DATA_PORT 0xCFC
+#define PCI_DATA_PORT    0xCFC
 
 extern pci_device_t *pci_devices[PCI_DEVICE_MAX];
 extern uint32_t pci_device_number;

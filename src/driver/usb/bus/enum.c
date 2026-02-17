@@ -23,16 +23,17 @@ bool usb_device_enumerate(UsbDevice *dev) {
     }
 
     if (!usb_device_submit_control(
-            dev, (ControlTransferArgs){
-                     .setup =
-                         (SetupPacket){
-                                       .request_type = USB_REQ_DIR_IN,
-                                       .request      = USB_REQ_GET_DESCRIPTOR,
-                                       .value        = (uint16_t)((USB_DESC_DEVICE << 8) | 0),
-                                       .index        = 0,
-                                       .length       = (uint16_t)sizeof(DeviceDescriptor),
-                                       },
-                     .buffer_phys = desc_phys,
+            dev,
+            (ControlTransferArgs){
+                .setup =
+                    (SetupPacket){
+                                  .request_type = USB_REQ_DIR_IN,
+                                  .request      = USB_REQ_GET_DESCRIPTOR,
+                                  .value        = (uint16_t)((USB_DESC_DEVICE << 8) | 0),
+                                  .index        = 0,
+                                  .length       = (uint16_t)sizeof(DeviceDescriptor),
+                                  },
+                .buffer_phys = desc_phys,
     }
         )) {
         usb_free_dma_pages(desc_virt, 1);
@@ -50,16 +51,17 @@ bool usb_device_enumerate(UsbDevice *dev) {
     }
 
     if (!usb_device_submit_control(
-            dev, (ControlTransferArgs){
-                     .setup =
-                         (SetupPacket){
-                                       .request_type = USB_REQ_DIR_IN,
-                                       .request      = USB_REQ_GET_DESCRIPTOR,
-                                       .value        = (uint16_t)((USB_DESC_CONFIGURATION << 8) | 0),
-                                       .index        = 0,
-                                       .length       = (uint16_t)sizeof(ConfigurationDescriptor),
-                                       },
-                     .buffer_phys = header_phys,
+            dev,
+            (ControlTransferArgs){
+                .setup =
+                    (SetupPacket){
+                                  .request_type = USB_REQ_DIR_IN,
+                                  .request      = USB_REQ_GET_DESCRIPTOR,
+                                  .value        = (uint16_t)((USB_DESC_CONFIGURATION << 8) | 0),
+                                  .index        = 0,
+                                  .length       = (uint16_t)sizeof(ConfigurationDescriptor),
+                                  },
+                .buffer_phys = header_phys,
     }
         )) {
         usb_free_dma_pages(header_virt, 1);
@@ -81,16 +83,17 @@ bool usb_device_enumerate(UsbDevice *dev) {
     }
 
     if (!usb_device_submit_control(
-            dev, (ControlTransferArgs){
-                     .setup =
-                         (SetupPacket){
-                                       .request_type = USB_REQ_DIR_IN,
-                                       .request      = USB_REQ_GET_DESCRIPTOR,
-                                       .value        = (uint16_t)((USB_DESC_CONFIGURATION << 8) | 0),
-                                       .index        = 0,
-                                       .length       = total_len,
-                                       },
-                     .buffer_phys = config_phys,
+            dev,
+            (ControlTransferArgs){
+                .setup =
+                    (SetupPacket){
+                                  .request_type = USB_REQ_DIR_IN,
+                                  .request      = USB_REQ_GET_DESCRIPTOR,
+                                  .value        = (uint16_t)((USB_DESC_CONFIGURATION << 8) | 0),
+                                  .index        = 0,
+                                  .length       = total_len,
+                                  },
+                .buffer_phys = config_phys,
     }
         )) {
         usb_free_dma_pages(config_virt, pages_needed);
@@ -124,16 +127,17 @@ bool usb_device_enumerate(UsbDevice *dev) {
     UsbEndpointVec_free(&endpoints);
 
     if (!usb_device_submit_control(
-            dev, (ControlTransferArgs){
-                     .setup =
-                         (SetupPacket){
-                                       .request_type = USB_REQ_DIR_OUT,
-                                       .request      = USB_REQ_SET_CONFIGURATION,
-                                       .value        = (uint16_t)config_val,
-                                       .index        = 0,
-                                       .length       = 0,
-                                       },
-                     .buffer_phys = 0,
+            dev,
+            (ControlTransferArgs){
+                .setup =
+                    (SetupPacket){
+                                  .request_type = USB_REQ_DIR_OUT,
+                                  .request      = USB_REQ_SET_CONFIGURATION,
+                                  .value        = (uint16_t)config_val,
+                                  .index        = 0,
+                                  .length       = 0,
+                                  },
+                .buffer_phys = 0,
     }
         )) {
         usb_free_dma_pages(config_virt, pages_needed);
