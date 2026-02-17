@@ -2,12 +2,12 @@
 #include "mem/heap.h"
 #include "term/klog.h"
 
-#define WT         size_t
-#define WS         (sizeof(WT))
-#define SS         (sizeof(size_t))
-#define ALIGN      (sizeof(size_t) - 1)
-#define ONES       ((size_t)-1 / UCHAR_MAX)
-#define HIGHS      (ONES * (UCHAR_MAX / 2 + 1))
+#define WT size_t
+#define WS (sizeof(WT))
+#define SS (sizeof(size_t))
+#define ALIGN (sizeof(size_t) - 1)
+#define ONES ((size_t)-1 / UCHAR_MAX)
+#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
 #define HASZERO(x) ((x) - ONES & ~(x) & HIGHS)
 #define BITOP(a, b, op)                                                                            \
     ((a)[(size_t)(b) / (8 * sizeof *(a))] op(size_t) 1 << ((size_t)(b) % (8 * sizeof *(a))))
@@ -17,7 +17,8 @@ int memcmp(const void *a_, const void *b_, size_t size) {
     const char *a = a_;
     const char *b = b_;
     while (size-- > 0) {
-        if (*a != *b) return *a > *b ? 1 : -1;
+        if (*a != *b)
+            return *a > *b ? 1 : -1;
         a++, b++;
     }
     return 0;
@@ -28,22 +29,26 @@ int memcmp(const void *a_, const void *b_, size_t size) {
 
 void *memset(void *dest, int c, size_t n) {
     unsigned char *s = dest;
-    size_t         k = 0;
+    size_t k = 0;
 
-    if (!n) return dest;
-    s[0]     = c;
+    if (!n)
+        return dest;
+    s[0] = c;
     s[n - 1] = c;
-    if (n <= 2) return dest;
-    s[1]     = c;
-    s[2]     = c;
+    if (n <= 2)
+        return dest;
+    s[1] = c;
+    s[2] = c;
     s[n - 2] = c;
     s[n - 3] = c;
-    if (n <= 6) return dest;
-    s[3]     = c;
+    if (n <= 6)
+        return dest;
+    s[3] = c;
     s[n - 4] = c;
-    if (n <= 8) return dest;
+    if (n <= 8)
+        return dest;
 
-    k  = -(uintptr_t)s & 3;
+    k = -(uintptr_t)s & 3;
     s += k;
     n -= k;
     n &= -4;
@@ -54,31 +59,33 @@ void *memset(void *dest, int c, size_t n) {
 
     u32 c32 = ((u32)-1) / 255 * (unsigned char)c;
 
-    *(u32 *)(s + 0)     = c32;
+    *(u32 *)(s + 0) = c32;
     *(u32 *)(s + n - 4) = c32;
-    if (n <= 8) return dest;
-    *(u32 *)(s + 4)      = c32;
-    *(u32 *)(s + 8)      = c32;
+    if (n <= 8)
+        return dest;
+    *(u32 *)(s + 4) = c32;
+    *(u32 *)(s + 8) = c32;
     *(u32 *)(s + n - 12) = c32;
-    *(u32 *)(s + n - 8)  = c32;
-    if (n <= 24) return dest;
-    *(u32 *)(s + 12)     = c32;
-    *(u32 *)(s + 16)     = c32;
-    *(u32 *)(s + 20)     = c32;
-    *(u32 *)(s + 24)     = c32;
+    *(u32 *)(s + n - 8) = c32;
+    if (n <= 24)
+        return dest;
+    *(u32 *)(s + 12) = c32;
+    *(u32 *)(s + 16) = c32;
+    *(u32 *)(s + 20) = c32;
+    *(u32 *)(s + 24) = c32;
     *(u32 *)(s + n - 28) = c32;
     *(u32 *)(s + n - 24) = c32;
     *(u32 *)(s + n - 20) = c32;
     *(u32 *)(s + n - 16) = c32;
 
-    k  = 24 + ((uintptr_t)s & 4);
+    k = 24 + ((uintptr_t)s & 4);
     s += k;
     n -= k;
 
     u64 c64 = c32 | ((u64)c32 << 32);
     for (; n >= 32; n -= 32, s += 32) {
-        *(u64 *)(s + 0)  = c64;
-        *(u64 *)(s + 8)  = c64;
+        *(u64 *)(s + 0) = c64;
+        *(u64 *)(s + 8) = c64;
         *(u64 *)(s + 16) = c64;
         *(u64 *)(s + 24) = c64;
     }
@@ -96,7 +103,7 @@ void *memset(void *dest, int c, size_t n) {
 #ifndef ARCH_HAS_OPTIMIZED_MEMSET
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
-    unsigned char       *d = dest;
+    unsigned char *d = dest;
     const unsigned char *s = src;
 
 #    ifdef __GNUC__
@@ -110,83 +117,86 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 #        endif
 
     typedef uint32_t __attribute__((__may_alias__)) u32;
-    uint32_t                                        w, x;
+    uint32_t w, x;
 
     for (; (uintptr_t)s % 4 && n; n--)
         *d++ = *s++;
 
     if ((uintptr_t)d % 4 == 0) {
         for (; n >= 16; s += 16, d += 16, n -= 16) {
-            *(u32 *)(d + 0)  = *(u32 *)(s + 0);
-            *(u32 *)(d + 4)  = *(u32 *)(s + 4);
-            *(u32 *)(d + 8)  = *(u32 *)(s + 8);
+            *(u32 *)(d + 0) = *(u32 *)(s + 0);
+            *(u32 *)(d + 4) = *(u32 *)(s + 4);
+            *(u32 *)(d + 8) = *(u32 *)(s + 8);
             *(u32 *)(d + 12) = *(u32 *)(s + 12);
         }
         if (n & 8) {
-            *(u32 *)(d + 0)  = *(u32 *)(s + 0);
-            *(u32 *)(d + 4)  = *(u32 *)(s + 4);
-            d               += 8;
-            s               += 8;
+            *(u32 *)(d + 0) = *(u32 *)(s + 0);
+            *(u32 *)(d + 4) = *(u32 *)(s + 4);
+            d += 8;
+            s += 8;
         }
         if (n & 4) {
-            *(u32 *)(d + 0)  = *(u32 *)(s + 0);
-            d               += 4;
-            s               += 4;
+            *(u32 *)(d + 0) = *(u32 *)(s + 0);
+            d += 4;
+            s += 4;
         }
         if (n & 2) {
             *d++ = *s++;
             *d++ = *s++;
         }
-        if (n & 1) { *d = *s; }
+        if (n & 1) {
+            *d = *s;
+        }
         return dest;
     }
 
-    if (n >= 32) switch ((uintptr_t)d % 4) {
+    if (n >= 32)
+        switch ((uintptr_t)d % 4) {
         case 1:
-            w     = *(u32 *)s;
-            *d++  = *s++;
-            *d++  = *s++;
-            *d++  = *s++;
-            n    -= 3;
+            w = *(u32 *)s;
+            *d++ = *s++;
+            *d++ = *s++;
+            *d++ = *s++;
+            n -= 3;
             for (; n >= 17; s += 16, d += 16, n -= 16) {
-                x                = *(u32 *)(s + 1);
-                *(u32 *)(d + 0)  = (w LS 24) | (x RS 8);
-                w                = *(u32 *)(s + 5);
-                *(u32 *)(d + 4)  = (x LS 24) | (w RS 8);
-                x                = *(u32 *)(s + 9);
-                *(u32 *)(d + 8)  = (w LS 24) | (x RS 8);
-                w                = *(u32 *)(s + 13);
+                x = *(u32 *)(s + 1);
+                *(u32 *)(d + 0) = (w LS 24) | (x RS 8);
+                w = *(u32 *)(s + 5);
+                *(u32 *)(d + 4) = (x LS 24) | (w RS 8);
+                x = *(u32 *)(s + 9);
+                *(u32 *)(d + 8) = (w LS 24) | (x RS 8);
+                w = *(u32 *)(s + 13);
                 *(u32 *)(d + 12) = (x LS 24) | (w RS 8);
             }
             break;
         case 2:
-            w     = *(u32 *)s;
-            *d++  = *s++;
-            *d++  = *s++;
-            n    -= 2;
+            w = *(u32 *)s;
+            *d++ = *s++;
+            *d++ = *s++;
+            n -= 2;
             for (; n >= 18; s += 16, d += 16, n -= 16) {
-                x                = *(u32 *)(s + 2);
-                *(u32 *)(d + 0)  = (w LS 16) | (x RS 16);
-                w                = *(u32 *)(s + 6);
-                *(u32 *)(d + 4)  = (x LS 16) | (w RS 16);
-                x                = *(u32 *)(s + 10);
-                *(u32 *)(d + 8)  = (w LS 16) | (x RS 16);
-                w                = *(u32 *)(s + 14);
+                x = *(u32 *)(s + 2);
+                *(u32 *)(d + 0) = (w LS 16) | (x RS 16);
+                w = *(u32 *)(s + 6);
+                *(u32 *)(d + 4) = (x LS 16) | (w RS 16);
+                x = *(u32 *)(s + 10);
+                *(u32 *)(d + 8) = (w LS 16) | (x RS 16);
+                w = *(u32 *)(s + 14);
                 *(u32 *)(d + 12) = (x LS 16) | (w RS 16);
             }
             break;
         case 3:
-            w     = *(u32 *)s;
-            *d++  = *s++;
-            n    -= 1;
+            w = *(u32 *)s;
+            *d++ = *s++;
+            n -= 1;
             for (; n >= 19; s += 16, d += 16, n -= 16) {
-                x                = *(u32 *)(s + 3);
-                *(u32 *)(d + 0)  = (w LS 8) | (x RS 24);
-                w                = *(u32 *)(s + 7);
-                *(u32 *)(d + 4)  = (x LS 8) | (w RS 24);
-                x                = *(u32 *)(s + 11);
-                *(u32 *)(d + 8)  = (w LS 8) | (x RS 24);
-                w                = *(u32 *)(s + 15);
+                x = *(u32 *)(s + 3);
+                *(u32 *)(d + 0) = (w LS 8) | (x RS 24);
+                w = *(u32 *)(s + 7);
+                *(u32 *)(d + 4) = (x LS 8) | (w RS 24);
+                x = *(u32 *)(s + 11);
+                *(u32 *)(d + 8) = (w LS 8) | (x RS 24);
+                w = *(u32 *)(s + 15);
                 *(u32 *)(d + 12) = (x LS 8) | (w RS 24);
             }
             break;
@@ -229,7 +239,9 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
         *d++ = *s++;
         *d++ = *s++;
     }
-    if (n & 1) { *d = *s; }
+    if (n & 1) {
+        *d = *s;
+    }
     return dest;
 #    endif
 
@@ -242,16 +254,19 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 
 #ifndef ARCH_HAS_OPTIMIZED_MEMMOVE
 void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cognitive-complexity)
-    char       *d = dest;
+    char *d = dest;
     const char *s = src;
 
-    if (d == s) return d;
-    if (s + n <= d || d + n <= s) return memcpy(d, s, n);
+    if (d == s)
+        return d;
+    if (s + n <= d || d + n <= s)
+        return memcpy(d, s, n);
 
     if (d < s) {
         if ((uintptr_t)s % WS == (uintptr_t)d % WS) {
             while ((uintptr_t)d % WS) {
-                if (!n--) return dest;
+                if (!n--)
+                    return dest;
                 *d++ = *s++;
             }
             for (; n >= WS; n -= WS, d += WS, s += WS)
@@ -262,7 +277,8 @@ void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cogn
     } else {
         if ((uintptr_t)s % WS == (uintptr_t)d % WS) {
             while ((uintptr_t)(d + n) % WS) {
-                if (!n--) return dest;
+                if (!n--)
+                    return dest;
                 d[n] = s[n];
             }
             while (n >= WS)
@@ -278,12 +294,12 @@ void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cogn
 
 void *memchr(const void *src, int c, size_t n) {
     const unsigned char *s = src;
-    c                      = (unsigned char)c;
+    c = (unsigned char)c;
     for (; ((uintptr_t)s & ALIGN) && n && *s != c; s++, n--)
         ;
     if (n && *s != c) {
         size_t *w = 0;
-        size_t  k = ONES * c;
+        size_t k = ONES * c;
         for (w = (void *)s; n >= SS && !HASZERO(*w ^ k); w++, n -= SS)
             ;
         for (s = (const void *)w; n && *s != c; s++, n--)
@@ -303,15 +319,16 @@ size_t strnlen(const char *s, size_t n) {
 
 #define ALIGN (sizeof(size_t))
 
-#define ONES       ((size_t)-1 / UCHAR_MAX)
-#define HIGHS      (ONES * (UCHAR_MAX / 2 + 1))
+#define ONES ((size_t)-1 / UCHAR_MAX)
+#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
 #define HASZERO(x) ((x) - ONES & ~(x) & HIGHS)
 
 size_t strlen(const char *s) {
     const char *a = s;
-    size_t     *w = NULL;
+    size_t *w = NULL;
     for (; (uintptr_t)s % ALIGN; s++)
-        if (!*s) return s - a;
+        if (!*s)
+            return s - a;
     for (w = (void *)s; !HASZERO(*w); w++)
         ;
     for (s = (const void *)w; *s; s++)
@@ -330,7 +347,8 @@ char *strcat(char *dest, const char *src) {
 
 char *strchrnul(const char *s, int c) {
     while (*s) {
-        if ((*s++) == c) break;
+        if ((*s++) == c)
+            break;
     }
     return (char *)s;
 }
@@ -339,8 +357,10 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     const unsigned char *p1 = (const unsigned char *)s1;
     const unsigned char *p2 = (const unsigned char *)s2;
     while (n-- > 0) {
-        if (*p1 != *p2) return *p1 - *p2;
-        if (*p1 == '\0') return 0;
+        if (*p1 != *p2)
+            return *p1 - *p2;
+        if (*p1 == '\0')
+            return 0;
         p1++, p2++;
     }
     return 0;
@@ -348,7 +368,9 @@ int strncmp(const char *s1, const char *s2, size_t n) {
 
 char *strchr(const char *s, int c) {
     while (*s) {
-        if (*s == (char)c) { return (char *)s; }
+        if (*s == (char)c) {
+            return (char *)s;
+        }
         s++;
     }
     return (*s == (char)c) ? (char *)s : NULL;
@@ -373,8 +395,12 @@ int strcmp(const char *s1, const char *s2) {
     }
 
     if (is_equal) {
-        if (*s1 != '\0') { return 1; }
-        if (*s2 != '\0') { return -1; }
+        if (*s1 != '\0') {
+            return 1;
+        }
+        if (*s2 != '\0') {
+            return -1;
+        }
         return 0;
     }
     return (int)(*s1 - *s2);
@@ -417,38 +443,42 @@ char *strtok(char *str, const char *delim) {
     return start;
 }
 
-int64_t strtol(const char *str, char **endptr,
-               int base) { // NOLINT(*-function-cognitive-complexity)
-    const char *s      = str;
-    uint64_t    acc    = 0;
-    char        c      = '\0';
-    uint64_t    cutoff = 0;
-    uint64_t    neg    = 0;
-    uint64_t    any    = 0;
-    uint64_t    cutlim = 0;
+int64_t strtol(
+    const char *str, char **endptr,
+    int base) { // NOLINT(*-function-cognitive-complexity)
+    const char *s = str;
+    uint64_t acc = 0;
+    char c = '\0';
+    uint64_t cutoff = 0;
+    uint64_t neg = 0;
+    uint64_t any = 0;
+    uint64_t cutlim = 0;
     do {
         c = *s++;
     } while (isspace((unsigned char)c));
     if (c == '-') {
         neg = 1;
-        c   = *s++;
+        c = *s++;
     } else {
         neg = 0;
-        if (c == '+') c = *s++;
+        if (c == '+')
+            c = *s++;
     }
-    if ((base == 0 || base == 16) && c == '0' && (*s == 'x' || *s == 'X') &&
-        ((s[1] >= '0' && s[1] <= '9') || (s[1] >= 'A' && s[1] <= 'F') ||
-         (s[1] >= 'a' && s[1] <= 'f'))) {
-        c     = s[1];
-        s    += 2;
-        base  = 16;
+    if ((base == 0 || base == 16) && c == '0' && (*s == 'x' || *s == 'X')
+        && ((s[1] >= '0' && s[1] <= '9') || (s[1] >= 'A' && s[1] <= 'F')
+            || (s[1] >= 'a' && s[1] <= 'f'))) {
+        c = s[1];
+        s += 2;
+        base = 16;
     }
-    if (base == 0) base = c == '0' ? 8 : 10;
+    if (base == 0)
+        base = c == '0' ? 8 : 10;
     acc = any = 0;
-    if (base < 2 || base > 36) goto noconv;
+    if (base < 2 || base > 36)
+        goto noconv;
 
-    cutoff  = neg ? (unsigned long)-(LONG_MIN + LONG_MAX) + LONG_MAX : LONG_MAX;
-    cutlim  = cutoff % base;
+    cutoff = neg ? (unsigned long)-(LONG_MIN + LONG_MAX) + LONG_MAX : LONG_MAX;
+    cutlim = cutoff % base;
     cutoff /= base;
     for (;; c = *s++) {
         if (c >= '0' && c <= '9')
@@ -459,11 +489,12 @@ int64_t strtol(const char *str, char **endptr,
             c -= 'a' - 10;
         else
             break;
-        if (c >= base) break;
+        if (c >= base)
+            break;
         if (any < 0 || acc > cutoff || (acc == cutoff && ((uint64_t)c) > cutlim))
             any = -1;
         else {
-            any  = 1;
+            any = 1;
             acc *= base;
             acc += c;
         }
@@ -472,7 +503,8 @@ int64_t strtol(const char *str, char **endptr,
     noconv: {}
     } else if (neg)
         acc = -acc;
-    if ((void *)endptr != NULL) *endptr = (char *)(any ? s - 1 : str);
+    if ((void *)endptr != NULL)
+        *endptr = (char *)(any ? s - 1 : str);
     return (int64_t)(acc);
 }
 
@@ -489,26 +521,34 @@ void not_null_assert(void *ptr, const char *msg) {
 }
 
 char *strdup(const char *str) {
-    if (str == NULL) return NULL;
+    if (str == NULL)
+        return NULL;
 
     char *strat = (char *)str;
-    int   len   = 0;
+    int len = 0;
     while (*str++ != '\0')
         len++;
     char *ret = (char *)malloc(len + 1);
 
-    while ((*ret++ = *strat++) != '\0') {}
+    while ((*ret++ = *strat++) != '\0') {
+    }
 
     return ret - (len + 1);
 }
 
 char *strndup(const char *s, size_t n) {
-    if (s == NULL) { return NULL; }
+    if (s == NULL) {
+        return NULL;
+    }
 
     size_t actual_len = strlen(s);
-    if (n < actual_len) { actual_len = n; }
+    if (n < actual_len) {
+        actual_len = n;
+    }
     char *new_str = (char *)malloc(actual_len + 1);
-    if (new_str == NULL) { return NULL; }
+    if (new_str == NULL) {
+        return NULL;
+    }
 
     size_t i;
     for (i = 0; i < actual_len; i++) {
@@ -523,7 +563,9 @@ char *strndup(const char *s, size_t n) {
 char *strrchr(const char *s, int c) {
     char *last = NULL;
     while (*s) {
-        if (*s == (char)c) { last = (char *)s; }
+        if (*s == (char)c) {
+            last = (char *)s;
+        }
         s++;
     }
     return (c == '\0') ? (char *)s : last;
@@ -565,14 +607,15 @@ static char *fourbyte_strstr(const unsigned char *h, const unsigned char *n) {
 
 static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
     const unsigned char *z;
-    size_t               l, ip, jp, k, p, ms, p0, mem, mem0;
-    size_t               byteset[32 / sizeof(size_t)] = {0};
-    size_t               shift[256];
+    size_t l, ip, jp, k, p, ms, p0, mem, mem0;
+    size_t byteset[32 / sizeof(size_t)] = {0};
+    size_t shift[256];
 
     /* Computing length of needle and fill shift table */
     for (l = 0; n[l] && h[l]; l++)
         BITOP(byteset, n[l], |=), shift[n[l]] = l + 1;
-    if (n[l]) return 0; /* hit the end of h */
+    if (n[l])
+        return 0; /* hit the end of h */
 
     /* Compute maximal suffix */
     ip = -1;
@@ -582,13 +625,13 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         if (n[ip + k] == n[jp + k]) {
             if (k == p) {
                 jp += p;
-                k   = 1;
+                k = 1;
             } else
                 k++;
         } else if (n[ip + k] > n[jp + k]) {
             jp += k;
-            k   = 1;
-            p   = jp - ip;
+            k = 1;
+            p = jp - ip;
         } else {
             ip = jp++;
             k = p = 1;
@@ -605,13 +648,13 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         if (n[ip + k] == n[jp + k]) {
             if (k == p) {
                 jp += p;
-                k   = 1;
+                k = 1;
             } else
                 k++;
         } else if (n[ip + k] < n[jp + k]) {
             jp += k;
-            k   = 1;
-            p   = jp - ip;
+            k = 1;
+            p = jp - ip;
         } else {
             ip = jp++;
             k = p = 1;
@@ -625,7 +668,7 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
     /* Periodic needle? */
     if (memcmp(n, n + p, ms + 1)) {
         mem0 = 0;
-        p    = MAX(ms, l - ms - 1) + 1;
+        p = MAX(ms, l - ms - 1) + 1;
     } else
         mem0 = l - p;
     mem = 0;
@@ -638,11 +681,12 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         /* Update incremental end-of-haystack pointer */
         if (z - h < l) {
             /* Fast estimate for MIN(l,63) */
-            size_t               grow = l | 63;
-            const unsigned char *z2   = memchr(z, 0, grow);
+            size_t grow = l | 63;
+            const unsigned char *z2 = memchr(z, 0, grow);
             if (z2) {
                 z = z2;
-                if (z - h < l) return 0;
+                if (z - h < l)
+                    return 0;
             } else
                 z += grow;
         }
@@ -650,16 +694,17 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         /* Check last byte first; advance by shift on mismatch */
         if (BITOP(byteset, h[l - 1], &)) {
             k = l - shift[h[l - 1]];
-            //printf("adv by %zu (on %c) at [%s] (%zu;l=%zu)\n", k, h[l-1], h, shift[h[l-1]], l);
+            // printf("adv by %zu (on %c) at [%s] (%zu;l=%zu)\n", k, h[l-1], h, shift[h[l-1]], l);
             if (k) {
-                if (mem0 && mem && k < p) k = l - p;
-                h   += k;
-                mem  = 0;
+                if (mem0 && mem && k < p)
+                    k = l - p;
+                h += k;
+                mem = 0;
                 continue;
             }
         } else {
-            h   += l;
-            mem  = 0;
+            h += l;
+            mem = 0;
             continue;
         }
 
@@ -667,32 +712,41 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         for (k = MAX(ms + 1, mem); n[k] && n[k] == h[k]; k++)
             ;
         if (n[k]) {
-            h   += k - ms;
-            mem  = 0;
+            h += k - ms;
+            mem = 0;
             continue;
         }
         /* Compare left half */
         for (k = ms + 1; k > mem && n[k - 1] == h[k - 1]; k--)
             ;
-        if (k <= mem) return (char *)h;
-        h   += p;
-        mem  = mem0;
+        if (k <= mem)
+            return (char *)h;
+        h += p;
+        mem = mem0;
     }
 }
 
 char *strstr(const char *h, const char *n) {
     /* Return immediately on empty needle */
-    if (!n[0]) return (char *)h;
+    if (!n[0])
+        return (char *)h;
 
     /* Use faster algorithms for short needles */
     h = strchr(h, *n);
-    if (!h || !n[1]) return (char *)h;
-    if (!h[1]) return 0;
-    if (!n[2]) return twobyte_strstr((void *)h, (void *)n);
-    if (!h[2]) return 0;
-    if (!n[3]) return threebyte_strstr((void *)h, (void *)n);
-    if (!h[3]) return 0;
-    if (!n[4]) return fourbyte_strstr((void *)h, (void *)n);
+    if (!h || !n[1])
+        return (char *)h;
+    if (!h[1])
+        return 0;
+    if (!n[2])
+        return twobyte_strstr((void *)h, (void *)n);
+    if (!h[2])
+        return 0;
+    if (!n[3])
+        return threebyte_strstr((void *)h, (void *)n);
+    if (!h[3])
+        return 0;
+    if (!n[4])
+        return fourbyte_strstr((void *)h, (void *)n);
 
     return twoway_strstr((void *)h, (void *)n);
 }
@@ -711,26 +765,34 @@ unsigned long strtoul(const char *restrict cp, char **restrict endp, int base) {
             }
         }
     } else if (base == 16) {
-        if (cp[0] == '0' && TOLOWER(cp[1]) == 'x') cp += 2;
+        if (cp[0] == '0' && TOLOWER(cp[1]) == 'x')
+            cp += 2;
     }
     while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10) < base) {
         result = result * base + value;
         cp++;
     }
-    if (endp) *endp = (char *)cp;
+    if (endp)
+        *endp = (char *)cp;
     return result;
 }
 
 int atoi(const char *pstr) {
-    int Ret_Integer  = 0;
+    int Ret_Integer = 0;
     int Integer_sign = 1;
 
-    if (pstr == NULL) { return 0; }
+    if (pstr == NULL) {
+        return 0;
+    }
     while (isspace(*pstr) == 0) {
         pstr++;
     }
-    if (*pstr == '-') { Integer_sign = -1; }
-    if (*pstr == '-' || *pstr == '+') { pstr++; }
+    if (*pstr == '-') {
+        Integer_sign = -1;
+    }
+    if (*pstr == '-' || *pstr == '+') {
+        pstr++;
+    }
     while (*pstr >= '0' && *pstr <= '9') {
         Ret_Integer = Ret_Integer * 10 + *pstr - '0';
         pstr++;
@@ -741,16 +803,19 @@ int atoi(const char *pstr) {
 }
 
 int fls(unsigned int x) {
-    if (x == 0) return 0;
+    if (x == 0)
+        return 0;
     return 32 - __builtin_clz(x);
 }
 
 char *normalize_path(const char *path) {
-    if (!path) return NULL;
+    if (!path)
+        return NULL;
 
-    size_t len    = strlen(path);
-    char  *result = malloc(len + 1);
-    if (!result) return NULL;
+    size_t len = strlen(path);
+    char *result = malloc(len + 1);
+    if (!result)
+        return NULL;
 
     char *dup = strdup(path);
     if (!dup) {
@@ -765,7 +830,8 @@ char *normalize_path(const char *path) {
     }
 
     char *start = dup;
-    if (*start == '/') start++;
+    if (*start == '/')
+        start++;
 
     char *token = strtok(start, "/");
     while (token) {
@@ -777,7 +843,8 @@ char *normalize_path(const char *path) {
             else
                 result[1] = '\0';
         } else {
-            if (result[strlen(result) - 1] != '/') strcat(result, "/");
+            if (result[strlen(result) - 1] != '/')
+                strcat(result, "/");
             strcat(result, token);
         }
 
@@ -802,7 +869,8 @@ char **copy_envp(char **envp) {
         count++;
     }
     char **new_envp = malloc((count + 1) * sizeof(char *));
-    if (!new_envp) return NULL;
+    if (!new_envp)
+        return NULL;
     for (size_t i = 0; i < count; i++) {
         new_envp[i] = strdup(envp[i]);
         if (!new_envp[i]) {
@@ -818,7 +886,8 @@ char **copy_envp(char **envp) {
 }
 
 void free_envp(char **envp) {
-    if (!envp) return;
+    if (!envp)
+        return;
     for (size_t i = 0; envp[i] != NULL; i++) {
         free(envp[i]);
     }
@@ -836,10 +905,12 @@ char *pathacat(char *p1, char *p2) {
 }
 
 char *get_parent_path(const char *path) {
-    if (!path || !*path) return strdup(".");
+    if (!path || !*path)
+        return strdup(".");
 
     char *copy = strdup(path);
-    if (!copy) return NULL;
+    if (!copy)
+        return NULL;
 
     char *last_slash = strrchr(copy, '/');
 
@@ -857,11 +928,12 @@ char *get_parent_path(const char *path) {
 
 char *build_proc_cmdline(char **argv, size_t *out_len) {
     if (argv == NULL || out_len == NULL) {
-        if (out_len) *out_len = 0;
+        if (out_len)
+            *out_len = 0;
         return NULL;
     }
     size_t total_length = 0;
-    int    i            = 0;
+    int i = 0;
     while (argv[i] != NULL) {
         total_length += strlen(argv[i]) + 1;
         i++;
@@ -877,12 +949,12 @@ char *build_proc_cmdline(char **argv, size_t *out_len) {
         return NULL;
     }
     char *current_ptr = cmdline_buf;
-    i                 = 0;
+    i = 0;
     while (argv[i] != NULL) {
         size_t len = strlen(argv[i]);
         memcpy(current_ptr, argv[i], len);
-        current_ptr[len]  = '\0';
-        current_ptr      += len + 1;
+        current_ptr[len] = '\0';
+        current_ptr += len + 1;
         i++;
     }
     *out_len = total_length;
@@ -891,22 +963,27 @@ char *build_proc_cmdline(char **argv, size_t *out_len) {
 
 char **restore_argv(const char *cmdline_buf, size_t len, int *out_argc) {
     if (cmdline_buf == NULL || len == 0) {
-        if (out_argc) *out_argc = 0;
+        if (out_argc)
+            *out_argc = 0;
         return NULL;
     }
     int argc = 0;
     for (size_t i = 0; i < len; i++) {
-        if (cmdline_buf[i] == '\0') { argc++; }
+        if (cmdline_buf[i] == '\0') {
+            argc++;
+        }
     }
-    if (out_argc) *out_argc = argc;
+    if (out_argc)
+        *out_argc = argc;
     char **argv = (char **)malloc(sizeof(char *) * (argc + 1));
-    if (!argv) return NULL;
-    const char *ptr   = cmdline_buf;
-    const char *end   = cmdline_buf + len;
-    int         index = 0;
+    if (!argv)
+        return NULL;
+    const char *ptr = cmdline_buf;
+    const char *end = cmdline_buf + len;
+    int index = 0;
     while (ptr < end && index < argc) {
         size_t str_len = strlen(ptr);
-        argv[index]    = (char *)malloc(str_len + 1);
+        argv[index] = (char *)malloc(str_len + 1);
         if (argv[index] == NULL) {
             kerror("malloc failed");
             return NULL;
@@ -921,7 +998,8 @@ char **restore_argv(const char *cmdline_buf, size_t len, int *out_argc) {
 }
 
 void free_argv(char **argv) {
-    if (argv == NULL) return;
+    if (argv == NULL)
+        return;
     for (int i = 0; argv[i] != NULL; i++) {
         free(argv[i]);
     }

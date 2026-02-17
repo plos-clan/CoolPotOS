@@ -14,7 +14,8 @@ int ahci_try_send(struct hba_port *port, int slot) {
         port->regs[HBA_RPxCI] = bitmask;
 
         uint64_t counter = wait_until_expire(!(port->regs[HBA_RPxCI] & bitmask), 10000);
-        if (counter <= 1) return false;
+        if (counter <= 1)
+            return false;
 
         port->regs[HBA_RPxCI] &= ~bitmask; // ensure CI bit is cleared
         if ((port->regs[HBA_RPxTFD] & HBA_PxTFD_ERR)) {
@@ -44,13 +45,16 @@ void ahci_post(struct hba_port *port, struct hba_cmd_state *state, int slot) {
 
     hba_clear_reg(port->regs[HBA_RPxIS]);
 
-    port->cmdctx.issued[slot]  = state;
-    port->cmdctx.tracked_ci   |= bitmask;
-    port->regs[HBA_RPxCI]     |= bitmask;
+    port->cmdctx.issued[slot] = state;
+    port->cmdctx.tracked_ci |= bitmask;
+    port->regs[HBA_RPxCI] |= bitmask;
 
     while (1) {
-        if ((port->regs[HBA_RPxCI] & (1 << slot)) == 0) break;
-        if (port->regs[HBA_RPxIS] & HBA_PxINTR_TFE) { goto err; }
+        if ((port->regs[HBA_RPxCI] & (1 << slot)) == 0)
+            break;
+        if (port->regs[HBA_RPxIS] & HBA_PxINTR_TFE) {
+            goto err;
+        }
     }
 
     if (port->regs[HBA_RPxIS] & HBA_PxINTR_TFE) {

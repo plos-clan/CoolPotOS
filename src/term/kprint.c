@@ -1,8 +1,8 @@
-#include "term/klog.h"
+#include "driver/tty.h"
+#include "krlibc.h"
 #include "lib/sprintf.h"
 #include "lock.h"
-#include "krlibc.h"
-#include "driver/tty.h"
+#include "term/klog.h"
 
 spin_t print_lock = SPIN_INIT;
 

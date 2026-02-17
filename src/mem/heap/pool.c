@@ -1,9 +1,9 @@
+#include "krlibc.h"
 #include "mem/alloc/alloc.h"
 #include "mem/alloc/area.h"
 #include "mem/alloc/block.h"
 #include "mem/alloc/freelist.h"
 #include "term/klog.h"
-#include "krlibc.h"
 
 // mpool_free 中使用的临时函数
 // 用于将内存块从空闲链表中分离
@@ -17,13 +17,15 @@ static void _detach(mpool_t pool, freelist_t ptr) {
 }
 
 bool mpool_init(mpool_t pool, void *ptr, size_t size) {
-    if (pool == NULL || ptr == NULL || size == 0) return false;
-    if (size & (2 * sizeof(size_t) - 1)) return false;
-    pool->ptr          = ptr;
-    pool->size         = size;
+    if (pool == NULL || ptr == NULL || size == 0)
+        return false;
+    if (size & (2 * sizeof(size_t) - 1))
+        return false;
+    pool->ptr = ptr;
+    pool->size = size;
     pool->alloced_size = 0;
-    pool->cb_delmem    = NULL;
-    pool->large_blk    = NULL;
+    pool->cb_delmem = NULL;
+    pool->large_blk = NULL;
 #pragma unroll
     for (size_t i = 0; i < FREELIST_NUM; i++) {
         pool->freed[i] = NULL;
@@ -34,8 +36,10 @@ bool mpool_init(mpool_t pool, void *ptr, size_t size) {
 }
 
 void mpool_deinit(mpool_t pool) {
-    if (pool == NULL) return;
-    if (pool->cb_delmem) pool->cb_delmem(pool->ptr, pool->size);
+    if (pool == NULL)
+        return;
+    if (pool->cb_delmem)
+        pool->cb_delmem(pool->ptr, pool->size);
     *pool = (struct mpool){};
 }
 
@@ -48,24 +52,28 @@ size_t mpool_total_size(mpool_t pool) {
 }
 
 void mpool_setcb(mpool_t pool, cb_reqmem_t reqmem, cb_delmem_t delmem) {
-    if (pool == NULL) return;
+    if (pool == NULL)
+        return;
     pool->cb_reqmem = reqmem;
     pool->cb_delmem = delmem;
 }
 
 static bool mpool_reqmem(mpool_t pool, size_t size) {
-    if (pool->cb_reqmem == NULL) return false;
+    if (pool->cb_reqmem == NULL)
+        return false;
     size_t memsize = PADDING_16k(size);
 
     void *mem = pool->cb_reqmem(pool->ptr + pool->size, memsize);
-    if (mem == NULL) return false;
-    //if (mem != pool->ptr) {
+    if (mem == NULL)
+        return false;
+    // if (mem != pool->ptr) {
     if (mem != pool->ptr + pool->size) {
-        if (pool->cb_delmem) pool->cb_delmem(mem, memsize);
+        if (pool->cb_delmem)
+            pool->cb_delmem(mem, memsize);
         return false;
     }
 
-    void *ptr   = allocarea_reinit(pool->ptr, pool->size, pool->size + memsize);
+    void *ptr = allocarea_reinit(pool->ptr, pool->size, pool->size + memsize);
     pool->size += memsize;
 
     ptr = blk_trymerge(ptr, (blk_detach_t)_detach, pool);
@@ -78,7 +86,8 @@ static bool mpool_reqmem(mpool_t pool, size_t size) {
 static void do_free(mpool_t pool, void *ptr) {
     blk_setfreed(ptr, blk_size(ptr));
     bool puted = freelists_put(pool->freed, ptr);
-    if (!puted) freelist_put(&pool->large_blk, ptr);
+    if (!puted)
+        freelist_put(&pool->large_blk, ptr);
 }
 
 static inline bool try_split_and_free(mpool_t pool, void *ptr, size_t size) {
@@ -97,7 +106,8 @@ void *mpool_alloc(mpool_t pool, size_t size) {
     void *ptr = freelists_match(pool->freed, size) ?: freelist_match(&pool->large_blk, size);
 
     if (ptr == NULL) { // 不足就分配
-        if (!mpool_reqmem(pool, size)) return NULL;
+        if (!mpool_reqmem(pool, size))
+            return NULL;
         ptr = freelist_match(&pool->large_blk, size);
     }
 
@@ -110,8 +120,10 @@ void *mpool_alloc(mpool_t pool, size_t size) {
 }
 
 void *mpool_aligned_alloc(mpool_t pool, size_t size, size_t align) {
-    if (align & (align - 1)) return NULL;                           // 不是 2 的幂次方
-    if (align < 2 * sizeof(size_t)) return mpool_alloc(pool, size); // 对齐小于 2 倍指针大小
+    if (align & (align - 1))
+        return NULL; // 不是 2 的幂次方
+    if (align < 2 * sizeof(size_t))
+        return mpool_alloc(pool, size);                    // 对齐小于 2 倍指针大小
     size = size == 0 ? 2 * sizeof(size_t) : PADDING(size); // 保证最小分配 2 个字长且对齐到 2 倍字长
 
     // 优先从空闲链表中分配
@@ -119,7 +131,8 @@ void *mpool_aligned_alloc(mpool_t pool, size_t size, size_t align) {
                     ?: freelist_aligned_match(&pool->large_blk, size, align);
 
     if (ptr == NULL) { // 不足就分配
-        if (!mpool_reqmem(pool, size + align)) return NULL;
+        if (!mpool_reqmem(pool, size + align))
+            return NULL;
         ptr = freelist_aligned_match(&pool->large_blk, size, align);
     }
 
@@ -139,12 +152,14 @@ void *mpool_aligned_alloc(mpool_t pool, size_t size, size_t align) {
 }
 
 void mpool_free(mpool_t pool, void *ptr) {
-    if (ptr == NULL) return;
+    if (ptr == NULL)
+        return;
 
-    if(blk_head(ptr) & FREE_FLAG) {
+    if (blk_head(ptr) & FREE_FLAG) {
         logkf("ERROR: DOUBLE FREE\n");
         arch_close_interrupt();
-        while (true) arch_wait_for_interrupt();
+        while (true)
+            arch_wait_for_interrupt();
     }
 
     pool->alloced_size -= blk_size(ptr);
@@ -155,12 +170,14 @@ void mpool_free(mpool_t pool, void *ptr) {
 }
 
 size_t mpool_msize(mpool_t pool, void *ptr) {
-    if (ptr == NULL) return 0;
+    if (ptr == NULL)
+        return 0;
     return blk_size(ptr);
 }
 
 void *mpool_realloc(mpool_t pool, void *ptr, size_t newsize) {
-    if (ptr == NULL) return mpool_alloc(pool, newsize);
+    if (ptr == NULL)
+        return mpool_alloc(pool, newsize);
     newsize = newsize == 0 ? 2 * sizeof(size_t) : PADDING(newsize);
 
     size_t size = blk_size(ptr);
@@ -187,8 +204,10 @@ void *mpool_realloc(mpool_t pool, void *ptr, size_t newsize) {
 
 //! 注意 align 和第一次分配时的 align 必须相同
 void *mpool_aligned_realloc(mpool_t pool, void *ptr, size_t newsize, size_t align) {
-    if (ptr == NULL) return mpool_aligned_alloc(pool, newsize, align);
-    if (align & (align - 1)) return NULL; // 不是 2 的幂次方
+    if (ptr == NULL)
+        return mpool_aligned_alloc(pool, newsize, align);
+    if (align & (align - 1))
+        return NULL; // 不是 2 的幂次方
     if (align < 2 * sizeof(size_t))
         return mpool_realloc(pool, ptr, newsize); // 对齐小于 2 倍指针大小
     newsize = newsize == 0 ? 2 * sizeof(size_t) : PADDING(newsize);

@@ -30,4 +30,3 @@ struct cpio_newc_header_t {
 };
 
 void cpio_init(void);
-

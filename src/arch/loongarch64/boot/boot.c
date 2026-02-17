@@ -18,9 +18,8 @@ boot_framebuffer_t *boot_get_framebuffer(size_t index) {
 }
 
 size_t boot_framebuffer_count() {
-    return 0; //TODO
+    return 0; // TODO
 }
-
 
 char *get_kernel_cmdline() {
     return "";
@@ -35,5 +34,6 @@ uint64_t boot_get_dtb() {
 }
 
 _Noreturn void _boot_c_start() {
-    for (;;) arch_wait_for_interrupt();
+    for (;;)
+        arch_wait_for_interrupt();
 }

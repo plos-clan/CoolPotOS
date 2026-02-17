@@ -18,7 +18,9 @@ static void usb_load_device(pci_device_t *device) {
         has_usb_device = true;
         xhci_init(device);
         break;
-    default: kwarn("Unknown USB interface: %x", prog_if); break;
+    default:
+        kwarn("Unknown USB interface: %x", prog_if);
+        break;
     }
 }
 
@@ -36,6 +38,7 @@ void usb_init(void) {
 }
 
 void usb_kservice_setup() {
-    if (!has_usb_device) return;
+    if (!has_usb_device)
+        return;
     create_kernel_thread("usb_service", (void *)xhci_poll_loop, NULL, NULL, NICE_TO_PRIO(0));
 }

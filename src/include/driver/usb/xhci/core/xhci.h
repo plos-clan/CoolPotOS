@@ -1,15 +1,15 @@
 #pragma once
 
-#include "types.h"
-#include "driver/usb/bus/host.h"
 #include "driver/usb/bus/device.h"
-#include "driver/usb/xhci/regs/cap.h"
-#include "driver/usb/xhci/regs/op.h"
-#include "driver/usb/xhci/regs/db.h"
-#include "driver/usb/xhci/regs/port.h"
+#include "driver/usb/bus/host.h"
 #include "driver/usb/xhci/core/ctx.h"
 #include "driver/usb/xhci/core/ring.h"
 #include "driver/usb/xhci/core/slot.h"
+#include "driver/usb/xhci/regs/cap.h"
+#include "driver/usb/xhci/regs/db.h"
+#include "driver/usb/xhci/regs/op.h"
+#include "driver/usb/xhci/regs/port.h"
+#include "types.h"
 
 #define XHCI_MAX_SLOTS 256
 

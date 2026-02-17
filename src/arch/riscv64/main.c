@@ -24,7 +24,7 @@
 #include "task/smp.h"
 #include "term/klog.h"
 
-extern void  arch_cpu_init();
+extern void arch_cpu_init();
 extern void initrd_setup();
 
 USED _Noreturn void kmain() {
@@ -63,7 +63,7 @@ USED _Noreturn void kmain() {
     scheduler_enable();
     arch_open_interrupt();
 
-   // launch_init_process();
+    // launch_init_process();
 
     while (true)
         arch_wait_for_interrupt();

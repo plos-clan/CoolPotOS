@@ -2,6 +2,6 @@
 
 #include "types.h"
 
-typedef struct arch_cpu_{
+typedef struct arch_cpu_ {
 
-}arch_cpu_t;
+} arch_cpu_t;

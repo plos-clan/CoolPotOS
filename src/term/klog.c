@@ -13,12 +13,10 @@ void logk(const char *str) {
 }
 
 void logkf(char *fmt, ...) {
-    char    buf[4096] = {0};
+    char buf[4096] = {0};
     va_list args;
     va_start(args, fmt);
     stbsp_vsprintf(buf, fmt, args);
     va_end(args);
     logk(buf);
 }
-
-

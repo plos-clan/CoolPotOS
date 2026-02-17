@@ -1,18 +1,18 @@
 #pragma once
 
-#include "types.h"
-#include "driver/usb/defs/types.h"
 #include "driver/usb/bus/iface.h"
+#include "driver/usb/defs/types.h"
+#include "types.h"
 
 typedef struct ControlTransferArgs {
-    uint8_t    slot_id;
+    uint8_t slot_id;
     SetupPacket setup;
-    uint64_t   buffer_phys;
+    uint64_t buffer_phys;
 } ControlTransferArgs;
 
 typedef struct GeneralTransferArgs {
-    uint8_t  slot_id;
-    uint8_t  ep_addr;
+    uint8_t slot_id;
+    uint8_t ep_addr;
     uint64_t buffer_phys;
     uint32_t length;
 } GeneralTransferArgs;
@@ -24,12 +24,12 @@ typedef struct HostControllerOps {
 } HostControllerOps;
 
 typedef struct HostController {
-    void                  *ctx;
+    void *ctx;
     const HostControllerOps *ops;
 } HostController;
 
-static inline bool host_configure_endpoints(HostController *host, uint8_t slot_id,
-                                            UsbEndpointVec *endpoints) {
+static inline bool
+host_configure_endpoints(HostController *host, uint8_t slot_id, UsbEndpointVec *endpoints) {
     if (!host || !host->ops || !host->ops->configure_endpoints) {
         return false;
     }

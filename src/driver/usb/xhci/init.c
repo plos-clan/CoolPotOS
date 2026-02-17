@@ -9,9 +9,9 @@
 Xhci *xhci_temp = NULL;
 
 static void xhci_print_info(Xhci *xhci) {
-    uint16_t version   = capability_version(xhci->cap);
-    uint8_t  max_slots = capability_max_slots(xhci->cap);
-    uint8_t  max_ports = capability_max_ports(xhci->cap);
+    uint16_t version = capability_version(xhci->cap);
+    uint8_t max_slots = capability_max_slots(xhci->cap);
+    uint8_t max_ports = capability_max_ports(xhci->cap);
 
     kdebug("xHCI Version: %x.%x", version >> 8, version & 0xff);
     kdebug("Max Slots: %d, Max Ports: %d", max_slots, max_ports);

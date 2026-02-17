@@ -57,14 +57,14 @@ static inline unsigned int rotword(unsigned int a) {
 }
 
 #define subbyte(a, o) (sbox[((a) >> (o)) & 0xff] << (o))
-#define subword(a)    (subbyte(a, 24) | subbyte(a, 16) | subbyte(a, 8) | subbyte(a, 0))
+#define subword(a) (subbyte(a, 24) | subbyte(a, 16) | subbyte(a, 8) | subbyte(a, 0))
 
 int tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k) {
     const unsigned int rconst[11] = {0x00000000, 0x01000000, 0x02000000, 0x04000000,
                                      0x08000000, 0x10000000, 0x20000000, 0x40000000,
                                      0x80000000, 0x1b000000, 0x36000000};
-    unsigned int       i;
-    unsigned int       t;
+    unsigned int i;
+    unsigned int t;
 
     if (s == (TCAesKeySched_t)0) {
         return TC_CRYPTO_FAIL;
@@ -79,7 +79,9 @@ int tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k) {
 
     for (; i < (Nb * (Nr + 1)); ++i) {
         t = s->words[i - 1];
-        if ((i % Nk) == 0) { t = subword(rotword(t)) ^ rconst[i / Nk]; }
+        if ((i % Nk) == 0) {
+            t = subword(rotword(t)) ^ rconst[i / Nk];
+        }
         s->words[i] = s->words[i - Nk] ^ t;
     }
 
@@ -87,16 +89,16 @@ int tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k) {
 }
 
 static inline void add_round_key(uint8_t *s, const unsigned int *k) {
-    s[0]  ^= (uint8_t)(k[0] >> 24);
-    s[1]  ^= (uint8_t)(k[0] >> 16);
-    s[2]  ^= (uint8_t)(k[0] >> 8);
-    s[3]  ^= (uint8_t)(k[0]);
-    s[4]  ^= (uint8_t)(k[1] >> 24);
-    s[5]  ^= (uint8_t)(k[1] >> 16);
-    s[6]  ^= (uint8_t)(k[1] >> 8);
-    s[7]  ^= (uint8_t)(k[1]);
-    s[8]  ^= (uint8_t)(k[2] >> 24);
-    s[9]  ^= (uint8_t)(k[2] >> 16);
+    s[0] ^= (uint8_t)(k[0] >> 24);
+    s[1] ^= (uint8_t)(k[0] >> 16);
+    s[2] ^= (uint8_t)(k[0] >> 8);
+    s[3] ^= (uint8_t)(k[0]);
+    s[4] ^= (uint8_t)(k[1] >> 24);
+    s[5] ^= (uint8_t)(k[1] >> 16);
+    s[6] ^= (uint8_t)(k[1] >> 8);
+    s[7] ^= (uint8_t)(k[1]);
+    s[8] ^= (uint8_t)(k[2] >> 24);
+    s[9] ^= (uint8_t)(k[2] >> 16);
     s[10] ^= (uint8_t)(k[2] >> 8);
     s[11] ^= (uint8_t)(k[2]);
     s[12] ^= (uint8_t)(k[3] >> 24);
@@ -139,16 +141,16 @@ static inline void mix_columns(uint8_t *s) {
 static inline void shift_rows(uint8_t *s) {
     uint8_t t[Nb * Nk];
 
-    t[0]  = s[0];
-    t[1]  = s[5];
-    t[2]  = s[10];
-    t[3]  = s[15];
-    t[4]  = s[4];
-    t[5]  = s[9];
-    t[6]  = s[14];
-    t[7]  = s[3];
-    t[8]  = s[8];
-    t[9]  = s[13];
+    t[0] = s[0];
+    t[1] = s[5];
+    t[2] = s[10];
+    t[3] = s[15];
+    t[4] = s[4];
+    t[5] = s[9];
+    t[6] = s[14];
+    t[7] = s[3];
+    t[8] = s[8];
+    t[9] = s[13];
     t[10] = s[2];
     t[11] = s[7];
     t[12] = s[12];
@@ -159,7 +161,7 @@ static inline void shift_rows(uint8_t *s) {
 }
 
 int tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s) {
-    uint8_t      state[Nk * Nb];
+    uint8_t state[Nk * Nb];
     unsigned int i;
 
     if (out == (uint8_t *)0) {

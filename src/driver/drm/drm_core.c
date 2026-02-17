@@ -1,7 +1,7 @@
 #include "driver/drm/drm_core.h"
 #include "driver/drm/drm.h"
-#include "mem/heap.h"
 #include "krlibc.h"
+#include "mem/heap.h"
 
 // Utility function to find a free slot in an array
 uint32_t drm_find_free_slot(void **array, uint32_t size) {
@@ -71,12 +71,11 @@ void drm_resource_manager_cleanup(drm_resource_manager_t *mgr) {
 }
 
 // Connector management
-drm_connector_t *drm_connector_alloc(drm_resource_manager_t *mgr, uint32_t type,
-                                     void *driver_data) {
+drm_connector_t *
+drm_connector_alloc(drm_resource_manager_t *mgr, uint32_t type, void *driver_data) {
     spin_lock(mgr->lock);
 
-    uint32_t slot = drm_find_free_slot((void **)mgr->connectors,
-                                       DRM_MAX_CONNECTORS_PER_DEVICE);
+    uint32_t slot = drm_find_free_slot((void **)mgr->connectors, DRM_MAX_CONNECTORS_PER_DEVICE);
     if (slot == (uint32_t)-1) {
         spin_unlock(mgr->lock);
         return NULL;
@@ -136,8 +135,7 @@ drm_connector_t *drm_connector_get(drm_resource_manager_t *mgr, uint32_t id) {
 drm_crtc_t *drm_crtc_alloc(drm_resource_manager_t *mgr, void *driver_data) {
     spin_lock(mgr->lock);
 
-    uint32_t slot =
-        drm_find_free_slot((void **)mgr->crtcs, DRM_MAX_CRTCS_PER_DEVICE);
+    uint32_t slot = drm_find_free_slot((void **)mgr->crtcs, DRM_MAX_CRTCS_PER_DEVICE);
     if (slot == (uint32_t)-1) {
         spin_unlock(mgr->lock);
         return NULL;
@@ -192,12 +190,10 @@ drm_crtc_t *drm_crtc_get(drm_resource_manager_t *mgr, uint32_t id) {
 }
 
 // Encoder management
-drm_encoder_t *drm_encoder_alloc(drm_resource_manager_t *mgr, uint32_t type,
-                                 void *driver_data) {
+drm_encoder_t *drm_encoder_alloc(drm_resource_manager_t *mgr, uint32_t type, void *driver_data) {
     spin_lock(mgr->lock);
 
-    uint32_t slot =
-        drm_find_free_slot((void **)mgr->encoders, DRM_MAX_ENCODERS_PER_DEVICE);
+    uint32_t slot = drm_find_free_slot((void **)mgr->encoders, DRM_MAX_ENCODERS_PER_DEVICE);
     if (slot == (uint32_t)-1) {
         spin_unlock(mgr->lock);
         return NULL;
@@ -253,12 +249,10 @@ drm_encoder_t *drm_encoder_get(drm_resource_manager_t *mgr, uint32_t id) {
 }
 
 // Framebuffer management
-drm_framebuffer_t *drm_framebuffer_alloc(drm_resource_manager_t *mgr,
-                                         void *driver_data) {
+drm_framebuffer_t *drm_framebuffer_alloc(drm_resource_manager_t *mgr, void *driver_data) {
     spin_lock(mgr->lock);
 
-    uint32_t slot = drm_find_free_slot((void **)mgr->framebuffers,
-                                       DRM_MAX_FRAMEBUFFERS_PER_DEVICE);
+    uint32_t slot = drm_find_free_slot((void **)mgr->framebuffers, DRM_MAX_FRAMEBUFFERS_PER_DEVICE);
     if (slot == (uint32_t)-1) {
         spin_unlock(mgr->lock);
         return NULL;
@@ -297,8 +291,7 @@ void drm_framebuffer_free(drm_resource_manager_t *mgr, uint32_t id) {
     spin_unlock(mgr->lock);
 }
 
-drm_framebuffer_t *drm_framebuffer_get(drm_resource_manager_t *mgr,
-                                       uint32_t id) {
+drm_framebuffer_t *drm_framebuffer_get(drm_resource_manager_t *mgr, uint32_t id) {
     spin_lock(mgr->lock);
 
     for (uint32_t i = 0; i < DRM_MAX_FRAMEBUFFERS_PER_DEVICE; i++) {
@@ -317,8 +310,7 @@ drm_framebuffer_t *drm_framebuffer_get(drm_resource_manager_t *mgr,
 drm_plane_t *drm_plane_alloc(drm_resource_manager_t *mgr, void *driver_data) {
     spin_lock(mgr->lock);
 
-    uint32_t slot =
-        drm_find_free_slot((void **)mgr->planes, DRM_MAX_PLANES_PER_DEVICE);
+    uint32_t slot = drm_find_free_slot((void **)mgr->planes, DRM_MAX_PLANES_PER_DEVICE);
     if (slot == (uint32_t)-1) {
         spin_unlock(mgr->lock);
         return NULL;

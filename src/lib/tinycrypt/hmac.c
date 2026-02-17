@@ -37,14 +37,14 @@
 static void rekey(uint8_t *key, const uint8_t *new_key, unsigned int key_size) {
     const uint8_t inner_pad = (uint8_t)0x36;
     const uint8_t outer_pad = (uint8_t)0x5c;
-    unsigned int  i;
+    unsigned int i;
 
     for (i = 0; i < key_size; ++i) {
-        key[i]                        = inner_pad ^ new_key[i];
+        key[i] = inner_pad ^ new_key[i];
         key[i + TC_SHA256_BLOCK_SIZE] = outer_pad ^ new_key[i];
     }
     for (; i < TC_SHA256_BLOCK_SIZE; ++i) {
-        key[i]                        = inner_pad;
+        key[i] = inner_pad;
         key[i + TC_SHA256_BLOCK_SIZE] = outer_pad;
     }
 }
@@ -55,17 +55,17 @@ int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key, unsigned int key_size
         return TC_CRYPTO_FAIL;
     }
 
-    uint8_t                     dummy_key[TC_SHA256_BLOCK_SIZE];
+    uint8_t dummy_key[TC_SHA256_BLOCK_SIZE];
     struct tc_hmac_state_struct dummy_state;
 
     if (key_size <= TC_SHA256_BLOCK_SIZE) {
         /*
-		 * The next three calls are dummy calls just to avoid
-		 * certain timing attacks. Without these dummy calls,
-		 * adversaries would be able to learn whether the key_size is
-		 * greater than TC_SHA256_BLOCK_SIZE by measuring the time
-		 * consumed in this process.
-		 */
+         * The next three calls are dummy calls just to avoid
+         * certain timing attacks. Without these dummy calls,
+         * adversaries would be able to learn whether the key_size is
+         * greater than TC_SHA256_BLOCK_SIZE by measuring the time
+         * consumed in this process.
+         */
         (void)tc_sha256_init(&dummy_state.hash_state);
         (void)tc_sha256_update(&dummy_state.hash_state, dummy_key, key_size);
         (void)tc_sha256_final(&dummy_state.key[TC_SHA256_DIGEST_SIZE], &dummy_state.hash_state);
@@ -85,7 +85,9 @@ int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key, unsigned int key_size
 int tc_hmac_init(TCHmacState_t ctx) {
 
     /* input sanity check: */
-    if (ctx == (TCHmacState_t)0) { return TC_CRYPTO_FAIL; }
+    if (ctx == (TCHmacState_t)0) {
+        return TC_CRYPTO_FAIL;
+    }
 
     (void)tc_sha256_init(&ctx->hash_state);
     (void)tc_sha256_update(&ctx->hash_state, ctx->key, TC_SHA256_BLOCK_SIZE);
@@ -96,7 +98,9 @@ int tc_hmac_init(TCHmacState_t ctx) {
 int tc_hmac_update(TCHmacState_t ctx, const void *data, unsigned int data_length) {
 
     /* input sanity check: */
-    if (ctx == (TCHmacState_t)0) { return TC_CRYPTO_FAIL; }
+    if (ctx == (TCHmacState_t)0) {
+        return TC_CRYPTO_FAIL;
+    }
 
     (void)tc_sha256_update(&ctx->hash_state, data, data_length);
 

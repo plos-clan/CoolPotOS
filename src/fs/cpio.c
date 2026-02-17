@@ -1,22 +1,28 @@
 #include "fs/cpio.h"
-#include "lib/zstd/zstd.h"
 #include "errno.h"
 #include "fs/vfs.h"
 #include "krlibc.h"
+#include "lib/zstd/zstd.h"
 #include "mem/heap.h"
 #include "mod/module.h"
 #include "term/klog.h"
 
 static char *get_pdir_fpath(char *path) {
 
-    if (strcmp(path, "/") == 0) { return strdup("/"); }
+    if (strcmp(path, "/") == 0) {
+        return strdup("/");
+    }
 
-    size_t len        = strlen(path);
-    char  *last_slash = strrchr(path, '/');
+    size_t len = strlen(path);
+    char *last_slash = strrchr(path, '/');
 
-    if (last_slash == NULL) { return strdup("."); }
+    if (last_slash == NULL) {
+        return strdup(".");
+    }
 
-    if (last_slash == path) { return strdup("/"); }
+    if (last_slash == path) {
+        return strdup("/");
+    }
 
     size_t new_len = last_slash - path;
 
@@ -37,7 +43,9 @@ static char *get_pdir_fpath(char *path) {
     }
 
     char *new_path = (char *)malloc(new_len + 1);
-    if (new_path == NULL) { return NULL; }
+    if (new_path == NULL) {
+        return NULL;
+    }
 
     strncpy(new_path, path, new_len);
     new_path[new_len] = '\0';
@@ -54,10 +62,12 @@ compression_type_t get_compression_type(const void *data, size_t size) {
         return COMPRESSION_UNKNOWN; // 数据太小，无法判断
     }
     const unsigned char *bytes = (const unsigned char *)data;
-    if (bytes[0] == 0x1F && bytes[1] == 0x8B) { return COMPRESSION_GZIP; }
+    if (bytes[0] == 0x1F && bytes[1] == 0x8B) {
+        return COMPRESSION_GZIP;
+    }
 
-    if (size >= 6 && bytes[0] == 0xFD && bytes[1] == 0x37 && bytes[2] == 0x7A && bytes[3] == 0x58 &&
-        bytes[4] == 0x5A && bytes[5] == 0x00) {
+    if (size >= 6 && bytes[0] == 0xFD && bytes[1] == 0x37 && bytes[2] == 0x7A && bytes[3] == 0x58
+        && bytes[4] == 0x5A && bytes[5] == 0x00) {
         return COMPRESSION_XZ;
     }
 
@@ -73,8 +83,8 @@ compression_type_t get_compression_type(const void *data, size_t size) {
         return COMPRESSION_LZMA;
     }
 
-    if (strncmp((const char *)bytes, "070701", 6) == 0 ||
-        strncmp((const char *)bytes, "070707", 6) == 0) {
+    if (strncmp((const char *)bytes, "070701", 6) == 0
+        || strncmp((const char *)bytes, "070707", 6) == 0) {
         return COMPRESSION_NONE;
     }
 
@@ -90,51 +100,53 @@ static size_t read_num(const char *str) {
 
 void cpio_init(void) {
     module_t *init_ramfs = get_module("initramfs");
-    if (!init_ramfs) return;
-    if (vfs_mount(NULL,"tmpfs",get_rootdir()) != EOK) {
+    if (!init_ramfs)
+        return;
+    if (vfs_mount(NULL, "tmpfs", get_rootdir()) != EOK) {
         kerror("Cannot mount tmpfs to root_dir");
         return;
     }
 
-    compression_type_t type    = get_compression_type(init_ramfs->data, init_ramfs->size);
-    uint8_t           *data_d  = NULL;
-    size_t             size_d  = 0;
-    bool               is_free = false;
+    compression_type_t type = get_compression_type(init_ramfs->data, init_ramfs->size);
+    uint8_t *data_d = NULL;
+    size_t size_d = 0;
+    bool is_free = false;
 
     char *compress_type;
     switch (type) {
     case COMPRESSION_NONE:
-        data_d        = init_ramfs->data;
-        size_d        = init_ramfs->size;
-        is_free       = false;
+        data_d = init_ramfs->data;
+        size_d = init_ramfs->size;
+        is_free = false;
         compress_type = "cpio";
         break;
     case COMPRESSION_ZSTD:
         size_d = ZSTD_getFrameContentSize(init_ramfs->data, init_ramfs->size);
-        void  *dict_data = malloc(size_d);
+        void *dict_data = malloc(size_d);
         ZSTD_decompress(dict_data, size_d, init_ramfs->data, init_ramfs->size);
-        data_d        = dict_data;
-        is_free       = true;
+        data_d = dict_data;
+        is_free = true;
         compress_type = "zstd";
         break;
-    default: kerror("Cannot load initramfs, unknown format."); return;
+    default:
+        kerror("Cannot load initramfs, unknown format.");
+        return;
     }
 
-
     struct cpio_newc_header_t hdr;
-    size_t                    offset       = 0;
-    size_t                    file_num_all = 0;
+    size_t offset = 0;
+    size_t file_num_all = 0;
     while (true) {
         memcpy(&hdr, data_d + offset, sizeof(hdr));
         offset += sizeof(hdr);
 
         size_t namesize = read_num(hdr.c_namesize);
-        char   filename[namesize + 1];
+        char filename[namesize + 1];
         filename[0] = '/';
         memcpy(filename + 1, data_d + offset, namesize);
         offset = (offset + namesize + 3) & ~3;
 
-        size_t         filesize = read_num(hdr.c_filesize);
+        size_t filesize = read_num(hdr.c_filesize);
         char *filedata = malloc(filesize);
         memcpy(filedata, data_d + offset, filesize);
         offset = (offset + filesize + 3) & ~3;
@@ -149,7 +161,7 @@ void cpio_init(void) {
         }
 
         file_num_all++;
-        size_t  mode = read_num(hdr.c_mode);
+        size_t mode = read_num(hdr.c_mode);
         errno_t status;
         if (mode & 040000) {
             status = vfs_mkdir(filename);
@@ -159,14 +171,14 @@ void cpio_init(void) {
                 return;
             }
         } else if ((mode & 0120000) == 0120000) {
-            const size_t len          = strlen(filename) + filesize;
-            char        *all_path     = malloc(len);
-            char        *dirname      = get_pdir_fpath(filename);
-            char        *symlink_path = calloc(1, filesize + 1);
+            const size_t len = strlen(filename) + filesize;
+            char *all_path = malloc(len);
+            char *dirname = get_pdir_fpath(filename);
+            char *symlink_path = calloc(1, filesize + 1);
             strncpy(symlink_path, filedata, filesize);
             sprintf(all_path, "%s/%s", dirname, symlink_path);
             char *target_name = normalize_path(all_path);
-            status            = vfs_symlink(filename, target_name);
+            status = vfs_symlink(filename, target_name);
             free(all_path);
             free(target_name);
             free(dirname);
@@ -199,8 +211,9 @@ void cpio_init(void) {
         }
         free(filedata);
     }
-    if (is_free) free(data_d);
+    if (is_free)
+        free(data_d);
 
-    kinfo("Loaded initramfs size:%llu files:%llu compress: %s", size_d, file_num_all,
-          compress_type);
+    kinfo(
+        "Loaded initramfs size:%llu files:%llu compress: %s", size_d, file_num_all, compress_type);
 }

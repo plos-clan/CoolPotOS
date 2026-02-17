@@ -1,7 +1,7 @@
 #pragma once
 
 #define FCSR_FRM_SHIFT 5
-#define FCSR_FRM_MASK  (0x7U << FCSR_FRM_SHIFT)
+#define FCSR_FRM_MASK (0x7U << FCSR_FRM_SHIFT)
 
 #define FRM_RNE 0 /* Round to Nearest, ties to Even (默认) */
 #define FRM_RTZ 1 /* Round Towards Zero (截断) */
@@ -34,13 +34,13 @@ typedef struct fpu_context {
 } fpu_context_t;
 
 struct arch_context_ {
-    uint64_t        ra;
-    uint64_t        sp;
+    uint64_t ra;
+    uint64_t sp;
     struct pt_regs *ctx;
-    fpu_context_t   fpu_ctx;
-    bool            dead;
-    uint64_t        user_stack;
-    uint64_t        user_stack_top;
+    fpu_context_t fpu_ctx;
+    bool dead;
+    uint64_t user_stack;
+    uint64_t user_stack_top;
 };
 
 #define switch_to(prev, next)                                                                      \

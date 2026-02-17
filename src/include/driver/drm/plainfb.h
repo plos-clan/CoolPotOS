@@ -1,9 +1,9 @@
 #pragma once
 
-#include "driver/drm/drm_core.h"
-#include "driver/drm/drm.h"
-#include "driver/drm/drm_fourcc.h"
 #include "boot.h"
+#include "driver/drm/drm.h"
+#include "driver/drm/drm_core.h"
+#include "driver/drm/drm_fourcc.h"
 
 typedef struct plainfb_device {
     boot_framebuffer_t *framebuffer;

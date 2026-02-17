@@ -2,7 +2,7 @@
 #include "krlibc.h"
 
 static boot_param_t params[MAX_PARAMS];
-static int          param_count = 0;
+static int param_count = 0;
 
 int boot_parse_cmdline(const char *cmdline) {
     param_count = 0;
@@ -11,7 +11,8 @@ int boot_parse_cmdline(const char *cmdline) {
     while (*p && param_count < MAX_PARAMS) {
         while (*p == ' ')
             p++;
-        if (*p == '\0') break;
+        if (*p == '\0')
+            break;
         const char *key_start = p;
         while (*p && *p != '=' && *p != ' ')
             p++;
@@ -20,7 +21,7 @@ int boot_parse_cmdline(const char *cmdline) {
             key_len = sizeof(params[param_count].key) - 1;
         memcpy(params[param_count].key, key_start, key_len);
         params[param_count].key[key_len] = '\0';
-        params[param_count].value[0]     = '\0';
+        params[param_count].value[0] = '\0';
         if (*p == '=') {
             p++;
             const char *val_start = p;
@@ -40,7 +41,9 @@ int boot_parse_cmdline(const char *cmdline) {
 
 const char *boot_get_cmdline_param(const char *key) {
     for (int i = 0; i < param_count; i++) {
-        if (strcmp(params[i].key, key) == 0) { return params[i].value; }
+        if (strcmp(params[i].key, key) == 0) {
+            return params[i].value;
+        }
     }
     return NULL;
 }

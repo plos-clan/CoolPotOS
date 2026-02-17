@@ -8,9 +8,9 @@
 
 #include <term/klog.h>
 
-extern page_directory_t          kernel_page_dir;
+extern page_directory_t kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
-static spin_t                    page_lock         = SPIN_INIT;
+static spin_t page_lock = SPIN_INIT;
 
 static void page_table_clear(page_table_t *table) {
     for (int i = 0; i < 512; i++) {
@@ -20,8 +20,8 @@ static void page_table_clear(page_table_t *table) {
 
 page_table_t *page_table_create(page_table_entry_t *entry) {
     if (entry->value == 0) {
-        uint64_t frame      = alloc_frames(1);
-        entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
+        uint64_t frame = alloc_frames(1);
+        entry->value = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
         page_table_t *table = phys_to_virt(entry->value & PTE_FRAME_MASK);
         page_table_clear(table);
         return table;
@@ -54,20 +54,24 @@ void unmap_page(page_directory_t *directory, uint64_t vaddr) {
 
     page_table_t *l4_table = directory->table;
     page_table_t *l3_table = phys_to_virt((&(l4_table->entries[l4_index]))->value & PTE_FRAME_MASK);
-    if (l3_table == NULL) return;
+    if (l3_table == NULL)
+        return;
     page_table_t *l2_table = phys_to_virt((&(l3_table->entries[l3_index]))->value & PTE_FRAME_MASK);
-    if (l2_table == NULL) return;
+    if (l2_table == NULL)
+        return;
     page_table_t *l1_table = phys_to_virt((&(l2_table->entries[l2_index]))->value & PTE_FRAME_MASK);
-    if (l1_table == NULL) return;
+    if (l1_table == NULL)
+        return;
 
     free_frame(l1_table->entries[l1_index].value & PTE_FRAME_MASK);
     l1_table->entries[l1_index].value = 0;
     flush_tlb(vaddr);
 }
 
-static page_table_t *copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy,
-                                               bool kernel_space) {
-    if (source_table == NULL) return NULL;
+static page_table_t *
+copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy, bool kernel_space) {
+    if (source_table == NULL)
+        return NULL;
     if (level == 0) {
         if (kernel_space) {
             // If we are copying the kernel space, we can just return the same table
@@ -100,8 +104,7 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
             continue;
         }
 
-        page_table_t *source_page_table_next =
-            phys_to_virt(entry_value & PTE_FRAME_MASK);
+        page_table_t *source_page_table_next = phys_to_virt(entry_value & PTE_FRAME_MASK);
         page_table_t *new_page_table = copy_page_table_recursive(
             source_page_table_next, level - 1, all_copy, level != 4 ? kernel_space : i >= 256);
         new_table->entries[i].value =
@@ -111,31 +114,39 @@ static page_table_t *copy_page_table_recursive(page_table_t *source_table, int l
 }
 
 uint64_t arch_virt_to_phys(uint64_t va) {
-    uint64_t  pml4_phys = get_cr3();
-    uint64_t *pml4      = phys_to_virt(pml4_phys);
+    uint64_t pml4_phys = get_cr3();
+    uint64_t *pml4 = phys_to_virt(pml4_phys);
 
     size_t pml4_idx = (va >> 39) & ENTRY_MASK;
     size_t pdpt_idx = (va >> 30) & ENTRY_MASK;
-    size_t pd_idx   = (va >> 21) & ENTRY_MASK;
-    size_t pt_idx   = (va >> 12) & ENTRY_MASK;
-    size_t offset   = va & 0xFFF;
+    size_t pd_idx = (va >> 21) & ENTRY_MASK;
+    size_t pt_idx = (va >> 12) & ENTRY_MASK;
+    size_t offset = va & 0xFFF;
 
     uint64_t pml4e = pml4[pml4_idx];
-    if (!(pml4e & PTE_PRESENT)) return 0; // not mapped
+    if (!(pml4e & PTE_PRESENT))
+        return 0; // not mapped
     uint64_t *pdpt = phys_to_virt(pml4e & PAGE_MASK);
 
     uint64_t pdpte = pdpt[pdpt_idx];
-    if (!(pdpte & PTE_PRESENT)) return 0;
-    if (pdpte & PTE_HUGE) { return (pdpte & ~((1ULL << 30) - 1)) + (va & ((1ULL << 30) - 1)); }
+    if (!(pdpte & PTE_PRESENT))
+        return 0;
+    if (pdpte & PTE_HUGE) {
+        return (pdpte & ~((1ULL << 30) - 1)) + (va & ((1ULL << 30) - 1));
+    }
     uint64_t *pd = phys_to_virt(pdpte & PAGE_MASK);
 
     uint64_t pde = pd[pd_idx];
-    if (!(pde & PTE_PRESENT)) return 0;
-    if (pde & PTE_HUGE) { return (pde & ~((1ULL << 21) - 1)) + (va & ((1ULL << 21) - 1)); }
+    if (!(pde & PTE_PRESENT))
+        return 0;
+    if (pde & PTE_HUGE) {
+        return (pde & ~((1ULL << 21) - 1)) + (va & ((1ULL << 21) - 1));
+    }
     uint64_t *pt = (uint64_t *)phys_to_virt(pde & PAGE_MASK);
 
     uint64_t pte = pt[pt_idx];
-    if (!(pte & PTE_PRESENT)) return 0;
+    if (!(pte & PTE_PRESENT))
+        return 0;
 
     uint64_t pa = (pte & PAGE_MASK) + offset;
     return pa;
@@ -144,11 +155,17 @@ uint64_t arch_virt_to_phys(uint64_t va) {
 uint64_t get_arch_page_table_flags(uint64_t flags) {
     uint64_t result = PTE_PRESENT;
 
-    if ((flags & PTE_WRITEABLE) != 0) { result |= PTE_WRITEABLE; }
+    if ((flags & PTE_WRITEABLE) != 0) {
+        result |= PTE_WRITEABLE;
+    }
 
-    if ((flags & PTE_USER) != 0) { result |= PTE_USER; }
+    if ((flags & PTE_USER) != 0) {
+        result |= PTE_USER;
+    }
 
-    if ((flags & PTE_U_ACCESSED) != 0) { result |= (PTE_DIS_CACHE | PTE_PWT); }
+    if ((flags & PTE_U_ACCESSED) != 0) {
+        result |= (PTE_DIS_CACHE | PTE_PWT);
+    }
     return result;
 }
 
@@ -160,12 +177,14 @@ uint64_t map_change_attribute(uint64_t *pgdir, uint64_t vaddr, uint64_t flags) {
 
     for (uint64_t i = 0; i < 4 - 1; i++) {
         uint64_t index = indexs[i];
-        uint64_t addr  = pgdir[index];
+        uint64_t addr = pgdir[index];
         if (ARCH_PT_IS_LARGE(addr)) {
             pgdir[index] &= ~PAGE_CALC_PAGE_TABLE_MASK(4);
             pgdir[index] |= flags;
         }
-        if (!ARCH_PT_IS_TABLE(addr)) { return 0; }
+        if (!ARCH_PT_IS_TABLE(addr)) {
+            return 0;
+        }
         pgdir = (uint64_t *)phys_to_virt(addr & (~PAGE_CALC_PAGE_TABLE_MASK(4)));
     }
 
@@ -185,7 +204,8 @@ page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     page_directory_t *new_directory = malloc(sizeof(page_directory_t));
     if (new_directory == NULL) {
         spin_unlock(page_lock);
-        if (is_sti) arch_open_interrupt();
+        if (is_sti)
+            arch_open_interrupt();
         logkf("error: clone direcotry null");
         return NULL;
     }
@@ -193,12 +213,14 @@ page_directory_t *clone_page_directory(page_directory_t *dir, bool all_copy) {
     if (!all_copy)
         memcpy((uint64_t *)new_directory->table + 256, (uint64_t *)dir->table + 256, PAGE_SIZE / 2);
     spin_unlock(page_lock);
-    if (is_sti) arch_open_interrupt();
+    if (is_sti)
+        arch_open_interrupt();
     return new_directory;
 }
 
 static void free_page_table_recursive(page_table_t *table, int level) {
-    if (table == NULL) return;
+    if (table == NULL)
+        return;
     if (level == 0) {
         free_frame(virt_to_phys(table));
         return;
@@ -223,7 +245,8 @@ void free_page_directory(page_directory_t *dir) {
     free_page_table_recursive(dir->table, 4);
     free(dir);
     spin_unlock(page_lock);
-    if (is_sti) arch_open_interrupt();
+    if (is_sti)
+        arch_open_interrupt();
 }
 
 void switch_page_directory0(page_directory_t *dir) {
@@ -233,7 +256,7 @@ void switch_page_directory0(page_directory_t *dir) {
 
 void arch_page_setup_l2() {
     page_directory_t *new_directory = clone_page_directory(&kernel_page_dir, true);
-    kernel_page_dir.table           = new_directory->table;
+    kernel_page_dir.table = new_directory->table;
     free(new_directory);
     switch_page_directory0(&kernel_page_dir);
     double_fault_page = get_cr3();
@@ -241,6 +264,6 @@ void arch_page_setup_l2() {
 
 void arch_page_setup() {
     page_table_t *kernel_page_table = phys_to_virt(get_cr3());
-    kernel_page_dir                 = (page_directory_t){.table = kernel_page_table};
-    double_fault_page               = get_cr3();
+    kernel_page_dir = (page_directory_t){.table = kernel_page_table};
+    double_fault_page = get_cr3();
 }

@@ -1,6 +1,5 @@
 #include "driver/ns16550.h"
 
-
 /* 计算实际寄存器偏移 */
 static inline uint32_t uart_calc_offset(uart_device_t *uart, uint8_t reg) {
     if (uart->reg_stride > 0) {
@@ -50,8 +49,7 @@ static void uart_write_reg(uart_device_t *uart, uint8_t reg, uint32_t value) {
 /**
  * @brief 标准NS16550初始化（寄存器连续）
  */
-void uart_init(uart_device_t *uart, volatile void *base_addr,
-               uart_config_t *config) {
+void uart_init(uart_device_t *uart, volatile void *base_addr, uart_config_t *config) {
     uart_init_gas(uart, base_addr, 0, UART_ACCESS_8BIT, config);
 }
 
@@ -63,9 +61,9 @@ void uart_init(uart_device_t *uart, volatile void *base_addr,
  * @param access_width 访问宽度
  * @param config 配置参数
  */
-void uart_init_gas(uart_device_t *uart, volatile void *base_addr,
-                   uint32_t reg_shift, uart_access_width_t access_width,
-                   uart_config_t *config) {
+void uart_init_gas(
+    uart_device_t *uart, volatile void *base_addr, uint32_t reg_shift,
+    uart_access_width_t access_width, uart_config_t *config) {
     if (uart == NULL || base_addr == NULL) {
         return;
     }
@@ -95,15 +93,14 @@ void uart_init_gas(uart_device_t *uart, volatile void *base_addr,
     uart_set_baudrate(uart, uart->config.baudrate);
 
     /* 配置线路控制寄存器 */
-    uint8_t lcr =
-        uart->config.data_bits | uart->config.stop_bits | uart->config.parity;
+    uint8_t lcr = uart->config.data_bits | uart->config.stop_bits | uart->config.parity;
     uart_write_reg(uart, UART_LCR, lcr);
 
     /* 配置FIFO */
     if (uart->config.fifo_enable) {
-        uart_write_reg(uart, UART_FCR,
-                       UART_FCR_ENABLE | UART_FCR_CLEAR_RX | UART_FCR_CLEAR_TX |
-                           UART_FCR_TRIGGER_14);
+        uart_write_reg(
+            uart, UART_FCR,
+            UART_FCR_ENABLE | UART_FCR_CLEAR_RX | UART_FCR_CLEAR_TX | UART_FCR_TRIGGER_14);
     }
 
     /* 配置调制解调器控制寄存器 */

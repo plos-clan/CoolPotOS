@@ -17,11 +17,10 @@ typedef struct __attribute__((packed)) SlotContext {
 } SlotContext;
 
 SlotContext *slot_context_from(uintptr_t base, int ctx_size);
-void         slot_context_set_entries(SlotContext *ctx, uint32_t count);
-void         slot_context_set_root_hub_port(SlotContext *ctx, uint32_t port);
-void         slot_context_set_speed(SlotContext *ctx, uint32_t speed);
-void         slot_context_set_route_string(SlotContext *ctx, uint32_t route);
-
+void slot_context_set_entries(SlotContext *ctx, uint32_t count);
+void slot_context_set_root_hub_port(SlotContext *ctx, uint32_t port);
+void slot_context_set_speed(SlotContext *ctx, uint32_t speed);
+void slot_context_set_route_string(SlotContext *ctx, uint32_t route);
 
 typedef struct __attribute__((packed)) InputControlContext {
     uint32_t drop_flags;
@@ -30,7 +29,6 @@ typedef struct __attribute__((packed)) InputControlContext {
 } InputControlContext;
 
 InputControlContext *input_control_context_from(uintptr_t base);
-
 
 typedef struct __attribute__((packed)) EndpointContext {
     uint32_t info1;

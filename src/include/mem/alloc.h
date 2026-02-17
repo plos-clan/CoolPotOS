@@ -3,8 +3,8 @@
 #include "types.h"
 
 typedef enum HeapError {
-  InvalidFree,
-  LayoutError,
+    InvalidFree,
+    LayoutError,
 } HeapError;
 
 /**
@@ -49,8 +49,8 @@ void heap_onerror(ErrorHandler handler);
 
 /**
  * Returns the usable size of the memory block pointed to by `ptr`.
- * This corresponds to the size originally requested during allocation (`malloc`, `aligned_alloc`, `realloc`).
- * Returns 0 if `ptr` is null.
+ * This corresponds to the size originally requested during allocation (`malloc`, `aligned_alloc`,
+ * `realloc`). Returns 0 if `ptr` is null.
  *
  * # Safety
  * - `ptr` must be null or a pointer previously returned by `malloc`, `realloc`,
@@ -117,5 +117,5 @@ void free(void *ptr);
 void *realloc(void *ptr, size_t size);
 
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+} // extern "C"
+#endif // __cplusplus

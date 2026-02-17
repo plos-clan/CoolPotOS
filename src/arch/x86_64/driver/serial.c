@@ -5,13 +5,15 @@
 #include "mem/heap.h"
 #include "term/klog.h"
 
-static bool     s_port[4]    = {false, false, false, false};
+static bool s_port[4] = {false, false, false, false};
 static uint16_t com_ports[4] = {SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4};
 
 static size_t extract_number_serial(const char *str) {
     size_t len = strlen(str);
 
-    if (len <= 4) { return -1; }
+    if (len <= 4) {
+        return -1;
+    }
 
     size_t start_index = len;
 
@@ -22,16 +24,19 @@ static size_t extract_number_serial(const char *str) {
             break;
         }
 
-        if (i == 0) break;
+        if (i == 0)
+            break;
     }
-    if (start_index < 4 || start_index >= len) { return -1; }
+    if (start_index < 4 || start_index >= len) {
+        return -1;
+    }
 
-    int         result = 0;
-    const char *p      = str + start_index;
+    int result = 0;
+    const char *p = str + start_index;
 
     while (isdigit((unsigned char)*p)) {
         int digit = *p - '0';
-        result    = result * 10 + digit;
+        result = result * 10 + digit;
         p++;
     }
 
@@ -42,14 +47,24 @@ static uint8_t serial_calculate_lcr(void) {
     uint8_t lcr = 0;
 
     switch (SERIAL_DATA_BITS) {
-    case 5: lcr |= 0x00; break;
-    case 6: lcr |= 0x01; break;
-    case 7: lcr |= 0x02; break;
-    case 8: lcr |= 0x03; break;
-    default: lcr |= 0x03;
+    case 5:
+        lcr |= 0x00;
+        break;
+    case 6:
+        lcr |= 0x01;
+        break;
+    case 7:
+        lcr |= 0x02;
+        break;
+    case 8:
+        lcr |= 0x03;
+        break;
+    default:
+        lcr |= 0x03;
     }
 
-    if (SERIAL_STOP_BITS == 2) lcr |= 0x04;
+    if (SERIAL_STOP_BITS == 2)
+        lcr |= 0x04;
 
     switch (SERIAL_PARITY) {
     case 0: // No parity
@@ -67,7 +82,8 @@ static uint8_t serial_calculate_lcr(void) {
     case 4: // Space parity
         lcr |= 0x38;
         break;
-    default: lcr |= 0x00;
+    default:
+        lcr |= 0x00;
     }
     return lcr;
 }
@@ -110,8 +126,9 @@ static void init_serial_port(uint16_t port) {
         return;
     }
     io_out8(port + SERIAL_REG_MCR, 0x0f); // Quit loopback mode
-    logkf("serial: Local port: %s, Baud rate: %d, Status: 0x%02x\n", PORT_TO_COM(port),
-          SERIAL_BAUD_RATE, io_in8(port + SERIAL_REG_LSR));
+    logkf(
+        "serial: Local port: %s, Baud rate: %d, Status: 0x%02x\n", PORT_TO_COM(port),
+        SERIAL_BAUD_RATE, io_in8(port + SERIAL_REG_LSR));
 }
 
 char read_serial(uint16_t port) {
@@ -121,10 +138,14 @@ char read_serial(uint16_t port) {
 }
 
 void write_serial(char a) {
-    if (s_port[0]) write_serial0(SERIAL_PORT_1, a);
-    if (s_port[1]) write_serial0(SERIAL_PORT_2, a);
-    if (s_port[2]) write_serial0(SERIAL_PORT_3, a);
-    if (s_port[3]) write_serial0(SERIAL_PORT_4, a);
+    if (s_port[0])
+        write_serial0(SERIAL_PORT_1, a);
+    if (s_port[1])
+        write_serial0(SERIAL_PORT_2, a);
+    if (s_port[2])
+        write_serial0(SERIAL_PORT_3, a);
+    if (s_port[3])
+        write_serial0(SERIAL_PORT_4, a);
 }
 
 void write_serial0(uint16_t port, char a) {
@@ -133,7 +154,8 @@ void write_serial0(uint16_t port, char a) {
     io_out8(port, a);
 }
 
-static void serial_flush(tty_device_t *device) {}
+static void serial_flush(tty_device_t *device) {
+}
 
 static size_t serial_write(tty_device_t *device, const char *buf, size_t count) {
     struct tty_serial_ *data = device->private_data;
@@ -159,14 +181,14 @@ int init_serial() {
             init_serial_port(com_ports[i]);
             valid_ports++;
 
-            tty_device_t       *device = alloc_tty_device(TTY_DEVICE_SERIAL);
-            struct tty_serial_ *data   = malloc(sizeof(struct tty_serial_));
+            tty_device_t *device = alloc_tty_device(TTY_DEVICE_SERIAL);
+            struct tty_serial_ *data = malloc(sizeof(struct tty_serial_));
 
-            data->port           = com_ports[i];
+            data->port = com_ports[i];
             device->private_data = data;
-            device->ops.flush    = serial_flush;
-            device->ops.write    = serial_write;
-            device->ops.read     = serial_read;
+            device->ops.flush = serial_flush;
+            device->ops.write = serial_write;
+            device->ops.read = serial_read;
 
             char name[20];
             sprintf(name, "ttyS%d", i);
@@ -174,6 +196,7 @@ int init_serial() {
             register_tty_device(device);
         }
     }
-    if (valid_ports == 0) logkf("serial: No serial port available.\n");
+    if (valid_ports == 0)
+        logkf("serial: No serial port available.\n");
     return 0;
 }

@@ -2,14 +2,14 @@
 
 #define KMSG_SIZE (1 << 17) // 内核日志环形缓冲区大小 (128k)
 
-#define BLACK   0 // 黑
-#define RED     1 // 红
-#define GREEN   2 // 绿
-#define YELLOW  3 // 黄
-#define BLUE    4 // 蓝
+#define BLACK 0   // 黑
+#define RED 1     // 红
+#define GREEN 2   // 绿
+#define YELLOW 3  // 黄
+#define BLUE 4    // 蓝
 #define MAGENTA 5 // 品红
-#define CYAN    6 // 青
-#define WHITE   7 // 白
+#define CYAN 6    // 青
+#define WHITE 7   // 白
 
 #define ksuccess(...)                                                                              \
     do {                                                                                           \
@@ -64,12 +64,12 @@
 void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...);
 void unlock_print();
 
-void   kmsg_putc(char c);
-void   kmsg_write(const char *s);
-int    kmsg_getc(void);
+void kmsg_putc(char c);
+void kmsg_write(const char *s);
+int kmsg_getc(void);
 size_t kmsg_length();
 size_t kmesg_read(uint8_t *buffer, size_t length);
-void   kmsg_empty(void);                              // 清空缓冲区
+void kmsg_empty(void);                                // 清空缓冲区
 size_t kmsg_read_all(uint8_t *buffer, size_t length); // 无损读取
 
 void logk(const char *str);

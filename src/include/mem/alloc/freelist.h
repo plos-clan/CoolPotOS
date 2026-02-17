@@ -16,9 +16,12 @@ static inline int freelists_size2id(size_t size) __attr(const);
 
 //; 获取该大小属于freelists中的哪个list
 static inline int freelists_size2id(size_t size) {
-    if (size < 64) return 0;
-    if (size < 256) return 1;
-    if (size >= FREELIST_MAXBLKSIZE) return -1;
+    if (size < 64)
+        return 0;
+    if (size < 256)
+        return 1;
+    if (size >= FREELIST_MAXBLKSIZE)
+        return -1;
     return (32 - 9) - __builtin_clz(size) + 2;
 }
 
@@ -30,9 +33,12 @@ static inline int freelists_size2id(size_t size) {
  *\return 分离后的空闲链表
  */
 static inline freelist_t freelist_detach(freelist_t list, freelist_t ptr) {
-    if (list == ptr) return ptr->next;
-    if (ptr->next) ptr->next->prev = ptr->prev;
-    if (ptr->prev) ptr->prev->next = ptr->next;
+    if (list == ptr)
+        return ptr->next;
+    if (ptr->next)
+        ptr->next->prev = ptr->prev;
+    if (ptr->prev)
+        ptr->prev->next = ptr->next;
     return list;
 }
 
@@ -50,8 +56,10 @@ static inline void *freelists_detach(freelists_t lists, int id, freelist_t ptr) 
         return ptr;
     }
 
-    if (ptr->next) ptr->next->prev = ptr->prev;
-    if (ptr->prev) ptr->prev->next = ptr->next;
+    if (ptr->next)
+        ptr->next->prev = ptr->prev;
+    if (ptr->prev)
+        ptr->prev->next = ptr->next;
     return ptr;
 }
 
@@ -82,11 +90,13 @@ static inline void *freelist_match(freelist_t *list_p, size_t size) {
  */
 static inline void *freelists_match(freelists_t lists, size_t size) {
     int id = freelists_size2id(size);
-    if (id < 0) return NULL;
+    if (id < 0)
+        return NULL;
     for (; id < FREELIST_NUM; id++) {
         for (freelist_t list = lists[id]; list != NULL; list = list->next) {
             size_t tgt_size = blk_size(list);
-            if (tgt_size >= size) return freelists_detach(lists, id, list);
+            if (tgt_size >= size)
+                return freelists_detach(lists, id, list);
         }
     }
     return NULL;
@@ -126,11 +136,13 @@ static inline void *freelist_aligned_match(freelist_t *list_p, size_t size, size
  */
 static inline void *freelists_aligned_match(freelists_t lists, size_t size, size_t align) {
     int id = freelists_size2id(size);
-    if (id < 0) return NULL;
+    if (id < 0)
+        return NULL;
     for (; id < FREELIST_NUM; id++) {
         for (freelist_t list = lists[id]; list != NULL; list = list->next) {
             ssize_t tgt_size = aligned_size_of(list, align);
-            if (tgt_size >= (ssize_t)size) return freelists_detach(lists, id, list);
+            if (tgt_size >= (ssize_t)size)
+                return freelists_detach(lists, id, list);
         }
     }
     return NULL;
@@ -147,8 +159,9 @@ static inline void *freelists_aligned_match(freelists_t lists, size_t size, size
 static inline void freelist_put(freelist_t *list_p, freelist_t ptr) {
     ptr->next = *list_p;
     ptr->prev = NULL;
-    *list_p   = ptr;
-    if (ptr->next) ptr->next->prev = ptr;
+    *list_p = ptr;
+    if (ptr->next)
+        ptr->next->prev = ptr;
 }
 
 /**
@@ -161,14 +174,17 @@ static inline void freelist_put(freelist_t *list_p, freelist_t ptr) {
  *\return 是否成功
  */
 static inline bool freelists_put(freelists_t lists, void *_ptr) {
-    freelist_t ptr  = _ptr;
-    size_t     size = blk_size(ptr);
-    if(size == 0) return true;
-    int        id   = freelists_size2id(size);
-    if (id < 0) return false;
+    freelist_t ptr = _ptr;
+    size_t size = blk_size(ptr);
+    if (size == 0)
+        return true;
+    int id = freelists_size2id(size);
+    if (id < 0)
+        return false;
     ptr->next = lists[id];
     ptr->prev = NULL;
     lists[id] = ptr;
-    if (ptr->next) ptr->next->prev = ptr;
+    if (ptr->next)
+        ptr->next->prev = ptr;
     return true;
 }

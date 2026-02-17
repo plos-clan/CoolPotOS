@@ -25,7 +25,7 @@ static uint32_t capability_hccparams1(Capability cap) {
 }
 
 Capability capability_new(uintptr_t base_addr) {
-    Capability cap = { .base_addr = base_addr };
+    Capability cap = {.base_addr = base_addr};
     return cap;
 }
 
@@ -63,6 +63,6 @@ bool capability_context_64byte(Capability cap) {
 
 uint32_t capability_max_scratchpad_bufs(Capability cap) {
     uint32_t high = (capability_hcsparams2(cap) >> 21) & 0x1fu;
-    uint32_t low  = (capability_hcsparams2(cap) >> 27) & 0x1fu;
+    uint32_t low = (capability_hcsparams2(cap) >> 27) & 0x1fu;
     return (high << 5) | low;
 }

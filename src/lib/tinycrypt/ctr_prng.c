@@ -54,7 +54,9 @@ static void arrInc(uint8_t arr[], unsigned int len) {
     unsigned int i;
     if (0 != arr) {
         for (i = len; i > 0U; i--) {
-            if (++arr[i - 1] != 0U) { break; }
+            if (++arr[i - 1] != 0U) {
+                break;
+            }
         }
     }
 }
@@ -71,19 +73,21 @@ static void arrInc(uint8_t arr[], unsigned int len) {
 static void tc_ctr_prng_update(TCCtrPrng_t *const ctx, uint8_t const *const providedData) {
     if (0 != ctx) {
         /* 10.2.1.2 step 1 */
-        uint8_t      temp[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
+        uint8_t temp[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
         unsigned int len = 0U;
 
         /* 10.2.1.2 step 2 */
         while (len < sizeof temp) {
             unsigned int blocklen = sizeof(temp) - len;
-            uint8_t      output_block[TC_AES_BLOCK_SIZE];
+            uint8_t output_block[TC_AES_BLOCK_SIZE];
 
             /* 10.2.1.2 step 2.1 */
             arrInc(ctx->V, sizeof ctx->V);
 
             /* 10.2.1.2 step 2.2 */
-            if (blocklen > TC_AES_BLOCK_SIZE) { blocklen = TC_AES_BLOCK_SIZE; }
+            if (blocklen > TC_AES_BLOCK_SIZE) {
+                blocklen = TC_AES_BLOCK_SIZE;
+            }
             (void)tc_aes_encrypt(output_block, ctx->V, &ctx->key);
 
             /* 10.2.1.2 step 2.3/step 3 */
@@ -108,18 +112,21 @@ static void tc_ctr_prng_update(TCCtrPrng_t *const ctx, uint8_t const *const prov
     }
 }
 
-int tc_ctr_prng_init(TCCtrPrng_t *const ctx, uint8_t const *const entropy, unsigned int entropyLen,
-                     uint8_t const *const personalization, unsigned int pLen) {
-    int          result = TC_CRYPTO_FAIL;
+int tc_ctr_prng_init(
+    TCCtrPrng_t *const ctx, uint8_t const *const entropy, unsigned int entropyLen,
+    uint8_t const *const personalization, unsigned int pLen) {
+    int result = TC_CRYPTO_FAIL;
     unsigned int i;
-    uint8_t      personalization_buf[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE] = {0U};
-    uint8_t      seed_material[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
-    uint8_t      zeroArr[TC_AES_BLOCK_SIZE] = {0U};
+    uint8_t personalization_buf[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE] = {0U};
+    uint8_t seed_material[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
+    uint8_t zeroArr[TC_AES_BLOCK_SIZE] = {0U};
 
     if (0 != personalization) {
         /* 10.2.1.3.1 step 1 */
         unsigned int len = pLen;
-        if (len > sizeof personalization_buf) { len = sizeof personalization_buf; }
+        if (len > sizeof personalization_buf) {
+            len = sizeof personalization_buf;
+        }
 
         /* 10.2.1.3.1 step 2 */
         memcpy(personalization_buf, personalization, len);
@@ -149,18 +156,20 @@ int tc_ctr_prng_init(TCCtrPrng_t *const ctx, uint8_t const *const entropy, unsig
     return result;
 }
 
-int tc_ctr_prng_reseed(TCCtrPrng_t *const ctx, uint8_t const *const entropy,
-                       unsigned int entropyLen, uint8_t const *const additional_input,
-                       unsigned int additionallen) {
+int tc_ctr_prng_reseed(
+    TCCtrPrng_t *const ctx, uint8_t const *const entropy, unsigned int entropyLen,
+    uint8_t const *const additional_input, unsigned int additionallen) {
     unsigned int i;
-    int          result                                                    = TC_CRYPTO_FAIL;
-    uint8_t      additional_input_buf[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE] = {0U};
-    uint8_t      seed_material[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
+    int result = TC_CRYPTO_FAIL;
+    uint8_t additional_input_buf[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE] = {0U};
+    uint8_t seed_material[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
 
     if (0 != additional_input) {
         /* 10.2.1.4.1 step 1 */
         unsigned int len = additionallen;
-        if (len > sizeof additional_input_buf) { len = sizeof additional_input_buf; }
+        if (len > sizeof additional_input_buf) {
+            len = sizeof additional_input_buf;
+        }
 
         /* 10.2.1.4.1 step 2 */
         memcpy(additional_input_buf, additional_input, len);
@@ -185,8 +194,9 @@ int tc_ctr_prng_reseed(TCCtrPrng_t *const ctx, uint8_t const *const entropy,
     return result;
 }
 
-int tc_ctr_prng_generate(TCCtrPrng_t *const ctx, uint8_t const *const additional_input,
-                         unsigned int additionallen, uint8_t *const out, unsigned int outlen) {
+int tc_ctr_prng_generate(
+    TCCtrPrng_t *const ctx, uint8_t const *const additional_input, unsigned int additionallen,
+    uint8_t *const out, unsigned int outlen) {
     /* 2^48 - see section 10.2.1 */
     static const uint64_t MAX_REQS_BEFORE_RESEED = 0x1000000000000ULL;
 
@@ -204,7 +214,9 @@ int tc_ctr_prng_generate(TCCtrPrng_t *const ctx, uint8_t const *const additional
             if (0 != additional_input) {
                 /* 10.2.1.5.1 step 2  */
                 unsigned int len = additionallen;
-                if (len > sizeof additional_input_buf) { len = sizeof additional_input_buf; }
+                if (len > sizeof additional_input_buf) {
+                    len = sizeof additional_input_buf;
+                }
                 memcpy(additional_input_buf, additional_input, len);
                 tc_ctr_prng_update(ctx, additional_input_buf);
             }
@@ -215,7 +227,7 @@ int tc_ctr_prng_generate(TCCtrPrng_t *const ctx, uint8_t const *const additional
             unsigned int len = 0U;
             while (len < outlen) {
                 unsigned int blocklen = outlen - len;
-                uint8_t      output_block[TC_AES_BLOCK_SIZE];
+                uint8_t output_block[TC_AES_BLOCK_SIZE];
 
                 /* 10.2.1.5.1 step 4.1 */
                 arrInc(ctx->V, sizeof ctx->V);
@@ -224,7 +236,9 @@ int tc_ctr_prng_generate(TCCtrPrng_t *const ctx, uint8_t const *const additional
                 (void)tc_aes_encrypt(output_block, ctx->V, &ctx->key);
 
                 /* 10.2.1.5.1 step 4.3/step 5 */
-                if (blocklen > TC_AES_BLOCK_SIZE) { blocklen = TC_AES_BLOCK_SIZE; }
+                if (blocklen > TC_AES_BLOCK_SIZE) {
+                    blocklen = TC_AES_BLOCK_SIZE;
+                }
                 memcpy(&(out[len]), output_block, blocklen);
 
                 len += blocklen;

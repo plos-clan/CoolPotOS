@@ -1,6 +1,6 @@
 #include "task/futex.h"
-#include "task/smp.h"
 #include "task/scheduler.h"
+#include "task/smp.h"
 #if EEVDF_SCHEDULER
 #    include "task/eevdf.h"
 #else
@@ -71,13 +71,15 @@ int futex_wake(void *phys_addr, int count) {
 }
 
 void futex_free(tcb_t thread) {
-    if (thread == NULL) { return; }
+    if (thread == NULL) {
+        return;
+    }
 
     for (size_t bucket = 0; bucket < futex_map->capacity; bucket++) {
         map_entry *entry = futex_map->buckets[bucket];
         while (entry) {
             map_entry *next = entry->next;
-            void      *key  = entry->key;
+            void *key = entry->key;
             cow_arraylist *queue = (cow_arraylist *)entry->value;
             if (queue != NULL) {
                 for (size_t index = 0; index < queue->size;) {

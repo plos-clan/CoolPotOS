@@ -34,16 +34,17 @@
 #include <lib/tinycrypt/constants.h>
 #include <lib/tinycrypt/utils.h>
 
-int tc_cbc_mode_encrypt(uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen,
-                        const uint8_t *iv, const TCAesKeySched_t sched) {
+int tc_cbc_mode_encrypt(
+    uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen, const uint8_t *iv,
+    const TCAesKeySched_t sched) {
 
-    uint8_t      buffer[TC_AES_BLOCK_SIZE];
+    uint8_t buffer[TC_AES_BLOCK_SIZE];
     unsigned int n, m;
 
     /* input sanity check: */
-    if (out == (uint8_t *)0 || in == (const uint8_t *)0 || sched == (TCAesKeySched_t)0 ||
-        inlen == 0 || outlen == 0 || (inlen % TC_AES_BLOCK_SIZE) != 0 ||
-        (outlen % TC_AES_BLOCK_SIZE) != 0 || outlen != inlen + TC_AES_BLOCK_SIZE) {
+    if (out == (uint8_t *)0 || in == (const uint8_t *)0 || sched == (TCAesKeySched_t)0 || inlen == 0
+        || outlen == 0 || (inlen % TC_AES_BLOCK_SIZE) != 0 || (outlen % TC_AES_BLOCK_SIZE) != 0
+        || outlen != inlen + TC_AES_BLOCK_SIZE) {
         return TC_CRYPTO_FAIL;
     }
 
@@ -59,38 +60,39 @@ int tc_cbc_mode_encrypt(uint8_t *out, unsigned int outlen, const uint8_t *in, un
             (void)tc_aes_encrypt(buffer, buffer, sched);
             (void)_copy(out, TC_AES_BLOCK_SIZE, buffer, TC_AES_BLOCK_SIZE);
             out += TC_AES_BLOCK_SIZE;
-            m    = 0;
+            m = 0;
         }
     }
 
     return TC_CRYPTO_SUCCESS;
 }
 
-int tc_cbc_mode_decrypt(uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen,
-                        const uint8_t *iv, const TCAesKeySched_t sched) {
+int tc_cbc_mode_decrypt(
+    uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen, const uint8_t *iv,
+    const TCAesKeySched_t sched) {
 
-    uint8_t        buffer[TC_AES_BLOCK_SIZE];
+    uint8_t buffer[TC_AES_BLOCK_SIZE];
     const uint8_t *p;
-    unsigned int   n, m;
+    unsigned int n, m;
 
     /* sanity check the inputs */
-    if (out == (uint8_t *)0 || in == (const uint8_t *)0 || sched == (TCAesKeySched_t)0 ||
-        inlen == 0 || outlen == 0 || (inlen % TC_AES_BLOCK_SIZE) != 0 ||
-        (outlen % TC_AES_BLOCK_SIZE) != 0 || outlen != inlen) {
+    if (out == (uint8_t *)0 || in == (const uint8_t *)0 || sched == (TCAesKeySched_t)0 || inlen == 0
+        || outlen == 0 || (inlen % TC_AES_BLOCK_SIZE) != 0 || (outlen % TC_AES_BLOCK_SIZE) != 0
+        || outlen != inlen) {
         return TC_CRYPTO_FAIL;
     }
 
     /*
-	 * Note that in == iv + ciphertext, i.e. the iv and the ciphertext are
-	 * contiguous. This allows for a very efficient decryption algorithm
-	 * that would not otherwise be possible.
-	 */
+     * Note that in == iv + ciphertext, i.e. the iv and the ciphertext are
+     * contiguous. This allows for a very efficient decryption algorithm
+     * that would not otherwise be possible.
+     */
     p = iv;
     for (n = m = 0; n < outlen; ++n) {
         if ((n % TC_AES_BLOCK_SIZE) == 0) {
             (void)tc_aes_decrypt(buffer, in, sched);
             in += TC_AES_BLOCK_SIZE;
-            m   = 0;
+            m = 0;
         }
         *out++ = buffer[m++] ^ *p++;
     }

@@ -1,12 +1,21 @@
 #include "task/scheduler.h"
 #include "cow_arraylist.h"
 #include "errno.h"
-#include "intctl.h"
 #include "krlibc.h"
 #include "lock.h"
+#include "mem/page.h"
+#include "metadata.h"
+#include "ptrace.h"
+#include "stdbool.h"
+#include "stddef.h"
+#include "task/signal.h"
 #include "task/smp.h"
+#include "task/task.h"
 #include "term/klog.h"
 #include "timer.h"
+#include "types.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #if EEVDF_SCHEDULER
 #    include "task/eevdf.h"
@@ -17,7 +26,7 @@
 _Atomic volatile bool scheduler_status = false;
 
 static cow_arraylist *sleep_list = NULL;
-static spin_t         sleep_lock = SPIN_INIT;
+static spin_t sleep_lock = SPIN_INIT;
 
 static inline void sleep_block_task(tcb_t thread) {
     cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
@@ -38,11 +47,15 @@ static inline void sleep_wake_task(tcb_t thread) {
 }
 
 void scheduler_check_sleep() {
-    if (sleep_list == NULL || sleep_list->size == 0) return;
+    if (sleep_list == NULL || sleep_list->size == 0) {
+        return;
+    }
 
     uint64_t now = nano_time();
 
-    if (!spin_trylock(sleep_lock)) return;
+    if (!spin_trylock(sleep_lock)) {
+        return;
+    }
     for (size_t i = 0; i < sleep_list->size;) {
         tcb_t thread = (tcb_t)cow_list_get(sleep_list, i);
         if (thread == NULL) {
@@ -55,7 +68,7 @@ void scheduler_check_sleep() {
         if (wake) {
             cow_list_remove(sleep_list, i);
             thread->sleep_deadline = 0;
-            thread->status         = T_START;
+            thread->status = T_START;
             sleep_wake_task(thread);
         } else {
             i++;
@@ -73,11 +86,13 @@ void scheduler_disable() {
 }
 
 int scheduler_nano_sleep(uint64_t nano) {
-    if (sleep_list == NULL) sleep_list = cow_list_create();
+    if (sleep_list == NULL) {
+        sleep_list = cow_list_create();
+    }
 
-    tcb_t current           = get_current_task();
+    tcb_t current = get_current_task();
     current->sleep_deadline = nano_time() + nano;
-    current->status         = T_WAIT;
+    current->status = T_WAIT;
 
     bool int_enable = arch_check_interrupt();
     arch_close_interrupt();
@@ -85,7 +100,9 @@ int scheduler_nano_sleep(uint64_t nano) {
     cow_list_add(sleep_list, current);
     sleep_block_task(current);
     spin_unlock(sleep_lock);
-    if (int_enable) arch_open_interrupt();
+    if (int_enable) {
+        arch_open_interrupt();
+    }
 
     scheduler_yield();
 
@@ -97,12 +114,16 @@ int scheduler_nano_sleep(uint64_t nano) {
 }
 
 bool scheduler_add_task(tcb_t thread, uint64_t prio) {
-    if (thread == NULL) return false;
-    cpu_local_t *local = NULL; //get_min_task_count_cpu();
-    local              = local == NULL ? arch_current_cpu() : local;
-    if (local == NULL) return false;
+    if (thread == NULL) {
+        return false;
+    }
+    cpu_local_t *local = get_min_task_count_cpu();
+    local = local == NULL ? arch_current_cpu() : local;
+    if (local == NULL) {
+        return false;
+    }
     local->task_count++;
-    thread->prio   = prio;
+    thread->prio = prio;
     thread->cpu_id = local->id;
 #if EEVDF_SCHEDULER
     add_eevdf_entity_with_prio(thread, prio, local);
@@ -113,9 +134,11 @@ bool scheduler_add_task(tcb_t thread, uint64_t prio) {
 }
 
 bool scheduler_add_task_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu) {
-    if (cpu == NULL || thread == NULL) return false;
+    if (cpu == NULL || thread == NULL) {
+        return false;
+    }
     cpu->task_count++;
-    thread->prio   = prio;
+    thread->prio = prio;
     thread->cpu_id = cpu->id;
 #if EEVDF_SCHEDULER
     add_eevdf_entity_with_prio(thread, prio, cpu);
@@ -127,17 +150,17 @@ bool scheduler_add_task_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu) {
 
 void scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu) {
     extern tcb_t bsp_idle_thread;
-    bsp_cpu->enable       = true;
-    bsp_cpu->directory    = get_kernel_pagedir();
+    bsp_cpu->enable = true;
+    bsp_cpu->directory = get_kernel_pagedir();
     bsp_cpu->current_task = bsp_idle_thread;
-    bsp_cpu->is_yield     = false;
-    bsp_cpu->jiffies      = 0;
+    bsp_cpu->is_yield = false;
+    bsp_cpu->jiffies = 0;
     bsp_cpu->idle_jiffies = 0;
-    bsp_cpu->task_count   = 1;
+    bsp_cpu->task_count = 1;
 
-    bsp_idle_thread->prio   = NICE_TO_PRIO(0);
-    bsp_cpu->idle_task      = bsp_idle_thread;
-    bsp_cpu->current_task   = bsp_idle_thread;
+    bsp_idle_thread->prio = NICE_TO_PRIO(0);
+    bsp_cpu->idle_task = bsp_idle_thread;
+    bsp_cpu->current_task = bsp_idle_thread;
     bsp_idle_thread->cpu_id = bsp_cpu->id;
 #if EEVDF_SCHEDULER
     init_cpu_idle(bsp_cpu, bsp_idle_thread);
@@ -147,14 +170,14 @@ void scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu) {
 }
 
 void scheduler_set_cpu_idle(tcb_t thread, cpu_local_t *cpu) {
-    thread->prio       = NICE_TO_PRIO(-20);
-    cpu->idle_task     = thread;
-    cpu->current_task  = thread;
-    cpu->is_yield      = false;
-    cpu->jiffies       = 0;
-    cpu->idle_jiffies  = 0;
-    cpu->task_count    = 1;
-    thread->cpu_id     = cpu->id;
+    thread->prio = NICE_TO_PRIO(-20);
+    cpu->idle_task = thread;
+    cpu->current_task = thread;
+    cpu->is_yield = false;
+    cpu->jiffies = 0;
+    cpu->idle_jiffies = 0;
+    cpu->task_count = 1;
+    thread->cpu_id = cpu->id;
 #if EEVDF_SCHEDULER
     init_cpu_idle(cpu, thread);
 #else
@@ -163,8 +186,12 @@ void scheduler_set_cpu_idle(tcb_t thread, cpu_local_t *cpu) {
 }
 
 void scheduler_remove_task(tcb_t thread, cpu_local_t *cpu) {
-    if (thread == NULL || cpu == NULL || thread->sched_handle == NULL) return;
-    if (cpu->task_count > 0) cpu->task_count--;
+    if (thread == NULL || cpu == NULL || thread->sched_handle == NULL) {
+        return;
+    }
+    if (cpu->task_count > 0) {
+        cpu->task_count--;
+    }
     if (thread->status == T_WAIT && thread->sleep_deadline != 0) {
         // 从 sleep 列表中移除
         bool int_enable = arch_check_interrupt();
@@ -186,7 +213,9 @@ void scheduler_remove_task(tcb_t thread, cpu_local_t *cpu) {
         add_rrs_entity(thread, cpu);
         remove_rrs_entity(thread, cpu);
 #endif
-        if (int_enable) arch_open_interrupt();
+        if (int_enable) {
+            arch_open_interrupt();
+        }
         return;
     }
     if (thread->status == T_FUTEX) {
@@ -198,7 +227,9 @@ void scheduler_remove_task(tcb_t thread, cpu_local_t *cpu) {
 #else
         remove_rrs_entity(thread, cpu);
 #endif
-        if (int_enable) arch_open_interrupt();
+        if (int_enable) {
+            arch_open_interrupt();
+        }
         return;
     }
 #if EEVDF_SCHEDULER
@@ -216,19 +247,23 @@ void scheduler_change_weight(tcb_t thread, uint64_t prio) {
 
 tcb_t scheduler_pick_next(uint64_t cpu_id) {
     cpu_local_t *cpu_local = get_cpu_local(cpu_id);
-    tcb_t        next_thread =
+    tcb_t next_thread =
 #if EEVDF_SCHEDULER
         eevdf_pick_next_task(cpu_local);
 #else
         rrs_pick_next_task(cpu_local);
 #endif
-    if (next_thread == NULL) next_thread = cpu_local->idle_task;
+    if (next_thread == NULL) {
+        next_thread = cpu_local->idle_task;
+    }
     return next_thread;
 }
 
 void scheduler_yield() {
     cpu_local_t *cpu = arch_current_cpu();
-    if (unlikely(cpu == NULL)) return;
+    if (unlikely(cpu == NULL)) {
+        return;
+    }
     cpu->is_yield = true;
 
 #if EEVDF_SCHEDULER
@@ -238,9 +273,13 @@ void scheduler_yield() {
 }
 
 void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
-    if (!scheduler_status) return;
+    if (!scheduler_status) {
+        return;
+    }
     cpu_local_t *cpu = arch_current_cpu();
-    if (unlikely(cpu == NULL)) return;
+    if (unlikely(cpu == NULL)) {
+        return;
+    }
 
     if (!cpu->is_yield) {
         cpu->jiffies++;
@@ -253,25 +292,29 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     scheduler_check_sleep();
 
     tcb_t current_thread = get_current_task();
-    if (unlikely(current_thread == NULL)) return;
+    if (unlikely(current_thread == NULL)) {
+        return;
+    }
     tcb_t next_thread = scheduler_pick_next(cpu->id);
 
     extern pcb_t kernel_process;
-    if (next_thread->process->parent == NULL || next_thread->process->parent->status == T_DEATH ||
-        next_thread->process->parent->status == T_OUT) {
+    if (next_thread->process->parent == NULL || next_thread->process->parent->status == T_DEATH
+        || next_thread->process->parent->status == T_OUT) {
         next_thread->process->parent = kernel_process;
     }
 
-    if (current_thread == next_thread) return;
+    if (current_thread == next_thread) {
+        return;
+    }
     current_thread->status = T_RUNNING;
-    next_thread->status    = T_START;
-    cpu->current_task      = next_thread;
+    next_thread->status = T_START;
+    cpu->current_task = next_thread;
     arch_task_switch(current_thread, next_thread, regs);
 }
 
 USED void foreach_all_process() {
     extern cow_arraylist *process_list;
-    pcb_t                 proc = NULL;
+    pcb_t proc = NULL;
     cow_foreach(process_list, proc) {
         logkf("process name: %s, pid: %d\n", proc->name, proc->pid);
     }

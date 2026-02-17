@@ -23,12 +23,12 @@ bool hid_field_is_range(const HidField *field) {
 }
 
 uint32_t hid_field_value(const HidField *field, const uint8_t *data, uint32_t idx) {
-    uint32_t offset   = field->bit_offset + (idx * field->bit_size);
+    uint32_t offset = field->bit_offset + (idx * field->bit_size);
     uint32_t byte_idx = offset / 8;
-    uint32_t shift    = offset % 8;
+    uint32_t shift = offset % 8;
 
     uint32_t count = (offset + field->bit_size + 7) / 8 - byte_idx;
-    uint64_t raw   = 0;
+    uint64_t raw = 0;
     for (uint32_t i = 0; i < count; i++) {
         raw |= (uint64_t)data[byte_idx + i] << (i * 8);
     }
@@ -90,7 +90,7 @@ void hid_descriptor_free(HidDescriptor *desc) {
 
 void hid_parser_init(HidParser *parser, const uint8_t *data, uint16_t length) {
     memset(parser, 0, sizeof(HidParser));
-    parser->data   = data;
+    parser->data = data;
     parser->length = length;
     parser->offset = 0;
     HidReportMap map;
@@ -109,7 +109,7 @@ static uint32_t hid_parser_read_unsigned(HidParser *parser, uint16_t len) {
     case 2: {
         uint32_t b0 = (uint32_t)parser->data[parser->offset];
         uint32_t b1 = (uint32_t)parser->data[parser->offset + 1];
-        value       = b0 | (b1 << 8);
+        value = b0 | (b1 << 8);
         break;
     }
     case 4: {
@@ -117,7 +117,7 @@ static uint32_t hid_parser_read_unsigned(HidParser *parser, uint16_t len) {
         uint32_t b1 = (uint32_t)parser->data[parser->offset + 1];
         uint32_t b2 = (uint32_t)parser->data[parser->offset + 2];
         uint32_t b3 = (uint32_t)parser->data[parser->offset + 3];
-        value       = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+        value = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
         break;
     }
     default:
@@ -186,8 +186,8 @@ static void hid_parser_handle_global(HidParser *parser, uint8_t tag, uint16_t le
     }
 }
 
-static void hid_parser_handle_local(HidParser *parser, uint8_t tag, uint16_t data_len,
-                                    uint32_t val) {
+static void
+hid_parser_handle_local(HidParser *parser, uint8_t tag, uint16_t data_len, uint32_t val) {
     bool is_extended = data_len == 4;
 
     uint32_t full_usage = is_extended ? val : ((uint32_t)parser->global.usage_page << 16) | val;
@@ -196,8 +196,8 @@ static void hid_parser_handle_local(HidParser *parser, uint8_t tag, uint16_t dat
     case HID_TAG_USAGE: {
         LocalItem item = {
             .is_range = false,
-            .min      = full_usage,
-            .max      = full_usage,
+            .min = full_usage,
+            .max = full_usage,
         };
         LocalItemVec_push(&parser->local.items, item);
         break;
@@ -205,8 +205,8 @@ static void hid_parser_handle_local(HidParser *parser, uint8_t tag, uint16_t dat
     case HID_TAG_USAGE_MIN: {
         LocalItem item = {
             .is_range = true,
-            .min      = full_usage,
-            .max      = 0,
+            .min = full_usage,
+            .max = 0,
         };
         LocalItemVec_push(&parser->local.items, item);
         break;
@@ -240,8 +240,8 @@ static void hid_parser_handle_main(HidParser *parser, uint8_t tag, uint32_t flag
         return;
     }
 
-    uint32_t kind_idx  = (uint32_t)kind;
-    uint8_t  report_id = parser->global.report_id;
+    uint32_t kind_idx = (uint32_t)kind;
+    uint8_t report_id = parser->global.report_id;
 
     HidReport new_report;
     memset(&new_report, 0, sizeof(HidReport));
@@ -256,39 +256,38 @@ static void hid_parser_handle_main(HidParser *parser, uint8_t tag, uint32_t flag
 
     HidReport *layout = hid_report_map_ensure(&parser->descriptor.reports, report_id, &new_report);
 
-    uint32_t report_count    = parser->global.report_count;
-    uint32_t report_size     = parser->global.report_size;
-    bool     is_variable     = (flags & HID_FLAG_VARIABLE) != 0;
-    bool     is_single_range =
-        (parser->local.items.len == 1 && parser->local.items.data[0].is_range);
+    uint32_t report_count = parser->global.report_count;
+    uint32_t report_size = parser->global.report_size;
+    bool is_variable = (flags & HID_FLAG_VARIABLE) != 0;
+    bool is_single_range = (parser->local.items.len == 1 && parser->local.items.data[0].is_range);
 
     if (!is_variable && is_single_range) {
         LocalItem usage_item = parser->local.items.data[0];
-        HidField  field      = {
-            .report_id    = report_id,
-            .kind         = kind,
-            .bit_offset   = layout->size_bits[kind_idx],
-            .bit_size     = report_size,
+        HidField field = {
+            .report_id = report_id,
+            .kind = kind,
+            .bit_offset = layout->size_bits[kind_idx],
+            .bit_size = report_size,
             .report_count = report_count,
-            .logical_min  = parser->global.logical_min,
-            .logical_max  = parser->global.logical_max,
+            .logical_min = parser->global.logical_min,
+            .logical_max = parser->global.logical_max,
             .physical_min = parser->global.physical_min,
             .physical_max = parser->global.physical_max,
-            .flags        = flags,
-            .usage_page   = parser->global.usage_page,
-            .usage_min    = usage_item.min,
-            .usage_max    = usage_item.max,
+            .flags = flags,
+            .usage_page = parser->global.usage_page,
+            .usage_min = usage_item.min,
+            .usage_max = usage_item.max,
         };
         HidFieldVec_push(&layout->fields, field);
         layout->size_bits[kind_idx] += report_size * report_count;
     } else {
-        uint64_t item_idx     = 0;
+        uint64_t item_idx = 0;
         uint32_t range_offset = 0;
         for (uint32_t i = 0; i < report_count; i++) {
             uint32_t current_usage = 0;
             if (item_idx < parser->local.items.len) {
                 LocalItem item = parser->local.items.data[item_idx];
-                current_usage  = item.min + range_offset;
+                current_usage = item.min + range_offset;
                 if (current_usage < item.max) {
                     range_offset++;
                 } else if (item_idx < parser->local.items.len - 1) {
@@ -298,19 +297,19 @@ static void hid_parser_handle_main(HidParser *parser, uint8_t tag, uint32_t flag
             }
 
             HidField field = {
-                .report_id    = report_id,
-                .kind         = kind,
-                .bit_offset   = layout->size_bits[kind_idx],
-                .bit_size     = report_size,
+                .report_id = report_id,
+                .kind = kind,
+                .bit_offset = layout->size_bits[kind_idx],
+                .bit_size = report_size,
                 .report_count = 1,
-                .logical_min  = parser->global.logical_min,
-                .logical_max  = parser->global.logical_max,
+                .logical_min = parser->global.logical_min,
+                .logical_max = parser->global.logical_max,
                 .physical_min = parser->global.physical_min,
                 .physical_max = parser->global.physical_max,
-                .flags        = flags,
-                .usage_page   = parser->global.usage_page,
-                .usage_min    = current_usage,
-                .usage_max    = current_usage,
+                .flags = flags,
+                .usage_page = parser->global.usage_page,
+                .usage_min = current_usage,
+                .usage_max = current_usage,
             };
             HidFieldVec_push(&layout->fields, field);
             layout->size_bits[kind_idx] += report_size;
@@ -325,11 +324,11 @@ bool hid_parser_parse(HidParser *parser, HidDescriptor *out_desc) {
         uint8_t header = parser->data[parser->offset];
         parser->offset++;
 
-        uint8_t  size_code = header & 0x03;
-        uint16_t data_len  = (size_code == 3) ? 4 : size_code;
+        uint8_t size_code = header & 0x03;
+        uint16_t data_len = (size_code == 3) ? 4 : size_code;
 
         uint8_t item_type = (header >> 2) & 0x03;
-        uint8_t item_tag  = (header >> 4) & 0x0f;
+        uint8_t item_tag = (header >> 4) & 0x0f;
 
         if ((uint16_t)(parser->offset + data_len) > parser->length) {
             kwarn("HID: Truncated at offset %d", parser->offset);

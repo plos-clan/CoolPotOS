@@ -24,21 +24,21 @@
  */
 
 #ifndef FLANTERM_FB_H
-#define FLANTERM_FB_H 1
+#    define FLANTERM_FB_H 1
 
-#include "types.h"
+#    include "types.h"
 
-#ifdef __cplusplus
+#    ifdef __cplusplus
 extern "C" {
-#endif
+#    endif
 
-#include "../flanterm.h"
+#    include "../flanterm.h"
 
-#ifdef FLANTERM_IN_FLANTERM
+#    ifdef FLANTERM_IN_FLANTERM
 
-#    include "fb_private.h"
+#        include "fb_private.h"
 
-#endif
+#    endif
 
 struct flanterm_context *flanterm_fb_init(
     /* If _malloc and _free are nulled, use the bump allocated instance (1 use only). */
@@ -52,10 +52,10 @@ struct flanterm_context *flanterm_fb_init(
     /* If font is null, use default font and font_width and font_height ignored. */
     void *font, size_t font_width, size_t font_height, size_t font_spacing,
     /* If scale_x and scale_y are 0, automatically scale font based on resolution. */
-    size_t font_scale_x, size_t font_scale_y, size_t margin,uint32_t num_glyph);
+    size_t font_scale_x, size_t font_scale_y, size_t margin, uint32_t num_glyph);
 
-#ifdef __cplusplus
+#    ifdef __cplusplus
 }
-#endif
+#    endif
 
 #endif

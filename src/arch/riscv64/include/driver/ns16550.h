@@ -30,7 +30,6 @@
 #define UART_MCR_RTS 0x02
 #define UART_MCR_OUT2 0x08
 
-
 #include "types.h"
 
 /* 访问宽度枚举 */
@@ -60,19 +59,17 @@ typedef struct {
     volatile void *base_addr;         // 基地址
     uart_addr_space_t addr_space;     // 地址空间类型
     uart_access_width_t access_width; // 访问宽度
-    uint32_t reg_shift;   // 寄存器偏移位移（字节间距 = 1 << reg_shift）
-    uint32_t reg_stride;  // 寄存器步进（优先使用）
-    uint32_t clock_freq;  // 时钟频率
-    uart_config_t config; // 配置参数
+    uint32_t reg_shift;               // 寄存器偏移位移（字节间距 = 1 << reg_shift）
+    uint32_t reg_stride;              // 寄存器步进（优先使用）
+    uint32_t clock_freq;              // 时钟频率
+    uart_config_t config;             // 配置参数
 } uart_device_t;
 
-
 /* 函数声明 */
-void uart_init(uart_device_t *uart, volatile void *base_addr,
-               uart_config_t *config);
-void uart_init_gas(uart_device_t *uart, volatile void *base_addr,
-                   uint32_t reg_shift, uart_access_width_t access_width,
-                   uart_config_t *config);
+void uart_init(uart_device_t *uart, volatile void *base_addr, uart_config_t *config);
+void uart_init_gas(
+    uart_device_t *uart, volatile void *base_addr, uint32_t reg_shift,
+    uart_access_width_t access_width, uart_config_t *config);
 void uart_set_baudrate(uart_device_t *uart, uint32_t baudrate);
 void uart_putc(uart_device_t *uart, char c);
 char uart_getc(uart_device_t *uart);

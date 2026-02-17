@@ -70,39 +70,39 @@ static const uint32_t col256[] = {
     0x626262, 0x6c6c6c, 0x767676, 0x808080, 0x8a8a8a, 0x949494, 0x9e9e9e, 0xa8a8a8, 0xb2b2b2,
     0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada, 0xe4e4e4, 0xeeeeee};
 
-#define CHARSET_DEFAULT     0
+#define CHARSET_DEFAULT 0
 #define CHARSET_DEC_SPECIAL 1
 
 void flanterm_context_reinit(struct flanterm_context *ctx) {
-    ctx->tab_size             = 8;
-    ctx->autoflush            = true;
-    ctx->cursor_enabled       = true;
-    ctx->scroll_enabled       = true;
-    ctx->control_sequence     = false;
-    ctx->escape               = false;
-    ctx->osc                  = false;
-    ctx->osc_escape           = false;
-    ctx->rrr                  = false;
-    ctx->discard_next         = false;
-    ctx->bold                 = false;
-    ctx->bg_bold              = false;
-    ctx->reverse_video        = false;
-    ctx->dec_private          = false;
-    ctx->insert_mode          = false;
-    ctx->unicode_remaining    = 0;
-    ctx->g_select             = 0;
-    ctx->charsets[0]          = CHARSET_DEFAULT;
-    ctx->charsets[1]          = CHARSET_DEC_SPECIAL;
-    ctx->current_charset      = 0;
-    ctx->escape_offset        = 0;
-    ctx->esc_values_i         = 0;
-    ctx->saved_cursor_x       = 0;
-    ctx->saved_cursor_y       = 0;
-    ctx->current_primary      = (size_t)-1;
-    ctx->current_bg           = (size_t)-1;
-    ctx->scroll_top_margin    = 0;
+    ctx->tab_size = 8;
+    ctx->autoflush = true;
+    ctx->cursor_enabled = true;
+    ctx->scroll_enabled = true;
+    ctx->control_sequence = false;
+    ctx->escape = false;
+    ctx->osc = false;
+    ctx->osc_escape = false;
+    ctx->rrr = false;
+    ctx->discard_next = false;
+    ctx->bold = false;
+    ctx->bg_bold = false;
+    ctx->reverse_video = false;
+    ctx->dec_private = false;
+    ctx->insert_mode = false;
+    ctx->unicode_remaining = 0;
+    ctx->g_select = 0;
+    ctx->charsets[0] = CHARSET_DEFAULT;
+    ctx->charsets[1] = CHARSET_DEC_SPECIAL;
+    ctx->current_charset = 0;
+    ctx->escape_offset = 0;
+    ctx->esc_values_i = 0;
+    ctx->saved_cursor_x = 0;
+    ctx->saved_cursor_y = 0;
+    ctx->current_primary = (size_t)-1;
+    ctx->current_bg = (size_t)-1;
+    ctx->scroll_top_margin = 0;
     ctx->scroll_bottom_margin = ctx->rows;
-    ctx->oob_output           = FLANTERM_OOB_OUTPUT_ONLCR;
+    ctx->oob_output = FLANTERM_OOB_OUTPUT_ONLCR;
 }
 
 void flanterm_write(struct flanterm_context *ctx, const char *buf, size_t count) {
@@ -110,13 +110,16 @@ void flanterm_write(struct flanterm_context *ctx, const char *buf, size_t count)
         flanterm_putchar(ctx, buf[i]);
     }
 
-    if (ctx->autoflush) { ctx->double_buffer_flush(ctx); }
+    if (ctx->autoflush) {
+        ctx->double_buffer_flush(ctx);
+    }
 }
 
 static void sgr(struct flanterm_context *ctx) {
     size_t i = 0;
 
-    if (!ctx->esc_values_i) goto def;
+    if (!ctx->esc_values_i)
+        goto def;
 
     for (; i < ctx->esc_values_i; i++) {
         size_t offset;
@@ -127,10 +130,10 @@ static void sgr(struct flanterm_context *ctx) {
                 ctx->reverse_video = false;
                 ctx->swap_palette(ctx);
             }
-            ctx->bold            = false;
-            ctx->bg_bold         = false;
+            ctx->bold = false;
+            ctx->bg_bold = false;
             ctx->current_primary = (size_t)-1;
-            ctx->current_bg      = (size_t)-1;
+            ctx->current_bg = (size_t)-1;
             ctx->set_text_bg_default(ctx);
             ctx->set_text_fg_default(ctx);
             continue;
@@ -209,10 +212,12 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 30 && ctx->esc_values[i] <= 37) {
-            offset               = 30;
+            offset = 30;
             ctx->current_primary = ctx->esc_values[i] - offset;
 
-            if (ctx->reverse_video) { goto set_bg; }
+            if (ctx->reverse_video) {
+                goto set_bg;
+            }
 
         set_fg:
             if ((ctx->bold && !ctx->reverse_video) || (ctx->bg_bold && ctx->reverse_video)) {
@@ -224,10 +229,12 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 40 && ctx->esc_values[i] <= 47) {
-            offset          = 40;
+            offset = 40;
             ctx->current_bg = ctx->esc_values[i] - offset;
 
-            if (ctx->reverse_video) { goto set_fg; }
+            if (ctx->reverse_video) {
+                goto set_fg;
+            }
 
         set_bg:
             if ((ctx->bold && ctx->reverse_video) || (ctx->bg_bold && !ctx->reverse_video)) {
@@ -239,10 +246,12 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 90 && ctx->esc_values[i] <= 97) {
-            offset               = 90;
+            offset = 90;
             ctx->current_primary = ctx->esc_values[i] - offset;
 
-            if (ctx->reverse_video) { goto set_bg_bright; }
+            if (ctx->reverse_video) {
+                goto set_bg_bright;
+            }
 
         set_fg_bright:
             ctx->set_text_fg_bright(ctx, ctx->esc_values[i] - offset);
@@ -250,10 +259,12 @@ static void sgr(struct flanterm_context *ctx) {
         }
 
         else if (ctx->esc_values[i] >= 100 && ctx->esc_values[i] <= 107) {
-            offset          = 100;
+            offset = 100;
             ctx->current_bg = ctx->esc_values[i] - offset;
 
-            if (ctx->reverse_video) { goto set_fg_bright; }
+            if (ctx->reverse_video) {
+                goto set_fg_bright;
+            }
 
         set_bg_bright:
             ctx->set_text_bg_bright(ctx, ctx->esc_values[i] - offset);
@@ -263,7 +274,9 @@ static void sgr(struct flanterm_context *ctx) {
         else if (ctx->esc_values[i] == 39) {
             ctx->current_primary = (size_t)-1;
 
-            if (ctx->reverse_video) { ctx->swap_palette(ctx); }
+            if (ctx->reverse_video) {
+                ctx->swap_palette(ctx);
+            }
 
             if (!ctx->bold) {
                 ctx->set_text_fg_default(ctx);
@@ -271,7 +284,9 @@ static void sgr(struct flanterm_context *ctx) {
                 ctx->set_text_fg_default_bright(ctx);
             }
 
-            if (ctx->reverse_video) { ctx->swap_palette(ctx); }
+            if (ctx->reverse_video) {
+                ctx->swap_palette(ctx);
+            }
 
             continue;
         }
@@ -279,7 +294,9 @@ static void sgr(struct flanterm_context *ctx) {
         else if (ctx->esc_values[i] == 49) {
             ctx->current_bg = (size_t)-1;
 
-            if (ctx->reverse_video) { ctx->swap_palette(ctx); }
+            if (ctx->reverse_video) {
+                ctx->swap_palette(ctx);
+            }
 
             if (!ctx->bg_bold) {
                 ctx->set_text_bg_default(ctx);
@@ -287,7 +304,9 @@ static void sgr(struct flanterm_context *ctx) {
                 ctx->set_text_bg_default_bright(ctx);
             }
 
-            if (ctx->reverse_video) { ctx->swap_palette(ctx); }
+            if (ctx->reverse_video) {
+                ctx->swap_palette(ctx);
+            }
 
             continue;
         }
@@ -313,11 +332,15 @@ static void sgr(struct flanterm_context *ctx) {
             bool fg = ctx->esc_values[i] == 38;
 
             i++;
-            if (i >= ctx->esc_values_i) { break; }
+            if (i >= ctx->esc_values_i) {
+                break;
+            }
 
             switch (ctx->esc_values[i]) {
             case 2: { // RGB
-                if (i + 3 >= ctx->esc_values_i) { goto out; }
+                if (i + 3 >= ctx->esc_values_i) {
+                    goto out;
+                }
 
                 uint32_t rgb_value = 0;
 
@@ -332,7 +355,9 @@ static void sgr(struct flanterm_context *ctx) {
                 break;
             }
             case 5: { // 256 colors
-                if (i + 1 >= ctx->esc_values_i) { goto out; }
+                if (i + 1 >= ctx->esc_values_i) {
+                    goto out;
+                }
 
                 uint32_t col = ctx->esc_values[i + 1];
 
@@ -349,7 +374,8 @@ static void sgr(struct flanterm_context *ctx) {
 
                 break;
             }
-            default: continue;
+            default:
+                continue;
             }
         }
     }
@@ -360,14 +386,21 @@ out:;
 static void dec_private_parse(struct flanterm_context *ctx, uint8_t c) {
     ctx->dec_private = false;
 
-    if (ctx->esc_values_i == 0) { return; }
+    if (ctx->esc_values_i == 0) {
+        return;
+    }
 
     bool set;
 
     switch (c) {
-    case 'h': set = true; break;
-    case 'l': set = false; break;
-    default: return;
+    case 'h':
+        set = true;
+        break;
+    case 'l':
+        set = false;
+        break;
+    default:
+        return;
     }
 
     switch (ctx->esc_values[0]) {
@@ -387,7 +420,9 @@ static void dec_private_parse(struct flanterm_context *ctx, uint8_t c) {
 }
 
 static void linux_private_parse(struct flanterm_context *ctx) {
-    if (ctx->esc_values_i == 0) { return; }
+    if (ctx->esc_values_i == 0) {
+        return;
+    }
 
     if (ctx->callback != NULL) {
         ctx->callback(ctx, FLANTERM_CB_LINUX, ctx->esc_values_i, (uintptr_t)ctx->esc_values, 0);
@@ -395,18 +430,27 @@ static void linux_private_parse(struct flanterm_context *ctx) {
 }
 
 static void mode_toggle(struct flanterm_context *ctx, uint8_t c) {
-    if (ctx->esc_values_i == 0) { return; }
+    if (ctx->esc_values_i == 0) {
+        return;
+    }
 
     bool set;
 
     switch (c) {
-    case 'h': set = true; break;
-    case 'l': set = false; break;
-    default: return;
+    case 'h':
+        set = true;
+        break;
+    case 'l':
+        set = false;
+        break;
+    default:
+        return;
     }
 
     switch (ctx->esc_values[0]) {
-    case 4: ctx->insert_mode = set; return;
+    case 4:
+        ctx->insert_mode = set;
+        return;
     }
 
     if (ctx->callback != NULL) {
@@ -415,33 +459,44 @@ static void mode_toggle(struct flanterm_context *ctx, uint8_t c) {
 }
 
 static void osc_parse(struct flanterm_context *ctx, uint8_t c) {
-    if (ctx->osc_escape && c == '\\') { goto cleanup; }
+    if (ctx->osc_escape && c == '\\') {
+        goto cleanup;
+    }
 
     ctx->osc_escape = false;
 
     switch (c) {
-    case 0x1b: ctx->osc_escape = true; return;
+    case 0x1b:
+        ctx->osc_escape = true;
+        return;
     case '\a':
-    default: break;
+    default:
+        break;
     }
 
 cleanup:
     ctx->osc_escape = false;
-    ctx->osc        = false;
-    ctx->escape     = false;
+    ctx->osc = false;
+    ctx->escape = false;
 }
 
 static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     if (ctx->escape_offset == 2) {
         switch (c) {
-        case '[': ctx->discard_next = true; goto cleanup;
-        case '?': ctx->dec_private = true; return;
+        case '[':
+            ctx->discard_next = true;
+            goto cleanup;
+        case '?':
+            ctx->dec_private = true;
+            return;
         }
     }
 
     if (c >= '0' && c <= '9') {
-        if (ctx->esc_values_i == FLANTERM_MAX_ESC_VALUES) { return; }
-        ctx->rrr                            = true;
+        if (ctx->esc_values_i == FLANTERM_MAX_ESC_VALUES) {
+            return;
+        }
+        ctx->rrr = true;
         ctx->esc_values[ctx->esc_values_i] *= 10;
         ctx->esc_values[ctx->esc_values_i] += c - '0';
         return;
@@ -450,9 +505,12 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     if (ctx->rrr == true) {
         ctx->esc_values_i++;
         ctx->rrr = false;
-        if (c == ';') return;
+        if (c == ';')
+            return;
     } else if (c == ';') {
-        if (ctx->esc_values_i == FLANTERM_MAX_ESC_VALUES) { return; }
+        if (ctx->esc_values_i == FLANTERM_MAX_ESC_VALUES) {
+            return;
+        }
         ctx->esc_values[ctx->esc_values_i] = 0;
         ctx->esc_values_i++;
         return;
@@ -462,8 +520,12 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     switch (c) {
     case 'J':
     case 'K':
-    case 'q': esc_default = 0; break;
-    default: esc_default = 1; break;
+    case 'q':
+        esc_default = 0;
+        break;
+    default:
+        esc_default = 1;
+        break;
     }
 
     for (size_t i = ctx->esc_values_i; i < FLANTERM_MAX_ESC_VALUES; i++) {
@@ -475,7 +537,7 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         goto cleanup;
     }
 
-    bool r              = ctx->scroll_enabled;
+    bool r = ctx->scroll_enabled;
     ctx->scroll_enabled = false;
     size_t x, y;
     ctx->get_cursor_pos(ctx, &x, &y);
@@ -485,12 +547,13 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         x = 0;
         // FALLTHRU
     case 'A': {
-        if (ctx->esc_values[0] > y) ctx->esc_values[0] = y;
-        size_t orig_y                   = y;
-        size_t dest_y                   = y - ctx->esc_values[0];
-        bool   will_be_in_scroll_region = false;
-        if ((ctx->scroll_top_margin >= dest_y && ctx->scroll_top_margin <= orig_y) ||
-            (ctx->scroll_bottom_margin >= dest_y && ctx->scroll_bottom_margin <= orig_y)) {
+        if (ctx->esc_values[0] > y)
+            ctx->esc_values[0] = y;
+        size_t orig_y = y;
+        size_t dest_y = y - ctx->esc_values[0];
+        bool will_be_in_scroll_region = false;
+        if ((ctx->scroll_top_margin >= dest_y && ctx->scroll_top_margin <= orig_y)
+            || (ctx->scroll_bottom_margin >= dest_y && ctx->scroll_bottom_margin <= orig_y)) {
             will_be_in_scroll_region = true;
         }
         if (will_be_in_scroll_region && dest_y < ctx->scroll_top_margin) {
@@ -504,12 +567,13 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         // FALLTHRU
     case 'e':
     case 'B': {
-        if (y + ctx->esc_values[0] > ctx->rows - 1) ctx->esc_values[0] = (ctx->rows - 1) - y;
-        size_t orig_y                   = y;
-        size_t dest_y                   = y + ctx->esc_values[0];
-        bool   will_be_in_scroll_region = false;
-        if ((ctx->scroll_top_margin >= orig_y && ctx->scroll_top_margin <= dest_y) ||
-            (ctx->scroll_bottom_margin >= orig_y && ctx->scroll_bottom_margin <= dest_y)) {
+        if (y + ctx->esc_values[0] > ctx->rows - 1)
+            ctx->esc_values[0] = (ctx->rows - 1) - y;
+        size_t orig_y = y;
+        size_t dest_y = y + ctx->esc_values[0];
+        bool will_be_in_scroll_region = false;
+        if ((ctx->scroll_top_margin >= orig_y && ctx->scroll_top_margin <= dest_y)
+            || (ctx->scroll_bottom_margin >= orig_y && ctx->scroll_bottom_margin <= dest_y)) {
             will_be_in_scroll_region = true;
         }
         if (will_be_in_scroll_region && dest_y >= ctx->scroll_bottom_margin) {
@@ -520,33 +584,45 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     }
     case 'a':
     case 'C':
-        if (x + ctx->esc_values[0] > ctx->cols - 1) ctx->esc_values[0] = (ctx->cols - 1) - x;
+        if (x + ctx->esc_values[0] > ctx->cols - 1)
+            ctx->esc_values[0] = (ctx->cols - 1) - x;
         ctx->set_cursor_pos(ctx, x + ctx->esc_values[0], y);
         break;
     case 'D':
-        if (ctx->esc_values[0] > x) ctx->esc_values[0] = x;
+        if (ctx->esc_values[0] > x)
+            ctx->esc_values[0] = x;
         ctx->set_cursor_pos(ctx, x - ctx->esc_values[0], y);
         break;
     case 'c':
-        if (ctx->callback != NULL) { ctx->callback(ctx, FLANTERM_CB_PRIVATE_ID, 0, 0, 0); }
+        if (ctx->callback != NULL) {
+            ctx->callback(ctx, FLANTERM_CB_PRIVATE_ID, 0, 0, 0);
+        }
         break;
     case 'd':
         ctx->esc_values[0] -= 1;
-        if (ctx->esc_values[0] >= ctx->rows) ctx->esc_values[0] = ctx->rows - 1;
+        if (ctx->esc_values[0] >= ctx->rows)
+            ctx->esc_values[0] = ctx->rows - 1;
         ctx->set_cursor_pos(ctx, x, ctx->esc_values[0]);
         break;
     case 'G':
     case '`':
         ctx->esc_values[0] -= 1;
-        if (ctx->esc_values[0] >= ctx->cols) ctx->esc_values[0] = ctx->cols - 1;
+        if (ctx->esc_values[0] >= ctx->cols)
+            ctx->esc_values[0] = ctx->cols - 1;
         ctx->set_cursor_pos(ctx, ctx->esc_values[0], y);
         break;
     case 'H':
     case 'f':
-        if (ctx->esc_values[0] != 0) { ctx->esc_values[0]--; }
-        if (ctx->esc_values[1] != 0) { ctx->esc_values[1]--; }
-        if (ctx->esc_values[1] >= ctx->cols) ctx->esc_values[1] = ctx->cols - 1;
-        if (ctx->esc_values[0] >= ctx->rows) ctx->esc_values[0] = ctx->rows - 1;
+        if (ctx->esc_values[0] != 0) {
+            ctx->esc_values[0]--;
+        }
+        if (ctx->esc_values[1] != 0) {
+            ctx->esc_values[1]--;
+        }
+        if (ctx->esc_values[1] >= ctx->cols)
+            ctx->esc_values[1] = ctx->cols - 1;
+        if (ctx->esc_values[0] >= ctx->rows)
+            ctx->esc_values[0] = ctx->rows - 1;
         ctx->set_cursor_pos(ctx, ctx->esc_values[1], ctx->esc_values[0]);
         break;
     case 'M': {
@@ -558,7 +634,7 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     }
     case 'L': {
         size_t old_scroll_top_margin = ctx->scroll_top_margin;
-        ctx->scroll_top_margin       = y;
+        ctx->scroll_top_margin = y;
         size_t count = ctx->esc_values[0] > ctx->rows ? ctx->rows : ctx->esc_values[0];
         for (size_t i = 0; i < count; i++) {
             ctx->revscroll(ctx);
@@ -569,7 +645,9 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
     case 'n':
         switch (ctx->esc_values[0]) {
         case 5:
-            if (ctx->callback != NULL) { ctx->callback(ctx, FLANTERM_CB_STATUS_REPORT, 0, 0, 0); }
+            if (ctx->callback != NULL) {
+                ctx->callback(ctx, FLANTERM_CB_STATUS_REPORT, 0, 0, 0);
+            }
             break;
         case 6:
             if (ctx->callback != NULL) {
@@ -587,8 +665,8 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         switch (ctx->esc_values[0]) {
         case 0: {
             size_t rows_remaining = ctx->rows - (y + 1);
-            size_t cols_diff      = ctx->cols - (x + 1);
-            size_t to_clear       = rows_remaining * ctx->cols + cols_diff + 1;
+            size_t cols_diff = ctx->cols - (x + 1);
+            size_t to_clear = rows_remaining * ctx->cols + cols_diff + 1;
             for (size_t i = 0; i < to_clear; i++) {
                 ctx->raw_putchar(ctx, ' ');
             }
@@ -607,12 +685,15 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
                         break;
                     }
                 }
-                if (b == true) break;
+                if (b == true)
+                    break;
             }
             break;
         }
         case 2:
-        case 3: ctx->clear(ctx, false); break;
+        case 3:
+            ctx->clear(ctx, false);
+            break;
         }
         break;
     case '@':
@@ -620,7 +701,9 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
             ctx->move_character(ctx, i + ctx->esc_values[0], y, i, y);
             ctx->set_cursor_pos(ctx, i, y);
             ctx->raw_putchar(ctx, ' ');
-            if (i == x) { break; }
+            if (i == x) {
+                break;
+            }
         }
         ctx->set_cursor_pos(ctx, x, y);
         break;
@@ -636,9 +719,15 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         ctx->set_cursor_pos(ctx, x, y);
         break;
     }
-    case 'm': sgr(ctx); break;
-    case 's': ctx->get_cursor_pos(ctx, &ctx->saved_cursor_x, &ctx->saved_cursor_y); break;
-    case 'u': ctx->set_cursor_pos(ctx, ctx->saved_cursor_x, ctx->saved_cursor_y); break;
+    case 'm':
+        sgr(ctx);
+        break;
+    case 's':
+        ctx->get_cursor_pos(ctx, &ctx->saved_cursor_x, &ctx->saved_cursor_y);
+        break;
+    case 'u':
+        ctx->set_cursor_pos(ctx, ctx->saved_cursor_x, ctx->saved_cursor_y);
+        break;
     case 'K':
         switch (ctx->esc_values[0]) {
         case 0: {
@@ -663,38 +752,50 @@ static void control_sequence_parse(struct flanterm_context *ctx, uint8_t c) {
         }
         break;
     case 'r':
-        if (ctx->esc_values[0] == 0) { ctx->esc_values[0] = 1; }
-        if (ctx->esc_values[1] == 0) { ctx->esc_values[1] = 1; }
-        ctx->scroll_top_margin    = 0;
+        if (ctx->esc_values[0] == 0) {
+            ctx->esc_values[0] = 1;
+        }
+        if (ctx->esc_values[1] == 0) {
+            ctx->esc_values[1] = 1;
+        }
+        ctx->scroll_top_margin = 0;
         ctx->scroll_bottom_margin = ctx->rows;
-        if (ctx->esc_values_i > 0) { ctx->scroll_top_margin = ctx->esc_values[0] - 1; }
-        if (ctx->esc_values_i > 1) { ctx->scroll_bottom_margin = ctx->esc_values[1]; }
-        if (ctx->scroll_top_margin >= ctx->rows || ctx->scroll_bottom_margin > ctx->rows ||
-            ctx->scroll_top_margin >= (ctx->scroll_bottom_margin - 1)) {
-            ctx->scroll_top_margin    = 0;
+        if (ctx->esc_values_i > 0) {
+            ctx->scroll_top_margin = ctx->esc_values[0] - 1;
+        }
+        if (ctx->esc_values_i > 1) {
+            ctx->scroll_bottom_margin = ctx->esc_values[1];
+        }
+        if (ctx->scroll_top_margin >= ctx->rows || ctx->scroll_bottom_margin > ctx->rows
+            || ctx->scroll_top_margin >= (ctx->scroll_bottom_margin - 1)) {
+            ctx->scroll_top_margin = 0;
             ctx->scroll_bottom_margin = ctx->rows;
         }
         ctx->set_cursor_pos(ctx, 0, 0);
         break;
     case 'l':
-    case 'h': mode_toggle(ctx, c); break;
-    case ']': linux_private_parse(ctx); break;
+    case 'h':
+        mode_toggle(ctx, c);
+        break;
+    case ']':
+        linux_private_parse(ctx);
+        break;
     }
 
     ctx->scroll_enabled = r;
 
 cleanup:
     ctx->control_sequence = false;
-    ctx->escape           = false;
+    ctx->escape = false;
 }
 
 static void restore_state(struct flanterm_context *ctx) {
-    ctx->bold            = ctx->saved_state_bold;
-    ctx->bg_bold         = ctx->saved_state_bg_bold;
-    ctx->reverse_video   = ctx->saved_state_reverse_video;
+    ctx->bold = ctx->saved_state_bold;
+    ctx->bg_bold = ctx->saved_state_bg_bold;
+    ctx->reverse_video = ctx->saved_state_reverse_video;
     ctx->current_charset = ctx->saved_state_current_charset;
     ctx->current_primary = ctx->saved_state_current_primary;
-    ctx->current_bg      = ctx->saved_state_current_bg;
+    ctx->current_bg = ctx->saved_state_current_bg;
 
     ctx->restore_state(ctx);
 }
@@ -702,12 +803,12 @@ static void restore_state(struct flanterm_context *ctx) {
 static void save_state(struct flanterm_context *ctx) {
     ctx->save_state(ctx);
 
-    ctx->saved_state_bold            = ctx->bold;
-    ctx->saved_state_bg_bold         = ctx->bg_bold;
-    ctx->saved_state_reverse_video   = ctx->reverse_video;
+    ctx->saved_state_bold = ctx->bold;
+    ctx->saved_state_bg_bold = ctx->bg_bold;
+    ctx->saved_state_reverse_video = ctx->reverse_video;
     ctx->saved_state_current_charset = ctx->current_charset;
     ctx->saved_state_current_primary = ctx->current_primary;
-    ctx->saved_state_current_bg      = ctx->current_bg;
+    ctx->saved_state_current_bg = ctx->current_bg;
 }
 
 static void escape_parse(struct flanterm_context *ctx, uint8_t c) {
@@ -729,17 +830,21 @@ static void escape_parse(struct flanterm_context *ctx, uint8_t c) {
     switch (c) {
     case ']':
         ctx->osc_escape = false;
-        ctx->osc        = true;
+        ctx->osc = true;
         return;
     case '[':
         for (size_t i = 0; i < FLANTERM_MAX_ESC_VALUES; i++)
             ctx->esc_values[i] = 0;
-        ctx->esc_values_i     = 0;
-        ctx->rrr              = false;
+        ctx->esc_values_i = 0;
+        ctx->rrr = false;
         ctx->control_sequence = true;
         return;
-    case '7': save_state(ctx); break;
-    case '8': restore_state(ctx); break;
+    case '7':
+        save_state(ctx);
+        break;
+    case '8':
+        restore_state(ctx);
+        break;
     case 'c':
         flanterm_context_reinit(ctx);
         ctx->clear(ctx, true);
@@ -770,10 +875,14 @@ static void escape_parse(struct flanterm_context *ctx, uint8_t c) {
         }
         break;
     case 'Z':
-        if (ctx->callback != NULL) { ctx->callback(ctx, FLANTERM_CB_PRIVATE_ID, 0, 0, 0); }
+        if (ctx->callback != NULL) {
+            ctx->callback(ctx, FLANTERM_CB_PRIVATE_ID, 0, 0, 0);
+        }
         break;
     case '(':
-    case ')': ctx->g_select = c - '\''; break;
+    case ')':
+        ctx->g_select = c - '\'';
+        break;
     }
 
     ctx->escape = false;
@@ -784,34 +893,62 @@ static bool dec_special_print(struct flanterm_context *ctx, uint8_t c) {
     ctx->raw_putchar(ctx, (C));                                                                    \
     return true;
     switch (c) {
-    case '`': FLANTERM_DEC_SPCL_PRN(0x04)
-    case '0': FLANTERM_DEC_SPCL_PRN(0xdb)
-    case '-': FLANTERM_DEC_SPCL_PRN(0x18)
-    case ',': FLANTERM_DEC_SPCL_PRN(0x1b)
-    case '.': FLANTERM_DEC_SPCL_PRN(0x19)
-    case 'a': FLANTERM_DEC_SPCL_PRN(0xb1)
-    case 'f': FLANTERM_DEC_SPCL_PRN(0xf8)
-    case 'g': FLANTERM_DEC_SPCL_PRN(0xf1)
-    case 'h': FLANTERM_DEC_SPCL_PRN(0xb0)
-    case 'j': FLANTERM_DEC_SPCL_PRN(0xd9)
-    case 'k': FLANTERM_DEC_SPCL_PRN(0xbf)
-    case 'l': FLANTERM_DEC_SPCL_PRN(0xda)
-    case 'm': FLANTERM_DEC_SPCL_PRN(0xc0)
-    case 'n': FLANTERM_DEC_SPCL_PRN(0xc5)
-    case 'q': FLANTERM_DEC_SPCL_PRN(0xc4)
-    case 's': FLANTERM_DEC_SPCL_PRN(0x5f)
-    case 't': FLANTERM_DEC_SPCL_PRN(0xc3)
-    case 'u': FLANTERM_DEC_SPCL_PRN(0xb4)
-    case 'v': FLANTERM_DEC_SPCL_PRN(0xc1)
-    case 'w': FLANTERM_DEC_SPCL_PRN(0xc2)
-    case 'x': FLANTERM_DEC_SPCL_PRN(0xb3)
-    case 'y': FLANTERM_DEC_SPCL_PRN(0xf3)
-    case 'z': FLANTERM_DEC_SPCL_PRN(0xf2)
-    case '~': FLANTERM_DEC_SPCL_PRN(0xfa)
-    case '_': FLANTERM_DEC_SPCL_PRN(0xff)
-    case '+': FLANTERM_DEC_SPCL_PRN(0x1a)
-    case '{': FLANTERM_DEC_SPCL_PRN(0xe3)
-    case '}': FLANTERM_DEC_SPCL_PRN(0x9c)
+    case '`':
+        FLANTERM_DEC_SPCL_PRN(0x04)
+    case '0':
+        FLANTERM_DEC_SPCL_PRN(0xdb)
+    case '-':
+        FLANTERM_DEC_SPCL_PRN(0x18)
+    case ',':
+        FLANTERM_DEC_SPCL_PRN(0x1b)
+    case '.':
+        FLANTERM_DEC_SPCL_PRN(0x19)
+    case 'a':
+        FLANTERM_DEC_SPCL_PRN(0xb1)
+    case 'f':
+        FLANTERM_DEC_SPCL_PRN(0xf8)
+    case 'g':
+        FLANTERM_DEC_SPCL_PRN(0xf1)
+    case 'h':
+        FLANTERM_DEC_SPCL_PRN(0xb0)
+    case 'j':
+        FLANTERM_DEC_SPCL_PRN(0xd9)
+    case 'k':
+        FLANTERM_DEC_SPCL_PRN(0xbf)
+    case 'l':
+        FLANTERM_DEC_SPCL_PRN(0xda)
+    case 'm':
+        FLANTERM_DEC_SPCL_PRN(0xc0)
+    case 'n':
+        FLANTERM_DEC_SPCL_PRN(0xc5)
+    case 'q':
+        FLANTERM_DEC_SPCL_PRN(0xc4)
+    case 's':
+        FLANTERM_DEC_SPCL_PRN(0x5f)
+    case 't':
+        FLANTERM_DEC_SPCL_PRN(0xc3)
+    case 'u':
+        FLANTERM_DEC_SPCL_PRN(0xb4)
+    case 'v':
+        FLANTERM_DEC_SPCL_PRN(0xc1)
+    case 'w':
+        FLANTERM_DEC_SPCL_PRN(0xc2)
+    case 'x':
+        FLANTERM_DEC_SPCL_PRN(0xb3)
+    case 'y':
+        FLANTERM_DEC_SPCL_PRN(0xf3)
+    case 'z':
+        FLANTERM_DEC_SPCL_PRN(0xf2)
+    case '~':
+        FLANTERM_DEC_SPCL_PRN(0xfa)
+    case '_':
+        FLANTERM_DEC_SPCL_PRN(0xff)
+    case '+':
+        FLANTERM_DEC_SPCL_PRN(0x1a)
+    case '{':
+        FLANTERM_DEC_SPCL_PRN(0xe3)
+    case '}':
+        FLANTERM_DEC_SPCL_PRN(0x9c)
     }
 #undef FLANTERM_DEC_SPCL_PRN
 
@@ -831,7 +968,8 @@ static int bisearch(uint32_t ucs, const struct interval *table, int max) {
     int min = 0;
     int mid;
 
-    if (ucs < table[0].first || ucs > table[max].last) return 0;
+    if (ucs < table[0].first || ucs > table[max].last)
+        return 0;
     while (max >= min) {
         mid = (min + max) / 2;
         if (ucs > table[mid].last)
@@ -994,191 +1132,354 @@ int mk_wcwidth(uint32_t ucs) {
     };
 
     /* test for 8-bit control characters */
-    if (ucs == 0) return 0;
-    if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0)) return 1;
+    if (ucs == 0)
+        return 0;
+    if (ucs < 32 || (ucs >= 0x7f && ucs < 0xa0))
+        return 1;
 
     /* binary search in table of non-spacing characters */
-    if (bisearch(ucs, combining, sizeof(combining) / sizeof(struct interval) - 1)) return 0;
+    if (bisearch(ucs, combining, sizeof(combining) / sizeof(struct interval) - 1))
+        return 0;
 
     /* if we arrive here, ucs is not a combining or C0/C1 control character */
 
-    return 1 + (ucs >= 0x1100 &&
-                (ucs <= 0x115f || /* Hangul Jamo init. consonants */
-                 ucs == 0x2329 || ucs == 0x232a ||
-                 (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs != 0x303f) || /* CJK ... Yi */
-                 (ucs >= 0xac00 && ucs <= 0xd7a3) ||                  /* Hangul Syllables */
-                 (ucs >= 0xf900 && ucs <= 0xfaff) || /* CJK Compatibility Ideographs */
-                 (ucs >= 0xfe10 && ucs <= 0xfe19) || /* Vertical forms */
-                 (ucs >= 0xfe30 && ucs <= 0xfe6f) || /* CJK Compatibility Forms */
-                 (ucs >= 0xff00 && ucs <= 0xff60) || /* Fullwidth Forms */
-                 (ucs >= 0xffe0 && ucs <= 0xffe6) || (ucs >= 0x20000 && ucs <= 0x2fffd) ||
-                 (ucs >= 0x30000 && ucs <= 0x3fffd)));
+    return 1
+           + (ucs >= 0x1100
+              && (ucs <= 0x115f || /* Hangul Jamo init. consonants */
+                  ucs == 0x2329 || ucs == 0x232a
+                  || (ucs >= 0x2e80 && ucs <= 0xa4cf && ucs != 0x303f) || /* CJK ... Yi */
+                  (ucs >= 0xac00 && ucs <= 0xd7a3) ||                     /* Hangul Syllables */
+                  (ucs >= 0xf900 && ucs <= 0xfaff) || /* CJK Compatibility Ideographs */
+                  (ucs >= 0xfe10 && ucs <= 0xfe19) || /* Vertical forms */
+                  (ucs >= 0xfe30 && ucs <= 0xfe6f) || /* CJK Compatibility Forms */
+                  (ucs >= 0xff00 && ucs <= 0xff60) || /* Fullwidth Forms */
+                  (ucs >= 0xffe0 && ucs <= 0xffe6) || (ucs >= 0x20000 && ucs <= 0x2fffd)
+                  || (ucs >= 0x30000 && ucs <= 0x3fffd)));
 }
 
 // End of https://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c inherited code
 
 static int unicode_to_cp437(uint64_t code_point) {
     switch (code_point) {
-    case 0x263a: return 1;
-    case 0x263b: return 2;
-    case 0x2665: return 3;
-    case 0x2666: return 4;
-    case 0x2663: return 5;
-    case 0x2660: return 6;
-    case 0x2022: return 7;
-    case 0x25d8: return 8;
-    case 0x25cb: return 9;
-    case 0x25d9: return 10;
-    case 0x2642: return 11;
-    case 0x2640: return 12;
-    case 0x266a: return 13;
-    case 0x266b: return 14;
-    case 0x263c: return 15;
-    case 0x25ba: return 16;
-    case 0x25c4: return 17;
-    case 0x2195: return 18;
-    case 0x203c: return 19;
-    case 0x00b6: return 20;
-    case 0x00a7: return 21;
-    case 0x25ac: return 22;
-    case 0x21a8: return 23;
-    case 0x2191: return 24;
-    case 0x2193: return 25;
-    case 0x2192: return 26;
-    case 0x2190: return 27;
-    case 0x221f: return 28;
-    case 0x2194: return 29;
-    case 0x25b2: return 30;
-    case 0x25bc: return 31;
+    case 0x263a:
+        return 1;
+    case 0x263b:
+        return 2;
+    case 0x2665:
+        return 3;
+    case 0x2666:
+        return 4;
+    case 0x2663:
+        return 5;
+    case 0x2660:
+        return 6;
+    case 0x2022:
+        return 7;
+    case 0x25d8:
+        return 8;
+    case 0x25cb:
+        return 9;
+    case 0x25d9:
+        return 10;
+    case 0x2642:
+        return 11;
+    case 0x2640:
+        return 12;
+    case 0x266a:
+        return 13;
+    case 0x266b:
+        return 14;
+    case 0x263c:
+        return 15;
+    case 0x25ba:
+        return 16;
+    case 0x25c4:
+        return 17;
+    case 0x2195:
+        return 18;
+    case 0x203c:
+        return 19;
+    case 0x00b6:
+        return 20;
+    case 0x00a7:
+        return 21;
+    case 0x25ac:
+        return 22;
+    case 0x21a8:
+        return 23;
+    case 0x2191:
+        return 24;
+    case 0x2193:
+        return 25;
+    case 0x2192:
+        return 26;
+    case 0x2190:
+        return 27;
+    case 0x221f:
+        return 28;
+    case 0x2194:
+        return 29;
+    case 0x25b2:
+        return 30;
+    case 0x25bc:
+        return 31;
 
-    case 0x2302: return 127;
-    case 0x00c7: return 128;
-    case 0x00fc: return 129;
-    case 0x00e9: return 130;
-    case 0x00e2: return 131;
-    case 0x00e4: return 132;
-    case 0x00e0: return 133;
-    case 0x00e5: return 134;
-    case 0x00e7: return 135;
-    case 0x00ea: return 136;
-    case 0x00eb: return 137;
-    case 0x00e8: return 138;
-    case 0x00ef: return 139;
-    case 0x00ee: return 140;
-    case 0x00ec: return 141;
-    case 0x00c4: return 142;
-    case 0x00c5: return 143;
-    case 0x00c9: return 144;
-    case 0x00e6: return 145;
-    case 0x00c6: return 146;
-    case 0x00f4: return 147;
-    case 0x00f6: return 148;
-    case 0x00f2: return 149;
-    case 0x00fb: return 150;
-    case 0x00f9: return 151;
-    case 0x00ff: return 152;
-    case 0x00d6: return 153;
-    case 0x00dc: return 154;
-    case 0x00a2: return 155;
-    case 0x00a3: return 156;
-    case 0x00a5: return 157;
-    case 0x20a7: return 158;
-    case 0x0192: return 159;
-    case 0x00e1: return 160;
-    case 0x00ed: return 161;
-    case 0x00f3: return 162;
-    case 0x00fa: return 163;
-    case 0x00f1: return 164;
-    case 0x00d1: return 165;
-    case 0x00aa: return 166;
-    case 0x00ba: return 167;
-    case 0x00bf: return 168;
-    case 0x2310: return 169;
-    case 0x00ac: return 170;
-    case 0x00bd: return 171;
-    case 0x00bc: return 172;
-    case 0x00a1: return 173;
-    case 0x00ab: return 174;
-    case 0x00bb: return 175;
-    case 0x2591: return 176;
-    case 0x2592: return 177;
-    case 0x2593: return 178;
-    case 0x2502: return 179;
-    case 0x2524: return 180;
-    case 0x2561: return 181;
-    case 0x2562: return 182;
-    case 0x2556: return 183;
-    case 0x2555: return 184;
-    case 0x2563: return 185;
-    case 0x2551: return 186;
-    case 0x2557: return 187;
-    case 0x255d: return 188;
-    case 0x255c: return 189;
-    case 0x255b: return 190;
-    case 0x2510: return 191;
-    case 0x2514: return 192;
-    case 0x2534: return 193;
-    case 0x252c: return 194;
-    case 0x251c: return 195;
-    case 0x2500: return 196;
-    case 0x253c: return 197;
-    case 0x255e: return 198;
-    case 0x255f: return 199;
-    case 0x255a: return 200;
-    case 0x2554: return 201;
-    case 0x2569: return 202;
-    case 0x2566: return 203;
-    case 0x2560: return 204;
-    case 0x2550: return 205;
-    case 0x256c: return 206;
-    case 0x2567: return 207;
-    case 0x2568: return 208;
-    case 0x2564: return 209;
-    case 0x2565: return 210;
-    case 0x2559: return 211;
-    case 0x2558: return 212;
-    case 0x2552: return 213;
-    case 0x2553: return 214;
-    case 0x256b: return 215;
-    case 0x256a: return 216;
-    case 0x2518: return 217;
-    case 0x250c: return 218;
-    case 0x2588: return 219;
-    case 0x2584: return 220;
-    case 0x258c: return 221;
-    case 0x2590: return 222;
-    case 0x2580: return 223;
-    case 0x03b1: return 224;
-    case 0x00df: return 225;
-    case 0x0393: return 226;
-    case 0x03c0: return 227;
-    case 0x03a3: return 228;
-    case 0x03c3: return 229;
-    case 0x00b5: return 230;
-    case 0x03c4: return 231;
-    case 0x03a6: return 232;
-    case 0x0398: return 233;
-    case 0x03a9: return 234;
-    case 0x03b4: return 235;
-    case 0x221e: return 236;
-    case 0x03c6: return 237;
-    case 0x03b5: return 238;
-    case 0x2229: return 239;
-    case 0x2261: return 240;
-    case 0x00b1: return 241;
-    case 0x2265: return 242;
-    case 0x2264: return 243;
-    case 0x2320: return 244;
-    case 0x2321: return 245;
-    case 0x00f7: return 246;
-    case 0x2248: return 247;
-    case 0x00b0: return 248;
-    case 0x2219: return 249;
-    case 0x00b7: return 250;
-    case 0x221a: return 251;
-    case 0x207f: return 252;
-    case 0x00b2: return 253;
-    case 0x25a0: return 254;
+    case 0x2302:
+        return 127;
+    case 0x00c7:
+        return 128;
+    case 0x00fc:
+        return 129;
+    case 0x00e9:
+        return 130;
+    case 0x00e2:
+        return 131;
+    case 0x00e4:
+        return 132;
+    case 0x00e0:
+        return 133;
+    case 0x00e5:
+        return 134;
+    case 0x00e7:
+        return 135;
+    case 0x00ea:
+        return 136;
+    case 0x00eb:
+        return 137;
+    case 0x00e8:
+        return 138;
+    case 0x00ef:
+        return 139;
+    case 0x00ee:
+        return 140;
+    case 0x00ec:
+        return 141;
+    case 0x00c4:
+        return 142;
+    case 0x00c5:
+        return 143;
+    case 0x00c9:
+        return 144;
+    case 0x00e6:
+        return 145;
+    case 0x00c6:
+        return 146;
+    case 0x00f4:
+        return 147;
+    case 0x00f6:
+        return 148;
+    case 0x00f2:
+        return 149;
+    case 0x00fb:
+        return 150;
+    case 0x00f9:
+        return 151;
+    case 0x00ff:
+        return 152;
+    case 0x00d6:
+        return 153;
+    case 0x00dc:
+        return 154;
+    case 0x00a2:
+        return 155;
+    case 0x00a3:
+        return 156;
+    case 0x00a5:
+        return 157;
+    case 0x20a7:
+        return 158;
+    case 0x0192:
+        return 159;
+    case 0x00e1:
+        return 160;
+    case 0x00ed:
+        return 161;
+    case 0x00f3:
+        return 162;
+    case 0x00fa:
+        return 163;
+    case 0x00f1:
+        return 164;
+    case 0x00d1:
+        return 165;
+    case 0x00aa:
+        return 166;
+    case 0x00ba:
+        return 167;
+    case 0x00bf:
+        return 168;
+    case 0x2310:
+        return 169;
+    case 0x00ac:
+        return 170;
+    case 0x00bd:
+        return 171;
+    case 0x00bc:
+        return 172;
+    case 0x00a1:
+        return 173;
+    case 0x00ab:
+        return 174;
+    case 0x00bb:
+        return 175;
+    case 0x2591:
+        return 176;
+    case 0x2592:
+        return 177;
+    case 0x2593:
+        return 178;
+    case 0x2502:
+        return 179;
+    case 0x2524:
+        return 180;
+    case 0x2561:
+        return 181;
+    case 0x2562:
+        return 182;
+    case 0x2556:
+        return 183;
+    case 0x2555:
+        return 184;
+    case 0x2563:
+        return 185;
+    case 0x2551:
+        return 186;
+    case 0x2557:
+        return 187;
+    case 0x255d:
+        return 188;
+    case 0x255c:
+        return 189;
+    case 0x255b:
+        return 190;
+    case 0x2510:
+        return 191;
+    case 0x2514:
+        return 192;
+    case 0x2534:
+        return 193;
+    case 0x252c:
+        return 194;
+    case 0x251c:
+        return 195;
+    case 0x2500:
+        return 196;
+    case 0x253c:
+        return 197;
+    case 0x255e:
+        return 198;
+    case 0x255f:
+        return 199;
+    case 0x255a:
+        return 200;
+    case 0x2554:
+        return 201;
+    case 0x2569:
+        return 202;
+    case 0x2566:
+        return 203;
+    case 0x2560:
+        return 204;
+    case 0x2550:
+        return 205;
+    case 0x256c:
+        return 206;
+    case 0x2567:
+        return 207;
+    case 0x2568:
+        return 208;
+    case 0x2564:
+        return 209;
+    case 0x2565:
+        return 210;
+    case 0x2559:
+        return 211;
+    case 0x2558:
+        return 212;
+    case 0x2552:
+        return 213;
+    case 0x2553:
+        return 214;
+    case 0x256b:
+        return 215;
+    case 0x256a:
+        return 216;
+    case 0x2518:
+        return 217;
+    case 0x250c:
+        return 218;
+    case 0x2588:
+        return 219;
+    case 0x2584:
+        return 220;
+    case 0x258c:
+        return 221;
+    case 0x2590:
+        return 222;
+    case 0x2580:
+        return 223;
+    case 0x03b1:
+        return 224;
+    case 0x00df:
+        return 225;
+    case 0x0393:
+        return 226;
+    case 0x03c0:
+        return 227;
+    case 0x03a3:
+        return 228;
+    case 0x03c3:
+        return 229;
+    case 0x00b5:
+        return 230;
+    case 0x03c4:
+        return 231;
+    case 0x03a6:
+        return 232;
+    case 0x0398:
+        return 233;
+    case 0x03a9:
+        return 234;
+    case 0x03b4:
+        return 235;
+    case 0x221e:
+        return 236;
+    case 0x03c6:
+        return 237;
+    case 0x03b5:
+        return 238;
+    case 0x2229:
+        return 239;
+    case 0x2261:
+        return 240;
+    case 0x00b1:
+        return 241;
+    case 0x2265:
+        return 242;
+    case 0x2264:
+        return 243;
+    case 0x2320:
+        return 244;
+    case 0x2321:
+        return 245;
+    case 0x00f7:
+        return 246;
+    case 0x2248:
+        return 247;
+    case 0x00b0:
+        return 248;
+    case 0x2219:
+        return 249;
+    case 0x00b7:
+        return 250;
+    case 0x221a:
+        return 251;
+    case 0x207f:
+        return 252;
+    case 0x00b2:
+        return 253;
+    case 0x25a0:
+        return 254;
     }
 
     return -1;
@@ -1186,13 +1487,13 @@ static int unicode_to_cp437(uint64_t code_point) {
 
 void flanterm_putchar(struct flanterm_context *ctx, uint8_t c) {
     if (ctx->discard_next || (c == 0x18 || c == 0x1a)) {
-        ctx->discard_next      = false;
-        ctx->escape            = false;
-        ctx->control_sequence  = false;
+        ctx->discard_next = false;
+        ctx->escape = false;
+        ctx->control_sequence = false;
         ctx->unicode_remaining = 0;
-        ctx->osc               = false;
-        ctx->osc_escape        = false;
-        ctx->g_select          = 0;
+        ctx->osc = false;
+        ctx->osc_escape = false;
+        ctx->g_select = 0;
         return;
     }
 
@@ -1204,13 +1505,17 @@ void flanterm_putchar(struct flanterm_context *ctx, uint8_t c) {
 
         ctx->unicode_remaining--;
         ctx->code_point |= (uint64_t)(c & 0x3f) << (6 * ctx->unicode_remaining);
-        if (ctx->unicode_remaining != 0) { return; }
+        if (ctx->unicode_remaining != 0) {
+            return;
+        }
 
         int cc = unicode_to_cp437(ctx->code_point);
 
         if (cc == -1) {
             size_t replacement_width = (size_t)mk_wcwidth(ctx->code_point);
-            if (replacement_width > 0) { ctx->raw_putchar(ctx, 0xfe); }
+            if (replacement_width > 0) {
+                ctx->raw_putchar(ctx, 0xfe);
+            }
             for (size_t i = 1; i < replacement_width; i++) {
                 ctx->raw_putchar(ctx, ' ');
             }
@@ -1224,13 +1529,13 @@ unicode_error:
     if (c >= 0xc0 && c <= 0xf7) {
         if (c >= 0xc0 && c <= 0xdf) {
             ctx->unicode_remaining = 1;
-            ctx->code_point        = (uint64_t)(c & 0x1f) << 6;
+            ctx->code_point = (uint64_t)(c & 0x1f) << 6;
         } else if (c >= 0xe0 && c <= 0xef) {
             ctx->unicode_remaining = 2;
-            ctx->code_point        = (uint64_t)(c & 0x0f) << (6 * 2);
+            ctx->code_point = (uint64_t)(c & 0x0f) << (6 * 2);
         } else if (c >= 0xf0 && c <= 0xf7) {
             ctx->unicode_remaining = 3;
-            ctx->code_point        = (uint64_t)(c & 0x07) << (6 * 3);
+            ctx->code_point = (uint64_t)(c & 0x07) << (6 * 3);
         }
         return;
     }
@@ -1243,8 +1548,12 @@ unicode_error:
     if (ctx->g_select) {
         ctx->g_select--;
         switch (c) {
-        case 'B': ctx->charsets[ctx->g_select] = CHARSET_DEFAULT; break;
-        case '0': ctx->charsets[ctx->g_select] = CHARSET_DEC_SPECIAL; break;
+        case 'B':
+            ctx->charsets[ctx->g_select] = CHARSET_DEFAULT;
+            break;
+        case '0':
+            ctx->charsets[ctx->g_select] = CHARSET_DEC_SPECIAL;
+            break;
         }
         ctx->g_select = 0;
         return;
@@ -1255,10 +1564,11 @@ unicode_error:
 
     switch (c) {
     case 0x00:
-    case 0x7f: return;
+    case 0x7f:
+        return;
     case 0x1b:
         ctx->escape_offset = 0;
-        ctx->escape        = true;
+        ctx->escape = true;
         return;
     case '\t':
         if ((x / ctx->tab_size + 1) >= ctx->cols) {
@@ -1277,11 +1587,17 @@ unicode_error:
             ctx->set_cursor_pos(ctx, (ctx->oob_output & FLANTERM_OOB_OUTPUT_ONLCR) ? 0 : x, y + 1);
         }
         return;
-    case '\b': ctx->set_cursor_pos(ctx, x - 1, y); return;
-    case '\r': ctx->set_cursor_pos(ctx, 0, y); return;
+    case '\b':
+        ctx->set_cursor_pos(ctx, x - 1, y);
+        return;
+    case '\r':
+        ctx->set_cursor_pos(ctx, 0, y);
+        return;
     case '\a':
         // The bell is handled by the kernel
-        if (ctx->callback != NULL) { ctx->callback(ctx, FLANTERM_CB_BELL, 0, 0, 0); }
+        if (ctx->callback != NULL) {
+            ctx->callback(ctx, FLANTERM_CB_BELL, 0, 0, 0);
+        }
         return;
     case 14:
         // Move to G1 set
@@ -1296,15 +1612,20 @@ unicode_error:
     if (ctx->insert_mode == true) {
         for (size_t i = ctx->cols - 1;; i--) {
             ctx->move_character(ctx, i + 1, y, i, y);
-            if (i == x) { break; }
+            if (i == x) {
+                break;
+            }
         }
     }
 
     // Translate character set
     switch (ctx->charsets[ctx->current_charset]) {
-    case CHARSET_DEFAULT: break;
+    case CHARSET_DEFAULT:
+        break;
     case CHARSET_DEC_SPECIAL:
-        if (dec_special_print(ctx, c)) { return; }
+        if (dec_special_print(ctx, c)) {
+            return;
+        }
         break;
     }
 
@@ -1336,9 +1657,9 @@ void flanterm_set_autoflush(struct flanterm_context *ctx, bool state) {
     ctx->autoflush = state;
 }
 
-void flanterm_set_callback(struct flanterm_context *ctx,
-                           void (*callback)(struct flanterm_context *, uint64_t, uint64_t, uint64_t,
-                                            uint64_t)) {
+void flanterm_set_callback(
+    struct flanterm_context *ctx,
+    void (*callback)(struct flanterm_context *, uint64_t, uint64_t, uint64_t, uint64_t)) {
     ctx->callback = callback;
 }
 

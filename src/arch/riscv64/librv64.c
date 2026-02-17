@@ -25,10 +25,10 @@ bool arch_check_interrupt(void) {
 }
 
 bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
-    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
-        ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
-        ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr) ||
-        ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
+    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1
+        || ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3
+        || ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr)
+        || ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
         return false;
     }
 
@@ -41,9 +41,10 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
     return true;
 }
 
-void arch_pci_legacy_enum() {}
+void arch_pci_legacy_enum() {
+}
 
-void arch_cpu_init(){
+void arch_cpu_init() {
     // SUM
     csr_set(sstatus, (1UL << 18));
     // FPU

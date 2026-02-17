@@ -1,13 +1,12 @@
 #define STB_SPRINTF_IMPLEMENTATION
 #if !(defined(__x86_64__) || defined(__amd64__))
-#define STB_SPRINTF_NOFLOAT
+#    define STB_SPRINTF_NOFLOAT
 #endif
 #include "types.h"
 #include "lib/sprintf.h"
-#include "krlibc.h"
 
 int sprintf(char *buf, char const *fmt, ...) {
-    int     result;
+    int result;
     va_list va;
     va_start(va, fmt);
     result = STB_SPRINTF_DECORATE(vsprintfcb)(0, 0, buf, fmt, va);
@@ -16,7 +15,7 @@ int sprintf(char *buf, char const *fmt, ...) {
 }
 
 int snprintf(char *buf, int count, const char *fmt, ...) {
-    int     result;
+    int result;
     va_list va;
     va_start(va, fmt);
     result = STB_SPRINTF_DECORATE(vsnprintf)(buf, count, fmt, va);
@@ -24,6 +23,6 @@ int snprintf(char *buf, int count, const char *fmt, ...) {
     return result;
 }
 
-int vsnprintf(char *buf, int count, const char *fmt,va_list va){
+int vsnprintf(char *buf, int count, const char *fmt, va_list va) {
     return STB_SPRINTF_DECORATE(vsnprintf)(buf, count, fmt, va);
 }

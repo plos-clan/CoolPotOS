@@ -3,8 +3,8 @@
 #define __IRQHANDLER __attribute__((interrupt))
 
 #define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
-#define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
-#define PADDING_REQ(size, to)  ((size + (to) - 1) & ~((to) - 1) / (to))
+#define PADDING_UP(size, to) PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
+#define PADDING_REQ(size, to) ((size + (to) - 1) & ~((to) - 1) / (to))
 
 #define UNUSED(...)                                                                                \
     do {                                                                                           \
@@ -29,7 +29,7 @@
 // 分支预测优化: x 很可能为真
 #define likely(x) __builtin_expect(!!(x), 1)
 
-#define ABS(x)    ((x) > 0 ? (x) : -(x))
+#define ABS(x) ((x) > 0 ? (x) : -(x))
 #define MAX(x, y) ((x > y) ? (x) : (y))
 #define MIN(x, y) ((x < y) ? (x) : (y))
 
@@ -38,7 +38,7 @@
     (('0' <= (c) && (c) <= '9') || ('a' <= (c) && (c) <= 'f') || ('A' <= (c) && (c) <= 'F'))
 
 #define ___PASTE(a, b) a##b
-#define __PASTE(a, b)  ___PASTE(a, b)
+#define __PASTE(a, b) ___PASTE(a, b)
 
 #ifndef __UNIQUE_ID
 #    define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
@@ -74,27 +74,27 @@ static inline errno_t dummy() {
 
 void not_null_assert(void *ptr, const char *msg);
 
-void         *memset(void *dest, int c, size_t n);
-void         *memmove(void *dest, const void *src, size_t n);
-void         *memchr(const void *src, int c, size_t n);
-size_t        strnlen(const char *str, size_t maxlen);
-size_t        strlen(const char *s);
-char         *strcat(char *dest, const char *src);
-char         *strchrnul(const char *s, int c);
-int           strncmp(const char *s1, const char *s2, size_t n);
-char         *strchr(const char *s, int c);
-char         *strcpy(char *dest, const char *src);
-int           strcmp(const char *s1, const char *s2);
-char         *strtok(char *str, const char *delim);
-char         *strdup(const char *str);
-char         *strndup(const char *s, size_t n);
-char         *strrchr(const char *s, int c);
-char         *strncpy(char *dest, const char *src, size_t n);
-int64_t       strtol(const char *str, char **endptr, int base);
+void *memset(void *dest, int c, size_t n);
+void *memmove(void *dest, const void *src, size_t n);
+void *memchr(const void *src, int c, size_t n);
+size_t strnlen(const char *str, size_t maxlen);
+size_t strlen(const char *s);
+char *strcat(char *dest, const char *src);
+char *strchrnul(const char *s, int c);
+int strncmp(const char *s1, const char *s2, size_t n);
+char *strchr(const char *s, int c);
+char *strcpy(char *dest, const char *src);
+int strcmp(const char *s1, const char *s2);
+char *strtok(char *str, const char *delim);
+char *strdup(const char *str);
+char *strndup(const char *s, size_t n);
+char *strrchr(const char *s, int c);
+char *strncpy(char *dest, const char *src, size_t n);
+int64_t strtol(const char *str, char **endptr, int base);
 unsigned long strtoul(const char *restrict s, char **restrict p, int base);
-int           memcmp(const void *a_, const void *b_, size_t size);
-void         *memcpy(void *dest, const void *src, size_t n);
-char         *strstr(const char *h, const char *n);
+int memcmp(const void *a_, const void *b_, size_t size);
+void *memcpy(void *dest, const void *src, size_t n);
+char *strstr(const char *h, const char *n);
 
 int isdigit(int c);
 int isspace(int c);
@@ -102,18 +102,18 @@ int isspace(int c);
 int atoi(const char *pstr);
 int fls(unsigned int x);
 
-char  *normalize_path(const char *path);
-char  *pathacat(char *p1, char *p2);
-int    cmd_parse(const char *cmd_str, char **argv, char token);
+char *normalize_path(const char *path);
+char *pathacat(char *p1, char *p2);
+int cmd_parse(const char *cmd_str, char **argv, char token);
 char **restore_argv(const char *cmdline_buf, size_t len, int *out_argc);
-void   free_argv(char **argv);
-char  *build_proc_cmdline(char **argv, size_t *out_len);
-void   cmd_free(char **argv, int argc);
-char  *get_parent_path(const char *path);
+void free_argv(char **argv);
+char *build_proc_cmdline(char **argv, size_t *out_len);
+void cmd_free(char **argv, int argc);
+char *get_parent_path(const char *path);
 
 size_t envp_length(char **envp);
 char **copy_envp(char **envp);
-void   free_envp(char **envp);
+void free_envp(char **envp);
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);

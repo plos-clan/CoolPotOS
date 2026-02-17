@@ -1,16 +1,16 @@
 #include "driver/usb/class/hid/mouse.h"
+#include "driver/usb/bus/device.h"
 #include "driver/usb/class/hid/common.h"
 #include "driver/usb/class/hid/parser.h"
 #include "driver/usb/defs/defs.h"
-#include "driver/usb/bus/device.h"
 #include "krlibc.h"
 #include "mem/alloc/alloc.h"
 #include "term/klog.h"
 
 typedef struct MouseLayout {
-    bool     has_axis_x;
-    bool     has_axis_y;
-    bool     has_axis_wheel;
+    bool has_axis_x;
+    bool has_axis_y;
+    bool has_axis_wheel;
     HidField axis_x;
     HidField axis_y;
     HidField axis_wheel;

@@ -9,16 +9,16 @@
  */
 
 /*-*************************************
-*  Dependencies
-***************************************/
+ *  Dependencies
+ ***************************************/
 #define ZSTD_DEPS_NEED_MALLOC
 #include "error_private.h"
 #include "zstd_deps.h"
 #include "zstd_internal.h"
 
 /*-****************************************
-*  Version
-******************************************/
+ *  Version
+ ******************************************/
 unsigned ZSTD_versionNumber(void) {
     return ZSTD_VERSION_NUMBER;
 }
@@ -28,8 +28,8 @@ const char *ZSTD_versionString(void) {
 }
 
 /*-****************************************
-*  ZSTD Error Management
-******************************************/
+ *  ZSTD Error Management
+ ******************************************/
 #undef ZSTD_isError /* defined within zstd_internal.h */
 /*! ZSTD_isError() :
  *  tells if a return value is an error code
@@ -57,10 +57,11 @@ const char *ZSTD_getErrorString(ZSTD_ErrorCode code) {
 }
 
 /*=**************************************************************
-*  Custom allocator
-****************************************************************/
+ *  Custom allocator
+ ****************************************************************/
 void *ZSTD_customMalloc(size_t size, ZSTD_customMem customMem) {
-    if (customMem.customAlloc) return customMem.customAlloc(customMem.opaque, size);
+    if (customMem.customAlloc)
+        return customMem.customAlloc(customMem.opaque, size);
     return ZSTD_malloc(size);
 }
 

@@ -2,19 +2,21 @@
 #include "mem/heap.h"
 
 static size_t calculate_block_count(size_t total_size) {
-    if (total_size == 0) return 0;
+    if (total_size == 0)
+        return 0;
     return (total_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 }
 
 static void block_retain(cow_block *block) {
     if (block) {
-        __atomic_add_fetch((size_t*)&block->ref_count, 1, __ATOMIC_RELAXED);
+        __atomic_add_fetch((size_t *)&block->ref_count, 1, __ATOMIC_RELAXED);
     }
 }
 
 static void block_release(cow_block *block) {
     if (block) {
-        _Atomic size_t new_count = __atomic_sub_fetch((size_t*)&block->ref_count, 1, __ATOMIC_ACQ_REL);
+        _Atomic size_t new_count =
+            __atomic_sub_fetch((size_t *)&block->ref_count, 1, __ATOMIC_ACQ_REL);
         if (new_count == 0) {
             free(block);
         }
@@ -23,13 +25,14 @@ static void block_release(cow_block *block) {
 
 cow_arraylist *cow_list_create() {
     cow_arraylist *list = (cow_arraylist *)malloc(sizeof(cow_arraylist));
-    if (list == NULL) return NULL;
+    if (list == NULL)
+        return NULL;
     list->size = 0;
     list->block_count = 0;
     list->blocks_capacity = 4;
     list->lock = SPIN_INIT;
     list->blocks = (cow_block **)calloc(list->blocks_capacity, sizeof(cow_block *));
-    if ((void*)list->blocks == NULL) {
+    if ((void *)list->blocks == NULL) {
         free(list);
         return NULL;
     }
@@ -38,16 +41,17 @@ cow_arraylist *cow_list_create() {
 }
 
 void cow_list_destroy(cow_arraylist *list) {
-    if (list == NULL) return;
+    if (list == NULL)
+        return;
     for (size_t i = 0; i < list->block_count; i++) {
         block_release(list->blocks[i]);
     }
-    free((void*)list->blocks);
+    free((void *)list->blocks);
     free(list);
 }
 
 size_t cow_list_size(cow_arraylist *list) {
-    return __atomic_load_n((size_t*)&list->size, __ATOMIC_ACQUIRE);
+    return __atomic_load_n((size_t *)&list->size, __ATOMIC_ACQUIRE);
 }
 
 void *cow_list_get(cow_arraylist *list, size_t index) {
@@ -101,9 +105,10 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
     // 数组扩容措施
     if (new_block_count > list->blocks_capacity) {
         size_t new_capacity = list->blocks_capacity * 2;
-        cow_block **new_blocks_array = (cow_block **)realloc((void*)list->blocks, new_capacity * sizeof(cow_block*));
+        cow_block **new_blocks_array =
+            (cow_block **)realloc((void *)list->blocks, new_capacity * sizeof(cow_block *));
 
-        if ((void*)new_blocks_array == NULL) {
+        if ((void *)new_blocks_array == NULL) {
             spin_unlock(list->lock);
             return 0;
         }
@@ -161,12 +166,12 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
     return new_size - 1;
 }
 
-void * cow_list_remove(cow_arraylist *list, size_t index) {
+void *cow_list_remove(cow_arraylist *list, size_t index) {
     if (index >= list->size || list->size == 0) {
         return NULL;
     }
 
-    void * removed_element = NULL;
+    void *removed_element = NULL;
 
     spin_lock(list->lock);
 
@@ -206,7 +211,7 @@ void * cow_list_remove(cow_arraylist *list, size_t index) {
         }
 
         // 移动数据
-        void * source_element = list->blocks[src_block_idx]->elements[src_element_idx];
+        void *source_element = list->blocks[src_block_idx]->elements[src_element_idx];
         list->blocks[dest_block_idx]->elements[dest_element_idx] = source_element;
     }
 

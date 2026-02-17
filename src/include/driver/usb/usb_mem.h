@@ -14,9 +14,9 @@ static inline void *usb_alloc_dma_pages(size_t pages, uint64_t *phys_out) {
         return NULL;
     }
 
-    size_t   size = pages * PAGE_SIZE;
+    size_t size = pages * PAGE_SIZE;
     uint64_t phys = alloc_frames(pages);
-    void    *virt = driver_phys_to_virt(phys);
+    void *virt = driver_phys_to_virt(phys);
 
     page_map_range(get_kernel_pagedir(), (uint64_t)virt, phys, size, KERNEL_PTE_FLAGS);
     if (virt) {

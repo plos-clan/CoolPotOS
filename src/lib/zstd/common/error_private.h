@@ -18,38 +18,40 @@ extern "C" {
 #endif
 
 /* ****************************************
-*  Dependencies
-******************************************/
+ *  Dependencies
+ ******************************************/
 #include "compiler.h"
 #include "debug.h"
 #include "lib/zstd/zstd_errors.h" /* enum list */
 #include "zstd_deps.h"
 
 /* ****************************************
-*  Compiler-specific
-******************************************/
+ *  Compiler-specific
+ ******************************************/
 #if defined(__GNUC__)
 #    define ERR_STATIC static __attribute__((unused))
-#elif defined(__cplusplus) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */)
+#elif defined(__cplusplus) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99   \
+                                                                                           */)
 #    define ERR_STATIC static inline
 #elif defined(_MSC_VER)
 #    define ERR_STATIC static __inline
 #else
 #    define ERR_STATIC                                                                             \
-        static /* this version may generate warnings for unused static functions; disable the relevant warning */
+        static /* this version may generate warnings for unused static functions; disable the      \
+                  relevant warning */
 #endif
 
 /*-****************************************
-*  Customization (error_public.h)
-******************************************/
+ *  Customization (error_public.h)
+ ******************************************/
 typedef ZSTD_ErrorCode ERR_enum;
 #define PREFIX(name) ZSTD_error_##name
 
 /*-****************************************
-*  Error codes handling
-******************************************/
+ *  Error codes handling
+ ******************************************/
 #undef ERROR /* already defined on Visual Studio */
-#define ERROR(name)      ZSTD_ERROR(name)
+#define ERROR(name) ZSTD_ERROR(name)
 #define ZSTD_ERROR(name) ((size_t)-PREFIX(name))
 
 ERR_STATIC unsigned ERR_isError(size_t code) {
@@ -57,20 +59,24 @@ ERR_STATIC unsigned ERR_isError(size_t code) {
 }
 
 ERR_STATIC ERR_enum ERR_getErrorCode(size_t code) {
-    if (!ERR_isError(code)) return (ERR_enum)0;
+    if (!ERR_isError(code))
+        return (ERR_enum)0;
     return (ERR_enum)(0 - code);
 }
 
 /* check and forward error code */
 #define CHECK_V_F(e, f)                                                                            \
     size_t const e = f;                                                                            \
-    if (ERR_isError(e)) return e
+    if (ERR_isError(e))                                                                            \
+    return e
 #define CHECK_F(f)                                                                                 \
-    { CHECK_V_F(_var_err__, f); }
+    {                                                                                              \
+        CHECK_V_F(_var_err__, f);                                                                  \
+    }
 
 /*-****************************************
-*  Error Strings
-******************************************/
+ *  Error Strings
+ ******************************************/
 
 const char *ERR_getErrorString(ERR_enum code); /* error_private.c */
 
@@ -98,7 +104,9 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
  * we don't want to force runtime evaluation of its arguments.
  */
 #define _FORCE_HAS_FORMAT_STRING(...)                                                              \
-    if (0) { _force_has_format_string(__VA_ARGS__); }
+    if (0) {                                                                                       \
+        _force_has_format_string(__VA_ARGS__);                                                     \
+    }
 
 #define ERR_QUOTE(str) #str
 
@@ -111,8 +119,9 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
  */
 #define RETURN_ERROR_IF(cond, err, ...)                                                            \
     if (cond) {                                                                                    \
-        RAWLOG(3, "%s:%d: ERROR!: check %s failed, returning %s", __FILE__, __LINE__,              \
-               ERR_QUOTE(cond), ERR_QUOTE(ERROR(err)));                                            \
+        RAWLOG(                                                                                    \
+            3, "%s:%d: ERROR!: check %s failed, returning %s", __FILE__, __LINE__,                 \
+            ERR_QUOTE(cond), ERR_QUOTE(ERROR(err)));                                               \
         _FORCE_HAS_FORMAT_STRING(__VA_ARGS__);                                                     \
         RAWLOG(3, ": " __VA_ARGS__);                                                               \
         RAWLOG(3, "\n");                                                                           \
@@ -126,8 +135,9 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
  */
 #define RETURN_ERROR(err, ...)                                                                     \
     do {                                                                                           \
-        RAWLOG(3, "%s:%d: ERROR!: unconditional check failed, returning %s", __FILE__, __LINE__,   \
-               ERR_QUOTE(ERROR(err)));                                                             \
+        RAWLOG(                                                                                    \
+            3, "%s:%d: ERROR!: unconditional check failed, returning %s", __FILE__, __LINE__,      \
+            ERR_QUOTE(ERROR(err)));                                                                \
         _FORCE_HAS_FORMAT_STRING(__VA_ARGS__);                                                     \
         RAWLOG(3, ": " __VA_ARGS__);                                                               \
         RAWLOG(3, "\n");                                                                           \
@@ -143,8 +153,9 @@ static INLINE_KEYWORD UNUSED_ATTR void _force_has_format_string(const char *form
     do {                                                                                           \
         size_t const err_code = (err);                                                             \
         if (ERR_isError(err_code)) {                                                               \
-            RAWLOG(3, "%s:%d: ERROR!: forwarding error in %s: %s", __FILE__, __LINE__,             \
-                   ERR_QUOTE(err), ERR_getErrorName(err_code));                                    \
+            RAWLOG(                                                                                \
+                3, "%s:%d: ERROR!: forwarding error in %s: %s", __FILE__, __LINE__,                \
+                ERR_QUOTE(err), ERR_getErrorName(err_code));                                       \
             _FORCE_HAS_FORMAT_STRING(__VA_ARGS__);                                                 \
             RAWLOG(3, ": " __VA_ARGS__);                                                           \
             RAWLOG(3, "\n");                                                                       \

@@ -44,7 +44,8 @@ const char *fdt_strerror(int errval) {
     else if (-errval < FDT_ERRTABSIZE) {
         const char *s = fdt_errtable[-errval].str;
 
-        if (s) return s;
+        if (s)
+            return s;
     }
 
     return "<unknown error>";

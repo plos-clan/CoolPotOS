@@ -1,7 +1,7 @@
-#include "driver/usb/xhci/core/xhci.h"
 #include "driver/usb/bus/device.h"
-#include "term/klog.h"
+#include "driver/usb/xhci/core/xhci.h"
 #include "krlibc.h"
+#include "term/klog.h"
 
 static bool xhci_setup_slot_device(Xhci *xhci, Port port, uint8_t slot_id);
 
@@ -76,10 +76,10 @@ static bool xhci_setup_slot_device(Xhci *xhci, Port port, uint8_t slot_id) {
     }
 
     UsbDevice *dev = usb_device_new((UsbDeviceConfig){
-        .host    = { .ctx = xhci, .ops = &xhci_host_ops },
+        .host = {.ctx = xhci, .ops = &xhci_host_ops},
         .slot_id = slot_id,
         .port_id = port.id,
-        .speed   = speed_id,
+        .speed = speed_id,
     });
 
     xhci->slots[slot_id].usb_device = dev;

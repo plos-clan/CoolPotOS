@@ -142,7 +142,7 @@ USED _Noreturn void kmain() {
 
     // usb_kservice_setup();
 
-    launch_init_process();  // ptmx_init() is called inside this function
+    launch_init_process(); // ptmx_init() is called inside this function
 
     //    for (int i = 0; i < 10; i++) {
     //        create_kernel_thread("test_thread",(void*)test_proc,NULL,NULL, NICE_TO_PRIO(0));

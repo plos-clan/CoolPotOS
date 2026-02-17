@@ -29,30 +29,36 @@ static uint64_t prng_state = 0;
 
 static uint64_t prng_next(void) {
     if (prng_state == 0) {
-        uint64_t     seed = rdtsc_read() ^ (uint64_t)(uintptr_t)&prng_state;
-        cpu_local_t *cpu  = arch_current_cpu();
-        if (cpu) { seed ^= ((uint64_t)cpu->id << 32); }
-        if (seed == 0) { seed = 0x9e3779b97f4a7c15ULL; }
+        uint64_t seed = rdtsc_read() ^ (uint64_t)(uintptr_t)&prng_state;
+        cpu_local_t *cpu = arch_current_cpu();
+        if (cpu) {
+            seed ^= ((uint64_t)cpu->id << 32);
+        }
+        if (seed == 0) {
+            seed = 0x9e3779b97f4a7c15ULL;
+        }
         prng_state = seed;
     }
 
-    uint64_t x  = prng_state;
-    x          ^= x >> 12;
-    x          ^= x << 25;
-    x          ^= x >> 27;
-    prng_state  = x;
+    uint64_t x = prng_state;
+    x ^= x >> 12;
+    x ^= x << 25;
+    x ^= x >> 27;
+    prng_state = x;
     return x * 2685821657736338717ULL;
 }
 
 bool arch_get_random_bytes(uint8_t *buf, size_t size) {
-    if (!buf) { return false; }
+    if (!buf) {
+        return false;
+    }
 
     bool have_rdseed = (featuresEbx & CPUID_EBX_RDSEED) != 0;
     bool have_rdrand = (featuresEcx & CPUID_ECX_RDRAND) != 0;
 
     while (size > 0) {
         uint64_t val = 0;
-        bool     ok  = false;
+        bool ok = false;
 
         if (have_rdseed) {
             for (int i = 0; i < 8 && !ok; i++) {
@@ -64,11 +70,13 @@ bool arch_get_random_bytes(uint8_t *buf, size_t size) {
                 ok = rdrand64(&val);
             }
         }
-        if (!ok) { val = prng_next(); }
+        if (!ok) {
+            val = prng_next();
+        }
 
         size_t chunk = size > sizeof(val) ? sizeof(val) : size;
         memcpy(buf, &val, chunk);
-        buf  += chunk;
+        buf += chunk;
         size -= chunk;
     }
 

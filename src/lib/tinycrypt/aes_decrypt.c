@@ -80,16 +80,16 @@ static inline void inv_mix_columns(uint8_t *s) {
 }
 
 static inline void add_round_key(uint8_t *s, const unsigned int *k) {
-    s[0]  ^= (uint8_t)(k[0] >> 24);
-    s[1]  ^= (uint8_t)(k[0] >> 16);
-    s[2]  ^= (uint8_t)(k[0] >> 8);
-    s[3]  ^= (uint8_t)(k[0]);
-    s[4]  ^= (uint8_t)(k[1] >> 24);
-    s[5]  ^= (uint8_t)(k[1] >> 16);
-    s[6]  ^= (uint8_t)(k[1] >> 8);
-    s[7]  ^= (uint8_t)(k[1]);
-    s[8]  ^= (uint8_t)(k[2] >> 24);
-    s[9]  ^= (uint8_t)(k[2] >> 16);
+    s[0] ^= (uint8_t)(k[0] >> 24);
+    s[1] ^= (uint8_t)(k[0] >> 16);
+    s[2] ^= (uint8_t)(k[0] >> 8);
+    s[3] ^= (uint8_t)(k[0]);
+    s[4] ^= (uint8_t)(k[1] >> 24);
+    s[5] ^= (uint8_t)(k[1] >> 16);
+    s[6] ^= (uint8_t)(k[1] >> 8);
+    s[7] ^= (uint8_t)(k[1]);
+    s[8] ^= (uint8_t)(k[2] >> 24);
+    s[9] ^= (uint8_t)(k[2] >> 16);
     s[10] ^= (uint8_t)(k[2] >> 8);
     s[11] ^= (uint8_t)(k[2]);
     s[12] ^= (uint8_t)(k[3] >> 24);
@@ -114,16 +114,16 @@ static inline void inv_sub_bytes(uint8_t *s) {
 static inline void inv_shift_rows(uint8_t *s) {
     uint8_t t[Nb * Nk];
 
-    t[0]  = s[0];
-    t[1]  = s[13];
-    t[2]  = s[10];
-    t[3]  = s[7];
-    t[4]  = s[4];
-    t[5]  = s[1];
-    t[6]  = s[14];
-    t[7]  = s[11];
-    t[8]  = s[8];
-    t[9]  = s[5];
+    t[0] = s[0];
+    t[1] = s[13];
+    t[2] = s[10];
+    t[3] = s[7];
+    t[4] = s[4];
+    t[5] = s[1];
+    t[6] = s[14];
+    t[7] = s[11];
+    t[8] = s[8];
+    t[9] = s[5];
     t[10] = s[2];
     t[11] = s[15];
     t[12] = s[12];
@@ -134,7 +134,7 @@ static inline void inv_shift_rows(uint8_t *s) {
 }
 
 int tc_aes_decrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s) {
-    uint8_t      state[Nk * Nb];
+    uint8_t state[Nk * Nb];
     unsigned int i;
 
     if (out == (uint8_t *)0) {

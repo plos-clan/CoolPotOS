@@ -8,7 +8,9 @@ void power_restart() {
     ACPI_STATUS status;
     kinfo("ACPI: Attempting hardware reset...");
     status = AcpiReset();
-    if (ACPI_FAILURE(status)) { kerror("ACPI: Reset failed: %s", AcpiFormatException(status)); }
+    if (ACPI_FAILURE(status)) {
+        kerror("ACPI: Reset failed: %s", AcpiFormatException(status));
+    }
     for (;;)
         arch_wait_for_interrupt();
 }
@@ -44,20 +46,22 @@ static void AcpiNotifyPowerButtonHandler(ACPI_HANDLE Device, UINT32 Value, void 
     }
 }
 
-static ACPI_STATUS InstallNotifyCallback(ACPI_HANDLE ObjHandle, UINT32 Level, void *Context,
-                                         void **RetVal) {
+static ACPI_STATUS
+InstallNotifyCallback(ACPI_HANDLE ObjHandle, UINT32 Level, void *Context, void **RetVal) {
     ACPI_STATUS status;
     status =
         AcpiInstallNotifyHandler(ObjHandle, ACPI_DEVICE_NOTIFY, AcpiNotifyPowerButtonHandler, NULL);
-    if (ACPI_SUCCESS(status)) { kinfo("ACPI: Found and hooked PNP0C0C power button."); }
+    if (ACPI_SUCCESS(status)) {
+        kinfo("ACPI: Found and hooked PNP0C0C power button.");
+    }
     return AE_OK;
 }
 
 static void init_fixed_power_button() {
     ACPI_STATUS status;
     AcpiClearEvent(ACPI_EVENT_POWER_BUTTON);
-    status = AcpiInstallFixedEventHandler(ACPI_EVENT_POWER_BUTTON, AcpiFixedEventPowerButtonHandler,
-                                          NULL);
+    status = AcpiInstallFixedEventHandler(
+        ACPI_EVENT_POWER_BUTTON, AcpiFixedEventPowerButtonHandler, NULL);
     if (ACPI_FAILURE(status)) {
         kerror("Failed to install fixed power button handler: %s", AcpiFormatException(status));
         return;

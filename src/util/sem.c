@@ -28,4 +28,3 @@ void sem_post(sem_t *sem) {
     sem->cnt++;
     spin_unlock(sem->lock);
 }
-

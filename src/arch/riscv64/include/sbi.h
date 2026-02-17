@@ -16,9 +16,9 @@
 /**
  * SBI ecall封装
  */
-static inline uint64_t sbi_ecall(uint64_t eid, uint64_t fid, uint64_t arg0,
-                                 uint64_t arg1, uint64_t arg2, uint64_t arg3,
-                                 uint64_t arg4, uint64_t arg5) {
+static inline uint64_t sbi_ecall(
+    uint64_t eid, uint64_t fid, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
+    uint64_t arg4, uint64_t arg5) {
     register uint64_t a0 __asm__("a0") = arg0;
     register uint64_t a1 __asm__("a1") = arg1;
     register uint64_t a2 __asm__("a2") = arg2;

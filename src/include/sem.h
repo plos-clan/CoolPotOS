@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types.h"
 #include "lock.h"
+#include "types.h"
 
 typedef struct sem {
     spin_t lock;
