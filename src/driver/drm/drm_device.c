@@ -2,8 +2,8 @@
 #include "krlibc.h"
 #include "mem/heap.h"
 
-uint64_t       drm_devices_idxs = 0;
-cow_arraylist *drm_devices      = NULL;
+uint64_t drm_devices_idxs  = 0;
+cow_arraylist *drm_devices = NULL;
 
 void drm_device_setup() {
     drm_devices = cow_list_create();

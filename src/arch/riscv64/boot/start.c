@@ -4,13 +4,13 @@
 
 extern uint8_t _bss_start[], _bss_end[];
 
-extern boot_memory_map_t  opensbi_memory_map;
+extern boot_memory_map_t opensbi_memory_map;
 extern boot_framebuffer_t opensbi_fb;
-extern char              *kernel_cmdline;
-void                     *opensbi_dtb_vaddr;
+extern char *kernel_cmdline;
+void *opensbi_dtb_vaddr;
 
 static bool fdt_getprop_u64(const void *fdt, int node, const char *name, int idx, uint64_t *out) {
-    int            len;
+    int len;
     const fdt64_t *p = fdt_getprop(fdt, node, name, &len);
     if (!p || len < ((idx + 1) * sizeof(uint64_t)))
         return false;
@@ -21,8 +21,8 @@ static bool fdt_getprop_u64(const void *fdt, int node, const char *name, int idx
 static void setup_framebuffer(boot_framebuffer_t *fb) {
     memset(fb, 0, sizeof(*fb));
 
-    void *fdt    = opensbi_dtb_vaddr;
-    int   fb_off = fdt_path_offset(fdt, "/framebuffer");
+    void *fdt  = opensbi_dtb_vaddr;
+    int fb_off = fdt_path_offset(fdt, "/framebuffer");
 
     // 如果找不到 /framebuffer，尝试按 compatible 查找 simple-framebuffer
     if (fb_off < 0) {
@@ -41,7 +41,7 @@ static void setup_framebuffer(boot_framebuffer_t *fb) {
 
     // 获取基本属性
     const fdt32_t *prop32;
-    uint32_t       width = 0, height = 0, stride = 0;
+    uint32_t width = 0, height = 0, stride = 0;
 
     prop32 = fdt_getprop(fdt, fb_off, "width", NULL);
     if (!prop32)
@@ -141,7 +141,7 @@ static void setup_framebuffer(boot_framebuffer_t *fb) {
     }
 
     // 获取 reg 属性
-    int            reg_len;
+    int reg_len;
     const fdt64_t *reg = fdt_getprop(fdt, fb_off, "reg", &reg_len);
     if (!reg || reg_len < 16)
         goto no_fb;
@@ -194,7 +194,7 @@ static void setup_memmap(
         if (!name)
             continue;
         if (strncmp(name, "memory@", 7) == 0 || strcmp(name, "memory") == 0) {
-            int            reg_len;
+            int reg_len;
             const fdt64_t *reg =
                 (const fdt64_t *)fdt_getprop(opensbi_dtb_vaddr, offset, "reg", &reg_len);
             if (reg && reg_len >= (int)sizeof(uint64_t) * 2
@@ -214,12 +214,12 @@ static void setup_memmap(
     /* 2) 收集保留区域（reserved list） */
     typedef struct {
         uint64_t base, size;
-        int      type; /* 使用你的 enum 常量 */
+        int type; /* 使用你的 enum 常量 */
     } reserved_region_t;
 
     /* 预留数组大小合理上限 */
     reserved_region_t reserved[256];
-    int               reserved_count = 0;
+    int reserved_count = 0;
 
     /* 2.1 内核区域作为 RESERVED（这里把内核标记为可执行与模块区，如果你要 kernel_module 可改） */
     if (kernel_end > kernel_start && reserved_count < (int)sizeof(reserved) / sizeof(reserved[0])) {
@@ -246,7 +246,7 @@ static void setup_memmap(
         /* 遍历 reserved-memory 的子节点 */
         for (child = fdt_first_subnode(opensbi_dtb_vaddr, resmem_off); child >= 0;
              child = fdt_next_subnode(opensbi_dtb_vaddr, child)) {
-            int            reg_len;
+            int reg_len;
             const fdt64_t *reg =
                 (const fdt64_t *)fdt_getprop(opensbi_dtb_vaddr, child, "reg", &reg_len);
             if (!reg || reg_len < (int)sizeof(uint64_t) * 2)
@@ -264,7 +264,7 @@ static void setup_memmap(
     int chosen_off = fdt_path_offset(opensbi_dtb_vaddr, "/chosen");
     if (chosen_off >= 0 && reserved_count < (int)sizeof(reserved) / sizeof(reserved[0])) {
         uint64_t initrd_start = 0, initrd_end = 0;
-        bool     has_start =
+        bool has_start =
             fdt_getprop_u64(opensbi_dtb_vaddr, chosen_off, "linux,initrd-start", 0, &initrd_start);
         bool has_end =
             fdt_getprop_u64(opensbi_dtb_vaddr, chosen_off, "linux,initrd-end", 0, &initrd_end);
@@ -388,7 +388,7 @@ static const char *fdt_kernel_cmdline(void *fdt) {
     if (chosen_off < 0)
         return NULL;
 
-    int         len      = 0;
+    int len              = 0;
     const char *bootargs = fdt_getprop(fdt, chosen_off, "bootargs", &len);
     if (!bootargs || len <= 0)
         return NULL;
@@ -397,10 +397,10 @@ static const char *fdt_kernel_cmdline(void *fdt) {
 }
 
 uint64_t fdt_get_initrd(const void *fdt, size_t *out_size) {
-    int         chosen;
+    int chosen;
     const void *prop;
-    int         len;
-    uint64_t    start = 0, end = 0;
+    int len;
+    uint64_t start = 0, end = 0;
 
     if (!fdt)
         return 0;

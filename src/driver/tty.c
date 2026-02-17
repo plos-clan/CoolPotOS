@@ -10,8 +10,8 @@
 #include "term/terminal.h"
 
 struct llist_header tty_device_list;
-tty_t              *kernel_session  = NULL; // 内核会话
-tty_t              *current_session = NULL; // 当前会话
+tty_t *kernel_session  = NULL; // 内核会话
+tty_t *current_session = NULL; // 当前会话
 
 int kernel_getch() {
     char ch;
@@ -68,8 +68,8 @@ void init_tty() {
 
 void tty_event_handle(indev_t *device, intype type, uint64_t code, uint8_t value) {
     if (type == EV_CHAR) {
-        char  *ascii_code = (char *)code;
-        size_t length     = strlen(ascii_code);
+        char *ascii_code = (char *)code;
+        size_t length    = strlen(ascii_code);
         if (length == 0)
             return;
         for (size_t i = 0; i < length; i++) {

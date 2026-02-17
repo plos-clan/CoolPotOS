@@ -19,10 +19,10 @@
 #    include "io.h"
 #endif
 
-extern pcb_t                 kernel_process;
+extern pcb_t kernel_process;
 extern _Atomic volatile bool scheduler_status;
-extern tty_t                *current_session;
-extern irq_action_t          actions[ARCH_MAX_IRQ_NUM];
+extern tty_t *current_session;
+extern irq_action_t actions[ARCH_MAX_IRQ_NUM];
 
 typedef struct {
     UINT16 object_size;
@@ -30,7 +30,7 @@ typedef struct {
 
 typedef struct {
     ACPI_OSD_EXEC_CALLBACK func;
-    void                  *ctx;
+    void *ctx;
 } acpica_exec_ctx_t;
 
 static volatile UINT32 acpica_exec_count = 0;
@@ -285,7 +285,7 @@ ACPI_STATUS AcpiOsReleaseObject(ACPI_CACHE_T *Cache, void *Object) {
 
 typedef struct acpica_irq_handler_arg {
     ACPI_OSD_HANDLER irq_handler;
-    void            *ctx;
+    void *ctx;
 } acpica_irq_handler_arg_t;
 
 void acpica_irq_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
@@ -321,7 +321,7 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(
 }
 
 ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 InterruptNumber, ACPI_OSD_HANDLER ServiceRoutine) {
-    uint64_t      vector = (uint64_t)InterruptNumber + IRQ_BASE_VECTOR;
+    uint64_t vector = (uint64_t)InterruptNumber + IRQ_BASE_VECTOR;
     irq_action_t *action;
 
     if (!ServiceRoutine) {
@@ -617,7 +617,7 @@ ACPI_STATUS AcpiOsEnterSleep(UINT8 SleepState, UINT32 RegaValue, UINT32 RegbValu
 }
 
 void AcpiOsPrintf(const char *Format, ...) {
-    char    buffer[512];
+    char buffer[512];
     va_list args;
 
     va_start(args, Format);
@@ -706,9 +706,9 @@ ACPI_STATUS AcpiOsGetTableByName(
 ACPI_STATUS AcpiOsGetTableByIndex(
     UINT32 Index, ACPI_TABLE_HEADER **Table, UINT32 *Instance, ACPI_PHYSICAL_ADDRESS *Address
 ) {
-    ACPI_STATUS        st;
+    ACPI_STATUS st;
     ACPI_TABLE_HEADER *hdr;
-    UINT32             inst = 1;
+    UINT32 inst = 1;
 
     if (!Table) {
         return AE_BAD_PARAMETER;
@@ -749,7 +749,7 @@ ACPI_STATUS AcpiOsGetTableByAddress(ACPI_PHYSICAL_ADDRESS Address, ACPI_TABLE_HE
 
     while (true) {
         ACPI_TABLE_HEADER *hdr;
-        ACPI_STATUS        st = AcpiGetTableByIndex(index, &hdr);
+        ACPI_STATUS st = AcpiGetTableByIndex(index, &hdr);
         if (ACPI_FAILURE(st)) {
             break;
         }

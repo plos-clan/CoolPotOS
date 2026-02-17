@@ -227,7 +227,7 @@ drm_device_op_t plainfb_drm_device_op = {
 };
 
 pci_device_t *vga_pci_devices[8];
-uint32_t      count;
+uint32_t count;
 
 void drm_load_device(pci_device_t *device) {
     vga_pci_devices[count++] = device;

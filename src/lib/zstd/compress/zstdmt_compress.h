@@ -47,7 +47,7 @@ extern "C" {
 /* ===   Memory management   === */
 typedef struct ZSTDMT_CCtx_s ZSTDMT_CCtx;
 /* Requires ZSTD_MULTITHREAD to be defined during compilation, otherwise it will return NULL. */
-ZSTDMT_CCtx        *
+ZSTDMT_CCtx *
 ZSTDMT_createCCtx_advanced(unsigned nbWorkers, ZSTD_customMem cMem, ZSTD_threadPool *pool);
 size_t ZSTDMT_freeCCtx(ZSTDMT_CCtx *mtctx);
 

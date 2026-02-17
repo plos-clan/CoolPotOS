@@ -7,11 +7,11 @@
 #include "term/klog.h"
 
 static uint64_t physical_memory_offset;
-FrameAllocator  frame_allocator;
+FrameAllocator frame_allocator;
 
 uint64_t get_memory_size() {
-    uint64_t           all_memory_size = 0;
-    boot_memory_map_t *memory_map      = boot_get_memory_map();
+    uint64_t all_memory_size      = 0;
+    boot_memory_map_t *memory_map = boot_get_memory_map();
 
     for (uint64_t i = memory_map->entry_count - 1;; i--) {
         struct boot_memory_map_entry region = memory_map->entries[i];
@@ -66,9 +66,9 @@ uint64_t mem_parse_size(const char *s) {
 }
 
 void init_frame() {
-    physical_memory_offset  = boot_get_hhdm_offset();
-    const char *mem_str     = boot_get_cmdline_param("mem");
-    uint64_t    memory_size = 0;
+    physical_memory_offset = boot_get_hhdm_offset();
+    const char *mem_str    = boot_get_cmdline_param("mem");
+    uint64_t memory_size   = 0;
 
     if (mem_str == NULL)
         goto Ldefault;

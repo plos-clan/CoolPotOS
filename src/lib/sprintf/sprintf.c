@@ -7,7 +7,7 @@
 #include "krlibc.h"
 
 int sprintf(char *buf, char const *fmt, ...) {
-    int     result;
+    int result;
     va_list va;
     va_start(va, fmt);
     result = STB_SPRINTF_DECORATE(vsprintfcb)(0, 0, buf, fmt, va);
@@ -16,7 +16,7 @@ int sprintf(char *buf, char const *fmt, ...) {
 }
 
 int snprintf(char *buf, int count, const char *fmt, ...) {
-    int     result;
+    int result;
     va_list va;
     va_start(va, fmt);
     result = STB_SPRINTF_DECORATE(vsnprintf)(buf, count, fmt, va);

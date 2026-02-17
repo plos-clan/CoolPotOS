@@ -4,7 +4,7 @@
 
 static uint8_t usb_endpoint_map_index_of(uint8_t ep_addr) {
     uint8_t ep_num = ep_addr & 0x0f;
-    bool    is_in  = (ep_addr & USB_REQ_DIR_IN) != 0;
+    bool is_in     = (ep_addr & USB_REQ_DIR_IN) != 0;
     return (uint8_t)(is_in ? (ep_num + 16) : ep_num);
 }
 

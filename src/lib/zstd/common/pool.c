@@ -26,21 +26,21 @@
 /* A job is a function and an opaque argument */
 typedef struct POOL_job_s {
     POOL_function function;
-    void         *opaque;
+    void *opaque;
 } POOL_job;
 
 struct POOL_ctx_s {
     ZSTD_customMem customMem;
     /* Keep track of the threads */
     ZSTD_pthread_t *threads;
-    size_t          threadCapacity;
-    size_t          threadLimit;
+    size_t threadCapacity;
+    size_t threadLimit;
 
     /* The queue is a circular buffer */
     POOL_job *queue;
-    size_t    queueHead;
-    size_t    queueTail;
-    size_t    queueSize;
+    size_t queueHead;
+    size_t queueTail;
+    size_t queueSize;
 
     /* The number of threads working on jobs */
     size_t numThreadsBusy;

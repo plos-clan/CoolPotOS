@@ -78,71 +78,71 @@ enum {
 };
 
 typedef struct vfs_callback { // VFS回调函数
-    vfs_mount_t    mount;     // 挂载文件系统
-    vfs_unmount_t  unmount;   // 卸载文件系统 (虚拟文件系统不支持卸载)
-    vfs_open_t     open;      // 打开一个文件句柄
-    vfs_close_t    close;     // 关闭一个文件句柄
-    vfs_read_t     read;      // 读取文件
-    vfs_write_t    write;     // 写入文件
+    vfs_mount_t mount;        // 挂载文件系统
+    vfs_unmount_t unmount;    // 卸载文件系统 (虚拟文件系统不支持卸载)
+    vfs_open_t open;          // 打开一个文件句柄
+    vfs_close_t close;        // 关闭一个文件句柄
+    vfs_read_t read;          // 读取文件
+    vfs_write_t write;        // 写入文件
     vfs_readlink_t readlink;  // 读取软链接
-    vfs_mk_t       mkdir;     // 创建文件夹
-    vfs_mk_t       mkfile;    // 创建文件
-    vfs_mk_t       link;      // 创建硬链接
-    vfs_mk_t       symlink;   // 创建软链接
-    vfs_stat_t     stat;      // 检查文件状态信息
-    vfs_ioctl_t    ioctl;     // I/O 控制接口 (仅 devfs 等特殊文件系统实现)
-    vfs_dup_t      dup;       // 复制文件节点
-    vfs_poll_t     poll;      // 轮询文件状态 (仅 devfs 等特殊文件系统实现)
-    vfs_mapfile_t  map;       // 映射文件到内存 (仅 devfs 等特殊文件系统实现)
+    vfs_mk_t mkdir;           // 创建文件夹
+    vfs_mk_t mkfile;          // 创建文件
+    vfs_mk_t link;            // 创建硬链接
+    vfs_mk_t symlink;         // 创建软链接
+    vfs_stat_t stat;          // 检查文件状态信息
+    vfs_ioctl_t ioctl;        // I/O 控制接口 (仅 devfs 等特殊文件系统实现)
+    vfs_dup_t dup;            // 复制文件节点
+    vfs_poll_t poll;          // 轮询文件状态 (仅 devfs 等特殊文件系统实现)
+    vfs_mapfile_t map;        // 映射文件到内存 (仅 devfs 等特殊文件系统实现)
     vfs_del_t delete;         // 删除文件或文件夹
     vfs_rename_t rename;      // 重命名文件或文件夹
-    vfs_free_t   free;        // 释放文件句柄
-    vfs_mknod_t  mknod;       // 创建设备节点
-    vfs_chmod_t  chmod;       // 更改文件权限
+    vfs_free_t free;          // 释放文件句柄
+    vfs_mknod_t mknod;        // 创建设备节点
+    vfs_chmod_t chmod;        // 更改文件权限
 } *vfs_callback_t;
 
 typedef struct vfs_filesystem {
-    vfs_callback_t      callback;
-    char                name[10];
-    uint16_t            fsid;
-    uint64_t            magic;
-    uint64_t            flags;
+    vfs_callback_t callback;
+    char name[10];
+    uint16_t fsid;
+    uint64_t magic;
+    uint64_t flags;
     struct llist_header node;
 } *vfs_filesystem_t;
 
-struct vfs_node {           // vfs节点
-    vfs_node_t parent;      // 父目录
-    vfs_node_t linkto;      // 符号链接指向的节点
-    char      *name;        // 名称
-    char      *linkname;    // 符号链接名称
-    uint64_t   realsize;    // 项目真实占用的空间 (可选)
-    uint64_t   size;        // 文件大小或若是文件夹则填0
-    uint64_t   createtime;  // 创建时间
-    uint64_t   readtime;    // 最后读取时间
-    uint64_t   writetime;   // 最后写入时间
-    uint64_t   inode;       // 节点编号
-    uint64_t   blksz;       // 块大小
-    uint32_t   owner;       // 所有者
-    uint32_t   group;       // 所有组
-    uint32_t   permissions; // 权限
-    uint16_t   type;        // 类型
-    uint32_t   refcount;    // 引用计数
-    uint16_t   mode;        // 模式
-    uint16_t   fsid;        // 文件系统挂载 id
-    void      *handle;      // 操作文件的句柄
-    uint64_t   flags;       // 文件标志
-    list_t     child;       // 子节点
-    vfs_node_t root;        // 根目录
-    bool       visited;     // 是否与具体文件系统同步
-    bool       is_mount;    // 是否是挂载点
-    uint64_t   dev;         // 设备号
-    uint64_t   rdev;        // 真实设备号
-    spin_t     lock;        // 节点操作锁
-    char      *linkto_path; // 符号链接悬空指向的路径 (若指向文件存在该字段为NULL)
+struct vfs_node {         // vfs节点
+    vfs_node_t parent;    // 父目录
+    vfs_node_t linkto;    // 符号链接指向的节点
+    char *name;           // 名称
+    char *linkname;       // 符号链接名称
+    uint64_t realsize;    // 项目真实占用的空间 (可选)
+    uint64_t size;        // 文件大小或若是文件夹则填0
+    uint64_t createtime;  // 创建时间
+    uint64_t readtime;    // 最后读取时间
+    uint64_t writetime;   // 最后写入时间
+    uint64_t inode;       // 节点编号
+    uint64_t blksz;       // 块大小
+    uint32_t owner;       // 所有者
+    uint32_t group;       // 所有组
+    uint32_t permissions; // 权限
+    uint16_t type;        // 类型
+    uint32_t refcount;    // 引用计数
+    uint16_t mode;        // 模式
+    uint16_t fsid;        // 文件系统挂载 id
+    void *handle;         // 操作文件的句柄
+    uint64_t flags;       // 文件标志
+    list_t child;         // 子节点
+    vfs_node_t root;      // 根目录
+    bool visited;         // 是否与具体文件系统同步
+    bool is_mount;        // 是否是挂载点
+    uint64_t dev;         // 设备号
+    uint64_t rdev;        // 真实设备号
+    spin_t lock;          // 节点操作锁
+    char *linkto_path;    // 符号链接悬空指向的路径 (若指向文件存在该字段为NULL)
 };
 
 extern struct vfs_callback vfs_empty_callback;
-extern vfs_node_t          rootdir;
+extern vfs_node_t rootdir;
 extern struct llist_header fs_metadata_list;
 
 /**
@@ -260,21 +260,21 @@ vfs_filesystem_t get_filesystem(char *type);
 vfs_filesystem_t get_filesystem_node(vfs_node_t node);
 
 vfs_node_t vfs_do_search(vfs_node_t dir, const char *name);
-void       vfs_free_child(vfs_node_t vfs);
-errno_t    vfs_delete(vfs_node_t node);
-errno_t    vfs_rename(vfs_node_t node, const char *new);
-errno_t    vfs_poll(vfs_node_t node, size_t event);
-errno_t    vfs_chmod(vfs_node_t node, uint16_t mode);
-void      *vfs_map(
-         vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags, uint64_t offset
-     );
-int    vfs_chown(const char *path, uint64_t uid, uint64_t gid);
+void vfs_free_child(vfs_node_t vfs);
+errno_t vfs_delete(vfs_node_t node);
+errno_t vfs_rename(vfs_node_t node, const char *new);
+errno_t vfs_poll(vfs_node_t node, size_t event);
+errno_t vfs_chmod(vfs_node_t node, uint16_t mode);
+void *vfs_map(
+    vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags, uint64_t offset
+);
+int vfs_chown(const char *path, uint64_t uid, uint64_t gid);
 size_t vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size);  // 读取节点数据
 size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size); // 写入节点
-void  *general_map(
-     vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
-     uint64_t flags, uint64_t offset
- ); // 文件映射
+void *general_map(
+    vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
+    uint64_t flags, uint64_t offset
+); // 文件映射
 
 /**
  * 挂载一个文件系统到指定节点
@@ -301,9 +301,9 @@ errno_t vfs_unmount(const char *path);
  * @return 根目录节点
  */
 vfs_node_t get_rootdir();
-void       set_rootdir(vfs_node_t node);
+void set_rootdir(vfs_node_t node);
 
 char *vfs_get_fullpath(vfs_node_t node);
 char *at_resolve_pathname(int dirfd, char *pathname);
 char *vfs_cwd_path_build(char *src); // 构建当前工作目录的路径
-bool  vfs_init();
+bool vfs_init();

@@ -24,8 +24,8 @@ struct signal_frame {
     fpu_context_t fpu_state;
 #endif
     uint64_t magic;
-    uint8_t  trampoline[16];
+    uint8_t trampoline[16];
 };
 
-bool     arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct syscall_regs *regs);
+bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct syscall_regs *regs);
 uint64_t arch_signal_sigreturn(struct syscall_regs *regs);

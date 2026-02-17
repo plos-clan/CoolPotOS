@@ -183,27 +183,27 @@
 #include "types.h"
 
 struct iovec {
-    void  *iov_base;
+    void *iov_base;
     size_t iov_len;
 };
 
 #include "fs/sockfs.h"
 
 struct stat {
-    long              st_dev;
-    unsigned long     st_ino;
-    unsigned long     st_nlink;
-    int               st_mode;
-    int               st_uid;
-    int               st_gid;
-    long              st_rdev;
-    long long         st_size;
-    long              st_blksize;
+    long st_dev;
+    unsigned long st_ino;
+    unsigned long st_nlink;
+    int st_mode;
+    int st_uid;
+    int st_gid;
+    long st_rdev;
+    long long st_size;
+    long st_blksize;
     unsigned long int st_blocks;
-    struct timespec   st_atim;
-    struct timespec   st_mtim;
-    struct timespec   st_ctim;
-    char              _pad[24];
+    struct timespec st_atim;
+    struct timespec st_mtim;
+    struct timespec st_ctim;
+    char _pad[24];
 };
 
 struct utsname {
@@ -221,21 +221,21 @@ typedef struct {
 
 typedef struct {
     sigset_t *ss;
-    size_t    ss_len;
+    size_t ss_len;
 } WeirdPselect6;
 
 struct dirent {
-    long           d_ino;
-    long           d_off;
+    long d_ino;
+    long d_off;
     unsigned short d_reclen;
-    unsigned char  d_type;
-    char           d_name[256];
+    unsigned char d_type;
+    char d_name[256];
 };
 
 struct statx_timestamp {
-    int64_t  tv_sec;
+    int64_t tv_sec;
     uint32_t tv_nsec;
-    int32_t  __reserved;
+    int32_t __reserved;
 };
 
 struct statx {
@@ -274,20 +274,20 @@ struct statx {
 };
 
 struct sysinfo {
-    int64_t  uptime;    /* Seconds since boot */
-    uint64_t loads[3];  /* 1, 5, and 15 minute load averages */
-    uint64_t totalram;  /* Total usable main memory size */
-    uint64_t freeram;   /* Available memory size */
-    uint64_t sharedram; /* Amount of shared memory */
-    uint64_t bufferram; /* Memory used by buffers */
-    uint64_t totalswap; /* Total swap space size */
-    uint64_t freeswap;  /* swap space still available */
-    uint16_t procs;     /* Number of current processes */
-    uint16_t pad;       /* Explicit padding for m68k */
-    uint64_t totalhigh; /* Total high memory size */
-    uint64_t freehigh;  /* Available high memory size */
-    uint32_t mem_unit;  /* Memory unit size in bytes */
-    char     _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
+    int64_t uptime;                                        /* Seconds since boot */
+    uint64_t loads[3];                                     /* 1, 5, and 15 minute load averages */
+    uint64_t totalram;                                     /* Total usable main memory size */
+    uint64_t freeram;                                      /* Available memory size */
+    uint64_t sharedram;                                    /* Amount of shared memory */
+    uint64_t bufferram;                                    /* Memory used by buffers */
+    uint64_t totalswap;                                    /* Total swap space size */
+    uint64_t freeswap;                                     /* swap space still available */
+    uint16_t procs;                                        /* Number of current processes */
+    uint16_t pad;                                          /* Explicit padding for m68k */
+    uint64_t totalhigh;                                    /* Total high memory size */
+    uint64_t freehigh;                                     /* Available high memory size */
+    uint32_t mem_unit;                                     /* Memory unit size in bytes */
+    char _f[20 - 2 * sizeof(uint64_t) - sizeof(uint32_t)]; /* Padding: libc5 uses this.. */
 };
 
 typedef struct {
@@ -295,18 +295,18 @@ typedef struct {
 } __kernel_fsid_t;
 
 struct statfs {
-    uint64_t        f_type;
-    uint64_t        f_bsize;
-    uint64_t        f_blocks;
-    uint64_t        f_bfree;
-    uint64_t        f_bavail;
-    uint64_t        f_files;
-    uint64_t        f_ffree;
+    uint64_t f_type;
+    uint64_t f_bsize;
+    uint64_t f_blocks;
+    uint64_t f_bfree;
+    uint64_t f_bavail;
+    uint64_t f_files;
+    uint64_t f_ffree;
     __kernel_fsid_t f_fsid;
-    uint64_t        f_namelen;
-    uint64_t        f_frsize;
-    uint64_t        f_flags;
-    uint64_t        f_spare[4];
+    uint64_t f_namelen;
+    uint64_t f_frsize;
+    uint64_t f_flags;
+    uint64_t f_spare[4];
 };
 
 struct rlimit {
@@ -317,20 +317,20 @@ struct rlimit {
 struct rusage {
     struct timeval ru_utime;
     struct timeval ru_stime;
-    long           ru_maxrss;
-    long           ru_ixrss;
-    long           ru_idrss;
-    long           ru_isrss;
-    long           ru_minflt;
-    long           ru_majflt;
-    long           ru_nswap;
-    long           ru_inblock;
-    long           ru_oublock;
-    long           ru_msgsnd;
-    long           ru_msgrcv;
-    long           ru_nsignals;
-    long           ru_nvcsw;
-    long           ru_nivcsw;
+    long ru_maxrss;
+    long ru_ixrss;
+    long ru_idrss;
+    long ru_isrss;
+    long ru_minflt;
+    long ru_majflt;
+    long ru_nswap;
+    long ru_inblock;
+    long ru_oublock;
+    long ru_msgsnd;
+    long ru_msgrcv;
+    long ru_nsignals;
+    long ru_nvcsw;
+    long ru_nivcsw;
 };
 
 struct tms {
@@ -347,7 +347,7 @@ struct tms {
 
 typedef struct {
     uint32_t version;
-    int      pid;
+    int pid;
 } cap_user_header_t;
 
 typedef struct {

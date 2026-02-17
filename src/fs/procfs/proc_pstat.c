@@ -2,7 +2,7 @@
 
 char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
     char *buffer = malloc(PAGE_SIZE * 4);
-    int   len    = sprintf(
+    int len      = sprintf(
         buffer,
         "%d (%s) %c %d %d %d %d %d %u %d %d %d %d %d %d %d %d %d %d "
              "%ld %d %d %lu %d %d %d %d %d %d %d %d %d %d %d %d %d "
@@ -77,7 +77,7 @@ size_t proc_pstat_stat(proc_handle_t *handle) {
         task = handle->task;
     }
     size_t content_len = 0;
-    char  *content     = proc_gen_stat_file(task, &content_len);
+    char *content      = proc_gen_stat_file(task, &content_len);
     free(content);
     return content_len;
 }
@@ -90,7 +90,7 @@ size_t proc_pstat_read(proc_handle_t *handle, void *addr, size_t offset, size_t 
         task = handle->task;
     }
     size_t content_len = 0;
-    char  *content     = proc_gen_stat_file(task, &content_len);
+    char *content      = proc_gen_stat_file(task, &content_len);
     if (offset >= content_len) {
         free(content);
         return 0;

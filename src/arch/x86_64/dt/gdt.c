@@ -3,10 +3,10 @@
 #include "task/smp.h"
 #include "apic.h"
 
-gdt_entries_t       gdt_entries;
+gdt_entries_t gdt_entries;
 struct gdt_register gdt_pointer;
-tss_t               tss0;
-tss_stack_t         tss_stack;
+tss_t tss0;
+tss_stack_t tss_stack;
 
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"

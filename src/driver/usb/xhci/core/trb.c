@@ -57,7 +57,7 @@ Trb trb_new_setup_stage(uint32_t req_low, uint32_t req_high, uint32_t trt) {
 
 Trb trb_new_data_stage(uint64_t buffer, uint32_t len, bool dir_in) {
     uint32_t dir_bit = dir_in ? (1u << 16) : 0u;
-    Trb      trb     = {
+    Trb trb          = {
                  .param_low  = (uint32_t)buffer,
                  .param_high = (uint32_t)(buffer >> 32),
                  .status     = len,
@@ -68,7 +68,7 @@ Trb trb_new_data_stage(uint64_t buffer, uint32_t len, bool dir_in) {
 
 Trb trb_new_status_stage(bool dir_in) {
     uint32_t dir_bit = dir_in ? (1u << 16) : 0u;
-    Trb      trb     = { .control = ((uint32_t)TRB_STATUS_STAGE << 10) | dir_bit | TRB_IOC };
+    Trb trb          = { .control = ((uint32_t)TRB_STATUS_STAGE << 10) | dir_bit | TRB_IOC };
     return trb;
 }
 

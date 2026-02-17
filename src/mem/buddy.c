@@ -18,14 +18,14 @@ const char *zone_names[__MAX_NR_ZONES] = {
     "DMA32", "Normal"
 };
 
-page_t       *mem_map               = NULL;
-uint64_t      max_pfn               = 0;
-uint64_t      min_pfn               = 0;
-zone_t       *zones[__MAX_NR_ZONES] = { NULL };
-int           nr_zones              = 0;
-static size_t total_frames          = 0;
-Bitmap        usable_regions;
-spin_t        frame_op_lock        = SPIN_INIT;
+page_t *mem_map               = NULL;
+uint64_t max_pfn              = 0;
+uint64_t min_pfn              = 0;
+zone_t *zones[__MAX_NR_ZONES] = { NULL };
+int nr_zones                  = 0;
+static size_t total_frames    = 0;
+Bitmap usable_regions;
+spin_t frame_op_lock               = SPIN_INIT;
 static size_t early_last_alloc_pos = 0;
 
 bool percpu_pagecache_initialized = false;
@@ -79,7 +79,7 @@ static enum zone_type gfp_zone(uint32_t gfp_flags) {
 // 构建 zone fallback 列表
 void build_zonelist(zonelist_t *zl, uint32_t gfp_flags) {
     enum zone_type start_zone = gfp_zone(gfp_flags);
-    int            idx        = 0;
+    int idx                   = 0;
 
     // 从首选 zone 开始，向低端 zone fallback
     for (int i = start_zone; i >= 0; i--) {
@@ -192,7 +192,7 @@ static page_t *__rmqueue_smallest(zone_t *zone, uint32_t order) {
 
     for (current_order = order; current_order < MAX_ORDER; current_order++) {
         free_area_t *area = &zone->free_area[current_order];
-        page_t      *page = area->free_list;
+        page_t *page      = area->free_list;
 
         if (!page)
             continue;
@@ -287,7 +287,7 @@ static page_t *rmqueue(zone_t *zone, uint32_t order, uint32_t gfp_flags) {
 }
 
 page_t *alloc_pages(uint32_t gfp_flags, uint32_t order) {
-    page_t    *page = NULL;
+    page_t *page = NULL;
     zonelist_t zl;
 
     if (order >= MAX_ORDER)
@@ -316,7 +316,7 @@ page_t *alloc_pages(uint32_t gfp_flags, uint32_t order) {
 
 static inline uint64_t __free_one_page(page_t *page, uint64_t pfn, zone_t *zone, uint32_t order) {
     uint64_t combined_pfn;
-    page_t  *buddy;
+    page_t *buddy;
 
     while (order < MAX_ORDER - 1) {
         buddy = find_buddy_page(page, order);
@@ -345,8 +345,8 @@ static void free_pcppages_bulk(zone_t *zone, per_cpu_pages_t *pcp, int count) {
         pcp->count--;
         count--;
 
-        page_t  *page = pcp->pages[pcp->count];
-        uint64_t pfn  = page_to_pfn(page);
+        page_t *page = pcp->pages[pcp->count];
+        uint64_t pfn = page_to_pfn(page);
 
         __free_one_page(page, pfn, zone, 0);
 
@@ -437,8 +437,8 @@ static void init_zone(zone_t *zone, enum zone_type type, uint64_t start_pfn, uin
 
 uint64_t alloc_frames_early(size_t count) {
     spin_lock(frame_op_lock);
-    Bitmap *bitmap      = &usable_regions;
-    size_t  frame_index = bitmap_find_range_from(bitmap, count, true, early_last_alloc_pos);
+    Bitmap *bitmap     = &usable_regions;
+    size_t frame_index = bitmap_find_range_from(bitmap, count, true, early_last_alloc_pos);
     bitmap_set_range(bitmap, frame_index, frame_index + count, false);
     early_last_alloc_pos = frame_index + count - 1;
     spin_unlock(frame_op_lock);
@@ -555,8 +555,8 @@ void percpu_pagecache_init() {
         if (!zone_has_memory(zone))
             continue;
 
-        size_t   total_size   = sizeof(per_cpu_pages_t) * get_cpu_count();
-        size_t   page_size    = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
+        size_t total_size     = sizeof(per_cpu_pages_t) * get_cpu_count();
+        size_t page_size      = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
         uint64_t pset_phy     = alloc_frames(page_size);
         zone->per_cpu_pageset = (per_cpu_pages_t *)driver_phys_to_virt(pset_phy);
         page_map_range(
@@ -657,7 +657,7 @@ void init_frame_buddy(uint64_t memory_size) {
     if (total_frames == 0)
         return;
 
-    size_t   bitmap_size    = (memory_size / PAGE_SIZE + 7) / 8;
+    size_t bitmap_size      = (memory_size / PAGE_SIZE + 7) / 8;
     uint64_t bitmap_address = 0;
 
     for (uint64_t i = 0; i < memory_map->entry_count; i++) {

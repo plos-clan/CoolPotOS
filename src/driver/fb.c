@@ -9,8 +9,8 @@
 #include <mem/page.h>
 
 static size_t fb_dev_read(void *data, void *buf, size_t offset, size_t len) {
-    boot_framebuffer_t *fb      = (boot_framebuffer_t *)data;
-    size_t              fb_size = fb->pitch * fb->height;
+    boot_framebuffer_t *fb = (boot_framebuffer_t *)data;
+    size_t fb_size         = fb->pitch * fb->height;
     if (offset >= fb_size)
         return 0;
     if (offset + len > fb_size)
@@ -20,8 +20,8 @@ static size_t fb_dev_read(void *data, void *buf, size_t offset, size_t len) {
 }
 
 static size_t fb_dev_write(void *data, const void *buf, size_t offset, size_t len) {
-    boot_framebuffer_t *fb      = (boot_framebuffer_t *)data;
-    size_t              fb_size = fb->pitch * fb->height;
+    boot_framebuffer_t *fb = (boot_framebuffer_t *)data;
+    size_t fb_size         = fb->pitch * fb->height;
     if (offset >= fb_size)
         return 0;
     if (offset + len > fb_size)
@@ -113,7 +113,7 @@ static size_t fb_dev_size(void *data) {
 static void *
 fb_dev_map(void *data, void *addr, size_t offset, size_t size, size_t prot, size_t flags) {
     boot_framebuffer_t *framebuffer = (boot_framebuffer_t *)data;
-    uint64_t            fb_addr     = arch_virt_to_phys(framebuffer->address) + offset;
+    uint64_t fb_addr                = arch_virt_to_phys(framebuffer->address) + offset;
 
     uint64_t page_flags =
 

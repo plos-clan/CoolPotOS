@@ -45,8 +45,8 @@ static inline int pntz(size_t p[2]) {
 
 static void cycle(size_t width, unsigned char *ar[], int n) {
     unsigned char tmp[256];
-    size_t        l;
-    int           i;
+    size_t l;
+    int i;
 
     if (n < 2) {
         return;
@@ -90,7 +90,7 @@ static inline void shr(size_t p[2], int n) {
 static void sift(unsigned char *head, size_t width, cmpfun cmp, int pshift, size_t lp[]) {
     unsigned char *rt, *lf;
     unsigned char *ar[14 * sizeof(size_t) + 1];
-    int            i = 1;
+    int i = 1;
 
     ar[0] = head;
     while (pshift > 1) {
@@ -117,10 +117,10 @@ static void trinkle(
     unsigned char *head, size_t width, cmpfun cmp, size_t pp[2], int pshift, int trusty, size_t lp[]
 ) {
     unsigned char *stepson, *rt, *lf;
-    size_t         p[2];
+    size_t p[2];
     unsigned char *ar[14 * sizeof(size_t) + 1];
-    int            i = 1;
-    int            trail;
+    int i = 1;
+    int trail;
 
     p[0] = pp[0];
     p[1] = pp[1];
@@ -153,12 +153,12 @@ static void trinkle(
 }
 
 void qsort(void *base, size_t nel, size_t width, cmpfun cmp) {
-    size_t         lp[12 * sizeof(size_t)];
-    size_t         i, size = width * nel;
+    size_t lp[12 * sizeof(size_t)];
+    size_t i, size = width * nel;
     unsigned char *head, *high;
-    size_t         p[2]   = { 1, 0 };
-    int            pshift = 1;
-    int            trail;
+    size_t p[2] = { 1, 0 };
+    int pshift  = 1;
+    int trail;
 
     if (!size)
         return;

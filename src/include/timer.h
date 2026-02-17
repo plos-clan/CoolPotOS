@@ -32,11 +32,11 @@ typedef struct int_timer_internal {
     uint64_t reset;
 } int_timer_internal_t;
 
-void     arch_send_scheduler();
-size_t   sched_clock();
+void arch_send_scheduler();
+size_t sched_clock();
 uint64_t nano_time();
-int64_t  mktime_universal();
-void     rtc_setup();
+int64_t mktime_universal();
+void rtc_setup();
 
 void ms_to_timeval(uint64_t ms, struct timeval *tv);
 

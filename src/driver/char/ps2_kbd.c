@@ -12,10 +12,10 @@
 #endif
 
 static uint64_t ps2_kbd_irq = -1;
-indev_t        *ps2_kbd_device;
-bool            ctrled     = false;
-bool            shifted    = false;
-bool            capsLocked = false;
+indev_t *ps2_kbd_device;
+bool ctrled     = false;
+bool shifted    = false;
+bool capsLocked = false;
 
 char character_table[140] = {
     0,    27,   '1',  '2', '3', '4', '5', '6', '7',  '8',  '9',  '0',  '-',  '=',  0,    9,
@@ -143,7 +143,7 @@ uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode
 
 static void ps2_key_handle(uint64_t irq, void *arg, struct pt_regs *regs) {
     uint8_t scancode = 0;
-    char    out      = 0;
+    char out         = 0;
 #if defined(__x86_64__) || defined(__amd64__)
     scancode = io_in8(0x60);
     if (scancode == 0xE0) {
@@ -259,15 +259,15 @@ ACPI_STATUS resource_callback(ACPI_RESOURCE *Resource, void *Context) {
 ACPI_STATUS device_found_callback(
     ACPI_HANDLE ObjectHandle, UINT32 NestingLevel, void *Context, void **ReturnValue
 ) {
-    ACPI_STATUS    status;
-    ps2_resource_t res    = { 0 };
-    ACPI_BUFFER    buffer = { ACPI_ALLOCATE_BUFFER, NULL };
+    ACPI_STATUS status;
+    ps2_resource_t res = { 0 };
+    ACPI_BUFFER buffer = { ACPI_ALLOCATE_BUFFER, NULL };
     status = AcpiEvaluateObjectTyped(ObjectHandle, "_STA", NULL, &buffer, ACPI_TYPE_INTEGER);
     if (ACPI_FAILURE(status)) {
         return AE_ERROR;
     }
-    ACPI_OBJECT *obj       = buffer.Pointer;
-    UINT64       sta_value = obj->Integer.Value;
+    ACPI_OBJECT *obj = buffer.Pointer;
+    UINT64 sta_value = obj->Integer.Value;
     AcpiOsFree(buffer.Pointer);
     if ((sta_value & 0x3) != 0x3) {
         return AE_OK;

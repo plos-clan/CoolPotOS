@@ -5,7 +5,7 @@
 #include "term/klog.h"
 
 id_allocator_t *intctl_irq_alloc;
-irq_action_t    actions[ARCH_MAX_IRQ_NUM];
+irq_action_t actions[ARCH_MAX_IRQ_NUM];
 
 static _Atomic volatile uint64_t irq_count = 0;
 

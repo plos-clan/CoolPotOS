@@ -44,7 +44,7 @@ void unmap_page_range(page_directory_t *directory, uint64_t vaddr, uint64_t size
 uint64_t page_alloc_random(page_directory_t *directory, uint64_t length, uint64_t flags) {
     if (length == 0)
         return -1;
-    size_t   p    = length / PAGE_SIZE;
+    size_t p      = length / PAGE_SIZE;
     uint64_t addr = alloc_frames(p == 0 ? 1 : p);
     for (uint64_t i = 0; i < length; i += 0x1000) {
         uint64_t var = addr + i;

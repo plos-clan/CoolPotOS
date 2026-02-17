@@ -73,7 +73,7 @@ struct limine_uuid {
     uint32_t a;
     uint16_t b;
     uint16_t c;
-    uint8_t  d[8];
+    uint8_t d[8];
 };
 
 #    define LIMINE_MEDIA_TYPE_GENERIC 0
@@ -90,12 +90,12 @@ struct limine_file {
 #    else
     LIMINE_PTR(char *) cmdline;
 #    endif
-    uint32_t           media_type;
-    uint32_t           unused;
-    uint32_t           tftp_ip;
-    uint32_t           tftp_port;
-    uint32_t           partition_index;
-    uint32_t           mbr_disk_id;
+    uint32_t media_type;
+    uint32_t unused;
+    uint32_t tftp_ip;
+    uint32_t tftp_port;
+    uint32_t partition_index;
+    uint32_t mbr_disk_id;
     struct limine_uuid gpt_disk_uuid;
     struct limine_uuid gpt_part_uuid;
     struct limine_uuid part_uuid;
@@ -198,13 +198,13 @@ struct limine_video_mode {
     uint64_t width;
     uint64_t height;
     uint16_t bpp;
-    uint8_t  memory_model;
-    uint8_t  red_mask_size;
-    uint8_t  red_mask_shift;
-    uint8_t  green_mask_size;
-    uint8_t  green_mask_shift;
-    uint8_t  blue_mask_size;
-    uint8_t  blue_mask_shift;
+    uint8_t memory_model;
+    uint8_t red_mask_size;
+    uint8_t red_mask_shift;
+    uint8_t green_mask_size;
+    uint8_t green_mask_shift;
+    uint8_t blue_mask_size;
+    uint8_t blue_mask_shift;
 };
 
 struct limine_framebuffer {
@@ -213,14 +213,14 @@ struct limine_framebuffer {
     uint64_t height;
     uint64_t pitch;
     uint16_t bpp;
-    uint8_t  memory_model;
-    uint8_t  red_mask_size;
-    uint8_t  red_mask_shift;
-    uint8_t  green_mask_size;
-    uint8_t  green_mask_shift;
-    uint8_t  blue_mask_size;
-    uint8_t  blue_mask_shift;
-    uint8_t  unused[7];
+    uint8_t memory_model;
+    uint8_t red_mask_size;
+    uint8_t red_mask_shift;
+    uint8_t green_mask_size;
+    uint8_t green_mask_shift;
+    uint8_t blue_mask_size;
+    uint8_t blue_mask_shift;
+    uint8_t unused[7];
     uint64_t edid_size;
     LIMINE_PTR(void *) edid;
     /* Response revision 1 */

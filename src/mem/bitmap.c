@@ -65,7 +65,7 @@ void bitmap_set_range(Bitmap *bitmap, size_t start, size_t end, bool value) {
 size_t bitmap_find_range_from(Bitmap *bitmap, size_t length, bool value, size_t start_from) {
     spin_lock(bitmap->lock);
 
-    size_t  count = 0, start_index = 0;
+    size_t count = 0, start_index = 0;
     uint8_t byte_match = value ? (uint8_t)-1 : 0;
 
     for (size_t byte_idx = start_from / 8; byte_idx < bitmap->length / 8; byte_idx++) {

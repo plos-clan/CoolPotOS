@@ -56,10 +56,10 @@ typedef struct {
 } ZSTD_seqSymbol_header;
 
 typedef struct {
-    U16  nextState;
+    U16 nextState;
     BYTE nbAdditionalBits;
     BYTE nbBits;
-    U32  baseValue;
+    U32 baseValue;
 } ZSTD_seqSymbol;
 
 #define SEQSYMBOL_TABLE_SIZE(log) (1 + (1 << (log)))
@@ -78,9 +78,9 @@ typedef struct {
     ZSTD_seqSymbol MLTable[SEQSYMBOL_TABLE_SIZE(
         MLFSELog
     )]; /* and therefore must be at least HUF_DECOMPRESS_WORKSPACE_SIZE large */
-    HUF_DTable     hufTable[HUF_DTABLE_SIZE(HufLog)]; /* can accommodate HUF_decompress4X */
-    U32            rep[ZSTD_REP_NUM];
-    U32            workspace[ZSTD_BUILD_FSE_TABLE_WKSP_SIZE_U32];
+    HUF_DTable hufTable[HUF_DTABLE_SIZE(HufLog)]; /* can accommodate HUF_decompress4X */
+    U32 rep[ZSTD_REP_NUM];
+    U32 workspace[ZSTD_BUILD_FSE_TABLE_WKSP_SIZE_U32];
 } ZSTD_entropyDTables_t;
 
 typedef enum {
@@ -105,8 +105,8 @@ typedef enum {
 /* Hashset for storing references to multiple ZSTD_DDict within ZSTD_DCtx */
 typedef struct {
     const ZSTD_DDict **ddictPtrTable;
-    size_t             ddictPtrTableSize;
-    size_t             ddictPtrCount;
+    size_t ddictPtrTableSize;
+    size_t ddictPtrCount;
 } ZSTD_DDictHashSet;
 
 #ifndef ZSTD_DECODER_INTERNAL_BUFFER
@@ -129,73 +129,73 @@ struct ZSTD_DCtx_s {
     const ZSTD_seqSymbol *LLTptr;
     const ZSTD_seqSymbol *MLTptr;
     const ZSTD_seqSymbol *OFTptr;
-    const HUF_DTable     *HUFptr;
+    const HUF_DTable *HUFptr;
     ZSTD_entropyDTables_t entropy;
     U32 workspace[HUF_DECOMPRESS_WORKSPACE_SIZE_U32]; /* space needed when building huffman tables
                                                        */
     const void *previousDstEnd;                       /* detect continuity */
     const void *prefixStart;                          /* start of current segment */
     const void
-        *virtualStart; /* virtual start of previous segment if it was just before current one */
-    const void      *dictEnd; /* end of previous segment */
-    size_t           expected;
+        *virtualStart;   /* virtual start of previous segment if it was just before current one */
+    const void *dictEnd; /* end of previous segment */
+    size_t expected;
     ZSTD_frameHeader fParams;
-    U64              processedCSize;
-    U64              decodedSize;
+    U64 processedCSize;
+    U64 decodedSize;
     blockType_e bType; /* used in ZSTD_decompressContinue(), store blockType between block header
                           decoding and block decompression stages */
-    ZSTD_dStage   stage;
-    U32           litEntropy;
-    U32           fseEntropy;
+    ZSTD_dStage stage;
+    U32 litEntropy;
+    U32 fseEntropy;
     XXH64_state_t xxhState;
-    size_t        headerSize;
+    size_t headerSize;
     ZSTD_format_e format;
     ZSTD_forceIgnoreChecksum_e
         forceIgnoreChecksum; /* User specified: if == 1, will ignore checksums in compressed frame.
                                 Default == 0 */
     U32 validateChecksum; /* if == 1, will validate checksum. Is == 1 if (fParams.checksumFlag == 1)
                              and (forceIgnoreChecksum == 0). */
-    const BYTE    *litPtr;
+    const BYTE *litPtr;
     ZSTD_customMem customMem;
-    size_t         litSize;
-    size_t         rleSize;
-    size_t         staticSize;
+    size_t litSize;
+    size_t rleSize;
+    size_t staticSize;
 #if DYNAMIC_BMI2 != 0
     int bmi2; /* == 1 if the CPU supports BMI2 and 0 otherwise. CPU support is determined
                  dynamically once per context lifetime. */
 #endif
 
     /* dictionary */
-    ZSTD_DDict       *ddictLocal;
+    ZSTD_DDict *ddictLocal;
     const ZSTD_DDict *ddict; /* set by ZSTD_initDStream_usingDDict(), or ZSTD_DCtx_refDDict() */
-    U32               dictID;
+    U32 dictID;
     int ddictIsCold; /* if == 1 : dictionary is "new" for working context, and presumed "cold" (not
                         in cpu cache) */
-    ZSTD_dictUses_e          dictUses;
-    ZSTD_DDictHashSet       *ddictSet;          /* Hash set for multiple ddicts */
+    ZSTD_dictUses_e dictUses;
+    ZSTD_DDictHashSet *ddictSet;                /* Hash set for multiple ddicts */
     ZSTD_refMultipleDDicts_e refMultipleDDicts; /* User specified: if == 1, will allow references to
                                                    multiple DDicts. Default == 0 (disabled) */
 
     /* streaming */
     ZSTD_dStreamStage streamStage;
-    char             *inBuff;
-    size_t            inBuffSize;
-    size_t            inPos;
-    size_t            maxWindowSize;
-    char             *outBuff;
-    size_t            outBuffSize;
-    size_t            outStart;
-    size_t            outEnd;
-    size_t            lhSize;
+    char *inBuff;
+    size_t inBuffSize;
+    size_t inPos;
+    size_t maxWindowSize;
+    char *outBuff;
+    size_t outBuffSize;
+    size_t outStart;
+    size_t outEnd;
+    size_t lhSize;
 
-    U32               hostageByte;
-    int               noForwardProgress;
+    U32 hostageByte;
+    int noForwardProgress;
     ZSTD_bufferMode_e outBufferMode;
-    ZSTD_outBuffer    expectedOutBuffer;
+    ZSTD_outBuffer expectedOutBuffer;
 
     /* workspace */
-    BYTE              *litBuffer;
-    const BYTE        *litBufferEnd;
+    BYTE *litBuffer;
+    const BYTE *litBufferEnd;
     ZSTD_litLocation_e litBufferLocation;
     BYTE litExtraBuffer[ZSTD_LITBUFFEREXTRASIZE + WILDCOPY_OVERLENGTH]; /* literal buffer can be
                                                                            split between storage

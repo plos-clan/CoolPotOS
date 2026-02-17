@@ -6,7 +6,7 @@
 #include "term/klog.h"
 #include "timer_rv64.h"
 
-extern int  init_trap_vector(); // vector.S
+extern int init_trap_vector(); // vector.S
 extern void do_irq(struct pt_regs *regs, uint64_t irq_num);
 extern void syscall_handler(struct pt_regs *regs); // syscall.c
 

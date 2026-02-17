@@ -15,7 +15,7 @@ bool xhci_address_device(Xhci *xhci, int port_id, uint8_t slot_id, uint32_t spee
     kdebug("Addressing device on slot %d...", slot_id);
 
     uint64_t out_ctx_phys     = 0;
-    void    *out_ctx_virt     = usb_alloc_dma_pages(1, &out_ctx_phys);
+    void *out_ctx_virt        = usb_alloc_dma_pages(1, &out_ctx_phys);
     xhci->dcbaa_virt[slot_id] = out_ctx_phys;
 
     TransferRing ep0_ring             = transfer_ring_new();
@@ -28,7 +28,7 @@ bool xhci_address_device(Xhci *xhci, int port_id, uint8_t slot_id, uint32_t spee
     xhci->slots[slot_id].rings[1]     = ep0_ring;
 
     uint64_t in_ctx_phys = 0;
-    void    *in_ctx_virt = usb_alloc_dma_pages(1, &in_ctx_phys);
+    void *in_ctx_virt    = usb_alloc_dma_pages(1, &in_ctx_phys);
     if (!in_ctx_virt) {
         return false;
     }
@@ -57,7 +57,7 @@ bool xhci_address_device(Xhci *xhci, int port_id, uint8_t slot_id, uint32_t spee
     endpoint_context_set_average_trb_len(ep0_ctx, 8);
     endpoint_context_set_dequeue_ptr(ep0_ctx, ep0_ring.phys_addr | 1u);
 
-    Trb      cmd  = trb_new_address_device(in_ctx_phys, slot_id);
+    Trb cmd       = trb_new_address_device(in_ctx_phys, slot_id);
     uint32_t code = 0;
     if (!xhci_send_command(xhci, cmd, &code, NULL)) {
         kerror("Address Device command timeout");
@@ -79,7 +79,7 @@ static uint32_t
 xhci_setup_one_endpoint(Xhci *xhci, uint8_t slot_id, uint64_t ctx_base, UsbEndpoint *ep) {
     uint8_t addr   = ep->desc.endpoint_address;
     uint8_t ep_num = addr & 0x0f;
-    bool    is_in  = (addr & USB_REQ_DIR_IN) != 0;
+    bool is_in     = (addr & USB_REQ_DIR_IN) != 0;
 
     uint32_t dci = is_in ? (ep_num * 2u + 1u) : (ep_num * 2u);
     if (dci < 2 || dci > 31) {
@@ -89,7 +89,7 @@ xhci_setup_one_endpoint(Xhci *xhci, uint8_t slot_id, uint64_t ctx_base, UsbEndpo
     TransferRing ring               = transfer_ring_new();
     xhci->slots[slot_id].rings[dci] = ring;
 
-    uint8_t  attr    = ep->desc.attributes & 0x3;
+    uint8_t attr     = ep->desc.attributes & 0x3;
     uint32_t ep_type = is_in ? (uint32_t)attr + 4u : (uint32_t)attr;
 
     uint32_t raw_mps = (uint32_t)ep->desc.max_packet_size;
@@ -107,9 +107,9 @@ xhci_setup_one_endpoint(Xhci *xhci, uint8_t slot_id, uint64_t ctx_base, UsbEndpo
         avg_trb_len = mps;
     }
 
-    bool     is_iso_int = (attr == USB_EP_TYPE_INT) || (attr == USB_EP_TYPE_ISO);
-    uint32_t hs_burst   = is_iso_int ? ((raw_mps >> 11) & 0x03u) : 0u;
-    uint32_t ss_burst   = ep->has_ss_desc ? (uint32_t)ep->ss_desc.max_burst : 0u;
+    bool is_iso_int   = (attr == USB_EP_TYPE_INT) || (attr == USB_EP_TYPE_ISO);
+    uint32_t hs_burst = is_iso_int ? ((raw_mps >> 11) & 0x03u) : 0u;
+    uint32_t ss_burst = ep->has_ss_desc ? (uint32_t)ep->ss_desc.max_burst : 0u;
 
     uint32_t max_burst = 0;
     if (speed == USB_SPEED_HIGH) {
@@ -131,7 +131,7 @@ xhci_setup_one_endpoint(Xhci *xhci, uint8_t slot_id, uint64_t ctx_base, UsbEndpo
         }
     }
 
-    bool     is_ss_iso   = (speed == USB_SPEED_SUPER) && (attr == USB_EP_TYPE_ISO);
+    bool is_ss_iso       = (speed == USB_SPEED_SUPER) && (attr == USB_EP_TYPE_ISO);
     uint32_t ss_iso_mult = ep->has_ss_desc ? (uint32_t)(ep->ss_desc.attributes & 0x3u) : 0u;
     uint32_t mult        = is_ss_iso ? ss_iso_mult : 0u;
 
@@ -167,7 +167,7 @@ xhci_setup_one_endpoint(Xhci *xhci, uint8_t slot_id, uint64_t ctx_base, UsbEndpo
 
 bool xhci_configure_endpoints(Xhci *xhci, uint8_t slot_id, UsbEndpointVec *endpoints) {
     uint64_t in_ctx_phys = 0;
-    void    *in_ctx_virt = usb_alloc_dma_pages(1, &in_ctx_phys);
+    void *in_ctx_virt    = usb_alloc_dma_pages(1, &in_ctx_phys);
     if (!in_ctx_virt) {
         return false;
     }
@@ -188,7 +188,7 @@ bool xhci_configure_endpoints(Xhci *xhci, uint8_t slot_id, UsbEndpointVec *endpo
     SlotContext *slot_ctx = slot_context_from((uintptr_t)in_ctx_virt, xhci->ctx_size);
     slot_context_set_entries(slot_ctx, max_dci);
 
-    Trb      cmd  = trb_new_configure_endpoint(in_ctx_phys, slot_id);
+    Trb cmd       = trb_new_configure_endpoint(in_ctx_phys, slot_id);
     uint32_t code = 0;
     if (!xhci_send_command(xhci, cmd, &code, NULL)) {
         kerror("Configure endpoint command timeout");

@@ -93,7 +93,7 @@ int send_signal_to_pgroup(pid_t pgid, int sig) {
     if (sig < MINSIG || sig > MAXSIG)
         return -EINVAL;
 
-    int   sent    = 0;
+    int sent      = 0;
     pcb_t process = NULL;
     cow_foreach(process_list, process) {
         if (process->pgid == pgid) {

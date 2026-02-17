@@ -15,7 +15,7 @@
 #ifndef __FREESTND_C_HDRS_STDDEF_H
 #    define __FREESTND_C_HDRS_STDDEF_H 1
 
-typedef __SIZE_TYPE__    size_t;
+typedef __SIZE_TYPE__ size_t;
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
 
 #    ifndef __cplusplus

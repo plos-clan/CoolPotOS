@@ -8,9 +8,9 @@
 
 #include <term/klog.h>
 
-extern page_directory_t          kernel_page_dir;
+extern page_directory_t kernel_page_dir;
 __attribute__((unused)) uint64_t double_fault_page = 0;
-static spin_t                    page_lock         = SPIN_INIT;
+static spin_t page_lock                            = SPIN_INIT;
 
 static void page_table_clear(page_table_t *table) {
     for (int i = 0; i < 512; i++) {
@@ -115,8 +115,8 @@ copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy, 
 }
 
 uint64_t arch_virt_to_phys(uint64_t va) {
-    uint64_t  pml4_phys = get_cr3();
-    uint64_t *pml4      = phys_to_virt(pml4_phys);
+    uint64_t pml4_phys = get_cr3();
+    uint64_t *pml4     = phys_to_virt(pml4_phys);
 
     size_t pml4_idx = (va >> 39) & ENTRY_MASK;
     size_t pdpt_idx = (va >> 30) & ENTRY_MASK;

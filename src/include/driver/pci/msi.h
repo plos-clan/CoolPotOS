@@ -32,8 +32,8 @@ struct pci_msi_desc_t {
  *
  */
 struct pci_msi_cap_t {
-    uint8_t  cap_id;
-    uint8_t  next_off;
+    uint8_t cap_id;
+    uint8_t next_off;
     uint16_t msg_ctrl;
 
     uint32_t msg_addr_lo;
@@ -51,8 +51,8 @@ struct pci_msi_cap_t {
  *
  */
 struct pci_msix_cap_t {
-    uint8_t  cap_id;
-    uint8_t  next_off;
+    uint8_t cap_id;
+    uint8_t next_off;
     uint16_t msg_ctrl;
 
     uint32_t dword1; // 该DWORD的组成为：[Table Offset][BIR2:0].
@@ -70,14 +70,14 @@ struct pci_msix_cap_t {
  *
  */
 struct msi_desc_t {
-    uint16_t              irq_num;      // 中断向量号
-    uint32_t              processor;    // 定向投递的处理器
-    uint16_t              edge_trigger; // 是否边缘触发
-    uint16_t              assert;       // 是否高电平触发
-    pci_device_t         *pci_dev;      // 对应的pci设备的结构体
-    struct msi_msg_t      msg;          // msi消息
-    uint16_t              msi_index;    // msi描述符的index
-    struct pci_msi_desc_t pci;          // 与pci相关的msi描述符数据
+    uint16_t irq_num;          // 中断向量号
+    uint32_t processor;        // 定向投递的处理器
+    uint16_t edge_trigger;     // 是否边缘触发
+    uint16_t assert;           // 是否高电平触发
+    pci_device_t *pci_dev;     // 对应的pci设备的结构体
+    struct msi_msg_t msg;      // msi消息
+    uint16_t msi_index;        // msi描述符的index
+    struct pci_msi_desc_t pci; // 与pci相关的msi描述符数据
 };
 
 /**

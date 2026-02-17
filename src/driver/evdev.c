@@ -11,8 +11,8 @@
 #include "term/klog.h"
 
 static evdev_ctx_t evdev_ctx;
-static bool        evdev_initialized        = false;
-static bool        evdev_handler_registered = false;
+static bool evdev_initialized        = false;
+static bool evdev_handler_registered = false;
 
 // PS/2 Set 1 scancode -> Linux keycode (basic keys, 1:1 mapping for most)
 static const uint16_t ps2_to_linux[128] = {
@@ -155,10 +155,10 @@ static int evdev_poll(void *handle, size_t events) {
 }
 
 static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
-    uint32_t cmd  = (uint32_t)req; // mask to 32-bit (may be sign-extended)
-    uint8_t  type = _IOC_TYPE(cmd);
-    uint8_t  nr   = _IOC_NR(cmd);
-    size_t   sz   = _IOC_SIZE(cmd);
+    uint32_t cmd = (uint32_t)req; // mask to 32-bit (may be sign-extended)
+    uint8_t type = _IOC_TYPE(cmd);
+    uint8_t nr   = _IOC_NR(cmd);
+    size_t sz    = _IOC_SIZE(cmd);
 
     if (type != EVDEV_IOC_TYPE)
         return -ENOSYS;
@@ -185,7 +185,7 @@ static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
     case EVIOC_NR_GNAME: {
         // EVIOCGNAME: return device name
         const char *name = "PS/2 Keyboard";
-        size_t      len  = strlen(name);
+        size_t len       = strlen(name);
         if (arg == NULL || sz == 0)
             return -EINVAL;
         size_t copy = (len + 1 < sz) ? len + 1 : sz;
@@ -197,7 +197,7 @@ static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
     case EVIOC_NR_GPHYS: {
         // EVIOCGPHYS: return physical path
         const char *phys = "isa0060/serio0/input0";
-        size_t      len  = strlen(phys);
+        size_t len       = strlen(phys);
         if (arg == NULL || sz == 0)
             return -EINVAL;
         size_t copy = (len + 1 < sz) ? len + 1 : sz;
@@ -232,8 +232,8 @@ static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
             return 0;
         } else if (ev == INPUT_EV_KEY) {
             // Key code bitmask: set bits for all supported keycodes
-            uint8_t *bits     = (uint8_t *)arg;
-            size_t   max_bits = sz * 8;
+            uint8_t *bits   = (uint8_t *)arg;
+            size_t max_bits = sz * 8;
 
             // Set bits from ps2_to_linux table
             for (int i = 0; i < 128; i++) {
@@ -286,8 +286,8 @@ void evdev_setup(vfs_node_t dev_root) {
     }
 
     // Create /dev/input/ directory
-    char             *full_path = vfs_get_fullpath(dev_root);
-    string_builder_t *path      = create_string_builder(50);
+    char *full_path        = vfs_get_fullpath(dev_root);
+    string_builder_t *path = create_string_builder(50);
     string_builder_append(path, "%s/input", full_path);
     vfs_mkdir(path->data);
     vfs_node_t input_dir = vfs_open(path->data);

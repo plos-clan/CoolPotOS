@@ -20,9 +20,9 @@ size_t proc_pcmdline_read(proc_handle_t *handle, void *addr, size_t offset, size
     } else {
         task = handle->task;
     }
-    char  *cmdline = task->cmdline != NULL ? task->cmdline : "no_cmdline";
-    size_t len     = task->cmdline != NULL ? task->cl_length : strlen(cmdline);
-    char  *contect = strdup(cmdline);
+    char *cmdline = task->cmdline != NULL ? task->cmdline : "no_cmdline";
+    size_t len    = task->cmdline != NULL ? task->cl_length : strlen(cmdline);
+    char *contect = strdup(cmdline);
 
     logkf("task(%s:%d): ", task->name, task->cl_length);
     for (size_t i = 0; i < task->cl_length; i++) {

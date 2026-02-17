@@ -6,11 +6,11 @@
 #include "mem/frame.h"
 #include "mem/page.h"
 
-extern void             *opensbi_dtb_vaddr; // start.c
+extern void *opensbi_dtb_vaddr; // start.c
 struct fdt_serial_device fdt_serial;
-bool                     serial_initialized = false;
-uart_device_t            uart0;
-uart_config_t            config;
+bool serial_initialized = false;
+uart_device_t uart0;
+uart_config_t config;
 
 static const char *serial_compatibles[] = {
     "ns16550a", "snps,dw-apb-uart", "sifive,uart0", "riscv,uart0", "uart0", NULL,
@@ -20,14 +20,14 @@ static int find_serial_chosem(struct fdt_serial_device *device) {
     int chosen_off = fdt_path_offset(opensbi_dtb_vaddr, "/chosen");
     if (chosen_off < 0)
         return -ENODEV;
-    int         len         = 0;
+    int len                 = 0;
     const char *stdout_path = fdt_getprop(opensbi_dtb_vaddr, chosen_off, "stdout-path", &len);
     if (!stdout_path || len <= 0)
         return -ENODEV;
     char path_buf[128];
 
-    const char *colon    = strchr(stdout_path, ':');
-    size_t      path_len = colon ? (size_t)(colon - stdout_path) : strlen(stdout_path);
+    const char *colon = strchr(stdout_path, ':');
+    size_t path_len   = colon ? (size_t)(colon - stdout_path) : strlen(stdout_path);
     if (path_len >= sizeof(path_buf))
         return -ENAMETOOLONG;
     memcpy(path_buf, stdout_path, path_len);
@@ -64,7 +64,7 @@ static int find_serial_chosem(struct fdt_serial_device *device) {
 
 int find_serial_by_compatible(struct fdt_serial_device *serial) {
     void *fdt = opensbi_dtb_vaddr;
-    int   node;
+    int node;
 
     memset(serial, 0, sizeof(*serial));
 
@@ -77,7 +77,7 @@ int find_serial_by_compatible(struct fdt_serial_device *serial) {
         // 匹配已知串口类型
         for (int i = 0; serial_compatibles[i]; i++) {
             if (strstr(compatible, serial_compatibles[i])) {
-                int            len;
+                int len;
                 const fdt64_t *reg = fdt_getprop(fdt, node, "reg", &len);
                 if (reg && len >= sizeof(fdt64_t)) {
                     serial->base_addr = fdt64_to_cpu(reg[0]);
@@ -157,8 +157,8 @@ int init_serial() {
             | ARCH_PT_FLAG_DIRTY
     );
     uart_init(&uart0, (volatile void *)virt, NULL);
-    tty_device_t       *device = alloc_tty_device(TTY_DEVICE_SERIAL);
-    struct tty_serial_ *data   = malloc(sizeof(struct tty_serial_));
+    tty_device_t *device     = alloc_tty_device(TTY_DEVICE_SERIAL);
+    struct tty_serial_ *data = malloc(sizeof(struct tty_serial_));
 
     device->private_data = data;
     device->ops.read     = serial_read;

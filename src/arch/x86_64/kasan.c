@@ -18,8 +18,8 @@ typedef struct {
     uintptr_t end;
     uintptr_t shadow_base;
     uintptr_t shadow_end;
-    size_t    shadow_size;
-    size_t    shadow_map_size;
+    size_t shadow_size;
+    size_t shadow_map_size;
 } kasan_range_t;
 
 typedef struct {
@@ -27,15 +27,15 @@ typedef struct {
     uintptr_t end;
 } kasan_whitelist_t;
 
-static kasan_range_t     kasan_ranges[KASAN_MAX_RANGES];
-static size_t            kasan_range_count = 0;
+static kasan_range_t kasan_ranges[KASAN_MAX_RANGES];
+static size_t kasan_range_count = 0;
 static kasan_whitelist_t kasan_whitelist[KASAN_MAX_WHITELIST];
-static size_t            kasan_whitelist_count = 0;
-static uintptr_t         kasan_shadow_cursor   = KASAN_SHADOW_BASE;
-static bool              kasan_initialized     = false;
-static bool              kasan_active          = false;
-static int               kasan_heap_range      = -1;
-static int               kasan_disable_depth   = 0;
+static size_t kasan_whitelist_count  = 0;
+static uintptr_t kasan_shadow_cursor = KASAN_SHADOW_BASE;
+static bool kasan_initialized        = false;
+static bool kasan_active             = false;
+static int kasan_heap_range          = -1;
+static int kasan_disable_depth       = 0;
 
 static inline uintptr_t align_up(uintptr_t v, uintptr_t a) {
     return (v + a - 1) & ~(a - 1);
@@ -75,10 +75,10 @@ static void kasan_add_whitelist(uintptr_t start, uintptr_t end) {
 static int kasan_add_range(uintptr_t start, uintptr_t end, bool poison_initial) {
     if (start >= end || kasan_range_count >= KASAN_MAX_RANGES)
         return -1;
-    size_t    size        = end - start;
-    size_t    shadow_size = (size + KASAN_SHADOW_GRANULE - 1) >> KASAN_SHADOW_SCALE_SHIFT;
+    size_t size           = end - start;
+    size_t shadow_size    = (size + KASAN_SHADOW_GRANULE - 1) >> KASAN_SHADOW_SCALE_SHIFT;
     uintptr_t shadow_base = align_up(kasan_shadow_cursor, PAGE_SIZE);
-    size_t    shadow_map  = align_up(shadow_size, PAGE_SIZE);
+    size_t shadow_map     = align_up(shadow_size, PAGE_SIZE);
 
     page_map_range_to_random(get_kernel_pagedir(), shadow_base, shadow_map, KERNEL_PTE_FLAGS);
     kasan_memset_u8((uint8_t *)shadow_base, poison_initial ? KASAN_POISON : 0, shadow_size);
@@ -118,8 +118,8 @@ static void kasan_check_range_in_range(
 ) {
     uintptr_t cur = start;
     while (cur < end) {
-        uintptr_t block  = cur & ~(KASAN_SHADOW_GRANULE - 1);
-        uint8_t   shadow = *(uint8_t *)kasan_shadow_addr(range, block);
+        uintptr_t block = cur & ~(KASAN_SHADOW_GRANULE - 1);
+        uint8_t shadow  = *(uint8_t *)kasan_shadow_addr(range, block);
 
         if (shadow == 0) {
             cur = block + KASAN_SHADOW_GRANULE;
@@ -175,7 +175,7 @@ static void kasan_unpoison_range(const kasan_range_t *range, uintptr_t start, ui
     }
 
     if (end != block_end) {
-        size_t   tail       = end - block_end;
+        size_t tail         = end - block_end;
         uint8_t *shadow_end = (uint8_t *)kasan_shadow_addr(range, block_end);
         *shadow_end         = (tail >= KASAN_SHADOW_GRANULE) ? 0 : (uint8_t)tail;
     }
@@ -242,8 +242,8 @@ void kasan_heap_extend(uintptr_t heap_start, size_t heap_size) {
         return;
     }
 
-    kasan_range_t *range   = &kasan_ranges[kasan_heap_range];
-    uintptr_t      new_end = heap_start + heap_size;
+    kasan_range_t *range = &kasan_ranges[kasan_heap_range];
+    uintptr_t new_end    = heap_start + heap_size;
 
     if (heap_start != range->end) {
         kasan_add_range(heap_start, new_end, true);
@@ -260,7 +260,7 @@ void kasan_heap_extend(uintptr_t heap_start, size_t heap_size) {
     size_t new_shadow_map = align_up(new_shadow_size, PAGE_SIZE);
     if (new_shadow_map > range->shadow_map_size) {
         uintptr_t map_addr = range->shadow_base + range->shadow_map_size;
-        size_t    map_len  = new_shadow_map - range->shadow_map_size;
+        size_t map_len     = new_shadow_map - range->shadow_map_size;
         page_map_range_to_random(get_kernel_pagedir(), map_addr, map_len, KERNEL_PTE_FLAGS);
         range->shadow_map_size = new_shadow_map;
         range->shadow_end      = range->shadow_base + range->shadow_map_size;

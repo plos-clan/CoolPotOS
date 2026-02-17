@@ -17,15 +17,15 @@ enum device_type {
 typedef struct devtmp_handle {
     enum devtmpfs_type type;
 
-    char       name[64];
+    char name[64];
     vfs_node_t node;
     vfs_node_t root;
-    size_t     capacity;
-    void      *data;
-    size_t     size;
+    size_t capacity;
+    void *data;
+    size_t size;
 
-    void            *device_handle;
-    bool             is_per_open;
+    void *device_handle;
+    bool is_per_open;
     enum device_type dev_type;
     void (*open_t)(void *parent, const char *name, vfs_node_t node);
     vfs_close_t close_t;

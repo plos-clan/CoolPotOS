@@ -2,10 +2,10 @@
 #include "lock.h"
 #include "term/klog.h"
 
-static char   kmsg_buf[KMSG_SIZE];
+static char kmsg_buf[KMSG_SIZE];
 static size_t kmsg_head = 0;
 static size_t kmsg_tail = 0;
-spin_t        kmsg_lock = SPIN_INIT;
+spin_t kmsg_lock        = SPIN_INIT;
 
 void kmsg_empty(void) {
     kmsg_head = 0;

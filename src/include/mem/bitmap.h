@@ -3,9 +3,9 @@
 #include "lock.h"
 
 typedef struct {
-    spin_t   lock;
+    spin_t lock;
     uint8_t *buffer;
-    size_t   length;
+    size_t length;
     uint64_t bitmap_refcount;
 } Bitmap;
 

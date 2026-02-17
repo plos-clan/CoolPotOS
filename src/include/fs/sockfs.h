@@ -47,22 +47,22 @@
 
 struct sockaddr {
     uint16_t sa_family;
-    char     sa_data[14];
+    char sa_data[14];
 };
 
 struct sockaddr_un {
     uint16_t sun_family;
-    char     sun_path[UNIX_PATH_MAX];
+    char sun_path[UNIX_PATH_MAX];
 };
 
 struct msghdr {
-    void         *msg_name;
-    uint32_t      msg_namelen;
+    void *msg_name;
+    uint32_t msg_namelen;
     struct iovec *msg_iov;
-    size_t        msg_iovlen;
-    void         *msg_control;
-    size_t        msg_controllen;
-    int           msg_flags;
+    size_t msg_iovlen;
+    void *msg_control;
+    size_t msg_controllen;
+    int msg_flags;
 };
 
 typedef enum {
@@ -75,7 +75,7 @@ typedef enum {
 } socket_state_t;
 
 typedef struct sock_ringbuf {
-    char  *buf;
+    char *buf;
     size_t capacity;
     size_t head;
     size_t tail;
@@ -83,51 +83,51 @@ typedef struct sock_ringbuf {
 } sock_ringbuf_t;
 
 typedef struct socket_info {
-    int            domain;
-    int            type;
-    int            protocol;
+    int domain;
+    int type;
+    int protocol;
     socket_state_t state;
-    int            so_error;
+    int so_error;
 
     // AF_UNIX addressing
-    char       bound_path[UNIX_PATH_MAX];
-    bool       is_bound;
+    char bound_path[UNIX_PATH_MAX];
+    bool is_bound;
     vfs_node_t bound_node;
 
     // SOCK_STREAM connection
     struct socket_info *peer;
 
     // listen/accept queue
-    int                  backlog;
-    int                  pending_count;
+    int backlog;
+    int pending_count;
     struct socket_info **pending_queue;
-    bool                 accept_waiting;
+    bool accept_waiting;
 
     // Data buffer
     sock_ringbuf_t recv_buf;
 
     // Reference counting and synchronization
-    int    refcount;
-    int    active;
-    bool   free_pending;
+    int refcount;
+    int active;
+    bool free_pending;
     spin_t lock;
 } socket_info_t;
 
 typedef struct socket_specific {
     socket_info_t *info;
-    vfs_node_t     node;
-    int            active;
-    bool           free_pending;
-    bool           shut_rd;
-    bool           shut_wr;
+    vfs_node_t node;
+    int active;
+    bool free_pending;
+    bool shut_rd;
+    bool shut_wr;
 } socket_specific_t;
 
 // Ring buffer operations
-void   ringbuf_init(sock_ringbuf_t *rb, size_t capacity);
+void ringbuf_init(sock_ringbuf_t *rb, size_t capacity);
 size_t ringbuf_read(sock_ringbuf_t *rb, void *dst, size_t len);
 size_t ringbuf_write(sock_ringbuf_t *rb, const void *src, size_t len);
 size_t ringbuf_peek(sock_ringbuf_t *rb, void *dst, size_t len);
-void   ringbuf_destroy(sock_ringbuf_t *rb);
+void ringbuf_destroy(sock_ringbuf_t *rb);
 
 // sockfs registration
 void sockfs_regist();

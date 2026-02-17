@@ -10,8 +10,8 @@ static inline uint32_t uart_calc_offset(uart_device_t *uart, uint8_t reg) {
 
 /* 读寄存器 - 支持不同访问宽度 */
 static uint32_t uart_read_reg(uart_device_t *uart, uint8_t reg) {
-    uint32_t       offset = uart_calc_offset(uart, reg);
-    volatile void *addr   = (volatile char *)uart->base_addr + offset;
+    uint32_t offset     = uart_calc_offset(uart, reg);
+    volatile void *addr = (volatile char *)uart->base_addr + offset;
 
     switch (uart->access_width) {
     case UART_ACCESS_8BIT:
@@ -27,8 +27,8 @@ static uint32_t uart_read_reg(uart_device_t *uart, uint8_t reg) {
 
 /* 写寄存器 - 支持不同访问宽度 */
 static void uart_write_reg(uart_device_t *uart, uint8_t reg, uint32_t value) {
-    uint32_t       offset = uart_calc_offset(uart, reg);
-    volatile void *addr   = (volatile char *)uart->base_addr + offset;
+    uint32_t offset     = uart_calc_offset(uart, reg);
+    volatile void *addr = (volatile char *)uart->base_addr + offset;
 
     switch (uart->access_width) {
     case UART_ACCESS_8BIT:

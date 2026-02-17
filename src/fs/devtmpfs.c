@@ -12,8 +12,8 @@
 #include "task/poll.h"
 #include "term/klog.h"
 
-int                            dev_tmpfs_id = 0;
-static _Atomic volatile size_t dev_id_now   = 0;
+int dev_tmpfs_id                          = 0;
+static _Atomic volatile size_t dev_id_now = 0;
 
 static void load_tty_device(vfs_node_t node) {
     extern tty_t *kernel_session;
@@ -26,7 +26,7 @@ static void load_tty_device(vfs_node_t node) {
 
 static void load_blk_device(vfs_node_t node) {
     extern cow_arraylist *block_device_list;
-    blk_device_t         *device = NULL;
+    blk_device_t *device = NULL;
     cow_foreach(block_device_list, device) {
         create_device_node(
             node, device->name, device_block, device, 0, (void *)blk_ioctl, (void *)blk_device_read,
@@ -36,14 +36,14 @@ static void load_blk_device(vfs_node_t node) {
 }
 
 static void load_drm_device(vfs_node_t node) {
-    char             *full_path = vfs_get_fullpath(node);
-    string_builder_t *builder   = create_string_builder(50);
+    char *full_path           = vfs_get_fullpath(node);
+    string_builder_t *builder = create_string_builder(50);
     string_builder_append(builder, "%s/dri", full_path);
     vfs_mkdir(builder->data);
     vfs_node_t drm_dir = vfs_open(builder->data);
 
     extern cow_arraylist *drm_devices;
-    drmd_device_t        *device = NULL;
+    drmd_device_t *device = NULL;
     cow_foreach(drm_devices, device) {
         create_device_node(
             drm_dir, device->name, device_stream, device->ptr, device->dev, device->ioctl,
@@ -187,7 +187,7 @@ size_t devtmpfs_write(void *file, const void *addr, size_t offset, size_t size) 
     size_t end = offset + size;
     if (end > f->capacity) {
         size_t new_cap = end * 2;
-        char  *new_buf = realloc(f->data, new_cap);
+        char *new_buf  = realloc(f->data, new_cap);
         if (!new_buf)
             return 0;
         f->data     = new_buf;

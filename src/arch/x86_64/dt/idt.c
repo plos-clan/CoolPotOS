@@ -2,7 +2,7 @@
 #include "term/klog.h"
 
 struct idt_register idt_pointer;
-struct idt_entry    idt_entries[256];
+struct idt_entry idt_entries[256];
 
 void idt_setup() {
     idt_pointer.size = (uint16_t)sizeof(idt_entries) - 1;

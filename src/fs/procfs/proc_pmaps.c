@@ -14,9 +14,9 @@ const char *get_vma_permissions(vma_t *vma) {
 }
 
 char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
-    vma_t            *vma     = task->vma_manager.vma_list;
-    tcb_t             current = get_current_task();
-    fdt_t            *fdt     = current->process->fdts;
+    vma_t *vma                = task->vma_manager.vma_list;
+    tcb_t current             = get_current_task();
+    fdt_t *fdt                = current->process->fdts;
     string_builder_t *builder = create_string_builder(4096);
 
     while (vma) {
@@ -59,7 +59,7 @@ size_t proc_pmaps_stat(proc_handle_t *handle) {
         task = handle->task;
     }
     size_t content_len = 0;
-    char  *content     = proc_gen_maps_file(handle->task, &content_len);
+    char *content      = proc_gen_maps_file(handle->task, &content_len);
     free(content);
     return content_len;
 }
@@ -72,7 +72,7 @@ size_t proc_pmaps_read(proc_handle_t *handle, void *addr, size_t offset, size_t 
         task = handle->task;
     }
     size_t content_len = 0;
-    char  *content     = proc_gen_maps_file(handle->task, &content_len);
+    char *content      = proc_gen_maps_file(handle->task, &content_len);
     if (offset >= content_len) {
         free(content);
         return 0;

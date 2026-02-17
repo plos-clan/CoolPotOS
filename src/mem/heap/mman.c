@@ -219,7 +219,7 @@ void mman_free(mman_t man, void *ptr) {
             return;
     }
 
-    size_t      size = blk_size(ptr);
+    size_t size      = blk_size(ptr);
     mman_pool_t pool = blk_poolptr(ptr);
     pool->alloced_size -= size;
     man->alloced_size -= size;

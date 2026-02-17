@@ -49,11 +49,11 @@ void scsi_submit(struct hba_device *dev, struct blkio_req *io_req) {
 
     header->options |= HBA_CMDH_ATAPI | (HBA_CMDH_WRITE * write);
 
-    size_t   size  = io_req->len;
+    size_t size    = io_req->len;
     uint32_t count = ICEIL(size, port->device->block_size);
 
     struct sata_reg_fis *fis = (struct sata_reg_fis *)(&table->command_fis);
-    void                *cdb = table->atapi_cmd;
+    void *cdb                = table->atapi_cmd;
     sata_create_fis(fis, ATA_PACKET, (size << 8), 0);
     fis->feature = 1 | ((!write) << 2);
 

@@ -379,7 +379,7 @@ int fdt_find_max_phandle(const void *fdt, uint32_t *phandle);
  */
 static inline uint32_t fdt_get_max_phandle(const void *fdt) {
     uint32_t phandle;
-    int      err;
+    int err;
 
     err = fdt_find_max_phandle(fdt, &phandle);
     if (err < 0)
@@ -805,7 +805,7 @@ fdt_getprop_namelen_w(void *fdt, int nodeoffset, const char *name, int namelen, 
  *		-FDT_ERR_BADSTRUCTURE,
  *		-FDT_ERR_TRUNCATED, standard meanings
  */
-const void         *fdt_getprop(const void *fdt, int nodeoffset, const char *name, int *lenp);
+const void *fdt_getprop(const void *fdt, int nodeoffset, const char *name, int *lenp);
 static inline void *fdt_getprop_w(void *fdt, int nodeoffset, const char *name, int *lenp) {
     return (void *)(uintptr_t)fdt_getprop(fdt, nodeoffset, name, lenp);
 }
@@ -1485,11 +1485,11 @@ int fdt_create_with_flags(void *buf, int bufsize, uint32_t flags);
  */
 int fdt_create(void *buf, int bufsize);
 
-int               fdt_resize(void *fdt, void *buf, int bufsize);
-int               fdt_add_reservemap_entry(void *fdt, uint64_t addr, uint64_t size);
-int               fdt_finish_reservemap(void *fdt);
-int               fdt_begin_node(void *fdt, const char *name);
-int               fdt_property(void *fdt, const char *name, const void *val, int len);
+int fdt_resize(void *fdt, void *buf, int bufsize);
+int fdt_add_reservemap_entry(void *fdt, uint64_t addr, uint64_t size);
+int fdt_finish_reservemap(void *fdt);
+int fdt_begin_node(void *fdt, const char *name);
+int fdt_property(void *fdt, const char *name, const void *val, int len);
 static inline int fdt_property_u32(void *fdt, const char *name, uint32_t val) {
     fdt32_t tmp = cpu_to_fdt32(val);
     return fdt_property(fdt, name, &tmp, sizeof(tmp));

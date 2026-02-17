@@ -54,8 +54,8 @@ static inline bool entity_before(const struct sched_entity *a, const struct sche
 
 static int vruntime_eligible(uint64_t vruntime, cpu_local_t *cpu) {
     struct sched_entity *curr = eevdf_sched(cpu)->current;
-    int64_t              avg  = eevdf_sched(cpu)->avg_vruntime;
-    long                 load = eevdf_sched(cpu)->avg_load;
+    int64_t avg               = eevdf_sched(cpu)->avg_vruntime;
+    long load                 = eevdf_sched(cpu)->avg_load;
     if (unlikely(load == 0))
         return 1;
     if (curr && curr->on_rq) {
@@ -67,8 +67,8 @@ static int vruntime_eligible(uint64_t vruntime, cpu_local_t *cpu) {
 }
 
 void insert_sched_entity(struct rb_root *root, struct sched_entity *se) {
-    struct rb_node **link   = &root->rb_node;
-    struct rb_node  *parent = NULL;
+    struct rb_node **link  = &root->rb_node;
+    struct rb_node *parent = NULL;
 
     while (*link) {
         struct sched_entity *entry;
@@ -95,7 +95,7 @@ struct sched_entity *pick_earliest_entity(struct rb_root *root) {
 }
 
 void set_load_weight(struct sched_entity *entity) {
-    int                prio = entity->prio - MAX_RT_PRIO;
+    int prio = entity->prio - MAX_RT_PRIO;
     struct load_weight lw;
     if (entity->prio == NICE_TO_PRIO(20)) {
         lw.weight     = scale_load(WEIGHT_IDLEPRIO);
@@ -134,8 +134,8 @@ static inline void __min_vruntime_update(struct sched_entity *se, struct rb_node
 static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct load_weight *lw) {
     uint64_t fact    = scale_load_down(weight);
     uint32_t fact_hi = (uint32_t)(fact >> 32);
-    int      shift   = WMULT_SHIFT;
-    int      fs;
+    int shift        = WMULT_SHIFT;
+    int fs;
 
     __update_inv_weight(lw);
 
@@ -158,8 +158,8 @@ static uint64_t __calc_delta(uint64_t delta_exec, unsigned long weight, struct l
 }
 
 static inline bool min_vruntime_update(struct sched_entity *se, bool exit) {
-    uint64_t        old_min_vruntime = se->min_vruntime;
-    struct rb_node *node             = &se->run_node;
+    uint64_t old_min_vruntime = se->min_vruntime;
+    struct rb_node *node      = &se->run_node;
 
     se->min_vruntime = se->vruntime;
     __min_vruntime_update(se, node->rb_right);
@@ -232,7 +232,7 @@ struct sched_entity *pick_eevdf(cpu_local_t *cpu) {
     struct sched_entity *se   = pick_earliest_entity(eevdf_sched(cpu)->root);
     struct sched_entity *curr = eevdf_sched(cpu)->current;
     struct sched_entity *best = NULL;
-    struct rb_node      *node = eevdf_sched(cpu)->root->rb_node;
+    struct rb_node *node      = eevdf_sched(cpu)->root->rb_node;
 
     if (se && vruntime_eligible(se->vruntime, cpu)) {
         best = se;
@@ -265,7 +265,7 @@ found:;
 
 static uint64_t __update_min_vruntime(uint64_t vruntime, cpu_local_t *cpu) {
     uint64_t min_vruntime = eevdf_sched(cpu)->min_vruntime;
-    int64_t  delta        = (int64_t)(vruntime - min_vruntime);
+    int64_t delta         = (int64_t)(vruntime - min_vruntime);
     if (delta > 0) {
         avg_vruntime_update(delta, cpu);
         min_vruntime = vruntime;
@@ -274,10 +274,10 @@ static uint64_t __update_min_vruntime(uint64_t vruntime, cpu_local_t *cpu) {
 }
 
 static void update_min_vruntime(cpu_local_t *cpu) {
-    struct rb_node      *node     = eevdf_sched(cpu)->root ? eevdf_sched(cpu)->root->rb_node : NULL;
-    struct sched_entity *se       = node ? container_of(node, struct sched_entity, run_node) : NULL;
-    struct sched_entity *curr     = eevdf_sched(cpu)->current;
-    uint64_t             vruntime = eevdf_sched(cpu)->min_vruntime;
+    struct rb_node *node      = eevdf_sched(cpu)->root ? eevdf_sched(cpu)->root->rb_node : NULL;
+    struct sched_entity *se   = node ? container_of(node, struct sched_entity, run_node) : NULL;
+    struct sched_entity *curr = eevdf_sched(cpu)->current;
+    uint64_t vruntime         = eevdf_sched(cpu)->min_vruntime;
 
     if (curr) {
         if (curr->on_rq)
@@ -324,7 +324,7 @@ static void wrap_vruntime(cpu_local_t *cpu) {
 
 static int64_t update_curr_se(struct sched_entity *curr) {
     uint64_t now = sched_clock();
-    int64_t  delta_exec;
+    int64_t delta_exec;
 
     delta_exec = now - curr->exec_start;
     if (unlikely(delta_exec <= 0))
@@ -347,7 +347,7 @@ void update_current_task(cpu_local_t *cpu) {
     struct sched_entity *curr = eevdf_sched(cpu)->current;
     if (unlikely(!curr))
         return;
-    bool    resche;
+    bool resche;
     int64_t delta_exec;
     delta_exec = update_curr_se(curr);
     if (unlikely(delta_exec <= 0)) {

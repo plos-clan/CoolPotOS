@@ -6,8 +6,8 @@
 struct large_blk {
     large_blk_t next;
     large_blk_t prev;
-    void       *ptr;
-    size_t      size;
+    void *ptr;
+    size_t size;
 };
 
 static inline large_blk_t *large_blk_blokp(large_blks_t blks, void *ptr) __attr(const);
@@ -26,7 +26,7 @@ static inline large_blk_t *large_blk_blokp(large_blks_t blks, void *ptr) {
 
 static inline large_blk_t large_blk_put(large_blks_t blks, void *ptr, size_t size) {
     large_blk_t *blk_p = large_blk_blokp(blks, ptr);
-    large_blk_t  blk   = malloc(sizeof(struct large_blk));
+    large_blk_t blk    = malloc(sizeof(struct large_blk));
     if (blk == NULL)
         return NULL;
     blk->ptr  = ptr;
@@ -82,7 +82,7 @@ large_blk_alloc(size_t size, large_blks_t blks, cb_reqmem_t reqmem, cb_delmem_t 
  */
 static inline bool large_blk_free(large_blks_t blks, void *ptr, cb_delmem_t delmem) {
     large_blk_t *blk_p = large_blk_blokp(blks, ptr);
-    large_blk_t  blk   = large_blk_find(blks, ptr);
+    large_blk_t blk    = large_blk_find(blks, ptr);
     if (blk == NULL)
         return false;
     *blk_p = (large_blk_t)freelist_detach((freelist_t)*blk_p, (freelist_t)blk);

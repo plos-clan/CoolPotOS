@@ -28,13 +28,13 @@
  *  Types
  *********************************************************/
 struct ZSTD_DDict_s {
-    void                 *dictBuffer;
-    const void           *dictContent;
-    size_t                dictSize;
+    void *dictBuffer;
+    const void *dictContent;
+    size_t dictSize;
     ZSTD_entropyDTables_t entropy;
-    U32                   dictID;
-    U32                   entropyPresent;
-    ZSTD_customMem        cMem;
+    U32 dictID;
+    U32 entropyPresent;
+    ZSTD_customMem cMem;
 }; /* typedef'd to ZSTD_DDict within "zstd.h" */
 
 const void *ZSTD_DDict_dictContent(const ZSTD_DDict *ddict) {

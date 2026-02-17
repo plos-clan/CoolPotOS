@@ -11,14 +11,14 @@
 #include "lib/libfdt/libfdt_internal.h"
 
 int fdt_check_full(const void *fdt, size_t bufsize) {
-    int          err;
-    int          num_memrsv;
-    int          offset, nextoffset = 0;
-    uint32_t     tag;
+    int err;
+    int num_memrsv;
+    int offset, nextoffset = 0;
+    uint32_t tag;
     unsigned int depth = 0;
-    const void  *prop;
-    const char  *propname;
-    bool         expect_end = false;
+    const void *prop;
+    const char *propname;
+    bool expect_end = false;
 
     if (bufsize < FDT_V1_SIZE)
         return -FDT_ERR_TRUNCATED;
@@ -62,7 +62,7 @@ int fdt_check_full(const void *fdt, size_t bufsize) {
             /* The root node must have an empty name */
             if (depth == 1) {
                 const char *name;
-                int         len;
+                int len;
 
                 name = fdt_get_name(fdt, offset, &len);
                 if (!name)

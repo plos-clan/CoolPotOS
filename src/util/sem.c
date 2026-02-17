@@ -3,7 +3,7 @@
 
 bool sem_wait(sem_t *sem, uint32_t timeout) {
     uint64_t timerStart = nano_time();
-    bool     ret        = false;
+    bool ret            = false;
 
     while (true) {
         if (timeout > 0 && nano_time() > (timerStart + timeout))

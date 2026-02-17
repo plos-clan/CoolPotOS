@@ -5,14 +5,14 @@
 #include "driver/usb/bus/iface.h"
 
 typedef struct ControlTransferArgs {
-    uint8_t     slot_id;
+    uint8_t slot_id;
     SetupPacket setup;
-    uint64_t    buffer_phys;
+    uint64_t buffer_phys;
 } ControlTransferArgs;
 
 typedef struct GeneralTransferArgs {
-    uint8_t  slot_id;
-    uint8_t  ep_addr;
+    uint8_t slot_id;
+    uint8_t ep_addr;
     uint64_t buffer_phys;
     uint32_t length;
 } GeneralTransferArgs;
@@ -24,7 +24,7 @@ typedef struct HostControllerOps {
 } HostControllerOps;
 
 typedef struct HostController {
-    void                    *ctx;
+    void *ctx;
     const HostControllerOps *ops;
 } HostController;
 

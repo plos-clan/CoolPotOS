@@ -240,8 +240,8 @@ static void hid_parser_handle_main(HidParser *parser, uint8_t tag, uint32_t flag
         return;
     }
 
-    uint32_t kind_idx  = (uint32_t)kind;
-    uint8_t  report_id = parser->global.report_id;
+    uint32_t kind_idx = (uint32_t)kind;
+    uint8_t report_id = parser->global.report_id;
 
     HidReport new_report;
     memset(&new_report, 0, sizeof(HidReport));
@@ -258,12 +258,12 @@ static void hid_parser_handle_main(HidParser *parser, uint8_t tag, uint32_t flag
 
     uint32_t report_count = parser->global.report_count;
     uint32_t report_size  = parser->global.report_size;
-    bool     is_variable  = (flags & HID_FLAG_VARIABLE) != 0;
+    bool is_variable      = (flags & HID_FLAG_VARIABLE) != 0;
     bool is_single_range  = (parser->local.items.len == 1 && parser->local.items.data[0].is_range);
 
     if (!is_variable && is_single_range) {
         LocalItem usage_item = parser->local.items.data[0];
-        HidField  field      = {
+        HidField field       = {
                   .report_id    = report_id,
                   .kind         = kind,
                   .bit_offset   = layout->size_bits[kind_idx],
@@ -324,8 +324,8 @@ bool hid_parser_parse(HidParser *parser, HidDescriptor *out_desc) {
         uint8_t header = parser->data[parser->offset];
         parser->offset++;
 
-        uint8_t  size_code = header & 0x03;
-        uint16_t data_len  = (size_code == 3) ? 4 : size_code;
+        uint8_t size_code = header & 0x03;
+        uint16_t data_len = (size_code == 3) ? 4 : size_code;
 
         uint8_t item_type = (header >> 2) & 0x03;
         uint8_t item_tag  = (header >> 4) & 0x0f;

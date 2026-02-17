@@ -32,8 +32,8 @@ struct msi_msg_t *msi_arch_get_msg(struct msi_desc_t *msi_desc) {
 static inline struct pci_msi_cap_t
 __msi_read_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
     struct pci_msi_cap_t cap_list = { 0 };
-    pci_device_t        *ptr      = msi_desc->pci_dev;
-    uint32_t             dw0;
+    pci_device_t *ptr             = msi_desc->pci_dev;
+    uint32_t dw0;
     dw0               = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off);
     cap_list.cap_id   = dw0 & 0xff;
     cap_list.next_off = (dw0 >> 8) & 0xff;
@@ -71,8 +71,8 @@ __msi_read_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
 static inline struct pci_msix_cap_t
 __msi_read_msix_cap_list(struct msi_desc_t *msi_desc, uint32_t cap_off) {
     struct pci_msix_cap_t cap_list = { 0 };
-    pci_device_t         *ptr      = msi_desc->pci_dev;
-    uint32_t              dw0;
+    pci_device_t *ptr              = msi_desc->pci_dev;
+    uint32_t dw0;
     dw0               = ptr->op->read(ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_off);
     cap_list.cap_id   = dw0 & 0xff;
     cap_list.next_off = (dw0 >> 8) & 0xff;
@@ -145,8 +145,8 @@ static inline void __msix_set_entry(struct msi_desc_t *msi_desc) {
  * @param msi_index 表项号
  */
 static inline void __msix_clear_entry(pci_device_t *pci_dev, uint16_t msi_index) {
-    uint64_t           table_base = pci_dev->msix_mmio_vaddr + pci_dev->msix_offset;
-    volatile uint64_t *entry_ptr  = (volatile uint64_t *)(table_base + msi_index * 16);
+    uint64_t table_base          = pci_dev->msix_mmio_vaddr + pci_dev->msix_offset;
+    volatile uint64_t *entry_ptr = (volatile uint64_t *)(table_base + msi_index * 16);
 
     // 清除MSI-X表项
     entry_ptr[0] = 0;
@@ -166,10 +166,10 @@ static inline void __msix_clear_entry(pci_device_t *pci_dev, uint16_t msi_index)
  */
 int pci_enable_msi(struct msi_desc_t *msi_desc) {
     pci_device_t *ptr = msi_desc->pci_dev;
-    uint32_t      cap_ptr;
-    uint32_t      tmp;
-    uint16_t      message_control;
-    uint64_t      message_addr;
+    uint32_t cap_ptr;
+    uint32_t tmp;
+    uint16_t message_control;
+    uint64_t message_addr;
 
     if (msi_desc->pci.msi_attribute.is_msix) {
         cap_ptr = pci_enumerate_capability_list(ptr, 0x11);

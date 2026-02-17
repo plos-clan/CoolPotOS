@@ -148,14 +148,14 @@ err:
 
 size_t proc_meminfo_stat(proc_handle_t *handle) {
     size_t content_len = 0;
-    char  *content     = proc_gen_meminfo(&content_len);
+    char *content      = proc_gen_meminfo(&content_len);
     free(content);
     return content_len;
 }
 
 size_t proc_meminfo_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t content_len = 0;
-    char  *content     = proc_gen_meminfo(&content_len);
+    char *content      = proc_gen_meminfo(&content_len);
 
     if (!content || content_len == 0) {
         if (content)

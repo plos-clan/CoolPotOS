@@ -5,7 +5,7 @@
 
 #define USB_VEC_DEFINE(type, name)                                                                 \
     typedef struct name {                                                                          \
-        type  *data;                                                                               \
+        type *data;                                                                                \
         size_t len;                                                                                \
         size_t cap;                                                                                \
     } name;                                                                                        \

@@ -100,7 +100,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         // Fill encoder IDs if pointer provided
         if (res->encoder_id_ptr && res->count_encoders > 0) {
             uint32_t *encoder_ids = (uint32_t *)(uintptr_t)res->encoder_id_ptr;
-            uint32_t  idx         = 0;
+            uint32_t idx          = 0;
             for (uint32_t i = 0; i < DRM_MAX_ENCODERS_PER_DEVICE; i++) {
                 if (dev->resource_mgr.encoders[i]) {
                     encoder_ids[idx++] = dev->resource_mgr.encoders[i]->id;
@@ -111,7 +111,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         // Fill CRTC IDs if pointer provided
         if (res->crtc_id_ptr && res->count_crtcs > 0) {
             uint32_t *crtc_ids = (uint32_t *)(uintptr_t)res->crtc_id_ptr;
-            uint32_t  idx      = 0;
+            uint32_t idx       = 0;
             for (uint32_t i = 0; i < DRM_MAX_CRTCS_PER_DEVICE; i++) {
                 if (dev->resource_mgr.crtcs[i]) {
                     crtc_ids[idx++] = dev->resource_mgr.crtcs[i]->id;
@@ -122,7 +122,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         // Fill connector IDs if pointer provided
         if (res->connector_id_ptr && res->count_connectors > 0) {
             uint32_t *connector_ids = (uint32_t *)(uintptr_t)res->connector_id_ptr;
-            uint32_t  idx           = 0;
+            uint32_t idx            = 0;
             for (uint32_t i = 0; i < DRM_MAX_CONNECTORS_PER_DEVICE; i++) {
                 if (dev->resource_mgr.connectors[i]) {
                     connector_ids[idx++] = dev->resource_mgr.connectors[i]->id;
@@ -133,7 +133,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         // Fill framebuffer IDs if pointer provided
         if (res->fb_id_ptr && res->count_fbs > 0) {
             uint32_t *fb_ids = (uint32_t *)(uintptr_t)res->fb_id_ptr;
-            uint32_t  idx    = 0;
+            uint32_t idx     = 0;
             for (uint32_t i = 0; i < DRM_MAX_FRAMEBUFFERS_PER_DEVICE; i++) {
                 if (dev->resource_mgr.framebuffers[i]) {
                     fb_ids[idx++] = dev->resource_mgr.framebuffers[i]->id;
@@ -327,7 +327,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         // Fill plane IDs if pointer provided
         if (res->plane_id_ptr && res->count_planes > 0) {
             uint32_t *plane_ids = (uint32_t *)(uintptr_t)res->plane_id_ptr;
-            uint32_t  idx       = 0;
+            uint32_t idx        = 0;
             for (uint32_t i = 0; i < DRM_MAX_PLANES_PER_DEVICE; i++) {
                 if (dev->resource_mgr.planes[i]) {
                     plane_ids[idx++] = dev->resource_mgr.planes[i]->id;
@@ -904,7 +904,7 @@ drm_device_t *drm_regist_pci_dev(void *data, drm_device_op_t *op, pci_device_t *
     }
 
     drm_framebuffer_t *framebuffer = drm_framebuffer_alloc(&drm_dev->resource_mgr, NULL);
-    uint32_t           width, height, bpp;
+    uint32_t width, height, bpp;
     drm_dev->op->get_display_info(drm_dev, &width, &height, &bpp);
     framebuffer->width  = width;
     framebuffer->height = height;

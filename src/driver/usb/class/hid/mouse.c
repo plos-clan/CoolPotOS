@@ -8,18 +8,18 @@
 #include "term/klog.h"
 
 typedef struct MouseLayout {
-    bool        has_axis_x;
-    bool        has_axis_y;
-    bool        has_axis_wheel;
-    HidField    axis_x;
-    HidField    axis_y;
-    HidField    axis_wheel;
+    bool has_axis_x;
+    bool has_axis_y;
+    bool has_axis_wheel;
+    HidField axis_x;
+    HidField axis_y;
+    HidField axis_wheel;
     HidFieldVec buttons;
 } MouseLayout;
 
 typedef struct Mouse {
-    UsbDriver   driver;
-    HidDevice   hid;
+    UsbDriver driver;
+    HidDevice hid;
     MouseLayout layout;
 } Mouse;
 

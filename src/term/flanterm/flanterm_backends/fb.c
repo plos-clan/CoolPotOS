@@ -60,7 +60,7 @@ void *memcpy(void *, const void *, size_t);
 #    endif
 
 static uint8_t bump_alloc_pool[FLANTERM_FB_BUMP_ALLOC_POOL_SIZE];
-static size_t  bump_alloc_ptr = 0;
+static size_t bump_alloc_ptr = 0;
 
 static void *bump_alloc(size_t s) {
     static bool base_offset_added = false;
@@ -352,9 +352,9 @@ static const uint8_t builtin_font[] = {
 
 static ALWAYS_INLINE uint32_t convert_colour(struct flanterm_context *_ctx, uint32_t colour) {
     struct flanterm_fb_context *ctx = (void *)_ctx;
-    uint32_t                    r   = (colour >> 16) & 0xff;
-    uint32_t                    g   = (colour >> 8) & 0xff;
-    uint32_t                    b   = colour & 0xff;
+    uint32_t r                      = (colour >> 16) & 0xff;
+    uint32_t g                      = (colour >> 8) & 0xff;
+    uint32_t b                      = colour & 0xff;
     return (r << ctx->red_mask_shift) | (g << ctx->green_mask_shift) | (b << ctx->blue_mask_shift);
 }
 
@@ -376,7 +376,7 @@ static void flanterm_fb_restore_state(struct flanterm_context *_ctx) {
 
 static void flanterm_fb_swap_palette(struct flanterm_context *_ctx) {
     struct flanterm_fb_context *ctx = (void *)_ctx;
-    uint32_t                    tmp = ctx->text_bg;
+    uint32_t tmp                    = ctx->text_bg;
     ctx->text_bg                    = ctx->text_fg;
     ctx->text_fg                    = tmp;
 }
@@ -396,13 +396,13 @@ static void plot_char_scaled_canvas(
     bool *glyph = &ctx->font_bool[c->c * ctx->font_height * ctx->font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
     for (size_t gy = 0; gy < ctx->glyph_height; gy++) {
-        uint8_t            fy            = gy / ctx->font_scale_y;
-        volatile uint32_t *fb_line       = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
-        uint32_t          *canvas_line   = ctx->canvas + x + (y + gy) * ctx->width;
-        bool              *glyph_pointer = glyph + (fy * ctx->font_width);
+        uint8_t fy                 = gy / ctx->font_scale_y;
+        volatile uint32_t *fb_line = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
+        uint32_t *canvas_line      = ctx->canvas + x + (y + gy) * ctx->width;
+        bool *glyph_pointer        = glyph + (fy * ctx->font_width);
         for (size_t fx = 0; fx < ctx->font_width; fx++) {
             for (size_t i = 0; i < ctx->font_scale_x; i++) {
-                size_t   gx = ctx->font_scale_x * fx + i;
+                size_t gx   = ctx->font_scale_x * fx + i;
                 uint32_t bg = c->bg == 0xffffffff ? canvas_line[gx] : c->bg;
                 uint32_t fg = c->fg == 0xffffffff ? canvas_line[gx] : c->fg;
                 fb_line[gx] = *glyph_pointer ? fg : bg;
@@ -432,9 +432,9 @@ static void plot_char_scaled_uncanvas(
     bool *glyph = &ctx->font_bool[c->c * ctx->font_height * ctx->font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
     for (size_t gy = 0; gy < ctx->glyph_height; gy++) {
-        uint8_t            fy            = gy / ctx->font_scale_y;
-        volatile uint32_t *fb_line       = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
-        bool              *glyph_pointer = glyph + (fy * ctx->font_width);
+        uint8_t fy                 = gy / ctx->font_scale_y;
+        volatile uint32_t *fb_line = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
+        bool *glyph_pointer        = glyph + (fy * ctx->font_width);
         for (size_t fx = 0; fx < ctx->font_width; fx++) {
             for (size_t i = 0; i < ctx->font_scale_x; i++) {
                 size_t gx   = ctx->font_scale_x * fx + i;
@@ -460,9 +460,9 @@ static void plot_char_unscaled_canvas(
     bool *glyph = &ctx->font_bool[c->c * ctx->font_height * ctx->font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
     for (size_t gy = 0; gy < ctx->glyph_height; gy++) {
-        volatile uint32_t *fb_line       = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
-        uint32_t          *canvas_line   = ctx->canvas + x + (y + gy) * ctx->width;
-        bool              *glyph_pointer = glyph + (gy * ctx->font_width);
+        volatile uint32_t *fb_line = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
+        uint32_t *canvas_line      = ctx->canvas + x + (y + gy) * ctx->width;
+        bool *glyph_pointer        = glyph + (gy * ctx->font_width);
         for (size_t fx = 0; fx < ctx->font_width; fx++) {
             uint32_t bg = c->bg == 0xffffffff ? canvas_line[fx] : c->bg;
             uint32_t fg = c->fg == 0xffffffff ? canvas_line[fx] : c->fg;
@@ -491,8 +491,8 @@ static void plot_char_unscaled_uncanvas(
     bool *glyph = &ctx->font_bool[c->c * ctx->font_height * ctx->font_width];
     // naming: fx,fy for font coordinates, gx,gy for glyph coordinates
     for (size_t gy = 0; gy < ctx->glyph_height; gy++) {
-        volatile uint32_t *fb_line       = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
-        bool              *glyph_pointer = glyph + (gy * ctx->font_width);
+        volatile uint32_t *fb_line = ctx->framebuffer + x + (y + gy) * (ctx->pitch / 4);
+        bool *glyph_pointer        = glyph + (gy * ctx->font_width);
         for (size_t fx = 0; fx < ctx->font_width; fx++) {
             fb_line[fx] = *(glyph_pointer++) ? fg : bg;
         }
@@ -536,7 +536,7 @@ static void flanterm_fb_revscroll(struct flanterm_context *_ctx) {
         if (i == (size_t)-1) {
             break;
         }
-        struct flanterm_fb_char       *c;
+        struct flanterm_fb_char *c;
         struct flanterm_fb_queue_item *q = ctx->map[i];
         if (q != NULL) {
             c = &q->c;
@@ -561,7 +561,7 @@ static void flanterm_fb_scroll(struct flanterm_context *_ctx) {
 
     for (size_t i = (_ctx->scroll_top_margin + 1) * _ctx->cols;
          i < _ctx->scroll_bottom_margin * _ctx->cols; i++) {
-        struct flanterm_fb_char       *c;
+        struct flanterm_fb_char *c;
         struct flanterm_fb_queue_item *q = ctx->map[i];
         if (q != NULL) {
             c = &q->c;
@@ -637,7 +637,7 @@ static void flanterm_fb_move_character(
 
     size_t i = old_x + old_y * _ctx->cols;
 
-    struct flanterm_fb_char       *c;
+    struct flanterm_fb_char *c;
     struct flanterm_fb_queue_item *q = ctx->map[i];
     if (q != NULL) {
         c = &q->c;
@@ -717,7 +717,7 @@ static void draw_cursor(struct flanterm_context *_ctx) {
 
     size_t i = ctx->cursor_x + ctx->cursor_y * _ctx->cols;
 
-    struct flanterm_fb_char        c;
+    struct flanterm_fb_char c;
     struct flanterm_fb_queue_item *q = ctx->map[i];
     if (q != NULL) {
         c = q->c;
@@ -742,8 +742,8 @@ static void flanterm_fb_double_buffer_flush(struct flanterm_context *_ctx) {
     }
 
     for (size_t i = 0; i < ctx->queue_i; i++) {
-        struct flanterm_fb_queue_item *q      = &ctx->queue[i];
-        size_t                         offset = q->y * _ctx->cols + q->x;
+        struct flanterm_fb_queue_item *q = &ctx->queue[i];
+        size_t offset                    = q->y * _ctx->cols + q->x;
         if (ctx->map[offset] == NULL) {
             continue;
         }

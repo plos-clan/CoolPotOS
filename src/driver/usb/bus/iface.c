@@ -13,9 +13,9 @@ UsbEndpoint *usb_interface_find_endpoint(UsbInterface *iface, uint8_t ep_type, b
     uint8_t ep_dir = is_in ? USB_REQ_DIR_IN : 0;
 
     for (size_t i = 0; i < iface->endpoints.len; i++) {
-        UsbEndpoint *ep       = &iface->endpoints.data[i];
-        uint8_t      cur_dir  = ep->desc.endpoint_address & USB_REQ_DIR_IN;
-        uint8_t      cur_type = ep->desc.attributes & 0x03;
+        UsbEndpoint *ep  = &iface->endpoints.data[i];
+        uint8_t cur_dir  = ep->desc.endpoint_address & USB_REQ_DIR_IN;
+        uint8_t cur_type = ep->desc.attributes & 0x03;
 
         if (cur_dir == ep_dir && cur_type == ep_type) {
             return ep;

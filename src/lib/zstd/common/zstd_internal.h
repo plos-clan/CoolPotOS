@@ -121,7 +121,7 @@ typedef enum { set_basic, set_rle, set_compressed, set_repeat } symbolEncodingTy
 #define ZSTD_MAX_FSE_HEADERS_SIZE                                                                  \
     (((MaxML + 1) * MLFSELog + (MaxLL + 1) * LLFSELog + (MaxOff + 1) * OffFSELog + 7) / 8)
 
-static UNUSED_ATTR const U8  LL_bits[MaxLL + 1]        = { 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0,
+static UNUSED_ATTR const U8 LL_bits[MaxLL + 1]         = { 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0,
                                                            0, 0, 0, 0, 1, 1,  1,  1,  2,  2,  3,  3,
                                                            4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 static UNUSED_ATTR const S16 LL_defaultNorm[MaxLL + 1] = { 4, 3, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,
@@ -130,10 +130,10 @@ static UNUSED_ATTR const S16 LL_defaultNorm[MaxLL + 1] = { 4, 3, 2, 2, 2, 2, 2, 
 #define LL_DEFAULTNORMLOG 6 /* for static allocation */
 static UNUSED_ATTR const U32 LL_defaultNormLog = LL_DEFAULTNORMLOG;
 
-static UNUSED_ATTR const U8  ML_bits[MaxML + 1] = { 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0, 0,
-                                                    0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0, 0,
-                                                    0, 0, 0, 0, 1,  1,  1,  1,  2,  2,  3, 3, 4, 4,
-                                                    5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+static UNUSED_ATTR const U8 ML_bits[MaxML + 1] = { 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0, 0,
+                                                   0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0, 0, 0, 0,
+                                                   0, 0, 0, 0, 1,  1,  1,  1,  2,  2,  3, 3, 4, 4,
+                                                   5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 static UNUSED_ATTR const S16 ML_defaultNorm[MaxML + 1] = {
     1, 4, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1,  1,  1,  1,  1,  1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1
@@ -209,9 +209,9 @@ typedef enum {
  */
 MEM_STATIC FORCE_INLINE_ATTR void
 ZSTD_wildcopy(void *dst, const void *src, ptrdiff_t length, ZSTD_overlap_e const ovtype) {
-    ptrdiff_t   diff = (BYTE *)dst - (const BYTE *)src;
+    ptrdiff_t diff   = (BYTE *)dst - (const BYTE *)src;
     const BYTE *ip   = (const BYTE *)src;
-    BYTE       *op   = (BYTE *)dst;
+    BYTE *op         = (BYTE *)dst;
     BYTE *const oend = op + length;
 
     if (ovtype == ZSTD_overlap_src_before_dst && diff < WILDCOPY_VECLEN) {
@@ -288,13 +288,13 @@ typedef enum {
 typedef struct {
     seqDef *sequencesStart;
     seqDef *sequences; /* ptr to end of sequences */
-    BYTE   *litStart;
-    BYTE   *lit; /* ptr to end of literals */
-    BYTE   *llCode;
-    BYTE   *mlCode;
-    BYTE   *ofCode;
-    size_t  maxNbSeq;
-    size_t  maxNbLit;
+    BYTE *litStart;
+    BYTE *lit; /* ptr to end of literals */
+    BYTE *llCode;
+    BYTE *mlCode;
+    BYTE *ofCode;
+    size_t maxNbSeq;
+    size_t maxNbLit;
 
     /* longLengthPos and longLengthType to allow us to represent either a single litLength or
      * matchLength in the seqStore that has a value larger than U16 (if it exists). To do so, we
@@ -336,19 +336,19 @@ ZSTD_getSequenceLength(seqStore_t const *seqStore, seqDef const *seq) {
  *          `decompressedBound != ZSTD_CONTENTSIZE_ERROR`
  */
 typedef struct {
-    size_t             compressedSize;
+    size_t compressedSize;
     unsigned long long decompressedBound;
 } ZSTD_frameSizeInfo; /* decompress & legacy */
 
 const seqStore_t *ZSTD_getSeqStore(const ZSTD_CCtx *ctx); /* compress & dictBuilder */
-void              ZSTD_seqToCodes(
-                 const seqStore_t *seqStorePtr
-             ); /* compress, dictBuilder, decodeCorpus (shouldn't get its definition from here) */
+void ZSTD_seqToCodes(
+    const seqStore_t *seqStorePtr
+); /* compress, dictBuilder, decodeCorpus (shouldn't get its definition from here) */
 
 /* custom memory allocation functions */
 void *ZSTD_customMalloc(size_t size, ZSTD_customMem customMem);
 void *ZSTD_customCalloc(size_t size, ZSTD_customMem customMem);
-void  ZSTD_customFree(void *ptr, ZSTD_customMem customMem);
+void ZSTD_customFree(void *ptr, ZSTD_customMem customMem);
 
 MEM_STATIC U32 ZSTD_highbit32(U32 val) /* compress, dictBuilder, decodeCorpus */
 {
@@ -375,7 +375,7 @@ MEM_STATIC U32 ZSTD_highbit32(U32 val) /* compress, dictBuilder, decodeCorpus */
         static const U32 DeBruijnClz[32] = { 0,  9,  1,  10, 13, 21, 2,  29, 11, 14, 16,
                                              18, 22, 25, 3,  30, 8,  12, 20, 28, 15, 17,
                                              24, 7,  19, 27, 23, 6,  26, 5,  4,  31 };
-        U32              v               = val;
+        U32 v                            = val;
         v |= v >> 1;
         v |= v >> 2;
         v |= v >> 4;
@@ -448,8 +448,8 @@ void ZSTD_invalidateRepCodes(
 
 typedef struct {
     blockType_e blockType;
-    U32         lastBlock;
-    U32         origSize;
+    U32 lastBlock;
+    U32 origSize;
 } blockProperties_t; /* declared here for decompress and fullbench */
 
 /*! ZSTD_getcBlockSize() :

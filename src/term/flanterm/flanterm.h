@@ -73,7 +73,7 @@ void flanterm_set_callback(
     void (*callback)(struct flanterm_context *, uint64_t, uint64_t, uint64_t, uint64_t)
 );
 uint64_t flanterm_get_oob_output(struct flanterm_context *ctx);
-void     flanterm_set_oob_output(struct flanterm_context *ctx, uint64_t oob_output);
+void flanterm_set_oob_output(struct flanterm_context *ctx, uint64_t oob_output);
 
 #    ifdef __cplusplus
 }

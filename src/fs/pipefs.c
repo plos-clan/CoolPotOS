@@ -6,8 +6,8 @@
 #include "term/klog.h"
 
 vfs_node_t pipefs_root = NULL;
-int        pipefs_id   = 0;
-int        pipefd_id   = 0;
+int pipefs_id          = 0;
+int pipefd_id          = 0;
 
 void pipefs_open(void *parent, const char *name, vfs_node_t node) {
     (void)parent;
@@ -141,10 +141,10 @@ size_t pipefs_write(void *file, const void *addr, size_t offset, size_t size) {
     pipe_info_t *pipe = spec->info;
     if (!pipe)
         return (size_t)-1;
-    const uint8_t *src       = (const uint8_t *)addr;
-    size_t         ret       = 0;
-    size_t         chunks    = size / PIPE_BUFF;
-    size_t         remainder = size % PIPE_BUFF;
+    const uint8_t *src = (const uint8_t *)addr;
+    size_t ret         = 0;
+    size_t chunks      = size / PIPE_BUFF;
+    size_t remainder   = size % PIPE_BUFF;
 
     spin_lock(pipe->lock);
     spec->active++;

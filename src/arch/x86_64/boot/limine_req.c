@@ -50,7 +50,7 @@ boot_memory_map_t limine_boot_memory_map;
 boot_memory_map_t *boot_get_memory_map() {
     for (size_t i = 0; i < memmap_request.response->entry_count; i++) {
         struct limine_memmap_entry *le = memmap_request.response->entries[i];
-        int                         mapped_type;
+        int mapped_type;
         switch (le->type) {
         case LIMINE_MEMMAP_USABLE:
             mapped_type = BOOT_MMAP_USABLE;

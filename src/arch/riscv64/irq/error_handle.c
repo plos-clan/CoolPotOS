@@ -8,7 +8,7 @@
 bool is_debug = false;
 
 void page_fault_(struct pt_regs *regs, enum page_fault_type type) {
-    char    *type_msg;
+    char *type_msg;
     uint64_t faulting_address = csr_read(stval);
     switch (type) {
     case LOAD_PAGE:

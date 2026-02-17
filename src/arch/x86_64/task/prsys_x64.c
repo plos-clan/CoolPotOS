@@ -276,10 +276,10 @@ syscall_(execve, char *path, char **argv, char **envp) {
         argv             = auto_argv_buf;
     }
 
-    char  *norm_path     = vfs_cwd_path_build(path);
-    char **shebang_argv  = NULL; // heap-allocated argv (all entries are strdup'd)
-    size_t shebang_argc  = 0;
-    int    shebang_depth = 0;
+    char *norm_path     = vfs_cwd_path_build(path);
+    char **shebang_argv = NULL; // heap-allocated argv (all entries are strdup'd)
+    size_t shebang_argc = 0;
+    int shebang_depth   = 0;
 
 shebang_retry:;
     vfs_node_t node = vfs_open(norm_path);
@@ -293,7 +293,7 @@ shebang_retry:;
 
     // Shebang (#!) check
     if (shebang_depth < 4) {
-        char   shebang_buf[256];
+        char shebang_buf[256];
         size_t n = vfs_read(node, shebang_buf, 0, sizeof(shebang_buf) - 1);
         if (n >= 4 && shebang_buf[0] == '#' && shebang_buf[1] == '!') {
             shebang_buf[n] = '\0';

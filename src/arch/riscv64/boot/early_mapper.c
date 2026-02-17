@@ -35,7 +35,7 @@ typedef uint64_t pte_t;
 // 内核预留的页表空间（在数据段中）
 #define PAGE_TABLE_POOL_SIZE (4 * 1024 * 1024) // 4MB 用于页表
 static uint8_t page_table_pool[PAGE_TABLE_POOL_SIZE] __attribute__((aligned(PAGE_SIZE)));
-static size_t  page_table_pool_used = 0;
+static size_t page_table_pool_used = 0;
 
 // 辅助宏
 #ifndef ALIGN_UP

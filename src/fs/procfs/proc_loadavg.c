@@ -4,12 +4,12 @@
 
 char *proc_gen_loadavg(size_t *context_len) {
     // 统计运行中的任务数和总任务数
-    size_t running  = 0;
-    size_t total    = 0;
-    pid_t  last_pid = 0;
+    size_t running = 0;
+    size_t total   = 0;
+    pid_t last_pid = 0;
 
     extern cow_arraylist *process_list;
-    pcb_t                 proc = NULL;
+    pcb_t proc = NULL;
     cow_foreach(process_list, proc) {
         total++;
         if (proc->status == T_RUNNING || proc->status == T_START) {
@@ -62,6 +62,6 @@ size_t proc_loadavg_stat(proc_handle_t *handle) {
 
 size_t proc_loadavg_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t fs_size = 0;
-    char  *content = proc_gen_loadavg(&fs_size);
+    char *content  = proc_gen_loadavg(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, content);
 }

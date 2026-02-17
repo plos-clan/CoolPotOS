@@ -7,16 +7,16 @@ static size_t hash_ptr(void *ptr) {
 }
 
 static void map_resize(map *map0) {
-    size_t      new_capacity = map0->capacity * 2;
-    map_entry **new_buckets  = (map_entry **)calloc(new_capacity, sizeof(map_entry *));
+    size_t new_capacity     = map0->capacity * 2;
+    map_entry **new_buckets = (map_entry **)calloc(new_capacity, sizeof(map_entry *));
     if (!new_buckets)
         return;
 
     for (size_t i = 0; i < map0->capacity; ++i) {
         map_entry *entry = map0->buckets[i];
         while (entry) {
-            map_entry *next      = entry->next;
-            size_t     new_index = hash_ptr(entry->key) % new_capacity;
+            map_entry *next  = entry->next;
+            size_t new_index = hash_ptr(entry->key) % new_capacity;
 
             entry->next            = new_buckets[new_index];
             new_buckets[new_index] = entry;
@@ -74,7 +74,7 @@ void map_set(map *map0, void *key, void *value) {
 
 void map_remove(map *map0, void *key) {
     spin_lock(map0->lock);
-    size_t     index = hash_ptr(key) % map0->capacity;
+    size_t index     = hash_ptr(key) % map0->capacity;
     map_entry *entry = map0->buckets[index];
     map_entry *prev  = NULL;
     while (entry) {

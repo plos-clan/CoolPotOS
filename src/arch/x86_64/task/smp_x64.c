@@ -11,7 +11,7 @@
 #include "security.h"
 
 extern struct idt_register idt_pointer;
-int                        nr_cpu = 256;
+int nr_cpu = 256;
 
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"
@@ -22,7 +22,7 @@ static __attr(naked) void _setcs_helper() {
 }
 
 static void apu_gdt_setup() {
-    uint32_t     this_id  = lapic_id();
+    uint32_t this_id      = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
 
     this_cpu->arch_data.gdtEntries[0] = 0x0000000000000000U;
@@ -68,7 +68,7 @@ static void apu_gdt_setup() {
 }
 
 void arch_bsp_cpu_init() {
-    uint32_t     this_id  = lapic_id();
+    uint32_t this_id      = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
@@ -89,11 +89,11 @@ _Noreturn void arch_ap_cpu_entry() {
     calibrate_tsc_with_hpet();
 
     extern pcb_t kernel_process;
-    tcb_t        idle_thread = malloc(STACK_SIZE);
-    idle_thread->process     = kernel_process;
-    idle_thread->tid         = alloc_tid();
-    idle_thread->ct_index    = cow_list_add(kernel_process->child_threads, idle_thread);
-    idle_thread->status      = T_RUNNING;
+    tcb_t idle_thread     = malloc(STACK_SIZE);
+    idle_thread->process  = kernel_process;
+    idle_thread->tid      = alloc_tid();
+    idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
+    idle_thread->status   = T_RUNNING;
     scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     float_processor_setup();
     arch_context_init(idle_thread, &idle_thread->context);

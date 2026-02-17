@@ -145,9 +145,9 @@ const void *fdt_offset_ptr(const void *fdt, int offset, unsigned int len) {
 
 uint32_t fdt_next_tag(const void *fdt, int startoffset, int *nextoffset) {
     const fdt32_t *tagp, *lenp;
-    uint32_t       tag, len, sum;
-    int            offset = startoffset;
-    const char    *p;
+    uint32_t tag, len, sum;
+    int offset = startoffset;
+    const char *p;
 
     *nextoffset = -FDT_ERR_TRUNCATED;
     tagp        = fdt_offset_ptr(fdt, offset, FDT_TAGSIZE);
@@ -221,7 +221,7 @@ int fdt_check_prop_offset_(const void *fdt, int offset) {
 }
 
 int fdt_next_node(const void *fdt, int offset, int *depth) {
-    int      nextoffset = 0;
+    int nextoffset = 0;
     uint32_t tag;
 
     if (offset >= 0)
@@ -285,7 +285,7 @@ int fdt_next_subnode(const void *fdt, int offset) {
 }
 
 const char *fdt_find_string_(const char *strtab, int tabsize, const char *s) {
-    int         len  = strlen(s) + 1;
+    int len          = strlen(s) + 1;
     const char *last = strtab + tabsize - len;
     const char *p;
 

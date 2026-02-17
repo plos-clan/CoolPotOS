@@ -6,7 +6,7 @@
 #include "mem/page.h"
 #include "term/klog.h"
 
-void           *op_buffer;
+void *op_buffer;
 static uint32_t cdb_size[] = { SCSI_CDB12, SCSI_CDB16, 0, 0 };
 
 void achi_register_ops(struct hba_port *port) {
@@ -53,7 +53,7 @@ int __get_free_slot(struct hba_port *port) {
     hba_reg_t pxsact   = port->regs[HBA_RPxSACT];
     hba_reg_t pxci     = port->regs[HBA_RPxCI];
     hba_reg_t free_bmp = pxsact | pxci;
-    uint32_t  i        = 0;
+    uint32_t i         = 0;
     for (; i <= port->hba->cmd_slots && (free_bmp & 0x1); i++, free_bmp >>= 1)
         ;
     return i | -(i > port->hba->cmd_slots);
@@ -65,7 +65,7 @@ int hba_prepare_cmd(struct hba_port *port, struct hba_cmdt **cmdt, struct hba_cm
     // 构建命令头（Command Header）和命令表（Command Table）
     struct hba_cmdh *cmd_header = phys_to_virt((uint64_t)&port->cmdlst[slot]);
     memset(cmd_header, 0, sizeof(struct hba_cmdh));
-    uint64_t         phys      = alloc_frames(1);
+    uint64_t phys              = alloc_frames(1);
     struct hba_cmdt *cmd_table = (struct hba_cmdt *)driver_phys_to_virt(phys);
     page_map_to(get_current_directory(), (uint64_t)cmd_table, phys, KERNEL_PTE_FLAGS);
 
@@ -97,7 +97,7 @@ void __hba_reset_port(hba_reg_t *port_reg) {
 }
 
 int hba_bind_vbuf(struct hba_cmdh *cmdh, struct hba_cmdt *cmdt, struct vecbuf *vbuf) {
-    size_t         i   = 0;
+    size_t i           = 0;
     struct vecbuf *pos = vbuf;
 
     do {
@@ -230,7 +230,7 @@ fail:
 
 size_t ahci_read(void *handle, uint8_t *buffer, size_t size, size_t lba) {
     struct hba_device *dev = (struct hba_device *)handle;
-    struct blkio_req   req = {
+    struct blkio_req req   = {
           .buf = (uint64_t)buffer, .lba = lba, .len = size * dev->block_size, .flags = 0
     };
     dev->ops.submit(dev, &req);
@@ -239,7 +239,7 @@ size_t ahci_read(void *handle, uint8_t *buffer, size_t size, size_t lba) {
 
 size_t ahci_write(void *handle, uint8_t *buffer, size_t size, size_t lba) {
     struct hba_device *dev = (struct hba_device *)handle;
-    struct blkio_req   req = {
+    struct blkio_req req   = {
           .buf = (uint64_t)buffer, .lba = lba, .len = size * dev->block_size, .flags = BLKIO_WRITE
     };
     dev->ops.submit(dev, &req);

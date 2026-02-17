@@ -5,7 +5,7 @@
 #include "term/klog.h"
 
 partition_t partitions[MAX_PARTITIONS_NUM];
-size_t      partition_num = 0;
+size_t partition_num = 0;
 
 void format_guid(const uint8_t guid[16], char out[37]) {
     snprintf(
@@ -51,8 +51,8 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
         return false;
     }
 
-    size_t           dptes_size = (size_t)gpt->num_partition_entries * gpt->size_of_partition_entry;
-    struct GPT_DPTE *dptes      = (struct GPT_DPTE *)malloc(dptes_size);
+    size_t dptes_size      = (size_t)gpt->num_partition_entries * gpt->size_of_partition_entry;
+    struct GPT_DPTE *dptes = (struct GPT_DPTE *)malloc(dptes_size);
     if (!dptes)
         return false;
 
@@ -116,8 +116,8 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
 
 // 从保护性 MBR 中解析 GPT（LBA 由 MBR 指定）
 static bool parse_gpt_from_protective_mbr(blk_device_t *disk, uint8_t *mbr) {
-    uint32_t        gpt_lba_start = *(uint32_t *)&mbr[0x1BE + 8];
-    struct GPT_DPT *gpt           = (struct GPT_DPT *)malloc(disk->block_size);
+    uint32_t gpt_lba_start = *(uint32_t *)&mbr[0x1BE + 8];
+    struct GPT_DPT *gpt    = (struct GPT_DPT *)malloc(disk->block_size);
     if (!gpt)
         return false;
 

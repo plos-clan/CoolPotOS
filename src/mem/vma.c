@@ -207,7 +207,7 @@ void vma_manager_exit_cleanup(vma_manager_t *mgr) {
 
     vma_t *vma = mgr->vma_list;
     vma_t *next;
-    int    cleaned_count = 0;
+    int cleaned_count = 0;
 
     // 遍历并清理所有VMA
     while (vma) {

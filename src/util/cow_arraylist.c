@@ -104,7 +104,7 @@ size_t cow_list_add(cow_arraylist *list, void *element) {
     size_t new_block_count = calculate_block_count(new_size);
     // 数组扩容措施
     if (new_block_count > list->blocks_capacity) {
-        size_t      new_capacity = list->blocks_capacity * 2;
+        size_t new_capacity = list->blocks_capacity * 2;
         cow_block **new_blocks_array =
             (cow_block **)realloc((void *)list->blocks, new_capacity * sizeof(cow_block *));
 

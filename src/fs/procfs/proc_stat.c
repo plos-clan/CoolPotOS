@@ -6,13 +6,13 @@
 #include "metadata.h"
 
 char *proc_gen_stat(size_t *context_len) {
-    string_builder_t *builder   = create_string_builder(4096);
-    size_t            cpu_count = get_cpu_count();
+    string_builder_t *builder = create_string_builder(4096);
+    size_t cpu_count          = get_cpu_count();
 
-    uint64_t total_idle    = 0;
-    uint64_t total_system  = 0;
-    size_t   processes_all = 0;
-    size_t   procs_running = 0;
+    uint64_t total_idle   = 0;
+    uint64_t total_system = 0;
+    size_t processes_all  = 0;
+    size_t procs_running  = 0;
 
     for (size_t i = 0; i < cpu_count; i++) {
         cpu_local_t *info = get_cpu_local(i);
@@ -68,6 +68,6 @@ size_t proc_stat_stat(proc_handle_t *handle) {
 
 size_t proc_stat_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t fs_size;
-    char  *contect = proc_gen_stat(&fs_size);
+    char *contect = proc_gen_stat(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, contect);
 }

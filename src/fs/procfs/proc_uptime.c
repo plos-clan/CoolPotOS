@@ -38,6 +38,6 @@ size_t proc_uptime_stat(proc_handle_t *handle) {
 
 size_t proc_uptime_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t fs_size;
-    char  *content = proc_gen_uptime(&fs_size);
+    char *content = proc_gen_uptime(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, content);
 }

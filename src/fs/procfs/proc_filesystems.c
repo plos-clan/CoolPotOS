@@ -4,8 +4,8 @@
 
 char *proc_gen_filesystems(size_t *context_len) {
     string_builder_t *builder = create_string_builder(1024);
-    vfs_filesystem_t  pos, n;
-    bool              status = false;
+    vfs_filesystem_t pos, n;
+    bool status = false;
     llist_for_each(pos, n, &fs_metadata_list, node) {
         if (pos->flags & FS_NO_MOUNT_FLAGS)
             continue;
@@ -27,6 +27,6 @@ size_t proc_filesystems_stat(proc_handle_t *handle) {
 
 size_t proc_filesystems_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
     size_t fs_size;
-    char  *contect = proc_gen_filesystems(&fs_size);
+    char *contect = proc_gen_filesystems(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, contect);
 }

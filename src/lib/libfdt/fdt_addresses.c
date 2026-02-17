@@ -13,8 +13,8 @@
 
 static int fdt_cells(const void *fdt, int nodeoffset, const char *name) {
     const fdt32_t *c;
-    uint32_t       val;
-    int            len;
+    uint32_t val;
+    int len;
 
     c = fdt_getprop(fdt, nodeoffset, name, &len);
     if (!c)
@@ -54,7 +54,7 @@ int fdt_size_cells(const void *fdt, int nodeoffset) {
 int fdt_appendprop_addrrange(
     void *fdt, int parent, int nodeoffset, const char *name, uint64_t addr, uint64_t size
 ) {
-    int     addr_cells, size_cells, ret;
+    int addr_cells, size_cells, ret;
     uint8_t data[sizeof(fdt64_t) * 2], *prop;
 
     ret = fdt_address_cells(fdt, parent);

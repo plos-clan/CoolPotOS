@@ -21,15 +21,15 @@
 #define TICK_NSEC ((1000000000 + SCHED_TIMER_SPEED / 2) / SCHED_TIMER_SPEED)
 
 tcb_t scheduler_pick_next(uint64_t cpu_id);
-bool  scheduler_add_task(tcb_t thread, uint64_t prio);
-bool  scheduler_add_task_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu);
-void  scheduler_set_cpu_idle(tcb_t thread, cpu_local_t *cpu);
-void  scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu);
-void  scheduler_remove_task(tcb_t thread, cpu_local_t *cpu);
-void  scheduler_change_weight(tcb_t thread, uint64_t prio);
-void  scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs);
-int   scheduler_nano_sleep(uint64_t nano);
-void  scheduler_check_sleep();
-void  scheduler_enable();
-void  scheduler_disable();
-void  scheduler_yield();
+bool scheduler_add_task(tcb_t thread, uint64_t prio);
+bool scheduler_add_task_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu);
+void scheduler_set_cpu_idle(tcb_t thread, cpu_local_t *cpu);
+void scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu);
+void scheduler_remove_task(tcb_t thread, cpu_local_t *cpu);
+void scheduler_change_weight(tcb_t thread, uint64_t prio);
+void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs);
+int scheduler_nano_sleep(uint64_t nano);
+void scheduler_check_sleep();
+void scheduler_enable();
+void scheduler_disable();
+void scheduler_yield();

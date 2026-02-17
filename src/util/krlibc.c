@@ -29,7 +29,7 @@ int memcmp(const void *a_, const void *b_, size_t size) {
 
 void *memset(void *dest, int c, size_t n) {
     unsigned char *s = dest;
-    size_t         k = 0;
+    size_t k         = 0;
 
     if (!n)
         return dest;
@@ -103,7 +103,7 @@ void *memset(void *dest, int c, size_t n) {
 #ifndef ARCH_HAS_OPTIMIZED_MEMSET
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
-    unsigned char       *d = dest;
+    unsigned char *d       = dest;
     const unsigned char *s = src;
 
 #    ifdef __GNUC__
@@ -117,7 +117,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 #        endif
 
     typedef uint32_t __attribute__((__may_alias__)) u32;
-    uint32_t                                        w, x;
+    uint32_t w, x;
 
     for (; (uintptr_t)s % 4 && n; n--)
         *d++ = *s++;
@@ -254,7 +254,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
 
 #ifndef ARCH_HAS_OPTIMIZED_MEMMOVE
 void *memmove(void *dest, const void *src, size_t n) { // NOLINT(*-function-cognitive-complexity)
-    char       *d = dest;
+    char *d       = dest;
     const char *s = src;
 
     if (d == s)
@@ -299,7 +299,7 @@ void *memchr(const void *src, int c, size_t n) {
         ;
     if (n && *s != c) {
         size_t *w = 0;
-        size_t  k = ONES * c;
+        size_t k  = ONES * c;
         for (w = (void *)s; n >= SS && !HASZERO(*w ^ k); w++, n -= SS)
             ;
         for (s = (const void *)w; n && *s != c; s++, n--)
@@ -325,7 +325,7 @@ size_t strnlen(const char *s, size_t n) {
 
 size_t strlen(const char *s) {
     const char *a = s;
-    size_t     *w = NULL;
+    size_t *w     = NULL;
     for (; (uintptr_t)s % ALIGN; s++)
         if (!*s)
             return s - a;
@@ -447,13 +447,13 @@ int64_t strtol(
     const char *str, char **endptr,
     int base
 ) { // NOLINT(*-function-cognitive-complexity)
-    const char *s      = str;
-    uint64_t    acc    = 0;
-    char        c      = '\0';
-    uint64_t    cutoff = 0;
-    uint64_t    neg    = 0;
-    uint64_t    any    = 0;
-    uint64_t    cutlim = 0;
+    const char *s   = str;
+    uint64_t acc    = 0;
+    char c          = '\0';
+    uint64_t cutoff = 0;
+    uint64_t neg    = 0;
+    uint64_t any    = 0;
+    uint64_t cutlim = 0;
     do {
         c = *s++;
     } while (isspace((unsigned char)c));
@@ -526,7 +526,7 @@ char *strdup(const char *str) {
         return NULL;
 
     char *strat = (char *)str;
-    int   len   = 0;
+    int len     = 0;
     while (*str++ != '\0')
         len++;
     char *ret = (char *)malloc(len + 1);
@@ -608,9 +608,9 @@ static char *fourbyte_strstr(const unsigned char *h, const unsigned char *n) {
 
 static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
     const unsigned char *z;
-    size_t               l, ip, jp, k, p, ms, p0, mem, mem0;
-    size_t               byteset[32 / sizeof(size_t)] = { 0 };
-    size_t               shift[256];
+    size_t l, ip, jp, k, p, ms, p0, mem, mem0;
+    size_t byteset[32 / sizeof(size_t)] = { 0 };
+    size_t shift[256];
 
     /* Computing length of needle and fill shift table */
     for (l = 0; n[l] && h[l]; l++)
@@ -682,8 +682,8 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n) {
         /* Update incremental end-of-haystack pointer */
         if (z - h < l) {
             /* Fast estimate for MIN(l,63) */
-            size_t               grow = l | 63;
-            const unsigned char *z2   = memchr(z, 0, grow);
+            size_t grow             = l | 63;
+            const unsigned char *z2 = memchr(z, 0, grow);
             if (z2) {
                 z = z2;
                 if (z - h < l)
@@ -813,8 +813,8 @@ char *normalize_path(const char *path) {
     if (!path)
         return NULL;
 
-    size_t len    = strlen(path);
-    char  *result = malloc(len + 1);
+    size_t len   = strlen(path);
+    char *result = malloc(len + 1);
     if (!result)
         return NULL;
 
@@ -934,7 +934,7 @@ char *build_proc_cmdline(char **argv, size_t *out_len) {
         return NULL;
     }
     size_t total_length = 0;
-    int    i            = 0;
+    int i               = 0;
     while (argv[i] != NULL) {
         total_length += strlen(argv[i]) + 1;
         i++;
@@ -979,9 +979,9 @@ char **restore_argv(const char *cmdline_buf, size_t len, int *out_argc) {
     char **argv = (char **)malloc(sizeof(char *) * (argc + 1));
     if (!argv)
         return NULL;
-    const char *ptr   = cmdline_buf;
-    const char *end   = cmdline_buf + len;
-    int         index = 0;
+    const char *ptr = cmdline_buf;
+    const char *end = cmdline_buf + len;
+    int index       = 0;
     while (ptr < end && index < argc) {
         size_t str_len = strlen(ptr);
         argv[index]    = (char *)malloc(str_len + 1);

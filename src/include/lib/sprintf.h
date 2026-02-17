@@ -131,7 +131,7 @@ static char stbsp__period = '.';
 static char stbsp__comma  = ',';
 static struct {
     short temp; // force next field to be 2-byte aligned
-    char  pair[201];
+    char pair[201];
 } stbsp__digitpair = { 0, "00010203040506070809101112131415161718192021222324"
                           "25262728293031323334353637383940414243444546474849"
                           "50515253545556575859606162636465666768697071727374"
@@ -214,14 +214,14 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(
 ) {
     static char hex[]  = "0123456789abcdefxp";
     static char hexu[] = "0123456789ABCDEFXP";
-    char       *bf     = NULL;
+    char *bf           = NULL;
     char const *f      = NULL;
-    int         tlen   = 0;
+    int tlen           = 0;
 
     bf = buf;
     f  = fmt;
     for (;;) {
-        stbsp__int32  fw = 0, pr = 0, tz = 0;
+        stbsp__int32 fw = 0, pr = 0, tz = 0;
         stbsp__uint32 fl = 0;
 
 // macros for the callback buffer stuff
@@ -437,18 +437,18 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(
         // handle each replacement
         switch (f[0]) {
 #    define STBSP__NUMSZ 512 // big enough for e308 (with commas) or e-307
-            char          num[STBSP__NUMSZ];
-            char          lead[8];
-            char          tail[8];
-            char         *s;
-            char const   *h;
+            char num[STBSP__NUMSZ];
+            char lead[8];
+            char tail[8];
+            char *s;
+            char const *h;
             stbsp__uint32 l, n, cs;
             stbsp__uint64 n64;
 #    ifndef STB_SPRINTF_NOFLOAT
             double fv;
 #    endif
             stbsp__int32 dp;
-            char const  *sn;
+            char const *sn;
 
         case 's':
             // get the string
@@ -1034,7 +1034,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(
 
             // copy the spaces and/or zeros
             if (fw + pr) {
-                stbsp__int32  i;
+                stbsp__int32 i;
                 stbsp__uint32 c;
 
                 // copy leading spaces (or when doing %8.4d stuff)
@@ -1242,7 +1242,7 @@ done:
 //   wrapper functions
 
 STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(sprintf)(char *buf, char const *fmt, ...) {
-    int     result;
+    int result;
     va_list va;
     va_start(va, fmt);
     result = STB_SPRINTF_DECORATE(vsprintfcb)(0, 0, buf, fmt, va);
@@ -1252,9 +1252,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(sprintf)(char *buf, char const *fmt, .
 
 typedef struct stbsp__context {
     char *buf;
-    int   count;
-    int   length;
-    char  tmp[STB_SPRINTF_MIN];
+    int count;
+    int length;
+    char tmp[STB_SPRINTF_MIN];
 } stbsp__context;
 
 static char *stbsp__clamp_callback(const char *buf, void *user, int len) {
@@ -1267,7 +1267,7 @@ static char *stbsp__clamp_callback(const char *buf, void *user, int len) {
     if (len) {
         if (buf != c->buf) {
             const char *s, *se;
-            char       *d;
+            char *d;
             d  = c->buf;
             s  = buf;
             se = buf + len;
@@ -1321,7 +1321,7 @@ STB_SPRINTF_DECORATE(vsnprintf)(char *buf, int count, char const *fmt, va_list v
 }
 
 STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(snprintf)(char *buf, int count, char const *fmt, ...) {
-    int     result;
+    int result;
     va_list va;
     va_start(va, fmt);
 
@@ -1350,7 +1350,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintf)(char *buf, char const *fmt, 
 
 // get float info
 static stbsp__int32 stbsp__real_to_parts(stbsp__int64 *bits, stbsp__int32 *expo, double value) {
-    double       d;
+    double d;
     stbsp__int64 b = 0;
 
     // load value and round at the frac_digits
@@ -1455,7 +1455,7 @@ static stbsp__uint64 const stbsp__powten[20] = { 1,
 
 #        define stbsp__ddmulthi(oh, ol, xh, yh)                                                    \
             {                                                                                      \
-                double       ahi = 0, alo, bhi = 0, blo;                                           \
+                double ahi = 0, alo, bhi = 0, blo;                                                 \
                 stbsp__int64 bt;                                                                   \
                 oh = xh * yh;                                                                      \
                 STBSP__COPYFP(bt, xh);                                                             \
@@ -1502,7 +1502,7 @@ static void stbsp__raise_to_power10(
         stbsp__ddmulthi(ph, pl, d, stbsp__bot[power]);
     } else {
         stbsp__int32 e, et, eb;
-        double       p2h, p2l;
+        double p2h, p2l;
 
         e = power;
         if (power < 0)
@@ -1567,7 +1567,7 @@ static stbsp__int32 stbsp__real_to_str(
     char const **start, stbsp__uint32 *len, char *out, stbsp__int32 *decimal_pos, double value,
     stbsp__uint32 frac_digits
 ) {
-    double       d;
+    double d;
     stbsp__int64 bits = 0;
     stbsp__int32 expo, e, ng, tens;
 
@@ -1675,7 +1675,7 @@ static stbsp__int32 stbsp__real_to_str(
     e = 0;
     for (;;) {
         stbsp__uint32 n;
-        char         *o = out - 8;
+        char *o = out - 8;
         // do the conversion in chunks of U32s (avoid most 64-bit divides, worth it, constant
         // denomiators be damned)
         if (bits >= 100000000) {

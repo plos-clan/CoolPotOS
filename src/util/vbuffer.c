@@ -50,8 +50,8 @@ void vbuf_chunkify(struct vecbuf **vbuf, void *buffer, size_t total_size, size_t
 }
 
 void vbuf_from_vaddr(struct vecbuf **out_vbuf, void *vaddr, size_t size) {
-    uint8_t *va        = (uint8_t *)vaddr;
-    size_t   remaining = size;
+    uint8_t *va      = (uint8_t *)vaddr;
+    size_t remaining = size;
 
     while (remaining > 0) {
         size_t page_offset = (uintptr_t)va % PAGE_SIZE;

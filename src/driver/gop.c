@@ -17,7 +17,7 @@ void init_gop() {
     for (size_t i = 0; i < boot_framebuffer_count(); i++) {
         struct boot_framebuffer *framebuffer = boot_get_framebuffer(i);
 
-        tty_device_t         *device   = alloc_tty_device(TTY_DEVICE_GRAPHI);
+        tty_device_t *device           = alloc_tty_device(TTY_DEVICE_GRAPHI);
         struct tty_graphics_ *graphics = malloc(sizeof(struct tty_graphics_));
 
         graphics->address = (void *)framebuffer->address;

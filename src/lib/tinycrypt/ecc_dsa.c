@@ -59,10 +59,10 @@
 
 static void
 bits2int(uECC_word_t *native, const uint8_t *bits, unsigned bits_size, uECC_Curve curve) {
-    unsigned     num_n_bytes = BITS_TO_BYTES(curve->num_n_bits);
-    unsigned     num_n_words = BITS_TO_WORDS(curve->num_n_bits);
-    int          shift;
-    uECC_word_t  carry;
+    unsigned num_n_bytes = BITS_TO_BYTES(curve->num_n_bits);
+    unsigned num_n_words = BITS_TO_WORDS(curve->num_n_bits);
+    int shift;
+    uECC_word_t carry;
     uECC_word_t *ptr;
 
     if (bits_size > num_n_bytes) {
@@ -94,14 +94,14 @@ int uECC_sign_with_k(
     uint8_t *signature, uECC_Curve curve
 ) {
 
-    uECC_word_t  tmp[NUM_ECC_WORDS];
-    uECC_word_t  s[NUM_ECC_WORDS];
+    uECC_word_t tmp[NUM_ECC_WORDS];
+    uECC_word_t s[NUM_ECC_WORDS];
     uECC_word_t *k2[2] = { tmp, s };
-    uECC_word_t  p[NUM_ECC_WORDS * 2];
-    uECC_word_t  carry;
-    wordcount_t  num_words   = curve->num_words;
-    wordcount_t  num_n_words = BITS_TO_WORDS(curve->num_n_bits);
-    bitcount_t   num_n_bits  = curve->num_n_bits;
+    uECC_word_t p[NUM_ECC_WORDS * 2];
+    uECC_word_t carry;
+    wordcount_t num_words   = curve->num_words;
+    wordcount_t num_n_words = BITS_TO_WORDS(curve->num_n_bits);
+    bitcount_t num_n_bits   = curve->num_n_bits;
 
     /* Make sure 0 < k < curve_n */
     if (uECC_vli_isZero(k, num_words) || uECC_vli_cmp(curve->n, k, num_n_words) != 1) {
@@ -184,18 +184,18 @@ int uECC_verify(
     const uint8_t *signature, uECC_Curve curve
 ) {
 
-    uECC_word_t        u1[NUM_ECC_WORDS], u2[NUM_ECC_WORDS];
-    uECC_word_t        z[NUM_ECC_WORDS];
-    uECC_word_t        sum[NUM_ECC_WORDS * 2];
-    uECC_word_t        rx[NUM_ECC_WORDS];
-    uECC_word_t        ry[NUM_ECC_WORDS];
-    uECC_word_t        tx[NUM_ECC_WORDS];
-    uECC_word_t        ty[NUM_ECC_WORDS];
-    uECC_word_t        tz[NUM_ECC_WORDS];
+    uECC_word_t u1[NUM_ECC_WORDS], u2[NUM_ECC_WORDS];
+    uECC_word_t z[NUM_ECC_WORDS];
+    uECC_word_t sum[NUM_ECC_WORDS * 2];
+    uECC_word_t rx[NUM_ECC_WORDS];
+    uECC_word_t ry[NUM_ECC_WORDS];
+    uECC_word_t tx[NUM_ECC_WORDS];
+    uECC_word_t ty[NUM_ECC_WORDS];
+    uECC_word_t tz[NUM_ECC_WORDS];
     const uECC_word_t *points[4];
     const uECC_word_t *point;
-    bitcount_t         num_bits;
-    bitcount_t         i;
+    bitcount_t num_bits;
+    bitcount_t i;
 
     uECC_word_t _public[NUM_ECC_WORDS * 2];
     uECC_word_t r[NUM_ECC_WORDS], s[NUM_ECC_WORDS];

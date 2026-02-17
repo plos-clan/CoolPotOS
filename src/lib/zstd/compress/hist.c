@@ -29,10 +29,10 @@ unsigned HIST_isError(size_t code) {
  ****************************************************************/
 unsigned
 HIST_count_simple(unsigned *count, unsigned *maxSymbolValuePtr, const void *src, size_t srcSize) {
-    const BYTE       *ip             = (const BYTE *)src;
-    const BYTE *const end            = ip + srcSize;
-    unsigned          maxSymbolValue = *maxSymbolValuePtr;
-    unsigned          largestCount   = 0;
+    const BYTE *ip          = (const BYTE *)src;
+    const BYTE *const end   = ip + srcSize;
+    unsigned maxSymbolValue = *maxSymbolValuePtr;
+    unsigned largestCount   = 0;
 
     ZSTD_memset(count, 0, (maxSymbolValue + 1) * sizeof(*count));
     if (srcSize == 0) {
@@ -74,14 +74,14 @@ static size_t HIST_count_parallel_wksp(
     unsigned *count, unsigned *maxSymbolValuePtr, const void *source, size_t sourceSize,
     HIST_checkInput_e check, U32 *const workSpace
 ) {
-    const BYTE       *ip        = (const BYTE *)source;
-    const BYTE *const iend      = ip + sourceSize;
-    size_t const      countSize = (*maxSymbolValuePtr + 1) * sizeof(*count);
-    unsigned          max       = 0;
-    U32 *const        Counting1 = workSpace;
-    U32 *const        Counting2 = Counting1 + 256;
-    U32 *const        Counting3 = Counting2 + 256;
-    U32 *const        Counting4 = Counting3 + 256;
+    const BYTE *ip         = (const BYTE *)source;
+    const BYTE *const iend = ip + sourceSize;
+    size_t const countSize = (*maxSymbolValuePtr + 1) * sizeof(*count);
+    unsigned max           = 0;
+    U32 *const Counting1   = workSpace;
+    U32 *const Counting2   = Counting1 + 256;
+    U32 *const Counting3   = Counting2 + 256;
+    U32 *const Counting4   = Counting3 + 256;
 
     /* safety checks */
     assert(*maxSymbolValuePtr <= 255);

@@ -18,9 +18,9 @@ typedef struct Keyboard {
     UsbDriver driver;
     HidDevice hid;
     KeyLayout layout;
-    indev_t  *input_dev;
-    bool      caps_locked;
-    bool      pressed[256];
+    indev_t *input_dev;
+    bool caps_locked;
+    bool pressed[256];
 } Keyboard;
 
 static const char *usb_kbd_escape_from_usage(uint16_t usage) {

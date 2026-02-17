@@ -34,13 +34,13 @@ typedef struct fpu_context {
 } fpu_context_t;
 
 struct arch_context_ {
-    uint64_t        ra;
-    uint64_t        sp;
+    uint64_t ra;
+    uint64_t sp;
     struct pt_regs *ctx;
-    fpu_context_t   fpu_ctx;
-    bool            dead;
-    uint64_t        user_stack;
-    uint64_t        user_stack_top;
+    fpu_context_t fpu_ctx;
+    bool dead;
+    uint64_t user_stack;
+    uint64_t user_stack_top;
 };
 
 #define switch_to(prev, next)                                                                      \

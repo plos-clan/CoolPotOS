@@ -6,7 +6,7 @@
 #include "term/klog.h"
 
 vfs_node_t sockfs_root = NULL;
-int        sockfs_id   = 0;
+int sockfs_id          = 0;
 static int sockfd_id   = 0;
 
 // --- Ring buffer operations ---
@@ -23,7 +23,7 @@ size_t ringbuf_read(sock_ringbuf_t *rb, void *dst, size_t len) {
     if (rb->count == 0 || len == 0)
         return 0;
     size_t to_read = MIN(len, rb->count);
-    char  *d       = (char *)dst;
+    char *d        = (char *)dst;
     for (size_t i = 0; i < to_read; i++) {
         d[i]     = rb->buf[rb->head];
         rb->head = (rb->head + 1) % rb->capacity;
@@ -52,7 +52,7 @@ size_t ringbuf_peek(sock_ringbuf_t *rb, void *dst, size_t len) {
     if (rb->count == 0 || len == 0)
         return 0;
     size_t to_read = MIN(len, rb->count);
-    char  *d       = (char *)dst;
+    char *d        = (char *)dst;
     size_t h       = rb->head;
     for (size_t i = 0; i < to_read; i++) {
         d[i] = rb->buf[h];
@@ -153,9 +153,9 @@ static size_t sockfs_write(void *file, const void *addr, size_t offset, size_t s
     info->active++;
     spin_unlock(info->lock);
 
-    const uint8_t *src       = (const uint8_t *)addr;
-    size_t         total     = 0;
-    size_t         remaining = size;
+    const uint8_t *src = (const uint8_t *)addr;
+    size_t total       = 0;
+    size_t remaining   = size;
 
     while (remaining > 0) {
         spin_lock(target->lock);
