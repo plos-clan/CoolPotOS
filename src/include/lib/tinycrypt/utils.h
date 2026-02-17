@@ -39,8 +39,8 @@
 #ifndef __TC_UTILS_H__
 #define __TC_UTILS_H__
 
-#include "types.h"
 #include "krlibc.h"
+#include "types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,8 +57,7 @@ extern "C" {
  * @param from IN -- origin buffer
  * @param from_len IN -- length of origin buffer
  */
-unsigned int _copy(uint8_t *to, unsigned int to_len,
-	           const uint8_t *from, unsigned int from_len);
+unsigned int _copy(uint8_t *to, unsigned int to_len, const uint8_t *from, unsigned int from_len);
 
 /**
  * @brief Set the value 'val' into the buffer 'to', 'len' times.
@@ -85,14 +84,13 @@ void _set(void *to, uint8_t val, unsigned int len);
 #ifdef TINYCRYPT_ARCH_HAS_SET_SECURE
 extern void _set_secure(void *to, uint8_t val, unsigned int len);
 #else /* ! TINYCRYPT_ARCH_HAS_SET_SECURE */
-static inline void _set_secure(void *to, uint8_t val, unsigned int len)
-{
-  (void) memset(to, val, len);
-#ifdef __GNUC__
-  __asm__ __volatile__("" :: "g"(to) : "memory");
-#endif /* __GNUC__ */
+static inline void _set_secure(void *to, uint8_t val, unsigned int len) {
+    (void)memset(to, val, len);
+#    ifdef __GNUC__
+    __asm__ __volatile__("" ::"g"(to) : "memory");
+#    endif /* __GNUC__ */
 }
-#endif /* TINYCRYPT_ARCH_HAS_SET_SECURE */
+#endif     /* TINYCRYPT_ARCH_HAS_SET_SECURE */
 
 /*
  * @brief AES specific doubling function, which utilizes

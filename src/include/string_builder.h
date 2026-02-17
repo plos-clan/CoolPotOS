@@ -10,4 +10,3 @@ typedef struct {
 
 string_builder_t *create_string_builder(size_t initial_capacity);
 bool string_builder_append(string_builder_t *buf, const char *format, ...);
-

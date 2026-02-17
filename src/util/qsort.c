@@ -27,7 +27,8 @@ static inline int a_ctz_l(unsigned long x) {
     static const char debruijn32[32] = {0,  1,  23, 2,  29, 24, 19, 3,  30, 27, 25,
                                         11, 20, 8,  4,  13, 31, 22, 28, 18, 26, 10,
                                         7,  12, 21, 17, 9,  6,  16, 5,  15, 14};
-    if (sizeof(long) == 8) return a_ctz_64(x);
+    if (sizeof(long) == 8)
+        return a_ctz_64(x);
     return debruijn32[(x & -x) * 0x076be629 >> 27];
 }
 
@@ -35,16 +36,20 @@ static inline int a_ctz_l(unsigned long x) {
 
 static inline int pntz(size_t p[2]) {
     int r = ntz(p[0] - 1);
-    if (r != 0 || (r = 8 * sizeof(size_t) + ntz(p[1])) != 8 * sizeof(size_t)) { return r; }
+    if (r != 0 || (r = 8 * sizeof(size_t) + ntz(p[1])) != 8 * sizeof(size_t)) {
+        return r;
+    }
     return 0;
 }
 
 static void cycle(size_t width, unsigned char *ar[], int n) {
     unsigned char tmp[256];
-    size_t        l;
-    int           i;
+    size_t l;
+    int i;
 
-    if (n < 2) { return; }
+    if (n < 2) {
+        return;
+    }
 
     ar[n] = tmp;
     while (width) {
@@ -61,57 +66,60 @@ static void cycle(size_t width, unsigned char *ar[], int n) {
 /* shl() and shr() need n > 0 */
 static inline void shl(size_t p[2], int n) {
     if (n >= 8 * sizeof(size_t)) {
-        n    -= 8 * sizeof(size_t);
-        p[1]  = p[0];
-        p[0]  = 0;
+        n -= 8 * sizeof(size_t);
+        p[1] = p[0];
+        p[0] = 0;
     }
     p[1] <<= n;
-    p[1]  |= p[0] >> (sizeof(size_t) * 8 - n);
+    p[1] |= p[0] >> (sizeof(size_t) * 8 - n);
     p[0] <<= n;
 }
 
 static inline void shr(size_t p[2], int n) {
     if (n >= 8 * sizeof(size_t)) {
-        n    -= 8 * sizeof(size_t);
-        p[0]  = p[1];
-        p[1]  = 0;
+        n -= 8 * sizeof(size_t);
+        p[0] = p[1];
+        p[1] = 0;
     }
     p[0] >>= n;
-    p[0]  |= p[1] << (sizeof(size_t) * 8 - n);
+    p[0] |= p[1] << (sizeof(size_t) * 8 - n);
     p[1] >>= n;
 }
 
 static void sift(unsigned char *head, size_t width, cmpfun cmp, int pshift, size_t lp[]) {
     unsigned char *rt, *lf;
     unsigned char *ar[14 * sizeof(size_t) + 1];
-    int            i = 1;
+    int i = 1;
 
     ar[0] = head;
     while (pshift > 1) {
         rt = head - width;
         lf = head - width - lp[pshift - 2];
 
-        if ((*cmp)(ar[0], lf) >= 0 && (*cmp)(ar[0], rt) >= 0) { break; }
+        if ((*cmp)(ar[0], lf) >= 0 && (*cmp)(ar[0], rt) >= 0) {
+            break;
+        }
         if ((*cmp)(lf, rt) >= 0) {
-            ar[i++]  = lf;
-            head     = lf;
-            pshift  -= 1;
+            ar[i++] = lf;
+            head = lf;
+            pshift -= 1;
         } else {
-            ar[i++]  = rt;
-            head     = rt;
-            pshift  -= 2;
+            ar[i++] = rt;
+            head = rt;
+            pshift -= 2;
         }
     }
     cycle(width, ar, i);
 }
 
-static void trinkle(unsigned char *head, size_t width, cmpfun cmp, size_t pp[2], int pshift,
-                    int trusty, size_t lp[]) {
+static void trinkle(
+    unsigned char *head, size_t width, cmpfun cmp, size_t pp[2], int pshift, int trusty,
+    size_t lp[]) {
     unsigned char *stepson, *rt, *lf;
-    size_t         p[2];
+    size_t p[2];
     unsigned char *ar[14 * sizeof(size_t) + 1];
-    int            i = 1;
-    int            trail;
+    int i = 1;
+    int trail;
 
     p[0] = pp[0];
     p[1] = pp[1];
@@ -119,19 +127,23 @@ static void trinkle(unsigned char *head, size_t width, cmpfun cmp, size_t pp[2],
     ar[0] = head;
     while (p[0] != 1 || p[1] != 0) {
         stepson = head - lp[pshift];
-        if ((*cmp)(stepson, ar[0]) <= 0) { break; }
+        if ((*cmp)(stepson, ar[0]) <= 0) {
+            break;
+        }
         if (!trusty && pshift > 1) {
             rt = head - width;
             lf = head - width - lp[pshift - 2];
-            if ((*cmp)(rt, stepson) >= 0 || (*cmp)(lf, stepson) >= 0) { break; }
+            if ((*cmp)(rt, stepson) >= 0 || (*cmp)(lf, stepson) >= 0) {
+                break;
+            }
         }
 
         ar[i++] = stepson;
-        head    = stepson;
-        trail   = pntz(p);
+        head = stepson;
+        trail = pntz(p);
         shr(p, trail);
         pshift += trail;
-        trusty  = 0;
+        trusty = 0;
     }
     if (!trusty) {
         cycle(width, ar, i);
@@ -140,14 +152,15 @@ static void trinkle(unsigned char *head, size_t width, cmpfun cmp, size_t pp[2],
 }
 
 void qsort(void *base, size_t nel, size_t width, cmpfun cmp) {
-    size_t         lp[12 * sizeof(size_t)];
-    size_t         i, size = width * nel;
+    size_t lp[12 * sizeof(size_t)];
+    size_t i, size = width * nel;
     unsigned char *head, *high;
-    size_t         p[2]   = {1, 0};
-    int            pshift = 1;
-    int            trail;
+    size_t p[2] = {1, 0};
+    int pshift = 1;
+    int trail;
 
-    if (!size) return;
+    if (!size)
+        return;
 
     head = base;
     high = head + size - width;
@@ -191,7 +204,7 @@ void qsort(void *base, size_t nel, size_t width, cmpfun cmp) {
         } else {
             shl(p, 2);
             pshift -= 2;
-            p[0]   ^= 7;
+            p[0] ^= 7;
             shr(p, 1);
             trinkle(head - lp[pshift] - width, width, cmp, p, pshift + 1, 1, lp);
             shl(p, 1);

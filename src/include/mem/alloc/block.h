@@ -13,29 +13,29 @@
 #define FLAG_BITS ((size_t)7) // 所有标志位
 
 // 两倍字长对齐和 16k 对齐
-#define PADDING(size)     (((size) + 2 * sizeof(size_t) - 1) & ~(2 * sizeof(size_t) - 1))
-#define PADDING_4k(size)  (((size) + SIZE_4k - 1) & ~(size_t)(SIZE_4k - 1))
+#define PADDING(size) (((size) + 2 * sizeof(size_t) - 1) & ~(2 * sizeof(size_t) - 1))
+#define PADDING_4k(size) (((size) + SIZE_4k - 1) & ~(size_t)(SIZE_4k - 1))
 #define PADDING_16k(size) (((size) + SIZE_16k - 1) & ~(size_t)(SIZE_16k - 1))
-#define PADDING_2M(size)  (((size) + SIZE_2M - 1) & ~(size_t)(SIZE_2M - 1))
-#define PADDING_1G(size)  (((size) + SIZE_1G - 1) & ~(size_t)(SIZE_1G - 1))
+#define PADDING_2M(size) (((size) + SIZE_2M - 1) & ~(size_t)(SIZE_2M - 1))
+#define PADDING_1G(size) (((size) + SIZE_1G - 1) & ~(size_t)(SIZE_1G - 1))
 
-#define blk_prevtail(ptr)       (((size_t *)ptr)[-2])         // 上一个块的尾部标记
-#define blk_head(ptr)           (((size_t *)ptr)[-1])         // 块头部标记
-#define blk_tail(ptr, size)     (((size_t *)(ptr + size))[0]) // 块尾部标记
+#define blk_prevtail(ptr) (((size_t *)ptr)[-2])               // 上一个块的尾部标记
+#define blk_head(ptr) (((size_t *)ptr)[-1])                   // 块头部标记
+#define blk_tail(ptr, size) (((size_t *)(ptr + size))[0])     // 块尾部标记
 #define blk_nexthead(ptr, size) (((size_t *)(ptr + size))[1]) // 下一个块的头部标记
 
-#define blk_noprev(ptr)       ((bool)(blk_prevtail(ptr) & AREA_FLAG))       // 是否有上一个块
+#define blk_noprev(ptr) ((bool)(blk_prevtail(ptr) & AREA_FLAG))             // 是否有上一个块
 #define blk_nonext(ptr, size) ((bool)(blk_nexthead(ptr, size) & AREA_FLAG)) // 是否有下一个块
 
-#define blk_freed(ptr)   (blk_head(ptr) & FREE_FLAG) // 是否已释放
-#define blk_alloced(ptr) (!blk_freed(ptr))           // 是否已分配
+#define blk_freed(ptr) (blk_head(ptr) & FREE_FLAG) // 是否已释放
+#define blk_alloced(ptr) (!blk_freed(ptr))         // 是否已分配
 
 static inline void blk_setalloced(void *ptr, size_t size) {
-    blk_head(ptr)       &= ~FREE_FLAG;
+    blk_head(ptr) &= ~FREE_FLAG;
     blk_tail(ptr, size) &= ~FREE_FLAG;
 }
 static inline void blk_setfreed(void *ptr, size_t size) {
-    blk_head(ptr)       |= FREE_FLAG;
+    blk_head(ptr) |= FREE_FLAG;
     blk_tail(ptr, size) |= FREE_FLAG;
 }
 
@@ -48,7 +48,7 @@ static inline void blk_setfreed(void *ptr, size_t size) {
  *\param size     块大小
  */
 static inline void blk_setsize(void *ptr, size_t size) {
-    ((size_t *)ptr)[-1]     = size;
+    ((size_t *)ptr)[-1] = size;
     *(size_t *)(ptr + size) = size;
 }
 
@@ -57,11 +57,11 @@ static inline void blk_setsize(void *ptr, size_t size) {
 #define blk_area_is_4k(ptr) (!blk_area_is_2M(ptr))
 
 static inline void blk_set_area_4k(void *ptr, size_t size) {
-    blk_head(ptr)       &= ~SIZE_FLAG;
+    blk_head(ptr) &= ~SIZE_FLAG;
     blk_tail(ptr, size) &= ~SIZE_FLAG;
 }
 static inline void blk_set_area_2M(void *ptr, size_t size) {
-    blk_head(ptr)       |= SIZE_FLAG;
+    blk_head(ptr) |= SIZE_FLAG;
     blk_tail(ptr, size) |= SIZE_FLAG;
 }
 
@@ -80,30 +80,34 @@ static inline void *blk_poolptr(void *ptr) {
 
 // 获取上一个块的指针
 static inline void *blk_prev(void *ptr) {
-    if (blk_noprev(ptr)) return NULL;
+    if (blk_noprev(ptr))
+        return NULL;
     size_t prevsize = blk_prevtail(ptr) & ~FLAG_BITS;
     return ptr - 2 * sizeof(size_t) - prevsize;
 }
 // 获取下一个块的指针
 static inline void *blk_next(void *ptr) {
     size_t size = blk_size(ptr);
-    if (blk_nonext(ptr, size)) return NULL;
+    if (blk_nonext(ptr, size))
+        return NULL;
     return ptr + size + 2 * sizeof(size_t);
 }
 
 typedef void (*blk_detach_t)(void *data, void *ptr);
 
 static inline void *blk_mergeprev(void *ptr, blk_detach_t detach, void *data) {
-    void  *prev = blk_prev(ptr);
+    void *prev = blk_prev(ptr);
     size_t size = blk_size(ptr) + blk_size(prev) + 2 * sizeof(size_t);
-    if (detach) detach(data, prev);
+    if (detach)
+        detach(data, prev);
     blk_setsize(prev, size);
     return prev;
 }
 static inline void *blk_mergenext(void *ptr, blk_detach_t detach, void *data) {
-    void  *next = blk_next(ptr);
+    void *next = blk_next(ptr);
     size_t size = blk_size(ptr) + blk_size(next) + 2 * sizeof(size_t);
-    if (detach) detach(data, next);
+    if (detach)
+        detach(data, next);
     blk_setsize(ptr, size);
     return ptr;
 }
@@ -116,15 +120,16 @@ static inline void *blk_mergenext(void *ptr, blk_detach_t detach, void *data) {
  *\return 新的块指针
  */
 static inline void *blk_trymerge(void *ptr, blk_detach_t detach, void *data) {
-    bool   is_2M = blk_area_is_2M(ptr);
-    size_t size  = blk_size(ptr);
+    bool is_2M = blk_area_is_2M(ptr);
+    size_t size = blk_size(ptr);
     if (!blk_nonext(ptr, size) && (blk_nexthead(ptr, size) & FREE_FLAG)) { //
         ptr = blk_mergenext(ptr, detach, data);
     }
     if (!blk_noprev(ptr) && (blk_prevtail(ptr) & FREE_FLAG)) { //
         ptr = blk_mergeprev(ptr, detach, data);
     }
-    if (is_2M) blk_set_area_2M(ptr, blk_size(ptr));
+    if (is_2M)
+        blk_set_area_2M(ptr, blk_size(ptr));
     return ptr;
 }
 
@@ -136,12 +141,14 @@ static inline void *blk_trymerge(void *ptr, blk_detach_t detach, void *data) {
  *\return 第二个块的指针
  */
 static inline void *blk_split(void *ptr, size_t size) {
-    bool   is_2M   = blk_area_is_2M(ptr);
+    bool is_2M = blk_area_is_2M(ptr);
     size_t oldsize = blk_size(ptr);
     blk_setsize(ptr, size);
-    if (is_2M) blk_set_area_2M(ptr, size);
+    if (is_2M)
+        blk_set_area_2M(ptr, size);
     size_t offset = size + 2 * sizeof(size_t);
     blk_setsize(ptr + offset, oldsize - offset);
-    if (is_2M) blk_set_area_2M(ptr + offset, oldsize - offset);
+    if (is_2M)
+        blk_set_area_2M(ptr + offset, oldsize - offset);
     return ptr + offset;
 }

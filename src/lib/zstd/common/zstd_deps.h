@@ -28,13 +28,13 @@
 #include "types/limits.h"
 
 #if defined(__GNUC__) && __GNUC__ >= 4
-#    define ZSTD_memcpy(d, s, l)  __builtin_memcpy((d), (s), (l))
+#    define ZSTD_memcpy(d, s, l) __builtin_memcpy((d), (s), (l))
 #    define ZSTD_memmove(d, s, l) __builtin_memmove((d), (s), (l))
-#    define ZSTD_memset(p, v, l)  __builtin_memset((p), (v), (l))
+#    define ZSTD_memset(p, v, l) __builtin_memset((p), (v), (l))
 #else
-#    define ZSTD_memcpy(d, s, l)  memcpy((d), (s), (l))
+#    define ZSTD_memcpy(d, s, l) memcpy((d), (s), (l))
 #    define ZSTD_memmove(d, s, l) memmove((d), (s), (l))
-#    define ZSTD_memset(p, v, l)  memset((p), (v), (l))
+#    define ZSTD_memset(p, v, l) memset((p), (v), (l))
 #endif
 
 #endif /* ZSTD_DEPS_COMMON */
@@ -50,9 +50,9 @@
 
 #    include "mem/heap.h"
 
-#    define ZSTD_malloc(s)    malloc(s)
+#    define ZSTD_malloc(s) malloc(s)
 #    define ZSTD_calloc(n, s) calloc((n), (s))
-#    define ZSTD_free(p)      free((p))
+#    define ZSTD_free(p) free((p))
 
 #endif /* ZSTD_DEPS_MALLOC */
 #endif /* ZSTD_DEPS_NEED_MALLOC */

@@ -7,8 +7,8 @@ struct llist_header {
     struct llist_header *next;
 };
 
-static inline void __llist_add(struct llist_header *elem, struct llist_header *prev,
-                               struct llist_header *next) {
+static inline void
+__llist_add(struct llist_header *elem, struct llist_header *prev, struct llist_header *next) {
     next->prev = elem;
     elem->next = next;
     elem->prev = prev;
@@ -81,8 +81,8 @@ static inline int llist_empty(struct llist_header *elem) {
  * @member:	the name of the list_struct within the struct.
  */
 #define llist_for_each(pos, n, head, member)                                                       \
-    for (pos                         = list_entry((head)->next, typeof(*pos), member),             \
-        n                            = list_entry(pos->member.next, typeof(*pos), member);         \
+    for (pos = list_entry((head)->next, typeof(*pos), member),                                     \
+        n = list_entry(pos->member.next, typeof(*pos), member);                                    \
          &pos->member != (head); pos = n, n = list_entry(n->member.next, typeof(*n), member))
 
 struct hlist_node {
@@ -90,19 +90,24 @@ struct hlist_node {
 };
 
 static inline void hlist_delete(struct hlist_node *node) {
-    if (!node->pprev) return;
+    if (!node->pprev)
+        return;
 
-    if (node->next) { node->next->pprev = node->pprev; }
+    if (node->next) {
+        node->next->pprev = node->pprev;
+    }
 
     *node->pprev = node->next;
 
-    node->next  = 0;
+    node->next = 0;
     node->pprev = 0;
 }
 
 static inline void hlist_add(struct hlist_node **head, struct hlist_node *node) {
     node->next = *head;
-    if (*head) { (*head)->pprev = &node->next; }
+    if (*head) {
+        (*head)->pprev = &node->next;
+    }
     node->pprev = head;
-    *head       = node;
+    *head = node;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types.h"
 #include "pci.h"
+#include "types.h"
 
 /**
  * @brief msi消息内容结构体
@@ -55,16 +55,14 @@ struct pci_msix_cap_t {
     uint8_t next_off;
     uint16_t msg_ctrl;
 
-    uint32_t
-        dword1; // 该DWORD的组成为：[Table Offset][BIR2:0].
-                // 由于Table
-                // Offset是8字节对齐的，因此mask掉该dword的BIR部分，就是table
-                // offset的值
-    uint32_t
-        dword2; // 该DWORD的组成为：[Pending Bit Offset][Pending Bit
-                // BIR2:0]. 由于Pending Bit
-                // Offset是8字节对齐的，因此mask掉该dword的BIR部分，就是Pending
-                // Bit Offset的值
+    uint32_t dword1; // 该DWORD的组成为：[Table Offset][BIR2:0].
+                     // 由于Table
+                     // Offset是8字节对齐的，因此mask掉该dword的BIR部分，就是table
+                     // offset的值
+    uint32_t dword2; // 该DWORD的组成为：[Pending Bit Offset][Pending Bit
+                     // BIR2:0]. 由于Pending Bit
+                     // Offset是8字节对齐的，因此mask掉该dword的BIR部分，就是Pending
+                     // Bit Offset的值
 };
 
 /**

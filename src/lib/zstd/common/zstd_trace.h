@@ -25,10 +25,10 @@ extern "C" {
  * Also, explicitly disable on platforms known not to work so they aren't
  * forgotten in the future.
  */
-#if !defined(ZSTD_HAVE_WEAK_SYMBOLS) && defined(__GNUC__) && defined(__ELF__) &&                   \
-    (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)) &&           \
-    !defined(__APPLE__) && !defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__) &&    \
-    !defined(_AIX)
+#if !defined(ZSTD_HAVE_WEAK_SYMBOLS) && defined(__GNUC__) && defined(__ELF__)                      \
+    && (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86))           \
+    && !defined(__APPLE__) && !defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)    \
+    && !defined(_AIX)
 #    define ZSTD_HAVE_WEAK_SYMBOLS 1
 #else
 #    define ZSTD_HAVE_WEAK_SYMBOLS 0
@@ -59,32 +59,32 @@ typedef struct {
      * the version number does not match your expectation, you
      * should not interpret the rest of the struct.
      */
-    unsigned                         version;
+    unsigned version;
     /**
      * Non-zero if streaming (de)compression is used.
      */
-    unsigned                         streaming;
+    unsigned streaming;
     /**
      * The dictionary ID.
      */
-    unsigned                         dictionaryID;
+    unsigned dictionaryID;
     /**
      * Is the dictionary cold?
      * Only set on decompression.
      */
-    unsigned                         dictionaryIsCold;
+    unsigned dictionaryIsCold;
     /**
      * The dictionary size or zero if no dictionary.
      */
-    size_t                           dictionarySize;
+    size_t dictionarySize;
     /**
      * The uncompressed size of the data.
      */
-    size_t                           uncompressedSize;
+    size_t uncompressedSize;
     /**
      * The compressed size of the data.
      */
-    size_t                           compressedSize;
+    size_t compressedSize;
     /**
      * The fully resolved CCtx parameters (NULL on decompression).
      */
@@ -92,11 +92,11 @@ typedef struct {
     /**
      * The ZSTD_CCtx pointer (NULL on decompression).
      */
-    struct ZSTD_CCtx_s const        *cctx;
+    struct ZSTD_CCtx_s const *cctx;
     /**
      * The ZSTD_DCtx pointer (NULL on compression).
      */
-    struct ZSTD_DCtx_s const        *dctx;
+    struct ZSTD_DCtx_s const *dctx;
 } ZSTD_Trace;
 
 /**

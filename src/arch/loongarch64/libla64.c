@@ -1,7 +1,7 @@
-#include "krlibc.h"
-#include "io.h"
-#include "timer.h"
 #include "exec/elf.h"
+#include "io.h"
+#include "krlibc.h"
+#include "timer.h"
 
 void arch_pause() {
     __asm__ volatile("nop");
@@ -21,19 +21,19 @@ void arch_close_interrupt() {
 
 bool arch_check_interrupt(void) {
     uint64_t crmd = csr_read(LOONGARCH_CSR_CRMD);
-    return (crmd & (1ULL << 0)) != 0;  /* check IE bit */
+    return (crmd & (1ULL << 0)) != 0; /* check IE bit */
 }
 
 bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
-    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
-        ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
-        ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr) ||
-        ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
+    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1
+        || ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3
+        || ehdr->e_version != EV_CURRENT || ehdr->e_ehsize != sizeof(Elf64_Ehdr)
+        || ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
         return false;
     }
 
     if (ehdr->e_ident[4] != 2 // 64-bit
-        //TODO loongarch64
+                              // TODO loongarch64
     ) {
         return false;
     }
@@ -41,7 +41,8 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
     return true;
 }
 
-void arch_pci_legacy_enum() {}
+void arch_pci_legacy_enum() {
+}
 
 uint64_t sched_clock() {
     return nano_time();

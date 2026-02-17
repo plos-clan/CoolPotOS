@@ -120,7 +120,8 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
         status &= string_builder_append(cpu_features->features, "fpu ");
     if (featuresEdx & CPUID_EDX_VME)
         status &= string_builder_append(cpu_features->features, "vme ");
-    if (featuresEdx & CPUID_EDX_DE) status &= string_builder_append(cpu_features->features, "de ");
+    if (featuresEdx & CPUID_EDX_DE)
+        status &= string_builder_append(cpu_features->features, "de ");
     if (featuresEdx & CPUID_EDX_PSE)
         status &= string_builder_append(cpu_features->features, "pse ");
     if (featuresEdx & CPUID_EDX_TSC)
@@ -153,7 +154,8 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
         status &= string_builder_append(cpu_features->features, "psn ");
     if (featuresEdx & CPUID_EDX_CLFSH)
         status &= string_builder_append(cpu_features->features, "clfsh ");
-    if (featuresEdx & CPUID_EDX_DS) status &= string_builder_append(cpu_features->features, "ds ");
+    if (featuresEdx & CPUID_EDX_DS)
+        status &= string_builder_append(cpu_features->features, "ds ");
     if (featuresEdx & CPUID_EDX_ACPI)
         status &= string_builder_append(cpu_features->features, "acpi ");
     if (featuresEdx & CPUID_EDX_MMX)
@@ -164,10 +166,12 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
         status &= string_builder_append(cpu_features->features, "sse ");
     if (featuresEdx & CPUID_EDX_SSE2)
         status &= string_builder_append(cpu_features->features, "sse2 ");
-    if (featuresEdx & CPUID_EDX_SS) status &= string_builder_append(cpu_features->features, "ss ");
+    if (featuresEdx & CPUID_EDX_SS)
+        status &= string_builder_append(cpu_features->features, "ss ");
     if (featuresEdx & CPUID_EDX_HTT)
         status &= string_builder_append(cpu_features->features, "htt ");
-    if (featuresEdx & CPUID_EDX_TM) status &= string_builder_append(cpu_features->features, "tm ");
+    if (featuresEdx & CPUID_EDX_TM)
+        status &= string_builder_append(cpu_features->features, "tm ");
     if (featuresEdx & CPUID_EDX_PBE)
         status &= string_builder_append(cpu_features->features, "pbe ");
 
@@ -232,14 +236,15 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
     if (featuresEcx & CPUID_ECX_RDRAND)
         status &= string_builder_append(cpu_features->features, "rdrand ");
 
-    int         cpuid_level;
+    int cpuid_level;
     static char x86_vendor_id[16] = {0};
-    cpuid_raw(0x00000000, (uint32_t *)&cpuid_level, (uint32_t *)&x86_vendor_id[0],
-              (uint32_t *)&x86_vendor_id[8], (uint32_t *)&x86_vendor_id[4]);
+    cpuid_raw(
+        0x00000000, (uint32_t *)&cpuid_level, (uint32_t *)&x86_vendor_id[0],
+        (uint32_t *)&x86_vendor_id[8], (uint32_t *)&x86_vendor_id[4]);
     cpu_features->vendor_id = strdup(x86_vendor_id);
 
     cpu_features->model_name = calloc(49, sizeof(char));
-    uint32_t *v              = (uint32_t *)cpu_features->model_name;
+    uint32_t *v = (uint32_t *)cpu_features->model_name;
     cpuid_raw(0x80000002, &v[0], &v[1], &v[2], &v[3]);
     cpuid_raw(0x80000003, &v[4], &v[5], &v[6], &v[7]);
     cpuid_raw(0x80000004, &v[8], &v[9], &v[10], &v[11]);
@@ -250,5 +255,6 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
     cpu_features->virt_bits = (eax >> 8) & 0xff;
     cpu_features->phys_bits = eax & 0xff;
 
-    if (!status) kwarn("cannot build cpu feature.");
+    if (!status)
+        kwarn("cannot build cpu feature.");
 }

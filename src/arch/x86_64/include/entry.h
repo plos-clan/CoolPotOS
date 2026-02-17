@@ -12,6 +12,6 @@
 
 #define ____cacheline_aligned __attribute__((__aligned__(L1_CACHE_BYTES)))
 
-#define ENTRY(name)                                                            \
-    .global SYMBOL_NAME(name);                                                 \
+#define ENTRY(name)                                                                                \
+    .global SYMBOL_NAME(name);                                                                     \
     SYMBOL_NAME_LABEL(name)

@@ -165,13 +165,14 @@ bool arch_check_interrupt() {
 }
 
 bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
-    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1 ||
-        ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
-        ehdr->e_version != EV_CURRENT) {
+    if (ehdr->e_ident[EI_MAG0] != ELFMAG0 || ehdr->e_ident[EI_MAG1] != ELFMAG1
+        || ehdr->e_ident[EI_MAG2] != ELFMAG2 || ehdr->e_ident[EI_MAG3] != ELFMAG3
+        || ehdr->e_version != EV_CURRENT) {
         logkf("libx64: elf head check magic error.\n\r");
-        logkf("libx64: head %x %c %c %c %d.\n\r", ehdr->e_ident[EI_MAG0],
-              ehdr->e_ident[EI_MAG1] != ELFMAG1, ehdr->e_ident[EI_MAG2],
-              ehdr->e_ident[EI_MAG3] != ELFMAG3, ehdr->e_version);
+        logkf(
+            "libx64: head %x %c %c %c %d.\n\r", ehdr->e_ident[EI_MAG0],
+            ehdr->e_ident[EI_MAG1] != ELFMAG1, ehdr->e_ident[EI_MAG2],
+            ehdr->e_ident[EI_MAG3] != ELFMAG3, ehdr->e_version);
         return false;
     }
     if (ehdr->e_ehsize != sizeof(Elf64_Ehdr) || ehdr->e_phentsize != sizeof(Elf64_Phdr)) {
@@ -181,8 +182,10 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
 
     switch (ehdr->e_machine) {
     case EM_X86_64:
-    case EM_386: break;
-    default: return false;
+    case EM_386:
+        break;
+    default:
+        return false;
     }
 
     return true;

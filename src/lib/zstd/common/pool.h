@@ -26,7 +26,7 @@ typedef struct POOL_ctx_s POOL_ctx;
  * `numThreads` must be at least 1.
  *  The maximum number of queued jobs before blocking is `queueSize`.
  * @return : POOL_ctx pointer on success, else NULL.
-*/
+ */
 POOL_ctx *POOL_create(size_t numThreads, size_t queueSize);
 
 POOL_ctx *POOL_create_advanced(size_t numThreads, size_t queueSize, ZSTD_customMem customMem);

@@ -38,14 +38,16 @@ static void compress(unsigned int *iv, const uint8_t *data);
 
 int tc_sha256_init(TCSha256State_t s) {
     /* input sanity check: */
-    if (s == (TCSha256State_t)0) { return TC_CRYPTO_FAIL; }
+    if (s == (TCSha256State_t)0) {
+        return TC_CRYPTO_FAIL;
+    }
 
     /*
-	 * Setting the initial state values.
-	 * These values correspond to the first 32 bits of the fractional parts
-	 * of the square roots of the first 8 primes: 2, 3, 5, 7, 11, 13, 17
-	 * and 19.
-	 */
+     * Setting the initial state values.
+     * These values correspond to the first 32 bits of the fractional parts
+     * of the square roots of the first 8 primes: 2, 3, 5, 7, 11, 13, 17
+     * and 19.
+     */
     _set((uint8_t *)s, 0x00, sizeof(*s));
     s->iv[0] = 0x6a09e667;
     s->iv[1] = 0xbb67ae85;
@@ -71,8 +73,8 @@ int tc_sha256_update(TCSha256State_t s, const uint8_t *data, size_t datalen) {
         s->leftover[s->leftover_offset++] = *(data++);
         if (s->leftover_offset >= TC_SHA256_BLOCK_SIZE) {
             compress(s->iv, s->leftover);
-            s->leftover_offset  = 0;
-            s->bits_hashed     += (TC_SHA256_BLOCK_SIZE << 3);
+            s->leftover_offset = 0;
+            s->bits_hashed += (TC_SHA256_BLOCK_SIZE << 3);
         }
     }
 
@@ -83,7 +85,9 @@ int tc_sha256_final(uint8_t *digest, TCSha256State_t s) {
     unsigned int i;
 
     /* input sanity check: */
-    if (digest == (uint8_t *)0 || s == (TCSha256State_t)0) { return TC_CRYPTO_FAIL; }
+    if (digest == (uint8_t *)0 || s == (TCSha256State_t)0) {
+        return TC_CRYPTO_FAIL;
+    }
 
     s->bits_hashed += (s->leftover_offset << 3);
 
@@ -112,10 +116,10 @@ int tc_sha256_final(uint8_t *digest, TCSha256State_t s) {
     /* copy the iv out to digest */
     for (i = 0; i < TC_SHA256_STATE_BLOCKS; ++i) {
         unsigned int t = *((unsigned int *)&s->iv[i]);
-        *digest++      = (uint8_t)(t >> 24);
-        *digest++      = (uint8_t)(t >> 16);
-        *digest++      = (uint8_t)(t >> 8);
-        *digest++      = (uint8_t)(t);
+        *digest++ = (uint8_t)(t >> 24);
+        *digest++ = (uint8_t)(t >> 16);
+        *digest++ = (uint8_t)(t >> 8);
+        *digest++ = (uint8_t)(t);
     }
 
     /* destroy the current state */
@@ -148,13 +152,13 @@ static inline unsigned int ROTR(unsigned int a, unsigned int n) {
 #define sigma0(a) (ROTR((a), 7) ^ ROTR((a), 18) ^ ((a) >> 3))
 #define sigma1(a) (ROTR((a), 17) ^ ROTR((a), 19) ^ ((a) >> 10))
 
-#define Ch(a, b, c)  (((a) & (b)) ^ ((~(a)) & (c)))
+#define Ch(a, b, c) (((a) & (b)) ^ ((~(a)) & (c)))
 #define Maj(a, b, c) (((a) & (b)) ^ ((a) & (c)) ^ ((b) & (c)))
 
 static inline unsigned int BigEndian(const uint8_t **c) {
     unsigned int n = 0;
 
-    n  = (((unsigned int)(*((*c)++))) << 24);
+    n = (((unsigned int)(*((*c)++))) << 24);
     n |= ((unsigned int)(*((*c)++)) << 16);
     n |= ((unsigned int)(*((*c)++)) << 8);
     n |= ((unsigned int)(*((*c)++)));
@@ -179,18 +183,18 @@ static void compress(unsigned int *iv, const uint8_t *data) {
     h = iv[7];
 
     for (i = 0; i < 16; ++i) {
-        n  = BigEndian(&data);
-        t1 = work_space[i]  = n;
-        t1                 += h + Sigma1(e) + Ch(e, f, g) + k256[i];
-        t2                  = Sigma0(a) + Maj(a, b, c);
-        h                   = g;
-        g                   = f;
-        f                   = e;
-        e                   = d + t1;
-        d                   = c;
-        c                   = b;
-        b                   = a;
-        a                   = t1 + t2;
+        n = BigEndian(&data);
+        t1 = work_space[i] = n;
+        t1 += h + Sigma1(e) + Ch(e, f, g) + k256[i];
+        t2 = Sigma0(a) + Maj(a, b, c);
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
     }
 
     for (; i < 64; ++i) {
@@ -200,16 +204,16 @@ static void compress(unsigned int *iv, const uint8_t *data) {
         s1 = sigma1(s1);
 
         t1 = work_space[i & 0xf] += s0 + s1 + work_space[(i + 9) & 0xf];
-        t1                       += h + Sigma1(e) + Ch(e, f, g) + k256[i];
-        t2                        = Sigma0(a) + Maj(a, b, c);
-        h                         = g;
-        g                         = f;
-        f                         = e;
-        e                         = d + t1;
-        d                         = c;
-        c                         = b;
-        b                         = a;
-        a                         = t1 + t2;
+        t1 += h + Sigma1(e) + Ch(e, f, g) + k256[i];
+        t2 = Sigma0(a) + Maj(a, b, c);
+        h = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
     }
 
     iv[0] += a;

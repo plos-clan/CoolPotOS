@@ -7,11 +7,11 @@
 #include "term/klog.h"
 
 static uint64_t physical_memory_offset;
-FrameAllocator  frame_allocator;
+FrameAllocator frame_allocator;
 
 uint64_t get_memory_size() {
-    uint64_t                       all_memory_size = 0;
-    boot_memory_map_t *memory_map      = boot_get_memory_map();
+    uint64_t all_memory_size = 0;
+    boot_memory_map_t *memory_map = boot_get_memory_map();
 
     for (uint64_t i = memory_map->entry_count - 1;; i--) {
         struct boot_memory_map_entry region = memory_map->entries[i];
@@ -24,20 +24,26 @@ uint64_t get_memory_size() {
 }
 
 uint64_t mem_parse_size(const char *s) {
-    if (s == NULL) { return UINT64_MAX; }
+    if (s == NULL) {
+        return UINT64_MAX;
+    }
 
-    uint8_t *p     = (uint8_t*)s;
+    uint8_t *p = (uint8_t *)s;
     uint64_t value = 0;
 
     while (isdigit((*p))) {
         int digit = *p - '0';
-        value     = value * 10 + digit;
+        value = value * 10 + digit;
         p++;
     }
-    if (*p == '\0') { return value; }
+    if (*p == '\0') {
+        return value;
+    }
     char suffix = *p;
 
-    if (suffix >= 'a' && suffix <= 'z') { suffix -= ('a' - 'A'); }
+    if (suffix >= 'a' && suffix <= 'z') {
+        suffix -= ('a' - 'A');
+    }
 
     switch (suffix) {
     case 'K':
@@ -49,19 +55,23 @@ uint64_t mem_parse_size(const char *s) {
     case 'G':
         value *= GIGA_FACTOR; // 乘以 1073741824 (2^30)
         break;
-    default: return value;
+    default:
+        return value;
     }
-    if (*(p + 1) != '\0') { return UINT64_MAX; }
+    if (*(p + 1) != '\0') {
+        return UINT64_MAX;
+    }
 
     return value;
 }
 
 void init_frame() {
     physical_memory_offset = boot_get_hhdm_offset();
-    const char    *mem_str = boot_get_cmdline_param("mem");
+    const char *mem_str = boot_get_cmdline_param("mem");
     uint64_t memory_size = 0;
 
-    if(mem_str == NULL) goto Ldefault;
+    if (mem_str == NULL)
+        goto Ldefault;
     if (strcmp(mem_str, "default") != 0) {
         memory_size = mem_parse_size(mem_str);
         memory_size =
@@ -79,22 +89,26 @@ uint64_t get_physical_memory_offset() {
 }
 
 void *phys_to_virt(uint64_t phys_addr) {
-    if (phys_addr == 0) return NULL;
+    if (phys_addr == 0)
+        return NULL;
     return (void *)(phys_addr + physical_memory_offset);
 }
 
 uint64_t virt_to_phys(void *virt_addr) {
-    if (virt_addr == 0) return 0;
+    if (virt_addr == 0)
+        return 0;
     return (uint64_t)(virt_addr - physical_memory_offset);
 }
 
 void *driver_phys_to_virt(uint64_t phys_addr) {
-    if (phys_addr == 0) return NULL;
+    if (phys_addr == 0)
+        return NULL;
     return (void *)(phys_addr + DRIVER_AREA_MEM);
 }
 
 uint64_t driver_virt_to_phys(void *virt_addr) {
-    if (virt_addr == 0) return 0;
+    if (virt_addr == 0)
+        return 0;
     return (uint64_t)(virt_addr - DRIVER_AREA_MEM);
 }
 
@@ -109,21 +123,21 @@ void free_frame(uint64_t addr) {
 }
 
 void free_frames_2M(uint64_t addr) {
-   // buddy_free_frames_2M(addr);
+    // buddy_free_frames_2M(addr);
     frame_allocator.usable_frames += 512;
 }
 
 void free_frames_1G(uint64_t addr) {
-    //buddy_free_frames_1G(addr);
+    // buddy_free_frames_1G(addr);
     frame_allocator.usable_frames += 262144;
 }
 
 uint64_t alloc_frames(size_t count) {
     frame_allocator.usable_frames -= count;
     uintptr_t frame = buddy_alloc_frames(count);
-    if(unlikely(frame == 0)){
+    if (unlikely(frame == 0)) {
         logkf("out of memory for buddy alloc\n");
-        //TODO disable_scheduler
+        // TODO disable_scheduler
         arch_close_interrupt();
         arch_wait_for_interrupt();
     }
@@ -132,10 +146,10 @@ uint64_t alloc_frames(size_t count) {
 
 uint64_t alloc_frames_2M(size_t count) {
     frame_allocator.usable_frames -= 512;
-    return 0;//buddy_alloc_frames_2M(count);
+    return 0; // buddy_alloc_frames_2M(count);
 }
 
 uint64_t alloc_frames_1G(size_t count) {
     frame_allocator.usable_frames -= 262144;
-    return 0;//buddy_alloc_frames_1G(count);
+    return 0; // buddy_alloc_frames_1G(count);
 }

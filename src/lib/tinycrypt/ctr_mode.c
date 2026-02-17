@@ -34,17 +34,18 @@
 #include <lib/tinycrypt/ctr_mode.h>
 #include <lib/tinycrypt/utils.h>
 
-int tc_ctr_mode(uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen,
-                uint8_t *ctr, const TCAesKeySched_t sched) {
+int tc_ctr_mode(
+    uint8_t *out, unsigned int outlen, const uint8_t *in, unsigned int inlen, uint8_t *ctr,
+    const TCAesKeySched_t sched) {
 
-    uint8_t      buffer[TC_AES_BLOCK_SIZE];
-    uint8_t      nonce[TC_AES_BLOCK_SIZE];
+    uint8_t buffer[TC_AES_BLOCK_SIZE];
+    uint8_t nonce[TC_AES_BLOCK_SIZE];
     unsigned int block_num;
     unsigned int i;
 
     /* input sanity check: */
-    if (out == (uint8_t *)0 || in == (uint8_t *)0 || ctr == (uint8_t *)0 ||
-        sched == (TCAesKeySched_t)0 || inlen == 0 || outlen == 0 || outlen != inlen) {
+    if (out == (uint8_t *)0 || in == (uint8_t *)0 || ctr == (uint8_t *)0
+        || sched == (TCAesKeySched_t)0 || inlen == 0 || outlen == 0 || outlen != inlen) {
         return TC_CRYPTO_FAIL;
     }
 

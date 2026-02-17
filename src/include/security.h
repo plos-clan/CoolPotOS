@@ -6,7 +6,7 @@ struct pthread {
     struct pthread *self;
     uintptr_t *dtv;
     struct pthread *prev, *next; /* non-ABI */
-    uintptr_t       sysinfo;
+    uintptr_t sysinfo;
     uintptr_t canary;
 };
 
@@ -15,4 +15,4 @@ struct pthread {
  */
 __attr(always_inline) void init_stack_canary(void);
 
-void test_stack_chk(void) ;
+void test_stack_chk(void);

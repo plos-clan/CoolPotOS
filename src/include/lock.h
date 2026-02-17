@@ -10,7 +10,8 @@ typedef _Atomic volatile bool spin_t;
 #define spin_lock(_spin_)                                                                          \
     ({                                                                                             \
         extern void scheduler_yield();                                                             \
-        while (__atomic_test_and_set(&(_spin_), 5)) {}                                             \
+        while (__atomic_test_and_set(&(_spin_), 5)) {                                              \
+        }                                                                                          \
     })
 #define spin_unlock(_spin_) ({ __atomic_clear(&(_spin_), 5); })
 
@@ -20,9 +21,11 @@ typedef _Atomic volatile bool spin_t;
         loop {                                                                                     \
             usize _i_ = 0;                                                                         \
             for (; _i_ < COUNT(_spins_); _i_++) {                                                  \
-                if (!spin_trylock(_spins_[_i_])) break;                                            \
+                if (!spin_trylock(_spins_[_i_]))                                                   \
+                    break;                                                                         \
             }                                                                                      \
-            if (_i_ == COUNT(_spins_)) break;                                                      \
+            if (_i_ == COUNT(_spins_))                                                             \
+                break;                                                                             \
             for (; _i_ > 0; _i_--) {                                                               \
                 spin_unlock(_spins_[_i_ - 1]);                                                     \
             }                                                                                      \

@@ -8,15 +8,15 @@
 #include "term/klog.h"
 #include "timer.h"
 
-bool     x2apic_mode = false;
+bool x2apic_mode = false;
 uint64_t lapic_address;
 
 uint64_t calibrated_timer_initial = 0;
 
 static struct ioapic_info found_ioapics[MAX_IOAPICS];
-static struct iso_info    found_isos[MAX_ISO];
+static struct iso_info found_isos[MAX_ISO];
 
-static size_t found_iso_count    = 0;
+static size_t found_iso_count = 0;
 static size_t found_ioapic_count = 0;
 
 void disable_pic() {
@@ -39,7 +39,9 @@ void lapic_write(uint32_t reg, uint32_t value) {
 }
 
 uint32_t lapic_read(uint32_t reg) {
-    if (x2apic_mode) { return rdmsr(0x800 + (reg >> 4)); }
+    if (x2apic_mode) {
+        return rdmsr(0x800 + (reg >> 4));
+    }
     return *(volatile uint32_t *)((uint64_t)lapic_address + reg);
 }
 
@@ -61,15 +63,17 @@ static uint32_t ioapic_mmio_read(uintptr_t base, uint32_t reg) {
 uint32_t isa_irq_to_gsi(uint8_t isa_irq) {
     isa_irq -= IRQ_BASE_VECTOR;
     for (size_t i = 0; i < found_iso_count; i++) {
-        if (found_isos[i].irq_source == isa_irq) { return found_isos[i].gsi; }
+        if (found_isos[i].irq_source == isa_irq) {
+            return found_isos[i].gsi;
+        }
     }
     return isa_irq;
 }
 
 static struct ioapic_info *find_ioapic(uint32_t gsi) {
     for (size_t i = 0; i < found_ioapic_count; i++) {
-        if (gsi >= found_ioapics[i].gsi_base &&
-            gsi < found_ioapics[i].gsi_base + found_ioapics[i].irq_count) {
+        if (gsi >= found_ioapics[i].gsi_base
+            && gsi < found_ioapics[i].gsi_base + found_ioapics[i].irq_count) {
             return &found_ioapics[i];
         }
     }
@@ -78,9 +82,10 @@ static struct ioapic_info *find_ioapic(uint32_t gsi) {
 
 void ioapic_add(uint8_t vector, uint32_t irq) {
     struct ioapic_info *io = find_ioapic(isa_irq_to_gsi(vector));
-    if (!io) return;
+    if (!io)
+        return;
 
-    uint32_t irq0     = irq - io->gsi_base;
+    uint32_t irq0 = irq - io->gsi_base;
     uint32_t ioredtbl = 0x10 + irq0 * 2;
     uint64_t redirect = vector | ((uint64_t)lapic_id() << 56);
 
@@ -95,8 +100,8 @@ void ioapic_enable(uint8_t vector) {
         return;
     }
     uint64_t index = 0x10 + ((isa_irq_to_gsi(vector) - ioapic->gsi_base) * 2);
-    uint64_t value = (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index + 1) << 32 |
-                     (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index);
+    uint64_t value = (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index + 1) << 32
+                     | (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index);
     value &= (~0x10000UL);
     ioapic_mmio_write(ioapic->mmio_base, index, (uint32_t)(value & 0xFFFFFFFF));
     ioapic_mmio_write(ioapic->mmio_base, index + 1, (uint32_t)(value >> 32));
@@ -109,8 +114,8 @@ void ioapic_disable(uint8_t vector) {
         return;
     }
     uint64_t index = 0x10 + ((isa_irq_to_gsi(vector) - ioapic->gsi_base) * 2);
-    uint64_t value = (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index + 1) << 32 |
-                     (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index);
+    uint64_t value = (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index + 1) << 32
+                     | (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index);
     value |= 0x10000UL;
     ioapic_mmio_write(ioapic->mmio_base, index, (uint32_t)(value & 0xFFFFFFFF));
     ioapic_mmio_write(ioapic->mmio_base, index + 1, (uint32_t)(value >> 32));
@@ -134,11 +139,12 @@ static void apic_handle_ioapic(ACPI_MADT_IO_APIC *ioapic_madt) {
     page_map_range(get_kernel_pagedir(), mmio_virt, mmio_phys, PAGE_SIZE, KERNEL_PTE_FLAGS);
     ioapic->mmio_base = mmio_virt;
 
-    ioapic->gsi_base  = ioapic_madt->GlobalIrqBase;
+    ioapic->gsi_base = ioapic_madt->GlobalIrqBase;
     ioapic->irq_count = (ioapic_mmio_read(ioapic->mmio_base, 0x01) & 0x00FF0000) >> 16;
 
-    kinfo("IOAPIC found: MMIO %p, GSI base %d, IRQs %d", (void *)ioapic->mmio_base,
-          ioapic->gsi_base, ioapic->irq_count);
+    kinfo(
+        "IOAPIC found: MMIO %p, GSI base %d, IRQs %d", (void *)ioapic->mmio_base, ioapic->gsi_base,
+        ioapic->irq_count);
 
     ioapic->id = ioapic_madt->Id;
 }
@@ -147,13 +153,15 @@ static void apic_handle_override(ACPI_MADT_INTERRUPT_OVERRIDE *override_madt) {
     struct iso_info *override = &found_isos[found_iso_count];
     found_iso_count++;
     override->irq_source = override_madt->SourceIrq;
-    override->gsi        = override_madt->GlobalIrq;
+    override->gsi = override_madt->GlobalIrq;
 }
 
 void local_apic_init() {
-    uint64_t data  = rdmsr(0x1b);
-    data          |= 1UL << 11;
-    if (x2apic_mode) { data |= 1UL << 10; }
+    uint64_t data = rdmsr(0x1b);
+    data |= 1UL << 11;
+    if (x2apic_mode) {
+        data |= 1UL << 10;
+    }
     wrmsr(0x1b, data);
 
     lapic_timer_stop();
@@ -165,8 +173,9 @@ void local_apic_init() {
     uint64_t b = nano_time();
     lapic_write(LAPIC_REG_TIMER_INITCNT, ~((uint32_t)0));
     for (;;)
-        if (nano_time() - b >= 1000000) break;
-    uint64_t lapic_timer     = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
+        if (nano_time() - b >= 1000000)
+            break;
+    uint64_t lapic_timer = (~(uint32_t)0) - lapic_read(LAPIC_REG_TIMER_CURCNT);
     calibrated_timer_initial = (uint64_t)((uint64_t)(lapic_timer * 1000) / SCHED_TIMER_SPEED);
     lapic_write(LAPIC_REG_TIMER, lapic_read(LAPIC_REG_TIMER) | 1 << 17);
     lapic_write(LAPIC_REG_TIMER_INITCNT, calibrated_timer_initial);
@@ -176,9 +185,10 @@ void local_apic_init() {
 }
 
 void ap_local_apic_init() {
-    uint64_t value  = rdmsr(0x1b);
-    value          |= (1UL << 11);
-    if (x2apic_mode) value |= (1UL << 10);
+    uint64_t value = rdmsr(0x1b);
+    value |= (1UL << 11);
+    if (x2apic_mode)
+        value |= (1UL << 10);
     wrmsr(0x1b, value);
 
     lapic_timer_stop();
@@ -192,7 +202,7 @@ void ap_local_apic_init() {
 }
 
 void apic_init() {
-    ACPI_TABLE_MADT  *madt   = NULL;
+    ACPI_TABLE_MADT *madt = NULL;
     const ACPI_STATUS status = AcpiGetTable(ACPI_SIG_MADT, 1, (ACPI_TABLE_HEADER **)&madt);
     if (ACPI_FAILURE(status)) {
         kerror("Failed to get MADT table: %s", AcpiFormatException(status));
@@ -201,9 +211,9 @@ void apic_init() {
 
     lapic_address = (uint64_t)phys_to_virt(madt->Address);
     page_map_range(get_kernel_pagedir(), lapic_address, madt->Address, PAGE_SIZE, KERNEL_PTE_FLAGS);
-    x2apic_mode                    = x2apic_mode_supported();
+    x2apic_mode = x2apic_mode_supported();
     ACPI_SUBTABLE_HEADER *subtable = (ACPI_SUBTABLE_HEADER *)(madt + 1);
-    uintptr_t             end      = (uintptr_t)madt + madt->Header.Length;
+    uintptr_t end = (uintptr_t)madt + madt->Header.Length;
     while ((uintptr_t)subtable < end) {
         switch (subtable->Type) {
         case ACPI_MADT_TYPE_IO_APIC:;
@@ -214,7 +224,8 @@ void apic_init() {
             ACPI_MADT_INTERRUPT_OVERRIDE *iso = (ACPI_MADT_INTERRUPT_OVERRIDE *)subtable;
             apic_handle_override(iso);
             break;
-        default: break;
+        default:
+            break;
         }
         subtable = (ACPI_SUBTABLE_HEADER *)((char *)subtable + subtable->Length);
     }
@@ -224,19 +235,22 @@ void apic_init() {
 }
 
 int64_t apic_mask(uint64_t irq, uint64_t flags) {
-    if (flags & IRQ_FLAGS_MSIX) return 0;
+    if (flags & IRQ_FLAGS_MSIX)
+        return 0;
     ioapic_disable((uint8_t)irq);
     return 0;
 }
 
 int64_t apic_unmask(uint64_t irq, uint64_t flags) {
-    if (flags & IRQ_FLAGS_MSIX) return 0;
+    if (flags & IRQ_FLAGS_MSIX)
+        return 0;
     ioapic_enable((uint8_t)irq);
     return 0;
 }
 
 int64_t apic_install(uint64_t vector, uint64_t irq, uint64_t flags) {
-    if (flags & IRQ_FLAGS_MSIX) return 0;
+    if (flags & IRQ_FLAGS_MSIX)
+        return 0;
     ioapic_add(vector, irq);
     return 0;
 }
@@ -248,8 +262,8 @@ int64_t apic_ack(uint64_t irq) {
 
 // export 供initctl 用
 intctl_t apic_controller = {
-    ._mask    = apic_mask,
-    ._unmask  = apic_unmask,
+    ._mask = apic_mask,
+    ._unmask = apic_unmask,
     ._install = apic_install,
     .send_eoi = apic_ack,
 };

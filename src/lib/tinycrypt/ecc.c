@@ -105,8 +105,9 @@ static wordcount_t vli_numDigits(const uECC_word_t *vli, const wordcount_t max_w
 
     wordcount_t i;
     /* Search from the end until we find a non-zero digit. We do it in reverse
-	 * because we expect that most digits will be nonzero. */
-    for (i = max_words - 1; i >= 0 && vli[i] == 0; --i) {}
+     * because we expect that most digits will be nonzero. */
+    for (i = max_words - 1; i >= 0 && vli[i] == 0; --i) {
+    }
 
     return (i + 1);
 }
@@ -117,7 +118,9 @@ bitcount_t uECC_vli_numBits(const uECC_word_t *vli, const wordcount_t max_words)
     uECC_word_t digit;
 
     wordcount_t num_digits = vli_numDigits(vli, max_words);
-    if (num_digits == 0) { return 0; }
+    if (num_digits == 0) {
+        return 0;
+    }
 
     digit = vli[num_digits - 1];
     for (i = 0; digit; ++i) {
@@ -135,8 +138,8 @@ void uECC_vli_set(uECC_word_t *dest, const uECC_word_t *src, wordcount_t num_wor
     }
 }
 
-cmpresult_t uECC_vli_cmp_unsafe(const uECC_word_t *left, const uECC_word_t *right,
-                                wordcount_t num_words) {
+cmpresult_t
+uECC_vli_cmp_unsafe(const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words) {
     wordcount_t i;
 
     for (i = num_words - 1; i >= 0; --i) {
@@ -149,8 +152,8 @@ cmpresult_t uECC_vli_cmp_unsafe(const uECC_word_t *left, const uECC_word_t *righ
     return 0;
 }
 
-uECC_word_t uECC_vli_equal(const uECC_word_t *left, const uECC_word_t *right,
-                           wordcount_t num_words) {
+uECC_word_t
+uECC_vli_equal(const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words) {
 
     uECC_word_t diff = 0;
     wordcount_t i;
@@ -167,14 +170,14 @@ uECC_word_t cond_set(uECC_word_t p_true, uECC_word_t p_false, unsigned int cond)
 
 /* Computes result = left - right, returning borrow, in constant time.
  * Can modify in place. */
-uECC_word_t uECC_vli_sub(uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right,
-                         wordcount_t num_words) {
+uECC_word_t uECC_vli_sub(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words) {
     uECC_word_t borrow = 0;
     wordcount_t i;
     for (i = 0; i < num_words; ++i) {
         uECC_word_t diff = left[i] - right[i] - borrow;
-        uECC_word_t val  = (diff > left[i]);
-        borrow           = cond_set(val, borrow, (diff != left[i]));
+        uECC_word_t val = (diff > left[i]);
+        borrow = cond_set(val, borrow, (diff != left[i]));
 
         result[i] = diff;
     }
@@ -183,53 +186,53 @@ uECC_word_t uECC_vli_sub(uECC_word_t *result, const uECC_word_t *left, const uEC
 
 /* Computes result = left + right, returning carry, in constant time.
  * Can modify in place. */
-static uECC_word_t uECC_vli_add(uECC_word_t *result, const uECC_word_t *left,
-                                const uECC_word_t *right, wordcount_t num_words) {
+static uECC_word_t uECC_vli_add(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words) {
     uECC_word_t carry = 0;
     wordcount_t i;
     for (i = 0; i < num_words; ++i) {
         uECC_word_t sum = left[i] + right[i] + carry;
         uECC_word_t val = (sum < left[i]);
-        carry           = cond_set(val, carry, (sum != left[i]));
-        result[i]       = sum;
+        carry = cond_set(val, carry, (sum != left[i]));
+        result[i] = sum;
     }
     return carry;
 }
 
 cmpresult_t uECC_vli_cmp(const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words) {
     uECC_word_t tmp[NUM_ECC_WORDS];
-    uECC_word_t neg   = !!uECC_vli_sub(tmp, left, right, num_words);
+    uECC_word_t neg = !!uECC_vli_sub(tmp, left, right, num_words);
     uECC_word_t equal = uECC_vli_isZero(tmp, num_words);
     return (!equal - 2 * neg);
 }
 
 /* Computes vli = vli >> 1. */
 static void uECC_vli_rshift1(uECC_word_t *vli, wordcount_t num_words) {
-    uECC_word_t *end   = vli;
-    uECC_word_t  carry = 0;
+    uECC_word_t *end = vli;
+    uECC_word_t carry = 0;
 
     vli += num_words;
     while (vli-- > end) {
         uECC_word_t temp = *vli;
-        *vli             = (temp >> 1) | carry;
-        carry            = temp << (uECC_WORD_BITS - 1);
+        *vli = (temp >> 1) | carry;
+        carry = temp << (uECC_WORD_BITS - 1);
     }
 }
 
-static void muladd(uECC_word_t a, uECC_word_t b, uECC_word_t *r0, uECC_word_t *r1,
-                   uECC_word_t *r2) {
+static void
+muladd(uECC_word_t a, uECC_word_t b, uECC_word_t *r0, uECC_word_t *r1, uECC_word_t *r2) {
 
-    uECC_dword_t p    = (uECC_dword_t)a * b;
-    uECC_dword_t r01  = ((uECC_dword_t)(*r1) << uECC_WORD_BITS) | *r0;
-    r01              += p;
-    *r2              += (r01 < p);
-    *r1               = r01 >> uECC_WORD_BITS;
-    *r0               = (uECC_word_t)r01;
+    uECC_dword_t p = (uECC_dword_t)a * b;
+    uECC_dword_t r01 = ((uECC_dword_t)(*r1) << uECC_WORD_BITS) | *r0;
+    r01 += p;
+    *r2 += (r01 < p);
+    *r1 = r01 >> uECC_WORD_BITS;
+    *r0 = (uECC_word_t)r01;
 }
 
 /* Computes result = left * right. Result must be 2 * num_words long. */
-static void uECC_vli_mult(uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right,
-                          wordcount_t num_words) {
+static void uECC_vli_mult(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, wordcount_t num_words) {
 
     uECC_word_t r0 = 0;
     uECC_word_t r1 = 0;
@@ -244,9 +247,9 @@ static void uECC_vli_mult(uECC_word_t *result, const uECC_word_t *left, const uE
         }
 
         result[k] = r0;
-        r0        = r1;
-        r1        = r2;
-        r2        = 0;
+        r0 = r1;
+        r1 = r2;
+        r2 = 0;
     }
 
     for (k = num_words; k < num_words * 2 - 1; ++k) {
@@ -255,52 +258,54 @@ static void uECC_vli_mult(uECC_word_t *result, const uECC_word_t *left, const uE
             muladd(left[i], right[k - i], &r0, &r1, &r2);
         }
         result[k] = r0;
-        r0        = r1;
-        r1        = r2;
-        r2        = 0;
+        r0 = r1;
+        r1 = r2;
+        r2 = 0;
     }
     result[num_words * 2 - 1] = r0;
 }
 
-void uECC_vli_modAdd(uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right,
-                     const uECC_word_t *mod, wordcount_t num_words) {
+void uECC_vli_modAdd(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, const uECC_word_t *mod,
+    wordcount_t num_words) {
     uECC_word_t carry = uECC_vli_add(result, left, right, num_words);
     if (carry || uECC_vli_cmp_unsafe(mod, result, num_words) != 1) {
         /* result > mod (result = mod + remainder), so subtract mod to get
-	 * remainder. */
+         * remainder. */
         uECC_vli_sub(result, result, mod, num_words);
     }
 }
 
-void uECC_vli_modSub(uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right,
-                     const uECC_word_t *mod, wordcount_t num_words) {
+void uECC_vli_modSub(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, const uECC_word_t *mod,
+    wordcount_t num_words) {
     uECC_word_t l_borrow = uECC_vli_sub(result, left, right, num_words);
     if (l_borrow) {
         /* In this case, result == -diff == (max int) - diff. Since -x % d == d - x,
-		 * we can get the correct result from result + mod (with overflow). */
+         * we can get the correct result from result + mod (with overflow). */
         uECC_vli_add(result, result, mod, num_words);
     }
 }
 
 /* Computes result = product % mod, where product is 2N words long. */
 /* Currently only designed to work for curve_p or curve_n. */
-void uECC_vli_mmod(uECC_word_t *result, uECC_word_t *product, const uECC_word_t *mod,
-                   wordcount_t num_words) {
-    uECC_word_t  mod_multiple[2 * NUM_ECC_WORDS];
-    uECC_word_t  tmp[2 * NUM_ECC_WORDS];
+void uECC_vli_mmod(
+    uECC_word_t *result, uECC_word_t *product, const uECC_word_t *mod, wordcount_t num_words) {
+    uECC_word_t mod_multiple[2 * NUM_ECC_WORDS];
+    uECC_word_t tmp[2 * NUM_ECC_WORDS];
     uECC_word_t *v[2] = {tmp, product};
-    uECC_word_t  index;
+    uECC_word_t index;
 
     /* Shift mod so its highest set bit is at the maximum position. */
-    bitcount_t  shift      = (num_words * 2 * uECC_WORD_BITS) - uECC_vli_numBits(mod, num_words);
+    bitcount_t shift = (num_words * 2 * uECC_WORD_BITS) - uECC_vli_numBits(mod, num_words);
     wordcount_t word_shift = shift / uECC_WORD_BITS;
-    wordcount_t bit_shift  = shift % uECC_WORD_BITS;
-    uECC_word_t carry      = 0;
+    wordcount_t bit_shift = shift % uECC_WORD_BITS;
+    uECC_word_t carry = 0;
     uECC_vli_clear(mod_multiple, word_shift);
     if (bit_shift > 0) {
         for (index = 0; index < (uECC_word_t)num_words; ++index) {
             mod_multiple[word_shift + index] = (mod[index] << bit_shift) | carry;
-            carry                            = mod[index] >> (uECC_WORD_BITS - bit_shift);
+            carry = mod[index] >> (uECC_WORD_BITS - bit_shift);
         }
     } else {
         uECC_vli_set(mod_multiple + word_shift, mod, num_words);
@@ -311,7 +316,9 @@ void uECC_vli_mmod(uECC_word_t *result, uECC_word_t *product, const uECC_word_t 
         wordcount_t i;
         for (i = 0; i < num_words * 2; ++i) {
             uECC_word_t diff = v[index][i] - mod_multiple[i] - borrow;
-            if (diff != v[index][i]) { borrow = (diff > v[index][i]); }
+            if (diff != v[index][i]) {
+                borrow = (diff > v[index][i]);
+            }
             v[1 - index][i] = diff;
         }
         /* Swap the index if there was no borrow */
@@ -323,23 +330,24 @@ void uECC_vli_mmod(uECC_word_t *result, uECC_word_t *product, const uECC_word_t 
     uECC_vli_set(result, v[index], num_words);
 }
 
-void uECC_vli_modMult(uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right,
-                      const uECC_word_t *mod, wordcount_t num_words) {
+void uECC_vli_modMult(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, const uECC_word_t *mod,
+    wordcount_t num_words) {
     uECC_word_t product[2 * NUM_ECC_WORDS];
     uECC_vli_mult(product, left, right, num_words);
     uECC_vli_mmod(result, product, mod, num_words);
 }
 
-void uECC_vli_modMult_fast(uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right,
-                           uECC_Curve curve) {
+void uECC_vli_modMult_fast(
+    uECC_word_t *result, const uECC_word_t *left, const uECC_word_t *right, uECC_Curve curve) {
     uECC_word_t product[2 * NUM_ECC_WORDS];
     uECC_vli_mult(product, left, right, curve->num_words);
 
     curve->mmod_fast(result, product);
 }
 
-static void uECC_vli_modSquare_fast(uECC_word_t *result, const uECC_word_t *left,
-                                    uECC_Curve curve) {
+static void
+uECC_vli_modSquare_fast(uECC_word_t *result, const uECC_word_t *left, uECC_Curve curve) {
     uECC_vli_modMult_fast(result, left, left, curve);
 }
 
@@ -349,13 +357,17 @@ static void vli_modInv_update(uECC_word_t *uv, const uECC_word_t *mod, wordcount
 
     uECC_word_t carry = 0;
 
-    if (!EVEN(uv)) { carry = uECC_vli_add(uv, uv, mod, num_words); }
+    if (!EVEN(uv)) {
+        carry = uECC_vli_add(uv, uv, mod, num_words);
+    }
     uECC_vli_rshift1(uv, num_words);
-    if (carry) { uv[num_words - 1] |= HIGH_BIT_SET; }
+    if (carry) {
+        uv[num_words - 1] |= HIGH_BIT_SET;
+    }
 }
 
-void uECC_vli_modInv(uECC_word_t *result, const uECC_word_t *input, const uECC_word_t *mod,
-                     wordcount_t num_words) {
+void uECC_vli_modInv(
+    uECC_word_t *result, const uECC_word_t *input, const uECC_word_t *mod, wordcount_t num_words) {
     uECC_word_t a[NUM_ECC_WORDS], b[NUM_ECC_WORDS];
     uECC_word_t u[NUM_ECC_WORDS], v[NUM_ECC_WORDS];
     cmpresult_t cmpResult;
@@ -380,13 +392,17 @@ void uECC_vli_modInv(uECC_word_t *result, const uECC_word_t *input, const uECC_w
         } else if (cmpResult > 0) {
             uECC_vli_sub(a, a, b, num_words);
             uECC_vli_rshift1(a, num_words);
-            if (uECC_vli_cmp_unsafe(u, v, num_words) < 0) { uECC_vli_add(u, u, mod, num_words); }
+            if (uECC_vli_cmp_unsafe(u, v, num_words) < 0) {
+                uECC_vli_add(u, u, mod, num_words);
+            }
             uECC_vli_sub(u, u, v, num_words);
             vli_modInv_update(u, mod, num_words);
         } else {
             uECC_vli_sub(b, b, a, num_words);
             uECC_vli_rshift1(b, num_words);
-            if (uECC_vli_cmp_unsafe(v, u, num_words) < 0) { uECC_vli_add(v, v, mod, num_words); }
+            if (uECC_vli_cmp_unsafe(v, u, num_words) < 0) {
+                uECC_vli_add(v, v, mod, num_words);
+            }
             uECC_vli_sub(v, v, u, num_words);
             vli_modInv_update(v, mod, num_words);
         }
@@ -402,7 +418,9 @@ void double_jacobian_default(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *Z1, 
     uECC_word_t t5[NUM_ECC_WORDS];
     wordcount_t num_words = curve->num_words;
 
-    if (uECC_vli_isZero(Z1, num_words)) { return; }
+    if (uECC_vli_isZero(Z1, num_words)) {
+        return;
+    }
 
     uECC_vli_modSquare_fast(t4, Y1, curve);   /* t4 = y1^2 */
     uECC_vli_modMult_fast(t5, X1, t4, curve); /* t5 = x1*y1^2 = A */
@@ -441,7 +459,7 @@ void double_jacobian_default(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *Z1, 
 
 void x_side_default(uECC_word_t *result, const uECC_word_t *x, uECC_Curve curve) {
     uECC_word_t _3[NUM_ECC_WORDS] = {3}; /* -a = 3 */
-    wordcount_t num_words         = curve->num_words;
+    wordcount_t num_words = curve->num_words;
 
     uECC_vli_modSquare_fast(result, x, curve);                /* r = x^2 */
     uECC_vli_modSub(result, result, _3, curve->p, num_words); /* r = x^2 - 3 */
@@ -456,90 +474,90 @@ uECC_Curve uECC_secp256r1(void) {
 
 void vli_mmod_fast_secp256r1(unsigned int *result, unsigned int *product) {
     unsigned int tmp[NUM_ECC_WORDS];
-    int          carry;
+    int carry;
 
     /* t */
     uECC_vli_set(result, product, NUM_ECC_WORDS);
 
     /* s1 */
-    tmp[0] = tmp[1] = tmp[2]  = 0;
-    tmp[3]                    = product[11];
-    tmp[4]                    = product[12];
-    tmp[5]                    = product[13];
-    tmp[6]                    = product[14];
-    tmp[7]                    = product[15];
-    carry                     = uECC_vli_add(tmp, tmp, tmp, NUM_ECC_WORDS);
-    carry                    += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
+    tmp[0] = tmp[1] = tmp[2] = 0;
+    tmp[3] = product[11];
+    tmp[4] = product[12];
+    tmp[5] = product[13];
+    tmp[6] = product[14];
+    tmp[7] = product[15];
+    carry = uECC_vli_add(tmp, tmp, tmp, NUM_ECC_WORDS);
+    carry += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
 
     /* s2 */
-    tmp[3]  = product[12];
-    tmp[4]  = product[13];
-    tmp[5]  = product[14];
-    tmp[6]  = product[15];
-    tmp[7]  = 0;
-    carry  += uECC_vli_add(tmp, tmp, tmp, NUM_ECC_WORDS);
-    carry  += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
+    tmp[3] = product[12];
+    tmp[4] = product[13];
+    tmp[5] = product[14];
+    tmp[6] = product[15];
+    tmp[7] = 0;
+    carry += uECC_vli_add(tmp, tmp, tmp, NUM_ECC_WORDS);
+    carry += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
 
     /* s3 */
     tmp[0] = product[8];
     tmp[1] = product[9];
     tmp[2] = product[10];
-    tmp[3] = tmp[4] = tmp[5]  = 0;
-    tmp[6]                    = product[14];
-    tmp[7]                    = product[15];
-    carry                    += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
+    tmp[3] = tmp[4] = tmp[5] = 0;
+    tmp[6] = product[14];
+    tmp[7] = product[15];
+    carry += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
 
     /* s4 */
-    tmp[0]  = product[9];
-    tmp[1]  = product[10];
-    tmp[2]  = product[11];
-    tmp[3]  = product[13];
-    tmp[4]  = product[14];
-    tmp[5]  = product[15];
-    tmp[6]  = product[13];
-    tmp[7]  = product[8];
-    carry  += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
+    tmp[0] = product[9];
+    tmp[1] = product[10];
+    tmp[2] = product[11];
+    tmp[3] = product[13];
+    tmp[4] = product[14];
+    tmp[5] = product[15];
+    tmp[6] = product[13];
+    tmp[7] = product[8];
+    carry += uECC_vli_add(result, result, tmp, NUM_ECC_WORDS);
 
     /* d1 */
     tmp[0] = product[11];
     tmp[1] = product[12];
     tmp[2] = product[13];
-    tmp[3] = tmp[4] = tmp[5]  = 0;
-    tmp[6]                    = product[8];
-    tmp[7]                    = product[10];
-    carry                    -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
+    tmp[3] = tmp[4] = tmp[5] = 0;
+    tmp[6] = product[8];
+    tmp[7] = product[10];
+    carry -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
 
     /* d2 */
     tmp[0] = product[12];
     tmp[1] = product[13];
     tmp[2] = product[14];
     tmp[3] = product[15];
-    tmp[4] = tmp[5]  = 0;
-    tmp[6]           = product[9];
-    tmp[7]           = product[11];
-    carry           -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
+    tmp[4] = tmp[5] = 0;
+    tmp[6] = product[9];
+    tmp[7] = product[11];
+    carry -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
 
     /* d3 */
-    tmp[0]  = product[13];
-    tmp[1]  = product[14];
-    tmp[2]  = product[15];
-    tmp[3]  = product[8];
-    tmp[4]  = product[9];
-    tmp[5]  = product[10];
-    tmp[6]  = 0;
-    tmp[7]  = product[12];
-    carry  -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
+    tmp[0] = product[13];
+    tmp[1] = product[14];
+    tmp[2] = product[15];
+    tmp[3] = product[8];
+    tmp[4] = product[9];
+    tmp[5] = product[10];
+    tmp[6] = 0;
+    tmp[7] = product[12];
+    carry -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
 
     /* d4 */
-    tmp[0]  = product[14];
-    tmp[1]  = product[15];
-    tmp[2]  = 0;
-    tmp[3]  = product[9];
-    tmp[4]  = product[10];
-    tmp[5]  = product[11];
-    tmp[6]  = 0;
-    tmp[7]  = product[13];
-    carry  -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
+    tmp[0] = product[14];
+    tmp[1] = product[15];
+    tmp[2] = 0;
+    tmp[3] = product[9];
+    tmp[4] = product[10];
+    tmp[5] = product[11];
+    tmp[6] = 0;
+    tmp[7] = product[13];
+    carry -= uECC_vli_sub(result, result, tmp, NUM_ECC_WORDS);
 
     if (carry < 0) {
         do {
@@ -566,8 +584,9 @@ void apply_z(uECC_word_t *X1, uECC_word_t *Y1, const uECC_word_t *const Z, uECC_
 }
 
 /* P = (x1, y1) => 2P, (x2, y2) => P' */
-static void XYcZ_initial_double(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2,
-                                const uECC_word_t *const initial_Z, uECC_Curve curve) {
+static void XYcZ_initial_double(
+    uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2,
+    const uECC_word_t *const initial_Z, uECC_Curve curve) {
     uECC_word_t z[NUM_ECC_WORDS];
     wordcount_t num_words = curve->num_words;
     if (initial_Z) {
@@ -585,8 +604,8 @@ static void XYcZ_initial_double(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X
     apply_z(X2, Y2, z, curve);
 }
 
-void XYcZ_add(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2,
-              uECC_Curve curve) {
+void XYcZ_add(
+    uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2, uECC_Curve curve) {
     /* t1 = X1, t2 = Y1, t3 = X2, t4 = Y2 */
     uECC_word_t t5[NUM_ECC_WORDS];
     wordcount_t num_words = curve->num_words;
@@ -613,8 +632,8 @@ void XYcZ_add(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2
    Output P + Q = (x3, y3, Z3), P - Q = (x3', y3', Z3)
    or P => P - Q, Q => P + Q
  */
-static void XYcZ_addC(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2,
-                      uECC_Curve curve) {
+static void
+XYcZ_addC(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_word_t *Y2, uECC_Curve curve) {
     /* t1 = X1, t2 = Y1, t3 = X2, t4 = Y2 */
     uECC_word_t t5[NUM_ECC_WORDS];
     uECC_word_t t6[NUM_ECC_WORDS];
@@ -649,13 +668,14 @@ static void XYcZ_addC(uECC_word_t *X1, uECC_word_t *Y1, uECC_word_t *X2, uECC_wo
     uECC_vli_set(X1, t7, num_words);
 }
 
-void EccPoint_mult(uECC_word_t *result, const uECC_word_t *point, const uECC_word_t *scalar,
-                   const uECC_word_t *initial_Z, bitcount_t num_bits, uECC_Curve curve) {
+void EccPoint_mult(
+    uECC_word_t *result, const uECC_word_t *point, const uECC_word_t *scalar,
+    const uECC_word_t *initial_Z, bitcount_t num_bits, uECC_Curve curve) {
     /* R0 and R1 */
     uECC_word_t Rx[2][NUM_ECC_WORDS];
     uECC_word_t Ry[2][NUM_ECC_WORDS];
     uECC_word_t z[NUM_ECC_WORDS];
-    bitcount_t  i;
+    bitcount_t i;
     uECC_word_t nb;
     wordcount_t num_words = curve->num_words;
 
@@ -691,37 +711,39 @@ void EccPoint_mult(uECC_word_t *result, const uECC_word_t *point, const uECC_wor
     uECC_vli_set(result + num_words, Ry[0], num_words);
 }
 
-uECC_word_t regularize_k(const uECC_word_t *const k, uECC_word_t *k0, uECC_word_t *k1,
-                         uECC_Curve curve) {
+uECC_word_t
+regularize_k(const uECC_word_t *const k, uECC_word_t *k0, uECC_word_t *k1, uECC_Curve curve) {
 
     wordcount_t num_n_words = BITS_TO_WORDS(curve->num_n_bits);
 
     bitcount_t num_n_bits = curve->num_n_bits;
 
-    uECC_word_t carry = uECC_vli_add(k0, k, curve->n, num_n_words) ||
-                        (num_n_bits < ((bitcount_t)num_n_words * uECC_WORD_SIZE * 8) &&
-                         uECC_vli_testBit(k0, num_n_bits));
+    uECC_word_t carry = uECC_vli_add(k0, k, curve->n, num_n_words)
+                        || (num_n_bits < ((bitcount_t)num_n_words * uECC_WORD_SIZE * 8)
+                            && uECC_vli_testBit(k0, num_n_bits));
 
     uECC_vli_add(k1, k0, curve->n, num_n_words);
 
     return carry;
 }
 
-uECC_word_t EccPoint_compute_public_key(uECC_word_t *result, uECC_word_t *private_key,
-                                        uECC_Curve curve) {
+uECC_word_t
+EccPoint_compute_public_key(uECC_word_t *result, uECC_word_t *private_key, uECC_Curve curve) {
 
-    uECC_word_t  tmp1[NUM_ECC_WORDS];
-    uECC_word_t  tmp2[NUM_ECC_WORDS];
+    uECC_word_t tmp1[NUM_ECC_WORDS];
+    uECC_word_t tmp2[NUM_ECC_WORDS];
     uECC_word_t *p2[2] = {tmp1, tmp2};
-    uECC_word_t  carry;
+    uECC_word_t carry;
 
     /* Regularize the bitcount for the private key so that attackers cannot
-	 * use a side channel attack to learn the number of leading zeros. */
+     * use a side channel attack to learn the number of leading zeros. */
     carry = regularize_k(private_key, tmp1, tmp2, curve);
 
     EccPoint_mult(result, curve->G, p2[!carry], 0, curve->num_n_bits + 1, curve);
 
-    if (EccPoint_isZero(result, curve)) { return 0; }
+    if (EccPoint_isZero(result, curve)) {
+        return 0;
+    }
     return 1;
 }
 
@@ -730,7 +752,7 @@ void uECC_vli_nativeToBytes(uint8_t *bytes, int num_bytes, const unsigned int *n
     wordcount_t i;
     for (i = 0; i < num_bytes; ++i) {
         unsigned b = num_bytes - 1 - i;
-        bytes[i]   = native[b / uECC_WORD_SIZE] >> (8 * (b % uECC_WORD_SIZE));
+        bytes[i] = native[b / uECC_WORD_SIZE] >> (8 * (b % uECC_WORD_SIZE));
     }
 }
 
@@ -739,7 +761,7 @@ void uECC_vli_bytesToNative(unsigned int *native, const uint8_t *bytes, int num_
     wordcount_t i;
     uECC_vli_clear(native, (num_bytes + (uECC_WORD_SIZE - 1)) / uECC_WORD_SIZE);
     for (i = 0; i < num_bytes; ++i) {
-        unsigned b                  = num_bytes - 1 - i;
+        unsigned b = num_bytes - 1 - i;
         native[b / uECC_WORD_SIZE] |= (uECC_word_t)bytes[i] << (8 * (b % uECC_WORD_SIZE));
     }
 }
@@ -747,12 +769,16 @@ void uECC_vli_bytesToNative(unsigned int *native, const uint8_t *bytes, int num_
 int uECC_generate_random_int(uECC_word_t *random, const uECC_word_t *top, wordcount_t num_words) {
     uECC_word_t mask = (uECC_word_t)-1;
     uECC_word_t tries;
-    bitcount_t  num_bits = uECC_vli_numBits(top, num_words);
+    bitcount_t num_bits = uECC_vli_numBits(top, num_words);
 
-    if (!g_rng_function) { return 0; }
+    if (!g_rng_function) {
+        return 0;
+    }
 
     for (tries = 0; tries < uECC_RNG_MAX_TRIES; ++tries) {
-        if (!g_rng_function((uint8_t *)random, num_words * uECC_WORD_SIZE)) { return 0; }
+        if (!g_rng_function((uint8_t *)random, num_words * uECC_WORD_SIZE)) {
+            return 0;
+        }
         random[num_words - 1] &= mask >> ((bitcount_t)(num_words * uECC_WORD_SIZE * 8 - num_bits));
         if (!uECC_vli_isZero(random, num_words) && uECC_vli_cmp(top, random, num_words) == 1) {
             return 1;
@@ -767,11 +793,13 @@ int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve) {
     wordcount_t num_words = curve->num_words;
 
     /* The point at infinity is invalid. */
-    if (EccPoint_isZero(point, curve)) { return -1; }
+    if (EccPoint_isZero(point, curve)) {
+        return -1;
+    }
 
     /* x and y must be smaller than p. */
-    if (uECC_vli_cmp_unsafe(curve->p, point, num_words) != 1 ||
-        uECC_vli_cmp_unsafe(curve->p, point + num_words, num_words) != 1) {
+    if (uECC_vli_cmp_unsafe(curve->p, point, num_words) != 1
+        || uECC_vli_cmp_unsafe(curve->p, point + num_words, num_words) != 1) {
         return -2;
     }
 
@@ -779,7 +807,8 @@ int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve) {
     curve->x_side(tmp2, point, curve); /* tmp2 = x^3 + ax + b */
 
     /* Make sure that y^2 == x^3 + ax + b */
-    if (uECC_vli_equal(tmp1, tmp2, num_words) != 0) return -3;
+    if (uECC_vli_equal(tmp1, tmp2, num_words) != 0)
+        return -3;
 
     return 0;
 }
@@ -789,10 +818,12 @@ int uECC_valid_public_key(const uint8_t *public_key, uECC_Curve curve) {
     uECC_word_t _public[NUM_ECC_WORDS * 2];
 
     uECC_vli_bytesToNative(_public, public_key, curve->num_bytes);
-    uECC_vli_bytesToNative(_public + curve->num_words, public_key + curve->num_bytes,
-                           curve->num_bytes);
+    uECC_vli_bytesToNative(
+        _public + curve->num_words, public_key + curve->num_bytes, curve->num_bytes);
 
-    if (uECC_vli_cmp_unsafe(_public, curve->G, NUM_ECC_WORDS * 2) == 0) { return -4; }
+    if (uECC_vli_cmp_unsafe(_public, curve->G, NUM_ECC_WORDS * 2) == 0) {
+        return -4;
+    }
 
     return uECC_valid_point(_public, curve);
 }
@@ -805,15 +836,21 @@ int uECC_compute_public_key(const uint8_t *private_key, uint8_t *public_key, uEC
     uECC_vli_bytesToNative(_private, private_key, BITS_TO_BYTES(curve->num_n_bits));
 
     /* Make sure the private key is in the range [1, n-1]. */
-    if (uECC_vli_isZero(_private, BITS_TO_WORDS(curve->num_n_bits))) { return 0; }
+    if (uECC_vli_isZero(_private, BITS_TO_WORDS(curve->num_n_bits))) {
+        return 0;
+    }
 
-    if (uECC_vli_cmp(curve->n, _private, BITS_TO_WORDS(curve->num_n_bits)) != 1) { return 0; }
+    if (uECC_vli_cmp(curve->n, _private, BITS_TO_WORDS(curve->num_n_bits)) != 1) {
+        return 0;
+    }
 
     /* Compute public key. */
-    if (!EccPoint_compute_public_key(_public, _private, curve)) { return 0; }
+    if (!EccPoint_compute_public_key(_public, _private, curve)) {
+        return 0;
+    }
 
     uECC_vli_nativeToBytes(public_key, curve->num_bytes, _public);
-    uECC_vli_nativeToBytes(public_key + curve->num_bytes, curve->num_bytes,
-                           _public + curve->num_words);
+    uECC_vli_nativeToBytes(
+        public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words);
     return 1;
 }

@@ -9,7 +9,8 @@ size_t proc_cmdline_read(proc_handle_t *handle, void *addr, size_t offset, size_
     size_t cmd_len = strlen(get_kernel_cmdline());
     size_t fs_size = cmd_len + 1;
     if (offset < fs_size) {
-        if (size > fs_size) size = fs_size;
+        if (size > fs_size)
+            size = fs_size;
         if (offset < cmd_len) {
             size_t copy_len = size;
             if (offset + copy_len > cmd_len) {

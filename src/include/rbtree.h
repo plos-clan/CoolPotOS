@@ -1,6 +1,5 @@
 #pragma once
 
-
 #if defined(container_of)
 #    undef container_of
 #    define container_of(ptr, type, member)                                                        \
@@ -32,7 +31,7 @@
 
 struct rb_node {
     unsigned long rb_parent_color;
-#define RB_RED   0
+#define RB_RED 0
 #define RB_BLACK 1
     struct rb_node *rb_right;
     struct rb_node *rb_left;
@@ -42,9 +41,9 @@ struct rb_root {
     struct rb_node *rb_node;
 };
 
-#define rb_parent(r)   ((struct rb_node *)((r)->rb_parent_color & ~3))
-#define rb_color(r)    ((r)->rb_parent_color & 1)
-#define rb_is_red(r)   (!rb_color(r))
+#define rb_parent(r) ((struct rb_node *)((r)->rb_parent_color & ~3))
+#define rb_color(r) ((r)->rb_parent_color & 1)
+#define rb_is_red(r) (!rb_color(r))
 #define rb_is_black(r) rb_color(r)
 #define rb_set_red(r)                                                                              \
     do {                                                                                           \
@@ -75,8 +74,8 @@ static inline void rb_set_color(struct rb_node *rb, int color) {
 
 static inline void rb_init_node(struct rb_node *rb) {
     rb->rb_parent_color = 0;
-    rb->rb_right        = NULL;
-    rb->rb_left         = NULL;
+    rb->rb_right = NULL;
+    rb->rb_left = NULL;
     RB_CLEAR_NODE(rb);
 }
 
@@ -104,8 +103,8 @@ extern void rb_replace_node(struct rb_node *victim, struct rb_node *new, struct 
 
 extern void rb_traverse_with_callback(struct rb_root *root, void (*cb)(struct rb_node *));
 
-static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
-                                struct rb_node **rb_link) {
+static inline void
+rb_link_node(struct rb_node *node, struct rb_node *parent, struct rb_node **rb_link) {
     node->rb_parent_color = (unsigned long)parent;
     node->rb_left = node->rb_right = NULL;
 

@@ -95,6 +95,22 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(kernel PRIVATE "DEBUG=1")  # 注意：原代码写反了，Debug 应该是 1
 endif ()
 
+find_program(CPPCHECK cppcheck)
+if (CPPCHECK)
+    add_custom_target(cppcheck
+            COMMAND ${CPPCHECK}
+            --project=${CMAKE_BINARY_DIR}/compile_commands.json
+            --enable=warning,style,performance,portability
+            --suppress=missingIncludeSystem
+            --suppress=*:${CMAKE_SOURCE_DIR}/module/fatfs/*
+            --suppress=*:${CMAKE_SOURCE_DIR}/module/iso9660/*
+            --suppress=*:${CMAKE_SOURCE_DIR}/src/term/flanterm/*
+            --quiet
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMENT "Running cppcheck..."
+    )
+endif ()
+
 # Architecture-specific setup
 if (TARGET_ARCH STREQUAL "x86_64")
     include(tools/x86_64.cmake)

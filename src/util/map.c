@@ -7,33 +7,35 @@ static size_t hash_ptr(void *ptr) {
 }
 
 static void map_resize(map *map0) {
-    size_t      new_capacity = map0->capacity * 2;
-    map_entry **new_buckets  = (map_entry **)calloc(new_capacity, sizeof(map_entry *));
-    if (!new_buckets) return;
+    size_t new_capacity = map0->capacity * 2;
+    map_entry **new_buckets = (map_entry **)calloc(new_capacity, sizeof(map_entry *));
+    if (!new_buckets)
+        return;
 
     for (size_t i = 0; i < map0->capacity; ++i) {
         map_entry *entry = map0->buckets[i];
         while (entry) {
-            map_entry *next      = entry->next;
-            size_t     new_index = hash_ptr(entry->key) % new_capacity;
+            map_entry *next = entry->next;
+            size_t new_index = hash_ptr(entry->key) % new_capacity;
 
-            entry->next            = new_buckets[new_index];
+            entry->next = new_buckets[new_index];
             new_buckets[new_index] = entry;
 
             entry = next;
         }
     }
 
-    free((void*)map0->buckets);
-    map0->buckets  = new_buckets;
+    free((void *)map0->buckets);
+    map0->buckets = new_buckets;
     map0->capacity = new_capacity;
 }
 
 map *map_create(size_t capacity) {
     map *map0 = (map *)malloc(sizeof(map));
-    if (!map0) return NULL;
+    if (!map0)
+        return NULL;
     map0->capacity = capacity;
-    map0->buckets  = (map_entry **)calloc(capacity, sizeof(map_entry *));
+    map0->buckets = (map_entry **)calloc(capacity, sizeof(map_entry *));
     if (!map0->buckets) {
         free(map0);
         return NULL;
@@ -61,9 +63,9 @@ void map_set(map *map0, void *key, void *value) {
     }
 
     map_entry *new_entry = (map_entry *)malloc(sizeof(map_entry));
-    new_entry->key       = key;
-    new_entry->value     = value;
-    new_entry->next      = map0->buckets[index];
+    new_entry->key = key;
+    new_entry->value = value;
+    new_entry->next = map0->buckets[index];
     map0->buckets[index] = new_entry;
     map0->size++;
 
@@ -72,9 +74,9 @@ void map_set(map *map0, void *key, void *value) {
 
 void map_remove(map *map0, void *key) {
     spin_lock(map0->lock);
-    size_t     index = hash_ptr(key) % map0->capacity;
+    size_t index = hash_ptr(key) % map0->capacity;
     map_entry *entry = map0->buckets[index];
-    map_entry *prev  = NULL;
+    map_entry *prev = NULL;
     while (entry) {
         if (entry->key == key) {
             if (prev)
@@ -83,11 +85,12 @@ void map_remove(map *map0, void *key) {
                 map0->buckets[index] = entry->next;
 
             free(entry);
-            if (map0->size > 0) map0->size--;
+            if (map0->size > 0)
+                map0->size--;
             spin_unlock(map0->lock);
             return;
         }
-        prev  = entry;
+        prev = entry;
         entry = entry->next;
     }
     spin_unlock(map0->lock);
@@ -122,7 +125,7 @@ void map_destroy(map *map0) {
             entry = next;
         }
     }
-    free((void*)map0->buckets);
+    free((void *)map0->buckets);
     spin_unlock(map0->lock);
     free(map0);
 }

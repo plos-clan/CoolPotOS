@@ -60,7 +60,7 @@ static void *heap_alloc(void *ptr, size_t size) {
 
 // 检查措施实现
 const static size_t start_magic = 0xF3EACFC1CCEBFAD7;
-const static size_t end_magic   = 0xA2BAD9BE14335FE2;
+const static size_t end_magic = 0xA2BAD9BE14335FE2;
 
 size_t alloc_mem_size = 0;
 
@@ -70,28 +70,28 @@ static size_t get_true_size(size_t data_size) {
 
 static void *set_magic(void *ptr, size_t data_size, bool fill_mem) {
     void *size_ptr, *start_magic_ptr, *data_ptr, *end_magic_ptr;
-    size_ptr         = ptr;
-    start_magic_ptr  = size_ptr + sizeof(size_t);
-    data_ptr         = start_magic_ptr + sizeof(start_magic);
-    end_magic_ptr    = data_ptr + data_size;
-    alloc_mem_size  += data_size;
+    size_ptr = ptr;
+    start_magic_ptr = size_ptr + sizeof(size_t);
+    data_ptr = start_magic_ptr + sizeof(start_magic);
+    end_magic_ptr = data_ptr + data_size;
+    alloc_mem_size += data_size;
 
     if (fill_mem)
         memset(ptr, 0xFF, get_true_size(data_size));
-    *(size_t *)size_ptr        = data_size;
+    *(size_t *)size_ptr = data_size;
     *(size_t *)start_magic_ptr = start_magic;
-    *(size_t *)end_magic_ptr   = end_magic;
+    *(size_t *)end_magic_ptr = end_magic;
     return data_ptr;
 }
 
 void *check_magic(void *ptr, bool fill_mem) {
     void *size_ptr, *start_magic_ptr, *data_ptr, *end_magic_ptr;
-    data_ptr          = ptr;
-    start_magic_ptr   = data_ptr - sizeof(start_magic);
-    size_ptr          = start_magic_ptr - sizeof(size_t);
-    size_t data_size  = *(size_t *)size_ptr;
-    end_magic_ptr     = data_ptr + data_size;
-    alloc_mem_size   -= data_size;
+    data_ptr = ptr;
+    start_magic_ptr = data_ptr - sizeof(start_magic);
+    size_ptr = start_magic_ptr - sizeof(size_t);
+    size_t data_size = *(size_t *)size_ptr;
+    end_magic_ptr = data_ptr + data_size;
+    alloc_mem_size -= data_size;
     if (*(size_t *)start_magic_ptr != start_magic) {
         logkf("\nMemory checkout error START\n");
         arch_close_interrupt();
@@ -115,9 +115,9 @@ void *malloc(size_t size) {
 #    endif
 
 #    if HEAP_CHECK
-    size             = (size + 7) & ~7;
+    size = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
-    void  *ptr       = mpool_alloc(&pool, true_size);
+    void *ptr = mpool_alloc(&pool, true_size);
     if (!ptr) {
         logkf("\nkernel malloc null\n");
         arch_close_interrupt();
@@ -177,13 +177,13 @@ void *realloc(void *ptr, size_t newsize) {
     kasan_push_disable();
 #    endif
 #    if HEAP_CHECK
-    void  *old_raw        = NULL;
+    void *old_raw = NULL;
     size_t old_block_size = 0;
     if (ptr != NULL) {
-        old_raw        = check_magic(ptr, false);
+        old_raw = check_magic(ptr, false);
         old_block_size = mpool_msize(&pool, old_raw);
     }
-    newsize          = (newsize + 7) & ~7;
+    newsize = (newsize + 7) & ~7;
     size_t true_size = get_true_size(newsize);
 
     ptr = mpool_realloc(&pool, old_raw, true_size);
@@ -195,9 +195,9 @@ void *realloc(void *ptr, size_t newsize) {
     kasan_mark_alloc((uint8_t *)ptr - sizeof(start_magic) - sizeof(size_t), ptr, newsize);
 #        endif
 #    else
-    void  *old_raw        = ptr;
+    void *old_raw = ptr;
     size_t old_block_size = (old_raw != NULL) ? mpool_msize(&pool, old_raw) : 0;
-    ptr                   = mpool_realloc(&pool, ptr, newsize);
+    ptr = mpool_realloc(&pool, ptr, newsize);
 #    endif
     alloc_exit(is_sti);
     return ptr;
@@ -213,10 +213,10 @@ void *aligned_alloc(size_t align, size_t size) {
     kasan_push_disable();
 #    endif
 #    if HEAP_CHECK
-    size             = (size + 7) & ~7;
+    size = (size + 7) & ~7;
     size_t true_size = get_true_size(size);
-    void  *ptr       = mpool_aligned_alloc(&pool, true_size, align);
-    ptr              = set_magic(ptr, size, true);
+    void *ptr = mpool_aligned_alloc(&pool, true_size, align);
+    ptr = set_magic(ptr, size, true);
 #        if KASAN_CHECK
     kasan_pop_disable();
     kasan_mark_alloc((uint8_t *)ptr - sizeof(start_magic) - sizeof(size_t), ptr, size);
@@ -229,15 +229,15 @@ void *aligned_alloc(size_t align, size_t size) {
 }
 
 size_t malloc_usable_size(void *ptr) {
-    bool   is_sti = alloc_enter();
-    size_t size   = mpool_msize(&pool, ptr);
+    bool is_sti = alloc_enter();
+    size_t size = mpool_msize(&pool, ptr);
     alloc_exit(is_sti);
     return size;
 }
 
 void *memalign(size_t align, size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, align);
+    void *ptr = mpool_aligned_alloc(&pool, size, align);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif
@@ -247,7 +247,7 @@ void *memalign(size_t align, size_t size) {
 
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, alignment);
+    void *ptr = mpool_aligned_alloc(&pool, size, alignment);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif
@@ -260,7 +260,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size) {
 
 void *valloc(size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
+    void *ptr = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif
@@ -270,7 +270,7 @@ void *valloc(size_t size) {
 
 void *pvalloc(size_t size) {
     const bool is_sti = alloc_enter();
-    void      *ptr    = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
+    void *ptr = mpool_aligned_alloc(&pool, size, PAGE_SIZE);
 #    if KASAN_CHECK
     kasan_mark_alloc(ptr, ptr, size);
 #    endif

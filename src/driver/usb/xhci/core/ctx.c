@@ -62,6 +62,6 @@ void endpoint_context_set_max_esit_payload(EndpointContext *ctx, uint32_t size) 
 }
 
 void endpoint_context_set_dequeue_ptr(EndpointContext *ctx, uint64_t ptr) {
-    ctx->tr_dequeue_low  = (uint32_t)ptr | 1u;
+    ctx->tr_dequeue_low = (uint32_t)ptr | 1u;
     ctx->tr_dequeue_high = (uint32_t)(ptr >> 32);
 }

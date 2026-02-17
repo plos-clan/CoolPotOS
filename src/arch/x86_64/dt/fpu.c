@@ -14,16 +14,17 @@ static inline void enable_sse() {
 
 void save_fpu_context(fpu_context_t *ctx) {
     __asm__ volatile("fxsave (%0)" ::"r"(ctx));
-   // __asm__ volatile("fnsave %0" : "=m"(ctx->fxsave_area)::"memory");
+    // __asm__ volatile("fnsave %0" : "=m"(ctx->fxsave_area)::"memory");
 }
 
 void restore_fpu_context(fpu_context_t *ctx) {
     __asm__ volatile("fxrstor (%0)" ::"r"(ctx));
-   // __asm__ volatile("frstor %0" : : "m"(ctx->fxsave_area) : "memory");
+    // __asm__ volatile("frstor %0" : : "m"(ctx->fxsave_area) : "memory");
 }
 
 void float_processor_setup() {
     enable_sse();
     bool is_bsp = arch_current_cpu()->id == get_bsp_cpu_id();
-    if(is_bsp) kinfo("Enable bsp cpu float processor.");
+    if (is_bsp)
+        kinfo("Enable bsp cpu float processor.");
 }

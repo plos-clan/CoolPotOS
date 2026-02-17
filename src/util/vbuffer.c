@@ -8,7 +8,7 @@ struct vecbuf *vbuf_alloc(struct vecbuf **vec, void *buf, size_t size) {
 
     *vbuf = (struct vecbuf){
         .buf = {.buffer = buf, .size = size},
-        .acc_sz = vbuf_size(_vec) + size
+          .acc_sz = vbuf_size(_vec) + size
     };
 
     if (_vec) {
@@ -31,7 +31,9 @@ void vbuf_free(struct vecbuf *vbuf) {
 }
 
 size_t vbuf_size(struct vecbuf *vbuf) {
-    if (!vbuf) { return 0; }
+    if (!vbuf) {
+        return 0;
+    }
 
     struct vecbuf *last = list_entry(vbuf->components.prev, struct vecbuf, components);
     return last->acc_sz;
@@ -40,7 +42,7 @@ size_t vbuf_size(struct vecbuf *vbuf) {
 void vbuf_chunkify(struct vecbuf **vbuf, void *buffer, size_t total_size, size_t chunk_size) {
     size_t offset = 0;
     while (offset < total_size) {
-        size_t remain     = total_size - offset;
+        size_t remain = total_size - offset;
         size_t this_chunk = remain > chunk_size ? chunk_size : remain;
         vbuf_alloc(vbuf, (uint8_t *)buffer + offset, this_chunk);
         offset += this_chunk;
@@ -48,20 +50,22 @@ void vbuf_chunkify(struct vecbuf **vbuf, void *buffer, size_t total_size, size_t
 }
 
 void vbuf_from_vaddr(struct vecbuf **out_vbuf, void *vaddr, size_t size) {
-    uint8_t *va        = (uint8_t *)vaddr;
-    size_t   remaining = size;
+    uint8_t *va = (uint8_t *)vaddr;
+    size_t remaining = size;
 
     while (remaining > 0) {
         size_t page_offset = (uintptr_t)va % PAGE_SIZE;
-        size_t chunk_size  = PAGE_SIZE - page_offset;
-        if (chunk_size > remaining) { chunk_size = remaining; }
+        size_t chunk_size = PAGE_SIZE - page_offset;
+        if (chunk_size > remaining) {
+            chunk_size = remaining;
+        }
         uintptr_t pa = arch_virt_to_phys((uint64_t)va);
         if (!pa) {
             // TODO 错误转换
             break;
         }
         vbuf_alloc(out_vbuf, (void *)pa, chunk_size);
-        va        += chunk_size;
+        va += chunk_size;
         remaining -= chunk_size;
     }
 }

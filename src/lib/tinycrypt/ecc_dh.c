@@ -1,6 +1,6 @@
 /* ec_dh.c - TinyCrypt implementation of EC-DH */
 
-/* 
+/*
  * Copyright (c) 2014, Kenneth MacKay
  * All rights reserved.
  *
@@ -60,15 +60,15 @@
 #include <lib/tinycrypt/ecc_dh.h>
 #include <lib/tinycrypt/utils.h>
 
-int uECC_make_key_with_d(uint8_t *public_key, uint8_t *private_key, unsigned int *d,
-                         uECC_Curve curve) {
+int uECC_make_key_with_d(
+    uint8_t *public_key, uint8_t *private_key, unsigned int *d, uECC_Curve curve) {
 
     uECC_word_t _private[NUM_ECC_WORDS];
     uECC_word_t _public[NUM_ECC_WORDS * 2];
 
     /* This function is designed for test purposes-only (such as validating NIST
-	 * test vectors) as it uses a provided value for d instead of generating
-	 * it uniformly at random. */
+     * test vectors) as it uses a provided value for d instead of generating
+     * it uniformly at random. */
     memcpy(_private, d, NUM_ECC_BYTES);
 
     /* Computing public-key from private: */
@@ -77,8 +77,8 @@ int uECC_make_key_with_d(uint8_t *public_key, uint8_t *private_key, unsigned int
         /* Converting buffers to correct bit order: */
         uECC_vli_nativeToBytes(private_key, BITS_TO_BYTES(curve->num_n_bits), _private);
         uECC_vli_nativeToBytes(public_key, curve->num_bytes, _public);
-        uECC_vli_nativeToBytes(public_key + curve->num_bytes, curve->num_bytes,
-                               _public + curve->num_words);
+        uECC_vli_nativeToBytes(
+            public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words);
 
         /* erasing temporary buffer used to store secret: */
         _set_secure(_private, 0, NUM_ECC_BYTES);
@@ -98,8 +98,8 @@ int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve) {
     for (tries = 0; tries < uECC_RNG_MAX_TRIES; ++tries) {
         /* Generating _private uniformly at random: */
         uECC_RNG_Function rng_function = uECC_get_rng();
-        if (!rng_function ||
-            !rng_function((uint8_t *)_random, 2 * NUM_ECC_WORDS * uECC_WORD_SIZE)) {
+        if (!rng_function
+            || !rng_function((uint8_t *)_random, 2 * NUM_ECC_WORDS * uECC_WORD_SIZE)) {
             return 0;
         }
 
@@ -112,8 +112,8 @@ int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve) {
             /* Converting buffers to correct bit order: */
             uECC_vli_nativeToBytes(private_key, BITS_TO_BYTES(curve->num_n_bits), _private);
             uECC_vli_nativeToBytes(public_key, curve->num_bytes, _public);
-            uECC_vli_nativeToBytes(public_key + curve->num_bytes, curve->num_bytes,
-                                   _public + curve->num_words);
+            uECC_vli_nativeToBytes(
+                public_key + curve->num_bytes, curve->num_bytes, _public + curve->num_words);
 
             /* erasing temporary buffer that stored secret: */
             _set_secure(_private, 0, NUM_ECC_BYTES);
@@ -124,19 +124,19 @@ int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve) {
     return 0;
 }
 
-int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key, uint8_t *secret,
-                       uECC_Curve curve) {
+int uECC_shared_secret(
+    const uint8_t *public_key, const uint8_t *private_key, uint8_t *secret, uECC_Curve curve) {
 
     uECC_word_t _public[NUM_ECC_WORDS * 2];
     uECC_word_t _private[NUM_ECC_WORDS];
 
-    uECC_word_t  tmp[NUM_ECC_WORDS];
-    uECC_word_t *p2[2]     = {_private, tmp};
+    uECC_word_t tmp[NUM_ECC_WORDS];
+    uECC_word_t *p2[2] = {_private, tmp};
     uECC_word_t *initial_Z = 0;
-    uECC_word_t  carry;
-    wordcount_t  num_words = curve->num_words;
-    wordcount_t  num_bytes = curve->num_bytes;
-    int          r;
+    uECC_word_t carry;
+    wordcount_t num_words = curve->num_words;
+    wordcount_t num_bytes = curve->num_bytes;
+    int r;
 
     /* Converting buffers to correct bit order: */
     uECC_vli_bytesToNative(_private, private_key, BITS_TO_BYTES(curve->num_n_bits));
@@ -144,11 +144,11 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key, ui
     uECC_vli_bytesToNative(_public + num_words, public_key + num_bytes, num_bytes);
 
     /* Regularize the bitcount for the private key so that attackers cannot use a
-	 * side channel attack to learn the number of leading zeros. */
+     * side channel attack to learn the number of leading zeros. */
     carry = regularize_k(_private, _private, tmp, curve);
 
     /* If an RNG function was specified, try to get a random initial Z value to
-	 * improve protection against side-channel attacks. */
+     * improve protection against side-channel attacks. */
     if (uECC_get_rng()) {
         if (!uECC_generate_random_int(p2[carry], curve->p, num_words)) {
             r = 0;

@@ -14,13 +14,13 @@
 #include "portability_macros.h"
 
 /*-*******************************************************
-*  Compiler specifics
-*********************************************************/
+ *  Compiler specifics
+ *********************************************************/
 /* force inlining */
 
 #if !defined(ZSTD_NO_INLINE)
-#    if (defined(__GNUC__) && !defined(__STRICT_ANSI__)) || defined(__cplusplus) ||                \
-        defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L /* C99 */
+#    if (defined(__GNUC__) && !defined(__STRICT_ANSI__)) || defined(__cplusplus)                   \
+        || defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L /* C99 */
 #        define INLINE_KEYWORD inline
 #    else
 #        define INLINE_KEYWORD
@@ -112,9 +112,9 @@
 #    define PREFETCH_L1(ptr) (void)(ptr) /* disabled */
 #    define PREFETCH_L2(ptr) (void)(ptr) /* disabled */
 #else
-#    if defined(_MSC_VER) &&                                                                       \
-        (defined(_M_X64) ||                                                                        \
-         defined(_M_I86))     /* _mm_prefetch() is not defined outside of x86/x64 */
+#    if defined(_MSC_VER)                                                                          \
+        && (defined(_M_X64)                                                                        \
+            || defined(_M_I86)) /* _mm_prefetch() is not defined outside of x86/x64 */
 #        include <mmintrin.h> /* https://msdn.microsoft.com/fr-fr/library/84szxsww(v=vs.90).aspx */
 #        define PREFETCH_L1(ptr) _mm_prefetch((const char *)(ptr), _MM_HINT_T0)
 #        define PREFETCH_L2(ptr) _mm_prefetch((const char *)(ptr), _MM_HINT_T1)
@@ -134,9 +134,9 @@
 
 #define PREFETCH_AREA(p, s)                                                                        \
     {                                                                                              \
-        const char *const _ptr  = (const char *)(p);                                               \
-        size_t const      _size = (size_t)(s);                                                     \
-        size_t            _pos;                                                                    \
+        const char *const _ptr = (const char *)(p);                                                \
+        size_t const _size = (size_t)(s);                                                          \
+        size_t _pos;                                                                               \
         for (_pos = 0; _pos < _size; _pos += CACHELINE_SIZE) {                                     \
             PREFETCH_L2(_ptr + _pos);                                                              \
         }                                                                                          \
@@ -161,10 +161,10 @@
  * and clang, please do.
  */
 #if defined(__GNUC__)
-#    define LIKELY(x)   (__builtin_expect((x), 1))
+#    define LIKELY(x) (__builtin_expect((x), 1))
 #    define UNLIKELY(x) (__builtin_expect((x), 0))
 #else
-#    define LIKELY(x)   (x)
+#    define LIKELY(x) (x)
 #    define UNLIKELY(x) (x)
 #endif
 
@@ -181,7 +181,8 @@
 /*Like DYNAMIC_BMI2 but for compile time determination of BMI2 support*/
 #ifndef STATIC_BMI2
 #    if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86))
-#        ifdef __AVX2__ //MSVC does not have a BMI2 specific flag, but every CPU that supports AVX2 also supports BMI2
+#        ifdef __AVX2__ // MSVC does not have a BMI2 specific flag, but every CPU that supports AVX2
+                        // also supports BMI2
 #            define STATIC_BMI2 1
 #        endif
 #    endif
@@ -193,8 +194,8 @@
 
 /* compile time determination of SIMD support */
 #if !defined(ZSTD_NO_INTRINSICS)
-#    if defined(__SSE2__) || defined(_M_AMD64) ||                                                  \
-        (defined(_M_IX86) && defined(_M_IX86_FP) && (_M_IX86_FP >= 2))
+#    if defined(__SSE2__) || defined(_M_AMD64)                                                     \
+        || (defined(_M_IX86) && defined(_M_IX86_FP) && (_M_IX86_FP >= 2))
 #        define ZSTD_ARCH_X86_SSE2
 #    endif
 #    if defined(__ARM_NEON) || defined(_M_ARM64)
@@ -236,7 +237,8 @@
 #        define ZSTD_FALLTHROUGH [[fallthrough]]
 #    elif __has_attribute(__fallthrough__)
 /* Leading semicolon is to satisfy gcc-11 with -pedantic. Without the semicolon
- * gcc complains about: a label can only be part of a statement and a declaration is not a statement.
+ * gcc complains about: a label can only be part of a statement and a declaration is not a
+ * statement.
  */
 #        define ZSTD_FALLTHROUGH                                                                   \
             ;                                                                                      \
@@ -247,8 +249,8 @@
 #endif
 
 /*-**************************************************************
-*  Alignment check
-*****************************************************************/
+ *  Alignment check
+ *****************************************************************/
 
 /* this test was initially positioned in mem.h,
  * but this file is removed (or replaced) for linux kernel
@@ -276,8 +278,8 @@
 #endif /* ZSTD_ALIGNOF */
 
 /*-**************************************************************
-*  Sanitizer
-*****************************************************************/
+ *  Sanitizer
+ *****************************************************************/
 
 #if ZSTD_MEMORY_SANITIZER
 /* Not all platforms that support msan provide sanitizers/msan_interface.h.

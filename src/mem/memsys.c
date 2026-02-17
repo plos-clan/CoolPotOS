@@ -9,22 +9,27 @@
 
 spin_t mm_op_lock = SPIN_INIT;
 
-syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd,
-         uint64_t offset) {
+syscall_(
+    mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd, uint64_t offset) {
 
     addr = addr & (~(PAGE_SIZE - 1));
 
     uint64_t aligned_len = (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
-    if (check_user_overflow(addr, aligned_len)) { return -EFAULT; }
+    if (check_user_overflow(addr, aligned_len)) {
+        return -EFAULT;
+    }
 
-    if (aligned_len == 0) { return SYSCALL_FAULT_(EINVAL); }
+    if (aligned_len == 0) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
     pcb_t process = get_current_task()->process;
 
-    vma_manager_t *mgr        = &process->vma_manager;
-    uint64_t       start_addr = 0;
+    vma_manager_t *mgr = &process->vma_manager;
+    uint64_t start_addr = 0;
     if (flags & MAP_FIXED) {
-        if (!addr) return SYSCALL_FAULT_(EINVAL);
+        if (!addr)
+            return SYSCALL_FAULT_(EINVAL);
 
         start_addr = addr;
         // 检查地址是否可用
@@ -42,36 +47,43 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
             start_addr = USER_MMAP_START;
             while (vma_find_intersection(mgr, start_addr, start_addr + aligned_len)) {
                 start_addr += PAGE_SIZE;
-                if (start_addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(ENOMEM);
+                if (start_addr > KERNEL_AREA_MEM)
+                    return SYSCALL_FAULT_(ENOMEM);
             }
         }
     }
 
     if (!(flags & MAP_ANONYMOUS)) {
-        if (get_fd(process->fdts, fd) == NULL) return SYSCALL_FAULT_(EBADF);
+        if (get_fd(process->fdts, fd) == NULL)
+            return SYSCALL_FAULT_(EBADF);
     }
 
     spin_lock(mm_op_lock);
 
     vma_t *vma = vma_alloc();
-    if (!vma) return SYSCALL_FAULT_(ENOMEM);
+    if (!vma)
+        return SYSCALL_FAULT_(ENOMEM);
 
     vma->vm_start = start_addr;
-    vma->vm_end   = start_addr + aligned_len;
+    vma->vm_end = start_addr + aligned_len;
     vma->vm_flags = 0;
 
-    if (prot & PROT_READ) vma->vm_flags |= VMA_READ;
-    if (prot & PROT_WRITE) vma->vm_flags |= VMA_WRITE;
-    if (prot & PROT_EXEC) vma->vm_flags |= VMA_EXEC;
-    if (flags & MAP_SHARED) vma->vm_flags |= VMA_SHARED;
+    if (prot & PROT_READ)
+        vma->vm_flags |= VMA_READ;
+    if (prot & PROT_WRITE)
+        vma->vm_flags |= VMA_WRITE;
+    if (prot & PROT_EXEC)
+        vma->vm_flags |= VMA_EXEC;
+    if (flags & MAP_SHARED)
+        vma->vm_flags |= VMA_SHARED;
 
     if (flags & MAP_ANONYMOUS) {
-        vma->vm_type   = VMA_TYPE_ANON;
+        vma->vm_type = VMA_TYPE_ANON;
         vma->vm_flags |= VMA_ANON;
-        vma->vm_fd     = -1;
+        vma->vm_fd = -1;
     } else {
-        vma->vm_type   = VMA_TYPE_FILE;
-        vma->vm_fd     = fd;
+        vma->vm_type = VMA_TYPE_FILE;
+        vma->vm_fd = fd;
         vma->vm_offset = (int64_t)offset;
     }
 
@@ -87,8 +99,8 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
     }
 
     if (!(flags & MAP_ANONYMOUS)) {
-        uint64_t ret = (uint64_t)vfs_map(get_fd(process->fdts, fd)->node, start_addr, aligned_len,
-                                         prot, flags, offset);
+        uint64_t ret = (uint64_t)vfs_map(
+            get_fd(process->fdts, fd)->node, start_addr, aligned_len, prot, flags, offset);
         spin_unlock(mm_op_lock);
         return ret;
     }
@@ -102,18 +114,24 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
 #if defined(__x86_64__) || defined(__amd64__)
         PTE_USER;
 
-    if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
-    if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
-    if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+    if (prot & PROT_READ)
+        pt_flags |= PTE_PRESENT;
+    if (prot & PROT_WRITE)
+        pt_flags |= PTE_WRITEABLE;
+    if (!(prot & PROT_EXEC))
+        pt_flags |= PTE_NO_EXECUTE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_USER;
 
-    if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
-    if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
-    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+    if (prot & PROT_READ)
+        pt_flags |= ARCH_PT_FLAG_VALID;
+    if (prot & PROT_WRITE)
+        pt_flags |= ARCH_PT_FLAG_WRITE;
+    if (prot & PROT_EXEC)
+        pt_flags |= ARCH_PT_FLAG_EXEC;
 #elif defined(__loongarch__) || defined(__loongarch64)
         ARCH_PT_FLAG_USER;
-    //TODO
+    // TODO
 #endif
 
     lazy_infoalloc(process, start_addr, aligned_len, pt_flags, flags);
@@ -123,21 +141,24 @@ syscall_(mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int 
 }
 
 syscall_(munmap, uint64_t addr, size_t size) {
-    if (size == 0) return EOK;
+    if (size == 0)
+        return EOK;
 
     addr = addr & (~(PAGE_SIZE - 1));
     size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
-    if (check_user_overflow(addr, size)) { return -EFAULT; }
+    if (check_user_overflow(addr, size)) {
+        return -EFAULT;
+    }
 
     tcb_t current = get_current_task();
     pcb_t process = current->process;
     vma_manager_t *mgr = &process->vma_manager;
-    vma_t         *vma  = mgr->vma_list;
-    vma_t         *next = NULL;
+    vma_t *vma = mgr->vma_list;
+    vma_t *next = NULL;
 
     uint64_t start = addr;
-    uint64_t end   = addr + size;
+    uint64_t end = addr + size;
 
     while (vma) {
         next = vma->vm_next;
@@ -163,7 +184,9 @@ syscall_(munmap, uint64_t addr, size_t size) {
             } else if (vma->vm_end > end) {
                 // 截断VMA的开头
                 vma->vm_start = end;
-                if (vma->vm_type == VMA_TYPE_FILE) { vma->vm_offset += end - vma->vm_start; }
+                if (vma->vm_type == VMA_TYPE_FILE) {
+                    vma->vm_offset += end - vma->vm_start;
+                }
             }
         }
 
@@ -175,8 +198,9 @@ syscall_(munmap, uint64_t addr, size_t size) {
     return EOK;
 }
 
-syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
-         uint64_t new_addr) {
+syscall_(
+    mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
+    uint64_t new_addr) {
     old_addr = old_addr & (~(PAGE_SIZE - 1));
     new_addr = new_addr & (~(PAGE_SIZE - 1));
     old_size = (old_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
@@ -185,14 +209,16 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
     vma_manager_t *mgr = &get_current_task()->process->vma_manager;
 
     vma_t *vma = vma_find(mgr, (unsigned long)old_addr);
-    if (!vma || vma->vm_start != (unsigned long)old_addr) { return SYSCALL_FAULT_(EINVAL); }
+    if (!vma || vma->vm_start != (unsigned long)old_addr) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
 
     uint64_t old_addr_phys = arch_virt_to_phys(old_addr);
 
     // 如果新大小更小，直接截断
     if (new_size <= vma->vm_end - vma->vm_start) {
-        unmap_page_range(get_current_directory(), vma->vm_end,
-                         vma->vm_start + new_size - vma->vm_end);
+        unmap_page_range(
+            get_current_directory(), vma->vm_end, vma->vm_start + new_size - vma->vm_end);
         vma->vm_end = vma->vm_start + new_size;
         return old_addr;
     }
@@ -203,22 +229,28 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
         uint64_t pt_flags =
 #if defined(__x86_64__) || defined(__amd64__)
             PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-        if (vma->vm_flags & VMA_READ) pt_flags |= PTE_PRESENT;
-        if (vma->vm_flags & VMA_WRITE) pt_flags |= PTE_WRITEABLE;
-        if (!(vma->vm_flags & VMA_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+        if (vma->vm_flags & VMA_READ)
+            pt_flags |= PTE_PRESENT;
+        if (vma->vm_flags & VMA_WRITE)
+            pt_flags |= PTE_WRITEABLE;
+        if (!(vma->vm_flags & VMA_EXEC))
+            pt_flags |= PTE_NO_EXECUTE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
             ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
-        if (vma->vm_flags & VMA_READ) pt_flags |= ARCH_PT_FLAG_VALID;
-        if (vma->vm_flags & VMA_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
-        if (vma->vm_flags & VMA_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+        if (vma->vm_flags & VMA_READ)
+            pt_flags |= ARCH_PT_FLAG_VALID;
+        if (vma->vm_flags & VMA_WRITE)
+            pt_flags |= ARCH_PT_FLAG_WRITE;
+        if (vma->vm_flags & VMA_EXEC)
+            pt_flags |= ARCH_PT_FLAG_EXEC;
 #elif defined(__loongarch__) || defined(__loongarch64)
             ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_USER;
-        //TODO
+        // TODO
 #endif
 
-        page_map_range(get_current_directory(), vma->vm_end,
-                       old_addr_phys + vma->vm_end - vma->vm_start, new_end - vma->vm_end,
-                       vma->vm_flags);
+        page_map_range(
+            get_current_directory(), vma->vm_end, old_addr_phys + vma->vm_end - vma->vm_start,
+            new_end - vma->vm_end, vma->vm_flags);
 
         vma->vm_end = new_end;
         return old_addr;
@@ -229,15 +261,17 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
         uint64_t start_addr = USER_MMAP_START;
         while (vma_find_intersection(mgr, start_addr, start_addr + new_size)) {
             start_addr += PAGE_SIZE;
-            if (start_addr > KERNEL_AREA_MEM) return SYSCALL_FAULT_(ENOMEM);
+            if (start_addr > KERNEL_AREA_MEM)
+                return SYSCALL_FAULT_(ENOMEM);
         }
 
         vma_t *new_vma = vma_alloc();
-        if (!new_vma) return SYSCALL_FAULT_(ENOMEM);
+        if (!new_vma)
+            return SYSCALL_FAULT_(ENOMEM);
 
         memcpy(new_vma, vma, sizeof(vma_t));
         new_vma->vm_start = start_addr;
-        new_vma->vm_end   = start_addr + new_size;
+        new_vma->vm_end = start_addr + new_size;
         new_vma->vm_flags = 0;
 
         if (vma_insert(mgr, new_vma) != 0) {
@@ -248,17 +282,23 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
         uint64_t pt_flags =
 #if defined(__x86_64__) || defined(__amd64__)
             PTE_USER | PTE_PRESENT | PTE_WRITEABLE;
-        if (new_vma->vm_flags & VMA_READ) pt_flags |= PTE_PRESENT;
-        if (new_vma->vm_flags & VMA_WRITE) pt_flags |= PTE_WRITEABLE;
-        if (!(new_vma->vm_flags & VMA_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+        if (new_vma->vm_flags & VMA_READ)
+            pt_flags |= PTE_PRESENT;
+        if (new_vma->vm_flags & VMA_WRITE)
+            pt_flags |= PTE_WRITEABLE;
+        if (!(new_vma->vm_flags & VMA_EXEC))
+            pt_flags |= PTE_NO_EXECUTE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
             ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER;
-        if (new_vma->vm_flags & VMA_READ) pt_flags |= ARCH_PT_FLAG_VALID;
-        if (new_vma->vm_flags & VMA_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
-        if (new_vma->vm_flags & VMA_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+        if (new_vma->vm_flags & VMA_READ)
+            pt_flags |= ARCH_PT_FLAG_VALID;
+        if (new_vma->vm_flags & VMA_WRITE)
+            pt_flags |= ARCH_PT_FLAG_WRITE;
+        if (new_vma->vm_flags & VMA_EXEC)
+            pt_flags |= ARCH_PT_FLAG_EXEC;
 #elif defined(__loongarch__) || defined(__loongarch64)
             ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_DIRTY | ARCH_PT_FLAG_USER;
-        //TODO
+        // TODO
 #endif
 
         page_map_range(get_current_directory(), start_addr, old_addr_phys, new_size, pt_flags);
@@ -271,24 +311,32 @@ syscall_(mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64
 }
 
 syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
-    addr   = addr & (~(PAGE_SIZE - 1));
+    addr = addr & (~(PAGE_SIZE - 1));
     length = (length + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
-    if (check_user_overflow(addr, length)) { return SYSCALL_FAULT_(EFAULT); }
+    if (check_user_overflow(addr, length)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
 
     uint64_t pt_flags =
 #if defined(__x86_64__) || defined(__amd64__)
         PTE_USER;
 
-    if (prot & PROT_READ) pt_flags |= PTE_PRESENT;
-    if (prot & PROT_WRITE) pt_flags |= PTE_WRITEABLE;
-    if (!(prot & PROT_EXEC)) pt_flags |= PTE_NO_EXECUTE;
+    if (prot & PROT_READ)
+        pt_flags |= PTE_PRESENT;
+    if (prot & PROT_WRITE)
+        pt_flags |= PTE_WRITEABLE;
+    if (!(prot & PROT_EXEC))
+        pt_flags |= PTE_NO_EXECUTE;
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_USER;
 
-    if (prot & PROT_READ) pt_flags |= ARCH_PT_FLAG_VALID;
-    if (prot & PROT_WRITE) pt_flags |= ARCH_PT_FLAG_WRITE;
-    if (prot & PROT_EXEC) pt_flags |= ARCH_PT_FLAG_EXEC;
+    if (prot & PROT_READ)
+        pt_flags |= ARCH_PT_FLAG_VALID;
+    if (prot & PROT_WRITE)
+        pt_flags |= ARCH_PT_FLAG_WRITE;
+    if (prot & PROT_EXEC)
+        pt_flags |= ARCH_PT_FLAG_EXEC;
 #elif defined(__loongarch__) || defined(__loongarch64)
         ARCH_PT_FLAG_USER;
 #endif
@@ -308,15 +356,21 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
 }
 
 syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
-    if (check_user_overflow(addr, size)) { return SYSCALL_FAULT_(EFAULT); }
+    if (check_user_overflow(addr, size)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
 
-    if (size == 0) { return EOK; }
+    if (size == 0) {
+        return EOK;
+    }
 
     uint64_t start_page = addr & (~(PAGE_SIZE - 1));
-    uint64_t end_page   = (addr + size - 1) & (~(PAGE_SIZE - 1));
-    uint64_t num_pages  = ((end_page - start_page) / PAGE_SIZE) + 1;
+    uint64_t end_page = (addr + size - 1) & (~(PAGE_SIZE - 1));
+    uint64_t num_pages = ((end_page - start_page) / PAGE_SIZE) + 1;
 
-    if (check_user_overflow(vec, num_pages)) { return SYSCALL_FAULT_(EFAULT); }
+    if (check_user_overflow(vec, num_pages)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
 
     spin_lock(mm_op_lock);
     uint64_t current_addr = start_page;
@@ -337,7 +391,11 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec) {
 
 syscall_(madvise, uint64_t addr, size_t length, int advice) {
     UNUSED(advice);
-    if (length == 0) { return EOK; }
-    if (check_user_overflow(addr, length)) { return SYSCALL_FAULT_(EFAULT); }
+    if (length == 0) {
+        return EOK;
+    }
+    if (check_user_overflow(addr, length)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
     return EOK;
 }

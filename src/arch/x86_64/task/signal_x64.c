@@ -1,11 +1,12 @@
-#include "task/signal_arch.h"
-#include "task/signal.h"
 #include "krlibc.h"
+#include "task/signal.h"
+#include "task/signal_arch.h"
 #include "term/klog.h"
 
 bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct syscall_regs *regs) {
     uint64_t handler = (uint64_t)action->sa_handler;
-    if (handler == 0 || handler == 1) return false;
+    if (handler == 0 || handler == 1)
+        return false;
 
     // Compute frame location on user stack (16-byte aligned)
     uint64_t user_rsp = task->syscall_stack_user;
@@ -21,8 +22,8 @@ bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct sysca
     frame->r12 = regs->r12;
     frame->r11 = regs->r11;
     frame->r10 = regs->r10;
-    frame->r9  = regs->r9;
-    frame->r8  = regs->r8;
+    frame->r9 = regs->r9;
+    frame->r8 = regs->r8;
     frame->rbx = regs->rbx;
     frame->rcx = regs->rcx;
     frame->rdx = regs->rdx;
@@ -30,8 +31,8 @@ bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct sysca
     frame->rdi = regs->rdi;
     frame->rbp = regs->rbp;
     frame->rax = regs->rax;
-    frame->rip = regs->rcx; // rcx holds original RIP (from sysret convention)
-    frame->rflags = regs->r11; // r11 holds original RFLAGS
+    frame->rip = regs->rcx;                // rcx holds original RIP (from sysret convention)
+    frame->rflags = regs->r11;             // r11 holds original RFLAGS
     frame->rsp = task->syscall_stack_user; // original user RSP
 
     // Save signal mask and call_in_signal state
@@ -75,7 +76,7 @@ bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct sysca
     // Modify regs so sysretq jumps to the signal handler
     // sysretq: RIP = RCX, RFLAGS = R11
     regs->rcx = handler;
-    regs->r11 = 0x202; // IF set
+    regs->r11 = 0x202;            // IF set
     regs->rdi = (uint64_t)signum; // first argument to handler
 
     // Set user RSP to the signal frame (asm return path restores RSP from tcb->syscall_stack_user)
@@ -112,7 +113,8 @@ uint64_t arch_signal_sigreturn(struct syscall_regs *regs) {
     // So frame = syscall_stack_user - offsetof(signal_frame, signum)
     // = syscall_stack_user - 8 (pretcode is 8 bytes)
     struct signal_frame *frame =
-        (struct signal_frame *)(task->syscall_stack_user - __builtin_offsetof(struct signal_frame, signum));
+        (struct signal_frame *)(task->syscall_stack_user
+                                - __builtin_offsetof(struct signal_frame, signum));
 
     // Validate magic
     if (frame->magic != SIGNAL_FRAME_MAGIC) {
@@ -127,8 +129,8 @@ uint64_t arch_signal_sigreturn(struct syscall_regs *regs) {
     regs->r12 = frame->r12;
     regs->r11 = frame->rflags; // sysretq loads RFLAGS from R11
     regs->r10 = frame->r10;
-    regs->r9  = frame->r9;
-    regs->r8  = frame->r8;
+    regs->r9 = frame->r9;
+    regs->r8 = frame->r8;
     regs->rbx = frame->rbx;
     regs->rcx = frame->rip; // sysretq loads RIP from RCX
     regs->rdx = frame->rdx;

@@ -68,8 +68,8 @@
 #ifndef __TC_HMAC_PRNG_H__
 #define __TC_HMAC_PRNG_H__
 
-#include <lib/tinycrypt/sha256.h>
 #include <lib/tinycrypt/hmac.h>
+#include <lib/tinycrypt/sha256.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,14 +78,14 @@ extern "C" {
 #define TC_HMAC_PRNG_RESEED_REQ -1
 
 struct tc_hmac_prng_struct {
-	/* the HMAC instance for this PRNG */
-	struct tc_hmac_state_struct h;
-	/* the PRNG key */
-	uint8_t key[TC_SHA256_DIGEST_SIZE];
-	/* PRNG state */
-	uint8_t v[TC_SHA256_DIGEST_SIZE];
-	/* calls to tc_hmac_prng_generate left before re-seed */
-	unsigned int countdown;
+    /* the HMAC instance for this PRNG */
+    struct tc_hmac_state_struct h;
+    /* the PRNG key */
+    uint8_t key[TC_SHA256_DIGEST_SIZE];
+    /* PRNG state */
+    uint8_t v[TC_SHA256_DIGEST_SIZE];
+    /* calls to tc_hmac_prng_generate left before re-seed */
+    unsigned int countdown;
 };
 
 typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
@@ -112,9 +112,7 @@ typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
  *  @param personalization IN -- personalization string
  *  @param plen IN -- personalization length in bytes
  */
-int tc_hmac_prng_init(TCHmacPrng_t prng,
-		      const uint8_t *personalization,
-		      unsigned int plen);
+int tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, unsigned int plen);
 
 /**
  *  @brief HMAC-PRNG reseed procedure
@@ -136,9 +134,9 @@ int tc_hmac_prng_init(TCHmacPrng_t prng,
  *  @param additional_input IN -- additional input to the prng
  *  @param additionallen IN -- additional input length in bytes
  */
-int tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
-			unsigned int seedlen, const uint8_t *additional_input,
-			unsigned int additionallen);
+int tc_hmac_prng_reseed(
+    TCHmacPrng_t prng, const uint8_t *seed, unsigned int seedlen, const uint8_t *additional_input,
+    unsigned int additionallen);
 
 /**
  *  @brief HMAC-PRNG generate procedure

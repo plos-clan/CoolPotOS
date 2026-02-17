@@ -1,28 +1,28 @@
 /*
-* Copyright (c) 2007 Dave Airlie <airlied@linux.ie>
-* Copyright (c) 2007 Jakob Bornecrantz <wallbraker@gmail.com>
-* Copyright (c) 2008 Red Hat Inc.
-* Copyright (c) 2007-2008 Tungsten Graphics, Inc., Cedar Park, TX., USA
-* Copyright (c) 2007-2008 Intel Corporation
-*
-* Permission is hereby granted, free of charge, to any person obtaining a
-* copy of this software and associated documentation files (the "Software"),
-* to deal in the Software without restriction, including without limitation
-* the rights to use, copy, modify, merge, publish, distribute, sublicense,
-* and/or sell copies of the Software, and to permit persons to whom the
-* Software is furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-* IN THE SOFTWARE.
-*/
+ * Copyright (c) 2007 Dave Airlie <airlied@linux.ie>
+ * Copyright (c) 2007 Jakob Bornecrantz <wallbraker@gmail.com>
+ * Copyright (c) 2008 Red Hat Inc.
+ * Copyright (c) 2007-2008 Tungsten Graphics, Inc., Cedar Park, TX., USA
+ * Copyright (c) 2007-2008 Intel Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
 #pragma once
 
 #include "types.h"
@@ -43,19 +43,17 @@ extern "C" {
 #define DRM_DISPLAY_MODE_LEN 32
 #define DRM_PROP_NAME_LEN 32
 
-#define DRM_MODE_TYPE_BUILTIN (1 << 0) /* deprecated */
-#define DRM_MODE_TYPE_CLOCK_C                                                  \
-    ((1 << 1) | DRM_MODE_TYPE_BUILTIN) /* deprecated */
-#define DRM_MODE_TYPE_CRTC_C                                                   \
-    ((1 << 2) | DRM_MODE_TYPE_BUILTIN) /* deprecated                           \
+#define DRM_MODE_TYPE_BUILTIN (1 << 0)                           /* deprecated */
+#define DRM_MODE_TYPE_CLOCK_C ((1 << 1) | DRM_MODE_TYPE_BUILTIN) /* deprecated */
+#define DRM_MODE_TYPE_CRTC_C                                                                       \
+    ((1 << 2) | DRM_MODE_TYPE_BUILTIN) /* deprecated                                               \
                                         */
 #define DRM_MODE_TYPE_PREFERRED (1 << 3)
 #define DRM_MODE_TYPE_DEFAULT (1 << 4) /* deprecated */
 #define DRM_MODE_TYPE_USERDEF (1 << 5)
 #define DRM_MODE_TYPE_DRIVER (1 << 6)
 
-#define DRM_MODE_TYPE_ALL                                                      \
-    (DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_USERDEF | DRM_MODE_TYPE_DRIVER)
+#define DRM_MODE_TYPE_ALL (DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_USERDEF | DRM_MODE_TYPE_DRIVER)
 
 /* Video mode flags */
 /* bit compatible with the xrandr RR_ definitions (bits 0-13)
@@ -118,12 +116,11 @@ extern "C" {
 #define DRM_MODE_FLAG_PIC_AR_64_27 (DRM_MODE_PICTURE_ASPECT_64_27 << 19)
 #define DRM_MODE_FLAG_PIC_AR_256_135 (DRM_MODE_PICTURE_ASPECT_256_135 << 19)
 
-#define DRM_MODE_FLAG_ALL                                                      \
-    (DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_PVSYNC |      \
-     DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_INTERLACE | DRM_MODE_FLAG_DBLSCAN |  \
-     DRM_MODE_FLAG_CSYNC | DRM_MODE_FLAG_PCSYNC | DRM_MODE_FLAG_NCSYNC |       \
-     DRM_MODE_FLAG_HSKEW | DRM_MODE_FLAG_DBLCLK | DRM_MODE_FLAG_CLKDIV2 |      \
-     DRM_MODE_FLAG_3D_MASK)
+#define DRM_MODE_FLAG_ALL                                                                          \
+    (DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_PVSYNC | DRM_MODE_FLAG_NVSYNC     \
+     | DRM_MODE_FLAG_INTERLACE | DRM_MODE_FLAG_DBLSCAN | DRM_MODE_FLAG_CSYNC                       \
+     | DRM_MODE_FLAG_PCSYNC | DRM_MODE_FLAG_NCSYNC | DRM_MODE_FLAG_HSKEW | DRM_MODE_FLAG_DBLCLK    \
+     | DRM_MODE_FLAG_CLKDIV2 | DRM_MODE_FLAG_3D_MASK)
 
 /* DPMS flags */
 /* bit compatible with the xorg definitions. */
@@ -133,8 +130,8 @@ extern "C" {
 #define DRM_MODE_DPMS_OFF 3
 
 /* Scaling mode options */
-#define DRM_MODE_SCALE_NONE                                                    \
-    0                               /* Unmodified timing (display or           \
+#define DRM_MODE_SCALE_NONE                                                                        \
+    0                               /* Unmodified timing (display or                               \
                            software can still scale) */
 #define DRM_MODE_SCALE_FULLSCREEN 1 /* Full screen, ignore aspect */
 #define DRM_MODE_SCALE_CENTER 2     /* Centered, no scaling */
@@ -173,9 +170,8 @@ extern "C" {
  *
  * Bitmask used to look for drm plane rotations.
  */
-#define DRM_MODE_ROTATE_MASK                                                   \
-    (DRM_MODE_ROTATE_0 | DRM_MODE_ROTATE_90 | DRM_MODE_ROTATE_180 |            \
-     DRM_MODE_ROTATE_270)
+#define DRM_MODE_ROTATE_MASK                                                                       \
+    (DRM_MODE_ROTATE_0 | DRM_MODE_ROTATE_90 | DRM_MODE_ROTATE_180 | DRM_MODE_ROTATE_270)
 
 /*
  * DRM_MODE_REFLECT_<axis>
@@ -380,9 +376,8 @@ struct drm_mode_get_connector {
 #define DRM_MODE_PROP_BITMASK (1 << 5) /* bitmask of enumerated types */
 
 /* non-extended types: legacy bitmask, one bit per type: */
-#define DRM_MODE_PROP_LEGACY_TYPE                                              \
-    (DRM_MODE_PROP_RANGE | DRM_MODE_PROP_ENUM | DRM_MODE_PROP_BLOB |           \
-     DRM_MODE_PROP_BITMASK)
+#define DRM_MODE_PROP_LEGACY_TYPE                                                                  \
+    (DRM_MODE_PROP_RANGE | DRM_MODE_PROP_ENUM | DRM_MODE_PROP_BLOB | DRM_MODE_PROP_BITMASK)
 
 /* extended-types: rather than continue to consume a bit per type,
  * grab a chunk of the bits to use as integer type id.
@@ -627,11 +622,10 @@ struct drm_color_lut {
 #define DRM_MODE_PAGE_FLIP_ASYNC 0x02
 #define DRM_MODE_PAGE_FLIP_TARGET_ABSOLUTE 0x4
 #define DRM_MODE_PAGE_FLIP_TARGET_RELATIVE 0x8
-#define DRM_MODE_PAGE_FLIP_TARGET                                              \
+#define DRM_MODE_PAGE_FLIP_TARGET                                                                  \
     (DRM_MODE_PAGE_FLIP_TARGET_ABSOLUTE | DRM_MODE_PAGE_FLIP_TARGET_RELATIVE)
-#define DRM_MODE_PAGE_FLIP_FLAGS                                               \
-    (DRM_MODE_PAGE_FLIP_EVENT | DRM_MODE_PAGE_FLIP_ASYNC |                     \
-     DRM_MODE_PAGE_FLIP_TARGET)
+#define DRM_MODE_PAGE_FLIP_FLAGS                                                                   \
+    (DRM_MODE_PAGE_FLIP_EVENT | DRM_MODE_PAGE_FLIP_ASYNC | DRM_MODE_PAGE_FLIP_TARGET)
 
 /*
  * Request a page flip on the specified crtc.
@@ -727,10 +721,9 @@ struct drm_mode_destroy_dumb {
 #define DRM_MODE_ATOMIC_NONBLOCK 0x0200
 #define DRM_MODE_ATOMIC_ALLOW_MODESET 0x0400
 
-#define DRM_MODE_ATOMIC_FLAGS                                                  \
-    (DRM_MODE_PAGE_FLIP_EVENT | DRM_MODE_PAGE_FLIP_ASYNC |                     \
-     DRM_MODE_ATOMIC_TEST_ONLY | DRM_MODE_ATOMIC_NONBLOCK |                    \
-     DRM_MODE_ATOMIC_ALLOW_MODESET)
+#define DRM_MODE_ATOMIC_FLAGS                                                                      \
+    (DRM_MODE_PAGE_FLIP_EVENT | DRM_MODE_PAGE_FLIP_ASYNC | DRM_MODE_ATOMIC_TEST_ONLY               \
+     | DRM_MODE_ATOMIC_NONBLOCK | DRM_MODE_ATOMIC_ALLOW_MODESET)
 
 struct drm_mode_atomic {
     __u32 flags;

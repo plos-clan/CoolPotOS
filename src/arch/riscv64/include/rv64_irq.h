@@ -9,4 +9,4 @@ enum page_fault_type {
 };
 
 int trap_init(void);
-void page_fault_(struct pt_regs *regs,enum page_fault_type type);
+void page_fault_(struct pt_regs *regs, enum page_fault_type type);

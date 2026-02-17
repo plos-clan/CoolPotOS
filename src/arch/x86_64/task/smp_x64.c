@@ -5,13 +5,13 @@
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/page.h"
+#include "security.h"
+#include "syscall.h"
 #include "task/scheduler.h"
 #include "task/smp.h"
-#include "syscall.h"
-#include "security.h"
 
 extern struct idt_register idt_pointer;
-int                nr_cpu = 256;
+int nr_cpu = 256;
 
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"
@@ -22,7 +22,7 @@ static __attr(naked) void _setcs_helper() {
 }
 
 static void apu_gdt_setup() {
-    uint32_t     this_id  = lapic_id();
+    uint32_t this_id = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
 
     this_cpu->arch_data.gdtEntries[0] = 0x0000000000000000U;
@@ -33,7 +33,7 @@ static void apu_gdt_setup() {
 
     this_cpu->arch_data.gdt_pointer = ((struct gdt_register){
         .size = ((uint16_t)((uint32_t)sizeof(gdt_entries_t) - 1U)),
-        .ptr  = &this_cpu->arch_data.gdtEntries,
+        .ptr = &this_cpu->arch_data.gdtEntries,
     });
 
     __asm__ volatile("lgdt %[ptr]\n\t"
@@ -51,12 +51,12 @@ static void apu_gdt_setup() {
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
 
-    uint64_t address     = (uint64_t)&(this_cpu->arch_data.tss0);
-    uint64_t low_base    = (((address & 0xffffffU)) << 16U);
-    uint64_t mid_base    = (((((address >> 24U)) & 0xffU)) << 56U);
-    uint64_t high_base   = (address >> 32U);
+    uint64_t address = (uint64_t)&(this_cpu->arch_data.tss0);
+    uint64_t low_base = (((address & 0xffffffU)) << 16U);
+    uint64_t mid_base = (((((address >> 24U)) & 0xffU)) << 56U);
+    uint64_t high_base = (address >> 32U);
     uint64_t access_byte = (((uint64_t)(0x89U)) << 40U);
-    uint64_t limit       = ((uint64_t)(uint32_t)(sizeof(tss_t) - 1U));
+    uint64_t limit = ((uint64_t)(uint32_t)(sizeof(tss_t) - 1U));
 
     this_cpu->arch_data.gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
     this_cpu->arch_data.gdtEntries[6] = high_base;
@@ -68,7 +68,7 @@ static void apu_gdt_setup() {
 }
 
 void arch_bsp_cpu_init() {
-    uint32_t     this_id  = lapic_id();
+    uint32_t this_id = lapic_id();
     cpu_local_t *this_cpu = get_cpu_local(this_id);
     write_gsbase((uint64_t)this_cpu);
     write_kgsbase((uint64_t)this_cpu);
@@ -89,14 +89,14 @@ _Noreturn void arch_ap_cpu_entry() {
     calibrate_tsc_with_hpet();
 
     extern pcb_t kernel_process;
-    tcb_t        idle_thread = malloc(STACK_SIZE);
-    idle_thread->process     = kernel_process;
-    idle_thread->tid         = alloc_tid();
-    idle_thread->ct_index    = cow_list_add(kernel_process->child_threads, idle_thread);
-    idle_thread->status      = T_RUNNING;
+    tcb_t idle_thread = malloc(STACK_SIZE);
+    idle_thread->process = kernel_process;
+    idle_thread->tid = alloc_tid();
+    idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
+    idle_thread->status = T_RUNNING;
     scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     float_processor_setup();
-    arch_context_init(idle_thread,&idle_thread->context);
+    arch_context_init(idle_thread, &idle_thread->context);
     arch_enable_syscall();
     arch_open_interrupt();
 
