@@ -1,11 +1,11 @@
 #pragma once
 
-#define DRM_MAX_DEVICES 8
-#define DRM_MAX_CONNECTORS_PER_DEVICE 4
-#define DRM_MAX_CRTCS_PER_DEVICE 2
-#define DRM_MAX_ENCODERS_PER_DEVICE 2
+#define DRM_MAX_DEVICES                 8
+#define DRM_MAX_CONNECTORS_PER_DEVICE   4
+#define DRM_MAX_CRTCS_PER_DEVICE        2
+#define DRM_MAX_ENCODERS_PER_DEVICE     2
 #define DRM_MAX_FRAMEBUFFERS_PER_DEVICE 16
-#define DRM_MAX_PLANES_PER_DEVICE 4
+#define DRM_MAX_PLANES_PER_DEVICE       4
 
 #include "drm_mode.h"
 #include "lock.h"

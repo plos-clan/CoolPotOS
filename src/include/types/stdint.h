@@ -75,7 +75,7 @@ typedef __INTMAX_TYPE__ intmax_t;
 #    ifdef __clang__
 #        ifndef __FREESTND_C_HDRS_C_JOIN
 #            define __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix) x##suffix
-#            define __FREESTND_C_HDRS_C_JOIN(x, suffix) __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix)
+#            define __FREESTND_C_HDRS_C_JOIN(x, suffix)        __FREESTND_C_HDRS_C_EXPAND_JOIN(x, suffix)
 #        endif
 
 #        undef INT8_C

@@ -86,11 +86,12 @@ void hid_device_free(HidDevice *dev) {
 
 void hid_device_submit_transfer(HidDevice *dev) {
     if (!usb_device_submit_transfer(
-            dev->iface->device, (GeneralTransferArgs){
-                                    .ep_addr     = dev->ep_addr,
-                                    .buffer_phys = dev->buf_phys,
-                                    .length      = dev->max_report_size,
-                                }
+            dev->iface->device,
+            (GeneralTransferArgs){
+                .ep_addr     = dev->ep_addr,
+                .buffer_phys = dev->buf_phys,
+                .length      = dev->max_report_size,
+            }
         )) {
         kerror("HID: Submit transfer failed");
     }
@@ -136,16 +137,17 @@ void hid_device_set_idle(HidDevice *dev, uint16_t duration) {
 
 bool hid_device_fetch_report_descriptor(HidDevice *dev) {
     if (!usb_device_submit_control(
-            dev->iface->device, (ControlTransferArgs){
-                                    .setup =
-                                        (SetupPacket){
-                                                      .request_type = USB_REQ_DIR_IN | USB_REQ_REC_INTERFACE,
-                                                      .request      = USB_REQ_GET_DESCRIPTOR,
-                                                      .value        = (uint16_t)((USB_DESC_REPORT << 8) | 0),
-                                                      .index        = dev->iface->desc.interface_number,
-                                                      .length       = dev->report_desc_len,
-                                                      },
-                                    .buffer_phys = dev->report_desc_phys,
+            dev->iface->device,
+            (ControlTransferArgs){
+                .setup =
+                    (SetupPacket){
+                                  .request_type = USB_REQ_DIR_IN | USB_REQ_REC_INTERFACE,
+                                  .request      = USB_REQ_GET_DESCRIPTOR,
+                                  .value        = (uint16_t)((USB_DESC_REPORT << 8) | 0),
+                                  .index        = dev->iface->desc.interface_number,
+                                  .length       = dev->report_desc_len,
+                                  },
+                .buffer_phys = dev->report_desc_phys,
     }
         )) {
         kerror("HID: Failed to fetch report descriptor");

@@ -215,7 +215,11 @@ vfs_node_t sysfs_child_append_symlink(vfs_node_t parent, const char *name, const
 }
 
 vfs_node_t sysfs_regist_dev(
-    char type, int major, int minor, const char *bus_path, const char *dev_name,
+    char type,
+    int major,
+    int minor,
+    const char *bus_path,
+    const char *dev_name,
     const char *uevent_content
 ) {
     // 在 /sys/dev/char/MAJOR:MINOR 或 /sys/dev/block/MAJOR:MINOR 创建目录

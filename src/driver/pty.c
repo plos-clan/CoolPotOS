@@ -618,10 +618,19 @@ static void ptmx_device_open(void *parent, const char *name, vfs_node_t node) {
     if (pts_root) {
         // Create pts device with open_t callback
         errno_t err = create_device_node_ex(
-            pts_root, pts_name, device_stream, NULL, 0,
+            pts_root,
+            pts_name,
+            device_stream,
+            NULL,
+            0,
             pts_device_open, // Pass open_t callback!
-            ptmx_device_close, pts_device_ioctl, pts_device_read, pts_device_write,
-            ptmx_device_poll, NULL, ptmx_size_func
+            ptmx_device_close,
+            pts_device_ioctl,
+            pts_device_read,
+            pts_device_write,
+            ptmx_device_poll,
+            NULL,
+            ptmx_size_func
         );
         vfs_close(pts_root);
 
@@ -705,10 +714,19 @@ void ptmx_init() {
     }
 
     errno_t err = create_device_node_ex(
-        dev_root, "ptmx", device_stream, NULL, 0,
+        dev_root,
+        "ptmx",
+        device_stream,
+        NULL,
+        0,
         ptmx_device_open, // Pass open_t here!
-        ptmx_device_close, ptmx_device_ioctl, ptmx_device_read, ptmx_device_write, ptmx_device_poll,
-        NULL, ptmx_size_func
+        ptmx_device_close,
+        ptmx_device_ioctl,
+        ptmx_device_read,
+        ptmx_device_write,
+        ptmx_device_poll,
+        NULL,
+        ptmx_size_func
     );
 
     vfs_close(dev_root);

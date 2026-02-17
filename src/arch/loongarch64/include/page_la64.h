@@ -4,29 +4,29 @@
 #    undef PAGE_SIZE
 #endif
 
-#define PAGE_SIZE 4096
-#define ARCH_PT_LEVEL 4
-#define ARCH_PT_OFFSET_BASE 12
+#define PAGE_SIZE                4096
+#define ARCH_PT_LEVEL            4
+#define ARCH_PT_OFFSET_BASE      12
 #define ARCH_PT_OFFSET_PER_LEVEL 9
 
-#define ARCH_PT_FLAG_VALID (0x1UL << 0)
-#define ARCH_PT_FLAG_DIRTY (0x1UL << 1)
-#define ARCH_PT_FLAG_USER ((0x1UL << 2) | (0x1UL << 3))
-#define ARCH_PT_FLAG_MAT_CC (0x1UL << 4)
-#define ARCH_PT_FLAG_MAT_WUC (0x1UL << 5)
-#define ARCH_PT_FLAG_GLOBAL (0x1UL << 6)
-#define ARCH_PT_FLAG_HUGE (0x1UL << 6)
+#define ARCH_PT_FLAG_VALID     (0x1UL << 0)
+#define ARCH_PT_FLAG_DIRTY     (0x1UL << 1)
+#define ARCH_PT_FLAG_USER      ((0x1UL << 2) | (0x1UL << 3))
+#define ARCH_PT_FLAG_MAT_CC    (0x1UL << 4)
+#define ARCH_PT_FLAG_MAT_WUC   (0x1UL << 5)
+#define ARCH_PT_FLAG_GLOBAL    (0x1UL << 6)
+#define ARCH_PT_FLAG_HUGE      (0x1UL << 6)
 #define ARCH_PT_FLAG_WRITEABLE (0x1UL << 8)
-#define ARCH_PT_FLAG_HGLOBAL (0x1UL << 12)
-#define ARCH_PT_FLAG_NX (0x1UL << 62)
+#define ARCH_PT_FLAG_HGLOBAL   (0x1UL << 12)
+#define ARCH_PT_FLAG_NX        (0x1UL << 62)
 
 #define ARCH_ADDR_MASK ((uint64_t)0x0000FFFFFFFFF000)
 
 #define ARCH_PT_TABLE_FLAGS 0
 
-#define ARCH_READ_PTE(pte) ((uint64_t)(pte) & ARCH_ADDR_MASK)
+#define ARCH_READ_PTE(pte)          ((uint64_t)(pte) & ARCH_ADDR_MASK)
 #define ARCH_MAKE_PTE(paddr, flags) (((uint64_t)(paddr) & ARCH_ADDR_MASK) | (flags))
-#define ARCH_READ_PTE_FLAG(pte) ((uint64_t)(pte) & ~ARCH_ADDR_MASK)
+#define ARCH_READ_PTE_FLAG(pte)     ((uint64_t)(pte) & ~ARCH_ADDR_MASK)
 
 #define ARCH_MAKE_HUGE_PTE(paddr, flags)                                                           \
     (((uint64_t)(paddr) & ARCH_ADDR_MASK) | ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_HGLOBAL              \

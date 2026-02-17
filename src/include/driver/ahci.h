@@ -2,43 +2,43 @@
 
 #define HBA_RCAP 0
 #define HBA_RGHC 1
-#define HBA_RIS 2
-#define HBA_RPI 3
+#define HBA_RIS  2
+#define HBA_RPI  3
 #define HBA_RVER 4
 
-#define HBA_RPBASE (0x40)
-#define HBA_RPSIZE (0x80 / sizeof(hba_reg_t))
-#define HBA_RPxCLB 0
-#define HBA_RPxFB 2
-#define HBA_RPxIS 4
-#define HBA_RPxIE 5
-#define HBA_RPxCMD 6
-#define HBA_RPxTFD 8
-#define HBA_RPxSIG 9
+#define HBA_RPBASE  (0x40)
+#define HBA_RPSIZE  (0x80 / sizeof(hba_reg_t))
+#define HBA_RPxCLB  0
+#define HBA_RPxFB   2
+#define HBA_RPxIS   4
+#define HBA_RPxIE   5
+#define HBA_RPxCMD  6
+#define HBA_RPxTFD  8
+#define HBA_RPxSIG  9
 #define HBA_RPxSSTS 10
 #define HBA_RPxSCTL 11
 #define HBA_RPxSERR 12
 #define HBA_RPxSACT 13
-#define HBA_RPxCI 14
+#define HBA_RPxCI   14
 #define HBA_RPxSNTF 15
-#define HBA_RPxFBS 16
+#define HBA_RPxFBS  16
 
-#define HBA_PxCMD_FRE (1 << 4)
-#define HBA_PxCMD_CR (1 << 15)
-#define HBA_PxCMD_FR (1 << 14)
-#define HBA_PxCMD_ST (1)
+#define HBA_PxCMD_FRE  (1 << 4)
+#define HBA_PxCMD_CR   (1 << 15)
+#define HBA_PxCMD_FR   (1 << 14)
+#define HBA_PxCMD_ST   (1)
 #define HBA_PxINTR_DMA (1 << 2)
 #define HBA_PxINTR_DHR (1)
 #define HBA_PxINTR_DPS (1 << 5)
 #define HBA_PxINTR_TFE (1 << 30)
 #define HBA_PxINTR_HBF (1 << 29)
 #define HBA_PxINTR_HBD (1 << 28)
-#define HBA_PxINTR_IF (1 << 27)
+#define HBA_PxINTR_IF  (1 << 27)
 #define HBA_PxINTR_NIF (1 << 26)
-#define HBA_PxINTR_OF (1 << 24)
-#define HBA_PxTFD_ERR (1)
-#define HBA_PxTFD_BSY (1 << 7)
-#define HBA_PxTFD_DRQ (1 << 3)
+#define HBA_PxINTR_OF  (1 << 24)
+#define HBA_PxTFD_ERR  (1)
+#define HBA_PxTFD_BSY  (1 << 7)
+#define HBA_PxTFD_DRQ  (1 << 3)
 
 #define HBA_FATAL (HBA_PxINTR_TFE | HBA_PxINTR_HBF | HBA_PxINTR_HBD | HBA_PxINTR_IF)
 
@@ -46,26 +46,26 @@
 
 #define HBA_RGHC_ACHI_ENABLE ((uint32_t)1 << 31)
 #define HBA_RGHC_INTR_ENABLE ((uint32_t)1 << 1)
-#define HBA_RGHC_RESET 1
+#define HBA_RGHC_RESET       1
 
-#define HBA_RPxSSTS_PWR(x) (((x) >> 8) & 0xf)
-#define HBA_RPxSSTS_IF(x) (((x) >> 4) & 0xf)
+#define HBA_RPxSSTS_PWR(x)      (((x) >> 8) & 0xf)
+#define HBA_RPxSSTS_IF(x)       (((x) >> 4) & 0xf)
 #define HBA_RPxSSTS_PHYSTATE(x) ((x) & 0xf)
 
 #define hba_clear_reg(reg) (reg) = (hba_reg_t)(-1)
 
 #define HBA_DEV_SIG_ATAPI 0xeb140101
-#define HBA_DEV_SIG_ATA 0x00000101
+#define HBA_DEV_SIG_ATA   0x00000101
 
 #define __HBA_PACKED__ __attribute__((packed))
 
 #define HBA_CMDH_FIS_LEN(fis_bytes) (((fis_bytes) / 4) & 0x1f)
-#define HBA_CMDH_ATAPI (1 << 5)
-#define HBA_CMDH_WRITE (1 << 6)
-#define HBA_CMDH_PREFETCH (1 << 7)
-#define HBA_CMDH_R (1 << 8)
-#define HBA_CMDH_CLR_BUSY (1 << 10)
-#define HBA_CMDH_PRDT_LEN(entries) (((entries) & 0xffff) << 16)
+#define HBA_CMDH_ATAPI              (1 << 5)
+#define HBA_CMDH_WRITE              (1 << 6)
+#define HBA_CMDH_PREFETCH           (1 << 7)
+#define HBA_CMDH_R                  (1 << 8)
+#define HBA_CMDH_CLR_BUSY           (1 << 10)
+#define HBA_CMDH_PRDT_LEN(entries)  (((entries) & 0xffff) << 16)
 
 #define SCSI_CDB16 16
 #define SCSI_CDB12 12
@@ -74,23 +74,23 @@
 
 #define SCSI_READ_CAPACITY_16 0x9e
 #define SCSI_READ_CAPACITY_10 0x25
-#define SCSI_READ_BLOCKS_16 0x88
-#define SCSI_READ_BLOCKS_12 0xa8
-#define SCSI_WRITE_BLOCKS_16 0x8a
-#define SCSI_WRITE_BLOCKS_12 0xaa
+#define SCSI_READ_BLOCKS_16   0x88
+#define SCSI_READ_BLOCKS_12   0xa8
+#define SCSI_WRITE_BLOCKS_16  0x8a
+#define SCSI_WRITE_BLOCKS_12  0xaa
 
-#define SATA_REG_FIS_D2H 0x34
-#define SATA_REG_FIS_H2D 0x27
-#define SATA_REG_FIS_COMMAND 0x80
+#define SATA_REG_FIS_D2H                0x34
+#define SATA_REG_FIS_H2D                0x27
+#define SATA_REG_FIS_COMMAND            0x80
 #define SATA_LBA_COMPONENT(lba, offset) ((uint8_t)(((lba) >> (offset)) & 0xff))
 
-#define ATA_IDENTIFY_DEVICE 0xec
+#define ATA_IDENTIFY_DEVICE        0xec
 #define ATA_IDENTIFY_PAKCET_DEVICE 0xa1
-#define ATA_PACKET 0xa0
-#define ATA_READ_DMA_EXT 0x25
-#define ATA_READ_DMA 0xc8
-#define ATA_WRITE_DMA_EXT 0x35
-#define ATA_WRITE_DMA 0xca
+#define ATA_PACKET                 0xa0
+#define ATA_READ_DMA_EXT           0x25
+#define ATA_READ_DMA               0xc8
+#define ATA_WRITE_DMA_EXT          0x35
+#define ATA_WRITE_DMA              0xca
 
 // ATA 状态寄存器 (STS) 位定义
 #define ATA_STS_ERR (1 << 0) // Error
@@ -98,32 +98,32 @@
 #define ATA_STS_BSY (1 << 7) // Busy
 
 // ATA 错误寄存器 (ERR) 位定义
-#define ATA_ERR_AMNF (1 << 0)  // Address Mark Not Found
+#define ATA_ERR_AMNF  (1 << 0) // Address Mark Not Found
 #define ATA_ERR_TKZNF (1 << 1) // Track Zero Not Found
-#define ATA_ERR_ABRT (1 << 2)  // Command Aborted
-#define ATA_ERR_IDNF (1 << 4)  // ID Not Found (LBA out of range)
-#define ATA_ERR_UNC (1 << 6)   // Uncorrectable Data Error
+#define ATA_ERR_ABRT  (1 << 2) // Command Aborted
+#define ATA_ERR_IDNF  (1 << 4) // ID Not Found (LBA out of range)
+#define ATA_ERR_UNC   (1 << 6) // Uncorrectable Data Error
 
 // AHCI 命令寄存器 (PxCMD) 位定义
 #define AHCI_CMD_FR (1 << 14) // FIS Receive Running
 #define AHCI_CMD_CR (1 << 15) // Command Running
 
-#define IDDEV_OFFMAXLBA 60
-#define IDDEV_OFFMAXLBA_EXT 230
-#define IDDEV_OFFLSECSIZE 117
-#define IDDEV_OFFWWN 108
-#define IDDEV_OFFSERIALNUM 10
-#define IDDEV_OFFMODELNUM 27
-#define IDDEV_OFFADDSUPPORT 69
-#define IDDEV_OFFA48SUPPORT 83
-#define IDDEV_OFFALIGN 209
-#define IDDEV_OFFLPP 106
+#define IDDEV_OFFMAXLBA       60
+#define IDDEV_OFFMAXLBA_EXT   230
+#define IDDEV_OFFLSECSIZE     117
+#define IDDEV_OFFWWN          108
+#define IDDEV_OFFSERIALNUM    10
+#define IDDEV_OFFMODELNUM     27
+#define IDDEV_OFFADDSUPPORT   69
+#define IDDEV_OFFA48SUPPORT   83
+#define IDDEV_OFFALIGN        209
+#define IDDEV_OFFLPP          106
 #define IDDEV_OFFCAPABILITIES 49
 
 #define HBA_FIS_SIZE 256
 #define HBA_CLB_SIZE 1024
 
-#define MAX_RETRY 2
+#define MAX_RETRY        2
 #define AHCI_MAX_DEVICES 20
 
 #define HBA_PRDTE_BYTE_CNT(cnt) ((cnt & 0x3FFFFF) | 0x1)
@@ -187,7 +187,7 @@ struct hba_cmdt {
 } __HBA_PACKED__;
 
 #define HBA_DEV_FEXTLBA 1
-#define HBA_DEV_FATAPI (1 << 1)
+#define HBA_DEV_FATAPI  (1 << 1)
 
 struct hba_port;
 struct ahci_hba;

@@ -2,13 +2,13 @@
 
 #define CPOS_SIG_MAGIC 0x43504F53 // ASCII "CPOS" (0x43='C',0x50='P',0x4F='O',0x53='S')
 
-#define HASH_SHA256 1
+#define HASH_SHA256     1
 #define SHA256_HASH_LEN 32
-#define HASH_LEN SHA256_HASH_LEN
+#define HASH_LEN        SHA256_HASH_LEN
 
-#define ECC_KEY_LEN 32                   // P-256 field element length in bytes
+#define ECC_KEY_LEN    32                // P-256 field element length in bytes
 #define ECC_PUBKEY_LEN (2 * ECC_KEY_LEN) // X||Y = 64 bytes
-#define ECC_SIG_LEN (2 * ECC_KEY_LEN)    // R||S = 64 bytes
+#define ECC_SIG_LEN    (2 * ECC_KEY_LEN) // R||S = 64 bytes
 
 #include "metadata.h"
 #include "module.h"

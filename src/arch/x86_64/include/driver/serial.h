@@ -1,11 +1,11 @@
 #pragma once
 
 #define SERIAL_REG_DATA 0 // Data Register
-#define SERIAL_REG_IER 1  // Interrupt Enable Register
-#define SERIAL_REG_FCR 2  // FIFO Control Register
-#define SERIAL_REG_LCR 3  // Line Control Register
-#define SERIAL_REG_MCR 4  // Modem Control Registers
-#define SERIAL_REG_LSR 5  // Line Status Register
+#define SERIAL_REG_IER  1 // Interrupt Enable Register
+#define SERIAL_REG_FCR  2 // FIFO Control Register
+#define SERIAL_REG_LCR  3 // Line Control Register
+#define SERIAL_REG_MCR  4 // Modem Control Registers
+#define SERIAL_REG_LSR  5 // Line Status Register
 
 /* Serial port I/O */
 #define SERIAL_PORT_1 0x3f8 // Serial port 1 number.

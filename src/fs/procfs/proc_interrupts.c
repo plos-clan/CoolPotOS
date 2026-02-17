@@ -28,7 +28,9 @@ char *proc_gen_interrupts(size_t *context_len) {
         // 写入每 CPU 的计数
         for (size_t cpu = 0; cpu < get_cpu_count(); cpu++) {
             offset += snprintf(
-                buffer + offset, bufsize - offset, "%-8llu",
+                buffer + offset,
+                bufsize - offset,
+                "%-8llu",
                 (unsigned long long)action->int_count[cpu]
             );
         }

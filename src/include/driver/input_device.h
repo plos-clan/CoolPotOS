@@ -1,9 +1,9 @@
 #pragma once
 
 #define INPUT_KEYBOARD_ID 1
-#define INPUT_MOUSE_ID 2
+#define INPUT_MOUSE_ID    2
 
-#define EV_PRESS 0
+#define EV_PRESS   0
 #define EV_RELEASE 1
 
 #include "llist_queue.h"

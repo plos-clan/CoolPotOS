@@ -367,7 +367,7 @@ extern "C" {
  * then V), but the exact Linear layout is undefined.
  * These formats can only be used with a non-Linear modifier.
  */
-#define DRM_FORMAT_YUV420_8BIT fourcc_code('Y', 'U', '0', '8')
+#define DRM_FORMAT_YUV420_8BIT  fourcc_code('Y', 'U', '0', '8')
 #define DRM_FORMAT_YUV420_10BIT fourcc_code('Y', 'U', '1', '0')
 
 /*
@@ -379,10 +379,10 @@ extern "C" {
 #define DRM_FORMAT_XBGR8888_A8 fourcc_code('X', 'B', 'A', '8')
 #define DRM_FORMAT_RGBX8888_A8 fourcc_code('R', 'X', 'A', '8')
 #define DRM_FORMAT_BGRX8888_A8 fourcc_code('B', 'X', 'A', '8')
-#define DRM_FORMAT_RGB888_A8 fourcc_code('R', '8', 'A', '8')
-#define DRM_FORMAT_BGR888_A8 fourcc_code('B', '8', 'A', '8')
-#define DRM_FORMAT_RGB565_A8 fourcc_code('R', '5', 'A', '8')
-#define DRM_FORMAT_BGR565_A8 fourcc_code('B', '5', 'A', '8')
+#define DRM_FORMAT_RGB888_A8   fourcc_code('R', '8', 'A', '8')
+#define DRM_FORMAT_BGR888_A8   fourcc_code('B', '8', 'A', '8')
+#define DRM_FORMAT_RGB565_A8   fourcc_code('R', '5', 'A', '8')
+#define DRM_FORMAT_BGR565_A8   fourcc_code('B', '5', 'A', '8')
 
 /*
  * 2 plane YCbCr
@@ -568,19 +568,19 @@ extern "C" {
  */
 
 /* Vendor Ids: */
-#define DRM_FORMAT_MOD_VENDOR_NONE 0
-#define DRM_FORMAT_MOD_VENDOR_INTEL 0x01
-#define DRM_FORMAT_MOD_VENDOR_AMD 0x02
-#define DRM_FORMAT_MOD_VENDOR_NVIDIA 0x03
-#define DRM_FORMAT_MOD_VENDOR_SAMSUNG 0x04
-#define DRM_FORMAT_MOD_VENDOR_QCOM 0x05
-#define DRM_FORMAT_MOD_VENDOR_VIVANTE 0x06
-#define DRM_FORMAT_MOD_VENDOR_BROADCOM 0x07
-#define DRM_FORMAT_MOD_VENDOR_ARM 0x08
+#define DRM_FORMAT_MOD_VENDOR_NONE      0
+#define DRM_FORMAT_MOD_VENDOR_INTEL     0x01
+#define DRM_FORMAT_MOD_VENDOR_AMD       0x02
+#define DRM_FORMAT_MOD_VENDOR_NVIDIA    0x03
+#define DRM_FORMAT_MOD_VENDOR_SAMSUNG   0x04
+#define DRM_FORMAT_MOD_VENDOR_QCOM      0x05
+#define DRM_FORMAT_MOD_VENDOR_VIVANTE   0x06
+#define DRM_FORMAT_MOD_VENDOR_BROADCOM  0x07
+#define DRM_FORMAT_MOD_VENDOR_ARM       0x08
 #define DRM_FORMAT_MOD_VENDOR_ALLWINNER 0x09
-#define DRM_FORMAT_MOD_VENDOR_AMLOGIC 0x0a
-#define DRM_FORMAT_MOD_VENDOR_MTK 0x0b
-#define DRM_FORMAT_MOD_VENDOR_APPLE 0x0c
+#define DRM_FORMAT_MOD_VENDOR_AMLOGIC   0x0a
+#define DRM_FORMAT_MOD_VENDOR_MTK       0x0b
+#define DRM_FORMAT_MOD_VENDOR_APPLE     0x0c
 
 /* add more to the end as needed */
 
@@ -725,7 +725,7 @@ extern "C" {
  * But that fact is not relevant unless the memory is accessed
  * directly.
  */
-#define I915_FORMAT_MOD_Y_TILED_CCS fourcc_mod_code(INTEL, 4)
+#define I915_FORMAT_MOD_Y_TILED_CCS  fourcc_mod_code(INTEL, 4)
 #define I915_FORMAT_MOD_Yf_TILED_CCS fourcc_mod_code(INTEL, 5)
 
 /*
@@ -997,11 +997,11 @@ extern "C" {
  * clear/compression modifiers, as future cores might add some more TS layout
  * variations.
  */
-#define VIVANTE_MOD_TS_64_4 (1ULL << 48)
-#define VIVANTE_MOD_TS_64_2 (2ULL << 48)
+#define VIVANTE_MOD_TS_64_4  (1ULL << 48)
+#define VIVANTE_MOD_TS_64_2  (2ULL << 48)
 #define VIVANTE_MOD_TS_128_4 (3ULL << 48)
 #define VIVANTE_MOD_TS_256_4 (4ULL << 48)
-#define VIVANTE_MOD_TS_MASK (0xfULL << 48)
+#define VIVANTE_MOD_TS_MASK  (0xfULL << 48)
 
 /*
  * Vivante compression modifiers. Those depend on a TS modifier being present
@@ -1009,7 +1009,7 @@ extern "C" {
  * clear markers when compression is enabled.
  */
 #define VIVANTE_MOD_COMP_DEC400 (1ULL << 52)
-#define VIVANTE_MOD_COMP_MASK (0xfULL << 52)
+#define VIVANTE_MOD_COMP_MASK   (0xfULL << 52)
 
 /* Masking out the extension bits will yield the base modifier. */
 #define VIVANTE_MOD_EXT_MASK (VIVANTE_MOD_TS_MASK | VIVANTE_MOD_COMP_MASK)
@@ -1108,8 +1108,9 @@ extern "C" {
  */
 #define DRM_FORMAT_MOD_NVIDIA_BLOCK_LINEAR_2D(c, s, g, k, h)                                       \
     fourcc_mod_code(                                                                               \
-        NVIDIA, (0x10 | ((h) & 0xf) | (((k) & 0xff) << 12) | (((g) & 0x3) << 20)                   \
-                 | (((s) & 0x1) << 22) | (((c) & 0x7) << 23))                                      \
+        NVIDIA,                                                                                    \
+        (0x10 | ((h) & 0xf) | (((k) & 0xff) << 12) | (((g) & 0x3) << 20) | (((s) & 0x1) << 22)     \
+         | (((c) & 0x7) << 23))                                                                    \
     )
 
 /* To grandfather in prior block linear format modifiers to the above layout,
@@ -1148,11 +1149,11 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  */
 #define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(v) DRM_FORMAT_MOD_NVIDIA_BLOCK_LINEAR_2D(0, 0, 0, 0, (v))
 
-#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_ONE_GOB DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(0)
-#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_TWO_GOB DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(1)
-#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_FOUR_GOB DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(2)
-#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_EIGHT_GOB DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(3)
-#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_SIXTEEN_GOB DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(4)
+#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_ONE_GOB       DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(0)
+#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_TWO_GOB       DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(1)
+#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_FOUR_GOB      DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(2)
+#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_EIGHT_GOB     DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(3)
+#define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_SIXTEEN_GOB   DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(4)
 #define DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK_THIRTYTWO_GOB DRM_FORMAT_MOD_NVIDIA_16BX2_BLOCK(5)
 
 /*
@@ -1162,7 +1163,7 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * vendor code.
  */
 #define __fourcc_mod_broadcom_param_shift 8
-#define __fourcc_mod_broadcom_param_bits 48
+#define __fourcc_mod_broadcom_param_bits  48
 #define fourcc_mod_broadcom_code(val, params)                                                      \
     fourcc_mod_code(BROADCOM, ((((__u64)params) << __fourcc_mod_broadcom_param_shift) | val))
 #define fourcc_mod_broadcom_param(m)                                                               \
@@ -1220,13 +1221,13 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * wide, but as this is a 10 bpp format that translates to 96 pixels.
  */
 
-#define DRM_FORMAT_MOD_BROADCOM_SAND32_COL_HEIGHT(v) fourcc_mod_broadcom_code(2, v)
-#define DRM_FORMAT_MOD_BROADCOM_SAND64_COL_HEIGHT(v) fourcc_mod_broadcom_code(3, v)
+#define DRM_FORMAT_MOD_BROADCOM_SAND32_COL_HEIGHT(v)  fourcc_mod_broadcom_code(2, v)
+#define DRM_FORMAT_MOD_BROADCOM_SAND64_COL_HEIGHT(v)  fourcc_mod_broadcom_code(3, v)
 #define DRM_FORMAT_MOD_BROADCOM_SAND128_COL_HEIGHT(v) fourcc_mod_broadcom_code(4, v)
 #define DRM_FORMAT_MOD_BROADCOM_SAND256_COL_HEIGHT(v) fourcc_mod_broadcom_code(5, v)
 
-#define DRM_FORMAT_MOD_BROADCOM_SAND32 DRM_FORMAT_MOD_BROADCOM_SAND32_COL_HEIGHT(0)
-#define DRM_FORMAT_MOD_BROADCOM_SAND64 DRM_FORMAT_MOD_BROADCOM_SAND64_COL_HEIGHT(0)
+#define DRM_FORMAT_MOD_BROADCOM_SAND32  DRM_FORMAT_MOD_BROADCOM_SAND32_COL_HEIGHT(0)
+#define DRM_FORMAT_MOD_BROADCOM_SAND64  DRM_FORMAT_MOD_BROADCOM_SAND64_COL_HEIGHT(0)
 #define DRM_FORMAT_MOD_BROADCOM_SAND128 DRM_FORMAT_MOD_BROADCOM_SAND128_COL_HEIGHT(0)
 #define DRM_FORMAT_MOD_BROADCOM_SAND256 DRM_FORMAT_MOD_BROADCOM_SAND256_COL_HEIGHT(0)
 
@@ -1294,10 +1295,10 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * plane(s). e.g. (32x8_64x4 means 32x8 Luma, with 64x4 Chroma).
  * Multiple superblock sizes are only valid for multi-plane YCbCr formats.
  */
-#define AFBC_FORMAT_MOD_BLOCK_SIZE_MASK 0xf
-#define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16 (1ULL)
-#define AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 (2ULL)
-#define AFBC_FORMAT_MOD_BLOCK_SIZE_64x4 (3ULL)
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_MASK      0xf
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_16x16     (1ULL)
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_32x8      (2ULL)
+#define AFBC_FORMAT_MOD_BLOCK_SIZE_64x4      (3ULL)
 #define AFBC_FORMAT_MOD_BLOCK_SIZE_32x8_64x4 (4ULL)
 
 /*
@@ -1477,11 +1478,11 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * AFRC_FORMAT_MOD_CU_SIZE_P12 must be specified.
  */
 #define AFRC_FORMAT_MOD_CU_SIZE_MASK 0xf
-#define AFRC_FORMAT_MOD_CU_SIZE_16 (1ULL)
-#define AFRC_FORMAT_MOD_CU_SIZE_24 (2ULL)
-#define AFRC_FORMAT_MOD_CU_SIZE_32 (3ULL)
+#define AFRC_FORMAT_MOD_CU_SIZE_16   (1ULL)
+#define AFRC_FORMAT_MOD_CU_SIZE_24   (2ULL)
+#define AFRC_FORMAT_MOD_CU_SIZE_32   (3ULL)
 
-#define AFRC_FORMAT_MOD_CU_SIZE_P0(__afrc_cu_size) (__afrc_cu_size)
+#define AFRC_FORMAT_MOD_CU_SIZE_P0(__afrc_cu_size)  (__afrc_cu_size)
 #define AFRC_FORMAT_MOD_CU_SIZE_P12(__afrc_cu_size) ((__afrc_cu_size) << 4)
 
 /*
@@ -1538,15 +1539,16 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * Not all combinations are valid, and different SoCs may support different
  * combinations of layout and options.
  */
-#define __fourcc_mod_amlogic_layout_mask 0xff
+#define __fourcc_mod_amlogic_layout_mask   0xff
 #define __fourcc_mod_amlogic_options_shift 8
-#define __fourcc_mod_amlogic_options_mask 0xff
+#define __fourcc_mod_amlogic_options_mask  0xff
 
 #define DRM_FORMAT_MOD_AMLOGIC_FBC(__layout, __options)                                            \
     fourcc_mod_code(                                                                               \
-        AMLOGIC, ((__layout) & __fourcc_mod_amlogic_layout_mask)                                   \
-                     | (((__options) & __fourcc_mod_amlogic_options_mask)                          \
-                        << __fourcc_mod_amlogic_options_shift)                                     \
+        AMLOGIC,                                                                                   \
+        ((__layout) & __fourcc_mod_amlogic_layout_mask)                                            \
+            | (((__options) & __fourcc_mod_amlogic_options_mask)                                   \
+               << __fourcc_mod_amlogic_options_shift)                                              \
     )
 
 /* Amlogic FBC Layouts */
@@ -1615,8 +1617,8 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * layout. Only the 16L_32S tiling is used for now, but we define an
  * "untiled" version and leave room for future expansion.
  */
-#define MTK_FMT_MOD_TILE_MASK 0xf
-#define MTK_FMT_MOD_TILE_NONE 0x0
+#define MTK_FMT_MOD_TILE_MASK   0xf
+#define MTK_FMT_MOD_TILE_NONE   0x0
 #define MTK_FMT_MOD_TILE_16L32S 0x1
 
 /*
@@ -1624,15 +1626,15 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  */
 #define MTK_FMT_MOD_COMPRESS_MASK (0xf << 8)
 #define MTK_FMT_MOD_COMPRESS_NONE (0x0 << 8)
-#define MTK_FMT_MOD_COMPRESS_V1 (0x1 << 8)
+#define MTK_FMT_MOD_COMPRESS_V1   (0x1 << 8)
 
 /*
  * Bits 16-23 specify how the bits of 10 bit formats are
  * stored out in memory
  */
-#define MTK_FMT_MOD_10BIT_LAYOUT_MASK (0xf << 16)
-#define MTK_FMT_MOD_10BIT_LAYOUT_PACKED (0x0 << 16)
-#define MTK_FMT_MOD_10BIT_LAYOUT_LSBTILED (0x1 << 16)
+#define MTK_FMT_MOD_10BIT_LAYOUT_MASK      (0xf << 16)
+#define MTK_FMT_MOD_10BIT_LAYOUT_PACKED    (0x0 << 16)
+#define MTK_FMT_MOD_10BIT_LAYOUT_LSBTILED  (0x1 << 16)
 #define MTK_FMT_MOD_10BIT_LAYOUT_LSBRASTER (0x2 << 16)
 
 /* alias for the most common tiling format */
@@ -1679,7 +1681,7 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * For detailed information on the hardware image layouts, see
  * https://docs.mesa3d.org/drivers/asahi.html#image-layouts
  */
-#define DRM_FORMAT_MOD_APPLE_GPU_TILED fourcc_mod_code(APPLE, 1)
+#define DRM_FORMAT_MOD_APPLE_GPU_TILED            fourcc_mod_code(APPLE, 1)
 #define DRM_FORMAT_MOD_APPLE_GPU_TILED_COMPRESSED fourcc_mod_code(APPLE, 2)
 
 /*
@@ -1727,11 +1729,11 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
 #define IS_AMD_FMT_MOD(val) (((val) >> 56) == DRM_FORMAT_MOD_VENDOR_AMD)
 
 /* Reserve 0 for GFX8 and older */
-#define AMD_FMT_MOD_TILE_VER_GFX9 1
-#define AMD_FMT_MOD_TILE_VER_GFX10 2
+#define AMD_FMT_MOD_TILE_VER_GFX9         1
+#define AMD_FMT_MOD_TILE_VER_GFX10        2
 #define AMD_FMT_MOD_TILE_VER_GFX10_RBPLUS 3
-#define AMD_FMT_MOD_TILE_VER_GFX11 4
-#define AMD_FMT_MOD_TILE_VER_GFX12 5
+#define AMD_FMT_MOD_TILE_VER_GFX11        4
+#define AMD_FMT_MOD_TILE_VER_GFX12        5
 
 /*
  * 64K_S is the same for GFX9/GFX10/GFX10_RBPLUS and hence has GFX9 as canonical
@@ -1745,11 +1747,11 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  *
  * 64K_D_2D on GFX12 is identical to 64K_D on GFX11.
  */
-#define AMD_FMT_MOD_TILE_GFX9_64K_D 10
-#define AMD_FMT_MOD_TILE_GFX9_4K_D_X 22
-#define AMD_FMT_MOD_TILE_GFX9_64K_S_X 25
-#define AMD_FMT_MOD_TILE_GFX9_64K_D_X 26
-#define AMD_FMT_MOD_TILE_GFX9_64K_R_X 27
+#define AMD_FMT_MOD_TILE_GFX9_64K_D     10
+#define AMD_FMT_MOD_TILE_GFX9_4K_D_X    22
+#define AMD_FMT_MOD_TILE_GFX9_64K_S_X   25
+#define AMD_FMT_MOD_TILE_GFX9_64K_D_X   26
+#define AMD_FMT_MOD_TILE_GFX9_64K_R_X   27
 #define AMD_FMT_MOD_TILE_GFX11_256K_R_X 31
 
 /* Gfx12 swizzle modes:
@@ -1763,40 +1765,40 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  *    7 - 256KB_3D
  */
 #define AMD_FMT_MOD_TILE_GFX12_256B_2D 1
-#define AMD_FMT_MOD_TILE_GFX12_4K_2D 2
-#define AMD_FMT_MOD_TILE_GFX12_64K_2D 3
+#define AMD_FMT_MOD_TILE_GFX12_4K_2D   2
+#define AMD_FMT_MOD_TILE_GFX12_64K_2D  3
 #define AMD_FMT_MOD_TILE_GFX12_256K_2D 4
 
-#define AMD_FMT_MOD_DCC_BLOCK_64B 0
+#define AMD_FMT_MOD_DCC_BLOCK_64B  0
 #define AMD_FMT_MOD_DCC_BLOCK_128B 1
 #define AMD_FMT_MOD_DCC_BLOCK_256B 2
 
 #define AMD_FMT_MOD_TILE_VERSION_SHIFT 0
-#define AMD_FMT_MOD_TILE_VERSION_MASK 0xFF
-#define AMD_FMT_MOD_TILE_SHIFT 8
-#define AMD_FMT_MOD_TILE_MASK 0x1F
+#define AMD_FMT_MOD_TILE_VERSION_MASK  0xFF
+#define AMD_FMT_MOD_TILE_SHIFT         8
+#define AMD_FMT_MOD_TILE_MASK          0x1F
 
 /* Whether DCC compression is enabled. */
 #define AMD_FMT_MOD_DCC_SHIFT 13
-#define AMD_FMT_MOD_DCC_MASK 0x1
+#define AMD_FMT_MOD_DCC_MASK  0x1
 
 /*
  * Whether to include two DCC surfaces, one which is rb & pipe aligned, and
  * one which is not-aligned.
  */
 #define AMD_FMT_MOD_DCC_RETILE_SHIFT 14
-#define AMD_FMT_MOD_DCC_RETILE_MASK 0x1
+#define AMD_FMT_MOD_DCC_RETILE_MASK  0x1
 
 /* Only set if DCC_RETILE = false */
 #define AMD_FMT_MOD_DCC_PIPE_ALIGN_SHIFT 15
-#define AMD_FMT_MOD_DCC_PIPE_ALIGN_MASK 0x1
+#define AMD_FMT_MOD_DCC_PIPE_ALIGN_MASK  0x1
 
-#define AMD_FMT_MOD_DCC_INDEPENDENT_64B_SHIFT 16
-#define AMD_FMT_MOD_DCC_INDEPENDENT_64B_MASK 0x1
-#define AMD_FMT_MOD_DCC_INDEPENDENT_128B_SHIFT 17
-#define AMD_FMT_MOD_DCC_INDEPENDENT_128B_MASK 0x1
+#define AMD_FMT_MOD_DCC_INDEPENDENT_64B_SHIFT      16
+#define AMD_FMT_MOD_DCC_INDEPENDENT_64B_MASK       0x1
+#define AMD_FMT_MOD_DCC_INDEPENDENT_128B_SHIFT     17
+#define AMD_FMT_MOD_DCC_INDEPENDENT_128B_MASK      0x1
 #define AMD_FMT_MOD_DCC_MAX_COMPRESSED_BLOCK_SHIFT 18
-#define AMD_FMT_MOD_DCC_MAX_COMPRESSED_BLOCK_MASK 0x3
+#define AMD_FMT_MOD_DCC_MAX_COMPRESSED_BLOCK_MASK  0x3
 
 /*
  * DCC supports embedding some clear colors directly in the DCC surface.
@@ -1808,7 +1810,7 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * embeddable colors.
  */
 #define AMD_FMT_MOD_DCC_CONSTANT_ENCODE_SHIFT 20
-#define AMD_FMT_MOD_DCC_CONSTANT_ENCODE_MASK 0x1
+#define AMD_FMT_MOD_DCC_CONSTANT_ENCODE_MASK  0x1
 
 /*
  * The below fields are for accounting for per GPU differences. These are only
@@ -1821,15 +1823,15 @@ static __inline__ __u64 drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier
  * PIPE = only for TILE_VER_GFX9 & DCC & (DCC_RETILE | DCC_PIPE_ALIGN)
  */
 #define AMD_FMT_MOD_PIPE_XOR_BITS_SHIFT 21
-#define AMD_FMT_MOD_PIPE_XOR_BITS_MASK 0x7
+#define AMD_FMT_MOD_PIPE_XOR_BITS_MASK  0x7
 #define AMD_FMT_MOD_BANK_XOR_BITS_SHIFT 24
-#define AMD_FMT_MOD_BANK_XOR_BITS_MASK 0x7
-#define AMD_FMT_MOD_PACKERS_SHIFT 27
-#define AMD_FMT_MOD_PACKERS_MASK 0x7
-#define AMD_FMT_MOD_RB_SHIFT 30
-#define AMD_FMT_MOD_RB_MASK 0x7
-#define AMD_FMT_MOD_PIPE_SHIFT 33
-#define AMD_FMT_MOD_PIPE_MASK 0x7
+#define AMD_FMT_MOD_BANK_XOR_BITS_MASK  0x7
+#define AMD_FMT_MOD_PACKERS_SHIFT       27
+#define AMD_FMT_MOD_PACKERS_MASK        0x7
+#define AMD_FMT_MOD_RB_SHIFT            30
+#define AMD_FMT_MOD_RB_MASK             0x7
+#define AMD_FMT_MOD_PIPE_SHIFT          33
+#define AMD_FMT_MOD_PIPE_MASK           0x7
 
 #define AMD_FMT_MOD_SET(field, value) ((__u64)(value) << AMD_FMT_MOD_##field##_SHIFT)
 #define AMD_FMT_MOD_GET(field, value)                                                              \

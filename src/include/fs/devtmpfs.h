@@ -40,15 +40,32 @@ typedef struct devtmp_handle {
 } dtmp_handle_t;
 
 errno_t create_device_node(
-    vfs_node_t root, char *name, enum device_type type, void *handle, uint64_t dev_number,
-    vfs_ioctl_t ioctl, vfs_read_t read, vfs_write_t write, vfs_poll_t poll, vfs_mapfile_t map,
+    vfs_node_t root,
+    char *name,
+    enum device_type type,
+    void *handle,
+    uint64_t dev_number,
+    vfs_ioctl_t ioctl,
+    vfs_read_t read,
+    vfs_write_t write,
+    vfs_poll_t poll,
+    vfs_mapfile_t map,
     size_t (*size_t)(void *handle)
 );
 
 errno_t create_device_node_ex(
-    vfs_node_t root, char *name, enum device_type type, void *handle, uint64_t dev_number,
-    void (*open_t)(void *, const char *, vfs_node_t), vfs_close_t close_t, vfs_ioctl_t ioctl,
-    vfs_read_t read, vfs_write_t write, vfs_poll_t poll, vfs_mapfile_t map,
+    vfs_node_t root,
+    char *name,
+    enum device_type type,
+    void *handle,
+    uint64_t dev_number,
+    void (*open_t)(void *, const char *, vfs_node_t),
+    vfs_close_t close_t,
+    vfs_ioctl_t ioctl,
+    vfs_read_t read,
+    vfs_write_t write,
+    vfs_poll_t poll,
+    vfs_mapfile_t map,
     size_t (*size_t)(void *handle)
 );
 

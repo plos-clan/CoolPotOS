@@ -12,8 +12,11 @@
 syscall_(exit, int exit_code) {
     tcb_t exit_thread = get_current_task();
     logkf(
-        "sys_exit: pid=%d tid=%d thread=%s exit code=%d.\n", exit_thread->process->pid,
-        exit_thread->tid, exit_thread->name, exit_code
+        "sys_exit: pid=%d tid=%d thread=%s exit code=%d.\n",
+        exit_thread->process->pid,
+        exit_thread->tid,
+        exit_thread->name,
+        exit_code
     );
     pcb_t process = exit_thread->process;
     if (process->child_threads->size <= 1) {
@@ -193,7 +196,10 @@ syscall_(sigpending, sigset_t *set, size_t sigsetsize) {
 }
 
 syscall_(
-    sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timespec *timeout,
+    sigtimedwait,
+    const sigset_t *set,
+    siginfo_t *info,
+    const struct timespec *timeout,
     size_t sigsetsize
 ) {
     if (set == NULL)

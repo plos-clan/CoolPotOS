@@ -1,12 +1,12 @@
 #pragma once
 
 #define PCI_MCFG_MAX_ENTRIES_LEN 1024
-#define PCI_DEVICE_MAX 256
+#define PCI_DEVICE_MAX           256
 
-#define PCI_CONF_VENDOR 0X0   // Vendor ID
-#define PCI_CONF_DEVICE 0X2   // Device ID
-#define PCI_CONF_COMMAND 0x4  // Command
-#define PCI_CONF_STATUS 0x6   // Status
+#define PCI_CONF_VENDOR   0X0 // Vendor ID
+#define PCI_CONF_DEVICE   0X2 // Device ID
+#define PCI_CONF_COMMAND  0x4 // Command
+#define PCI_CONF_STATUS   0x6 // Status
 #define PCI_CONF_REVISION 0x8 // revision ID
 
 #define EXPORT_BYTE(target, first) ((first) ? ((target) & ~0xFF00) : (((target) & ~0x00FF) >> 8))

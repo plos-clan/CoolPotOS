@@ -3,42 +3,42 @@
 #include "types.h"
 #include "driver/usb/usb_vec.h"
 
-#define HID_ITEM_TYPE_MAIN 0
+#define HID_ITEM_TYPE_MAIN   0
 #define HID_ITEM_TYPE_GLOBAL 1
-#define HID_ITEM_TYPE_LOCAL 2
+#define HID_ITEM_TYPE_LOCAL  2
 
-#define HID_TAG_INPUT 0b1000
-#define HID_TAG_OUTPUT 0b1001
-#define HID_TAG_COLLECTION 0b1010
-#define HID_TAG_FEATURE 0b1011
+#define HID_TAG_INPUT          0b1000
+#define HID_TAG_OUTPUT         0b1001
+#define HID_TAG_COLLECTION     0b1010
+#define HID_TAG_FEATURE        0b1011
 #define HID_TAG_END_COLLECTION 0b1100
 
-#define HID_TAG_USAGE_PAGE 0b0000
-#define HID_TAG_LOGICAL_MIN 0b0001
-#define HID_TAG_LOGICAL_MAX 0b0010
+#define HID_TAG_USAGE_PAGE   0b0000
+#define HID_TAG_LOGICAL_MIN  0b0001
+#define HID_TAG_LOGICAL_MAX  0b0010
 #define HID_TAG_PHYSICAL_MIN 0b0011
 #define HID_TAG_PHYSICAL_MAX 0b0100
-#define HID_TAG_UNIT_EXP 0b0101
-#define HID_TAG_UNIT 0b0110
-#define HID_TAG_REPORT_SIZE 0b0111
-#define HID_TAG_REPORT_ID 0b1000
+#define HID_TAG_UNIT_EXP     0b0101
+#define HID_TAG_UNIT         0b0110
+#define HID_TAG_REPORT_SIZE  0b0111
+#define HID_TAG_REPORT_ID    0b1000
 #define HID_TAG_REPORT_COUNT 0b1001
-#define HID_TAG_PUSH 0b1010
-#define HID_TAG_POP 0b1011
+#define HID_TAG_PUSH         0b1010
+#define HID_TAG_POP          0b1011
 
-#define HID_TAG_USAGE 0b0000
+#define HID_TAG_USAGE     0b0000
 #define HID_TAG_USAGE_MIN 0b0001
 #define HID_TAG_USAGE_MAX 0b0010
 
-#define HID_FLAG_CONSTANT (1u << 0)
-#define HID_FLAG_VARIABLE (1u << 1)
-#define HID_FLAG_RELATIVE (1u << 2)
-#define HID_FLAG_WRAP (1u << 3)
-#define HID_FLAG_NONLINEAR (1u << 4)
-#define HID_FLAG_NO_PREF (1u << 5)
+#define HID_FLAG_CONSTANT   (1u << 0)
+#define HID_FLAG_VARIABLE   (1u << 1)
+#define HID_FLAG_RELATIVE   (1u << 2)
+#define HID_FLAG_WRAP       (1u << 3)
+#define HID_FLAG_NONLINEAR  (1u << 4)
+#define HID_FLAG_NO_PREF    (1u << 5)
 #define HID_FLAG_NULL_STATE (1u << 6)
-#define HID_FLAG_VOLATILE (1u << 7)
-#define HID_FLAG_BUFFERED (1u << 8)
+#define HID_FLAG_VOLATILE   (1u << 7)
+#define HID_FLAG_BUFFERED   (1u << 8)
 
 typedef enum {
     HID_KIND_INPUT   = 0,

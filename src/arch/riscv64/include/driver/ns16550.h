@@ -17,18 +17,18 @@
 #define UART_SCR 7 // 暂存寄存器
 
 /* 寄存器位定义（与之前相同）*/
-#define UART_LCR_DLAB 0x80
-#define UART_LCR_WLEN8 0x03
-#define UART_LSR_TEMT 0x40
-#define UART_LSR_THRE 0x20
-#define UART_LSR_DR 0x01
-#define UART_FCR_ENABLE 0x01
-#define UART_FCR_CLEAR_RX 0x02
-#define UART_FCR_CLEAR_TX 0x04
+#define UART_LCR_DLAB       0x80
+#define UART_LCR_WLEN8      0x03
+#define UART_LSR_TEMT       0x40
+#define UART_LSR_THRE       0x20
+#define UART_LSR_DR         0x01
+#define UART_FCR_ENABLE     0x01
+#define UART_FCR_CLEAR_RX   0x02
+#define UART_FCR_CLEAR_TX   0x04
 #define UART_FCR_TRIGGER_14 0xC0
-#define UART_MCR_DTR 0x01
-#define UART_MCR_RTS 0x02
-#define UART_MCR_OUT2 0x08
+#define UART_MCR_DTR        0x01
+#define UART_MCR_RTS        0x02
+#define UART_MCR_OUT2       0x08
 
 #include "types.h"
 
@@ -68,8 +68,11 @@ typedef struct {
 /* 函数声明 */
 void uart_init(uart_device_t *uart, volatile void *base_addr, uart_config_t *config);
 void uart_init_gas(
-    uart_device_t *uart, volatile void *base_addr, uint32_t reg_shift,
-    uart_access_width_t access_width, uart_config_t *config
+    uart_device_t *uart,
+    volatile void *base_addr,
+    uint32_t reg_shift,
+    uart_access_width_t access_width,
+    uart_config_t *config
 );
 void uart_set_baudrate(uart_device_t *uart, uint32_t baudrate);
 void uart_putc(uart_device_t *uart, char c);

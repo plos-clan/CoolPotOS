@@ -112,8 +112,11 @@ static inline int __msix_map_table(pci_device_t *pci_dev, struct pci_msix_cap_t 
     // 映射整个BAR区域（包括MSI-X表）
     pci_dev->msix_mmio_vaddr = (uint64_t)phys_to_virt((uint64_t)bar_physical_address);
     page_map_range(
-        get_kernel_pagedir(), pci_dev->msix_mmio_vaddr, bar_physical_address,
-        pci_dev->bars[bir].size, KERNEL_PTE_FLAGS
+        get_kernel_pagedir(),
+        pci_dev->msix_mmio_vaddr,
+        bar_physical_address,
+        pci_dev->bars[bir].size,
+        KERNEL_PTE_FLAGS
     );
 
     return 0;
@@ -208,7 +211,10 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
 
             // 使能msi-x
             tmp = ptr->op->read(
-                ptr->bus, ptr->slot, ptr->func, ptr->segment,
+                ptr->bus,
+                ptr->slot,
+                ptr->func,
+                ptr->segment,
                 cap_ptr + 0x2
             ); // 读取cap+0x2处的值
             tmp &= ~(1U << 14);
@@ -220,7 +226,10 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
         __msix_set_entry(msi_desc);
     } else {
         tmp = ptr->op->read(
-            ptr->bus, ptr->slot, ptr->func, ptr->segment,
+            ptr->bus,
+            ptr->slot,
+            ptr->func,
+            ptr->segment,
             cap_ptr
         ); // 读取cap+0x0处的值
         message_control = (tmp >> 16) & 0xffff;
@@ -230,13 +239,21 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
             ((((uint64_t)msi_desc->msg.address_hi) << 32)
              | msi_desc->msg.address_lo); // 获取message address
         ptr->op->write(
-            ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_ptr + 0x4,
+            ptr->bus,
+            ptr->slot,
+            ptr->func,
+            ptr->segment,
+            cap_ptr + 0x4,
             (uint32_t)(message_addr & 0xffffffff)
         );
 
         if (message_control & (1 << 7)) // 64位
             ptr->op->write(
-                ptr->bus, ptr->slot, ptr->func, ptr->segment, cap_ptr + 0x8,
+                ptr->bus,
+                ptr->slot,
+                ptr->func,
+                ptr->segment,
+                cap_ptr + 0x8,
                 (uint32_t)((message_addr >> 32) & 0xffffffff)
             );
 
@@ -250,7 +267,10 @@ int pci_enable_msi(struct msi_desc_t *msi_desc) {
 
         // 使能msi
         tmp = ptr->op->read(
-            ptr->bus, ptr->slot, ptr->func, ptr->segment,
+            ptr->bus,
+            ptr->slot,
+            ptr->func,
+            ptr->segment,
             cap_ptr + 0x2
         ); // 读取cap+0x2处的值
         tmp |= 1;

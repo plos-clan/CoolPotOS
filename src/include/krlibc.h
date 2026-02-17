@@ -3,8 +3,8 @@
 #define __IRQHANDLER __attribute__((interrupt))
 
 #define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
-#define PADDING_UP(size, to) PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
-#define PADDING_REQ(size, to) ((size + (to) - 1) & ~((to) - 1) / (to))
+#define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)
+#define PADDING_REQ(size, to)  ((size + (to) - 1) & ~((to) - 1) / (to))
 
 #define UNUSED(...)                                                                                \
     do {                                                                                           \
@@ -29,7 +29,7 @@
 // 分支预测优化: x 很可能为真
 #define likely(x) __builtin_expect(!!(x), 1)
 
-#define ABS(x) ((x) > 0 ? (x) : -(x))
+#define ABS(x)    ((x) > 0 ? (x) : -(x))
 #define MAX(x, y) ((x > y) ? (x) : (y))
 #define MIN(x, y) ((x < y) ? (x) : (y))
 
@@ -38,7 +38,7 @@
     (('0' <= (c) && (c) <= '9') || ('a' <= (c) && (c) <= 'f') || ('A' <= (c) && (c) <= 'F'))
 
 #define ___PASTE(a, b) a##b
-#define __PASTE(a, b) ___PASTE(a, b)
+#define __PASTE(a, b)  ___PASTE(a, b)
 
 #ifndef __UNIQUE_ID
 #    define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)

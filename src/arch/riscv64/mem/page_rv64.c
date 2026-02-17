@@ -229,7 +229,9 @@ copy_page_table_recursive(page_table_t *source_table, int level, bool all_copy, 
         page_table_t *source_page_table_next =
             (page_table_t *)phys_to_virt(ARCH_READ_PTE(source_table->entries[i].value));
         page_table_t *new_page_table = copy_page_table_recursive(
-            source_page_table_next, level - 1, all_copy,
+            source_page_table_next,
+            level - 1,
+            all_copy,
             level != ARCH_PT_LEVEL ? kernel_space : i >= 256
         );
         new_table->entries[i].value = ARCH_MAKE_PTE(

@@ -1,12 +1,12 @@
 #pragma once
 
 // VMA标志定义
-#define VMA_READ 0x1
-#define VMA_WRITE 0x2
-#define VMA_EXEC 0x4
+#define VMA_READ   0x1
+#define VMA_WRITE  0x2
+#define VMA_EXEC   0x4
 #define VMA_SHARED 0x8
-#define VMA_ANON 0x10
-#define VMA_SHM 0x20
+#define VMA_ANON   0x10
+#define VMA_SHM    0x20
 
 #include "types.h"
 

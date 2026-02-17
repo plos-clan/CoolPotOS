@@ -9,12 +9,25 @@ size_t partition_num = 0;
 
 void format_guid(const uint8_t guid[16], char out[37]) {
     snprintf(
-        out, 37, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X", guid[3],
-        guid[2], guid[1], guid[0],                                 // time_low
-        guid[5], guid[4],                                          // time_mid
-        guid[7], guid[6],                                          // time_hi_and_version
-        guid[8], guid[9],                                          // clock_seq
-        guid[10], guid[11], guid[12], guid[13], guid[14], guid[15] // node
+        out,
+        37,
+        "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+        guid[3],
+        guid[2],
+        guid[1],
+        guid[0], // time_low
+        guid[5],
+        guid[4], // time_mid
+        guid[7],
+        guid[6], // time_hi_and_version
+        guid[8],
+        guid[9], // clock_seq
+        guid[10],
+        guid[11],
+        guid[12],
+        guid[13],
+        guid[14],
+        guid[15] // node
     );
 }
 
@@ -196,8 +209,12 @@ bool parser_block_device(blk_device_t *disk) {
             partition->is_used     = true;
 
             kinfo(
-                "MBR Partition(%s) %d lba=%llu..%llu %s", disk->name, j, partition->starting_lba,
-                partition->ending_lba, (boot_sector->dpte[j].flags & 0x80) ? "bootable" : ""
+                "MBR Partition(%s) %d lba=%llu..%llu %s",
+                disk->name,
+                j,
+                partition->starting_lba,
+                partition->ending_lba,
+                (boot_sector->dpte[j].flags & 0x80) ? "bootable" : ""
             );
 
             blk_device_t *part = (blk_device_t *)malloc(sizeof(blk_device_t));

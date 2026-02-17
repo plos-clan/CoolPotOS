@@ -883,8 +883,13 @@ char *vfs_cwd_path_build(char *src) {
 }
 
 void *general_map(
-    vfs_read_t read_callback, void *file, uint64_t addr, uint64_t len, uint64_t prot,
-    uint64_t flags, uint64_t offset
+    vfs_read_t read_callback,
+    void *file,
+    uint64_t addr,
+    uint64_t len,
+    uint64_t prot,
+    uint64_t flags,
+    uint64_t offset
 ) {
     UNUSED(flags);
 
@@ -907,8 +912,10 @@ void *general_map(
 #endif
 
     page_map_range_to_random(
-        get_current_directory(), addr & (~(PAGE_SIZE - 1)),
-        (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)), pt_flags
+        get_current_directory(),
+        addr & (~(PAGE_SIZE - 1)),
+        (len + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)),
+        pt_flags
     );
 
     ssize_t ret = read_callback(file, (void *)addr, offset, len);

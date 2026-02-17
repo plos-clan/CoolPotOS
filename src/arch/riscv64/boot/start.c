@@ -175,7 +175,9 @@ no_fb:
 }
 
 static void setup_memmap(
-    boot_memory_map_t *mmap, uintptr_t kernel_start, uintptr_t kernel_end,
+    boot_memory_map_t *mmap,
+    uintptr_t kernel_start,
+    uintptr_t kernel_end,
     const boot_framebuffer_t *fb
 ) {
     /* 清零并初始化计数 */
@@ -311,7 +313,8 @@ static void setup_memmap(
                     if (usable_count + 1 < (int)sizeof(usable) / sizeof(usable[0])) {
                         /* 把后半段插入 */
                         memmove(
-                            &usable[u + 2], &usable[u + 1],
+                            &usable[u + 2],
+                            &usable[u + 1],
                             (usable_count - u - 1) * sizeof(usable[0])
                         );
                         usable[u + 1].start = re;

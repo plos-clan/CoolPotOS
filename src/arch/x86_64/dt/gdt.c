@@ -36,7 +36,9 @@ void gdt_setup() {
                      "mov %[dseg], %%es\n\t"
                      "mov %[dseg], %%ss\n\t"
                      :
-                     : [ptr] "m"(gdt_pointer), [dseg] "rm"((uint16_t)0x10U), "a"(&_setcs_helper),
+                     : [ptr] "m"(gdt_pointer),
+                       [dseg] "rm"((uint16_t)0x10U),
+                       "a"(&_setcs_helper),
                        "b"((uint16_t)0x8U)
                      : "memory");
 

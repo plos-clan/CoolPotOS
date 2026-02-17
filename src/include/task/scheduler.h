@@ -2,14 +2,14 @@
 
 #define MAX(x, y) ((x > y) ? (x) : (y))
 
-#define MAX_NICE 19
-#define MIN_NICE -20
+#define MAX_NICE   19
+#define MIN_NICE   -20
 #define NICE_WIDTH (MAX_NICE - MIN_NICE + 1)
 
 #define MAX_RT_PRIO 100
 #define MAX_DL_PRIO 0
 
-#define MAX_PRIO (MAX_RT_PRIO + NICE_WIDTH)
+#define MAX_PRIO     (MAX_RT_PRIO + NICE_WIDTH)
 #define DEFAULT_PRIO (MAX_RT_PRIO + NICE_WIDTH / 2)
 
 #define NICE_TO_PRIO(nice) ((nice) + DEFAULT_PRIO)

@@ -4,8 +4,8 @@
 
 // 一个非常取巧的宏魔法, 可以简化 syscall 函数的定义
 #define __EXPAND_PARAMS(...) __VA_ARGS__
-#define __CONCAT_IMPL(a, b) a##b
-#define __CONCAT(a, b) __CONCAT_IMPL(a, b)
+#define __CONCAT_IMPL(a, b)  a##b
+#define __CONCAT(a, b)       __CONCAT_IMPL(a, b)
 
 #define __ARGS_COUNT_IMPL(_0, _1, _2, _3, _4, _5, _6, N, ...) N
 
@@ -13,19 +13,34 @@
 
 #define __SYSCALL_IMPL_0(NAME)                                                                     \
     uint64_t syscall_##NAME(                                                                       \
-        uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,  \
+        uint64_t arg0,                                                                             \
+        uint64_t arg1,                                                                             \
+        uint64_t arg2,                                                                             \
+        uint64_t arg3,                                                                             \
+        uint64_t arg4,                                                                             \
+        uint64_t arg5,                                                                             \
         struct syscall_regs *regs                                                                  \
     )
 
 #define __SYSCALL_IMPL_1(NAME, P1)                                                                 \
     uint64_t syscall_##NAME(                                                                       \
-        P1, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,             \
+        P1,                                                                                        \
+        uint64_t arg1,                                                                             \
+        uint64_t arg2,                                                                             \
+        uint64_t arg3,                                                                             \
+        uint64_t arg4,                                                                             \
+        uint64_t arg5,                                                                             \
         struct syscall_regs *regs                                                                  \
     )
 
 #define __SYSCALL_IMPL_2(NAME, P1, P2)                                                             \
     uint64_t syscall_##NAME(                                                                       \
-        P1, P2, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5,                        \
+        P1,                                                                                        \
+        P2,                                                                                        \
+        uint64_t arg2,                                                                             \
+        uint64_t arg3,                                                                             \
+        uint64_t arg4,                                                                             \
+        uint64_t arg5,                                                                             \
         struct syscall_regs *regs                                                                  \
     )
 
@@ -49,132 +64,135 @@
 
 #define syscall_def_(name)                                                                         \
     uint64_t syscall_##name(                                                                       \
-        uint64_t arg0 __attribute__((unused)), uint64_t arg1 __attribute__((unused)),              \
-        uint64_t arg2 __attribute__((unused)), uint64_t arg3 __attribute__((unused)),              \
-        uint64_t arg4 __attribute__((unused)), uint64_t arg5 __attribute__((unused)),              \
+        uint64_t arg0 __attribute__((unused)),                                                     \
+        uint64_t arg1 __attribute__((unused)),                                                     \
+        uint64_t arg2 __attribute__((unused)),                                                     \
+        uint64_t arg3 __attribute__((unused)),                                                     \
+        uint64_t arg4 __attribute__((unused)),                                                     \
+        uint64_t arg5 __attribute__((unused)),                                                     \
         struct syscall_regs *regs __attribute__((unused))                                          \
     )
 
 #define SYSCALL_FAULT_(name) ((uint64_t)-(name))
 
 // stat 文件类型标志
-#define S_IFMT 00170000
+#define S_IFMT   00170000
 #define S_IFSOCK 0140000
-#define S_IFLNK 0120000
-#define S_IFREG 0100000
-#define S_IFBLK 0060000
-#define S_IFDIR 0040000
-#define S_IFCHR 0020000
-#define S_IFIFO 0010000
-#define S_ISUID 0004000
-#define S_ISGID 0002000
-#define S_ISVTX 0001000
+#define S_IFLNK  0120000
+#define S_IFREG  0100000
+#define S_IFBLK  0060000
+#define S_IFDIR  0040000
+#define S_IFCHR  0020000
+#define S_IFIFO  0010000
+#define S_ISUID  0004000
+#define S_ISGID  0002000
+#define S_ISVTX  0001000
 
 // mremap 标志
-#define MREMAP_MAYMOVE 1
-#define MREMAP_FIXED 2
+#define MREMAP_MAYMOVE   1
+#define MREMAP_FIXED     2
 #define MREMAP_DONTUNMAP 4
 
 // fnctl
-#define F_DUPFD 0
-#define F_GETFD 1
-#define F_SETFD 2
-#define F_GETFL 3
-#define F_SETFL 4
-#define F_SETOWN 8
-#define F_GETOWN 9
-#define F_SETSIG 10
-#define F_GETSIG 11
+#define F_DUPFD         0
+#define F_GETFD         1
+#define F_SETFD         2
+#define F_GETFL         3
+#define F_SETFL         4
+#define F_SETOWN        8
+#define F_GETOWN        9
+#define F_SETSIG        10
+#define F_GETSIG        11
 #define F_DUPFD_CLOEXEC 1030
 
-#define MS_RDONLY 1       /* 只读挂载 */
-#define MS_NOSUID 2       /* 忽略 SUID/SGID */
-#define MS_NODEV 4        /* 禁止访问设备文件 */
-#define MS_NOEXEC 8       /* 禁止执行 */
+#define MS_RDONLY      1  /* 只读挂载 */
+#define MS_NOSUID      2  /* 忽略 SUID/SGID */
+#define MS_NODEV       4  /* 禁止访问设备文件 */
+#define MS_NOEXEC      8  /* 禁止执行 */
 #define MS_SYNCHRONOUS 16 /* 同步写入 */
-#define MS_REMOUNT 32     /* 重新挂载已挂载点 */
-#define MS_MANDLOCK 64
-#define MS_DIRSYNC 128
-#define MS_NOATIME 1024
-#define MS_NODIRATIME 2048
-#define MS_BIND 4096 /* 绑定挂载 */
-#define MS_MOVE 8192 /* 挂载点移动 */
-#define MS_REC 16384 /* 递归 */
-#define MS_PRIVATE (1 << 18)
-#define MS_SHARED (1 << 20)
-#define MS_SLAVE (1 << 19)
-#define MS_UNBINDABLE (1 << 17)
+#define MS_REMOUNT     32 /* 重新挂载已挂载点 */
+#define MS_MANDLOCK    64
+#define MS_DIRSYNC     128
+#define MS_NOATIME     1024
+#define MS_NODIRATIME  2048
+#define MS_BIND        4096  /* 绑定挂载 */
+#define MS_MOVE        8192  /* 挂载点移动 */
+#define MS_REC         16384 /* 递归 */
+#define MS_PRIVATE     (1 << 18)
+#define MS_SHARED      (1 << 20)
+#define MS_SLAVE       (1 << 19)
+#define MS_UNBINDABLE  (1 << 17)
 
 // futex 系统调用操作码
-#define FUTEX_WAIT 0
-#define FUTEX_WAKE 1
-#define FUTEX_FD 2
-#define FUTEX_REQUEUE 3
-#define FUTEX_CMP_REQUEUE 4
-#define FUTEX_WAKE_OP 5
-#define FUTEX_LOCK_PI 6
-#define FUTEX_UNLOCK_PI 7
-#define FUTEX_TRYLOCK_PI 8
-#define FUTEX_WAIT_BITSET 9
-#define FUTEX_WAKE_BITSET 10
-#define FUTEX_PRIVATE_FLAG 128
+#define FUTEX_WAIT           0
+#define FUTEX_WAKE           1
+#define FUTEX_FD             2
+#define FUTEX_REQUEUE        3
+#define FUTEX_CMP_REQUEUE    4
+#define FUTEX_WAKE_OP        5
+#define FUTEX_LOCK_PI        6
+#define FUTEX_UNLOCK_PI      7
+#define FUTEX_TRYLOCK_PI     8
+#define FUTEX_WAIT_BITSET    9
+#define FUTEX_WAKE_BITSET    10
+#define FUTEX_PRIVATE_FLAG   128
 #define FUTEX_CLOCK_REALTIME 256
-#define FUTEX_CMD_MASK 0x7f
+#define FUTEX_CMD_MASK       0x7f
 
 #define DT_UNKNOWN 0
-#define DT_FIFO 1
-#define DT_CHR 2
-#define DT_DIR 4
-#define DT_BLK 6
-#define DT_REG 8
-#define DT_LNK 10
-#define DT_SOCK 12
-#define DT_WHT 14
+#define DT_FIFO    1
+#define DT_CHR     2
+#define DT_DIR     4
+#define DT_BLK     6
+#define DT_REG     8
+#define DT_LNK     10
+#define DT_SOCK    12
+#define DT_WHT     14
 
 #define FD_SETSIZE 1024
 
-#define WNOHANG 1
-#define WUNTRACED 2
+#define WNOHANG    1
+#define WUNTRACED  2
 #define WCONTINUED 8
 
-#define SEEK_SET 0 /* Seek from beginning of file.  */
-#define SEEK_CUR 1 /* Seek from current position.  */
-#define SEEK_END 2 /* Seek from end of file.  */
+#define SEEK_SET  0 /* Seek from beginning of file.  */
+#define SEEK_CUR  1 /* Seek from current position.  */
+#define SEEK_END  2 /* Seek from end of file.  */
 #define SEEK_DATA 3
 #define SEEK_HOLE 4
 
-#define RLIMIT_CPU 0
-#define RLIMIT_FSIZE 1
-#define RLIMIT_DATA 2
-#define RLIMIT_STACK 3
-#define RLIMIT_CORE 4
-#define RLIMIT_RSS 5
-#define RLIMIT_NPROC 6
-#define RLIMIT_NOFILE 7
-#define RLIMIT_MEMLOCK 8
-#define RLIMIT_AS 9
-#define RLIMIT_LOCKS 10
+#define RLIMIT_CPU        0
+#define RLIMIT_FSIZE      1
+#define RLIMIT_DATA       2
+#define RLIMIT_STACK      3
+#define RLIMIT_CORE       4
+#define RLIMIT_RSS        5
+#define RLIMIT_NPROC      6
+#define RLIMIT_NOFILE     7
+#define RLIMIT_MEMLOCK    8
+#define RLIMIT_AS         9
+#define RLIMIT_LOCKS      10
 #define RLIMIT_SIGPENDING 11
-#define RLIMIT_MSGQUEUE 12
-#define RLIMIT_NICE 13
-#define RLIMIT_RTPRIO 14
-#define RLIMIT_RTTIME 15
-#define RLIMIT_NLIMITS 16
+#define RLIMIT_MSGQUEUE   12
+#define RLIMIT_NICE       13
+#define RLIMIT_RTPRIO     14
+#define RLIMIT_RTTIME     15
+#define RLIMIT_NLIMITS    16
 
-#define LINUX_REBOOT_MAGIC1 0xfee1dead
-#define LINUX_REBOOT_MAGIC2 672274793
+#define LINUX_REBOOT_MAGIC1  0xfee1dead
+#define LINUX_REBOOT_MAGIC2  672274793
 #define LINUX_REBOOT_MAGIC2A 85072278
 #define LINUX_REBOOT_MAGIC2B 369367448
 #define LINUX_REBOOT_MAGIC2C 537993216
 
-#define LINUX_REBOOT_CMD_RESTART 0x01234567
-#define LINUX_REBOOT_CMD_HALT 0xCDEF0123
-#define LINUX_REBOOT_CMD_CAD_ON 0x89ABCDEF
-#define LINUX_REBOOT_CMD_CAD_OFF 0x00000000
-#define LINUX_REBOOT_CMD_POWER_OFF 0x4321FEDC
-#define LINUX_REBOOT_CMD_RESTART2 0xA1B2C3D4
+#define LINUX_REBOOT_CMD_RESTART    0x01234567
+#define LINUX_REBOOT_CMD_HALT       0xCDEF0123
+#define LINUX_REBOOT_CMD_CAD_ON     0x89ABCDEF
+#define LINUX_REBOOT_CMD_CAD_OFF    0x00000000
+#define LINUX_REBOOT_CMD_POWER_OFF  0x4321FEDC
+#define LINUX_REBOOT_CMD_RESTART2   0xA1B2C3D4
 #define LINUX_REBOOT_CMD_SW_SUSPEND 0xD000FCE2
-#define LINUX_REBOOT_CMD_KEXEC 0x45584543
+#define LINUX_REBOOT_CMD_KEXEC      0x45584543
 
 #include "fs/vfs.h"
 #include "task/poll.h"
@@ -382,7 +400,12 @@ syscall_(lseek, int fd, size_t offset, size_t whence);
 syscall_(pread, int fd, uint8_t *buffer);
 syscall_(pwrite, int fd, uint8_t *buffer);
 syscall_(
-    copy_file_range, int fd_in, uint64_t *off_in, int fd_out, uint64_t *off_out, size_t len,
+    copy_file_range,
+    int fd_in,
+    uint64_t *off_in,
+    int fd_out,
+    uint64_t *off_out,
+    size_t len,
     uint64_t flags
 );
 syscall_(ftruncate);
@@ -391,8 +414,13 @@ syscall_(symlink, char *name, char *new);
 syscall_(link, char *name, char *new);
 syscall_(select, int nfds, uint8_t *read, uint8_t *write, uint8_t *except, struct timeval *timeout);
 syscall_(
-    pselect6, uint64_t nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-    struct timespec *timeout, WeirdPselect6 *weirdPselect6
+    pselect6,
+    uint64_t nfds,
+    fd_set *readfds,
+    fd_set *writefds,
+    fd_set *exceptfds,
+    struct timespec *timeout,
+    WeirdPselect6 *weirdPselect6
 );
 syscall_(getdents, int fd, struct dirent *dents, size_t size);
 syscall_(newfstatat, int dirfd, char *pathname, struct stat *buf, uint64_t flags);
@@ -433,11 +461,21 @@ syscall_(listen, int sockfd, int backlog);
 syscall_(accept, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
 syscall_(
-    sendto, int sockfd, void *buf, size_t len, int flags, struct sockaddr *dest_addr,
+    sendto,
+    int sockfd,
+    void *buf,
+    size_t len,
+    int flags,
+    struct sockaddr *dest_addr,
     uint64_t addrlen
 );
 syscall_(
-    recvfrom, int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr,
+    recvfrom,
+    int sockfd,
+    void *buf,
+    size_t len,
+    int flags,
+    struct sockaddr *src_addr,
     uint64_t *addrlen
 );
 syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags);
@@ -453,8 +491,13 @@ syscall_(epoll_create1, int flags);
 syscall_(epoll_ctl, int epfd, int op, int fd, struct epoll_event *event);
 syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int timeout);
 syscall_(
-    epoll_pwait, int epfd, struct epoll_event *events, int maxevents, int timeout,
-    sigset_t *sigmask, size_t sigsetsize
+    epoll_pwait,
+    int epfd,
+    struct epoll_event *events,
+    int maxevents,
+    int timeout,
+    sigset_t *sigmask,
+    size_t sigsetsize
 );
 
 // eventfd syscall
@@ -478,7 +521,10 @@ syscall_(sigaltstack, altstack_t *old_stack, altstack_t *new_stack);
 syscall_(sig_action, int sig, sigaction_t *action, sigaction_t *oldaction);
 syscall_(sigpending, sigset_t *set, size_t sigsetsize);
 syscall_(
-    sigtimedwait, const sigset_t *set, siginfo_t *info, const struct timespec *timeout,
+    sigtimedwait,
+    const sigset_t *set,
+    siginfo_t *info,
+    const struct timespec *timeout,
     size_t sigsetsize
 );
 syscall_(sigqueueinfo, pid_t pid, int sig, siginfo_t *info);
@@ -511,7 +557,11 @@ syscall_(
 );
 syscall_(munmap, uint64_t addr, size_t size);
 syscall_(
-    mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
+    mremap,
+    uint64_t old_addr,
+    uint64_t old_size,
+    uint64_t new_size,
+    uint64_t flags,
     uint64_t new_addr
 );
 syscall_(madvise, uint64_t addr, size_t length, int advice);

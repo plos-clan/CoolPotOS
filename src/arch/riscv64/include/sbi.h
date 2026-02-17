@@ -1,15 +1,15 @@
 #pragma once
 
 /* SBI调用ID */
-#define SBI_SET_TIMER 0x00
-#define SBI_CONSOLE_PUTCHAR 0x01
-#define SBI_CONSOLE_GETCHAR 0x02
-#define SBI_CLEAR_IPI 0x03
-#define SBI_SEND_IPI 0x04
-#define SBI_REMOTE_FENCE_I 0x05
-#define SBI_REMOTE_SFENCE_VMA 0x06
+#define SBI_SET_TIMER              0x00
+#define SBI_CONSOLE_PUTCHAR        0x01
+#define SBI_CONSOLE_GETCHAR        0x02
+#define SBI_CLEAR_IPI              0x03
+#define SBI_SEND_IPI               0x04
+#define SBI_REMOTE_FENCE_I         0x05
+#define SBI_REMOTE_SFENCE_VMA      0x06
 #define SBI_REMOTE_SFENCE_VMA_ASID 0x07
-#define SBI_SHUTDOWN 0x08
+#define SBI_SHUTDOWN               0x08
 
 #include "types.h"
 
@@ -17,8 +17,14 @@
  * SBI ecall封装
  */
 static inline uint64_t sbi_ecall(
-    uint64_t eid, uint64_t fid, uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
-    uint64_t arg4, uint64_t arg5
+    uint64_t eid,
+    uint64_t fid,
+    uint64_t arg0,
+    uint64_t arg1,
+    uint64_t arg2,
+    uint64_t arg3,
+    uint64_t arg4,
+    uint64_t arg5
 ) {
     register uint64_t a0 __asm__("a0") = arg0;
     register uint64_t a1 __asm__("a1") = arg1;

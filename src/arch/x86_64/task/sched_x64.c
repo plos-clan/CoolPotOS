@@ -187,8 +187,14 @@ static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
 }
 
 static uint64_t build_user_stack(
-    tcb_t task, uint64_t sp, uint64_t entry_point, uint64_t link_start, uint8_t *link_data,
-    size_t link_size, uint8_t *src_data, uint64_t load_start
+    tcb_t task,
+    uint64_t sp,
+    uint64_t entry_point,
+    uint64_t link_start,
+    uint8_t *link_data,
+    size_t link_size,
+    uint8_t *src_data,
+    uint64_t load_start
 ) {
     uint64_t env_i  = 0;
     uint64_t argv_i = 0;
@@ -231,14 +237,18 @@ static uint64_t build_user_stack(
     tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     page_map_range_to_random(
-        task->process->directory, EHDR_START_ADDR, task->process->exec->size,
+        task->process->directory,
+        EHDR_START_ADDR,
+        task->process->exec->size,
         PTE_PRESENT | PTE_WRITEABLE | PTE_USER
     );
     memcpy((void *)EHDR_START_ADDR, src_data, task->process->exec->size);
 
     if (link_data != NULL) {
         page_map_range_to_random(
-            task->process->directory, INTERPRETER_EHDR_ADDR, link_size,
+            task->process->directory,
+            INTERPRETER_EHDR_ADDR,
+            link_size,
             PTE_PRESENT | PTE_WRITEABLE | PTE_USER
         );
         memcpy((void *)INTERPRETER_EHDR_ADDR, link_data, link_size);
@@ -432,8 +442,11 @@ _Noreturn void arch_switch_to_user_mode() {
                      "pushq %4\n" // RIP
                      "iretq\n"
                      :
-                     : "r"((uint64_t)GET_SEL(4 * 8, SA_RPL3)), "r"(rsp),
-                       "r"(current->context.regs.rflags), "r"((uint64_t)0x23), "r"(entry),
+                     : "r"((uint64_t)GET_SEL(4 * 8, SA_RPL3)),
+                       "r"(rsp),
+                       "r"(current->context.regs.rflags),
+                       "r"((uint64_t)0x23),
+                       "r"(entry),
                        "r"((uint64_t)0x1b)
                      : "memory");
 err:

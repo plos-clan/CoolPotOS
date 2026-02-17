@@ -31,8 +31,15 @@ typedef struct drmd_device_t {
 
 void drm_device_setup();
 uint64_t drm_device_install(
-    int type, void *ptr, char *name, uint64_t parent, void *ioctl, void *poll, void *read,
-    void *write, void *map
+    int type,
+    void *ptr,
+    char *name,
+    uint64_t parent,
+    void *ioctl,
+    void *poll,
+    void *read,
+    void *write,
+    void *map
 );
 size_t drm_size_t(void *data);
 size_t drm_ioctl(void *data, size_t cmd, size_t arg);

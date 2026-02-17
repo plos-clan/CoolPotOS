@@ -16,8 +16,11 @@ extern void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved
             if (process->pid != 0) {                                                               \
                 logkf(#exc ": error_code %x at %p\n\r", error_code, frame->rip);                   \
                 logkf(                                                                             \
-                    "current process(%s:%d) thread:%s:%d\n\r", process->name, process->pid,        \
-                    current_task->name, current_task->tid                                          \
+                    "current process(%s:%d) thread:%s:%d\n\r",                                     \
+                    process->name,                                                                 \
+                    process->pid,                                                                  \
+                    current_task->name,                                                            \
+                    current_task->tid                                                              \
                 );                                                                                 \
                 kill_proc(process, -1, true);                                                      \
                 arch_open_interrupt();                                                             \
@@ -167,9 +170,14 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
         }
     kill:
         logkf(
-            "page_fault %s process(%s:%d) thread %s:%d (%p)->%p\n", error_msg,
-            current_task->process->name, current_task->process->pid, current_task->name,
-            current_task->tid, faulting_address, frame->rip
+            "page_fault %s process(%s:%d) thread %s:%d (%p)->%p\n",
+            error_msg,
+            current_task->process->name,
+            current_task->process->pid,
+            current_task->name,
+            current_task->tid,
+            faulting_address,
+            frame->rip
         );
         pcb_t process = current_task->process;
         if (process->pid != 0)
@@ -182,8 +190,11 @@ msg:;
     kerror("Page %s fault %p at %p", error_msg, faulting_address, frame->rip);
     if (current_task != NULL) {
         printk(
-            "Current process(%s:%d) thread %s:%d\n", current_task->process->name,
-            current_task->process->pid, current_task->name, current_task->tid
+            "Current process(%s:%d) thread %s:%d\n",
+            current_task->process->name,
+            current_task->process->pid,
+            current_task->name,
+            current_task->tid
         );
     }
     print_kernel_backtrace(frame, saved_rbp);

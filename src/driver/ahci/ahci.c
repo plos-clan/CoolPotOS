@@ -259,7 +259,10 @@ void load_ahci(pci_device_t *device) {
 
     hba->base = (hba_reg_t *)phys_to_virt(device->bars[5].address);
     page_map_range(
-        get_kernel_pagedir(), (uint64_t)hba->base, device->bars[5].address, device->bars[5].size,
+        get_kernel_pagedir(),
+        (uint64_t)hba->base,
+        device->bars[5].address,
+        device->bars[5].size,
         KERNEL_PTE_FLAGS
     );
     // WARN limine v3 时需要插入 page_map_to 以映射
@@ -368,13 +371,20 @@ void load_ahci(pci_device_t *device) {
         strcpy(sata->name, name_buf);
         size_t id = register_device(sata);
         kinfo(
-            "sata%d: blk_size=%d, blk=0..%d, device_id=%lu %s", i, hbadev->block_size,
-            hbadev->max_lba, id, hbadev->model
+            "sata%d: blk_size=%d, blk=0..%d, device_id=%lu %s",
+            i,
+            hbadev->block_size,
+            hbadev->max_lba,
+            id,
+            hbadev->model
         );
     }
     kinfo(
-        "AHCI initialized with %d ports, version %d.%d.%d", hba->ports_num,
-        (hba->version >> 16) & 0xff, (hba->version >> 8) & 0xff, hba->version & 0xff
+        "AHCI initialized with %d ports, version %d.%d.%d",
+        hba->ports_num,
+        (hba->version >> 16) & 0xff,
+        (hba->version >> 8) & 0xff,
+        hba->version & 0xff
     );
 }
 

@@ -62,8 +62,11 @@ void uart_init(uart_device_t *uart, volatile void *base_addr, uart_config_t *con
  * @param config 配置参数
  */
 void uart_init_gas(
-    uart_device_t *uart, volatile void *base_addr, uint32_t reg_shift,
-    uart_access_width_t access_width, uart_config_t *config
+    uart_device_t *uart,
+    volatile void *base_addr,
+    uint32_t reg_shift,
+    uart_access_width_t access_width,
+    uart_config_t *config
 ) {
     if (uart == NULL || base_addr == NULL) {
         return;
@@ -100,7 +103,8 @@ void uart_init_gas(
     /* 配置FIFO */
     if (uart->config.fifo_enable) {
         uart_write_reg(
-            uart, UART_FCR,
+            uart,
+            UART_FCR,
             UART_FCR_ENABLE | UART_FCR_CLEAR_RX | UART_FCR_CLEAR_TX | UART_FCR_TRIGGER_14
         );
     }

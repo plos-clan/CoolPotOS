@@ -1,61 +1,61 @@
 #pragma once
 
-#define SIGHUP 1   // Hangup (终端断开)
-#define SIGINT 2   // Interrupt (Ctrl+C)
-#define SIGQUIT 3  // Quit (Ctrl+\)
-#define SIGILL 4   // Illegal instruction
-#define SIGTRAP 5  // Trace trap
-#define SIGABRT 6  // Abort
-#define SIGBUS 7   // Bus error
-#define SIGFPE 8   // Floating-point exception
-#define SIGKILL 9  // Kill signal (不可捕获/屏蔽)
-#define SIGUSR1 10 // User-defined signal 1
-#define SIGSEGV 11 // Segmentation fault
-#define SIGUSR2 12 // User-defined signal 2
-#define SIGPIPE 13 // Broken pipe
-#define SIGALRM 14 // Alarm clock
-#define SIGTERM 15 // Termination signal
+#define SIGHUP    1  // Hangup (终端断开)
+#define SIGINT    2  // Interrupt (Ctrl+C)
+#define SIGQUIT   3  // Quit (Ctrl+\)
+#define SIGILL    4  // Illegal instruction
+#define SIGTRAP   5  // Trace trap
+#define SIGABRT   6  // Abort
+#define SIGBUS    7  // Bus error
+#define SIGFPE    8  // Floating-point exception
+#define SIGKILL   9  // Kill signal (不可捕获/屏蔽)
+#define SIGUSR1   10 // User-defined signal 1
+#define SIGSEGV   11 // Segmentation fault
+#define SIGUSR2   12 // User-defined signal 2
+#define SIGPIPE   13 // Broken pipe
+#define SIGALRM   14 // Alarm clock
+#define SIGTERM   15 // Termination signal
 #define SIGSTKFLT 16
-#define SIGCHLD 17 // Child stopped or terminated
-#define SIGCONT 18 // Continue if stopped
-#define SIGSTOP 19 // Stop process (不可捕获)
-#define SIGTSTP 20 // Stop typed at terminal (Ctrl+Z)
-#define SIGTTIN 21 // Background read from tty
-#define SIGTTOU 22 // Background write to tty
-#define SIGURG 23
-#define SIGXCPU 24
-#define SIGXFSZ 25
+#define SIGCHLD   17 // Child stopped or terminated
+#define SIGCONT   18 // Continue if stopped
+#define SIGSTOP   19 // Stop process (不可捕获)
+#define SIGTSTP   20 // Stop typed at terminal (Ctrl+Z)
+#define SIGTTIN   21 // Background read from tty
+#define SIGTTOU   22 // Background write to tty
+#define SIGURG    23
+#define SIGXCPU   24
+#define SIGXFSZ   25
 #define SIGVTALRM 26
-#define SIGPROF 27
-#define SIGWINCH 28
-#define SIGPOLL 29
-#define SIGIO 29
-#define SIGPWR 30
-#define SIGSYS 31
+#define SIGPROF   27
+#define SIGWINCH  28
+#define SIGPOLL   29
+#define SIGIO     29
+#define SIGPWR    30
+#define SIGSYS    31
 #define SIGUNUSED SIGSYS
-#define SIGIOT SIGABRT
+#define SIGIOT    SIGABRT
 
-#define SIG_NOMASK 0x40000000
+#define SIG_NOMASK  0x40000000
 #define SIG_ONESHOT 0x80000000
 
-#define SIG_BLOCK 0
+#define SIG_BLOCK   0
 #define SIG_UNBLOCK 1
 #define SIG_SETMASK 2
 
 #define SA_NOCLDSTOP 0x00000001
 #define SA_NOCLDWAIT 0x00000002
-#define SA_SIGINFO 0x00000004
-#define SA_RESTORER 0x04000000
-#define SA_ONSTACK 0x08000000
-#define SA_RESTART 0x10000000
-#define SA_NODEFER 0x40000000
+#define SA_SIGINFO   0x00000004
+#define SA_RESTORER  0x04000000
+#define SA_ONSTACK   0x08000000
+#define SA_RESTART   0x10000000
+#define SA_NODEFER   0x40000000
 #define SA_RESETHAND 0x80000000
 
 #define MINSIG 1
 #define MAXSIG 32
 
 #define HAS_SIGNAL(sigset, signum) (sigset & (1ULL << signum))
-#define SIGMASK(sig) (1 << (sig))
+#define SIGMASK(sig)               (1 << (sig))
 
 #define SIG_DFL ((sighandler_t)0) // 默认的信号处理程序（信号句柄）
 #define SIG_IGN ((sighandler_t)1) // 忽略信号的处理程序

@@ -170,9 +170,12 @@ bool arch_elf_test_head(Elf64_Ehdr *ehdr) {
         || ehdr->e_version != EV_CURRENT) {
         logkf("libx64: elf head check magic error.\n\r");
         logkf(
-            "libx64: head %x %c %c %c %d.\n\r", ehdr->e_ident[EI_MAG0],
-            ehdr->e_ident[EI_MAG1] != ELFMAG1, ehdr->e_ident[EI_MAG2],
-            ehdr->e_ident[EI_MAG3] != ELFMAG3, ehdr->e_version
+            "libx64: head %x %c %c %c %d.\n\r",
+            ehdr->e_ident[EI_MAG0],
+            ehdr->e_ident[EI_MAG1] != ELFMAG1,
+            ehdr->e_ident[EI_MAG2],
+            ehdr->e_ident[EI_MAG3] != ELFMAG3,
+            ehdr->e_version
         );
         return false;
     }

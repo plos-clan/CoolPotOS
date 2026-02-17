@@ -11,7 +11,7 @@
 #include "timer_rv64.h"
 
 #define EARLY_MAP_BASE 0x80000000
-#define EARLY_MAP_END 0x88000000
+#define EARLY_MAP_END  0x88000000
 
 int nr_cpu = 256;
 uint64_t cpuid_to_hartids[MAX_CPU];
@@ -116,8 +116,14 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
                 apu_arg[cpu_id].satp =
                     MAKE_SATP_PADDR(SATP_MODE_SV48, 0, virt_to_phys(get_kernel_pagedir()->table));
                 uint64_t rv = sbi_ecall(
-                    0x48534D, 0, hartid, virt_to_phys(apu_start), virt_to_phys(&apu_arg[cpu_id]), 0,
-                    0, 0
+                    0x48534D,
+                    0,
+                    hartid,
+                    virt_to_phys(apu_start),
+                    virt_to_phys(&apu_arg[cpu_id]),
+                    0,
+                    0,
+                    0
                 );
                 (void)rv;
                 continue;

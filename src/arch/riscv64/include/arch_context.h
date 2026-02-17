@@ -1,7 +1,7 @@
 #pragma once
 
 #define FCSR_FRM_SHIFT 5
-#define FCSR_FRM_MASK (0x7U << FCSR_FRM_SHIFT)
+#define FCSR_FRM_MASK  (0x7U << FCSR_FRM_SHIFT)
 
 #define FRM_RNE 0 /* Round to Nearest, ties to Even (默认) */
 #define FRM_RTZ 1 /* Round Towards Zero (截断) */

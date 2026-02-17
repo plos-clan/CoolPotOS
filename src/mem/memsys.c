@@ -201,7 +201,11 @@ syscall_(munmap, uint64_t addr, size_t size) {
 }
 
 syscall_(
-    mremap, uint64_t old_addr, uint64_t old_size, uint64_t new_size, uint64_t flags,
+    mremap,
+    uint64_t old_addr,
+    uint64_t old_size,
+    uint64_t new_size,
+    uint64_t flags,
     uint64_t new_addr
 ) {
     old_addr = old_addr & (~(PAGE_SIZE - 1));
@@ -253,8 +257,11 @@ syscall_(
 #endif
 
         page_map_range(
-            get_current_directory(), vma->vm_end, old_addr_phys + vma->vm_end - vma->vm_start,
-            new_end - vma->vm_end, vma->vm_flags
+            get_current_directory(),
+            vma->vm_end,
+            old_addr_phys + vma->vm_end - vma->vm_start,
+            new_end - vma->vm_end,
+            vma->vm_flags
         );
 
         vma->vm_end = new_end;

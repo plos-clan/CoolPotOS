@@ -348,8 +348,13 @@ syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int ti
 }
 
 syscall_(
-    epoll_pwait, int epfd, struct epoll_event *events, int maxevents, int timeout,
-    sigset_t *sigmask, size_t sigsetsize
+    epoll_pwait,
+    int epfd,
+    struct epoll_event *events,
+    int maxevents,
+    int timeout,
+    sigset_t *sigmask,
+    size_t sigsetsize
 ) {
     tcb_t thread      = get_current_task();
     sigset_t old_mask = thread->blocked;

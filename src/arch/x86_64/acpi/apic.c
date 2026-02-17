@@ -143,7 +143,9 @@ static void apic_handle_ioapic(ACPI_MADT_IO_APIC *ioapic_madt) {
     ioapic->irq_count = (ioapic_mmio_read(ioapic->mmio_base, 0x01) & 0x00FF0000) >> 16;
 
     kinfo(
-        "IOAPIC found: MMIO %p, GSI base %d, IRQs %d", (void *)ioapic->mmio_base, ioapic->gsi_base,
+        "IOAPIC found: MMIO %p, GSI base %d, IRQs %d",
+        (void *)ioapic->mmio_base,
+        ioapic->gsi_base,
         ioapic->irq_count
     );
 

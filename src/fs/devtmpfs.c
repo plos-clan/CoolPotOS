@@ -18,9 +18,17 @@ static _Atomic volatile size_t dev_id_now = 0;
 static void load_tty_device(vfs_node_t node) {
     extern tty_t *kernel_session;
     create_device_node(
-        node, "tty0", device_stream, kernel_session, 0, (void *)kernel_session->ops.ioctl,
-        (void *)kernel_session->ops.read, (void *)kernel_session->ops.write,
-        (void *)kernel_session->ops.poll, NULL, (void *)kernel_session->ops.size_t
+        node,
+        "tty0",
+        device_stream,
+        kernel_session,
+        0,
+        (void *)kernel_session->ops.ioctl,
+        (void *)kernel_session->ops.read,
+        (void *)kernel_session->ops.write,
+        (void *)kernel_session->ops.poll,
+        NULL,
+        (void *)kernel_session->ops.size_t
     );
 }
 
@@ -29,8 +37,17 @@ static void load_blk_device(vfs_node_t node) {
     blk_device_t *device = NULL;
     cow_foreach(block_device_list, device) {
         create_device_node(
-            node, device->name, device_block, device, 0, (void *)blk_ioctl, (void *)blk_device_read,
-            (void *)blk_device_write, (void *)blk_poll, NULL, (void *)blk_size_t
+            node,
+            device->name,
+            device_block,
+            device,
+            0,
+            (void *)blk_ioctl,
+            (void *)blk_device_read,
+            (void *)blk_device_write,
+            (void *)blk_poll,
+            NULL,
+            (void *)blk_size_t
         );
     }
 }
@@ -46,8 +63,17 @@ static void load_drm_device(vfs_node_t node) {
     drmd_device_t *device = NULL;
     cow_foreach(drm_devices, device) {
         create_device_node(
-            drm_dir, device->name, device_stream, device->ptr, device->dev, device->ioctl,
-            device->read, device->write, device->poll, device->map, drm_size_t
+            drm_dir,
+            device->name,
+            device_stream,
+            device->ptr,
+            device->dev,
+            device->ioctl,
+            device->read,
+            device->write,
+            device->poll,
+            device->map,
+            drm_size_t
         );
     }
 
@@ -249,8 +275,16 @@ errno_t devtmpfs_stat(void *file, vfs_node_t node) {
 }
 
 errno_t create_device_node(
-    vfs_node_t root, char *name, enum device_type type, void *handle, uint64_t dev_number,
-    vfs_ioctl_t ioctl, vfs_read_t read, vfs_write_t write, vfs_poll_t poll, vfs_mapfile_t map,
+    vfs_node_t root,
+    char *name,
+    enum device_type type,
+    void *handle,
+    uint64_t dev_number,
+    vfs_ioctl_t ioctl,
+    vfs_read_t read,
+    vfs_write_t write,
+    vfs_poll_t poll,
+    vfs_mapfile_t map,
     size_t (*size_t)(void *handle)
 ) {
     return create_device_node_ex(
@@ -259,9 +293,18 @@ errno_t create_device_node(
 }
 
 errno_t create_device_node_ex(
-    vfs_node_t root, char *name, enum device_type type, void *handle, uint64_t dev_number,
-    void (*open_t)(void *, const char *, vfs_node_t), vfs_close_t close_t, vfs_ioctl_t ioctl,
-    vfs_read_t read, vfs_write_t write, vfs_poll_t poll, vfs_mapfile_t map,
+    vfs_node_t root,
+    char *name,
+    enum device_type type,
+    void *handle,
+    uint64_t dev_number,
+    void (*open_t)(void *, const char *, vfs_node_t),
+    vfs_close_t close_t,
+    vfs_ioctl_t ioctl,
+    vfs_read_t read,
+    vfs_write_t write,
+    vfs_poll_t poll,
+    vfs_mapfile_t map,
     size_t (*size_t)(void *handle)
 ) {
     if (root == NULL)

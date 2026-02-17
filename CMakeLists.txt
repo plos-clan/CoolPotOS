@@ -97,14 +97,27 @@ endif ()
 
 find_program(CPPCHECK cppcheck)
 if (CPPCHECK)
+    set(CPPCHECK_ARCH_DEFS "")
+    if (TARGET_ARCH STREQUAL "x86_64")
+        set(CPPCHECK_ARCH_DEFS -D__x86_64__=1)
+    elseif (TARGET_ARCH STREQUAL "riscv64")
+        set(CPPCHECK_ARCH_DEFS -D__riscv=1 -D__riscv_xlen=64)
+    elseif (TARGET_ARCH STREQUAL "loongarch64")
+        set(CPPCHECK_ARCH_DEFS -D__loongarch__=1 -D__loongarch_grlen=64)
+    endif ()
     add_custom_target(cppcheck
             COMMAND ${CPPCHECK}
             --project=${CMAKE_BINARY_DIR}/compile_commands.json
             --enable=warning,style,performance,portability
+            -D__GNUC__=1
+            -DSIZE_MAX=0xFFFFFFFFFFFFFFFFUL
+            ${CPPCHECK_ARCH_DEFS}
             --suppress=missingIncludeSystem
             --suppress=*:${CMAKE_SOURCE_DIR}/module/fatfs/*
             --suppress=*:${CMAKE_SOURCE_DIR}/module/iso9660/*
             --suppress=*:${CMAKE_SOURCE_DIR}/src/term/flanterm/*
+            --suppress=*:${CMAKE_SOURCE_DIR}/src/lib/*
+            --suppress=*:${CMAKE_SOURCE_DIR}/src/include/lib/*
             --quiet
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             COMMENT "Running cppcheck..."

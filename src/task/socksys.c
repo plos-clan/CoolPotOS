@@ -352,7 +352,12 @@ syscall_(shutdown, int sockfd, int how) {
 }
 
 syscall_(
-    sendto, int sockfd, void *buf, size_t len, int flags, struct sockaddr *dest_addr,
+    sendto,
+    int sockfd,
+    void *buf,
+    size_t len,
+    int flags,
+    struct sockaddr *dest_addr,
     uint64_t addrlen
 ) {
     socket_specific_t *spec = get_sock_spec(sockfd);
@@ -413,7 +418,12 @@ syscall_(
 }
 
 syscall_(
-    recvfrom, int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr,
+    recvfrom,
+    int sockfd,
+    void *buf,
+    size_t len,
+    int flags,
+    struct sockaddr *src_addr,
     uint64_t *addrlen
 ) {
     socket_specific_t *spec = get_sock_spec(sockfd);

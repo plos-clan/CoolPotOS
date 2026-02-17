@@ -9,7 +9,11 @@
 #include "term/klog.h"
 
 void load_segment(
-    Elf64_Phdr *phdr, void *elf, page_directory_t *directory, bool is_user, uint64_t offset,
+    Elf64_Phdr *phdr,
+    void *elf,
+    page_directory_t *directory,
+    bool is_user,
+    uint64_t offset,
     uint64_t *load_start
 ) {
     size_t hi = PADDING_UP(phdr->p_paddr + phdr->p_memsz, 0x1000) + offset;
@@ -58,8 +62,13 @@ void load_segment(
 }
 
 bool mmap_phdr_segment(
-    Elf64_Ehdr *ehdr, Elf64_Phdr *phdrs, page_directory_t *directory, bool is_user, uint64_t offset,
-    uint64_t *load_start, uint64_t *load_size
+    Elf64_Ehdr *ehdr,
+    Elf64_Phdr *phdrs,
+    page_directory_t *directory,
+    bool is_user,
+    uint64_t offset,
+    uint64_t *load_start,
+    uint64_t *load_size
 ) {
     size_t i = 0;
     while (i < ehdr->e_phnum && phdrs[i].p_type != PT_LOAD) {
@@ -142,7 +151,10 @@ void *load_executor_elf(
 }
 
 void *load_interpreter_elf(
-    uint8_t *data, page_directory_t *dir, uint64_t *load_start, uint8_t **link_data,
+    uint8_t *data,
+    page_directory_t *dir,
+    uint64_t *load_start,
+    uint8_t **link_data,
     size_t *link_size
 ) {
 

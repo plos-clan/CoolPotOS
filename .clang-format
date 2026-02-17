@@ -12,7 +12,7 @@ AlignArrayOfStructures: Left
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveBitFields: true
 AlignConsecutiveDeclarations: None
-AlignConsecutiveMacros: None
+AlignConsecutiveMacros: true
 AlignEscapedNewlines: Right
 AlignOperands: Align
 AlignTrailingComments: true
@@ -26,8 +26,8 @@ AllowShortLoopsOnASingleLine: false
 AttributeMacros:
   - __attribute__
   - __declspec
-BinPackArguments: true
-BinPackParameters: true
+BinPackArguments: false
+BinPackParameters: false
 BraceWrapping:
   AfterCaseLabel: false
   AfterControlStatement: Never

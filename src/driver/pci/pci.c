@@ -438,22 +438,36 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
                     pci_device->bars[i].mmio    = true;
 
                     uint32_t original_value = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset
                     );
 
                     pci_device->op->write(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-                        offset, 0xFFFFFFFF
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
+                        offset,
+                        0xFFFFFFFF
                     );
                     uint32_t value = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset
                     );
 
                     pci_device->op->write(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-                        offset, original_value
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
+                        offset,
+                        original_value
                     );
 
                     uint32_t mask = (uint32_t)(value & 0xFFFFFFF0);
@@ -464,45 +478,76 @@ void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint
                 // 64 bit
                 case 0b10:;
                     uint32_t bar_address_upper = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset + 0x4
                     );
 
                     bar_address |= ((uint64_t)bar_address_upper << 32);
 
                     uint32_t original_value = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset
                     );
                     uint32_t original_value_high = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset + 4
                     );
 
                     pci_device->op->write(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-                        offset, 0xFFFFFFFF
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
+                        offset,
+                        0xFFFFFFFF
                     );
                     pci_device->op->write(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-                        offset + 4, 0xFFFFFFFF
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
+                        offset + 4,
+                        0xFFFFFFFF
                     );
                     uint32_t mask = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset
                     );
                     uint32_t mask_high = pci_device->op->read(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
                         offset + 4
                     );
 
                     pci_device->op->write(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-                        offset, original_value
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
+                        offset,
+                        original_value
                     );
                     pci_device->op->write(
-                        pci_device->bus, pci_device->slot, pci_device->func, pci_device->segment,
-                        offset + 4, original_value_high
+                        pci_device->bus,
+                        pci_device->slot,
+                        pci_device->func,
+                        pci_device->segment,
+                        offset + 4,
+                        original_value_high
                     );
 
                     uint64_t value = ((uint64_t)mask_high << 32) | (mask & 0xFFFFFFF0);
@@ -629,8 +674,13 @@ void pci_init() {
         );
         mcfg_virt_bases[i] = virt;
         kinfo(
-            "MCFG map: seg=%u bus=%u-%u phys=%#llx virt=%#llx size=%#llx", segment_group, start_bus,
-            end_bus, mcfg_entries[i]->Address, virt, size
+            "MCFG map: seg=%u bus=%u-%u phys=%#llx virt=%#llx size=%#llx",
+            segment_group,
+            start_bus,
+            end_bus,
+            mcfg_entries[i]->Address,
+            virt,
+            size
         );
         for (uint16_t bus = start_bus; bus <= end_bus; bus++) {
             pci_scan_bus(segment_group, (uint8_t)bus);

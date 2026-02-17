@@ -44,8 +44,17 @@ char *proc_gen_loadavg(size_t *context_len) {
 
     string_builder_t *builder = create_string_builder(64);
     string_builder_append(
-        builder, "%llu.%02llu %llu.%02llu %llu.%02llu %llu/%llu %d\n", load_int, load_frac,
-        load_int, load_frac, load_int, load_frac, (uint64_t)running, (uint64_t)total, last_pid
+        builder,
+        "%llu.%02llu %llu.%02llu %llu.%02llu %llu/%llu %d\n",
+        load_int,
+        load_frac,
+        load_int,
+        load_frac,
+        load_int,
+        load_frac,
+        (uint64_t)running,
+        (uint64_t)total,
+        last_pid
     );
 
     *context_len = builder->size;

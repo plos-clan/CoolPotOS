@@ -31,7 +31,7 @@
 
 struct rb_node {
     unsigned long rb_parent_color;
-#define RB_RED 0
+#define RB_RED   0
 #define RB_BLACK 1
     struct rb_node *rb_right;
     struct rb_node *rb_left;
@@ -41,9 +41,9 @@ struct rb_root {
     struct rb_node *rb_node;
 };
 
-#define rb_parent(r) ((struct rb_node *)((r)->rb_parent_color & ~3))
-#define rb_color(r) ((r)->rb_parent_color & 1)
-#define rb_is_red(r) (!rb_color(r))
+#define rb_parent(r)   ((struct rb_node *)((r)->rb_parent_color & ~3))
+#define rb_color(r)    ((r)->rb_parent_color & 1)
+#define rb_is_red(r)   (!rb_color(r))
 #define rb_is_black(r) rb_color(r)
 #define rb_set_red(r)                                                                              \
     do {                                                                                           \

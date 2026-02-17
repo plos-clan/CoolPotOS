@@ -2,8 +2,8 @@
 
 #define SA_RPL3 3
 
-#define SA_RPL_MASK 0xFFFC
-#define SA_TI_MASK 0xFFFB
+#define SA_RPL_MASK      0xFFFC
+#define SA_TI_MASK       0xFFFB
 #define GET_SEL(cs, rpl) ((cs & SA_RPL_MASK & SA_TI_MASK) | (rpl))
 
 #include "types.h"

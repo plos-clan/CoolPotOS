@@ -149,7 +149,9 @@ static void ps2_key_handle(uint64_t irq, void *arg, struct pt_regs *regs) {
     if (scancode == 0xE0) {
         uint8_t sc2 = io_in8(0x60);
         send_input_event(
-            ps2_kbd_device, EV_KEY, (uint64_t)(sc2 & 0x7F) | EVDEV_EXT_FLAG,
+            ps2_kbd_device,
+            EV_KEY,
+            (uint64_t)(sc2 & 0x7F) | EVDEV_EXT_FLAG,
             (sc2 & 0x80) ? EV_RELEASE : EV_PRESS
         );
         out = keyboard_scancode(scancode, sc2, 0);
@@ -157,7 +159,9 @@ static void ps2_key_handle(uint64_t irq, void *arg, struct pt_regs *regs) {
         out = keyboard_scancode(scancode, io_in8(0x60), io_in8(0x60));
     } else {
         send_input_event(
-            ps2_kbd_device, EV_KEY, (uint64_t)(scancode & 0x7F),
+            ps2_kbd_device,
+            EV_KEY,
+            (uint64_t)(scancode & 0x7F),
             (scancode & 0x80) ? EV_RELEASE : EV_PRESS
         );
         out = keyboard_scancode(scancode, 0, 0);
@@ -217,8 +221,14 @@ void ps2k_create_device() {
 #if defined(__x86_64__) || defined(__amd64__)
     extern intctl_t apic_controller;
     irq_regist_irq(
-        ps2_kbd_irq + IRQ_BASE_VECTOR, ps2_key_handle, ps2_kbd_irq, NULL, &apic_controller,
-        "ps2_keyboard", 0, IO_APIC
+        ps2_kbd_irq + IRQ_BASE_VECTOR,
+        ps2_key_handle,
+        ps2_kbd_irq,
+        NULL,
+        &apic_controller,
+        "ps2_keyboard",
+        0,
+        IO_APIC
     );
 #endif
     irq_set_alloc(ps2_kbd_irq);

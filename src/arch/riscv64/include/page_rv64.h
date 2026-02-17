@@ -4,24 +4,24 @@
 #    undef PAGE_SIZE
 #endif
 
-#define PAGE_SIZE 4096
-#define ARCH_PT_LEVEL 4
-#define PT_OFFSET_BASE 12
+#define PAGE_SIZE           4096
+#define ARCH_PT_LEVEL       4
+#define PT_OFFSET_BASE      12
 #define PT_OFFSET_PER_LEVEL 9
 
-#define ARCH_PT_FLAG_VALID (0x1UL << 0)
-#define ARCH_PT_FLAG_READ (0x1UL << 1)
-#define ARCH_PT_FLAG_WRITE (0x1UL << 2)
-#define ARCH_PT_FLAG_EXEC (0x1UL << 3)
-#define ARCH_PT_FLAG_USER (0x1UL << 4)
+#define ARCH_PT_FLAG_VALID    (0x1UL << 0)
+#define ARCH_PT_FLAG_READ     (0x1UL << 1)
+#define ARCH_PT_FLAG_WRITE    (0x1UL << 2)
+#define ARCH_PT_FLAG_EXEC     (0x1UL << 3)
+#define ARCH_PT_FLAG_USER     (0x1UL << 4)
 #define ARCH_PT_FLAG_ACCESSED (0x1UL << 6)
-#define ARCH_PT_FLAG_DIRTY (0x1UL << 7)
-#define ARCH_PT_FLAG_PBMT_NC (0x1UL << 62)
-#define ARCH_ADDR_MASK ((uint64_t)0x003ffffffffffc00)
+#define ARCH_PT_FLAG_DIRTY    (0x1UL << 7)
+#define ARCH_PT_FLAG_PBMT_NC  (0x1UL << 62)
+#define ARCH_ADDR_MASK        ((uint64_t)0x003ffffffffffc00)
 
-#define ARCH_READ_PTE(pte) (((uint64_t)(pte) >> 10) << 12)
+#define ARCH_READ_PTE(pte)          (((uint64_t)(pte) >> 10) << 12)
 #define ARCH_MAKE_PTE(paddr, flags) ((((uint64_t)(paddr) >> 12) << 10) | (flags))
-#define ARCH_READ_PTE_FLAG(pte) ((uint64_t)(pte) & 0xffc00000000003ffULL)
+#define ARCH_READ_PTE_FLAG(pte)     ((uint64_t)(pte) & 0xffc00000000003ffULL)
 
 #define ARCH_PT_TABLE_FLAGS ARCH_PT_FLAG_VALID
 
@@ -35,9 +35,9 @@
 // SV48模式下的SATP寄存器位字段定义
 #define SATP_MODE_SHIFT 60
 #define SATP_ASID_SHIFT 44
-#define SATP_PPN_MASK 0x00000FFFFFFFFFFFULL  // 44位PPN
-#define SATP_ASID_MASK 0x0FFFF00000000000ULL // 16位ASID
-#define SATP_MODE_MASK 0xF000000000000000ULL // 4位MODE
+#define SATP_PPN_MASK   0x00000FFFFFFFFFFFULL // 44位PPN
+#define SATP_ASID_MASK  0x0FFFF00000000000ULL // 16位ASID
+#define SATP_MODE_MASK  0xF000000000000000ULL // 4位MODE
 
 // 页表模式
 #define SATP_MODE_BARE 0
@@ -46,8 +46,8 @@
 #define SATP_MODE_SV57 10
 
 // SV48虚拟地址空间划分（48位地址空间）
-#define SV48_VA_BITS 48
-#define SV48_USER_END 0x0000800000000000ULL     // 用户空间结束地址
+#define SV48_VA_BITS      48
+#define SV48_USER_END     0x0000800000000000ULL // 用户空间结束地址
 #define SV48_KERNEL_START 0xFFFF800000000000ULL // 内核空间起始地址（符号扩展）
 
 #define PAGE_CALC_PAGE_TABLE_SIZE(level)                                                           \

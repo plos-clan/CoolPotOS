@@ -124,8 +124,11 @@ fb_dev_map(void *data, void *addr, size_t offset, size_t size, size_t prot, size
 #endif
 
     page_map_range(
-        get_current_directory(), (uint64_t)addr, fb_addr,
-        framebuffer->width * framebuffer->height * framebuffer->bpp / 8, page_flags
+        get_current_directory(),
+        (uint64_t)addr,
+        fb_addr,
+        framebuffer->width * framebuffer->height * framebuffer->bpp / 8,
+        page_flags
     );
     return addr;
 }
@@ -139,8 +142,16 @@ void fb_setup(vfs_node_t dev_root) {
 
     uint64_t dev_number = ((uint64_t)FB_MAJOR << 8) | 0;
     create_device_node(
-        dev_root, "fb0", device_stream, fb, dev_number, (vfs_ioctl_t)fb_dev_ioctl,
-        (vfs_read_t)fb_dev_read, (vfs_write_t)fb_dev_write, (vfs_poll_t)fb_dev_poll,
-        (vfs_mapfile_t)fb_dev_map, fb_dev_size
+        dev_root,
+        "fb0",
+        device_stream,
+        fb,
+        dev_number,
+        (vfs_ioctl_t)fb_dev_ioctl,
+        (vfs_read_t)fb_dev_read,
+        (vfs_write_t)fb_dev_write,
+        (vfs_poll_t)fb_dev_poll,
+        (vfs_mapfile_t)fb_dev_map,
+        fb_dev_size
     );
 }

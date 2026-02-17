@@ -7,7 +7,7 @@
 #define SCHED_CAPACITY_SCALE (1L << SCHED_CAPACITY_SHIFT)
 
 #define NICE_0_LOAD_SHIFT (SCHED_FIXEDPOINT_SHIFT + SCHED_FIXEDPOINT_SHIFT)
-#define scale_load(w) ((w) << SCHED_FIXEDPOINT_SHIFT)
+#define scale_load(w)     ((w) << SCHED_FIXEDPOINT_SHIFT)
 #define scale_load_down(w)                                                                         \
     ({                                                                                             \
         unsigned long __w = (w);                                                                   \
@@ -18,7 +18,7 @@
     })
 
 #define WEIGHT_IDLEPRIO 3
-#define WMULT_IDLEPRIO 1431655765
+#define WMULT_IDLEPRIO  1431655765
 
 #define NICE_0_LOAD (1L << NICE_0_LOAD_SHIFT)
 

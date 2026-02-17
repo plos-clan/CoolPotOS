@@ -247,7 +247,8 @@ void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp) {
         }
 
         for (uint64_t *p = (uint64_t *)start_rsp;
-             (uint64_t)p + sizeof(uint64_t) <= stack_high && count < max_frames; p++) {
+             (uint64_t)p + sizeof(uint64_t) <= stack_high && count < max_frames;
+             p++) {
             const uint64_t candidate = *p;
 
             if (!addr_in_kernel_text(candidate)) {
