@@ -1,27 +1,30 @@
 #include "task/rrs.h"
 #include "task/scheduler.h"
 
-void add_rrs_entity(tcb_t thread, cpu_local_t *local) {
-    rrs_t *scheduler            = local->sched_handle;
+void add_rrs_entity(const tcb_t thread, const cpu_local_t *local) {
+    const rrs_t *scheduler      = local->sched_handle;
     struct sched_entity *entity = malloc(sizeof(struct sched_entity));
-    entity->thread              = thread;
-    entity->node                = list_enqueue(scheduler->sched_queue, entity);
-    thread->sched_handle        = entity;
+    asserts(entity, "add_rrs_entity: entity is null.");
+    entity->thread       = thread;
+    entity->node         = list_enqueue(scheduler->sched_queue, entity);
+    thread->sched_handle = entity;
 }
 
-void remove_rrs_entity(tcb_t thread, cpu_local_t *local) {
-    if (thread == NULL || local == NULL || thread->sched_handle == NULL)
+void remove_rrs_entity(const tcb_t thread, const cpu_local_t *local) {
+    if (thread == NULL || local == NULL || thread->sched_handle == NULL) {
         return;
+    }
     rrs_t *scheduler            = local->sched_handle;
     struct sched_entity *entity = thread->sched_handle;
     list_remove_node(scheduler->sched_queue, entity->node);
-    if (scheduler->curr == entity)
+    if (scheduler->curr == entity) {
         scheduler->curr = scheduler->idle;
+    }
     free(entity);
     thread->sched_handle = NULL;
 }
 
-tcb_t rrs_pick_next_task(cpu_local_t *local) {
+tcb_t rrs_pick_next_task(const cpu_local_t *local) {
     rrs_t *scheduler = local->sched_handle;
 
     if (scheduler->sched_queue->size == 1) {
@@ -29,12 +32,12 @@ tcb_t rrs_pick_next_task(cpu_local_t *local) {
     }
 
 resche:;
-    struct sched_entity *entity = scheduler->curr;
-    list_node_t *nextL          = entity->node->next;
+    const struct sched_entity *entity = scheduler->curr;
+    const list_node_t *nextL          = entity->node->next;
     struct sched_entity *next;
-    if (nextL == NULL)
+    if (nextL == NULL) {
         next = scheduler->idle;
-    else {
+    } else {
         next = nextL->data;
     }
     scheduler->curr = next;
@@ -44,13 +47,15 @@ resche:;
     return next->thread;
 }
 
-void init_cpu_idle_rrs(cpu_local_t *cpu, tcb_t idle) {
-    rrs_t *scheduler            = (rrs_t *)calloc(1, sizeof(rrs_t));
-    cpu->sched_handle           = scheduler;
+void init_cpu_idle_rrs(cpu_local_t *local, const tcb_t idle) {
+    rrs_t *scheduler = calloc(1, sizeof(rrs_t));
+    asserts(scheduler, "init_cpu_idle_rrs: scheduler is null.");
+    local->sched_handle           = scheduler;
     scheduler->sched_queue      = create_llist_queue();
     struct sched_entity *entity = malloc(sizeof(struct sched_entity));
-    entity->thread              = idle;
-    entity->node                = list_enqueue(scheduler->sched_queue, entity);
-    scheduler->idle             = entity;
-    scheduler->curr             = entity;
+    asserts(entity, "init_cpu_idle_rrs: entity is null.");
+    entity->thread  = idle;
+    entity->node    = list_enqueue(scheduler->sched_queue, entity);
+    scheduler->idle = entity;
+    scheduler->curr = entity;
 }

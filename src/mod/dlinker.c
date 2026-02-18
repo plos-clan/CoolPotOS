@@ -296,7 +296,7 @@ void dlinker_load(kernel_mode_t *module) {
     );
 
     module->entry_exit_code = dlinit();
-    kernel_modules_load_offset += (load_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+    kernel_modules_load_offset += load_size + PAGE_SIZE - 1 & ~(PAGE_SIZE - 1);
 }
 
 static void cp_printk(const char *fmt, ...) {
@@ -305,15 +305,16 @@ static void cp_printk(const char *fmt, ...) {
     va_start(args, fmt);
     stbsp_vsprintf(buf, fmt, args);
     va_end(args);
-    tty_t *tty_ = kernel_session;
+    tty_t *tty_ = get_kernel_session();
     tty_->ops.write(tty_, buf, 0, strlen(buf));
     tty_->ops.flush(tty_);
 }
 
 static bool ends_with_km(const char *str) {
-    size_t len = strlen(str);
-    if (len < 3)
+    const size_t len = strlen(str);
+    if (len < 3) {
         return false;
+    }
     return strcmp(str + len - 3, ".km") == 0;
 }
 

@@ -56,12 +56,12 @@ void irq_regist_irq(
     uint64_t arg,
     void *data,
     intctl_t *controller,
-    char *name,
+    const char *name,
     uint64_t flags,
     enum irq_type type
 );
 void do_irq(struct pt_regs *regs, uint64_t irq_num);
-
+irq_action_t *get_irq_actions();
 uint64_t get_all_irq_count();
 int irq_allocate_irqnum();
 void irq_deallocate_irqnum(int irq_num);

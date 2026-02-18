@@ -4,8 +4,8 @@
 #include "task/smp.h"
 #include "term/klog.h"
 
-id_allocator_t *intctl_irq_alloc;
-irq_action_t actions[ARCH_MAX_IRQ_NUM];
+static id_allocator_t *intctl_irq_alloc;
+static irq_action_t actions[ARCH_MAX_IRQ_NUM];
 
 static _Atomic volatile uint64_t irq_count = 0;
 
@@ -13,10 +13,14 @@ uint64_t get_all_irq_count() {
     return irq_count;
 }
 
-void do_irq(struct pt_regs *regs, uint64_t irq_num) {
+irq_action_t *get_irq_actions() {
+    return actions;
+}
+
+void do_irq(struct pt_regs *regs, const uint64_t irq_num) {
     irq_action_t *action = &actions[irq_num];
 
-    cpu_local_t *cpu = arch_current_cpu();
+    const cpu_local_t *cpu = arch_current_cpu();
     action->int_count[cpu->id]++;
 
     if (action->handler) {
@@ -34,14 +38,14 @@ void do_irq(struct pt_regs *regs, uint64_t irq_num) {
 }
 
 void irq_regist_irq(
-    uint64_t irq_num,
+    const uint64_t irq_num,
     void (*handler)(uint64_t irq_num, void *data, struct pt_regs *regs),
-    uint64_t arg,
+    const uint64_t arg,
     void *data,
     intctl_t *controller,
-    char *name,
-    uint64_t flags,
-    enum irq_type type
+    const char *name,
+    const uint64_t flags,
+    const enum irq_type type
 ) {
     irq_action_t *action = &actions[irq_num];
 
@@ -66,11 +70,11 @@ int irq_allocate_irqnum() {
     return id_alloc(intctl_irq_alloc);
 }
 
-void irq_deallocate_irqnum(int irq_num) {
+void irq_deallocate_irqnum(const int irq_num) {
     id_free(intctl_irq_alloc, irq_num);
 }
 
-void irq_set_alloc(size_t irq_num) {
+void irq_set_alloc(const size_t irq_num) {
     id_alloc_set(intctl_irq_alloc, irq_num);
 }
 

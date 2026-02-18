@@ -13,25 +13,23 @@
 #include "task/smp.h"
 #include "term/klog.h"
 
-pcb_t kernel_process;
-tcb_t bsp_idle_thread;
-cow_arraylist *process_list;
+static pcb_t kernel_process;
+static tcb_t bsp_idle_thread;
+static cow_arraylist *process_list;
 _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
 extern volatile bool smp_enable;
 
-USED void foreach_task() {
-    pcb_t process = NULL;
-    cow_foreach(process_list, process) {
-        logkf("PID:%d - %s %p\n\r", process->pid, process->name, process);
-        tcb_t thread = NULL;
-        cow_foreach(process->child_threads, thread) {
-            logkf("\t TID:%d - %s %p\n\r", thread->tid, thread->name, thread);
-            struct sched_entity *entity = thread->sched_handle;
-            // logkf("\t deadline: %x - vruntime: %x\n\r",entity->deadline,entity->vruntime);
-            logkf("\t deadline: %lx - vruntime: %lx\n\r", entity->deadline, entity->vruntime);
-        }
-    }
+cow_arraylist *get_process_list() {
+    return process_list;
+}
+
+pcb_t get_kernel_process() {
+    return kernel_process;
+}
+
+tcb_t get_bsp_idle_thread() {
+    return bsp_idle_thread;
 }
 
 pid_t alloc_pid() {
@@ -49,13 +47,14 @@ tcb_t get_current_task() {
 pcb_t found_pcb(pid_t pid) {
     pcb_t process = NULL;
     cow_foreach(process_list, process) {
-        if (process->pid == pid)
+        if (process->pid == pid) {
             return process;
+        }
     }
     return NULL;
 }
 
-static void kill_thread0(pcb_t parent, tcb_t task) {
+static void kill_thread0(pcb_t parent, const tcb_t task) {
     task->status = T_OUT;
     free((void *)(task->syscall_stack - MAX_STACK_SIZE));
     free((void *)(task->signal_stack - STACK_SIZE));
@@ -63,18 +62,20 @@ static void kill_thread0(pcb_t parent, tcb_t task) {
     page_directory_t *src_dir = get_current_directory();
     switch_context_directory(task->process->directory);
     int *tid_addr = (int *)task->tid_address;
-    if (tid_addr != NULL)
+    if (tid_addr != NULL) {
         *tid_addr = 0;
+    }
     switch_context_directory(src_dir);
 }
 
-static void kill_proc0(pcb_t pcb) {
+static void kill_proc0(const pcb_t pcb) {
     cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
     while (pcb->child_threads->size > 0) {
-        tcb_t thread = (tcb_t)cow_list_get(pcb->child_threads, 0);
+        const tcb_t thread = cow_list_get(pcb->child_threads, 0);
         cow_list_remove(pcb->child_threads, 0);
-        if (thread == NULL)
+        if (thread == NULL) {
             continue;
+        }
         if (thread->status != T_OUT) {
             kill_thread0(pcb, thread);
         }
@@ -92,11 +93,11 @@ static void kill_proc0(pcb_t pcb) {
     ipc_queue_release(pcb->ipc_queue);
     free_llist_queue(pcb->virt_queue, NULL, NULL);
     free(pcb->cmdline);
-    free(pcb->name);
     vfs_close(pcb->cwd);
     vfs_close(pcb->exec);
-    if (pcb->envp)
+    if (pcb->envp) {
         free_envp(pcb->envp);
+    }
     free(pcb->ctty_path);
     logkf(
         "task: Freeing process %s (PID: %d) vfork: %s\n",
@@ -104,16 +105,20 @@ static void kill_proc0(pcb_t pcb) {
         pcb->pid,
         pcb->vfork ? "true" : "false"
     );
-    if (!pcb->vfork)
+    free(pcb->name);
+    if (!pcb->vfork) {
         free_page_directory(pcb->directory);
+    }
     free(pcb);
 }
 
-void kill_thread(tcb_t task) {
-    if (task == NULL)
+void kill_thread(const tcb_t task) {
+    if (task == NULL) {
         return;
-    if (task->status == T_DEATH || task->status == T_OUT)
+    }
+    if (task->status == T_DEATH || task->status == T_OUT) {
         return;
+    }
     task->status = T_DEATH;
     if (task->tid_directory != NULL) {
         page_directory_t *directory = get_current_directory();
@@ -123,7 +128,6 @@ void kill_thread(tcb_t task) {
             int *tid_addr = (int *)task->tid_address;
             *tid_addr     = 0;
         }
-        int woken = futex_key ? futex_wake((void *)futex_key, 1) : 0;
         switch_context_directory(directory);
         task->tid_address   = 0;
         task->tid_directory = NULL;
@@ -134,13 +138,16 @@ void kill_thread(tcb_t task) {
     }
 }
 
-void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
-    if (pcb == NULL)
+void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
+    if (pcb == NULL) {
         return;
-    if (pcb->status == T_DEATH)
+    }
+    if (pcb->status == T_DEATH) {
         return;
-    if (is_zombie && pcb->status == T_ZOMBIE)
+    }
+    if (is_zombie && pcb->status == T_ZOMBIE) {
         return;
+    }
     if (pcb->pid == kernel_process->pid) {
         kerror("Cannot kill System process.");
         return;
@@ -154,21 +161,21 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
         if (pcb->child_threads->size > 0) {
             tcb_t tcb = NULL;
             cow_foreach(pcb->child_threads, tcb) {
-                if (tcb == NULL)
+                if (tcb->status == T_DEATH || tcb->status == T_OUT) {
                     continue;
-                if (tcb->status == T_DEATH || tcb->status == T_OUT)
-                    continue;
+                }
                 kill_thread(tcb);
             }
         }
         pcb->status       = T_ZOMBIE;
-        ipc_message_t msg = malloc(sizeof(struct ipc_message));
+        const ipc_message_t msg = malloc(sizeof(struct ipc_message));
+        asserts(msg,"kill_proc: ipc_message is null.");
         msg->pid          = pcb->pid;
         msg->type         = IPC_MSG_TYPE_EPID;
         msg->data[0]      = exit_code & 0xFF;
-        msg->data[1]      = (exit_code >> 8) & 0xFF;
-        msg->data[2]      = (exit_code >> 16) & 0xFF;
-        msg->data[3]      = (exit_code >> 24) & 0xFF;
+        msg->data[1]      = exit_code >> 8 & 0xFF;
+        msg->data[2]      = exit_code >> 16 & 0xFF;
+        msg->data[3]      = exit_code >> 24 & 0xFF;
         ipc_send(pcb->parent->ipc_queue, msg);
         send_signal_to_process(pcb->parent, SIGCHLD);
 
@@ -188,25 +195,25 @@ void kill_proc(pcb_t pcb, int exit_code, bool is_zombie) {
     }
 }
 
-int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
-    tcb_t current   = get_current_task();
-    current->status = T_WAIT;
-    bool is_sti     = arch_check_interrupt();
+int waitpid(const pid_t pid, pid_t *pid_ret, const bool nohang) {
+    const tcb_t current = get_current_task();
+    current->status     = T_WAIT;
+    const bool is_sti   = arch_check_interrupt();
     arch_open_interrupt();
 
-    pcb_t process = current->process;
+    const pcb_t process = current->process;
 
     ipc_message_t mesg = NULL;
     int exit_code      = 0;
     if (nohang) {
-        size_t tries = process->ipc_queue->size;
+        const size_t tries = process->ipc_queue->size;
         for (size_t i = 0; i < tries; i++) {
             mesg = ipc_recv(process->ipc_queue, IPC_MSG_TYPE_EPID);
             if (mesg == NULL) {
                 break;
             }
-            exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8)
-                        | mesg->data[0];
+            exit_code =
+                mesg->data[3] << 24 | mesg->data[2] << 16 | mesg->data[1] << 8 | mesg->data[0];
             if (pid == -1 || pid == mesg->pid) {
                 break;
             }
@@ -214,8 +221,9 @@ int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
             mesg = NULL;
         }
         if (mesg == NULL) {
-            if (!is_sti)
+            if (!is_sti) {
                 arch_close_interrupt();
+            }
             current->status = T_RUNNING;
             *pid_ret        = 0;
             return 0;
@@ -227,28 +235,32 @@ int waitpid(pid_t pid, pid_t *pid_ret, bool nohang) {
             scheduler_change_weight(current, NICE_TO_PRIO(0));
             exit_code = (mesg->data[3] << 24) | (mesg->data[2] << 16) | (mesg->data[1] << 8)
                         | mesg->data[0];
-            if (pid == -1 || pid == mesg->pid)
+            if (pid == -1 || pid == mesg->pid) {
                 break;
+            }
             ipc_send(process->ipc_queue, mesg);
         }
     }
 
-    pcb_t wait_p = found_pcb(mesg->pid);
-    if (wait_p && wait_p->status == T_ZOMBIE)
+    const pcb_t wait_p = found_pcb(mesg->pid);
+    if (wait_p && wait_p->status == T_ZOMBIE) {
         kill_proc(wait_p, exit_code, false);
+    }
     *pid_ret = mesg->pid;
     free(mesg);
 
-    if (!is_sti)
+    if (!is_sti) {
         arch_close_interrupt();
+    }
     current->status = T_RUNNING;
     return exit_code;
 }
 
 pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
-    pcb_t new_pgb = calloc(1, sizeof(struct process_control_block));
-    if (new_pgb == NULL)
+    const pcb_t new_pgb = calloc(1, sizeof(struct process_control_block));
+    if (new_pgb == NULL) {
         return -ENOMEM;
+    }
     new_pgb->name          = strdup(name);
     new_pgb->pl_index      = cow_list_add(process_list, new_pgb);
     new_pgb->pid           = alloc_pid();
@@ -267,16 +279,17 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->proc_root     = get_rootdir();
     if (flags & CLONE_VM) {
         new_pgb->directory = clone_page_directory(new_pgb->parent->directory, false);
-    } else
+    } else {
         new_pgb->directory = new_pgb->parent->directory;
+    }
     return new_pgb->pid;
 }
 
 pid_t create_kernel_thread(
     const char *name, int (*func)(void *arg), void *arg, pcb_t process, uint64_t prio
 ) {
-    tcb_t thread = calloc(1, STACK_SIZE);
-    not_null_assert(thread, "create kernel thread null.");
+    const tcb_t thread = calloc(1, STACK_SIZE);
+    asserts(thread, "create kernel thread null.");
     thread->name          = strdup(name);
     thread->tid           = alloc_tid();
     thread->process       = process == NULL ? kernel_process : process;
@@ -292,7 +305,6 @@ pid_t create_kernel_thread(
 }
 
 void setup_task() {
-    extern tty_t *kernel_session;
     process_list                  = cow_list_create();
     kernel_process                = calloc(1, sizeof(struct process_control_block));
     kernel_process->name          = strdup("System");
@@ -302,7 +314,7 @@ void setup_task() {
     kernel_process->cwd           = get_rootdir();
     kernel_process->child_threads = cow_list_create();
     kernel_process->directory     = get_kernel_pagedir();
-    kernel_process->tty           = kernel_session;
+    kernel_process->tty           = get_kernel_session();
     kernel_process->ctty_path     = strdup("/dev/tty0");
     kernel_process->status        = T_RUNNING;
     kernel_process->exec          = NULL;

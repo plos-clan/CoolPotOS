@@ -2,12 +2,12 @@
 #include "intctl.h"
 #include "task/smp.h"
 
-char *proc_gen_interrupts(size_t *context_len) {
-    extern irq_action_t actions[ARCH_MAX_IRQ_NUM];
+static char *proc_gen_interrupts(size_t *context_len) {
     const size_t bufsize = PAGE_SIZE * 4;
     char *buffer         = malloc(bufsize);
-    if (!buffer)
+    if (!buffer) {
         return NULL;
+    }
 
     size_t offset = 0;
     memset(buffer, 0, bufsize);
@@ -19,9 +19,10 @@ char *proc_gen_interrupts(size_t *context_len) {
     }
     offset += snprintf(buffer + offset, bufsize - offset, "\n");
     for (size_t irq = 0; irq < ARCH_MAX_IRQ_NUM; irq++) {
-        irq_action_t *action = &actions[irq];
-        if (action->irq_controller == NULL || action->handler == NULL)
+        const irq_action_t *action = &get_irq_actions()[irq];
+        if (action->irq_controller == NULL || action->handler == NULL) {
             continue;
+        }
 
         offset += snprintf(buffer + offset, bufsize - offset, "%3zu:    ", irq);
 
@@ -46,10 +47,11 @@ char *proc_gen_interrupts(size_t *context_len) {
         }
         offset += snprintf(buffer + offset, bufsize - offset, "%s ", name_type);
 
-        if (action->name)
+        if (action->name) {
             offset += snprintf(buffer + offset, bufsize - offset, "%s\n", action->name);
-        else
+        } else {
             offset += snprintf(buffer + offset, bufsize - offset, "unknown\n");
+        }
     }
 
     *context_len = offset;

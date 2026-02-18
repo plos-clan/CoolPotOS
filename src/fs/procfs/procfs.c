@@ -13,8 +13,6 @@ static int proc_self_id = 0;
 vfs_node_t procfs_root  = NULL;
 spin_t procfs_oplock    = SPIN_INIT;
 
-extern cow_arraylist *process_list;
-
 errno_t procfs_mount(const char *src, vfs_node_t node) {
     procfs_root = node;
 
@@ -30,7 +28,7 @@ errno_t procfs_mount(const char *src, vfs_node_t node) {
     load_procfs_root();
 
     pcb_t Inode = NULL;
-    cow_foreach(process_list, Inode) {
+    cow_foreach(get_process_list(), Inode) {
         procfs_on_new_task(Inode);
     }
 

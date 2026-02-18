@@ -1,6 +1,7 @@
 #include "krlibc.h"
 #include "mem/heap.h"
 #include "term/klog.h"
+#include "types/limits.h"
 
 #define WT         size_t
 #define WS         (sizeof(WT))

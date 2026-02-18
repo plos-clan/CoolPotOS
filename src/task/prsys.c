@@ -488,14 +488,15 @@ syscall_(getresuid, int *ruid, int *euid, int *suid) {
     return EOK;
 }
 
-syscall_(kill, int pid, int sig) {
-    if (sig < 0 || sig > MAXSIG)
+syscall_(kill, const int pid, const int sig) {
+    if (sig < 0 || sig > MAXSIG) {
         return SYSCALL_FAULT_(EINVAL);
+}
 
     // sig == 0: permission check only
     if (sig == 0) {
         if (pid > 0) {
-            pcb_t process = found_pcb(pid);
+            const pcb_t process = found_pcb(pid);
             return process ? EOK : SYSCALL_FAULT_(ESRCH);
         }
         return EOK;
@@ -503,31 +504,33 @@ syscall_(kill, int pid, int sig) {
 
     if (pid > 0) {
         // Send to specific process
-        pcb_t process = found_pcb(pid);
-        if (process == NULL)
+        const pcb_t process = found_pcb(pid);
+        if (process == NULL) {
             return SYSCALL_FAULT_(ESRCH);
+        }
         return send_signal_to_process(process, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
-    } else if (pid == 0) {
+    }
+    if (pid == 0) {
         // Send to caller's process group
-        pcb_t self = get_current_task()->process;
+        const pcb_t self = get_current_task()->process;
         return send_signal_to_pgroup(self->pgid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
-    } else if (pid == -1) {
+    }
+    if (pid == -1) {
         // Send to all processes (simplified: skip kernel process)
-        extern cow_arraylist *process_list;
-        extern pcb_t kernel_process;
         pcb_t process = NULL;
         int sent      = 0;
-        cow_foreach(process_list, process) {
-            if (process->pid == kernel_process->pid)
+        cow_foreach(get_process_list(), process) {
+            if (process->pid == get_kernel_process()->pid) {
                 continue;
-            if (send_signal_to_process(process, sig) == 0)
+            }
+            if (send_signal_to_process(process, sig) == 0) {
                 sent++;
+            }
         }
         return sent > 0 ? EOK : SYSCALL_FAULT_(ESRCH);
-    } else {
-        // pid < -1: send to process group |pid|
-        return send_signal_to_pgroup(-pid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
     }
+    // pid < -1: send to process group |pid|
+    return send_signal_to_pgroup(-pid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
 }
 
 syscall_(times, struct tms *buf) {

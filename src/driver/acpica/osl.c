@@ -19,10 +19,7 @@
 #    include "io.h"
 #endif
 
-extern pcb_t kernel_process;
-extern _Atomic volatile bool scheduler_status;
 extern tty_t *current_session;
-extern irq_action_t actions[ARCH_MAX_IRQ_NUM];
 
 typedef struct {
     UINT16 object_size;
@@ -46,7 +43,7 @@ static int acpica_exec_thread(void *arg) {
     return 0;
 }
 
-static inline void acpi_busy_wait_ns(uint64_t ns) {
+static void acpi_busy_wait_ns(uint64_t ns) {
     uint64_t end = nano_time() + ns;
     while (nano_time() < end) {
         cpu_relax();
@@ -330,8 +327,7 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(
 }
 
 ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 InterruptNumber, ACPI_OSD_HANDLER ServiceRoutine) {
-    uint64_t vector = (uint64_t)InterruptNumber + IRQ_BASE_VECTOR;
-    irq_action_t *action;
+    const uint64_t vector = (uint64_t)InterruptNumber + IRQ_BASE_VECTOR;
 
     if (!ServiceRoutine) {
         return AE_BAD_PARAMETER;
@@ -340,7 +336,7 @@ ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 InterruptNumber, ACPI_OSD_HANDLE
         return AE_BAD_PARAMETER;
     }
 
-    action = &actions[vector];
+    irq_action_t *action = &get_irq_actions()[vector];
     if (!action->handler) {
         return AE_NOT_EXIST;
     }
@@ -366,7 +362,7 @@ ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 InterruptNumber, ACPI_OSD_HANDLE
 }
 
 ACPI_THREAD_ID AcpiOsGetThreadId(void) {
-    tcb_t task = get_current_task();
+    const tcb_t task = get_current_task();
     if (!task || task->tid == 0) {
         return 1;
     }
@@ -374,19 +370,18 @@ ACPI_THREAD_ID AcpiOsGetThreadId(void) {
 }
 
 ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Function, void *Context) {
-    acpica_exec_ctx_t *ctx;
 
     (void)Type;
     if (!Function) {
         return AE_BAD_PARAMETER;
     }
 
-    if (!kernel_process || !scheduler_status) {
+    if (!get_kernel_process() || !scheduler_check_status()) {
         Function(Context);
         return AE_OK;
     }
 
-    ctx = malloc(sizeof(*ctx));
+    acpica_exec_ctx_t *ctx = malloc(sizeof(*ctx));
     if (!ctx) {
         Function(Context);
         return AE_NO_MEMORY;
@@ -401,7 +396,7 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Functio
 
 void AcpiOsWaitEventsComplete(void) {
     while (__atomic_load_n(&acpica_exec_count, __ATOMIC_ACQUIRE) != 0) {
-        if (scheduler_status) {
+        if (scheduler_check_status()) {
             scheduler_yield();
         } else {
             cpu_relax();
@@ -410,7 +405,7 @@ void AcpiOsWaitEventsComplete(void) {
 }
 
 void AcpiOsSleep(UINT64 Milliseconds) {
-    if (scheduler_status && get_current_task()) {
+    if (scheduler_check_status() && get_current_task()) {
         scheduler_nano_sleep(Milliseconds * 1000000ULL);
     } else {
         acpi_busy_wait_ns(Milliseconds * 1000000ULL);
