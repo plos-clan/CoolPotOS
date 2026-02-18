@@ -8,15 +8,15 @@
 #include "timer.h"
 
 #include <driver/power/power.h>
-
-extern cow_arraylist *process_list;
+#include <stddef.h>
 
 syscall_(uname, struct utsname *utsname) {
-    if (unlikely(utsname == NULL))
+    if (unlikely(utsname == NULL)) {
         return SYSCALL_FAULT_(EINVAL);
-    char sysname[] = "CoolPotOS";
-    char machine[] = "x86_64";
-    char version[] = "0.0.1";
+    }
+    const char sysname[] = "CoolPotOS";
+    const char machine[] = "x86_64";
+    const char version[] = "0.0.1";
     memcpy(utsname->sysname, sysname, sizeof(sysname));
     memcpy(utsname->nodename, "localhost", 50);
     memcpy(utsname->release, KERNEL_NAME, sizeof(KERNEL_NAME));
@@ -25,20 +25,20 @@ syscall_(uname, struct utsname *utsname) {
     return EOK;
 }
 
-syscall_(clock_gettime, uint64_t arg0, struct timespec *ts) {
+syscall_(clock_gettime, const uint64_t arg0, struct timespec *ts) {
     switch (arg0) {
     case 1:
     case 6:
     case 4: {
         if (ts != NULL) {
-            uint64_t nano = nano_time();
-            ts->tv_sec    = nano / 1000000000ULL;
-            ts->tv_nsec   = nano % 1000000000ULL;
+            const uint64_t nano = nano_time();
+            ts->tv_sec          = nano / 1000000000ULL;
+            ts->tv_nsec         = nano % 1000000000ULL;
         }
         return EOK;
     }
     case 0: {
-        uint64_t timestamp = mktime_universal();
+        const uint64_t timestamp = mktime_universal();
         if (ts != NULL) {
             ts->tv_sec  = timestamp;
             ts->tv_nsec = 0;
@@ -47,9 +47,9 @@ syscall_(clock_gettime, uint64_t arg0, struct timespec *ts) {
     }
     case 7: {
         if (ts != NULL) {
-            uint64_t nano = sched_clock();
-            ts->tv_sec    = nano / 1000000000ULL;
-            ts->tv_nsec   = nano % 1000000000ULL;
+            const uint64_t nano = sched_clock();
+            ts->tv_sec          = nano / 1000000000ULL;
+            ts->tv_nsec         = nano % 1000000000ULL;
         }
         return EOK;
     }
@@ -59,14 +59,15 @@ syscall_(clock_gettime, uint64_t arg0, struct timespec *ts) {
     }
 }
 
-syscall_(clock_getres) {
-    if (arg2 == 0)
+syscall_(clock_getres, uint64_t arg0, struct timespec *res) {
+    if (res == NULL) {
         return SYSCALL_FAULT_(EINVAL);
-    ((struct timespec *)arg2)->tv_nsec = 1000000;
+    }
+    res->tv_nsec = 1000000;
     return EOK;
 }
 
-syscall_(getgroups, int count, int *gid_list) {
+syscall_(getgroups, const int count, int *gid_list) {
     if (count > 0) {
         gid_list[0] = 0;
         return 1;
@@ -74,35 +75,39 @@ syscall_(getgroups, int count, int *gid_list) {
     return 0;
 }
 
-syscall_(nano_sleep, void *time_handle) {
+syscall_(nano_sleep, const void *time_handle) {
     struct timespec k_req;
-    if (unlikely(time_handle == NULL))
+    if (unlikely(time_handle == NULL)) {
         return SYSCALL_FAULT_(EINVAL);
+    }
     memcpy(&k_req, time_handle, sizeof(k_req));
-    if (unlikely(k_req.tv_nsec >= 1000000000L))
+    if (unlikely(k_req.tv_nsec >= 1000000000L)) {
         return SYSCALL_FAULT_(EINVAL);
-    uint64_t nsec = k_req.tv_sec * 1000000000 + k_req.tv_nsec;
-    int ret       = scheduler_nano_sleep(nsec);
-    if (ret < 0)
+    }
+    const uint64_t nsec = k_req.tv_sec * 1000000000 + k_req.tv_nsec;
+    const int ret       = scheduler_nano_sleep(nsec);
+    if (ret < 0) {
         return SYSCALL_FAULT_(EINTR);
+    }
     return EOK;
 }
 
 syscall_(sysinfo, struct sysinfo *info) {
-    if (check_user_overflow((uint64_t)info, sizeof(struct sysinfo)))
+    if (check_user_overflow((uint64_t)info, sizeof(struct sysinfo))) {
         return SYSCALL_FAULT_(EFAULT);
+    }
     memset(info, 0, sizeof(struct sysinfo));
     info->freeram  = get_available_memory();
     info->totalram = get_all_memory();
     info->mem_unit = 1;
-    info->procs    = process_list->size;
+    info->procs    = get_process_list()->size;
     return EOK;
 }
 
-syscall_(sys_log, int type, const char *buf, size_t len) {
+syscall_(sys_log, const int type, const char *buf, const size_t len) {
     switch (type) {
     case 3:
-        if (len <= 0) {
+        if (len == 0) {
             return SYSCALL_FAULT_(EINVAL);
         }
         if (check_user_overflow((uint64_t)buf, len)) {
@@ -121,38 +126,40 @@ syscall_(sys_log, int type, const char *buf, size_t len) {
     }
 }
 
-syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old) {
-    if (which != 0)
+syscall_(setitimer, const int which, const struct itimerval *value, struct itimerval *old) {
+    if (which != 0) {
         return (size_t)-ENOSYS;
+    }
 
-    pcb_t process = get_current_task()->process;
+    const pcb_t process = get_current_task()->process;
 
-    uint64_t rt_at    = process->itimer_real.at;
-    uint64_t rt_reset = process->itimer_real.reset;
+    const uint64_t rt_at    = process->itimer_real.at;
+    const uint64_t rt_reset = process->itimer_real.reset;
 
-    uint64_t now = nano_time() / 1000000;
+    const uint64_t now = nano_time() / 1000000;
 
     if (old) {
-        uint64_t remaining = rt_at > now ? rt_at - now : 0;
+        const uint64_t remaining = rt_at > now ? rt_at - now : 0;
         ms_to_timeval(remaining, &old->it_value);
         ms_to_timeval(rt_reset, &old->it_interval);
     }
 
     if (value) {
-        uint64_t targValue = value->it_value.tv_sec * 1000 + value->it_value.tv_usec / 1000;
-        uint64_t targInterval =
+        const uint64_t targValue = value->it_value.tv_sec * 1000 + value->it_value.tv_usec / 1000;
+        const uint64_t targInterval =
             value->it_interval.tv_sec * 1000 + value->it_interval.tv_usec / 1000;
 
-        process->itimer_real.at    = targValue ? (now + targValue) : 0ULL;
+        process->itimer_real.at    = targValue ? now + targValue : 0ULL;
         process->itimer_real.reset = targInterval;
     }
 
-    return 0;
+    return EOK;
 }
 
-syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg) {
-    if (magic1 != LINUX_REBOOT_MAGIC1 || magic2 != LINUX_REBOOT_MAGIC2)
+syscall_(reboot, const int magic1, const int magic2, const uint32_t cmd, void *arg) {
+    if (magic1 != LINUX_REBOOT_MAGIC1 || magic2 != LINUX_REBOOT_MAGIC2) {
         return (uint64_t)-EINVAL;
+    }
     switch (cmd) {
     case LINUX_REBOOT_CMD_CAD_OFF:
         return EOK;
@@ -170,15 +177,15 @@ syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg) {
     }
 }
 
-syscall_(getrandom, void *buffer, size_t len, uint32_t flags) {
-    if (len == 0 || len > 1024 * 1024) {
+syscall_(getrandom, void *buffer, const size_t len, uint32_t flags) {
+    if (len == 0 || len > (size_t)(1024 * 1024)) {
         return SYSCALL_FAULT_(EINVAL);
     }
 
     for (size_t i = 0; i < len; i++) {
         uint64_t next     = nano_time();
         next              = next * 1103515245 + 12345;
-        uint8_t rand_byte = ((uint8_t)(next / 65536) % 32768);
+        uint8_t rand_byte = (uint8_t)(next / 65536) % 32768;
         memcpy(buffer + i, &rand_byte, 1);
     }
 

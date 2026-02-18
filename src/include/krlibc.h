@@ -44,9 +44,18 @@
 #    define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
 #endif
 
+#define asserts(b, msg)                                                                            \
+    do {                                                                                           \
+        if (unlikely(!(b))) {                                                                      \
+            extern void logkf(char *fmt, ...);                                                     \
+            logkf("assertion failed: %s\n\r" msg);                                                 \
+            for (;;)                                                                               \
+                arch_wait_for_interrupt();                                                         \
+        }                                                                                          \
+    } while (0)
+
 #include "metadata.h"
 #include "types.h"
-#include "types/limits.h"
 
 typedef int (*cmpfun)(const void *, const void *);
 
@@ -56,19 +65,19 @@ void arch_close_interrupt();
 void arch_open_interrupt();
 bool arch_check_interrupt();
 
-static inline uint64_t mmio_read64(void *addr) {
+static uint64_t mmio_read64(void *addr) {
     return *(volatile uint64_t *)addr;
 }
 
-static inline uint32_t mmio_read32(void *addr) {
+static uint32_t mmio_read32(void *addr) {
     return *(volatile uint32_t *)addr;
 }
 
-static inline void mmio_write32(uint32_t *addr, uint32_t data) {
+static void mmio_write32(uint32_t *addr, uint32_t data) {
     *(volatile uint32_t *)addr = data;
 }
 
-static inline errno_t dummy() {
+static errno_t dummy() {
     return 0;
 }
 

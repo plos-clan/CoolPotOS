@@ -4,7 +4,6 @@
 #include "task/scheduler.h"
 #include "task/smp.h"
 
-extern void arch_ap_cpu_entry();
 
 USED SECTION(".limine_requests_start") static volatile LIMINE_REQUESTS_START_MARKER;
 USED SECTION(".limine_requests_end") static const volatile LIMINE_REQUESTS_END_MARKER;
@@ -45,11 +44,11 @@ uint64_t boot_get_hhdm_offset() {
     return hhdm_request.response->offset;
 }
 
-boot_memory_map_t limine_boot_memory_map;
+static boot_memory_map_t limine_boot_memory_map;
 
 boot_memory_map_t *boot_get_memory_map() {
     for (size_t i = 0; i < memmap_request.response->entry_count; i++) {
-        struct limine_memmap_entry *le = memmap_request.response->entries[i];
+        const struct limine_memmap_entry *le = memmap_request.response->entries[i];
         int mapped_type;
         switch (le->type) {
         case LIMINE_MEMMAP_USABLE:
@@ -99,7 +98,7 @@ size_t boot_framebuffer_count() {
     return framebuffer_request.response->framebuffer_count;
 }
 
-boot_framebuffer_t limine_boot_fb[MAX_FRAMEBUFFER];
+static boot_framebuffer_t limine_boot_fb[MAX_FRAMEBUFFER];
 
 boot_framebuffer_t *boot_get_framebuffer(size_t index) {
     limine_boot_fb[index].address =
@@ -124,7 +123,7 @@ boot_framebuffer_t *boot_get_framebuffer(size_t index) {
     return &limine_boot_fb[index];
 }
 
-boot_module_t limine_boot_modules[MAX_LOAD_MODULE];
+static boot_module_t limine_boot_modules[MAX_LOAD_MODULE];
 
 void boot_get_modules(boot_module_t **modules, size_t *count) {
     *count = 0;

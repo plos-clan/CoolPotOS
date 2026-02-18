@@ -15,7 +15,7 @@ typedef struct rrs_scheduler {
     struct sched_entity *curr;
 } rrs_t;
 
-void add_rrs_entity(tcb_t thread, cpu_local_t *local);
-void remove_rrs_entity(tcb_t thread, cpu_local_t *local);
-tcb_t rrs_pick_next_task(cpu_local_t *local);
+void add_rrs_entity(tcb_t thread, const cpu_local_t *local);
+void remove_rrs_entity(tcb_t thread, const cpu_local_t *local);
+tcb_t rrs_pick_next_task(const cpu_local_t *local);
 void init_cpu_idle_rrs(cpu_local_t *local, tcb_t idle);

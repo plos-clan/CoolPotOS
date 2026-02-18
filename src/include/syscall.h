@@ -463,7 +463,7 @@ syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
 syscall_(
     sendto,
     int sockfd,
-    void *buf,
+    const void *buf,
     size_t len,
     int flags,
     struct sockaddr *dest_addr,
@@ -481,14 +481,14 @@ syscall_(
 syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(shutdown, int sockfd, int how);
-syscall_(setsockopt, int sockfd, int level, int optname, void *optval, uint64_t optlen);
+syscall_(setsockopt, int sockfd, int level, int optname, const void *optval, uint64_t optlen);
 syscall_(getsockopt, int sockfd, int level, int optname, void *optval, uint64_t *optlen);
 syscall_(getsockname, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 syscall_(getpeername, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
 
 // epoll syscall
 syscall_(epoll_create1, int flags);
-syscall_(epoll_ctl, int epfd, int op, int fd, struct epoll_event *event);
+syscall_(epoll_ctl, int epfd, int op, int fd, const struct epoll_event *event);
 syscall_(epoll_wait, int epfd, struct epoll_event *events, int maxevents, int timeout);
 syscall_(
     epoll_pwait,
@@ -496,7 +496,7 @@ syscall_(
     struct epoll_event *events,
     int maxevents,
     int timeout,
-    sigset_t *sigmask,
+    const sigset_t *sigmask,
     size_t sigsetsize
 );
 
@@ -571,12 +571,12 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec);
 // os syscall
 syscall_(uname, struct utsname *utsname);
 syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
-syscall_(clock_getres);
+syscall_(clock_getres,uint64_t arg0, struct timespec *res);
 syscall_(getgroups, int count, int *gid_list);
-syscall_(nano_sleep, void *time_handle);
+syscall_(nano_sleep, const void *time_handle);
 syscall_(sysinfo, struct sysinfo *info);
 syscall_(sys_log, int type, const char *buf, size_t len);
-syscall_(setitimer, int which, struct itimerval *value, struct itimerval *old);
+syscall_(setitimer, int which, const struct itimerval *value, struct itimerval *old);
 syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg);
 syscall_(getrandom, void *buffer, size_t len, uint32_t flags);
 syscall_(times, struct tms *buf);

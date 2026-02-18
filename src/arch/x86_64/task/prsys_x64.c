@@ -8,15 +8,13 @@
 #include "task/task.h"
 #include "term/klog.h"
 
-extern cow_arraylist *process_list;
+static uint64_t process_fork(const struct syscall_regs *reg,const bool is_vfork, const uint64_t user_stack) {
+    const cpu_local_t *current_cpu = arch_current_cpu();
 
-static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t user_stack) {
-    cpu_local_t *current_cpu = arch_current_cpu();
+    const tcb_t current     = get_current_task();
+    const pcb_t current_pcb = current->process;
 
-    tcb_t current     = get_current_task();
-    pcb_t current_pcb = current->process;
-
-    pcb_t new_pcb = malloc(sizeof(struct process_control_block));
+    const pcb_t new_pcb = malloc(sizeof(struct process_control_block));
     memset(new_pcb, 0, sizeof(struct process_control_block));
     new_pcb->pid    = alloc_pid();
     new_pcb->name   = strdup(current_pcb->name);
@@ -54,7 +52,7 @@ static uint64_t process_fork(struct syscall_regs *reg, bool is_vfork, uint64_t u
     new_pcb->virt_queue = copy_list_queue(current_pcb->virt_queue, virt_copy, virt_copy_index);
     // new_pcb->mmap_start    = current_pcb->mmap_start;
     new_pcb->fdts          = copy_fdt(current_pcb->fdts);
-    new_pcb->pl_index      = cow_list_add(process_list, new_pcb);
+    new_pcb->pl_index      = cow_list_add(get_process_list(), new_pcb);
     new_pcb->vfork         = is_vfork;
     new_pcb->child_process = cow_list_create();
     new_pcb->child_threads = cow_list_create();

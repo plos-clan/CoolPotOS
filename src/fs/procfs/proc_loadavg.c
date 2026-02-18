@@ -2,15 +2,14 @@
 #include "string_builder.h"
 #include "task/smp.h"
 
-char *proc_gen_loadavg(size_t *context_len) {
+static char *proc_gen_loadavg(size_t *context_len) {
     // 统计运行中的任务数和总任务数
     size_t running = 0;
     size_t total   = 0;
     pid_t last_pid = 0;
 
-    extern cow_arraylist *process_list;
     pcb_t proc = NULL;
-    cow_foreach(process_list, proc) {
+    cow_foreach(get_process_list(), proc) {
         total++;
         if (proc->status == T_RUNNING || proc->status == T_START) {
             running++;
@@ -24,7 +23,7 @@ char *proc_gen_loadavg(size_t *context_len) {
     uint64_t total_jiffies = 0;
     uint64_t total_idle    = 0;
     for (size_t i = 0; i < get_cpu_count(); i++) {
-        cpu_local_t *info = get_cpu_local(i);
+        const cpu_local_t *info = get_cpu_local(i);
         if (info == NULL || !info->enable) {
             continue;
         }
@@ -33,10 +32,10 @@ char *proc_gen_loadavg(size_t *context_len) {
     }
 
     // load = (busy / total) * nr_cpus, 用两位小数表示
-    uint64_t busy     = total_jiffies - total_idle;
+    const uint64_t busy     = total_jiffies - total_idle;
     uint64_t load_100 = 0;
     if (total_jiffies > 0) {
-        load_100 = (busy * 100 * get_cpu_count()) / total_jiffies;
+        load_100 = busy * 100 * get_cpu_count() / total_jiffies;
     }
 
     const uint64_t load_int  = load_100 / 100;
@@ -69,7 +68,7 @@ size_t proc_loadavg_stat(proc_handle_t *handle) {
     return length;
 }
 
-size_t proc_loadavg_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
+size_t proc_loadavg_read(proc_handle_t *handle, void *addr, const size_t offset, const size_t size) {
     size_t fs_size = 0;
     char *content  = proc_gen_loadavg(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, content);

@@ -31,6 +31,7 @@ static int sock_create_fd(socket_info_t *info, int flags) {
         return -ENOMEM;
 
     fd_t *handle   = calloc(1, sizeof(fd_t));
+    asserts(handle,"sock_create_fd: handle is null.");
     handle->node   = node;
     handle->offset = 0;
     handle->flags  = 0;
@@ -303,19 +304,23 @@ syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen) {
         return SYSCALL_FAULT_(EALREADY);
 
     char *path = vfs_cwd_path_build(sun->sun_path);
-    if (!path)
+    if (!path) {
         return SYSCALL_FAULT_(ENOMEM);
-    vfs_node_t target_node = vfs_open(path);
+    }
+    const vfs_node_t target_node = vfs_open(path);
     free(path);
-    if (!target_node || !(target_node->type & file_socket))
+    if (!target_node || !(target_node->type & file_socket)) {
         return SYSCALL_FAULT_(ECONNREFUSED);
+    }
 
     socket_specific_t *server_spec = (socket_specific_t *)target_node->handle;
-    if (!server_spec)
+    if (!server_spec) {
         return SYSCALL_FAULT_(ECONNREFUSED);
+    }
     socket_info_t *server_info = server_spec->info;
-    if (!server_info || server_info->state != SS_LISTENING)
+    if (!server_info || server_info->state != SS_LISTENING) {
         return SYSCALL_FAULT_(ECONNREFUSED);
+    }
 
     // Enqueue into server's pending queue
     spin_lock(server_info->lock);
@@ -340,34 +345,40 @@ syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen) {
     }
 }
 
-syscall_(shutdown, int sockfd, int how) {
+syscall_(shutdown, const int sockfd, const int how) {
     socket_specific_t *spec = get_sock_spec(sockfd);
-    if (!spec)
+    if (!spec) {
         return SYSCALL_FAULT_(ENOTSOCK);
-    if (how == SHUT_RD || how == SHUT_RDWR)
+    }
+    if (how == SHUT_RD || how == SHUT_RDWR) {
         spec->shut_rd = true;
-    if (how == SHUT_WR || how == SHUT_RDWR)
+    }
+    if (how == SHUT_WR || how == SHUT_RDWR) {
         spec->shut_wr = true;
+    }
     return EOK;
 }
 
 syscall_(
     sendto,
-    int sockfd,
-    void *buf,
-    size_t len,
-    int flags,
+    const int sockfd,
+    const void *buf,
+    const size_t len,
+    const int flags,
     struct sockaddr *dest_addr,
     uint64_t addrlen
 ) {
     socket_specific_t *spec = get_sock_spec(sockfd);
-    if (!spec)
+    if (!spec) {
         return SYSCALL_FAULT_(ENOTSOCK);
+    }
     socket_info_t *info = spec->info;
-    if (!info)
+    if (!info) {
         return SYSCALL_FAULT_(ENOTSOCK);
-    if (spec->shut_wr)
+    }
+    if (spec->shut_wr) {
         return SYSCALL_FAULT_(EPIPE);
+    }
 
     socket_info_t *target = info->peer;
 
@@ -377,40 +388,44 @@ syscall_(
         if (sun->sun_family == AF_UNIX && sun->sun_path[0] != '\0') {
             char *path = vfs_cwd_path_build(sun->sun_path);
             if (path) {
-                vfs_node_t tnode = vfs_open(path);
+                const vfs_node_t tnode = vfs_open(path);
                 free(path);
-                if (tnode && (tnode->type & file_socket)) {
-                    socket_specific_t *ts = (socket_specific_t *)tnode->handle;
-                    if (ts)
+                if (tnode && tnode->type & file_socket) {
+                    const socket_specific_t *ts = tnode->handle;
+                    if (ts) {
                         target = ts->info;
+                    }
                 }
             }
         }
     }
 
-    if (!target)
+    if (!target) {
         return SYSCALL_FAULT_(ENOTCONN);
+    }
 
     // Write data to target's recv_buf
-    const uint8_t *src = (const uint8_t *)buf;
+    const uint8_t *src = buf;
     size_t total       = 0;
     size_t remaining   = len;
 
     while (remaining > 0) {
         spin_lock(target->lock);
-        size_t avail = target->recv_buf.capacity - target->recv_buf.count;
+        const size_t avail = target->recv_buf.capacity - target->recv_buf.count;
         if (avail > 0) {
             size_t to_write = MIN(remaining, avail);
             ringbuf_write(&target->recv_buf, src + total, to_write);
             total += to_write;
             remaining -= to_write;
             spin_unlock(target->lock);
-            if (info->type == SOCK_DGRAM)
+            if (info->type == SOCK_DGRAM) {
                 break; // DGRAM: single write
+            }
         } else {
             spin_unlock(target->lock);
-            if (flags & MSG_DONTWAIT)
+            if (flags & MSG_DONTWAIT) {
                 break;
+            }
             scheduler_yield();
         }
     }
@@ -419,21 +434,24 @@ syscall_(
 
 syscall_(
     recvfrom,
-    int sockfd,
+    const int sockfd,
     void *buf,
-    size_t len,
-    int flags,
+    const size_t len,
+    const int flags,
     struct sockaddr *src_addr,
     uint64_t *addrlen
 ) {
     socket_specific_t *spec = get_sock_spec(sockfd);
-    if (!spec)
+    if (!spec) {
         return SYSCALL_FAULT_(ENOTSOCK);
+    }
     socket_info_t *info = spec->info;
-    if (!info)
+    if (!info) {
         return SYSCALL_FAULT_(ENOTSOCK);
-    if (spec->shut_rd)
+    }
+    if (spec->shut_rd) {
         return 0;
+    }
 
     for (;;) {
         spin_lock(info->lock);
@@ -459,54 +477,70 @@ syscall_(
             return 0;
         }
         spin_unlock(info->lock);
-        if (flags & MSG_DONTWAIT)
+        if (flags & MSG_DONTWAIT) {
             return SYSCALL_FAULT_(EAGAIN);
+        }
         scheduler_yield();
     }
 }
 
-syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags) {
-    if (!msg)
+syscall_(sendmsg, const int sockfd, struct msghdr *msg, const int flags) {
+    if (!msg) {
         return SYSCALL_FAULT_(EINVAL);
+    }
     size_t total = 0;
     for (size_t i = 0; i < msg->msg_iovlen; i++) {
-        struct iovec *iov = &msg->msg_iov[i];
-        if (iov->iov_len == 0)
+        const struct iovec *iov = &msg->msg_iov[i];
+        if (iov->iov_len == 0) {
             continue;
+        }
         size_t ret = syscall_sendto(
             sockfd, iov->iov_base, iov->iov_len, flags, msg->msg_name, msg->msg_namelen, regs
         );
-        if ((int64_t)ret < 0)
+        if ((int64_t)ret < 0) {
             return total > 0 ? total : ret;
+        }
         total += ret;
     }
     return total;
 }
 
-syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags) {
-    if (!msg)
+syscall_(recvmsg, const int sockfd, struct msghdr *msg, const int flags) {
+    if (!msg) {
         return SYSCALL_FAULT_(EINVAL);
+    }
     size_t total = 0;
     for (size_t i = 0; i < msg->msg_iovlen; i++) {
         struct iovec *iov = &msg->msg_iov[i];
-        if (iov->iov_len == 0)
+        if (iov->iov_len == 0) {
             continue;
+        }
         size_t ret = syscall_recvfrom(sockfd, iov->iov_base, iov->iov_len, flags, NULL, NULL, regs);
-        if ((int64_t)ret < 0)
+        if ((int64_t)ret < 0) {
             return total > 0 ? total : ret;
+        }
         total += ret;
-        if (ret < iov->iov_len)
+        if (ret < iov->iov_len) {
             break; // short read
+        }
     }
     msg->msg_controllen = 0;
     msg->msg_flags      = 0;
     return total;
 }
 
-syscall_(setsockopt, int sockfd, int level, int optname, void *optval, uint64_t optlen) {
+syscall_(
+    setsockopt,
+    const int sockfd,
+    const int level,
+    const int optname,
+    const void *optval,
+    const uint64_t optlen
+) {
     socket_specific_t *spec = get_sock_spec(sockfd);
-    if (!spec)
+    if (!spec) {
         return SYSCALL_FAULT_(ENOTSOCK);
+    }
     // Minimal implementation: accept common options silently
     (void)level;
     (void)optname;
@@ -515,15 +549,20 @@ syscall_(setsockopt, int sockfd, int level, int optname, void *optval, uint64_t 
     return EOK;
 }
 
-syscall_(getsockopt, int sockfd, int level, int optname, void *optval, uint64_t *optlen) {
+syscall_(
+    getsockopt, const int sockfd, const int level, const int optname, void *optval, uint64_t *optlen
+) {
     socket_specific_t *spec = get_sock_spec(sockfd);
-    if (!spec)
+    if (!spec) {
         return SYSCALL_FAULT_(ENOTSOCK);
+    }
     socket_info_t *info = spec->info;
-    if (!info)
+    if (!info) {
         return SYSCALL_FAULT_(ENOTSOCK);
-    if (!optval || !optlen)
+    }
+    if (!optval || !optlen) {
         return SYSCALL_FAULT_(EINVAL);
+    }
 
     if (level == SOL_SOCKET) {
         int val = 0;

@@ -4,19 +4,19 @@
 #include "krlibc.h"
 #include "driver/tty.h"
 
-spin_t print_lock = SPIN_INIT;
+static spin_t print_lock = SPIN_INIT;
 
 static char *const color_codes[] = { [BLACK] = "0", [RED] = "1",     [GREEN] = "2", [YELLOW] = "3",
                                      [BLUE] = "4",  [MAGENTA] = "5", [CYAN] = "6",  [WHITE] = "7" };
 
-void add_color(char *dest, uint32_t color, int is_background) {
+static void add_color(char *dest, const uint32_t color, const int is_background) {
     strcat(dest, "\033[");
     strcat(dest, is_background ? "4" : "3");
     strcat(dest, color_codes[color]);
     strcat(dest, "m");
 }
 
-void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
+void color_printk(const size_t fcolor,const size_t bcolor, const char *fmt, ...) {
     spin_lock(print_lock);
     char buf[4096] = { 0 };
     add_color(buf, fcolor, false);
@@ -30,7 +30,7 @@ void color_printk(size_t fcolor, size_t bcolor, const char *fmt, ...) {
     strcat(buf, buf + 11);
     strcat(buf, "\033[0m");
 
-    tty_t *tty_ = kernel_session;
+    tty_t *tty_ = get_kernel_session();
     tty_->ops.write(tty_, buf, 0, strlen(buf));
     tty_->ops.flush(tty_);
 

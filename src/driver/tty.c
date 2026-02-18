@@ -1,5 +1,4 @@
 #include "driver/tty.h"
-#include "boot.h"
 #include "bootarg.h"
 #include "driver/input_device.h"
 #include "driver/ioctl.h"
@@ -12,6 +11,10 @@
 struct llist_header tty_device_list;
 tty_t *kernel_session  = NULL; // 内核会话
 tty_t *current_session = NULL; // 当前会话
+
+tty_t *get_kernel_session() {
+    return kernel_session;
+}
 
 int kernel_getch() {
     char ch;

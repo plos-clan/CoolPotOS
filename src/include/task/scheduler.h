@@ -20,6 +20,7 @@
 
 #define TICK_NSEC ((1000000000 + SCHED_TIMER_SPEED / 2) / SCHED_TIMER_SPEED)
 
+bool scheduler_check_status();
 tcb_t scheduler_pick_next(uint64_t cpu_id);
 bool scheduler_add_task(tcb_t thread, uint64_t prio);
 bool scheduler_add_task_cpu(tcb_t thread, uint64_t prio, cpu_local_t *cpu);

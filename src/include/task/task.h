@@ -178,6 +178,9 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(
     const char *name, int (*func)(void *arg), void *arg, pcb_t process, uint64_t prio
 );
+pcb_t get_kernel_process();
+cow_arraylist *get_process_list();
+tcb_t get_bsp_idle_thread();
 int waitpid(pid_t pid, pid_t *pid_ret, bool nohang);
 void kill_thread(tcb_t task);
 void kill_proc(pcb_t pcb, int exit_code, bool is_zombie);

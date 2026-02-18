@@ -54,11 +54,11 @@ static void apu_gdt_setup() {
     write_kgsbase((uint64_t)this_cpu);
 
     uint64_t address     = (uint64_t)&(this_cpu->arch_data.tss0);
-    uint64_t low_base    = (((address & 0xffffffU)) << 16U);
-    uint64_t mid_base    = (((((address >> 24U)) & 0xffU)) << 56U);
-    uint64_t high_base   = (address >> 32U);
-    uint64_t access_byte = (((uint64_t)(0x89U)) << 40U);
-    uint64_t limit       = ((uint64_t)(uint32_t)(sizeof(tss_t) - 1U));
+    uint64_t low_base    = (address & 0xffffffU) << 16U;
+    uint64_t mid_base    = (address >> 24U & 0xffU) << 56U;
+    uint64_t high_base   = address >> 32U;
+    uint64_t access_byte = (uint64_t)0x89U << 40U;
+    uint64_t limit       = (uint32_t)(sizeof(tss_t) - 1U);
 
     this_cpu->arch_data.gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
     this_cpu->arch_data.gdtEntries[6] = high_base;
@@ -90,11 +90,11 @@ _Noreturn void arch_ap_cpu_entry() {
     ap_local_apic_init();
     calibrate_tsc_with_hpet();
 
-    extern pcb_t kernel_process;
-    tcb_t idle_thread     = malloc(STACK_SIZE);
-    idle_thread->process  = kernel_process;
+    tcb_t idle_thread = malloc(STACK_SIZE);
+    asserts(idle_thread, "arch_ap_cpu_entry: idle_thread is null.");
+    idle_thread->process  = get_kernel_process();
     idle_thread->tid      = alloc_tid();
-    idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
+    idle_thread->ct_index = cow_list_add(get_kernel_process()->child_threads, idle_thread);
     idle_thread->status   = T_RUNNING;
     scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     float_processor_setup();
@@ -102,6 +102,7 @@ _Noreturn void arch_ap_cpu_entry() {
     arch_enable_syscall();
     arch_open_interrupt();
 
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }

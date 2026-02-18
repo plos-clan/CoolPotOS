@@ -203,7 +203,7 @@ typedef struct tty_session { // 一个 TTY 会话
     struct llist_header list_node;
 } tty_t;
 
-extern tty_t *kernel_session;
+tty_t *get_kernel_session();
 
 int kernel_getch();
 tty_device_t *get_tty_device(const char *name);
