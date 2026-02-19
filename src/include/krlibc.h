@@ -1,6 +1,6 @@
 #pragma once
 
-#define __IRQHANDLER __attribute__((interrupt))
+#define __IRQHANDLER __attribute__((interrupt)) _Noreturn static
 
 #define PADDING_DOWN(size, to) ((size_t)(size) / (size_t)(to) * (size_t)(to))
 #define PADDING_UP(size, to)   PADDING_DOWN((size_t)(size) + (size_t)(to) - (size_t)1, to)

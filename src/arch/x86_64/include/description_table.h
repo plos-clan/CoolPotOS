@@ -46,6 +46,8 @@ typedef uint8_t tss_stack_t[1024];
 void tss_setup();
 void set_kernel_stack(uint64_t rsp); // 一定要在 apic 初始化后用!!!!!!!!
 
+struct idt_register *get_idt_register();
+
 void gdt_setup();
 void idt_setup();
 

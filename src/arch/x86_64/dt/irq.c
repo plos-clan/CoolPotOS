@@ -81,7 +81,7 @@ Build_IRQ(0x3f);
 Build_IRQ(0x40);
 
 // 初始化中断数组
-void (*interrupt_table[])(void) = {
+static void (*interrupt_table[])(void) = {
     IRQ0x20interrupt, IRQ0x21interrupt, IRQ0x22interrupt, IRQ0x23interrupt, IRQ0x24interrupt,
     IRQ0x25interrupt, IRQ0x26interrupt, IRQ0x27interrupt, IRQ0x28interrupt, IRQ0x29interrupt,
     IRQ0x2ainterrupt, IRQ0x2binterrupt, IRQ0x2cinterrupt, IRQ0x2dinterrupt, IRQ0x2einterrupt,

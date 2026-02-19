@@ -2,7 +2,7 @@
 #include "task/smp.h"
 #include "term/klog.h"
 
-static inline void enable_sse() {
+static void enable_sse() {
     __asm__ volatile("movq %cr0, %rax\n\t"
                      "and  $0xFFFB, %ax\n\t"
                      "or   $0x2,%ax\n\t"
@@ -24,7 +24,8 @@ void restore_fpu_context(fpu_context_t *ctx) {
 
 void float_processor_setup() {
     enable_sse();
-    bool is_bsp = arch_current_cpu()->id == get_bsp_cpu_id();
-    if (is_bsp)
+    const bool is_bsp = arch_current_cpu()->id == get_bsp_cpu_id();
+    if (is_bsp) {
         kinfo("Enable bsp cpu float processor.");
+    }
 }

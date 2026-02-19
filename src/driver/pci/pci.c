@@ -147,13 +147,6 @@ uint32_t pci_device_number = 0;
 static bool pci_use_mcfg   = false;
 static uint64_t mcfg_virt_bases[PCI_MCFG_MAX_ENTRIES_LEN];
 
-#if defined(__x86_64__) || defined(__amd64__)
-uint32_t pci_read0(uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset);
-void pci_write0(
-    uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset, uint32_t value
-);
-#endif
-
 void mcfg_addr_to_entries(ACPI_TABLE_MCFG *mcfg, ACPI_MCFG_ALLOCATION **entries, uint64_t *num) {
     ACPI_MCFG_ALLOCATION *entry =
         (ACPI_MCFG_ALLOCATION *)((uint64_t)mcfg + sizeof(ACPI_TABLE_MCFG));

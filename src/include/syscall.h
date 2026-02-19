@@ -505,20 +505,20 @@ syscall_(eventfd2, uint64_t initval, int flags);
 
 // proc syscall
 syscall_(exit, int exit_code);
-syscall_(set_tid_address, int *tidptr);
+syscall_(set_tid_address, const int *tidptr);
 syscall_(getpid);
 syscall_(exit_group, int exit_code);
 syscall_(getuid);
 syscall_(getgid);
 syscall_(yield);
 syscall_(setpgid, pid_t pid, pid_t pgid);
-syscall_(getpgid);
+syscall_(getpgid, pid_t pid);
 syscall_(getsid, pid_t pid);
 syscall_(setsid);
 syscall_(getppid);
-syscall_(ssetmask, int how, sigset_t *nset, sigset_t *oset);
-syscall_(sigaltstack, altstack_t *old_stack, altstack_t *new_stack);
-syscall_(sig_action, int sig, sigaction_t *action, sigaction_t *oldaction);
+syscall_(ssetmask, int how, const sigset_t *nset, sigset_t *oset);
+syscall_(sigaltstack, altstack_t *old_stack, const altstack_t *new_stack);
+syscall_(sig_action, int sig, const sigaction_t *action, sigaction_t *oldaction);
 syscall_(sigpending, sigset_t *set, size_t sigsetsize);
 syscall_(
     sigtimedwait,
@@ -527,14 +527,14 @@ syscall_(
     const struct timespec *timeout,
     size_t sigsetsize
 );
-syscall_(sigqueueinfo, pid_t pid, int sig, siginfo_t *info);
+syscall_(sigqueueinfo, pid_t pid, int sig, const siginfo_t *info);
 syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize);
 syscall_(signal, int sig, void *handler);
 syscall_(sigret);
 syscall_(getegid);
 syscall_(geteuid);
 syscall_(waitpid, pid_t pid, int *status, uint64_t options, struct rusage *rusage);
-syscall_(futex, int *uaddr, int op, int val, struct timespec *time, int timeout);
+syscall_(futex, int *uaddr, int op, int val, const struct timespec *time, int timeout);
 syscall_(get_tid);
 syscall_(fork);
 syscall_(vfork);
@@ -549,7 +549,7 @@ syscall_(getresgid, int *rgid, int *egid, int *sgid);
 syscall_(getresuid, int *ruid, int *euid, int *suid);
 syscall_(kill, int pid, int sig);
 syscall_(capget, cap_user_header_t *header, cap_user_data_t *data);
-syscall_(capset, cap_user_header_t *header, cap_user_data_t *data);
+syscall_(capset, cap_user_header_t *header, const cap_user_data_t *data);
 
 // mem syscall
 syscall_(

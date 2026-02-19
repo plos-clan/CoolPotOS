@@ -9,7 +9,7 @@ static bool s_port[4]        = { false, false, false, false };
 static uint16_t com_ports[4] = { SERIAL_PORT_1, SERIAL_PORT_2, SERIAL_PORT_3, SERIAL_PORT_4 };
 
 static size_t extract_number_serial(const char *str) {
-    size_t len = strlen(str);
+    const size_t len = strlen(str);
 
     if (len <= 4) {
         return -1;
@@ -24,8 +24,9 @@ static size_t extract_number_serial(const char *str) {
             break;
         }
 
-        if (i == 0)
+        if (i == 0) {
             break;
+        }
     }
     if (start_index < 4 || start_index >= len) {
         return -1;
@@ -35,8 +36,8 @@ static size_t extract_number_serial(const char *str) {
     const char *p = str + start_index;
 
     while (isdigit((unsigned char)*p)) {
-        int digit = *p - '0';
-        result    = result * 10 + digit;
+        const int digit = *p - '0';
+        result          = result * 10 + digit;
         p++;
     }
 
@@ -88,8 +89,8 @@ static uint8_t serial_calculate_lcr(void) {
     return lcr;
 }
 
-static int serial_exists(uint16_t port) {
-    uint8_t original_lcr = io_in8(port + SERIAL_REG_LCR);
+static int serial_exists(const uint16_t port) {
+    const uint8_t original_lcr = io_in8(port + SERIAL_REG_LCR);
 
     io_out8(port + SERIAL_REG_LCR, 0xaa);
     if (io_in8(port + SERIAL_REG_LCR) != 0xaa) {
@@ -107,13 +108,13 @@ static int serial_exists(uint16_t port) {
     return 1;
 }
 
-static void init_serial_port(uint16_t port) {
-    uint16_t divisor = 115200 / SERIAL_BAUD_RATE;
+static void init_serial_port(const uint16_t port) {
+    const uint16_t divisor = 115200 / SERIAL_BAUD_RATE;
 
     io_out8(port + SERIAL_REG_IER, 0x00);                   // Disable COM interrupts
     io_out8(port + SERIAL_REG_LCR, 0x80);                   // Enable DLAB (set baud rate divisor)
     io_out8(port + SERIAL_REG_DATA, divisor & 0xff);        // Set low baud rate
-    io_out8(port + SERIAL_REG_IER, (divisor >> 8) & 0xff);  // Set high baud rate
+    io_out8(port + SERIAL_REG_IER, divisor >> 8 & 0xff);    // Set high baud rate
     io_out8(port + SERIAL_REG_LCR, serial_calculate_lcr()); // Set LCR
     io_out8(port + SERIAL_REG_FCR, 0xcf);                   // Enable FIFO with 14-byte threshold
     io_out8(port + SERIAL_REG_MCR, 0x0f);                   // Enable IRQ, set RTS/DSR
@@ -134,26 +135,30 @@ static void init_serial_port(uint16_t port) {
     );
 }
 
-char read_serial(uint16_t port) {
-    while ((io_in8(port + 5) & 1) == 0)
-        ;
-    return io_in8(port);
+char read_serial(const uint16_t port) {
+    while ((io_in8(port + 5) & 1) == 0) {
+    }
+    return (char)io_in8(port);
 }
 
-void write_serial(char a) {
-    if (s_port[0])
-        write_serial0(SERIAL_PORT_1, a);
-    if (s_port[1])
-        write_serial0(SERIAL_PORT_2, a);
-    if (s_port[2])
-        write_serial0(SERIAL_PORT_3, a);
-    if (s_port[3])
-        write_serial0(SERIAL_PORT_4, a);
+void write_serial(const char ch) {
+    if (s_port[0]) {
+        write_serial0(SERIAL_PORT_1, ch);
+    }
+    if (s_port[1]) {
+        write_serial0(SERIAL_PORT_2, ch);
+    }
+    if (s_port[2]) {
+        write_serial0(SERIAL_PORT_3, ch);
+    }
+    if (s_port[3]) {
+        write_serial0(SERIAL_PORT_4, ch);
+    }
 }
 
 void write_serial0(uint16_t port, char a) {
-    while ((io_in8(port + 5) & 0x20) == 0)
-        ;
+    while ((io_in8(port + 5) & 0x20) == 0) {
+    }
     io_out8(port, a);
 }
 
@@ -161,7 +166,7 @@ static void serial_flush(tty_device_t *device) {
 }
 
 static size_t serial_write(tty_device_t *device, const char *buf, size_t count) {
-    struct tty_serial_ *data = device->private_data;
+    const struct tty_serial_ *data = device->private_data;
     for (size_t i = 0; i < count; i++) {
         write_serial0(data->port, buf[i]);
     }
@@ -169,7 +174,7 @@ static size_t serial_write(tty_device_t *device, const char *buf, size_t count) 
 }
 
 static size_t serial_read(tty_device_t *device, char *buf, size_t count) {
-    struct tty_serial_ *data = device->private_data;
+    const struct tty_serial_ *data = device->private_data;
     for (size_t i = 0; i < count; i++) {
         buf[i] = read_serial(data->port);
     }
@@ -199,7 +204,8 @@ int init_serial() {
             register_tty_device(device);
         }
     }
-    if (valid_ports == 0)
+    if (valid_ports == 0) {
         logkf("serial: No serial port available.\n");
+    }
     return 0;
 }

@@ -57,6 +57,13 @@ typedef struct {
     void *desc;
 } pci_device_t;
 
+#if defined(__x86_64__) || defined(__amd64__)
+uint32_t pci_read0(uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset);
+void pci_write0(
+    uint32_t b, uint32_t d, uint32_t f, uint32_t arg, uint32_t registeroffset, uint32_t value
+);
+#endif
+
 const char *pci_classname(uint32_t classcode);
 void pci_find_vid(uint32_t vid, void (*load_device)(pci_device_t *device));
 void pci_find_class(uint32_t class_code, void (*load_device)(pci_device_t *device));

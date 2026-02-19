@@ -120,3 +120,7 @@ typedef struct {
     uint32_t ecx;
     uint32_t edx;
 } cpuid_output_t;
+
+bool has_cpu_features_ebx(uint32_t flags);
+bool has_cpu_features_ecx(uint32_t flags);
+bool has_cpu_features_edx(uint32_t flags);
