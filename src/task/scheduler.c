@@ -20,7 +20,7 @@ static cow_arraylist *sleep_list = NULL;
 static spin_t sleep_lock         = SPIN_INIT;
 
 static void sleep_block_task(tcb_t thread) {
-    cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
+    const cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
 #if EEVDF_SCHEDULER
     wait_eevdf_entity(thread, cpu);
 #else
@@ -29,7 +29,7 @@ static void sleep_block_task(tcb_t thread) {
 }
 
 static void sleep_wake_task(tcb_t thread) {
-    cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
+    const cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
 #if EEVDF_SCHEDULER
     futex_eevdf_entity(thread, cpu);
 #else
@@ -155,7 +155,6 @@ void scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu) {
 
     bsp_idle_thread->prio   = NICE_TO_PRIO(0);
     bsp_cpu->idle_task      = bsp_idle_thread;
-    bsp_cpu->current_task   = bsp_idle_thread;
     bsp_idle_thread->cpu_id = bsp_cpu->id;
 #if EEVDF_SCHEDULER
     init_cpu_idle(bsp_cpu, bsp_idle_thread);

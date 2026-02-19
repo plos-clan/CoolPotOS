@@ -12,7 +12,7 @@ uint64_t read_fsbase_msr() {
     return rdmsr(IA32_FS_BASE);
 }
 
-void write_fsbase_msr(uint64_t value) {
+void write_fsbase_msr(const uint64_t value) {
     wrmsr(IA32_FS_BASE, value);
 }
 
@@ -20,7 +20,7 @@ uint64_t read_gsbase_msr() {
     return rdmsr(IA32_GS_BASE);
 }
 
-void write_gsbase_msr(uint64_t value) {
+void write_gsbase_msr(const uint64_t value) {
     wrmsr(IA32_GS_BASE, value);
 }
 
@@ -48,17 +48,16 @@ uint64_t read_kgsbase() {
     return rdmsr(IA32_KERNEL_GS_BASE);
 }
 
-void write_kgsbase(uint64_t value) {
+void write_kgsbase(const uint64_t value) {
     wrmsr(IA32_KERNEL_GS_BASE, value);
 }
 
 uint32_t has_fsgsbase() {
-    extern cpuid_ebx_features_t featuresEbx;
-    return featuresEbx & CPUID_EBX_FSGSBASE;
+    return has_cpu_features_ebx(CPUID_EBX_FSGSBASE);
 }
 
 uint64_t fsgsbase_init() {
-    uint32_t support = has_fsgsbase();
+    const uint32_t support = has_fsgsbase();
     //    if (support) {
     //        uint64_t cr4 = 0;
     //        __asm__ __volatile__("movq %%cr4, %0" : "=r"(cr4));

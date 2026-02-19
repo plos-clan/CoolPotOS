@@ -3,23 +3,20 @@
 #include "krlibc.h"
 #include "task/smp.h"
 
-extern cpuid_ecx_features_t featuresEcx;
-extern cpuid_ebx_features_t featuresEbx;
-
-static inline uint64_t rdtsc_read(void) {
+static uint64_t rdtsc_read(void) {
     uint32_t lo = 0;
     uint32_t hi = 0;
     __asm__ volatile("rdtsc" : "=a"(lo), "=d"(hi));
-    return ((uint64_t)hi << 32) | lo;
+    return (uint64_t)hi << 32 | lo;
 }
 
-static inline bool rdrand64(uint64_t *val) {
+static bool rdrand64(uint64_t *val) {
     unsigned char ok = 0;
     __asm__ volatile("rdrand %0; setc %1" : "=r"(*val), "=qm"(ok));
     return ok != 0;
 }
 
-static inline bool rdseed64(uint64_t *val) {
+static bool rdseed64(uint64_t *val) {
     unsigned char ok = 0;
     __asm__ volatile("rdseed %0; setc %1" : "=r"(*val), "=qm"(ok));
     return ok != 0;
@@ -29,10 +26,10 @@ static uint64_t prng_state = 0;
 
 static uint64_t prng_next(void) {
     if (prng_state == 0) {
-        uint64_t seed    = rdtsc_read() ^ (uint64_t)(uintptr_t)&prng_state;
+        uint64_t seed    = rdtsc_read() ^ (uintptr_t)&prng_state;
         cpu_local_t *cpu = arch_current_cpu();
         if (cpu) {
-            seed ^= ((uint64_t)cpu->id << 32);
+            seed ^= (uint64_t)cpu->id << 32;
         }
         if (seed == 0) {
             seed = 0x9e3779b97f4a7c15ULL;
@@ -53,8 +50,8 @@ bool arch_get_random_bytes(uint8_t *buf, size_t size) {
         return false;
     }
 
-    bool have_rdseed = (featuresEbx & CPUID_EBX_RDSEED) != 0;
-    bool have_rdrand = (featuresEcx & CPUID_ECX_RDRAND) != 0;
+    const bool have_rdseed = has_cpu_features_ebx(CPUID_EBX_RDSEED);
+    const bool have_rdrand = has_cpu_features_ecx(CPUID_ECX_RDRAND);
 
     while (size > 0) {
         uint64_t val = 0;
@@ -74,7 +71,7 @@ bool arch_get_random_bytes(uint8_t *buf, size_t size) {
             val = prng_next();
         }
 
-        size_t chunk = size > sizeof(val) ? sizeof(val) : size;
+        const size_t chunk = size > sizeof(val) ? sizeof(val) : size;
         memcpy(buf, &val, chunk);
         buf += chunk;
         size -= chunk;

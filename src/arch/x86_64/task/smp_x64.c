@@ -10,9 +10,6 @@
 #include "syscall.h"
 #include "security.h"
 
-extern struct idt_register idt_pointer;
-int nr_cpu = 256;
-
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"
                      "push %%rbx\n\t"
@@ -86,7 +83,7 @@ _Noreturn void arch_ap_cpu_entry() {
     page_table_t *physical_table = (page_table_t *)virt_to_phys(get_kernel_pagedir()->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
     apu_gdt_setup();
-    __asm__ volatile("lidt %0" : : "m"(idt_pointer) : "memory");
+    __asm__ volatile("lidt %0" : : "m"(*get_idt_register()) : "memory");
     ap_local_apic_init();
     calibrate_tsc_with_hpet();
 

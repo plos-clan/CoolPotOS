@@ -3,9 +3,9 @@
 #include "mem/heap.h"
 #include "term/klog.h"
 
-cpuid_ecx_features_t featuresEcx;
-cpuid_edx_features_t featuresEdx;
-cpuid_ebx_features_t featuresEbx;
+static cpuid_ecx_features_t featuresEcx;
+static cpuid_edx_features_t featuresEdx;
+static cpuid_ebx_features_t featuresEbx;
 
 static void cpuid(cpuid_input_eax_t eax, cpuid_input_ecx_t ecx, cpuid_output_t *out) {
     __asm__ volatile("cpuid"
@@ -15,6 +15,18 @@ static void cpuid(cpuid_input_eax_t eax, cpuid_input_ecx_t ecx, cpuid_output_t *
 
 static void cpuid_raw(uint32_t code, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     __asm__ volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code) : "memory");
+}
+
+bool has_cpu_features_ebx(const uint32_t flags) {
+    return (featuresEbx & flags) != 0;
+}
+
+bool has_cpu_features_ecx(const uint32_t flags) {
+    return (featuresEcx & flags) != 0;
+}
+
+bool has_cpu_features_edx(const uint32_t flags) {
+    return (featuresEdx & flags) != 0;
 }
 
 void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
@@ -254,11 +266,15 @@ void arch_cpuid_feature_info(cpu_features_t *cpu_features) {
     cpuid_raw(0x80000004, &v[8], &v[9], &v[10], &v[11]);
     cpu_features->model_name[48] = 0;
 
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax;
+    uint32_t ebx;
+    uint32_t ecx;
+    uint32_t edx;
     cpuid_raw(0x80000008, &eax, &ebx, &ecx, &edx);
     cpu_features->virt_bits = (eax >> 8) & 0xff;
     cpu_features->phys_bits = eax & 0xff;
 
-    if (!status)
+    if (!status) {
         kwarn("cannot build cpu feature.");
+    }
 }

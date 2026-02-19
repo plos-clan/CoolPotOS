@@ -4,9 +4,10 @@
 #include "term/klog.h"
 
 bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct syscall_regs *regs) {
-    uint64_t handler = (uint64_t)action->sa_handler;
-    if (handler == 0 || handler == 1)
+    const uint64_t handler = (uint64_t)action->sa_handler;
+    if (handler == 0 || handler == 1) {
         return false;
+    }
 
     // Compute frame location on user stack (16-byte aligned)
     uint64_t user_rsp = task->syscall_stack_user;

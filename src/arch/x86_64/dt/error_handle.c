@@ -37,43 +37,52 @@ __IRQHANDLER void divide_error(struct interrupt_frame *frame, uint64_t error_cod
     HANDLE_USER_EXCEPTION(divide_error);
     kerror("divide_error: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void debug_exception(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void debug_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(debug_exception);
     kerror("debug_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void nmi_interrupt(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void nmi_interrupt(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(nmi_interrupt);
     kerror("nmi_interrupt: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void breakpoint_exception(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void
+breakpoint_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(breakpoint_exception);
     kerror("breakpoint_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void overflow_exception(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void
+overflow_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(overflow_exception);
     kerror("overflow_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void bound_range_exceeded(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void
+bound_range_exceeded(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(bound_range_exceeded);
     kerror("bound_range_exceeded: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
 __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_code) {
@@ -82,29 +91,34 @@ __IRQHANDLER void invalid_opcode(struct interrupt_frame *frame, uint64_t error_c
     HANDLE_USER_EXCEPTION(invalid_opcode);
     kerror("invalid_opcode: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void device_not_available(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void
+device_not_available(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(device_not_available);
     kerror("device_not_available: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void double_fault(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void double_fault(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(double_fault);
     kerror("double_fault: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-__IRQHANDLER void invalid_tss(struct interrupt_frame *frame, uint64_t error_code) {
+__IRQHANDLER void invalid_tss(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(invalid_tss);
     kerror("invalid_tss: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
 __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t error_code) {
@@ -113,8 +127,9 @@ __IRQHANDLER void segment_not_present(struct interrupt_frame *frame, uint64_t er
     HANDLE_USER_EXCEPTION(segment_not_present);
     kerror("segment_not_present: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
 __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t error_code) {
@@ -123,11 +138,12 @@ __IRQHANDLER void stack_segment_fault(struct interrupt_frame *frame, uint64_t er
     HANDLE_USER_EXCEPTION(stack_segment_fault);
     kerror("stack_segment_fault: error_code %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
-USED volatile int is_debug;
+USED static volatile int is_debug;
 
 __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64_t error_code) {
     uint64_t saved_rbp;
@@ -135,10 +151,12 @@ __IRQHANDLER void general_protection_fault(struct interrupt_frame *frame, uint64
     HANDLE_USER_EXCEPTION(general_protection_fault);
     kerror("general_protection_fault: %x at %p", error_code, frame->rip);
     print_kernel_backtrace(frame, saved_rbp);
-    if (is_debug)
+    if (is_debug) {
         return;
-    while (true)
+    }
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
 __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code) {
@@ -159,10 +177,12 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
             logkf("ERROR: HANDLE NULL TO #PF CURRENT TASK\n\r");
             goto wfi;
         }
-        if (current_task->process->pid == 0)
+        if (current_task->process->pid == 0) {
             goto msg;
-        if (faulting_address < 0x1000)
+        }
+        if (faulting_address < 0x1000) {
             goto kill;
+        }
         errno_t status = lazy_tryalloc(current_task->process, faulting_address);
         if (status == EOK) {
             arch_open_interrupt();
@@ -180,11 +200,13 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
             frame->rip
         );
         pcb_t process = current_task->process;
-        if (process->pid != 0)
+        if (process->pid != 0) {
             kill_proc(process, -1, true);
+        }
         arch_open_interrupt();
-        while (true)
+        while (true) {
             arch_wait_for_interrupt();
+        }
     }
 msg:;
     kerror("Page %s fault %p at %p", error_msg, faulting_address, frame->rip);
@@ -199,39 +221,48 @@ msg:;
     }
     print_kernel_backtrace(frame, saved_rbp);
 wfi:
-    if (is_debug)
+    if (is_debug) {
         return;
-    while (true)
+    }
+    while (true) {
         arch_wait_for_interrupt();
-}
-
-__IRQHANDLER void x87_floating_point_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    HANDLE_USER_EXCEPTION(x87_floating_point_exception);
-    kerror("x87_floating_point_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
-        arch_wait_for_interrupt();
-}
-
-__IRQHANDLER void alignment_check_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    HANDLE_USER_EXCEPTION(alignment_check_exception);
-    kerror("alignment_check_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
-        arch_wait_for_interrupt();
-}
-
-__IRQHANDLER void machine_check_exception(struct interrupt_frame *frame, uint64_t error_code) {
-    HANDLE_USER_EXCEPTION(machine_check_exception);
-    kerror("machine_check_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
-        arch_wait_for_interrupt();
+    }
 }
 
 __IRQHANDLER void
-simd_floating_point_exception(struct interrupt_frame *frame, uint64_t error_code) {
+x87_floating_point_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
+    HANDLE_USER_EXCEPTION(x87_floating_point_exception);
+    kerror("x87_floating_point_exception: error_code %x at %p", error_code, frame->rip);
+    while (true) {
+        arch_wait_for_interrupt();
+    }
+}
+
+__IRQHANDLER void
+alignment_check_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
+    HANDLE_USER_EXCEPTION(alignment_check_exception);
+    kerror("alignment_check_exception: error_code %x at %p", error_code, frame->rip);
+    while (true) {
+        arch_wait_for_interrupt();
+    }
+}
+
+__IRQHANDLER void
+machine_check_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
+    HANDLE_USER_EXCEPTION(machine_check_exception);
+    kerror("machine_check_exception: error_code %x at %p", error_code, frame->rip);
+    while (true) {
+        arch_wait_for_interrupt();
+    }
+}
+
+__IRQHANDLER void
+simd_floating_point_exception(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(simd_floating_point_exception);
     kerror("simd_floating_point_exception: error_code %x at %p", error_code, frame->rip);
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
 void init_err_handle() {

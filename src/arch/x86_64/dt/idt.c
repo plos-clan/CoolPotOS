@@ -1,8 +1,12 @@
 #include "description_table.h"
 #include "term/klog.h"
 
-struct idt_register idt_pointer;
-struct idt_entry idt_entries[256];
+static struct idt_register idt_pointer;
+static struct idt_entry idt_entries[256];
+
+struct idt_register *get_idt_register() {
+    return &idt_pointer;
+}
 
 void idt_setup() {
     idt_pointer.size = (uint16_t)sizeof(idt_entries) - 1;
@@ -11,8 +15,10 @@ void idt_setup() {
     kinfo("Setup interrupt table - lidt:%p", idt_pointer);
 }
 
-void register_interrupt_handler(uint16_t vector, void *handler, uint8_t ist, uint8_t flags) {
-    uint64_t addr                  = (uint64_t)handler;
+void register_interrupt_handler(
+    const uint16_t vector, void *handler, const uint8_t ist, const uint8_t flags
+) {
+    const uint64_t addr            = (uint64_t)handler;
     idt_entries[vector].offset_low = (uint16_t)addr;
     idt_entries[vector].ist        = ist;
     idt_entries[vector].flags      = flags;
