@@ -13,7 +13,6 @@
 #define EARLY_MAP_BASE 0x80000000
 #define EARLY_MAP_END  0x88000000
 
-int nr_cpu = 256;
 uint64_t cpuid_to_hartids[MAX_CPU];
 atomic_t started_cpu_count;
 extern uint64_t bsp_hart_id;
@@ -21,9 +20,6 @@ extern uintptr_t opensbi_dtb_vaddr;
 extern uintptr_t smp_entry;
 extern void arch_cpu_init();
 extern cpu_local_t cpu_local_infos[MAX_CPU];
-
-extern pcb_t kernel_process;
-extern tcb_t bsp_idle_thread;
 
 uint64_t hartid_to_cpuid(uint64_t hartid) {
     for (size_t i = 0; i < MAX_CPU; ++i) {
@@ -52,9 +48,9 @@ _Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
     __asm__ volatile("mv tp, %0\n\t" ::"r"(&cpu_local_infos[cpuid]));
 
     tcb_t idle_thread     = malloc(STACK_SIZE);
-    idle_thread->process  = kernel_process;
+    idle_thread->process  = get_kernel_process();
     idle_thread->tid      = alloc_tid();
-    idle_thread->ct_index = cow_list_add(kernel_process->child_threads, idle_thread);
+    idle_thread->ct_index = cow_list_add(get_kernel_process()->child_threads, idle_thread);
     idle_thread->status   = T_RUNNING;
     scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     arch_context_init(idle_thread, &idle_thread->context);
@@ -126,7 +122,6 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
                     0
                 );
                 (void)rv;
-                continue;
             }
         }
     }

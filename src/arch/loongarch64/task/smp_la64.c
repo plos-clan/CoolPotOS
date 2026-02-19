@@ -1,8 +1,6 @@
 #include "smp_la64.h"
 #include "task/smp.h"
 
-int nr_cpu = 256;
-
 cpu_local_t *arch_current_cpu() {
     return NULL;
 }
