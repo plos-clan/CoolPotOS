@@ -190,7 +190,6 @@ extern uint64_t max_pfn;
 extern uint64_t min_pfn;
 extern zone_t *zones[__MAX_NR_ZONES];
 extern int nr_zones;
-extern int nr_cpu;
 
 // 获取页面所属的 zone
 #define page_zone(page) (zones[(page)->zone_id])

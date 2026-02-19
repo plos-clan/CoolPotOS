@@ -68,12 +68,13 @@ bool zone_has_memory(zone_t *zone) {
 
 // GFP 标志到首选 zone 的映射
 static enum zone_type gfp_zone(uint32_t gfp_flags) {
-#if defined(__x86_64__)
+#ifdef __x86_64__
     if (gfp_flags & GFP_DMA)
         return ZONE_DMA;
 #endif
-    if (gfp_flags & GFP_DMA32)
+    if (gfp_flags & GFP_DMA32) {
         return ZONE_DMA32;
+    }
     return ZONE_NORMAL;
 }
 
@@ -585,10 +586,11 @@ void percpu_pagecache_init() {
 void drain_all_pages(void) {
     for (int i = 0; i < __MAX_NR_ZONES; i++) {
         zone_t *zone = zones[i];
-        if (!zone_has_memory(zone))
+        if (!zone_has_memory(zone)) {
             continue;
+        }
 
-        for (int cpu = 0; cpu < nr_cpu; cpu++) {
+        for (int cpu = 0; cpu < MAX_CPU; cpu++) {
             per_cpu_pages_t *pcp = zone_pcp(zone, cpu);
             if (pcp->count > 0) {
                 free_pcppages_bulk(zone, pcp, pcp->count);
