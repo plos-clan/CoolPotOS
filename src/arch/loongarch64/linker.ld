@@ -2,7 +2,8 @@ OUTPUT_FORMAT(elf64-loongarch)
 ENTRY(_start)
 
 SECTIONS {
-    KERNEL_VMA = 0xffff800000000000;
+    KERNEL_VIRT_BASE = 0xffffffff80000000;
+    KERNEL_VMA = KERNEL_VIRT_BASE - 0x90000000;
     /* 内核物理加载地址 */
     . = 0x90000000;
 

@@ -7,6 +7,9 @@ static int param_count = 0;
 int boot_parse_cmdline(const char *cmdline) {
     param_count = 0;
 
+    if (cmdline == NULL || *cmdline == '\0')
+        return 0;
+
     const char *p = cmdline;
     while (*p && param_count < MAX_PARAMS) {
         while (*p == ' ')

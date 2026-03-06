@@ -1,8 +1,11 @@
 #include "boot.h"
 #include "krlibc.h"
 
+extern uint8_t _bss_start[], _bss_end[];
+extern void kmain(void);
+
 uint64_t boot_get_hhdm_offset() {
-    return 0xffff800000000000;
+    return 0xfffffffef0000000;
 }
 
 boot_memory_map_t *boot_get_memory_map() {
@@ -34,6 +37,10 @@ uint64_t boot_get_dtb() {
 }
 
 _Noreturn void _boot_c_start() {
+    memset(_bss_start, 0, (size_t)(_bss_end - _bss_start));
+
+    kmain();
+
     for (;;)
         arch_wait_for_interrupt();
 }

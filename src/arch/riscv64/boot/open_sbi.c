@@ -4,7 +4,8 @@ extern uintptr_t smp_entry;
 
 boot_memory_map_t opensbi_memory_map;
 boot_framebuffer_t opensbi_fb;
-char *kernel_cmdline = NULL;
+static char empty_kernel_cmdline[] = "";
+char *kernel_cmdline = empty_kernel_cmdline;
 extern uintptr_t opensbi_dtb_vaddr;
 
 uint64_t boot_get_hhdm_offset() {
@@ -32,7 +33,7 @@ static void *find_string_tag(void *mb2_info_addr) {
 }
 
 char *get_kernel_cmdline() {
-    return kernel_cmdline;
+    return kernel_cmdline ? kernel_cmdline : empty_kernel_cmdline;
 }
 
 boot_module_t opensbi_modules[MAX_LOAD_MODULE];
