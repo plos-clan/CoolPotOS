@@ -28,7 +28,7 @@ typedef struct cpu_local_info {
 #if defined(__x86_64__) || defined(__amd64__)
 bool x2apic_mode_supported();
 #endif
-void arch_ap_cpu_entry();
+void arch_ap_cpu_entry(uint64_t hartid);
 cpu_local_t *get_min_task_count_cpu();
 cpu_local_t *get_cpu_local(size_t id);
 uint64_t get_bsp_cpu_id();

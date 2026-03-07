@@ -26,6 +26,7 @@
 
 extern void arch_cpu_init();
 extern void initrd_setup();
+extern bool is_initrd();
 
 USED _Noreturn void kmain() {
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
@@ -58,13 +59,16 @@ USED _Noreturn void kmain() {
     futex_init();
     setup_task();
     smp_init();
-    // cpio_init();
+    if (is_initrd()) {
+        cpio_init();
+    }
     ksuccess("Kernel load done!");
     scheduler_enable();
     arch_open_interrupt();
 
     // launch_init_process();
 
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }

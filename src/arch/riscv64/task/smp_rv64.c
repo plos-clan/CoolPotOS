@@ -108,7 +108,7 @@ void smp_cpu_init(uint64_t *cpu_count0, uint64_t *bsp_cpu_id, cpu_local_t *cpu_l
                 uint64_t cpu_id          = cpu_count++;
                 cpuid_to_hartids[cpu_id] = hartid;
 
-                apu_arg[cpu_id].sp = (uint64_t)aligned_alloc(PAGE_SIZE, 32768);
+                apu_arg[cpu_id].sp = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
                 apu_arg[cpu_id].satp =
                     MAKE_SATP_PADDR(SATP_MODE_SV48, 0, virt_to_phys(get_kernel_pagedir()->table));
                 uint64_t rv = sbi_ecall(
