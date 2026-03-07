@@ -77,7 +77,11 @@ cpu_local_t *arch_current_cpu() {
     return get_cpu_local(lapic_id());
 }
 
-_Noreturn void arch_ap_cpu_entry() {
+/**
+ * x86_64 中 ap cpu 核心入口的 hartid 不可用
+ * @param hartid 不可用
+ */
+_Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
     init_stack_canary();
 
     page_table_t *physical_table = (page_table_t *)virt_to_phys(get_kernel_pagedir()->table);
