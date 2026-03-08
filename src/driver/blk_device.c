@@ -1,5 +1,4 @@
 #include "driver/blk_device.h"
-#include "cow_arraylist.h"
 #include "driver/ioctl.h"
 #include "errno.h"
 #include "fs/partition.h"
@@ -8,26 +7,34 @@
 #include "mem/page.h"
 #include "term/klog.h"
 
-cow_arraylist *block_device_list;
+static cow_arraylist *block_device_list = NULL;
 
-size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t length) {
-    if (device == NULL)
+cow_arraylist *get_block_device_list() {
+    return block_device_list;
+}
+
+size_t blk_device_read(
+    const blk_device_t *device, void *buffer, const size_t offset, const size_t length
+) {
+    if (device == NULL) {
         return -1;
-    if (device->ops.read == NULL)
+    }
+    if (device->ops.read == NULL) {
         return -1;
+    }
 
     if (device->type == BLK_STREAM_DEVICE) {
         return device->ops.read(device->handle, buffer, offset, length);
     }
 
-    uint64_t start_sector    = offset / device->block_size;
-    uint64_t end_sector      = (offset + length - 1) / device->block_size;
-    uint64_t sector_count    = end_sector - start_sector + 1;
-    uint64_t offset_in_block = offset % device->block_size;
+    uint64_t start_sector       = offset / device->block_size;
+    const uint64_t end_sector   = (offset + length - 1) / device->block_size;
+    const uint64_t sector_count = end_sector - start_sector + 1;
+    uint64_t offset_in_block    = offset % device->block_size;
 
-    size_t total_size = sector_count * device->block_size;
-    size_t page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-    uint64_t phys     = alloc_frames(page_size);
+    const size_t total_size = sector_count * device->block_size;
+    const size_t page_size  = total_size / PAGE_SIZE == 0 ? 1 : total_size / PAGE_SIZE;
+    const uint64_t phys     = alloc_frames(page_size);
     page_map_range(
         get_current_directory(),
         (uint64_t)driver_phys_to_virt(phys),
@@ -37,11 +44,11 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     );
     uint8_t *kbuf = driver_phys_to_virt(phys);
 
-    if ((offset_in_block == 0) && ((length % device->block_size) == 0)) {
+    if (offset_in_block == 0 && length % device->block_size == 0) {
         uint64_t total_copied      = 0;
         uint64_t remaining_sectors = sector_count;
         while (remaining_sectors > 0) {
-            uint64_t to_copy_sectors =
+            const uint64_t to_copy_sectors =
                 MIN(remaining_sectors, device->max_size / device->block_size);
 
             size_t read_length = start_sector + total_copied / device->block_size;
@@ -59,7 +66,7 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
 
     uint64_t total_read = 0;
     uint64_t remaining  = length;
-    uint8_t *dest       = (uint8_t *)buffer;
+    uint8_t *dest       = buffer;
 
     while (remaining > 0) {
         // 计算本次操作的扇区数和长度
@@ -85,7 +92,7 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
         }
 
         // 复制数据到目标缓冲区
-        uint64_t copy_size = (chunk_size > remaining) ? remaining : chunk_size;
+        const uint64_t copy_size = chunk_size > remaining ? remaining : chunk_size;
 
         memcpy(dest, kbuf + offset_in_block, copy_size);
 
@@ -102,24 +109,28 @@ size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t
     return total_read;
 }
 
-size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset, size_t length) {
-    if (device == NULL)
+size_t blk_device_write(
+    const blk_device_t *device, const void *buffer, const size_t offset, const size_t length
+) {
+    if (device == NULL) {
         return -1;
-    if (device->ops.write == NULL)
+    }
+    if (device->ops.write == NULL) {
         return -1;
+    }
 
     if (device->type == BLK_STREAM_DEVICE) {
         return device->ops.write(device->handle, (uint8_t *)buffer, offset, length);
     }
 
-    uint64_t start_sector    = offset / device->block_size;
-    uint64_t end_sector      = (offset + length - 1) / device->block_size;
-    uint64_t sector_count    = end_sector - start_sector + 1;
-    uint64_t offset_in_block = offset % device->block_size;
+    uint64_t start_sector       = offset / device->block_size;
+    const uint64_t end_sector   = (offset + length - 1) / device->block_size;
+    const uint64_t sector_count = end_sector - start_sector + 1;
+    uint64_t offset_in_block    = offset % device->block_size;
 
-    size_t total_size = sector_count * device->block_size;
-    size_t page_size  = (total_size / PAGE_SIZE) == 0 ? 1 : (total_size / PAGE_SIZE);
-    uint64_t phys     = alloc_frames(page_size);
+    const size_t total_size = sector_count * device->block_size;
+    const size_t page_size  = total_size / PAGE_SIZE == 0 ? 1 : total_size / PAGE_SIZE;
+    const uint64_t phys     = alloc_frames(page_size);
     page_map_range(
         get_current_directory(),
         (uint64_t)driver_phys_to_virt(phys),
@@ -129,13 +140,13 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     );
     uint8_t *tmp = driver_phys_to_virt(phys);
 
-    if ((offset_in_block == 0) && ((length % device->block_size) == 0)) {
+    if (offset_in_block == 0 && length % device->block_size == 0) {
         uint64_t total_copied      = 0;
         uint64_t remaining_sectors = sector_count;
         while (remaining_sectors > 0) {
-            uint64_t to_copy_sectors =
+            const uint64_t to_copy_sectors =
                 MIN(remaining_sectors, device->max_size / device->block_size);
-            uint64_t to_copy_bytes = to_copy_sectors * device->block_size;
+            const uint64_t to_copy_bytes = to_copy_sectors * device->block_size;
             memcpy(tmp, buffer + total_copied, to_copy_bytes);
 
             size_t write_length = start_sector + total_copied / device->block_size;
@@ -151,7 +162,7 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
 
     uint64_t total_written = 0;
     uint64_t remaining     = length;
-    const uint8_t *src     = (const uint8_t *)buffer;
+    const uint8_t *src     = buffer;
 
     while (remaining > 0) {
         // 计算本次操作的扇区数和长度
@@ -180,7 +191,7 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
         }
 
         // 复制数据到临时缓冲区
-        uint64_t copy_size = (chunk_size > remaining) ? remaining : chunk_size;
+        const uint64_t copy_size = chunk_size > remaining ? remaining : chunk_size;
 
         memcpy(tmp + offset_in_block, src, copy_size);
 
@@ -206,11 +217,11 @@ size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset,
     return total_written;
 }
 
-size_t blk_size_t(blk_device_t *device) {
+size_t blk_size_t(const blk_device_t *device) {
     return device->size;
 }
 
-errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg) {
+errno_t blk_ioctl(blk_device_t *device, const size_t cmd, void *arg) {
     switch (cmd) {
     case BLKGETSIZE64:
         *(uint64_t *)arg = device->size;
@@ -219,11 +230,12 @@ errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg) {
         *(unsigned long *)arg = device->size / device->block_size;
         break;
     case BLKSSZGET:
-        *((int *)arg) = device->block_size;
+        *(int *)arg = (int)device->block_size;
         break;
     case BLKRRPART:
-        if (device->type != BLK_BLOCK_DEVICE)
+        if (device->type != BLK_BLOCK_DEVICE) {
             return -ENOSYS;
+        }
         parser_block_device(device);
         break;
     default:
@@ -232,24 +244,27 @@ errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg) {
     return EOK;
 }
 
-errno_t blk_poll(blk_device_t *device, size_t events) {
-    return events;
+errno_t blk_poll(blk_device_t *device, const size_t events) {
+    return (errno_t)events;
 }
 
-errno_t delete_blk_device(size_t blk_id) {
+errno_t delete_blk_device(const size_t blk_id) {
     blk_device_t *device = cow_list_get(block_device_list, blk_id);
-    if (device == NULL)
+    if (device == NULL) {
         return -ENODEV;
+    }
     errno_t res = EOK;
-    if (device->ops.del_blk != NULL)
+    if (device->ops.del_blk != NULL) {
         res = device->ops.del_blk(device->handle);
+    }
     free(device);
     return res;
 }
 
 size_t register_device(blk_device_t *device) {
-    if (device == NULL || device->handle == NULL)
+    if (device == NULL || device->handle == NULL) {
         return -ENODEV;
+    }
     device->device_id = cow_list_add(block_device_list, device);
     if (device->type == BLK_BLOCK_DEVICE) {
         parser_block_device(device);

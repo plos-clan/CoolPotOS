@@ -46,3 +46,4 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg);
 size_t drm_read(void *data, void *buf, uint64_t offset, uint64_t len);
 size_t drm_poll(void *data, size_t event);
 void *drm_map(void *data, void *addr, uint64_t offset, uint64_t len);
+cow_arraylist *drm_devices_get();

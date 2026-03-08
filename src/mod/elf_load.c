@@ -1,5 +1,6 @@
 #include "exec/elf_load.h"
 #include "bootarg.h"
+#include "driver/tty.h"
 #include "errno.h"
 #include "krlibc.h"
 #include "mem/frame.h"
@@ -198,8 +199,7 @@ void *load_interpreter_elf(
 }
 
 void launch_init_process() {
-    const char *cmdline = boot_get_cmdline_param("init");
-    vfs_node_t node     = vfs_open("/bin/sh");
+    const vfs_node_t node = vfs_open("/bin/sh");
     if (node == NULL) {
         kwarn("Cannot open init file.");
         return;
@@ -220,7 +220,7 @@ void launch_init_process() {
     extern void ptmx_init();
     ptmx_init();
 
-    pcb_t init_process          = found_pcb(init_pid);
+    const pcb_t init_process    = found_pcb(init_pid);
     init_process->exec          = node;
     const char *init_envp_src[] = {
         "PWD=/", "HOME=/root", "TERM=linux", "PATH=/bin:/sbin:/usr/bin", "PS1=\\u@\\h \\w# ", NULL,
@@ -263,6 +263,6 @@ void launch_init_process() {
         "main", (void *)arch_switch_to_user_mode, NULL, init_process, NICE_TO_PRIO(0)
     );
 
-    int exit_code = waitpid(init_pid, &init_pid, false);
+    const int exit_code = waitpid(init_pid, &init_pid, false);
     kwarn("Init process exit, code:%d", exit_code);
 }

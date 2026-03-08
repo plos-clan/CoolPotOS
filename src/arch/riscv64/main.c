@@ -1,5 +1,6 @@
 #include "bootarg.h"
 #include "driver/blk_device.h"
+#include "driver/drm/drm_device.h"
 #include "driver/gop.h"
 #include "driver/input_device.h"
 #include "driver/serial.h"
@@ -42,6 +43,7 @@ USED _Noreturn void kmain() {
     printk("CoolPotOS %s\n", KERNEL_NAME);
     kinfo("kernel cmdline(%llu): %s", boot_argc, get_kernel_cmdline());
     init_block_device_manager();
+    drm_device_setup();
     vfs_init();
     intctl_init();
     trap_init();
@@ -66,7 +68,9 @@ USED _Noreturn void kmain() {
     scheduler_enable();
     arch_open_interrupt();
 
-    // launch_init_process();
+    init_console_symlink();
+
+    launch_init_process();
 
     while (true) {
         arch_wait_for_interrupt();

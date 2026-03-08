@@ -11,11 +11,11 @@ void arch_wait_for_interrupt() {
 }
 
 void arch_open_interrupt() {
-    csr_set(sstatus, (1 << 1)); /* SIE */
+    csr_set(sstatus, 1 << 1); /* SIE */
 }
 
 void arch_close_interrupt() {
-    csr_clear(sstatus, (1 << 1)); /* SIE */
+    csr_clear(sstatus, 1 << 1); /* SIE */
 }
 
 bool arch_check_interrupt(void) {
@@ -47,9 +47,9 @@ void arch_pci_legacy_enum() {
 
 void arch_cpu_init() {
     // SUM
-    csr_set(sstatus, (1UL << 18));
+    csr_set(sstatus, 1UL << 18);
     // FPU
-    csr_set(sstatus, (3UL << 13));
+    csr_set(sstatus, 3UL << 13);
 }
 
 bool arch_get_random_bytes(uint8_t *buf, size_t size) {

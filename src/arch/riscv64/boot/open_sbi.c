@@ -28,10 +28,6 @@ size_t boot_framebuffer_count() {
     return 0; // TODO
 }
 
-static void *find_string_tag(void *mb2_info_addr) {
-    return NULL;
-}
-
 char *get_kernel_cmdline() {
     return kernel_cmdline ? kernel_cmdline : empty_kernel_cmdline;
 }

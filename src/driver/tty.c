@@ -17,19 +17,20 @@ tty_t *get_kernel_session() {
 }
 
 int kernel_getch() {
-    char ch;
-    bool int_status = arch_check_interrupt();
+    int ch;
+    const bool int_status = arch_check_interrupt();
     arch_open_interrupt();
     while ((ch = atom_pop(current_session->queue)) == -1) {
         arch_pause();
     }
-    if (!int_status)
+    if (!int_status) {
         arch_close_interrupt();
+    }
     return ch;
 }
 
 tty_device_t *alloc_tty_device(enum tty_device_type type) {
-    tty_device_t *device = (tty_device_t *)calloc(1, sizeof(tty_device_t));
+    tty_device_t *device = calloc(1, sizeof(tty_device_t));
     device->type         = type;
     llist_init_head(&device->node);
     return device;
@@ -342,11 +343,19 @@ void init_tty_session() {
 
 void init_console_symlink() {
     const char *console = boot_get_cmdline_param("console");
-    if (console == NULL)
+    if (console == NULL) {
         console = "tty0";
+    }
 
     char buf[50];
     sprintf(buf, "/dev/%s", console);
+
+    const vfs_node_t console_node = vfs_open(buf);
+    if (console_node == NULL) {
+        strcpy(buf, "/dev/tty0");
+    } else {
+        vfs_close(console_node);
+    }
 
     vfs_symlink("/dev/tty", buf);
     vfs_symlink("/dev/console", "/dev/tty");

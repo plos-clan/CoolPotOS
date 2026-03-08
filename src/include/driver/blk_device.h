@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "cow_arraylist.h"
 
 typedef struct block_device blk_device_t;
 
@@ -40,13 +41,14 @@ struct block_device {
     struct block_device_ops ops;
 };
 
-size_t blk_device_read(blk_device_t *device, void *buffer, size_t offset, size_t length);
-size_t blk_device_write(blk_device_t *device, const void *buffer, size_t offset, size_t length);
-size_t blk_size_t(blk_device_t *device);
+size_t blk_device_read(const blk_device_t *device, void *buffer, size_t offset, size_t length);
+size_t blk_device_write(const blk_device_t *device, const void *buffer, size_t offset, size_t length);
+size_t blk_size_t(const blk_device_t *device);
 errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg);
 errno_t blk_poll(blk_device_t *device, size_t events);
 
 errno_t delete_blk_device(size_t blk_id);
 size_t register_device(blk_device_t *device);
+cow_arraylist *get_block_device_list();
 
 void init_block_device_manager();

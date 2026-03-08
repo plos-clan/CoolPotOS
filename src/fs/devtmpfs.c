@@ -33,9 +33,8 @@ static void load_tty_device(vfs_node_t node) {
 }
 
 static void load_blk_device(vfs_node_t node) {
-    extern cow_arraylist *block_device_list;
     blk_device_t *device = NULL;
-    cow_foreach(block_device_list, device) {
+    cow_foreach(get_block_device_list(), device) {
         create_device_node(
             node,
             device->name,
@@ -57,11 +56,10 @@ static void load_drm_device(vfs_node_t node) {
     string_builder_t *builder = create_string_builder(50);
     string_builder_append(builder, "%s/dri", full_path);
     vfs_mkdir(builder->data);
-    vfs_node_t drm_dir = vfs_open(builder->data);
+    const vfs_node_t drm_dir = vfs_open(builder->data);
 
-    extern cow_arraylist *drm_devices;
-    drmd_device_t *device = NULL;
-    cow_foreach(drm_devices, device) {
+    const drmd_device_t *device = NULL;
+    cow_foreach(drm_devices_get(), device) {
         create_device_node(
             drm_dir,
             device->name,
