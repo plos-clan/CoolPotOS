@@ -7,14 +7,14 @@
 #include "mod/module.h"
 #include "term/klog.h"
 
-static char *get_pdir_fpath(char *path) {
+static char *get_pdir_fpath(const char *path) {
 
     if (strcmp(path, "/") == 0) {
         return strdup("/");
     }
 
-    size_t len       = strlen(path);
-    char *last_slash = strrchr(path, '/');
+    const size_t len = strlen(path);
+    const char *last_slash = strrchr(path, '/');
 
     if (last_slash == NULL) {
         return strdup(".");
@@ -27,7 +27,7 @@ static char *get_pdir_fpath(char *path) {
     size_t new_len = last_slash - path;
 
     if (path[len - 1] == '/') {
-        char *prev_last_slash = (char *)last_slash - 1;
+        const char *prev_last_slash = last_slash - 1;
         while (prev_last_slash > path && *prev_last_slash == '/') {
             prev_last_slash--;
         }
@@ -42,7 +42,7 @@ static char *get_pdir_fpath(char *path) {
         }
     }
 
-    char *new_path = (char *)malloc(new_len + 1);
+    char *new_path = malloc(new_len + 1);
     if (new_path == NULL) {
         return NULL;
     }
@@ -57,11 +57,11 @@ static char *get_pdir_fpath(char *path) {
     return new_path;
 }
 
-compression_type_t get_compression_type(const void *data, size_t size) {
+static compression_type_t get_compression_type(const void *data, const size_t size) {
     if (size < 4) {
         return COMPRESSION_UNKNOWN; // 数据太小，无法判断
     }
-    const unsigned char *bytes = (const unsigned char *)data;
+    const unsigned char *bytes = data;
     if (bytes[0] == 0x1F && bytes[1] == 0x8B) {
         return COMPRESSION_GZIP;
     }
@@ -93,24 +93,26 @@ compression_type_t get_compression_type(const void *data, size_t size) {
 
 static size_t read_num(const char *str) {
     size_t val = 0;
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < 8; ++i) {
         val = val * 16 + (isdigit(str[i]) ? str[i] - '0' : str[i] - 'A' + 10);
+    }
     return val;
 }
 
 void cpio_init(void) {
     module_t *init_ramfs = get_module("initramfs");
-    if (!init_ramfs)
+    if (!init_ramfs) {
         return;
+    }
     if (vfs_mount(NULL, "tmpfs", get_rootdir()) != EOK) {
         kerror("Cannot mount tmpfs to root_dir");
         return;
     }
 
-    compression_type_t type = get_compression_type(init_ramfs->data, init_ramfs->size);
-    uint8_t *data_d         = NULL;
-    size_t size_d           = 0;
-    bool is_free            = false;
+    const compression_type_t type = get_compression_type(init_ramfs->data, init_ramfs->size);
+    uint8_t *data_d               = NULL;
+    size_t size_d                 = 0;
+    bool is_free                  = false;
 
     char *compress_type;
     switch (type) {
@@ -140,16 +142,16 @@ void cpio_init(void) {
         memcpy(&hdr, data_d + offset, sizeof(hdr));
         offset += sizeof(hdr);
 
-        size_t namesize = read_num(hdr.c_namesize);
+        const size_t namesize = read_num(hdr.c_namesize);
         char filename[namesize + 1];
         filename[0] = '/';
         memcpy(filename + 1, data_d + offset, namesize);
-        offset = (offset + namesize + 3) & ~3;
+        offset = offset + namesize + 3 & ~3;
 
-        size_t filesize = read_num(hdr.c_filesize);
-        char *filedata  = malloc(filesize);
+        const size_t filesize = read_num(hdr.c_filesize);
+        char *filedata        = malloc(filesize);
         memcpy(filedata, data_d + offset, filesize);
-        offset = (offset + filesize + 3) & ~3;
+        offset = offset + filesize + 3 & ~3;
 
         if (!strcmp(filename, "/TRAILER!!!")) {
             free(filedata);
@@ -161,7 +163,7 @@ void cpio_init(void) {
         }
 
         file_num_all++;
-        size_t mode = read_num(hdr.c_mode);
+        const size_t mode = read_num(hdr.c_mode);
         errno_t status;
         if (mode & 040000) {
             status = vfs_mkdir(filename);
@@ -195,7 +197,7 @@ void cpio_init(void) {
                 free(filedata);
                 return;
             }
-            vfs_node_t file = vfs_open(filename);
+            const vfs_node_t file = vfs_open(filename);
             if (file == NULL) {
                 kerror("Cannot build initramfs, open error(%s)", filename);
                 free(filedata);
@@ -211,8 +213,9 @@ void cpio_init(void) {
         }
         free(filedata);
     }
-    if (is_free)
+    if (is_free) {
         free(data_d);
+    }
 
     kinfo(
         "Loaded initramfs size:%llu files:%llu compress: %s", size_d, file_num_all, compress_type

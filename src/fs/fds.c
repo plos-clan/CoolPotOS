@@ -24,13 +24,13 @@ static int expand_fds_table(fdt_t *fdt) {
         new_len = FD_INITIAL_CAPACITY;
     }
 
-    fd_t **new_fds = (fd_t **)realloc(fdt->fds, new_len * sizeof(fd_t *));
+    fd_t **new_fds = realloc(fdt->fds, new_len * sizeof(fd_t *));
     if (new_fds == NULL) {
         return -1;
     }
 
-    fdt->fds            = new_fds;
-    size_t new_elements = new_len - old_len;
+    fdt->fds                  = new_fds;
+    const size_t new_elements = new_len - old_len;
     memset(&fdt->fds[old_len], 0, new_elements * sizeof(fd_t *));
 
     fdt->fds_length = new_len;
@@ -52,20 +52,22 @@ int add_fd(fdt_t *fdt, fd_t *new_fd) {
     return fdid;
 }
 
-fd_t *get_fd(fdt_t *table, int fd) {
-    if (fd >= table->fds_length)
+fd_t *get_fd(const fdt_t *table, const int fd) {
+    if (fd >= table->fds_length) {
         return NULL;
+    }
     return table->fds[fd];
 }
 
-errno_t set_fd(fdt_t *table, fd_t *handle, int fd) {
-    if (table->fds[fd] != NULL)
+errno_t set_fd(const fdt_t *table, fd_t *handle, const int fd) {
+    if (table->fds[fd] != NULL) {
         return -EEXIST;
+    }
     table->fds[fd] = handle;
     return EOK;
 }
 
-errno_t remove_fd(fdt_t *fdt, int fd) {
+errno_t remove_fd(fdt_t *fdt, const int fd) {
     if (!fdt) {
         return -ENOENT;
     }
@@ -82,12 +84,12 @@ errno_t remove_fd(fdt_t *fdt, int fd) {
 }
 
 void free_fdt(fdt_t *fdt) {
-    free((void *)fdt->fds);
+    free(fdt->fds);
     free(fdt);
 }
 
-fd_t *fd_dup(fd_t *src) {
-    fd_t *new = (fd_t *)malloc(sizeof(fd_t));
+fd_t *fd_dup(const fd_t *src) {
+    fd_t *new = malloc(sizeof(fd_t));
     not_null_assert(new, "fd_dup out of memory.");
     src->node->refcount++;
     new->node       = src->node;
@@ -95,9 +97,9 @@ fd_t *fd_dup(fd_t *src) {
     new->dir_last   = src->dir_last;
     new->flags      = src->flags;
     new->fd         = src->fd;
-    vfs_node_t node = new->node;
+    const vfs_node_t node = new->node;
     if (node->type & file_pipe) {
-        pipe_specific_t *spec = node->handle;
+        const pipe_specific_t *spec = node->handle;
         pipe_info_t *pipe     = spec->info;
         spin_lock(pipe->lock);
         if (spec->write) {
@@ -108,7 +110,7 @@ fd_t *fd_dup(fd_t *src) {
         spin_unlock(pipe->lock);
     }
     if (node->type & file_socket) {
-        socket_specific_t *spec = node->handle;
+        const socket_specific_t *spec = node->handle;
         if (spec && spec->info) {
             spin_lock(spec->info->lock);
             spec->info->refcount++;
@@ -123,21 +125,21 @@ fdt_t *copy_fdt(fdt_t *src_fdt) {
         return NULL;
     }
 
-    fdt_t *new_fdt = (fdt_t *)malloc(sizeof(fdt_t));
+    fdt_t *new_fdt = malloc(sizeof(fdt_t));
     if (new_fdt == NULL) {
         return NULL;
     }
 
     new_fdt->fds_length = src_fdt->fds_length;
 
-    size_t array_size = new_fdt->fds_length * sizeof(fd_t *);
+    const size_t array_size = new_fdt->fds_length * sizeof(fd_t *);
     new_fdt->fds      = (fd_t **)malloc(array_size);
     if (new_fdt->fds == NULL) {
         free(new_fdt);
         return NULL;
     }
     for (size_t i = 0; i < src_fdt->fds_length; i++) {
-        fd_t *fd_entry = src_fdt->fds[i];
+        const fd_t *fd_entry = src_fdt->fds[i];
         if (fd_entry != NULL) {
             new_fdt->fds[i] = fd_dup(fd_entry);
         } else {

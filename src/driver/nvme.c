@@ -26,15 +26,15 @@ void *cpkrnl_dma_alloc(size_t size, uint64_t *phys_addr) {
     return addr;
 }
 
-void cpkrnl_dma_free(void *virt, size_t size) {
+static void cpkrnl_dma_free(void *virt, const size_t size) {
     unmap_page_range(get_current_directory(), (uint64_t)virt, size);
 }
 
-void naos_memory_barrier(void) {
+static void naos_memory_barrier(void) {
 }
-void naos_read_barrier(void) {
+static void naos_read_barrier(void) {
 }
-void naos_write_barrier(void) {
+static void naos_write_barrier(void) {
 }
 
 void naos_udelay(uint32_t us) {

@@ -16,7 +16,7 @@ int dev_tmpfs_id                          = 0;
 static _Atomic volatile size_t dev_id_now = 0;
 
 static void load_tty_device(vfs_node_t node) {
-    extern tty_t *kernel_session;
+    tty_t *kernel_session = get_kernel_session();
     create_device_node(
         node,
         "tty0",

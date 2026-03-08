@@ -8,36 +8,40 @@
 
 #include <mem/page.h>
 
-static size_t fb_dev_read(void *data, void *buf, size_t offset, size_t len) {
-    boot_framebuffer_t *fb = (boot_framebuffer_t *)data;
-    size_t fb_size         = fb->pitch * fb->height;
-    if (offset >= fb_size)
+static size_t fb_dev_read(const void *data, void *buf, const size_t offset, size_t len) {
+    const boot_framebuffer_t *fb = data;
+    const size_t fb_size         = fb->pitch * fb->height;
+    if (offset >= fb_size) {
         return 0;
-    if (offset + len > fb_size)
+    }
+    if (offset + len > fb_size) {
         len = fb_size - offset;
+    }
     memcpy(buf, (char *)fb->address + offset, len);
     return len;
 }
 
-static size_t fb_dev_write(void *data, const void *buf, size_t offset, size_t len) {
-    boot_framebuffer_t *fb = (boot_framebuffer_t *)data;
-    size_t fb_size         = fb->pitch * fb->height;
-    if (offset >= fb_size)
+static size_t fb_dev_write(const void *data, const void *buf, const size_t offset, size_t len) {
+    const boot_framebuffer_t *fb = data;
+    size_t fb_size               = fb->pitch * fb->height;
+    if (offset >= fb_size) {
         return 0;
-    if (offset + len > fb_size)
+    }
+    if (offset + len > fb_size) {
         len = fb_size - offset;
+    }
     memcpy((char *)fb->address + offset, buf, len);
     return len;
 }
 
 static errno_t fb_dev_ioctl(void *data, size_t cmd, void *arg) {
-    boot_framebuffer_t *framebuffer = (boot_framebuffer_t *)data;
+    const boot_framebuffer_t *framebuffer = data;
 
     cmd = cmd & 0xFFFFFFFF;
 
     switch (cmd) {
     case FBIOGET_FSCREENINFO:;
-        struct fb_fix_screeninfo *fb_fix = (struct fb_fix_screeninfo *)arg;
+        struct fb_fix_screeninfo *fb_fix = arg;
         memcpy(fb_fix->id, "CPOS-FBDEV", 10);
         fb_fix->smem_start   = arch_virt_to_phys(framebuffer->address);
         fb_fix->smem_len     = framebuffer->pitch * framebuffer->height;
@@ -53,7 +57,7 @@ static errno_t fb_dev_ioctl(void *data, size_t cmd, void *arg) {
         fb_fix->capabilities = 0;
         return 0;
     case FBIOGET_VSCREENINFO:;
-        struct fb_var_screeninfo *fb_var = (struct fb_var_screeninfo *)arg;
+        struct fb_var_screeninfo *fb_var = arg;
         fb_var->xres                     = framebuffer->width;
         fb_var->yres                     = framebuffer->height;
 
@@ -82,7 +86,7 @@ static errno_t fb_dev_ioctl(void *data, size_t cmd, void *arg) {
     case FBIOPUTCMAP:
         return 0;
     case TIOCGWINSZ:;
-        struct winsize *win = (struct winsize *)arg;
+        struct winsize *win = arg;
         win->ws_col         = framebuffer->width / 8;
         win->ws_row         = framebuffer->height / 16;
 
@@ -96,26 +100,28 @@ static errno_t fb_dev_ioctl(void *data, size_t cmd, void *arg) {
     }
 }
 
-static errno_t fb_dev_poll(void *data, size_t events) {
+static errno_t fb_dev_poll(void *data, const size_t events) {
     int revents = 0;
-    if (events & 0x1)
+    if (events & 0x1) {
         revents |= 0x1; // POLLIN
-    if (events & 0x4)
+    }
+    if (events & 0x4) {
         revents |= 0x4; // POLLOUT
+    }
     return revents;
 }
 
 static size_t fb_dev_size(void *data) {
-    boot_framebuffer_t *fb = (boot_framebuffer_t *)data;
+    const boot_framebuffer_t *fb = data;
     return fb->pitch * fb->height;
 }
 
 static void *
-fb_dev_map(void *data, void *addr, size_t offset, size_t size, size_t prot, size_t flags) {
-    boot_framebuffer_t *framebuffer = (boot_framebuffer_t *)data;
-    uint64_t fb_addr                = arch_virt_to_phys(framebuffer->address) + offset;
+fb_dev_map(void *data, void *addr, const size_t offset, size_t size, size_t prot, size_t flags) {
+    const boot_framebuffer_t *framebuffer = (boot_framebuffer_t *)data;
+    const uint64_t fb_addr                = arch_virt_to_phys(framebuffer->address) + offset;
 
-    uint64_t page_flags =
+    const uint64_t page_flags =
 
 #if defined(__x86_64__) || defined(__amd64__)
         PTE_USER | PTE_PRESENT | PTE_WRITEABLE | PTE_NO_EXECUTE;
@@ -133,25 +139,27 @@ fb_dev_map(void *data, void *addr, size_t offset, size_t size, size_t prot, size
     return addr;
 }
 
-void fb_setup(vfs_node_t dev_root) {
-    if (boot_framebuffer_count() == 0)
+void fb_setup(const vfs_node_t dev_root) {
+    if (boot_framebuffer_count() == 0) {
         return;
+    }
     boot_framebuffer_t *fb = boot_get_framebuffer(0);
-    if (fb == NULL || dev_root == NULL)
+    if (fb == NULL || dev_root == NULL) {
         return;
+    }
 
-    uint64_t dev_number = ((uint64_t)FB_MAJOR << 8) | 0;
+    const uint64_t dev_number = (uint64_t)FB_MAJOR << 8 | 0;
     create_device_node(
         dev_root,
         "fb0",
         device_stream,
         fb,
         dev_number,
-        (vfs_ioctl_t)fb_dev_ioctl,
+        fb_dev_ioctl,
         (vfs_read_t)fb_dev_read,
         (vfs_write_t)fb_dev_write,
-        (vfs_poll_t)fb_dev_poll,
-        (vfs_mapfile_t)fb_dev_map,
+        fb_dev_poll,
+        fb_dev_map,
         fb_dev_size
     );
 }

@@ -40,12 +40,12 @@ typedef struct file_description_table {
     size_t fds_length; // 文件描述符表长度
 } fdt_t;
 
-fd_t *fd_dup(fd_t *src);
+fd_t *fd_dup(const fd_t *src);
 fdt_t *copy_fdt(fdt_t *src_fdt);
-int find_free_fd(fdt_t *pcb);
+int find_free_fd(fdt_t *fdt);
 errno_t remove_fd(fdt_t *fdt, int fd);
-errno_t set_fd(fdt_t *table, fd_t *handle, int fd);
+errno_t set_fd(const fdt_t *table, fd_t *handle, int fd);
 int add_fd(fdt_t *fdt, fd_t *new_fd);
-fd_t *get_fd(fdt_t *table, int fd);
+fd_t *get_fd(const fdt_t *table, int fd);
 fdt_t *fds_init();
 void free_fdt(fdt_t *fdt);

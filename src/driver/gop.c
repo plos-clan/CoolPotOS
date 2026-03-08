@@ -3,8 +3,8 @@
 #include "lib/sprintf.h"
 #include "mem/heap.h"
 
-void gop_clear(struct boot_framebuffer *framebuffer, uint32_t color) {
-    uint64_t stride = framebuffer->pitch / 4;
+void gop_clear(const struct boot_framebuffer *framebuffer, const uint32_t color) {
+    const uint64_t stride = framebuffer->pitch / 4;
 
     for (size_t y = 0; y < framebuffer->height; y++) {
         for (size_t x = 0; x < framebuffer->width; x++) {
@@ -15,7 +15,7 @@ void gop_clear(struct boot_framebuffer *framebuffer, uint32_t color) {
 
 void init_gop() {
     for (size_t i = 0; i < boot_framebuffer_count(); i++) {
-        struct boot_framebuffer *framebuffer = boot_get_framebuffer(i);
+        const struct boot_framebuffer *framebuffer = boot_get_framebuffer(i);
 
         tty_device_t *device           = alloc_tty_device(TTY_DEVICE_GRAPHI);
         struct tty_graphics_ *graphics = malloc(sizeof(struct tty_graphics_));

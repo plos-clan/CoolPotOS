@@ -224,15 +224,14 @@ AcpiOsPredefinedOverride (
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsTableOverride
 ACPI_STATUS
-AcpiOsTableOverride (
-    ACPI_TABLE_HEADER       *ExistingTable,
+AcpiOsTableOverride (const ACPI_TABLE_HEADER       *ExistingTable,
     ACPI_TABLE_HEADER       **NewTable);
 #endif
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsPhysicalTableOverride
 ACPI_STATUS
 AcpiOsPhysicalTableOverride (
-    ACPI_TABLE_HEADER       *ExistingTable,
+    const ACPI_TABLE_HEADER       *ExistingTable,
     ACPI_PHYSICAL_ADDRESS   *NewAddress,
     UINT32                  *NewTableLength);
 #endif
@@ -539,15 +538,13 @@ AcpiOsWritePciConfiguration (
  */
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsReadable
 BOOLEAN
-AcpiOsReadable (
-    void                    *Pointer,
+AcpiOsReadable (const void                    *Pointer,
     ACPI_SIZE               Length);
 #endif
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsWritable
 BOOLEAN
-AcpiOsWritable (
-    void                    *Pointer,
+AcpiOsWritable (const void                    *Pointer,
     ACPI_SIZE               Length);
 #endif
 
@@ -560,8 +557,7 @@ AcpiOsGetTimer (
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsSignal
 ACPI_STATUS
 AcpiOsSignal (
-    UINT32                  Function,
-    void                    *Info);
+    UINT32                  Function, const void                    *Info);
 #endif
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsEnterSleep
@@ -593,8 +589,7 @@ AcpiOsVprintf (
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsRedirectOutput
 void
-AcpiOsRedirectOutput (
-    void                    *Destination);
+AcpiOsRedirectOutput (const void                    *Destination);
 #endif
 
 
@@ -691,14 +686,12 @@ AcpiOsOpenDirectory (
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsGetNextFilename
 char *
-AcpiOsGetNextFilename (
-    void                    *DirHandle);
+AcpiOsGetNextFilename (const void                    *DirHandle);
 #endif
 
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsCloseDirectory
 void
-AcpiOsCloseDirectory (
-    void                    *DirHandle);
+AcpiOsCloseDirectory (const void                    *DirHandle);
 #endif
 
 

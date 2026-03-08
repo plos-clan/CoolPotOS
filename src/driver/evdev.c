@@ -48,8 +48,8 @@ static const uint16_t ps2_ext_to_linux[128] = {
     [0x52] = KEY_INSERT,  [0x53] = KEY_DELETE,
 };
 
-static void evdev_push_event(uint16_t type, uint16_t code, int32_t value) {
-    uint64_t ns = nano_time();
+static void evdev_push_event(const uint16_t type, const uint16_t code, const int32_t value) {
+    const uint64_t ns = nano_time();
 
     struct input_event ev;
     ev.time.tv_sec  = (long)(ns / 1000000000ULL);
@@ -68,54 +68,57 @@ static void evdev_push_event(uint16_t type, uint16_t code, int32_t value) {
     spin_unlock(evdev_ctx.lock);
 }
 
-static bool is_modifier_keycode(uint16_t keycode) {
+static bool is_modifier_keycode(const uint16_t keycode) {
     return keycode == KEY_LEFTSHIFT || keycode == KEY_RIGHTSHIFT || keycode == KEY_LEFTCTRL
            || keycode == KEY_RIGHTCTRL || keycode == KEY_LEFTALT || keycode == KEY_RIGHTALT
            || keycode == KEY_CAPSLOCK || keycode == KEY_NUMLOCK || keycode == KEY_SCROLLLOCK;
 }
 
-static void evdev_input_handler(indev_t *device, intype type, uint64_t code, uint8_t value) {
-    if (type != EV_KEY)
+static void
+evdev_input_handler(indev_t *device, const intype type, const uint64_t code, const uint8_t value) {
+    if (type != EV_KEY || evdev_ctx.open_count <= 0) {
         return;
-    if (evdev_ctx.open_count <= 0)
-        return;
+    }
 
     uint16_t keycode;
     if (code & EVDEV_EXT_FLAG) {
         // Extended key (0xE0 prefix)
-        uint8_t idx = code & 0x7F;
-        keycode     = (idx < 128) ? ps2_ext_to_linux[idx] : 0;
+        const uint8_t idx = code & 0x7F;
+        keycode           = idx < 128 ? ps2_ext_to_linux[idx] : 0;
     } else {
         // Regular key
-        uint8_t idx = code & 0x7F;
-        keycode     = (idx < 128) ? ps2_to_linux[idx] : 0;
+        const uint8_t idx = code & 0x7F;
+        keycode           = idx < 128 ? ps2_to_linux[idx] : 0;
     }
 
-    if (keycode == KEY_RESERVED)
+    if (keycode == KEY_RESERVED) {
         return;
+    }
 
     // value: EV_PRESS(0) = key press, EV_RELEASE(1) = key release
     // Linux evdev: value 1 = press, value 0 = release
-    int32_t ev_value = (value == EV_PRESS) ? 1 : 0;
+    const int32_t ev_value = value == EV_PRESS ? 1 : 0;
 
     // Only send release events for modifier keys (shift, ctrl, alt, etc.)
     // Non-modifier release events are suppressed to avoid terminal emulators
     // that process both press and release as input, causing double characters
-    if (ev_value == 0 && !is_modifier_keycode(keycode))
+    if (ev_value == 0 && !is_modifier_keycode(keycode)) {
         return;
+    }
 
     evdev_push_event(INPUT_EV_KEY, keycode, ev_value);
     evdev_push_event(INPUT_EV_SYN, SYN_REPORT, 0);
 }
 
-static size_t evdev_read(void *handle, void *addr, size_t offset, size_t size) {
+static size_t evdev_read(void *handle, void *addr, const size_t offset, const size_t size) {
     (void)offset;
-    size_t ev_size = sizeof(struct input_event);
-    if (size < ev_size)
+    const size_t ev_size = sizeof(struct input_event);
+    if (size < ev_size) {
         return 0;
+    }
 
-    size_t max_events = size / ev_size;
-    size_t read_count = 0;
+    const size_t max_events = size / ev_size;
+    size_t read_count       = 0;
 
     // Block until at least one event is available
     for (;;) {
@@ -137,7 +140,8 @@ static size_t evdev_read(void *handle, void *addr, size_t offset, size_t size) {
     }
 }
 
-static size_t evdev_write(void *handle, const void *addr, size_t offset, size_t size) {
+static size_t
+evdev_write(const void *handle, const void *addr, const size_t offset, const size_t size) {
     (void)handle;
     (void)addr;
     (void)offset;
@@ -145,37 +149,41 @@ static size_t evdev_write(void *handle, const void *addr, size_t offset, size_t 
     return 0;
 }
 
-static int evdev_poll(void *handle, size_t events) {
+static int evdev_poll(void *handle, const size_t events) {
     int out = 0;
     spin_lock(evdev_ctx.lock);
-    if ((events & EPOLLIN) && evdev_ctx.count > 0)
+    if (events & EPOLLIN && evdev_ctx.count > 0) {
         out |= EPOLLIN;
+    }
     spin_unlock(evdev_ctx.lock);
     return out;
 }
 
-static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
-    uint32_t cmd = (uint32_t)req; // mask to 32-bit (may be sign-extended)
-    uint8_t type = _IOC_TYPE(cmd);
-    uint8_t nr   = _IOC_NR(cmd);
-    size_t sz    = _IOC_SIZE(cmd);
+static errno_t evdev_ioctl(void *handle, const size_t req, void *arg) {
+    const uint32_t cmd = (uint32_t)req; // mask to 32-bit (may be sign-extended)
+    const uint8_t type = _IOC_TYPE(cmd);
+    const uint8_t nr   = _IOC_NR(cmd);
+    const size_t sz    = _IOC_SIZE(cmd);
 
-    if (type != EVDEV_IOC_TYPE)
+    if (type != EVDEV_IOC_TYPE) {
         return -ENOSYS;
+    }
 
     switch (nr) {
     case EVIOC_NR_GVERSION: {
         // EVIOCGVERSION: return evdev protocol version
-        if (arg == NULL || sz < sizeof(int))
+        if (arg == NULL || sz < sizeof(int)) {
             return -EINVAL;
+        }
         *(int *)arg = EV_VERSION;
         return 0;
     }
     case EVIOC_NR_GID: {
         // EVIOCGID: return input device ID
-        if (arg == NULL || sz < sizeof(struct input_id))
+        if (arg == NULL || sz < sizeof(struct input_id)) {
             return -EINVAL;
-        struct input_id *id = (struct input_id *)arg;
+        }
+        struct input_id *id = arg;
         id->bustype         = BUS_I8042;
         id->vendor          = 0;
         id->product         = 0;
@@ -185,32 +193,37 @@ static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
     case EVIOC_NR_GNAME: {
         // EVIOCGNAME: return device name
         const char *name = "PS/2 Keyboard";
-        size_t len       = strlen(name);
-        if (arg == NULL || sz == 0)
+        const size_t len = strlen(name);
+        if (arg == NULL || sz == 0) {
             return -EINVAL;
-        size_t copy = (len + 1 < sz) ? len + 1 : sz;
+        }
+        const size_t copy = len + 1 < sz ? len + 1 : sz;
         memcpy(arg, name, copy);
-        if (copy <= len)
+        if (copy <= len) {
             ((char *)arg)[copy - 1] = '\0';
+        }
         return (errno_t)copy;
     }
     case EVIOC_NR_GPHYS: {
         // EVIOCGPHYS: return physical path
         const char *phys = "isa0060/serio0/input0";
-        size_t len       = strlen(phys);
-        if (arg == NULL || sz == 0)
+        const size_t len = strlen(phys);
+        if (arg == NULL || sz == 0) {
             return -EINVAL;
-        size_t copy = (len + 1 < sz) ? len + 1 : sz;
+        }
+        const size_t copy = len + 1 < sz ? len + 1 : sz;
         memcpy(arg, phys, copy);
-        if (copy <= len)
+        if (copy <= len) {
             ((char *)arg)[copy - 1] = '\0';
+        }
         return (errno_t)copy;
     }
     case EVIOC_NR_GUNIQ:
     case EVIOC_NR_GPROP: {
         // Return empty / no properties
-        if (arg == NULL || sz == 0)
+        if (arg == NULL || sz == 0) {
             return -EINVAL;
+        }
         memset(arg, 0, sz);
         return 0;
     }
@@ -220,32 +233,36 @@ static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
 
     // EVIOCGBIT(ev, len): nr = 0x20 + ev
     if (nr >= EVIOC_NR_GBIT_BASE && nr < EVIOC_NR_GABS_BASE) {
-        uint8_t ev = nr - EVIOC_NR_GBIT_BASE;
-        if (arg == NULL || sz == 0)
+        const uint8_t ev = nr - EVIOC_NR_GBIT_BASE;
+        if (arg == NULL || sz == 0) {
             return -EINVAL;
+        }
         memset(arg, 0, sz);
 
         if (ev == 0) {
             // Event type bitmask: we support EV_SYN(0) and EV_KEY(1)
-            uint8_t *bits = (uint8_t *)arg;
+            uint8_t *bits = arg;
             bits[0]       = 0x03; // bit 0 and bit 1
             return 0;
-        } else if (ev == INPUT_EV_KEY) {
+        }
+        if (ev == INPUT_EV_KEY) {
             // Key code bitmask: set bits for all supported keycodes
-            uint8_t *bits   = (uint8_t *)arg;
-            size_t max_bits = sz * 8;
+            uint8_t *bits         = arg;
+            const size_t max_bits = sz * 8;
 
             // Set bits from ps2_to_linux table
             for (int i = 0; i < 128; i++) {
-                uint16_t kc = ps2_to_linux[i];
-                if (kc != KEY_RESERVED && kc < max_bits)
-                    bits[kc / 8] |= (1 << (kc % 8));
+                const uint16_t kc = ps2_to_linux[i];
+                if (kc != KEY_RESERVED && kc < max_bits) {
+                    bits[kc / 8] |= 1 << (kc % 8);
+                }
             }
             // Set bits from ps2_ext_to_linux table
             for (int i = 0; i < 128; i++) {
-                uint16_t kc = ps2_ext_to_linux[i];
-                if (kc != KEY_RESERVED && kc < max_bits)
-                    bits[kc / 8] |= (1 << (kc % 8));
+                const uint16_t kc = ps2_ext_to_linux[i];
+                if (kc != KEY_RESERVED && kc < max_bits) {
+                    bits[kc / 8] |= 1 << (kc % 8);
+                }
             }
             return 0;
         }
@@ -256,10 +273,11 @@ static errno_t evdev_ioctl(void *handle, size_t req, void *arg) {
     return -ENOSYS;
 }
 
-static void evdev_open(void *parent, const char *path, vfs_node_t node) {
-    dtmp_handle_t *dtmp = (dtmp_handle_t *)node->handle;
-    if (dtmp)
+static void evdev_open(void *parent, const char *path, const vfs_node_t node) {
+    dtmp_handle_t *dtmp = node->handle;
+    if (dtmp) {
         dtmp->device_handle = &evdev_ctx;
+    }
 
     spin_lock(evdev_ctx.lock);
     // Flush stale events on first open
@@ -279,7 +297,7 @@ static bool evdev_close(void *handle) {
     return false;
 }
 
-void evdev_setup(vfs_node_t dev_root) {
+void evdev_setup(const vfs_node_t dev_root) {
     if (!evdev_initialized) {
         memset(&evdev_ctx, 0, sizeof(evdev_ctx));
         evdev_initialized = true;
@@ -290,7 +308,7 @@ void evdev_setup(vfs_node_t dev_root) {
     string_builder_t *path = create_string_builder(50);
     string_builder_append(path, "%s/input", full_path);
     vfs_mkdir(path->data);
-    vfs_node_t input_dir = vfs_open(path->data);
+    const vfs_node_t input_dir = vfs_open(path->data);
 
     // Create /dev/input/event0 device node
     create_device_node_ex(
@@ -301,10 +319,10 @@ void evdev_setup(vfs_node_t dev_root) {
         0,
         evdev_open,
         evdev_close,
-        (vfs_ioctl_t)evdev_ioctl,
-        (vfs_read_t)evdev_read,
+        evdev_ioctl,
+        evdev_read,
         (vfs_write_t)evdev_write,
-        (vfs_poll_t)evdev_poll,
+        evdev_poll,
         NULL,
         NULL
     );

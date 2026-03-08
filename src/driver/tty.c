@@ -8,12 +8,16 @@
 #include "term/klog.h"
 #include "term/terminal.h"
 
-struct llist_header tty_device_list;
-tty_t *kernel_session  = NULL; // 内核会话
-tty_t *current_session = NULL; // 当前会话
+static struct llist_header tty_device_list;
+static tty_t *kernel_session  = NULL; // 内核会话
+static tty_t *current_session = NULL; // 当前会话
 
 tty_t *get_kernel_session() {
     return kernel_session;
+}
+
+tty_t *get_current_session() {
+    return current_session;
 }
 
 int kernel_getch() {
@@ -29,7 +33,7 @@ int kernel_getch() {
     return ch;
 }
 
-tty_device_t *alloc_tty_device(enum tty_device_type type) {
+tty_device_t *alloc_tty_device(const enum tty_device_type type) {
     tty_device_t *device = calloc(1, sizeof(tty_device_t));
     device->type         = type;
     llist_init_head(&device->node);
@@ -37,15 +41,17 @@ tty_device_t *alloc_tty_device(enum tty_device_type type) {
 }
 
 errno_t register_tty_device(tty_device_t *device) {
-    if (device->private_data == NULL)
+    if (device->private_data == NULL) {
         return -EINVAL;
+    }
     llist_append(&tty_device_list, &device->node);
     return EOK;
 }
 
 errno_t delete_tty_device(tty_device_t *device) {
-    if (device == NULL)
+    if (device == NULL) {
         return -EINVAL;
+    }
     free(device->private_data);
     llist_delete(&device->node);
     free(device);
@@ -53,8 +59,9 @@ errno_t delete_tty_device(tty_device_t *device) {
 }
 
 tty_device_t *get_tty_device(const char *name) {
-    if (name == NULL)
+    if (name == NULL) {
         return NULL;
+    }
     tty_device_t *pos = NULL;
     tty_device_t *n   = NULL;
     llist_for_each(pos, n, &tty_device_list, node) {
@@ -70,12 +77,13 @@ void init_tty() {
     kernel_session = malloc(sizeof(tty_t));
 }
 
-void tty_event_handle(indev_t *device, intype type, uint64_t code, uint8_t value) {
+static void tty_event_handle(indev_t *device, const intype type, const uint64_t code, uint8_t value) {
     if (type == EV_CHAR) {
-        char *ascii_code = (char *)code;
-        size_t length    = strlen(ascii_code);
-        if (length == 0)
+        const char *ascii_code = (char *)code;
+        const size_t length    = strlen(ascii_code);
+        if (length == 0) {
             return;
+        }
         for (size_t i = 0; i < length; i++) {
             atom_push(current_session->queue, ascii_code[i]);
         }
@@ -111,12 +119,15 @@ static void termios_init(termios_t *termios) {
     termios->c_cc[VLNEXT]   = 22;
 }
 
-static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
+static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
     switch (req) {
     case TIOCGWINSZ:;
-        struct winsize *ws = (struct winsize *)arg;
+        struct winsize *ws = arg;
         if (ws != NULL) {
-            size_t col, row, x, y;
+            size_t col;
+            size_t row;
+            size_t x;
+            size_t y;
             terminal_cols_rows(session, &col, &row);
             terminal_width_height(session, &x, &y);
             ws->ws_col    = col;
@@ -126,7 +137,7 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
         }
         break;
     case TCGETS:;
-        struct termios *termios = (struct termios *)arg;
+        struct termios *termios = arg;
         termios->c_iflag        = session->termios.c_iflag;
         termios->c_oflag        = session->termios.c_oflag;
         termios->c_cflag        = session->termios.c_cflag;
@@ -134,7 +145,6 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
 
         termios->c_cc[VINTR]    = session->termios.c_cc[VINTR];  // Ctrl-C
         termios->c_cc[VQUIT]    = session->termios.c_cc[VQUIT];  // Ctrl-\
-
         termios->c_cc[VERASE]   = session->termios.c_cc[VERASE]; // Backspace
         termios->c_cc[VKILL]    = session->termios.c_cc[VKILL];  // Ctrl-U
         termios->c_cc[VEOF]     = session->termios.c_cc[VEOF];   // Ctrl-D
@@ -151,34 +161,33 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
         termios->c_line = session->termios.c_line;
         break;
     case TIOCGPGRP:;
-        pid_t *pid = (pid_t *)arg;
+        pid_t *pid = arg;
         *pid       = session->fgproc;
         break;
     case TCSETS:
     case TCSETSF:
     case TCSETSW: {
         // 对 termios 设置支持，可选实现
-        const struct termios *termios = (const struct termios *)arg;
-        session->termios.c_lflag      = termios->c_lflag;
-        session->termios.c_oflag      = termios->c_oflag;
-        session->termios.c_cflag      = termios->c_cflag;
-        session->termios.c_line       = termios->c_line;
+        const struct termios *termios_sw = arg;
+        session->termios.c_lflag         = termios_sw->c_lflag;
+        session->termios.c_oflag         = termios_sw->c_oflag;
+        session->termios.c_cflag         = termios_sw->c_cflag;
+        session->termios.c_line          = termios_sw->c_line;
 
-        session->termios.c_cc[VINTR]    = termios->c_cc[VINTR];  // Ctrl-C
-        session->termios.c_cc[VQUIT]    = termios->c_cc[VQUIT];  // Ctrl-\
-
-        session->termios.c_cc[VERASE]   = termios->c_cc[VERASE]; // Backspace
-        session->termios.c_cc[VKILL]    = termios->c_cc[VKILL];  // Ctrl-U
-        session->termios.c_cc[VEOF]     = termios->c_cc[VEOF];   // Ctrl-D
-        session->termios.c_cc[VTIME]    = termios->c_cc[VTIME];
-        session->termios.c_cc[VMIN]     = termios->c_cc[VMIN];
-        session->termios.c_cc[VSTART]   = termios->c_cc[VSTART];   // Ctrl-Q
-        session->termios.c_cc[VSTOP]    = termios->c_cc[VSTOP];    // Ctrl-S
-        session->termios.c_cc[VSUSP]    = termios->c_cc[VSUSP];    // Ctrl-Z
-        session->termios.c_cc[VREPRINT] = termios->c_cc[VREPRINT]; // Ctrl-R
-        session->termios.c_cc[VDISCARD] = termios->c_cc[VDISCARD]; // Ctrl-O
-        session->termios.c_cc[VWERASE]  = termios->c_cc[VWERASE];  // Ctrl-W
-        session->termios.c_cc[VLNEXT]   = termios->c_cc[VLNEXT];   // Ctrl-V
+        session->termios.c_cc[VINTR]    = termios_sw->c_cc[VINTR];  // Ctrl-C
+        session->termios.c_cc[VQUIT]    = termios_sw->c_cc[VQUIT];  // Ctrl-\
+        session->termios.c_cc[VERASE]   = termios_sw->c_cc[VERASE]; // Backspace
+        session->termios.c_cc[VKILL]    = termios_sw->c_cc[VKILL];  // Ctrl-U
+        session->termios.c_cc[VEOF]     = termios_sw->c_cc[VEOF];   // Ctrl-D
+        session->termios.c_cc[VTIME]    = termios_sw->c_cc[VTIME];
+        session->termios.c_cc[VMIN]     = termios_sw->c_cc[VMIN];
+        session->termios.c_cc[VSTART]   = termios_sw->c_cc[VSTART];   // Ctrl-Q
+        session->termios.c_cc[VSTOP]    = termios_sw->c_cc[VSTOP];    // Ctrl-S
+        session->termios.c_cc[VSUSP]    = termios_sw->c_cc[VSUSP];    // Ctrl-Z
+        session->termios.c_cc[VREPRINT] = termios_sw->c_cc[VREPRINT]; // Ctrl-R
+        session->termios.c_cc[VDISCARD] = termios_sw->c_cc[VDISCARD]; // Ctrl-O
+        session->termios.c_cc[VWERASE]  = termios_sw->c_cc[VWERASE];  // Ctrl-W
+        session->termios.c_cc[VLNEXT]   = termios_sw->c_cc[VLNEXT];   // Ctrl-V
 
         break;
     }
@@ -195,16 +204,16 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
         session->tty_kbmode = *(int *)arg;
         break;
     case VT_SETMODE: {
-        struct vt_mode *src     = (struct vt_mode *)arg;
-        session->vt_mode.mode   = src->mode;
-        session->vt_mode.waitv  = src->waitv;
-        session->vt_mode.relsig = src->relsig;
-        session->vt_mode.acqsig = src->acqsig;
-        session->vt_mode.frsig  = src->frsig;
+        const struct vt_mode *src = arg;
+        session->vt_mode.mode     = src->mode;
+        session->vt_mode.waitv    = src->waitv;
+        session->vt_mode.relsig   = src->relsig;
+        session->vt_mode.acqsig   = src->acqsig;
+        session->vt_mode.frsig    = src->frsig;
         break;
     }
     case VT_GETMODE: {
-        struct vt_mode *src = (struct vt_mode *)arg;
+        struct vt_mode *src = arg;
         src->mode           = session->vt_mode.mode;
         src->waitv          = session->vt_mode.waitv;
         src->relsig         = session->vt_mode.relsig;
@@ -226,7 +235,7 @@ static errno_t tty_ioctl(tty_t *session, size_t req, void *arg) {
     return EOK;
 }
 
-size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
+static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size_t number) {
 
     size_t i = 0;
     for (; i < number; i++) {
@@ -238,8 +247,9 @@ size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
             c = '\t';
         }
         if (c == '\b') {
-            if (session->termios.c_lflag & ECHO)
+            if (session->termios.c_lflag & ECHO) {
                 session->ops.write(session, "\b \b", 0, 3);
+            }
             if (session->termios.c_lflag & ICANON) {
                 if (i > 0) {
                     buffer[i--] = '\0';
@@ -250,13 +260,15 @@ size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
             buffer[i] = session->termios.c_cc[VERASE];
             continue;
         }
-        if (session->termios.c_lflag & ECHO)
+        if (session->termios.c_lflag & ECHO) {
             printk("%c", c);
+        }
         if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;
             i++;
-            if (session->termios.c_lflag & ECHO && c == '\r')
+            if (session->termios.c_lflag & ECHO && c == '\r') {
                 session->ops.write(session, "\n", 0, 1);
+            }
             break;
         }
         buffer[i] = c;
@@ -265,32 +277,34 @@ size_t stdin_read(tty_t *session, char *buffer, size_t offset, size_t number) {
     return i;
 }
 
-errno_t tty_poll(tty_t *session, size_t events) {
+static errno_t tty_poll(tty_t *session, const size_t events) {
     ssize_t revents = 0;
     // if (events & EPOLLERR || events & EPOLLPRI) return 0;
-    if (events & EPOLLIN && (session->queue->size > 0))
+    if (events & EPOLLIN && (session->queue->size > 0)) {
         revents |= EPOLLIN;
-    if (events & EPOLLOUT)
+    }
+    if (events & EPOLLOUT) {
         revents |= EPOLLOUT;
-    return revents;
+    }
+    return (errno_t)revents;
 }
 
-size_t tty_serial_read(tty_t *session, char *buffer, size_t offset, size_t count) {
+static size_t tty_serial_read(tty_t *session, char *buffer, size_t offset, const size_t count) {
     tty_device_t *device = session->device;
     return device->ops.read(device, buffer, count);
 }
 
-size_t tty_serial_write(tty_t *session, const char *buffer, size_t offset, size_t count) {
+static size_t
+tty_serial_write(tty_t *session, const char *buffer, size_t offset, const size_t count) {
     tty_device_t *device = session->device;
     return device->ops.write(device, buffer, count);
 }
 
-void tty_serial_flush(tty_t *session) {
+static void tty_serial_flush(tty_t *session) {
 }
 
-errno_t create_session_serial(tty_t *session) {
-    if (session->device == NULL)
-        return -ENODEV;
+static errno_t create_session_serial(tty_t *session) {
+    asserts(session->device, "tty: session device is null.");
     session->terminal  = NULL;
     session->ops.read  = tty_serial_read;
     session->ops.write = tty_serial_write;
@@ -298,9 +312,10 @@ errno_t create_session_serial(tty_t *session) {
     return EOK;
 }
 
-tty_t *alloc_tty_session(tty_device_t *device) {
-    if (device == NULL)
+static tty_t *alloc_tty_session(tty_device_t *device) {
+    if (device == NULL) {
         return NULL;
+    }
     tty_t *session         = calloc(1, sizeof(tty_t));
     session->device        = device;
     session->queue         = create_atom_queue(1024);

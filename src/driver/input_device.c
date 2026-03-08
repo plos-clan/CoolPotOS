@@ -3,8 +3,8 @@
 #include "cow_arraylist.h"
 #include "errno.h"
 
-cow_arraylist *handlers;
-cow_arraylist *devices;
+static cow_arraylist *handlers;
+static cow_arraylist *devices;
 
 indev_t *alloc_input_dev() {
     indev_t *device = calloc(1, sizeof(indev_t));
@@ -14,8 +14,9 @@ indev_t *alloc_input_dev() {
 }
 
 errno_t register_input_device(indev_t *device) {
-    if (device == NULL)
+    if (device == NULL) {
         return -EINVAL;
+    }
     device->index = cow_list_add(devices, device);
     input_handler_t *handler;
     cow_foreach(handlers, handler) {
@@ -27,8 +28,9 @@ errno_t register_input_device(indev_t *device) {
 }
 
 errno_t register_input_handler(input_handler_t *handler) {
-    if (handler == NULL)
+    if (handler == NULL) {
         return -EINVAL;
+    }
     handler->index = cow_list_add(handlers, handler);
     indev_t *device;
     cow_foreach(devices, device) {
@@ -39,27 +41,31 @@ errno_t register_input_handler(input_handler_t *handler) {
     return EOK;
 }
 
-static void free_handler(input_handler_t *handler, indev_t *dev) {
-    if (handler->disconnect != NULL)
+static void free_handler(const input_handler_t *handler, indev_t *dev) {
+    if (handler->disconnect != NULL) {
         handler->disconnect(dev);
+    }
 }
 
 errno_t delete_input_device(indev_t *device) {
-    if (device == NULL)
+    if (device == NULL) {
         return -EINVAL;
+    }
     cow_list_remove(devices, device->index);
     free_llist_queue(device->handlers, (void *)free_handler, device);
-    if (device->name != NULL)
+    if (device->name != NULL) {
         free(device->name);
+    }
     free(device);
     return EOK;
 }
 
-void send_input_event(indev_t *dev, intype type, uint64_t code, uint8_t value) {
-    if (dev == NULL)
+void send_input_event(indev_t *dev, const intype type, const uint64_t code, const uint8_t value) {
+    if (dev == NULL) {
         return;
+    }
     qlist_foreach(dev->handlers, node) {
-        input_handler_t *handler = node->data;
+        const input_handler_t *handler = node->data;
         handler->handle(dev, type, code, value);
     }
 }

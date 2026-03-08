@@ -70,8 +70,6 @@ char *character_array[2][2] = {
     { cap_character_table, shifted_cap_character_table }
 };
 
-extern tty_t *current_session;
-
 uint8_t keyboard_scancode(uint8_t scancode, uint8_t scancode_1, uint8_t scancode_2) {
     if (scancode == 0xE0) {
         switch (scancode_1) {

@@ -41,6 +41,8 @@ struct block_device {
     struct block_device_ops ops;
 };
 
+void zero_setup();
+
 size_t blk_device_read(const blk_device_t *device, void *buffer, size_t offset, size_t length);
 size_t blk_device_write(const blk_device_t *device, const void *buffer, size_t offset, size_t length);
 size_t blk_size_t(const blk_device_t *device);

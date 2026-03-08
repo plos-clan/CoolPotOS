@@ -5,20 +5,22 @@
 #include "mem/heap.h"
 #include "task/poll.h"
 
-int urandom_poll(size_t events) {
+static errno_t urandom_poll(const size_t events) {
     ssize_t revents = 0;
-    if (events & EPOLLIN)
+    if (events & EPOLLIN) {
         revents |= EPOLLIN;
-    if (events & EPOLLOUT)
+    }
+    if (events & EPOLLOUT) {
         revents |= EPOLLOUT;
-    return revents;
+    }
+    return (errno_t)revents;
 }
 
-errno_t urandom_ioctl(blk_device_t *device, size_t req, void *handle) {
+static errno_t urandom_ioctl(blk_device_t *device, size_t req, void *handle) {
     return -ENOSYS;
 }
 
-size_t urandom_write(void *id, uint8_t *addr, size_t size, size_t lba) {
+static size_t urandom_write(void *id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(addr);
     UNUSED(lba);
@@ -26,7 +28,7 @@ size_t urandom_write(void *id, uint8_t *addr, size_t size, size_t lba) {
     return size;
 }
 
-size_t urandom_read(void *id, uint8_t *addr, size_t size, size_t lba) {
+static size_t urandom_read(void *id, uint8_t *addr, const size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(lba);
     if (!addr || size == 0) {

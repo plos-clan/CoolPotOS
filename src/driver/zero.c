@@ -4,7 +4,7 @@
 #include "mem/heap.h"
 #include "task/poll.h"
 
-size_t null_read(void *id, uint8_t *addr, size_t size, size_t lba) {
+static size_t null_read(void *id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(addr);
     UNUSED(lba);
@@ -12,7 +12,7 @@ size_t null_read(void *id, uint8_t *addr, size_t size, size_t lba) {
     return 0;
 }
 
-size_t null_write(void *id, uint8_t *addr, size_t size, size_t lba) {
+static size_t null_write(void *id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(addr);
     UNUSED(lba);
@@ -20,23 +20,25 @@ size_t null_write(void *id, uint8_t *addr, size_t size, size_t lba) {
     return size;
 }
 
-size_t zero_read(void *id, uint8_t *addr, size_t size, size_t lba) {
+static size_t zero_read(void *id, uint8_t *addr, size_t size, size_t lba) {
     UNUSED(id);
     UNUSED(lba);
     memset(addr, 0, size);
     return size;
 }
 
-int zero_poll(size_t events) {
+static errno_t zero_poll(const size_t events) {
     ssize_t revents = 0;
-    if (events & EPOLLIN)
+    if (events & EPOLLIN) {
         revents |= EPOLLIN;
-    if (events & EPOLLOUT)
+    }
+    if (events & EPOLLOUT) {
         revents |= EPOLLOUT;
-    return revents;
+    }
+    return (errno_t)revents;
 }
 
-int zero_ioctl(blk_device_t *device, size_t req, void *handle) {
+static int zero_ioctl(blk_device_t *device, size_t req, void *handle) {
     UNUSED(req);
     UNUSED(handle);
     UNUSED(device);

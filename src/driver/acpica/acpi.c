@@ -4,31 +4,35 @@
 #include "term/klog.h"
 
 void acpi_init() {
-    ACPI_STATUS st;
-    st = AcpiInitializeSubsystem();
-    if (ACPI_FAILURE(st))
+    ACPI_STATUS st = AcpiInitializeSubsystem();
+    if (ACPI_FAILURE(st)) {
         goto error;
+    }
     st = AcpiInitializeTables(NULL, 16, TRUE);
-    if (ACPI_FAILURE(st))
+    if (ACPI_FAILURE(st)) {
         goto error;
+    }
     return;
 error:
     kerror("acpica initialize failure");
-    while (true)
+    while (true) {
         arch_wait_for_interrupt();
+    }
 }
 
 void acpi_namespace_setup() {
-    ACPI_STATUS st;
-    st = AcpiLoadTables();
-    if (ACPI_FAILURE(st))
+    ACPI_STATUS st = AcpiLoadTables();
+    if (ACPI_FAILURE(st)) {
         goto error;
+    }
     st = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
-    if (ACPI_FAILURE(st))
+    if (ACPI_FAILURE(st)) {
         goto error;
+    }
     st = AcpiInitializeObjects(ACPI_FULL_INITIALIZATION);
-    if (ACPI_FAILURE(st))
+    if (ACPI_FAILURE(st)) {
         goto error;
+    }
     return;
 error:
     kerror("acpica namespace setup fault");
@@ -36,7 +40,6 @@ error:
 
 ACPI_STATUS acpi_table_find_by_signature(const char *signature, acpi_table_handle_t *out_table) {
     size_t i;
-    ACPI_STATUS st;
 
     if (!signature || !out_table) {
         return AE_BAD_PARAMETER;
@@ -52,7 +55,7 @@ ACPI_STATUS acpi_table_find_by_signature(const char *signature, acpi_table_handl
     out_table->signature[4] = '\0';
     out_table->instance     = 1;
 
-    st = AcpiGetTable(out_table->signature, out_table->instance, &out_table->hdr);
+    const ACPI_STATUS st = AcpiGetTable(out_table->signature, out_table->instance, &out_table->hdr);
     if (ACPI_FAILURE(st)) {
         out_table->hdr = NULL;
     }
@@ -60,7 +63,6 @@ ACPI_STATUS acpi_table_find_by_signature(const char *signature, acpi_table_handl
 }
 
 ACPI_STATUS acpi_table_find_next_with_same_signature(acpi_table_handle_t *in_out_table) {
-    ACPI_STATUS st;
 
     if (!in_out_table || !in_out_table->signature[0]) {
         return AE_BAD_PARAMETER;
@@ -72,7 +74,8 @@ ACPI_STATUS acpi_table_find_next_with_same_signature(acpi_table_handle_t *in_out
     }
 
     in_out_table->instance++;
-    st = AcpiGetTable(in_out_table->signature, in_out_table->instance, &in_out_table->hdr);
+    const ACPI_STATUS st =
+        AcpiGetTable(in_out_table->signature, in_out_table->instance, &in_out_table->hdr);
     if (ACPI_FAILURE(st)) {
         in_out_table->hdr = NULL;
     }
