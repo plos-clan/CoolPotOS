@@ -583,11 +583,12 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg) {
 }
 
 syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void *data) {
-    if (dir_name == NULL)
+    if (dir_name == NULL) {
         return SYSCALL_FAULT_(EINVAL);
+    }
 
     char *ndir_name = vfs_cwd_path_build(dir_name);
-    vfs_node_t dir  = vfs_open((const char *)ndir_name);
+    vfs_node_t dir  = vfs_open(ndir_name);
     if (!dir) {
         free(ndir_name);
         return SYSCALL_FAULT_(ENOENT);
@@ -631,7 +632,7 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
     char *ndev_name = vfs_cwd_path_build(dev_name);
     errno_t mret    = EOK;
 mount:
-    mret = vfs_mount((const char *)ndev_name, type, dir);
+    mret = vfs_mount(ndev_name, type, dir, data);
     if (mret != EOK) {
         free(ndir_name);
         free(ndev_name);

@@ -81,7 +81,7 @@ static void load_drm_device(vfs_node_t node) {
     free(builder);
 }
 
-errno_t devtmpfs_mount(const char *handle, vfs_node_t node) {
+errno_t devtmpfs_mount(const char *handle, vfs_node_t node, void *data) {
     node->fsid                = dev_tmpfs_id;
     dtmp_handle_t *tmpfs_root = (dtmp_handle_t *)malloc(sizeof(dtmp_handle_t));
     tmpfs_root->type          = dtp_file_dir;

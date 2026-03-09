@@ -577,7 +577,6 @@ vfs_node_t vfs_open_nofollow(const char *str) {
                 goto err;
             target->refcount++;
             current = target;
-            continue;
         }
     }
 
@@ -725,18 +724,21 @@ void vfs_free_child(vfs_node_t vfs) {
     list_free_with(vfs->child, (void (*)(void *))vfs_free);
 }
 
-errno_t vfs_mount(const char *src, const char *type, vfs_node_t node) {
-    if (node == NULL || type == NULL)
+errno_t vfs_mount(const char *src, const char *type, vfs_node_t node, void *data) {
+    if (node == NULL || type == NULL) {
         return -EINVAL;
-    if (node->type != file_dir)
+    }
+    if (node->type != file_dir) {
         return -EINVAL;
+    }
     if (node->is_mount)
         return -EBUSY;
 
-    vfs_filesystem_t fs = get_filesystem((char *)type);
-    if (fs == NULL)
+    const vfs_filesystem_t fs = get_filesystem((char *)type);
+    if (fs == NULL) {
         return -ENODEV;
-    if (fs->callback->mount(src, node) == 0) {
+    }
+    if (fs->callback->mount(src, node, data) == 0) {
         node->fsid     = fs->fsid;
         node->root     = node;
         node->is_mount = true;

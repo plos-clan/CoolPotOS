@@ -71,7 +71,7 @@ void mount_modfs() {
         mod = vfs_open("/mod");
         not_null_assert(mod, "error: cannot create modfs.");
     }
-    if (vfs_mount(NULL, "tmpfs", mod) != EOK) {
+    if (vfs_mount(NULL, "tmpfs", mod, NULL) != EOK) {
         return;
     }
 

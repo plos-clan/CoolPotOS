@@ -104,7 +104,7 @@ void cpio_init(void) {
     if (!init_ramfs) {
         return;
     }
-    if (vfs_mount(NULL, "tmpfs", get_rootdir()) != EOK) {
+    if (vfs_mount(NULL, "tmpfs", get_rootdir(), NULL) != EOK) {
         kerror("Cannot mount tmpfs to root_dir");
         return;
     }

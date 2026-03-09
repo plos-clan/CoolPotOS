@@ -8,7 +8,7 @@
 static int tmpfs_id              = 0;
 static _Atomic int mount_dev_now = 0;
 
-errno_t tmpfs_mount(const char *handle, vfs_node_t node) {
+errno_t tmpfs_mount(const char *handle, vfs_node_t node, void *data) {
     node->fsid               = tmpfs_id;
     tmpfs_file_t *tmpfs_root = malloc(sizeof(tmpfs_file_t));
     tmpfs_root->type         = tp_file_dir;

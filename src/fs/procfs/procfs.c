@@ -11,9 +11,9 @@
 static int procfs_id    = 0;
 static int proc_self_id = 0;
 vfs_node_t procfs_root  = NULL;
-spin_t procfs_oplock    = SPIN_INIT;
+static spin_t procfs_oplock    = SPIN_INIT;
 
-errno_t procfs_mount(const char *src, vfs_node_t node) {
+errno_t procfs_mount(const char *src, vfs_node_t node, void *data) {
     procfs_root = node;
 
     procfs_root->fsid = procfs_id;

@@ -210,7 +210,7 @@ void launch_init_process() {
         return;
     }
     vfs_node_t dev = vfs_open("/dev");
-    if (vfs_mount(NULL, "devtmpfs", dev) != EOK) {
+    if (vfs_mount(NULL, "devtmpfs", dev, NULL) != EOK) {
         kerror("Cannot mount devtmpfs");
         return;
     }

@@ -15,7 +15,7 @@ static vfs_node_t sysfs_kernel    = NULL;
 static vfs_node_t sysfs_dev_char  = NULL;
 static vfs_node_t sysfs_dev_block = NULL;
 
-static errno_t sysfs_mount(const char *src, vfs_node_t node) {
+static errno_t sysfs_mount(const char *src, vfs_node_t node, void *data) {
     sysfs_root       = node;
     sysfs_root->fsid = sysfs_id;
 

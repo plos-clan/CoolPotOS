@@ -283,9 +283,10 @@ static errno_t sockfs_free(void *handle) {
     return EOK;
 }
 
-static int sockfs_mount(const char *handle, vfs_node_t node) {
-    if (sockfs_root != NULL)
+static int sockfs_mount(const char *handle, vfs_node_t node, void *data) {
+    if (sockfs_root != NULL) {
         return -EBUSY;
+    }
     node->fsid   = sockfs_id;
     sockfs_root  = node;
     node->handle = calloc(1, sizeof(socket_specific_t));

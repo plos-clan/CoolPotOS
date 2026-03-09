@@ -26,7 +26,7 @@
 
 typedef struct vfs_node *vfs_node_t;
 
-typedef errno_t (*vfs_mount_t)(const char *src, vfs_node_t node);
+typedef errno_t (*vfs_mount_t)(const char *src, vfs_node_t node, void *data);
 typedef void (*vfs_unmount_t)(void *root);
 
 typedef void (*vfs_open_t)(void *parent, const char *name, vfs_node_t node);
@@ -167,7 +167,6 @@ errno_t vfs_mknod(const char *name, uint16_t mode, int dev);
  * (如果不需要某个回调函数, 用一个空实现替代即可)
  * @param name 文件系统名
  * @param callback 回调指针
- * @param register_id 文件系统挂载id (非虚拟文件系统填0)
  * @param magic 文件系统属性类型
  * @param flags 文件系统注册标志
  * @return 文件系统id
@@ -288,10 +287,11 @@ void *general_map(
  *
  * @param src 设备路径
  * @param node 挂载点
+ * @param data 挂载信息参数
  * @param type 文件系统类型
  * @return 非0代表挂载失败
  */
-errno_t vfs_mount(const char *src, const char *type, vfs_node_t node);
+errno_t vfs_mount(const char *src, const char *type, vfs_node_t node, void *data);
 
 /**
  * 卸载一个挂载点

@@ -306,7 +306,7 @@ int pipefs_poll(void *file, size_t events) {
     return out;
 }
 
-int pipefs_mount(const char *handle, vfs_node_t node) {
+int pipefs_mount(const char *handle, vfs_node_t node, void *data) {
     if (pipefs_root != NULL)
         return -EBUSY;
     node->fsid   = pipefs_id;

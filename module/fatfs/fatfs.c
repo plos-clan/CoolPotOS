@@ -137,7 +137,7 @@ bool fatfs_close(file_t handle) {
     return true;
 }
 
-errno_t fatfs_mount(const char *src, vfs_node_t node) {
+errno_t fatfs_mount(const char *src, vfs_node_t node, void *data) {
     int drive                   = alloc_number();
     drive_number_mapping[drive] = vfs_open(src);
     if (drive_number_mapping[drive] == NULL) return -ENODEV;

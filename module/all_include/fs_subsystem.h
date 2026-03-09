@@ -33,7 +33,7 @@
 
 typedef struct vfs_node *vfs_node_t;
 
-typedef errno_t (*vfs_mount_t)(const char *src, vfs_node_t node);
+typedef errno_t (*vfs_mount_t)(const char *src, vfs_node_t node, void *data);
 typedef void (*vfs_unmount_t)(void *root);
 
 typedef void (*vfs_open_t)(void *parent, const char *name, vfs_node_t node);
