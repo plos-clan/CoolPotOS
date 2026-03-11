@@ -1,6 +1,7 @@
 #include "mod/module.h"
 #include "boot.h"
 #include "errno.h"
+#include "fs/tmpfs.h"
 #include "fs/vfs.h"
 #include "krlibc.h"
 #include "mem/heap.h"
@@ -21,6 +22,10 @@ static const char *find_boot_rootfs_name(void) {
     }
 
     return NULL;
+}
+
+static bool is_boot_rootfs_module(const char *name) {
+    return strcmp(name, "cp_rootfs") == 0 || strcmp(name, "rootfs") == 0;
 }
 
 void extract_name(const char *input, char *output, size_t output_size) {
@@ -100,35 +105,11 @@ void mount_modfs() {
             continue;
         }
         vfs_write(mod_node, module0.data, 0, module0.size);
+        if (is_boot_rootfs_module(module0.name) && mod_node->handle != NULL) {
+            tmpfs_file_t *tmpfile = mod_node->handle;
+            tmpfile->type         = tp_file_blk;
+            mod_node->type        = file_block;
+            mod_node->mode        = 0644;
+        }
     }
-}
-
-errno_t mount_boot_rootfs() {
-    const char *rootfs_name = find_boot_rootfs_name();
-    if (rootfs_name == NULL) {
-        logkf("rootfs: boot module not found\n\r");
-        return -ENOENT;
-    }
-
-    char rootfs_path[64];
-    sprintf(rootfs_path, "/mod/%s", rootfs_name);
-
-    vfs_mkdir("/new_root");
-
-    vfs_node_t new_root = vfs_open("/new_root");
-    if (new_root == NULL) {
-        logkf("rootfs: cannot open /new_root\n\r");
-        return -ENOENT;
-    }
-
-    errno_t ret = vfs_mount(rootfs_path, "squashfs", new_root, NULL);
-    if (ret != EOK) {
-        logkf("rootfs: squashfs mount from %s failed: %d\n\r", rootfs_path, ret);
-        vfs_close(new_root);
-        return ret;
-    }
-
-    logkf("rootfs: mounted %s on /new_root\n\r", rootfs_path);
-    vfs_close(new_root);
-    return EOK;
 }

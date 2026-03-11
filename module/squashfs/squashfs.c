@@ -390,7 +390,6 @@ int squashfs_lookup_child(
 int squashfs_create_mount(
     const char *src, squashfs_mount_t **out, sqfs_inode_generic_t **root_inode, sqfs_u64 *root_ref
 ) {
-
     *out = NULL;
     if (root_inode != NULL) {
         *root_inode = NULL;

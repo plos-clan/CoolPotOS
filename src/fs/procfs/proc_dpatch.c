@@ -65,7 +65,7 @@ void load_procfs_root() {
 }
 
 size_t procfs_read_dispatch(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
-    uint64_t hash = hash_dp(handle->name);
+    const uint64_t hash = hash_dp(handle->name);
     for (size_t i = 0; i < dp_index; i++) {
         if (hash == dispatch_array[i]->hash) {
             return dispatch_array[i]->read_entry(handle, addr, offset, size);
@@ -75,7 +75,7 @@ size_t procfs_read_dispatch(proc_handle_t *handle, void *addr, size_t offset, si
 }
 
 void procfs_stat_dispatch(proc_handle_t *handle, vfs_node_t node) {
-    uint64_t hash = hash_dp(handle->name);
+    const uint64_t hash = hash_dp(handle->name);
     for (size_t i = 0; i < dp_index; i++) {
         if (hash == dispatch_array[i]->hash) {
             node->size = dispatch_array[i]->stat_entry(handle);

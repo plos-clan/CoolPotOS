@@ -548,20 +548,23 @@ syscall_(chdir, char *s) {
 }
 
 syscall_(fcntl, int fd, int cmd, uint64_t arg) {
-    if (fd < 0 || cmd < 0)
+    if (fd < 0 || cmd < 0) {
         return SYSCALL_FAULT_(EINVAL);
+    }
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
-    if (handle == NULL)
+    if (handle == NULL) {
         return SYSCALL_FAULT_(EBADF);
+    }
 
     switch (cmd) {
     case F_GETFD:
-        return (handle->flags & O_CLOEXEC) ? 1 : 0;
+        return handle->flags & O_CLOEXEC ? 1 : 0;
     case F_SETFD:
-        if (arg & 1)
+        if (arg & 1) {
             handle->flags |= O_CLOEXEC;
-        else
+        } else {
             handle->flags &= ~O_CLOEXEC;
+        }
         return EOK;
     case F_DUPFD_CLOEXEC:
         return dup_with_minfd(handle, (int)arg, true);
@@ -570,7 +573,7 @@ syscall_(fcntl, int fd, int cmd, uint64_t arg) {
     case F_GETFL:
         return handle->flags;
     case F_SETFL:;
-        uint32_t valid_flags = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
+        const uint32_t valid_flags = O_APPEND | O_DIRECT | O_NOATIME | O_NONBLOCK;
         handle->flags &= ~valid_flags;
         handle->flags |= arg & valid_flags;
         handle->node->flags &= ~valid_flags;
@@ -587,8 +590,8 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
         return SYSCALL_FAULT_(EINVAL);
     }
 
-    char *ndir_name = vfs_cwd_path_build(dir_name);
-    vfs_node_t dir  = vfs_open(ndir_name);
+    char *ndir_name      = vfs_cwd_path_build(dir_name);
+    const vfs_node_t dir = vfs_open(ndir_name);
     if (!dir) {
         free(ndir_name);
         return SYSCALL_FAULT_(ENOENT);
@@ -599,35 +602,39 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
             free(ndir_name);
             return SYSCALL_FAULT_(EINVAL);
         }
-        char *old_root_p    = vfs_cwd_path_build(dev_name);
-        vfs_node_t old_root = vfs_open(old_root_p);
+        char *old_root_p          = vfs_cwd_path_build(dev_name);
+        const vfs_node_t old_root = vfs_open(old_root_p);
         free(old_root_p);
-        if (old_root == NULL || !old_root->is_mount)
+        if (old_root == NULL || !old_root->is_mount) {
             return SYSCALL_FAULT_(EINVAL);
-        if (dir != rootdir)
+        }
+        if (dir != rootdir) {
             list_append(dir->parent->child, old_root);
+        }
         char *nb       = old_root->name;
         old_root->name = dir->name;
         dir->name      = nb;
         list_append(old_root->parent->child, dir);
 
         list_delete(old_root->parent->child, old_root);
-        if (dir != rootdir)
+        if (dir != rootdir) {
             list_delete(dir->parent->child, dir);
-        else
+        } else {
             rootdir = old_root;
+        }
 
-        vfs_node_t parent = dir->parent;
-        dir->parent       = old_root->parent;
-        old_root->parent  = parent;
+        const vfs_node_t parent = dir->parent;
+        dir->parent             = old_root->parent;
+        old_root->parent        = parent;
 
         vfs_close(old_root);
         vfs_close(dir);
         return EOK;
     }
 
-    if (type == NULL)
+    if (type == NULL) {
         return SYSCALL_FAULT_(EINVAL);
+}
 
     char *ndev_name = vfs_cwd_path_build(dev_name);
     errno_t mret    = EOK;
@@ -636,8 +643,9 @@ mount:
     if (mret != EOK) {
         free(ndir_name);
         free(ndev_name);
-        if (mret < 0)
+        if (mret < 0) {
             return (uint64_t)mret;
+}
         return SYSCALL_FAULT_(EIO);
     }
     free(ndir_name);
@@ -647,12 +655,10 @@ mount:
 
 syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
     int ready           = 0;
-    uint64_t start_time = nano_time();
+    const uint64_t start_time = nano_time();
     bool sigexit        = false;
-    tcb_t current       = get_current_task();
-    fdt_t *fdt          = current->process->fdts;
-
-    extern vfs_callback_t fs_callbacks[256];
+    const tcb_t current       = get_current_task();
+    const fdt_t *fdt          = current->process->fdts;
 
     do {
         ready = 0;
@@ -663,7 +669,8 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
 
         // 检查每个文件描述符
         for (size_t i = 0; i < nfds; i++) {
-            fd_t *handle = get_fd(fdt, fds_user[i].fd);
+            extern vfs_callback_t fs_callbacks[256];
+            const fd_t *handle = get_fd(fdt, fds_user[i].fd);
             if (handle == NULL) {
                 fds_user[i].revents = POLLNVAL;
                 ready++;

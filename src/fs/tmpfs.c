@@ -103,6 +103,8 @@ errno_t tmpfs_stat(void *file, vfs_node_t node) {
         return -ENOENT;
     node->type = file0->type == tp_file_symlink ? file_symlink
                  : file0->type == tp_file_dir   ? file_dir
+                 : file0->type == tp_file_blk   ? file_block
+                 : file0->type == tp_file_char  ? file_stream
                                                 : file_none;
     node->size = file0->type == file_dir ? 0 : file0->size;
     return EOK;
@@ -233,7 +235,7 @@ errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mo
         node->type   = file_block;
         handle->type = tp_file_blk;
     }
-    if ((mode & S_IFMT) == S_IFCHR) {
+    else if ((mode & S_IFMT) == S_IFCHR) {
         node->type   = file_stream;
         handle->type = tp_file_char;
     } else {

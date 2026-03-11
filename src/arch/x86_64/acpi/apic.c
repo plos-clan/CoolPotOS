@@ -8,10 +8,10 @@
 #include "term/klog.h"
 #include "timer.h"
 
-bool x2apic_mode = false;
-uint64_t lapic_address;
+static bool x2apic_mode = false;
+static uint64_t lapic_address;
 
-uint64_t calibrated_timer_initial = 0;
+static uint64_t calibrated_timer_initial = 0;
 
 static struct ioapic_info found_ioapics[MAX_IOAPICS];
 static struct iso_info found_isos[MAX_ISO];
@@ -19,7 +19,7 @@ static struct iso_info found_isos[MAX_ISO];
 static size_t found_iso_count    = 0;
 static size_t found_ioapic_count = 0;
 
-void disable_pic() {
+static void disable_pic() {
     io_out8(0x21, 0xff);
     io_out8(0xa1, 0xff);
 
@@ -35,19 +35,19 @@ void lapic_write(uint32_t reg, uint32_t value) {
         wrmsr(0x800 + (reg >> 4), value);
         return;
     }
-    *(volatile uint32_t *)((uint64_t)lapic_address + reg) = value;
+    *(volatile uint32_t *)(lapic_address + reg) = value;
 }
 
 uint32_t lapic_read(uint32_t reg) {
     if (x2apic_mode) {
         return rdmsr(0x800 + (reg >> 4));
     }
-    return *(volatile uint32_t *)((uint64_t)lapic_address + reg);
+    return *(volatile uint32_t *)(lapic_address + reg);
 }
 
 uint64_t lapic_id() {
     uint32_t phy_id = lapic_read(LAPIC_REG_ID);
-    return x2apic_mode ? phy_id : (phy_id >> 24);
+    return x2apic_mode ? phy_id : phy_id >> 24;
 }
 
 static void ioapic_mmio_write(uintptr_t base, uint32_t reg, uint32_t value) {
@@ -82,12 +82,13 @@ static struct ioapic_info *find_ioapic(uint32_t gsi) {
 
 void ioapic_add(uint8_t vector, uint32_t irq) {
     struct ioapic_info *io = find_ioapic(isa_irq_to_gsi(vector));
-    if (!io)
+    if (!io) {
         return;
+    }
 
-    uint32_t irq0     = irq - io->gsi_base;
-    uint32_t ioredtbl = 0x10 + irq0 * 2;
-    uint64_t redirect = vector | ((uint64_t)lapic_id() << 56);
+    const uint32_t irq0     = irq - io->gsi_base;
+    const uint32_t ioredtbl = 0x10 + irq0 * 2;
+    const uint64_t redirect = vector | lapic_id() << 56;
 
     ioapic_mmio_write(io->mmio_base, ioredtbl, (uint32_t)redirect);
     ioapic_mmio_write(io->mmio_base, ioredtbl + 1, (uint32_t)(redirect >> 32));
@@ -99,10 +100,10 @@ void ioapic_enable(uint8_t vector) {
         printk("Cannot found ioapic for vector %d gsi:%d ENABLE\n", vector, isa_irq_to_gsi(vector));
         return;
     }
-    uint64_t index = 0x10 + ((isa_irq_to_gsi(vector) - ioapic->gsi_base) * 2);
+    const uint64_t index = 0x10 + (isa_irq_to_gsi(vector) - ioapic->gsi_base) * 2;
     uint64_t value = (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index + 1) << 32
                      | (uint64_t)ioapic_mmio_read(ioapic->mmio_base, index);
-    value &= (~0x10000UL);
+    value &= ~0x10000UL;
     ioapic_mmio_write(ioapic->mmio_base, index, (uint32_t)(value & 0xFFFFFFFF));
     ioapic_mmio_write(ioapic->mmio_base, index + 1, (uint32_t)(value >> 32));
 }

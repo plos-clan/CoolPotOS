@@ -314,6 +314,8 @@ syscall_(
     const uint64_t start_time = nano_time();
     int ready                 = 0;
 
+    arch_open_interrupt();
+    scheduler_enable();
     do {
         ready = 0;
         spin_lock(ep->lock);
@@ -356,7 +358,8 @@ syscall_(
         }
 
         scheduler_yield();
-    } while (timeout < 0 || (nano_time() - start_time) < (uint64_t)timeout * 1000000ULL);
+    } while (timeout < 0 || nano_time() - start_time < (uint64_t)timeout * 1000000ULL);
+    arch_close_interrupt();
 
     return 0;
 }

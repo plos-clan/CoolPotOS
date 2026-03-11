@@ -138,7 +138,6 @@ USED _Noreturn void kmain() {
     extern void mount_modfs();
     extern errno_t mount_boot_rootfs();
     mount_modfs();
-    mount_boot_rootfs();
 
     init_console_symlink();
 
