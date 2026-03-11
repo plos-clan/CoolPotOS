@@ -25,6 +25,8 @@ typedef struct {
 } squashfs_compressor_stub_t;
 
 static void squashfs_open(void *parent, const char *name, vfs_node_t node);
+static squashfs_handle_t *
+squashfs_handle_create(squashfs_mount_t *mount, sqfs_inode_generic_t *inode, const sqfs_u64 inode_ref);
 
 static void squashfs_handle_release(squashfs_handle_t *handle) {
     if (handle == NULL) {
@@ -404,10 +406,23 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
         if (!squashfs_child_exists(node, (const char *)ent->name)) {
             const vfs_node_t child = vfs_child_append(node, (const char *)ent->name, NULL);
             if (child != NULL) {
+                sqfs_inode_generic_t *child_inode = NULL;
+                squashfs_handle_t *child_handle   = NULL;
+
                 child->fsid    = squashfs_id;
                 child->dev     = node->dev;
                 child->type    = squashfs_map_inode_type(ent->type);
                 child->visited = true;
+
+                if (squashfs_open_inode(handle->mount, state.ent_ref, &child_inode) == 0) {
+                    child_handle = squashfs_handle_create(handle->mount, child_inode, state.ent_ref);
+                    if (child_handle != NULL) {
+                        child->handle = child_handle;
+                        squashfs_fill_node(child, child_handle);
+                    } else {
+                        sqfs_free(child_inode);
+                    }
+                }
             }
         }
 
@@ -603,6 +618,9 @@ static void squashfs_open(void *parent, const char *name, vfs_node_t node) {
         return;
     }
 
+    if (node->handle != NULL) {
+        return;
+    }
     int ret =
         squashfs_lookup_child(parent_handle->mount, parent_handle->inode, name, &inode_ref, &inode);
     if (ret != 0) {
@@ -627,8 +645,8 @@ static void squashfs_open(void *parent, const char *name, vfs_node_t node) {
 }
 
 static bool squashfs_close(void *current) {
-    squashfs_handle_release(current);
-    return true;
+    (void)current;
+    return false;
 }
 
 static size_t squashfs_read(void *file, void *addr, size_t offset, size_t size) {

@@ -20,582 +20,622 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct sqfs_cached_data_block_t {
+    sqfs_u64 location;
+    size_t size;
+    sqfs_u8 *data;
+    struct sqfs_cached_data_block_t *next;
+} sqfs_cached_data_block_t;
+
+#define SQFS_DATA_BLOCK_CACHE_BUCKETS 1024
+
 struct sqfs_data_reader_t {
-	sqfs_object_t obj;
+    sqfs_object_t obj;
 
-	sqfs_frag_table_t *frag_tbl;
-	sqfs_compressor_t *cmp;
-	sqfs_file_t *file;
+    sqfs_frag_table_t *frag_tbl;
+    sqfs_compressor_t *cmp;
+    sqfs_file_t *file;
 
-	sqfs_u8 *data_block;
-	size_t data_blk_size;
-	sqfs_u64 current_block;
+    sqfs_u8 *data_block;
+    size_t data_blk_size;
+    sqfs_u64 current_block;
+    sqfs_cached_data_block_t *block_cache[SQFS_DATA_BLOCK_CACHE_BUCKETS];
 
-	sqfs_u8 *frag_block;
-	size_t frag_blk_size;
-	sqfs_u32 current_frag_index;
-	sqfs_u32 block_size;
+    sqfs_u8 *frag_block;
+    size_t frag_blk_size;
+    sqfs_u32 current_frag_index;
+    sqfs_u32 block_size;
 
-	const sqfs_inode_generic_t *cached_inode;
-	size_t cached_block_index;
-	sqfs_u64 cached_block_file_offset;
-	sqfs_u64 cached_disk_offset;
+    const sqfs_inode_generic_t *cached_inode;
+    size_t cached_block_index;
+    sqfs_u64 cached_block_file_offset;
+    sqfs_u64 cached_disk_offset;
 
-	sqfs_u8 scratch[];
+    sqfs_u8 scratch[];
 };
 
-static int get_block(sqfs_data_reader_t *data, sqfs_u64 off, sqfs_u32 size,
-		     sqfs_u32 max_size, size_t *out_sz, sqfs_u8 *out)
-{
-	sqfs_u32 on_disk_size;
-	sqfs_s32 ret;
-	int err;
-
-	if (SQFS_IS_SPARSE_BLOCK(size)) {
-		memset(out, 0, max_size);
-		*out_sz = max_size;
-		return 0;
-	}
-
-	on_disk_size = SQFS_ON_DISK_BLOCK_SIZE(size);
-
-	if (on_disk_size > max_size)
-		return SQFS_ERROR_OVERFLOW;
-
-	if (SQFS_IS_BLOCK_COMPRESSED(size)) {
-		err = data->file->read_at(data->file, off,
-					  data->scratch, on_disk_size);
-		if (err)
-			return err;
-
-		ret = data->cmp->do_block(data->cmp, data->scratch,
-					  on_disk_size, out, max_size);
-		if (ret <= 0)
-			return ret < 0 ? ret : SQFS_ERROR_OVERFLOW;
-
-		*out_sz = ret;
-	} else {
-		err = data->file->read_at(data->file, off,
-					  out, on_disk_size);
-		if (err)
-			return err;
-
-		*out_sz = on_disk_size;
-	}
-
-	return 0;
+static size_t data_block_cache_bucket(sqfs_u64 location) {
+    return ((location >> 12) ^ (location >> 21) ^ (location >> 32))
+           & (SQFS_DATA_BLOCK_CACHE_BUCKETS - 1);
 }
 
-static int precache_data_block(sqfs_data_reader_t *data, sqfs_u64 location,
-			       sqfs_u32 size)
-{
-	if (data->data_block != NULL && data->current_block == location)
-		return 0;
+static int get_block(
+    sqfs_data_reader_t *data,
+    sqfs_u64 off,
+    sqfs_u32 size,
+    sqfs_u32 max_size,
+    size_t *out_sz,
+    sqfs_u8 *out
+) {
+    sqfs_u32 on_disk_size;
+    sqfs_s32 ret;
+    int err;
 
-	data->current_block = location;
+    if (SQFS_IS_SPARSE_BLOCK(size)) {
+        memset(out, 0, max_size);
+        *out_sz = max_size;
+        return 0;
+    }
 
-	return get_block(data, location, size, data->block_size,
-			 &data->data_blk_size, data->data_block);
+    on_disk_size = SQFS_ON_DISK_BLOCK_SIZE(size);
+
+    if (on_disk_size > max_size)
+        return SQFS_ERROR_OVERFLOW;
+
+    if (SQFS_IS_BLOCK_COMPRESSED(size)) {
+        err = data->file->read_at(data->file, off, data->scratch, on_disk_size);
+        if (err)
+            return err;
+
+        ret = data->cmp->do_block(data->cmp, data->scratch, on_disk_size, out, max_size);
+        if (ret <= 0)
+            return ret < 0 ? ret : SQFS_ERROR_OVERFLOW;
+
+        *out_sz = ret;
+    } else {
+        err = data->file->read_at(data->file, off, out, on_disk_size);
+        if (err)
+            return err;
+
+        *out_sz = on_disk_size;
+    }
+
+    return 0;
 }
 
-static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
-{
-	sqfs_fragment_t ent;
-	int ret;
+static int precache_data_block(sqfs_data_reader_t *data, sqfs_u64 location, sqfs_u32 size) {
+    sqfs_cached_data_block_t *blk;
+    size_t bucket;
+    int ret;
 
-	if (data->frag_block != NULL && idx == data->current_frag_index)
-		return 0;
+    bucket = data_block_cache_bucket(location);
 
-	ret = sqfs_frag_table_lookup(data->frag_tbl, idx, &ent);
-	if (ret != 0)
-		return ret;
+    /* Once a compressed block has been expanded, keep the result around so
+       later ELF page faults do not pay the zstd cost again. */
+    for (blk = data->block_cache[bucket]; blk != NULL; blk = blk->next) {
+        if (blk->location == location) {
+            data->data_block    = blk->data;
+            data->data_blk_size = blk->size;
+            data->current_block = location;
+            return 0;
+        }
+    }
 
-	data->current_frag_index = idx;
+    blk = calloc(1, sizeof(*blk));
+    if (blk == NULL)
+        return SQFS_ERROR_ALLOC;
 
-	return get_block(data, ent.start_offset, ent.size, data->block_size,
-			 &data->frag_blk_size, data->frag_block);
+    blk->data = malloc(data->block_size);
+    if (blk->data == NULL) {
+        free(blk);
+        return SQFS_ERROR_ALLOC;
+    }
+
+    data->current_block = location;
+    ret                 = get_block(data, location, size, data->block_size, &blk->size, blk->data);
+    if (ret != 0) {
+        free(blk->data);
+        free(blk);
+        return ret;
+    }
+
+    blk->location             = location;
+    blk->next                 = data->block_cache[bucket];
+    data->block_cache[bucket] = blk;
+    data->data_block          = blk->data;
+    data->data_blk_size       = blk->size;
+    return 0;
 }
 
-static void data_reader_destroy(sqfs_object_t *obj)
-{
-	sqfs_data_reader_t *data = (sqfs_data_reader_t *)obj;
+static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx) {
+    sqfs_fragment_t ent;
+    int ret;
 
-	sqfs_drop(data->cmp);
-	sqfs_drop(data->file);
-	sqfs_drop(data->frag_tbl);
-	free(data->data_block);
-	free(data->frag_block);
-	free(data);
+    if (data->frag_block != NULL && idx == data->current_frag_index)
+        return 0;
+
+    ret = sqfs_frag_table_lookup(data->frag_tbl, idx, &ent);
+    if (ret != 0)
+        return ret;
+
+    data->current_frag_index = idx;
+
+    return get_block(
+        data, ent.start_offset, ent.size, data->block_size, &data->frag_blk_size, data->frag_block
+    );
 }
 
-static sqfs_object_t *data_reader_copy(const sqfs_object_t *obj)
-{
-	const sqfs_data_reader_t *data = (const sqfs_data_reader_t *)obj;
-	sqfs_data_reader_t *copy;
+static void data_reader_destroy(sqfs_object_t *obj) {
+    sqfs_data_reader_t *data = (sqfs_data_reader_t *)obj;
+    sqfs_cached_data_block_t *blk;
+    sqfs_cached_data_block_t *next;
+    size_t i;
 
-	copy = alloc_flex(sizeof(*data), 1, data->block_size);
-	if (copy == NULL)
-		return NULL;
+    sqfs_drop(data->cmp);
+    sqfs_drop(data->file);
+    sqfs_drop(data->frag_tbl);
+    for (i = 0; i < SQFS_DATA_BLOCK_CACHE_BUCKETS; ++i) {
+        for (blk = data->block_cache[i]; blk != NULL; blk = next) {
+            next = blk->next;
+            free(blk->data);
+            free(blk);
+        }
+    }
+    free(data->frag_block);
+    free(data);
+}
 
-	memcpy(copy, data, sizeof(*data) + data->block_size);
+static sqfs_object_t *data_reader_copy(const sqfs_object_t *obj) {
+    const sqfs_data_reader_t *data = (const sqfs_data_reader_t *)obj;
+    sqfs_data_reader_t *copy;
 
-	copy->frag_tbl = sqfs_copy(data->frag_tbl);
-	if (copy->frag_tbl == NULL)
-		goto fail_ftbl;
+    copy = alloc_flex(sizeof(*data), 1, data->block_size);
+    if (copy == NULL)
+        return NULL;
 
-	copy->data_block = malloc(data->block_size);
-	if (copy->data_block == NULL)
-		goto fail_dblk;
+    memcpy(copy, data, sizeof(*data) + data->block_size);
 
-	copy->frag_block = malloc(data->block_size);
-	if (copy->frag_block == NULL)
-		goto fail_fblk;
+    copy->frag_tbl = sqfs_copy(data->frag_tbl);
+    if (copy->frag_tbl == NULL)
+        goto fail_ftbl;
 
-	if (data->data_block != NULL && data->data_blk_size > 0)
-		memcpy(copy->data_block, data->data_block, data->data_blk_size);
+    copy->data_block    = NULL;
+    copy->data_blk_size = 0;
+    copy->current_block = 0xFFFFFFFFFFFFFFFFULL;
+    for (size_t i = 0; i < SQFS_DATA_BLOCK_CACHE_BUCKETS; ++i)
+        copy->block_cache[i] = NULL;
 
-	if (data->frag_block != NULL && data->frag_blk_size > 0)
-		memcpy(copy->frag_block, data->frag_block, data->frag_blk_size);
+    copy->frag_block = malloc(data->block_size);
+    if (copy->frag_block == NULL)
+        goto fail_fblk;
 
-	/* duplicate references */
-	copy->file = sqfs_grab(copy->file);
-	copy->cmp = sqfs_grab(copy->cmp);
-	return (sqfs_object_t *)copy;
+    if (data->frag_block != NULL && data->frag_blk_size > 0)
+        memcpy(copy->frag_block, data->frag_block, data->frag_blk_size);
+
+    /* duplicate references */
+    copy->file = sqfs_grab(copy->file);
+    copy->cmp  = sqfs_grab(copy->cmp);
+    return (sqfs_object_t *)copy;
 fail_fblk:
-	free(copy->data_block);
-fail_dblk:
-	sqfs_drop(copy->frag_tbl);
+    sqfs_drop(copy->frag_tbl);
 fail_ftbl:
-	free(copy);
-	return NULL;
+    free(copy);
+    return NULL;
 }
 
-sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
-					    size_t block_size,
-					    sqfs_compressor_t *cmp,
-					    sqfs_u32 flags)
-{
-	sqfs_data_reader_t *data;
+sqfs_data_reader_t *sqfs_data_reader_create(
+    sqfs_file_t *file, size_t block_size, sqfs_compressor_t *cmp, sqfs_u32 flags
+) {
+    sqfs_data_reader_t *data;
 
-	if (flags != 0)
-		return NULL;
+    if (flags != 0)
+        return NULL;
 
-	data = alloc_flex(sizeof(*data), 1, block_size);
-	if (data == NULL)
-		return NULL;
+    data = alloc_flex(sizeof(*data), 1, block_size);
+    if (data == NULL)
+        return NULL;
 
-	sqfs_object_init(data, data_reader_destroy, data_reader_copy);
+    sqfs_object_init(data, data_reader_destroy, data_reader_copy);
 
-	data->frag_tbl = sqfs_frag_table_create(0);
-	if (data->frag_tbl == NULL) {
-		free(data);
-		return NULL;
-	}
+    data->frag_tbl = sqfs_frag_table_create(0);
+    if (data->frag_tbl == NULL) {
+        free(data);
+        return NULL;
+    }
 
-	data->file = sqfs_grab(file);
-	data->block_size = block_size;
-	data->cmp = sqfs_grab(cmp);
-	data->data_block = malloc(block_size);
-	data->frag_block = malloc(block_size);
-	if (data->data_block == NULL || data->frag_block == NULL) {
-		free(data->data_block);
-		free(data->frag_block);
-		sqfs_drop(data->cmp);
-		sqfs_drop(data->file);
-		sqfs_drop(data->frag_tbl);
-		free(data);
-		return NULL;
-	}
-	data->current_block = 0xFFFFFFFFFFFFFFFFULL;
-	data->current_frag_index = 0xFFFFFFFFU;
-	return data;
+    data->file       = sqfs_grab(file);
+    data->block_size = block_size;
+    data->cmp        = sqfs_grab(cmp);
+    data->data_block = NULL;
+    data->frag_block = malloc(block_size);
+    if (data->frag_block == NULL) {
+        free(data->frag_block);
+        sqfs_drop(data->cmp);
+        sqfs_drop(data->file);
+        sqfs_drop(data->frag_tbl);
+        free(data);
+        return NULL;
+    }
+    data->current_block      = 0xFFFFFFFFFFFFFFFFULL;
+    data->current_frag_index = 0xFFFFFFFFU;
+    return data;
 }
 
-int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
-					 const sqfs_super_t *super)
-{
-	int ret;
+int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data, const sqfs_super_t *super) {
+    int ret;
 
-	data->frag_blk_size = 0;
-	data->current_frag_index = 0xFFFFFFFFU;
+    data->frag_blk_size      = 0;
+    data->current_frag_index = 0xFFFFFFFFU;
 
-	ret = sqfs_frag_table_read(data->frag_tbl, data->file,
-				   super, data->cmp);
-	if (ret != 0)
-		return ret;
+    ret = sqfs_frag_table_read(data->frag_tbl, data->file, super, data->cmp);
+    if (ret != 0)
+        return ret;
 
-	data->current_frag_index = sqfs_frag_table_get_size(data->frag_tbl);
-	return 0;
+    data->current_frag_index = sqfs_frag_table_get_size(data->frag_tbl);
+    return 0;
 }
 
-int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
-			       const sqfs_inode_generic_t *inode,
-			       size_t index, size_t *size, sqfs_u8 **out)
-{
-	size_t i, unpacked_size;
-	sqfs_u64 off, filesz;
-	int err;
+int sqfs_data_reader_get_block(
+    sqfs_data_reader_t *data,
+    const sqfs_inode_generic_t *inode,
+    size_t index,
+    size_t *size,
+    sqfs_u8 **out
+) {
+    size_t i, unpacked_size;
+    sqfs_u64 off, filesz;
+    int err;
 
-	sqfs_inode_get_file_block_start(inode, &off);
-	sqfs_inode_get_file_size(inode, &filesz);
+    sqfs_inode_get_file_block_start(inode, &off);
+    sqfs_inode_get_file_size(inode, &filesz);
 
-	if (index >= sqfs_inode_get_file_block_count(inode))
-		return SQFS_ERROR_OUT_OF_BOUNDS;
+    if (index >= sqfs_inode_get_file_block_count(inode))
+        return SQFS_ERROR_OUT_OF_BOUNDS;
 
-	for (i = 0; i < index; ++i) {
-		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
-		filesz -= data->block_size;
-	}
+    for (i = 0; i < index; ++i) {
+        off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
+        filesz -= data->block_size;
+    }
 
-	unpacked_size = filesz < data->block_size ? filesz : data->block_size;
-	*out = alloc_array(1, unpacked_size);
-	if (*out == NULL)
-		return SQFS_ERROR_ALLOC;
+    unpacked_size = filesz < data->block_size ? filesz : data->block_size;
+    *out          = alloc_array(1, unpacked_size);
+    if (*out == NULL)
+        return SQFS_ERROR_ALLOC;
 
-	err = get_block(data, off, inode->extra[index], unpacked_size, size, *out);
-	if (err == 0)
-		return 0;
+    err = get_block(data, off, inode->extra[index], unpacked_size, size, *out);
+    if (err == 0)
+        return 0;
 
-	free(*out);
-	*out = NULL;
-	*size = 0;
-	return err;
+    free(*out);
+    *out  = NULL;
+    *size = 0;
+    return err;
 }
 
-int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
-				  const sqfs_inode_generic_t *inode,
-				  size_t *size, sqfs_u8 **out)
-{
-	sqfs_u32 frag_idx, frag_off, frag_sz;
-	size_t block_count;
-	sqfs_u64 filesz;
-	int err;
+int sqfs_data_reader_get_fragment(
+    sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode, size_t *size, sqfs_u8 **out
+) {
+    sqfs_u32 frag_idx, frag_off, frag_sz;
+    size_t block_count;
+    sqfs_u64 filesz;
+    int err;
 
-	sqfs_inode_get_file_size(inode, &filesz);
-	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
-	*size = 0;
-	*out = NULL;
+    sqfs_inode_get_file_size(inode, &filesz);
+    sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
+    *size = 0;
+    *out  = NULL;
 
-	block_count = sqfs_inode_get_file_block_count(inode);
+    block_count = sqfs_inode_get_file_block_count(inode);
 
-	if (block_count > (UINT64_MAX / data->block_size))
-		return SQFS_ERROR_OVERFLOW;
+    if (block_count > (UINT64_MAX / data->block_size))
+        return SQFS_ERROR_OVERFLOW;
 
-	if ((sqfs_u64)block_count * data->block_size >= filesz)
-		return 0;
+    if ((sqfs_u64)block_count * data->block_size >= filesz)
+        return 0;
 
-	frag_sz = filesz % data->block_size;
+    frag_sz = filesz % data->block_size;
 
-	err = precache_fragment_block(data, frag_idx);
-	if (err)
-		return err;
+    err = precache_fragment_block(data, frag_idx);
+    if (err)
+        return err;
 
-	if (frag_off + frag_sz > data->block_size)
-		return SQFS_ERROR_OUT_OF_BOUNDS;
+    if (frag_off + frag_sz > data->block_size)
+        return SQFS_ERROR_OUT_OF_BOUNDS;
 
-	*out = alloc_array(1, frag_sz);
-	if (*out == NULL)
-		return SQFS_ERROR_ALLOC;
+    *out = alloc_array(1, frag_sz);
+    if (*out == NULL)
+        return SQFS_ERROR_ALLOC;
 
-	*size = frag_sz;
-	memcpy(*out, (char *)data->frag_block + frag_off, frag_sz);
-	return 0;
+    *size = frag_sz;
+    memcpy(*out, (char *)data->frag_block + frag_off, frag_sz);
+    return 0;
 }
 
-sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
-			       const sqfs_inode_generic_t *inode,
-			       sqfs_u64 offset, void *buffer, sqfs_u32 size)
-{
-	sqfs_u32 frag_idx, frag_off, diff, total = 0;
-	size_t i, block_count;
-	sqfs_u64 file_block_off;
-	sqfs_u64 off, filesz;
-	char *ptr;
-	int err;
+sqfs_s32 sqfs_data_reader_read(
+    sqfs_data_reader_t *data,
+    const sqfs_inode_generic_t *inode,
+    sqfs_u64 offset,
+    void *buffer,
+    sqfs_u32 size
+) {
+    sqfs_u32 frag_idx, frag_off, diff, total = 0;
+    size_t i, block_count;
+    sqfs_u64 file_block_off;
+    sqfs_u64 off, filesz;
+    char *ptr;
+    int err;
 
-	if (size >= 0x7FFFFFFF)
-		size = 0x7FFFFFFE;
+    if (size >= 0x7FFFFFFF)
+        size = 0x7FFFFFFE;
 
-	/* work out file location and size */
-	sqfs_inode_get_file_size(inode, &filesz);
-	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
-	sqfs_inode_get_file_block_start(inode, &off);
-	block_count = sqfs_inode_get_file_block_count(inode);
-	file_block_off = 0;
+    /* work out file location and size */
+    sqfs_inode_get_file_size(inode, &filesz);
+    sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
+    sqfs_inode_get_file_block_start(inode, &off);
+    block_count    = sqfs_inode_get_file_block_count(inode);
+    file_block_off = 0;
 
-	if (offset >= filesz)
-		return 0;
+    if (offset >= filesz)
+        return 0;
 
-	if ((filesz - offset) < (sqfs_u64)size)
-		size = filesz - offset;
+    if ((filesz - offset) < (sqfs_u64)size)
+        size = filesz - offset;
 
-	if (size == 0)
-		return 0;
+    if (size == 0)
+        return 0;
 
-	/* Reuse the previous lookup for sequential reads of the same inode. */
-	if (data->cached_inode == inode && offset >= data->cached_block_file_offset) {
-		i = data->cached_block_index;
-		off = data->cached_disk_offset;
-		file_block_off = data->cached_block_file_offset;
-	} else {
-		i = 0;
-	}
+    /* Reuse the previous lookup for sequential reads of the same inode. */
+    if (data->cached_inode == inode && offset >= data->cached_block_file_offset) {
+        i              = data->cached_block_index;
+        off            = data->cached_disk_offset;
+        file_block_off = data->cached_block_file_offset;
+    } else {
+        i = 0;
+    }
 
-	/* find location of the first block */
-	while (offset >= data->block_size && i < block_count) {
-		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
-		offset -= data->block_size;
-		file_block_off += data->block_size;
-		++i;
-	}
+    /* find location of the first block */
+    while (offset >= data->block_size && i < block_count) {
+        off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
+        offset -= data->block_size;
+        file_block_off += data->block_size;
+        ++i;
+    }
 
-	data->cached_inode = inode;
-	data->cached_block_index = i;
-	data->cached_block_file_offset = file_block_off;
-	data->cached_disk_offset = off;
+    data->cached_inode             = inode;
+    data->cached_block_index       = i;
+    data->cached_block_file_offset = file_block_off;
+    data->cached_disk_offset       = off;
 
-	/* copy data from blocks */
-	while (i < block_count && size > 0) {
-		diff = data->block_size - offset;
-		if (size < diff)
-			diff = size;
+    /* copy data from blocks */
+    while (i < block_count && size > 0) {
+        diff = data->block_size - offset;
+        if (size < diff)
+            diff = size;
 
-		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i])) {
-			memset(buffer, 0, diff);
-		} else {
-			err = precache_data_block(data, off, inode->extra[i]);
-			if (err)
-				return err;
+        if (SQFS_IS_SPARSE_BLOCK(inode->extra[i])) {
+            memset(buffer, 0, diff);
+        } else {
+            err = precache_data_block(data, off, inode->extra[i]);
+            if (err)
+                return err;
 
-			memcpy(buffer, (char *)data->data_block + offset, diff);
-			off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
-		}
+            memcpy(buffer, (char *)data->data_block + offset, diff);
+            off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
+        }
 
-		++i;
-		file_block_off += data->block_size;
-		data->cached_inode = inode;
-		data->cached_block_index = i;
-		data->cached_block_file_offset = file_block_off;
-		data->cached_disk_offset = off;
-		offset = 0;
-		size -= diff;
-		total += diff;
-		buffer = (char *)buffer + diff;
-	}
+        ++i;
+        file_block_off += data->block_size;
+        data->cached_inode             = inode;
+        data->cached_block_index       = i;
+        data->cached_block_file_offset = file_block_off;
+        data->cached_disk_offset       = off;
+        offset                         = 0;
+        size -= diff;
+        total += diff;
+        buffer = (char *)buffer + diff;
+    }
 
-	/* copy from fragment */
-	if (size > 0) {
-		err = precache_fragment_block(data, frag_idx);
-		if (err)
-			return err;
+    /* copy from fragment */
+    if (size > 0) {
+        err = precache_fragment_block(data, frag_idx);
+        if (err)
+            return err;
 
-		if ((frag_off + offset) >= data->frag_blk_size)
-			return SQFS_ERROR_OUT_OF_BOUNDS;
+        if ((frag_off + offset) >= data->frag_blk_size)
+            return SQFS_ERROR_OUT_OF_BOUNDS;
 
-		if ((data->frag_blk_size - (frag_off + offset)) < size)
-			return SQFS_ERROR_OUT_OF_BOUNDS;
+        if ((data->frag_blk_size - (frag_off + offset)) < size)
+            return SQFS_ERROR_OUT_OF_BOUNDS;
 
-		ptr = (char *)data->frag_block + frag_off + offset;
-		memcpy(buffer, ptr, size);
-		total += size;
-	}
+        ptr = (char *)data->frag_block + frag_off + offset;
+        memcpy(buffer, ptr, size);
+        total += size;
+    }
 
-	return total;
+    return total;
 }
 
 /*****************************************************************************/
 
 typedef struct {
-	sqfs_istream_t base;
+    sqfs_istream_t base;
 
-	sqfs_data_reader_t *rd;
-	const char *filename;
-	const sqfs_u32 *blocks;
+    sqfs_data_reader_t *rd;
+    const char *filename;
+    const sqfs_u32 *blocks;
 
-	sqfs_u8 *buffer;
-	size_t buf_used;
-	size_t buf_off;
+    sqfs_u8 *buffer;
+    size_t buf_used;
+    size_t buf_off;
 
-	sqfs_u64 filesz;
-	sqfs_u64 disk_offset;
+    sqfs_u64 filesz;
+    sqfs_u64 disk_offset;
 
-	sqfs_u32 frag_idx;
-	sqfs_u32 frag_off;
+    sqfs_u32 frag_idx;
+    sqfs_u32 frag_off;
 
-	sqfs_u32 blk_idx;
-	sqfs_u32 blk_count;
+    sqfs_u32 blk_idx;
+    sqfs_u32 blk_count;
 
-	sqfs_u32 inodata[];
+    sqfs_u32 inodata[];
 } data_reader_istream_t;
 
-static int dr_stream_get_buffered_data(sqfs_istream_t *base,
-				       const sqfs_u8 **out,
-				       size_t *size, size_t want)
-{
-	data_reader_istream_t *stream = (data_reader_istream_t *)base;
-	sqfs_data_reader_t *rd = stream->rd;
-	int ret;
-	(void)want;
+static int
+dr_stream_get_buffered_data(sqfs_istream_t *base, const sqfs_u8 **out, size_t *size, size_t want) {
+    data_reader_istream_t *stream = (data_reader_istream_t *)base;
+    sqfs_data_reader_t *rd        = stream->rd;
+    int ret;
+    (void)want;
 
-	if (stream->buf_off < stream->buf_used) {
-		*out = stream->buffer + stream->buf_off;
-		*size = stream->buf_used - stream->buf_off;
-		return 0;
-	}
+    if (stream->buf_off < stream->buf_used) {
+        *out  = stream->buffer + stream->buf_off;
+        *size = stream->buf_used - stream->buf_off;
+        return 0;
+    }
 
-	if (stream->filesz == 0) {
-		ret = 1;
-		goto fail;
-	}
+    if (stream->filesz == 0) {
+        ret = 1;
+        goto fail;
+    }
 
-	stream->buf_off = 0;
-	stream->buf_used = rd->block_size;
-	if (stream->filesz < (sqfs_u64)stream->buf_used)
-		stream->buf_used = stream->filesz;
+    stream->buf_off  = 0;
+    stream->buf_used = rd->block_size;
+    if (stream->filesz < (sqfs_u64)stream->buf_used)
+        stream->buf_used = stream->filesz;
 
-	if (stream->blk_idx < stream->blk_count) {
-		sqfs_u32 blkword = stream->blocks[stream->blk_idx++];
-		sqfs_u32 disksz = SQFS_ON_DISK_BLOCK_SIZE(blkword);
+    if (stream->blk_idx < stream->blk_count) {
+        sqfs_u32 blkword = stream->blocks[stream->blk_idx++];
+        sqfs_u32 disksz  = SQFS_ON_DISK_BLOCK_SIZE(blkword);
 
-		if (disksz == 0) {
-			memset(stream->buffer, 0, stream->buf_used);
-		} else if (SQFS_IS_BLOCK_COMPRESSED(blkword)) {
-			ret = rd->file->read_at(rd->file, stream->disk_offset,
-						rd->scratch, disksz);
-			if (ret)
-				goto fail;
+        if (disksz == 0) {
+            memset(stream->buffer, 0, stream->buf_used);
+        } else if (SQFS_IS_BLOCK_COMPRESSED(blkword)) {
+            ret = rd->file->read_at(rd->file, stream->disk_offset, rd->scratch, disksz);
+            if (ret)
+                goto fail;
 
-			ret = rd->cmp->do_block(rd->cmp, rd->scratch, disksz,
-						stream->buffer,
-						stream->buf_used);
-			if (ret <= 0) {
-				ret = ret < 0 ? ret : SQFS_ERROR_OVERFLOW;
-				goto fail;
-			}
+            ret = rd->cmp->do_block(rd->cmp, rd->scratch, disksz, stream->buffer, stream->buf_used);
+            if (ret <= 0) {
+                ret = ret < 0 ? ret : SQFS_ERROR_OVERFLOW;
+                goto fail;
+            }
 
-			if ((size_t)ret < stream->buf_used) {
-				memset(stream->buffer + ret, 0,
-				       stream->buf_used - ret);
-			}
-		} else {
-			ret = rd->file->read_at(rd->file, stream->disk_offset,
-						stream->buffer, disksz);
-			if (ret)
-				goto fail;
-			if (disksz < stream->buf_used) {
-				memset(stream->buffer + disksz, 0,
-				       stream->buf_used - disksz);
-			}
-		}
+            if ((size_t)ret < stream->buf_used) {
+                memset(stream->buffer + ret, 0, stream->buf_used - ret);
+            }
+        } else {
+            ret = rd->file->read_at(rd->file, stream->disk_offset, stream->buffer, disksz);
+            if (ret)
+                goto fail;
+            if (disksz < stream->buf_used) {
+                memset(stream->buffer + disksz, 0, stream->buf_used - disksz);
+            }
+        }
 
-		stream->disk_offset += disksz;
-	} else {
-		ret = precache_fragment_block(rd, stream->frag_idx);
-		if (ret)
-			return ret;
+        stream->disk_offset += disksz;
+    } else {
+        ret = precache_fragment_block(rd, stream->frag_idx);
+        if (ret)
+            return ret;
 
-		if (rd->frag_blk_size < stream->frag_off ||
-		    (rd->frag_blk_size - stream->frag_off) < stream->buf_used) {
-			ret = SQFS_ERROR_CORRUPTED;
-			goto fail;
-		}
+        if (rd->frag_blk_size < stream->frag_off
+            || (rd->frag_blk_size - stream->frag_off) < stream->buf_used) {
+            ret = SQFS_ERROR_CORRUPTED;
+            goto fail;
+        }
 
-		memcpy(stream->buffer, rd->frag_block + stream->frag_off,
-		       stream->buf_used);
-	}
+        memcpy(stream->buffer, rd->frag_block + stream->frag_off, stream->buf_used);
+    }
 
-	stream->filesz -= stream->buf_used;
-	*out = stream->buffer;
-	*size = stream->buf_used;
-	return 0;
+    stream->filesz -= stream->buf_used;
+    *out  = stream->buffer;
+    *size = stream->buf_used;
+    return 0;
 fail:
-	free(stream->buffer);
-	stream->buffer = NULL;
-	stream->buf_used = 0;
-	stream->buf_off = 0;
-	stream->filesz = 0;
-	*out = NULL;
-	*size = 0;
-	return ret;
+    free(stream->buffer);
+    stream->buffer   = NULL;
+    stream->buf_used = 0;
+    stream->buf_off  = 0;
+    stream->filesz   = 0;
+    *out             = NULL;
+    *size            = 0;
+    return ret;
 }
 
-static void dr_stream_advance_buffer(sqfs_istream_t *base, size_t count)
-{
-	data_reader_istream_t *stream = (data_reader_istream_t *)base;
-	size_t diff = stream->buf_used - stream->buf_off;
+static void dr_stream_advance_buffer(sqfs_istream_t *base, size_t count) {
+    data_reader_istream_t *stream = (data_reader_istream_t *)base;
+    size_t diff                   = stream->buf_used - stream->buf_off;
 
-	stream->buf_off += (diff < count ? diff : count);
+    stream->buf_off += (diff < count ? diff : count);
 }
 
-static const char *dr_stream_get_filename(sqfs_istream_t *base)
-{
-	return ((data_reader_istream_t *)base)->filename;
+static const char *dr_stream_get_filename(sqfs_istream_t *base) {
+    return ((data_reader_istream_t *)base)->filename;
 }
 
-static void dr_stream_destroy(sqfs_object_t *obj)
-{
-	data_reader_istream_t *stream = (data_reader_istream_t *)obj;
+static void dr_stream_destroy(sqfs_object_t *obj) {
+    data_reader_istream_t *stream = (data_reader_istream_t *)obj;
 
-	sqfs_drop(stream->rd);
-	free(stream->buffer);
-	free(stream);
+    sqfs_drop(stream->rd);
+    free(stream->buffer);
+    free(stream);
 }
 
-int sqfs_data_reader_create_stream(sqfs_data_reader_t *data,
-				   const sqfs_inode_generic_t *inode,
-				   const char *filename, sqfs_istream_t **out)
-{
-	data_reader_istream_t *stream;
-	size_t ino_sz, namelen, sz;
-	sqfs_u64 filesz;
-	char *nameptr;
-	int ret;
+int sqfs_data_reader_create_stream(
+    sqfs_data_reader_t *data,
+    const sqfs_inode_generic_t *inode,
+    const char *filename,
+    sqfs_istream_t **out
+) {
+    data_reader_istream_t *stream;
+    size_t ino_sz, namelen, sz;
+    sqfs_u64 filesz;
+    char *nameptr;
+    int ret;
 
-	*out = NULL;
+    *out = NULL;
 
-	ret = sqfs_inode_get_file_size(inode, &filesz);
-	if (ret != 0)
-		return ret;
+    ret = sqfs_inode_get_file_size(inode, &filesz);
+    if (ret != 0)
+        return ret;
 
-	ino_sz = inode->payload_bytes_used;
-	namelen = strlen(filename) + 1;
+    ino_sz  = inode->payload_bytes_used;
+    namelen = strlen(filename) + 1;
 
-	if (SZ_ADD_OV(ino_sz, namelen, &sz))
-		return SQFS_ERROR_ALLOC;
-	if (SZ_ADD_OV(sz, sizeof(*stream), &sz))
-		return SQFS_ERROR_ALLOC;
+    if (SZ_ADD_OV(ino_sz, namelen, &sz))
+        return SQFS_ERROR_ALLOC;
+    if (SZ_ADD_OV(sz, sizeof(*stream), &sz))
+        return SQFS_ERROR_ALLOC;
 
-	stream = calloc(1, sz);
-	if (stream == NULL)
-		return SQFS_ERROR_ALLOC;
+    stream = calloc(1, sz);
+    if (stream == NULL)
+        return SQFS_ERROR_ALLOC;
 
-	stream->buffer = malloc(data->block_size);
-	if (stream->buffer == NULL) {
-		free(stream);
-		return SQFS_ERROR_ALLOC;
-	}
+    stream->buffer = malloc(data->block_size);
+    if (stream->buffer == NULL) {
+        free(stream);
+        return SQFS_ERROR_ALLOC;
+    }
 
-	sqfs_object_init(stream, dr_stream_destroy, NULL);
+    sqfs_object_init(stream, dr_stream_destroy, NULL);
 
-	memcpy(stream->inodata, inode->extra, ino_sz);
-	stream->blocks = stream->inodata;
-	stream->blk_count = ino_sz / sizeof(stream->blocks[0]);
-	stream->filesz = filesz;
+    memcpy(stream->inodata, inode->extra, ino_sz);
+    stream->blocks    = stream->inodata;
+    stream->blk_count = ino_sz / sizeof(stream->blocks[0]);
+    stream->filesz    = filesz;
 
-	nameptr = (char *)stream->inodata + ino_sz;
-	memcpy(nameptr, filename, namelen);
-	stream->filename = nameptr;
+    nameptr = (char *)stream->inodata + ino_sz;
+    memcpy(nameptr, filename, namelen);
+    stream->filename = nameptr;
 
-	sqfs_inode_get_file_block_start(inode, &stream->disk_offset);
-	sqfs_inode_get_frag_location(inode, &stream->frag_idx,
-				     &stream->frag_off);
-	stream->rd = sqfs_grab(data);
+    sqfs_inode_get_file_block_start(inode, &stream->disk_offset);
+    sqfs_inode_get_frag_location(inode, &stream->frag_idx, &stream->frag_off);
+    stream->rd = sqfs_grab(data);
 
-	((sqfs_istream_t *)stream)->advance_buffer = dr_stream_advance_buffer;
-	((sqfs_istream_t *)stream)->get_filename = dr_stream_get_filename;
-	((sqfs_istream_t *)stream)->get_buffered_data =
-		dr_stream_get_buffered_data;
+    ((sqfs_istream_t *)stream)->advance_buffer    = dr_stream_advance_buffer;
+    ((sqfs_istream_t *)stream)->get_filename      = dr_stream_get_filename;
+    ((sqfs_istream_t *)stream)->get_buffered_data = dr_stream_get_buffered_data;
 
-	*out = (sqfs_istream_t *)stream;
-	return 0;
+    *out = (sqfs_istream_t *)stream;
+    return 0;
 }
