@@ -40,6 +40,7 @@ add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
 add_subdirectory(module/iso9660)
 add_subdirectory(module/squashfs)
+add_subdirectory(module/zstd)
 
 add_executable(kernel)
 

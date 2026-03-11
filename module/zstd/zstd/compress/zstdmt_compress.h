@@ -27,7 +27,7 @@ extern "C" {
 /* ===   Dependencies   === */
 #include "../common/zstd_deps.h"
 #define ZSTD_STATIC_LINKING_ONLY /* ZSTD_parameters */
-#include "lib/zstd/zstd.h"       /* ZSTD_inBuffer, ZSTD_outBuffer, ZSTDLIB_API */
+#include "zstd.h"       /* ZSTD_inBuffer, ZSTD_outBuffer, ZSTDLIB_API */
 
 /* ===   Constants   === */
 #ifndef ZSTDMT_NBWORKERS_MAX /* a different value can be selected at compile time */

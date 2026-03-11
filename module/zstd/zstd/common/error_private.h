@@ -22,7 +22,7 @@ extern "C" {
  ******************************************/
 #include "compiler.h"
 #include "debug.h"
-#include "lib/zstd/zstd_errors.h" /* enum list */
+#include "zstd_errors.h" /* enum list */
 #include "zstd_deps.h"
 
 /* ****************************************

@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-#include "lib/zstd/zstd.h" /* ZSTD_CCtx, size_t */
+#include "zstd.h" /* ZSTD_CCtx, size_t */
 #include "zstd_compress_internal.h"
 
 /*-*************************************

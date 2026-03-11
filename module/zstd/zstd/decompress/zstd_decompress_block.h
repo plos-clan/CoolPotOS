@@ -16,7 +16,7 @@
  *********************************************************/
 #include "../common/zstd_deps.h"
 #include "../common/zstd_internal.h"
-#include "lib/zstd/zstd.h" /* DCtx, and some public functions */
+#include "zstd.h" /* DCtx, and some public functions */
 #include "zstd_decompress_internal.h"
 
 /* ===   Prototypes   === */

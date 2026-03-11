@@ -15,7 +15,7 @@
  *  Dependencies
  *********************************************************/
 #include "../common/zstd_deps.h"
-#include "lib/zstd/zstd.h" /* ZSTD_DDict, and several public functions */
+#include "zstd.h" /* ZSTD_DDict, and several public functions */
 
 /*-*******************************************************
  *  Interface

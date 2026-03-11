@@ -30,6 +30,7 @@ struct squashfs_handle {
     squashfs_mount_t      *mount;
     sqfs_inode_generic_t  *inode;
     sqfs_u64               inode_ref;
+    bool                   dir_populated;
 };
 
 int  squashfs_create_mount(const char *src, squashfs_mount_t **out, sqfs_inode_generic_t **root_inode, sqfs_u64 *root_ref);

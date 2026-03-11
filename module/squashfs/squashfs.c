@@ -1,20 +1,30 @@
 #include "squashfs.h"
+#include "cpzstd.h"
 
 static errno_t squashfs_id         = -1;
 static sqfs_u64 squashfs_mount_dev = 1;
 errno_t errno                      = EOK;
+
+#define SQUASHFS_IMAGE_CACHE_SIZE 262144ULL
+#define SQUASHFS_IMAGE_CACHE_ALIGN 4096ULL
 
 typedef struct {
     sqfs_file_t base;
     vfs_node_t device;
     char *name;
     sqfs_u64 size;
+    char *cache;
+    size_t cache_size;
+    size_t cache_capacity;
+    sqfs_u64 cache_offset;
 } squashfs_image_t;
 
 typedef struct {
     sqfs_compressor_t base;
     sqfs_u16 id;
 } squashfs_compressor_stub_t;
+
+static void squashfs_open(void *parent, const char *name, vfs_node_t node);
 
 static void squashfs_handle_release(squashfs_handle_t *handle) {
     if (handle == NULL) {
@@ -27,8 +37,47 @@ static void squashfs_handle_release(squashfs_handle_t *handle) {
 }
 
 static int squashfs_image_read_at(sqfs_file_t *base, sqfs_u64 offset, void *buffer, size_t size) {
-    const squashfs_image_t *file = (squashfs_image_t *)base;
-    const size_t ret             = vfs_read(file->device, buffer, offset, size);
+    squashfs_image_t *file = (squashfs_image_t *)base;
+    size_t ret;
+
+    if (size == 0) {
+        return 0;
+    }
+
+    if (offset + size <= offset || offset + size > file->size) {
+        return SQFS_ERROR_IO;
+    }
+
+    if (size <= file->cache_size && file->cache != NULL && offset >= file->cache_offset
+        && (offset - file->cache_offset) + size <= file->cache_size) {
+        memcpy(buffer, file->cache + (offset - file->cache_offset), size);
+        return 0;
+    }
+
+    if (file->cache != NULL && size < file->cache_capacity) {
+        sqfs_u64 cache_offset = offset & ~(SQUASHFS_IMAGE_CACHE_ALIGN - 1);
+        size_t cache_size     = file->cache_capacity;
+
+        if (cache_offset >= file->size) {
+            return SQFS_ERROR_IO;
+        }
+
+        if (cache_size > file->size - cache_offset) {
+            cache_size = file->size - cache_offset;
+        }
+
+        ret = vfs_read(file->device, file->cache, cache_offset, cache_size);
+        if (ret != cache_size) {
+            return SQFS_ERROR_IO;
+        }
+
+        file->cache_offset = cache_offset;
+        file->cache_size   = cache_size;
+        memcpy(buffer, file->cache + (offset - cache_offset), size);
+        return 0;
+    }
+
+    ret = vfs_read(file->device, buffer, offset, size);
     return ret == size ? 0 : SQFS_ERROR_IO;
 }
 
@@ -62,6 +111,7 @@ static void squashfs_image_destroy(sqfs_object_t *obj) {
     if (file->device != NULL) {
         vfs_close(file->device);
     }
+    free(file->cache);
     free(file->name);
     free(file);
 }
@@ -86,6 +136,14 @@ static squashfs_image_t *squashfs_image_create(vfs_node_t device, const char *na
     file->device            = device;
     file->name              = strdup(name != NULL ? name : "<device>");
     file->size              = device->size;
+    file->cache_capacity    = SQUASHFS_IMAGE_CACHE_SIZE;
+    file->cache_offset      = 0xFFFFFFFFFFFFFFFFULL;
+    file->cache             = malloc(file->cache_capacity);
+    if (file->cache == NULL) {
+        free(file->name);
+        free(file);
+        return NULL;
+    }
     return file;
 }
 
@@ -118,6 +176,20 @@ static sqfs_s32 squashfs_cmp_do_block(
 ) {
     static bool warned                     = false;
     const squashfs_compressor_stub_t *stub = (squashfs_compressor_stub_t *)cmp;
+    if (stub->id == SQFS_COMP_ZSTD) {
+        const size_t ret = cpzstd_decompress(out, outsize, in, size);
+        if (!cpzstd_is_error(ret)) {
+            return (sqfs_s32)ret;
+        }
+
+        printk(
+            "squashfs: zstd decompress failed: %s (%d)\n",
+            cpzstd_get_error_name(ret),
+            cpzstd_get_error_code(ret)
+        );
+        return SQFS_ERROR_COMPRESSOR;
+    }
+
     (void)in;
     (void)size;
     (void)out;
@@ -311,6 +383,9 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
     if (node->type != file_dir) {
         return 0;
     }
+    if (handle->dir_populated) {
+        return 0;
+    }
 
     int ret = sqfs_dir_reader_open_dir(handle->mount->dir_reader, handle->inode, &state, 0);
     if (ret != 0) {
@@ -339,6 +414,7 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
         sqfs_free(ent);
     }
 
+    ((squashfs_handle_t *)handle)->dir_populated = true;
     return 0;
 }
 

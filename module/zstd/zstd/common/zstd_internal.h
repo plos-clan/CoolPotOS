@@ -25,7 +25,7 @@
 #include "error_private.h"
 #include "mem.h"
 #define ZSTD_STATIC_LINKING_ONLY
-#include "lib/zstd/zstd.h"
+#include "zstd.h"
 #define FSE_STATIC_LINKING_ONLY
 #include "fse.h"
 #define HUF_STATIC_LINKING_ONLY

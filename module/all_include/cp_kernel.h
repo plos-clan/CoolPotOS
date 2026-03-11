@@ -1,6 +1,8 @@
 #pragma once
 
+#ifndef assert
 #define assert(expr)
+#endif
 
 #include "types/stdbool.h"
 #include "types/stdint.h"

@@ -24,8 +24,14 @@
 #ifndef ZSTD_DEPS_COMMON
 #define ZSTD_DEPS_COMMON
 
-#include "krlibc.h"
-#include "types/limits.h"
+#ifdef __CPOS_MODULE__
+#    include "cp_kernel.h"
+#    include "types/limits.h"
+#else
+#    include "krlibc.h"
+#    include "mem/heap.h"
+#    include "types/limits.h"
+#endif
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 #    define ZSTD_memcpy(d, s, l) __builtin_memcpy((d), (s), (l))
@@ -47,8 +53,6 @@
 #ifdef ZSTD_DEPS_NEED_MALLOC
 #ifndef ZSTD_DEPS_MALLOC
 #    define ZSTD_DEPS_MALLOC
-
-#    include "mem/heap.h"
 
 #    define ZSTD_malloc(s) malloc(s)
 #    define ZSTD_calloc(n, s) calloc((n), (s))
@@ -88,7 +92,11 @@
 #ifndef ZSTD_DEPS_IO
 #    define ZSTD_DEPS_IO
 
-#    define ZSTD_DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__)
+#    ifdef __CPOS_MODULE__
+#        define ZSTD_DEBUG_PRINT(...) printk(__VA_ARGS__)
+#    else
+#        define ZSTD_DEBUG_PRINT(...) fprintf(stderr, __VA_ARGS__)
+#    endif
 
 #endif /* ZSTD_DEPS_IO */
 #endif /* ZSTD_DEPS_NEED_IO */
