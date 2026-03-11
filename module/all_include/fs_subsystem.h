@@ -26,6 +26,8 @@
 #define S_ISGID  0002000
 #define S_ISVTX  0001000
 
+#define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
+
 #include "cp_kernel.h"
 #include "list.h"
 #include "llist.h"

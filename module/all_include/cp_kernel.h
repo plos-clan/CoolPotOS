@@ -1,5 +1,7 @@
 #pragma once
 
+#define assert(expr)
+
 #include "types/stdbool.h"
 #include "types/stdint.h"
 #include "types/stddef.h"

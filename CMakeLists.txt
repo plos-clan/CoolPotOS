@@ -39,6 +39,7 @@ include(tools/bootloader.cmake)
 add_subdirectory(module/e1000)
 add_subdirectory(module/fatfs)
 add_subdirectory(module/iso9660)
+add_subdirectory(module/squashfs)
 
 add_executable(kernel)
 
@@ -113,6 +114,7 @@ if (CPPCHECK)
             -DSIZE_MAX=0xFFFFFFFFFFFFFFFFUL
             ${CPPCHECK_ARCH_DEFS}
             --suppress=missingIncludeSystem
+            --suppress=*:${CMAKE_SOURCE_DIR}/module/squashfs/*
             --suppress=*:${CMAKE_SOURCE_DIR}/module/fatfs/*
             --suppress=*:${CMAKE_SOURCE_DIR}/module/iso9660/*
             --suppress=*:${CMAKE_SOURCE_DIR}/src/term/flanterm/*

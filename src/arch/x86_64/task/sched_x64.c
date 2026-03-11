@@ -231,6 +231,12 @@ static uint64_t build_user_stack(
                             + (argv_i + 0) * sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint64_t);
     tmp_stack -= (tmp_stack - total_length) % 0x10;
 
+    uint8_t random_bytes[16];
+    for (int i = 0; i < 16; i++)
+        random_bytes[i] = (uint8_t)(i * 17 + 42);
+    tmp_stack            = push_slice(tmp_stack, random_bytes, 16);
+    uint64_t random_addr = tmp_stack;
+
     // push auxv
     uint8_t *tmp = (uint8_t *)malloc(2 * sizeof(uint64_t));
     memset(tmp, 0, 2 * sizeof(uint64_t));
@@ -297,12 +303,6 @@ static uint64_t build_user_stack(
     ((uint64_t *)tmp)[1] = 0;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    uint8_t random_bytes[16];
-    for (int i = 0; i < 16; i++)
-        random_bytes[i] = (uint8_t)(i * 17 + 42);
-    tmp_stack            = push_slice(tmp_stack, random_bytes, 16);
-    uint64_t random_addr = tmp_stack;
-
     ((uint64_t *)tmp)[0] = AT_RANDOM;
     ((uint64_t *)tmp)[1] = random_addr;
     tmp_stack            = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
@@ -337,6 +337,7 @@ static uint64_t build_user_stack(
     free(link_data);
     free_argv(argv);
 
+
     return tmp_stack;
 }
 
@@ -356,8 +357,15 @@ _Noreturn void arch_switch_to_user_mode() {
         ulog("process exec read file null.\n");
         goto err;
     }
-    uint64_t load_start = 0;
-    void *entry         = load_executor_elf(data, process->directory, 0, &load_start, process);
+
+    Elf64_Ehdr *ehdr        = (Elf64_Ehdr *)data;
+    uint64_t executor_start = ehdr->e_type == ET_DYN ? EXECUTOR_BASE_ADDR : 0;
+    uint64_t load_start     = 0;
+    void *entry =
+        load_executor_elf(data, process->directory, executor_start, &load_start, process);
+    if (entry != NULL && ehdr->e_type == ET_DYN) {
+        entry = (void *)((uint64_t)entry + load_start);
+    }
     if (entry == NULL) {
         ulog("cannot load process exec file.\n");
         goto err;
@@ -392,7 +400,7 @@ _Noreturn void arch_switch_to_user_mode() {
         size_t link_size      = 0;
 
         linker_main = load_interpreter_elf(
-            data, get_current_directory(), &linker_start, &link_data, &link_size
+            data, process->directory, &linker_start, &link_data, &link_size
         );
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n\r");
@@ -423,7 +431,6 @@ _Noreturn void arch_switch_to_user_mode() {
         }
         // 如未实现 VMA 可以直接去掉这段代码
 
-        logkf("task: linker main: %p - program main: %p\n", linker_main, entry);
         rsp = build_user_stack(
             current, rsp, (uint64_t)entry, linker_start, link_data, link_size, data, load_start
         );

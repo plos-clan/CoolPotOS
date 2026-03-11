@@ -82,9 +82,10 @@
 #define KERNEL_HEAP_SIZE      0x18000000           // 内核堆初始大小 25MB (可扩容)
 #define STACK_SIZE            0x8000               // 32768                // 栈大小
 #define BIG_USER_STACK        999424               // 用户栈大小，要对齐到页
-#define EHDR_START_ADDR       0x0000300000000000   // ELF头起始地址
-#define INTERPRETER_EHDR_ADDR 0x0000200000000000   // 链接器ELF头起始地址
-#define INTERPRETER_BASE_ADDR 0x0000100000000000   // 链接器基址起始地址
+#define EHDR_START_ADDR       0x0000300000000000UL  // ELF头起始地址
+#define INTERPRETER_EHDR_ADDR 0x0000200000000000UL  // 链接器ELF头起始地址
+#define INTERPRETER_BASE_ADDR 0x0000100000000000UL  // 链接器基址起始地址
+#define EXECUTOR_BASE_ADDR    0x0000080000000000UL  // PIE主程序基址起始地址
 #define USER_MMAP_START       0x0000400000000000UL // 用户堆映射起始地址
 #define KERNEL_AREA_MEM       0xf000000000000000   // 内核地址空间起始
 #define DRIVER_AREA_MEM       0xffffb00000000000   // 驱动恒等映射空间偏移

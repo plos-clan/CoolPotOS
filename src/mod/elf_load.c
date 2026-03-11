@@ -169,7 +169,6 @@ void *load_interpreter_elf(
     for (int i = 0; i < ehdr->e_phnum; ++i) {
         if (phdrs[i].p_type == PT_INTERP) {
             interpreter_name = ((char *)ehdr + phdrs[i].p_offset);
-            logkf("load interpreter: %s\n", interpreter_name);
         }
     }
     if (interpreter_name == NULL) {
@@ -190,6 +189,7 @@ void *load_interpreter_elf(
         logkf("exec: libc read error\n\r");
         return NULL;
     }
+
     void *start =
         load_executor_elf((uint8_t *)inter_ehdr, dir, INTERPRETER_BASE_ADDR, load_start, NULL);
     *link_data = (uint8_t *)inter_ehdr;
@@ -216,7 +216,6 @@ void launch_init_process() {
     }
     vfs_close(dev);
 
-    // Initialize ptmx after devtmpfs is mounted
     extern void ptmx_init();
     ptmx_init();
 

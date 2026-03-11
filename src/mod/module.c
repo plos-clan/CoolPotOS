@@ -9,6 +9,20 @@
 module_t boot_modules[MAX_LOAD_MODULE];
 size_t modules_count = 0;
 
+static const char *find_boot_rootfs_name(void) {
+    module_t *mod = get_module("cp_rootfs");
+    if (mod != NULL) {
+        return mod->name;
+    }
+
+    mod = get_module("rootfs");
+    if (mod != NULL) {
+        return mod->name;
+    }
+
+    return NULL;
+}
+
 void extract_name(const char *input, char *output, size_t output_size) {
     const char *name = strrchr(input, '/');
     if (!name) {
@@ -87,4 +101,34 @@ void mount_modfs() {
         }
         vfs_write(mod_node, module0.data, 0, module0.size);
     }
+}
+
+errno_t mount_boot_rootfs() {
+    const char *rootfs_name = find_boot_rootfs_name();
+    if (rootfs_name == NULL) {
+        logkf("rootfs: boot module not found\n\r");
+        return -ENOENT;
+    }
+
+    char rootfs_path[64];
+    sprintf(rootfs_path, "/mod/%s", rootfs_name);
+
+    vfs_mkdir("/new_root");
+
+    vfs_node_t new_root = vfs_open("/new_root");
+    if (new_root == NULL) {
+        logkf("rootfs: cannot open /new_root\n\r");
+        return -ENOENT;
+    }
+
+    errno_t ret = vfs_mount(rootfs_path, "squashfs", new_root, NULL);
+    if (ret != EOK) {
+        logkf("rootfs: squashfs mount from %s failed: %d\n\r", rootfs_path, ret);
+        vfs_close(new_root);
+        return ret;
+    }
+
+    logkf("rootfs: mounted %s on /new_root\n\r", rootfs_path);
+    vfs_close(new_root);
+    return EOK;
 }

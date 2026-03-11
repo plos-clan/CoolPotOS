@@ -15,15 +15,30 @@ size_t terminal_write(tty_t *device, const char *buf, size_t offset, size_t coun
 
 void terminal_cols_rows(tty_t *session, size_t *cols, size_t *rows) {
     struct flanterm_context *fl_context = session->terminal;
-    flanterm_get_dimensions(fl_context, cols, rows);
+
+    if (cols != NULL)
+        *cols = 80;
+    if (rows != NULL)
+        *rows = 25;
+
+    if (fl_context != NULL)
+        flanterm_get_dimensions(fl_context, cols, rows);
 }
 
 void terminal_width_height(tty_t *session, size_t *width, size_t *height) {
     tty_device_t *device = session->device;
+
+    if (width != NULL)
+        *width = 640;
+    if (height != NULL)
+        *height = 400;
+
     if (device->type == TTY_DEVICE_GRAPHI) {
         struct tty_graphics_ *graphics = device->private_data;
-        *width                         = graphics->width;
-        *height                        = graphics->height;
+        if (width != NULL)
+            *width = graphics->width;
+        if (height != NULL)
+            *height = graphics->height;
     }
 }
 

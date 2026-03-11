@@ -14,9 +14,6 @@
 
 ---
 
-I'm working on [flavortown](https://flavortown.hackclub.com/projects/10683)! And
-[www18845340923](https://flavortown.hackclub.com/users/6782) is xiaoyi1212!
-
 Languages
 : *English*
 | [简体中文](readme/README-zh-CN.md)
@@ -50,6 +47,7 @@ You need to install them on your computer:
 - lld (for linking LTO objects)
 - openssl (kernel module key)
 - python3 `cryptography` (sign kernel module)
+- squashfs-tools
 
 ### Options
 
