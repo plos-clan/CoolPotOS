@@ -6,8 +6,48 @@
 #include "task/scheduler.h"
 #include "task/signal.h"
 #include "task/signal_arch.h"
+#include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
+
+static tcb_t find_task_by_id(const pid_t pid) {
+    if (pid == 0) {
+        return get_current_task();
+    }
+
+    pcb_t process = NULL;
+    cow_foreach(get_process_list(), process) {
+        if (process->pid == pid && process->child_threads != NULL) {
+            tcb_t thread = cow_list_get(process->child_threads, 0);
+            if (thread != NULL) {
+                return thread;
+            }
+        }
+
+        if (process->child_threads == NULL) {
+            continue;
+        }
+
+        tcb_t thread = NULL;
+        cow_foreach(process->child_threads, thread) {
+            if (thread->tid == pid) {
+                return thread;
+            }
+        }
+    }
+    return NULL;
+}
+
+static uint64_t default_affinity_mask(void) {
+    const size_t cpu_count = get_cpu_count();
+    if (cpu_count == 0) {
+        return 1;
+    }
+    if (cpu_count >= 64) {
+        return UINT64_MAX;
+    }
+    return (1ULL << cpu_count) - 1ULL;
+}
 
 _Noreturn syscall_(exit, const int exit_code) {
     const tcb_t exit_thread = get_current_task();
@@ -69,6 +109,27 @@ syscall_(getgid) {
 syscall_(yield) {
     scheduler_yield();
     return EOK;
+}
+
+syscall_(sched_getaffinity, const pid_t pid, const size_t cpusetsize, unsigned long *mask) {
+    if (mask == NULL) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+    if (cpusetsize == 0) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
+
+    const tcb_t task = find_task_by_id(pid);
+    if (task == NULL) {
+        return SYSCALL_FAULT_(ESRCH);
+    }
+
+    const uint64_t affinity = task->affinity_mask != 0 ? task->affinity_mask : default_affinity_mask();
+    memset(mask, 0, cpusetsize);
+
+    const size_t copy_size = cpusetsize < sizeof(affinity) ? cpusetsize : sizeof(affinity);
+    memcpy(mask, &affinity, copy_size);
+    return copy_size;
 }
 
 syscall_(setpgid, const pid_t pid, pid_t pgid) {

@@ -26,6 +26,7 @@ cow_arraylist *cow_list_create();
 void cow_list_destroy(cow_arraylist *list);
 void *cow_list_get(cow_arraylist *list, size_t index);
 int cow_list_set(cow_arraylist *list, size_t index, void *element);
+void *cow_list_clear(cow_arraylist *list, size_t index);
 size_t cow_list_add(cow_arraylist *list, void *element);
 void *cow_list_remove(cow_arraylist *list, size_t index);
 size_t cow_list_size(cow_arraylist *list);

@@ -4,6 +4,7 @@
 #include "fs/procfs.h"
 #include "krlibc.h"
 #include "mem/heap.h"
+#include "mem/frame.h"
 #include "mem/lazy_alloc.h"
 #include "metadata.h"
 #include "task/eevdf.h"
@@ -55,20 +56,19 @@ pcb_t found_pcb(pid_t pid) {
 }
 
 static void kill_thread0(pcb_t parent, const tcb_t task) {
+    (void)parent;
     task->status = T_OUT;
-    free((void *)(task->syscall_stack - MAX_STACK_SIZE));
-    free((void *)(task->signal_stack - STACK_SIZE));
-    arch_context_free(task);
     page_directory_t *src_dir = get_current_directory();
-    switch_context_directory(task->process->directory);
+    switch_memory_directory(task->process->directory);
     int *tid_addr = (int *)task->tid_address;
     if (tid_addr != NULL) {
         *tid_addr = 0;
     }
-    switch_context_directory(src_dir);
+    switch_memory_directory(src_dir);
 }
 
 static void kill_proc0(const pcb_t pcb) {
+    pcb->status = T_OUT;
     cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
     while (pcb->child_threads->size > 0) {
         const tcb_t thread = cow_list_get(pcb->child_threads, 0);
@@ -79,37 +79,51 @@ static void kill_proc0(const pcb_t pcb) {
         if (thread->status != T_OUT) {
             kill_thread0(pcb, thread);
         }
-        free(thread);
     }
 
-    cow_list_destroy(pcb->child_threads);
-    cow_list_remove(process_list, pcb->pl_index);
+    cow_list_clear(process_list, pcb->pl_index);
 
     procfs_on_exit_task(pcb);
 
     lazy_free(pcb);
 
-    free_fdt(pcb->fdts);
-    ipc_queue_release(pcb->ipc_queue);
-    free_llist_queue(pcb->virt_queue, NULL, NULL);
+    // 当前内核对 pcb/tcb 的读取没有引用计数保护，立即释放会产生跨 CPU 的 UAF。
+    // 先把对象从全局可见列表摘掉并标记失效，回收延后到将来引入 refcount/RCU 后再做。
+    if (pcb->fdts) {
+        free_fdt(pcb->fdts);
+        pcb->fdts = NULL;
+    }
+    if (pcb->ipc_queue) {
+        ipc_queue_release(pcb->ipc_queue);
+        pcb->ipc_queue = NULL;
+    }
+    if (pcb->virt_queue) {
+        free_llist_queue(pcb->virt_queue, NULL, NULL);
+        pcb->virt_queue = NULL;
+    }
     free(pcb->cmdline);
-    vfs_close(pcb->cwd);
-    vfs_close(pcb->exec);
+    pcb->cmdline = NULL;
+    if (pcb->cwd) {
+        vfs_close(pcb->cwd);
+        pcb->cwd = NULL;
+    }
+    if (pcb->exec) {
+        vfs_close(pcb->exec);
+        pcb->exec = NULL;
+    }
     if (pcb->envp) {
         free_envp(pcb->envp);
+        pcb->envp = NULL;
     }
     free(pcb->ctty_path);
+    pcb->ctty_path = NULL;
     logkf(
         "task: Freeing process %s (PID: %d) vfork: %s\n",
         pcb->name,
         pcb->pid,
         pcb->vfork ? "true" : "false"
     );
-    free(pcb->name);
-    if (!pcb->vfork) {
-        free_page_directory(pcb->directory);
-    }
-    free(pcb);
+    pcb->vfork = false;
 }
 
 void kill_thread(const tcb_t task) {
@@ -122,13 +136,13 @@ void kill_thread(const tcb_t task) {
     task->status = T_DEATH;
     if (task->tid_directory != NULL) {
         page_directory_t *directory = get_current_directory();
-        switch_context_directory(task->tid_directory);
+        switch_memory_directory(task->tid_directory);
         uint64_t futex_key = arch_virt_to_phys(task->tid_address);
         if (task->tid_address != 0 && futex_key != 0) {
             int *tid_addr = (int *)task->tid_address;
             *tid_addr     = 0;
         }
-        switch_context_directory(directory);
+        switch_memory_directory(directory);
         task->tid_address   = 0;
         task->tid_directory = NULL;
     }
@@ -297,8 +311,8 @@ pid_t create_kernel_thread(
     thread->prio          = prio;
     thread->_start        = (uint64_t)func;
     thread->status        = T_CREATE;
-    thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, MAX_STACK_SIZE) + MAX_STACK_SIZE;
+    thread->signal_stack  = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
+    thread->syscall_stack = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
     arch_context_init_thread(thread, arg);
     scheduler_add_task(thread, thread->prio);
     return thread->tid;
@@ -331,8 +345,8 @@ void setup_task() {
     bsp_idle_thread->tid           = alloc_tid();
     bsp_idle_thread->ct_index      = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
     bsp_idle_thread->status        = T_RUNNING;
-    bsp_idle_thread->signal_stack  = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    bsp_idle_thread->syscall_stack = (uint64_t)aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
+    bsp_idle_thread->signal_stack  = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
+    bsp_idle_thread->syscall_stack = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
     arch_context_init(bsp_idle_thread, &bsp_idle_thread->context);
     kinfo("kernel process(%s) PID: %d ", kernel_process->name, kernel_process->pid);
 }

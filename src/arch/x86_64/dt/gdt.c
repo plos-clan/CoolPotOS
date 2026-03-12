@@ -1,10 +1,12 @@
 #include "description_table.h"
+#include "../../../../module/all_include/mem_subsystem.h"
+#include "mem/frame.h"
+#include "task/smp.h"
 #include "term/klog.h"
 
 static gdt_entries_t gdt_entries;
 static struct gdt_register gdt_pointer;
 static tss_t tss0;
-static tss_stack_t tss_stack;
 
 static __attr(naked) void _setcs_helper() {
     __asm__ volatile("pop %%rax\n\t"
@@ -54,11 +56,23 @@ void tss_setup() {
     gdt_entries[5]       = low_base | mid_base | limit | access_byte;
     gdt_entries[6]       = high_base;
 
-    tss0.ist[0] = (uint64_t)&tss_stack + sizeof(tss_stack_t);
+    tss0.ist[0] = (uint64_t)phys_to_virt((alloc_frames(STACK_SIZE / PAGE_SIZE) + STACK_SIZE));
+    tss0.ist[1] = tss0.ist[0];
+    tss0.ist[2] = tss0.ist[0];
+    tss0.ist[3] = tss0.ist[0];
+    tss0.ist[4] = tss0.ist[0];
+    tss0.ist[5] = tss0.ist[0];
+    tss0.ist[6] = tss0.ist[0];
 
     __asm__ volatile("ltr %[offset];" : : [offset] "rm"(0x28U) : "memory");
 }
 
 void set_kernel_stack(const uint64_t rsp) {
-    tss0.rsp[0] = rsp;
+    cpu_local_t *local = arch_current_cpu();
+    if (local) {
+        local->arch_data.tss0.rsp[0] = rsp;
+    }
+    else {
+        tss0.rsp[0] = rsp;
+    }
 }

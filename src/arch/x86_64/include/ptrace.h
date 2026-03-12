@@ -27,7 +27,7 @@ struct pt_regs {
     uint64_t rflags;
     uint64_t rsp;
     uint64_t ss;
-};
+} __attribute__((packed));
 
 struct interrupt_frame {
     uint64_t rip;
@@ -35,7 +35,7 @@ struct interrupt_frame {
     uint64_t rflags;
     uint64_t rsp;
     uint64_t ss;
-};
+} __attribute__((packed));
 
 struct syscall_regs {
     uint64_t r15;
@@ -62,4 +62,4 @@ struct syscall_regs {
     uint64_t rflags;
     uint64_t rsp;
     uint64_t ss;
-};
+} __attribute__((packed));

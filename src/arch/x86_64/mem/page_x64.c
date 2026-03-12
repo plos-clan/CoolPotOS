@@ -252,7 +252,7 @@ void free_page_directory(page_directory_t *dir) {
 
 void switch_page_directory0(page_directory_t *dir) {
     page_table_t *physical_table = (page_table_t *)virt_to_phys(dir->table);
-    __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
+    __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table) : "memory");
 }
 
 void arch_page_setup_l2() {

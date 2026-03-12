@@ -14,7 +14,8 @@ extern void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved
         if (current_task != NULL) {                                                                \
             pcb_t process = current_task->process;                                                 \
             if (process->pid != 0) {                                                               \
-                logkf(#exc ": error_code %x at %p\n\r", error_code, frame->rip);                   \
+                logkf(#exc ": error_code %x at %p, stack at %p\n\r",                               \
+                        error_code, frame->rip, frame->rsp);                                       \
                 logkf(                                                                             \
                     "current process(%s:%d) thread:%s:%d\n\r",                                     \
                     process->name,                                                                 \
@@ -107,7 +108,7 @@ device_not_available(const struct interrupt_frame *frame, const uint64_t error_c
 
 __IRQHANDLER void double_fault(const struct interrupt_frame *frame, const uint64_t error_code) {
     HANDLE_USER_EXCEPTION(double_fault);
-    kerror("double_fault: error_code %x at %p", error_code, frame->rip);
+    kerror("double_fault: error_code %x at %p, stack at %p", error_code, frame->rip, frame->rsp);
     while (true) {
         arch_wait_for_interrupt();
     }
@@ -190,10 +191,11 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
         }
     kill:
         logkf(
-            "page_fault %s process(%s:%d) thread %s:%d (%p)->%p\n",
+            "page_fault %s process(%s:%d,%s) thread %s:%d (%p)->%p\n",
             error_msg,
             current_task->process->name,
             current_task->process->pid,
+            (frame->cs & 0x3) ? "User" : "Kernel",
             current_task->name,
             current_task->tid,
             faulting_address,
@@ -274,7 +276,7 @@ void init_err_handle() {
     register_interrupt_handler(5, bound_range_exceeded, 0, 0x8E);
     register_interrupt_handler(6, invalid_opcode, 0, 0x8E);
     register_interrupt_handler(7, device_not_available, 0, 0x8E);
-    register_interrupt_handler(8, double_fault, 0, 0x8E);
+    register_interrupt_handler(8, double_fault, 1, 0x8E);
     register_interrupt_handler(10, invalid_tss, 0, 0x8E);
     register_interrupt_handler(11, segment_not_present, 0, 0x8E);
     register_interrupt_handler(12, stack_segment_fault, 0, 0x8E);

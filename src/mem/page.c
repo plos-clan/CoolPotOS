@@ -94,6 +94,18 @@ page_directory_t *switch_context_directory(page_directory_t *directory) {
     return ret;
 }
 
+page_directory_t *switch_memory_directory(page_directory_t *directory) {
+    const bool is_sti = arch_check_interrupt();
+    arch_close_interrupt();
+
+    page_directory_t *ret = get_current_directory();
+    switch_page_directory(directory);
+
+    if (is_sti)
+        arch_open_interrupt();
+    return ret;
+}
+
 page_directory_t *get_current_directory() {
     cpu_local_t *local = arch_current_cpu();
     if (local == NULL)

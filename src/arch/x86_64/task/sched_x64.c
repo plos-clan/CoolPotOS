@@ -5,6 +5,7 @@
 #include "intctl.h"
 #include "io.h"
 #include "krlibc.h"
+#include "apic.h"
 #include "lock.h"
 #include "mem/page.h"
 #include "ptrace.h"
@@ -14,6 +15,18 @@
 #include "timer.h"
 
 spin_t tsc_lock = SPIN_INIT;
+
+__attribute__((naked, noreturn)) void
+arch_run_on_kernel_stack(uint64_t stack_top, arch_stack_entry_t entry, void *arg) {
+    __asm__ volatile(
+        "mov %rdi, %rsp\n\t"
+        "andq $-16, %rsp\n\t"
+        "xorq %rbp, %rbp\n\t"
+        "mov %rdx, %rdi\n\t"
+        "call *%rsi\n\t"
+        "ud2\n\t"
+    );
+}
 
 void cpuid(uint32_t code, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
     __asm__ volatile("cpuid" : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d) : "a"(code) : "memory");
@@ -76,10 +89,16 @@ end:
 }
 
 void arch_context_init(tcb_t thread, struct arch_context_ *context) {
-    context->kernel_stack = get_rsp();
-    context->user_stack   = get_rsp();
+    context->kernel_stack = (uint64_t)thread + STACK_SIZE;
+    context->user_stack   = context->kernel_stack;
+    context->user_stack_top = context->kernel_stack;
+    context->regs.rsp     = context->kernel_stack;
     context->regs.rflags  = get_rflags();
-    set_kernel_stack(get_rsp());
+    context->regs.cs      = 0x8;
+    context->regs.ss      = 0x10;
+    context->regs.es      = 0x10;
+    context->regs.ds      = 0x10;
+    set_kernel_stack(context->kernel_stack);
     context->fs_base = read_fsbase();
     context->gs_base = read_gsbase();
     context->fs = context->gs = 0;

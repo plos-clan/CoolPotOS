@@ -2,6 +2,7 @@
 #include "description_table.h"
 #include "fpu.h"
 #include "fsgsbase.h"
+#include "io.h"
 #include "krlibc.h"
 #include "mem/frame.h"
 #include "mem/page.h"
@@ -16,6 +17,18 @@ static __attr(naked) void _setcs_helper() {
                      "push %%rax\n\t"
                      "lretq\n\t" ::
                          : "memory");
+}
+
+extern spin_t ap_startup_lock;
+
+static _Noreturn void arch_ap_idle_loop(void *arg) {
+    (void)arg;
+    spin_unlock(ap_startup_lock);
+    arch_open_interrupt();
+
+    while (true) {
+        arch_wait_for_interrupt();
+    }
 }
 
 static void apu_gdt_setup() {
@@ -47,9 +60,6 @@ static void apu_gdt_setup() {
                        "b"((uint16_t)0x8U)
                      : "memory");
 
-    write_gsbase((uint64_t)this_cpu);
-    write_kgsbase((uint64_t)this_cpu);
-
     uint64_t address     = (uint64_t)&(this_cpu->arch_data.tss0);
     uint64_t low_base    = (address & 0xffffffU) << 16U;
     uint64_t mid_base    = (address >> 24U & 0xffU) << 56U;
@@ -60,17 +70,22 @@ static void apu_gdt_setup() {
     this_cpu->arch_data.gdtEntries[5] = (((low_base | mid_base) | limit) | access_byte);
     this_cpu->arch_data.gdtEntries[6] = high_base;
 
-    this_cpu->arch_data.tss0.ist[0] =
-        ((uint64_t)&(this_cpu->arch_data.tss_stack)) + sizeof(tss_stack_t);
+    this_cpu->arch_data.tss0.ist[0] = (uint64_t)phys_to_virt((alloc_frames(STACK_SIZE / PAGE_SIZE) + STACK_SIZE));
+    this_cpu->arch_data.tss0.ist[1] = this_cpu->arch_data.tss0.ist[0];
+    this_cpu->arch_data.tss0.ist[2] = this_cpu->arch_data.tss0.ist[0];
+    this_cpu->arch_data.tss0.ist[3] = this_cpu->arch_data.tss0.ist[0];
+    this_cpu->arch_data.tss0.ist[4] = this_cpu->arch_data.tss0.ist[0];
+    this_cpu->arch_data.tss0.ist[5] = this_cpu->arch_data.tss0.ist[0];
+    this_cpu->arch_data.tss0.ist[6] = this_cpu->arch_data.tss0.ist[0];
 
     __asm__ volatile("ltr %[offset]\n\t" : : [offset] "rm"(0x28U) : "memory");
+
+    write_gsbase((uint64_t)this_cpu);
+    write_kgsbase((uint64_t)this_cpu);
 }
 
 void arch_bsp_cpu_init() {
-    uint32_t this_id      = lapic_id();
-    cpu_local_t *this_cpu = get_cpu_local(this_id);
-    write_gsbase((uint64_t)this_cpu);
-    write_kgsbase((uint64_t)this_cpu);
+    apu_gdt_setup();
 }
 
 cpu_local_t *arch_current_cpu() {
@@ -86,9 +101,9 @@ _Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
 
     page_table_t *physical_table = (page_table_t *)virt_to_phys(get_kernel_pagedir()->table);
     __asm__ volatile("mov %0, %%cr3" : : "r"(physical_table));
+    ap_local_apic_init();
     apu_gdt_setup();
     __asm__ volatile("lidt %0" : : "m"(*get_idt_register()) : "memory");
-    ap_local_apic_init();
     calibrate_tsc_with_hpet();
 
     tcb_t idle_thread = malloc(STACK_SIZE);
@@ -97,13 +112,12 @@ _Noreturn void arch_ap_cpu_entry(uint64_t hartid) {
     idle_thread->tid      = alloc_tid();
     idle_thread->ct_index = cow_list_add(get_kernel_process()->child_threads, idle_thread);
     idle_thread->status   = T_RUNNING;
+    idle_thread->syscall_stack = (uint64_t)phys_to_virt(alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE);
+    idle_thread->signal_stack = (uint64_t)phys_to_virt(alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE);
+    idle_thread->call_in_signal = false;
     scheduler_set_cpu_idle(idle_thread, arch_current_cpu());
     float_processor_setup();
     arch_context_init(idle_thread, &idle_thread->context);
     arch_enable_syscall();
-    arch_open_interrupt();
-
-    while (true) {
-        arch_wait_for_interrupt();
-    }
+    arch_run_on_kernel_stack(idle_thread->context.kernel_stack, arch_ap_idle_loop, NULL);
 }

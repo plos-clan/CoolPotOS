@@ -12,3 +12,7 @@ struct arch_context_ {
     uint64_t fs, gs;
     uint64_t fs_base, gs_base;
 };
+
+typedef void (*arch_stack_entry_t)(void *);
+
+void arch_run_on_kernel_stack(uint64_t stack_top, arch_stack_entry_t entry, void *arg) __attribute__((noreturn));

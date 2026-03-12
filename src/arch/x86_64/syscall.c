@@ -10,6 +10,7 @@
 #include "term/klog.h"
 
 syscall_(arch_prctl, uint64_t code, uint64_t addr); // prsys_x64.c
+syscall_(sched_getaffinity, pid_t pid, size_t cpusetsize, unsigned long *mask); // prsys.c
 
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
@@ -205,6 +206,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_CHROOT]        = (syscall_t)syscall_chroot,
     [SYSCALL_SETITIMER]     = (syscall_t)syscall_setitimer,
     [SYSCALL_KILL]          = (syscall_t)syscall_kill,
+    [SYSCALL_G_AFFINITY]    = (syscall_t)syscall_sched_getaffinity,
     [SYSCALL_CAPGET]        = (syscall_t)syscall_capget,
     [SYSCALL_CAPSET]        = (syscall_t)syscall_capset,
     [SYSCALL_CHOWN]         = (syscall_t)syscall_chown,
@@ -250,27 +252,6 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
 
     tcb_t thread = get_current_task();
     write_fsbase((uint64_t)thread);
-    thread->context.regs.rsp    = regs->rsp;
-    thread->context.regs.rip    = regs->rip;
-    thread->context.regs.rflags = regs->rflags;
-    thread->context.regs.cs     = regs->cs;
-    thread->context.regs.ss     = regs->ss;
-    thread->context.regs.ds     = regs->ds;
-    thread->context.regs.es     = regs->es;
-    thread->context.regs.rdi    = regs->rdi;
-    thread->context.regs.rsi    = regs->rsi;
-    thread->context.regs.rdx    = regs->rdx;
-    thread->context.regs.r10    = regs->r10;
-    thread->context.regs.r8     = regs->r8;
-    thread->context.regs.r9     = regs->r9;
-    thread->context.regs.r15    = regs->r15;
-    thread->context.regs.r14    = regs->r14;
-    thread->context.regs.r13    = regs->r13;
-    thread->context.regs.r12    = regs->r12;
-    thread->context.regs.r11    = regs->r11;
-    thread->context.regs.rbx    = regs->rbx;
-    thread->context.regs.rcx    = regs->rcx;
-    thread->context.regs.rbp    = regs->rbp;
 
     uint64_t syscall_id = regs->rax & 0xFFFFFFFF;
 

@@ -111,13 +111,15 @@
 #define SYSCALL_PRCTL         157
 #define SYSCALL_ARCH_PRCTL    158
 #define SYSCALL_PIVOT_ROOT    155
-#define SYSCALL_G_AFFINITY    160
+#define SYSCALL_SETRLIMIT     160
 #define SYSCALL_CHROOT        161
 #define SYSCALL_SYNC          162
 #define SYSCALL_MOUNT         165
 #define SYSCALL_UMOUNT2       166
 #define SYSCALL_REBOOT        169
 #define SYSCALL_GET_TID       186
+#define SYSCALL_S_AFFINITY    203
+#define SYSCALL_G_AFFINITY    204
 #define SYSCALL_FUTEX         202
 #define SYSCALL_GETDENTS64    217
 #define SYSCALL_SETID_ADDR    218

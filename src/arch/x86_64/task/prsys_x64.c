@@ -2,6 +2,7 @@
 #include "fs/procfs.h"
 #include "fsgsbase.h"
 #include "mem/lazy_alloc.h"
+#include "mem/frame.h"
 #include "nr.h"
 #include "syscall.h"
 #include "task/scheduler.h"
@@ -110,8 +111,8 @@ static uint64_t process_fork(const struct syscall_regs *reg,const bool is_vfork,
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
 
-    void *signal_stack  = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    void *syscall_stack = aligned_alloc(PAGE_SIZE, MAX_STACK_SIZE) + MAX_STACK_SIZE;
+    void *signal_stack  = phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
+    void *syscall_stack = phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
     memset((void *)(signal_stack - STACK_SIZE), 0, STACK_SIZE);
     memset((void *)(syscall_stack - MAX_STACK_SIZE), 0, MAX_STACK_SIZE);
     new_task->signal_stack  = (uint64_t)signal_stack;
@@ -190,18 +191,26 @@ uint64_t thread_clone(
     new_task->context.regs.rbp    = reg->rbp;
     new_task->context.regs.rcx    = reg->rcx;
 
-    memcpy(&new_task->context.context, &parent_task->context.context, sizeof(fpu_context_t));
+    new_task->context.context = aligned_alloc(16, sizeof(struct fpu_context));
+    if (new_task->context.context == NULL) {
+        free(new_task->name);
+        free(new_task);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
+    memcpy(new_task->context.context, parent_task->context.context, sizeof(fpu_context_t));
 
     new_task->affinity_mask   = parent_task->affinity_mask;
     new_task->context.fs      = parent_task->context.fs;
     new_task->context.fs_base = parent_task->context.fs_base;
+    new_task->context.gs      = parent_task->context.gs;
+    new_task->context.gs_base = parent_task->context.gs_base;
 
     // Inherit signal handlers and blocked mask from parent
     memcpy(new_task->actions, parent_task->actions, sizeof(parent_task->actions));
     new_task->blocked = parent_task->blocked;
 
-    void *signal_stack  = aligned_alloc(PAGE_SIZE, STACK_SIZE) + STACK_SIZE;
-    void *syscall_stack = aligned_alloc(PAGE_SIZE, MAX_STACK_SIZE) + MAX_STACK_SIZE;
+    void *signal_stack  = phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
+    void *syscall_stack = phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
     memset((void *)(signal_stack - STACK_SIZE), 0, STACK_SIZE);
     memset((void *)(syscall_stack - MAX_STACK_SIZE), 0, MAX_STACK_SIZE);
     new_task->signal_stack  = (uint64_t)signal_stack;

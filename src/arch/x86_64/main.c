@@ -54,6 +54,25 @@
 extern void kallsyms_init_from_elf();
 extern void zero_setup();
 
+static _Noreturn void bsp_idle_loop(void *arg) {
+    (void)arg;
+
+    arch_open_interrupt();
+    scheduler_enable();
+    start_all_kernel_module();
+
+    extern void mount_modfs();
+    extern errno_t mount_boot_rootfs();
+    mount_modfs();
+
+    init_console_symlink();
+
+    launch_init_process(); // ptmx_init() is called inside this function
+
+    while (true)
+        arch_wait_for_interrupt();
+}
+
 USED _Noreturn void kmain() {
     init_stack_canary();
 
@@ -131,24 +150,5 @@ USED _Noreturn void kmain() {
     cpio_init();
     procfs_setup();
     ksuccess("Kernel load done!");
-    arch_open_interrupt();
-    scheduler_enable();
-    start_all_kernel_module();
-
-    extern void mount_modfs();
-    extern errno_t mount_boot_rootfs();
-    mount_modfs();
-
-    init_console_symlink();
-
-    // usb_kservice_setup();
-
-    launch_init_process(); // ptmx_init() is called inside this function
-
-    //    for (int i = 0; i < 10; i++) {
-    //        create_kernel_thread("test_thread",(void*)test_proc,NULL,NULL, NICE_TO_PRIO(0));
-    //    }
-
-    while (true)
-        arch_wait_for_interrupt();
+    arch_run_on_kernel_stack(get_bsp_idle_thread()->context.kernel_stack, bsp_idle_loop, NULL);
 }

@@ -11,8 +11,8 @@ target_compile_options(kernel PRIVATE
         -Wno-incompatible-library-redeclaration
         -Wno-unused-function
         -flto
-        -fstack-protector
-        -fstack-protector-all
+        # -fstack-protector
+        # -fstack-protector-all
         ${COMPILE_MODE}
 )
 

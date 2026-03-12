@@ -41,7 +41,6 @@ struct tss {
 
 typedef struct tss tss_t;
 typedef uint64_t gdt_entries_t[7];
-typedef uint8_t tss_stack_t[1024];
 
 void tss_setup();
 void set_kernel_stack(uint64_t rsp); // 一定要在 apic 初始化后用!!!!!!!!

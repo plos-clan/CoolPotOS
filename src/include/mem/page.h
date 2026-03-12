@@ -91,6 +91,12 @@ page_directory_t *get_current_directory();
 page_directory_t *switch_context_directory(page_directory_t *directory);
 
 /**
+ * 临时切换当前 CPU 的地址空间, 不修改 current->process->directory
+ * 用于在内核中短暂访问其它地址空间
+ */
+page_directory_t *switch_memory_directory(page_directory_t *directory);
+
+/**
  * 根据页表反向解析出物理地址
  * @param va 虚拟地址
  * @return 物理地址

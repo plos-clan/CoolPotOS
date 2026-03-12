@@ -48,18 +48,18 @@ void load_segment(
     } else
         for (size_t i = lo; i < hi; i += 0x1000) {
             page_map_to(directory, i, alloc_frames(1), flags);
-        }
+    }
     uint64_t p_vaddr      = (uint64_t)phdr->p_vaddr + offset;
     uint64_t p_filesz     = (uint64_t)phdr->p_filesz;
     uint64_t p_memsz      = (uint64_t)phdr->p_memsz;
     page_directory_t *dir = get_current_directory();
-    switch_context_directory(directory);
+    switch_memory_directory(directory);
     memcpy((void *)p_vaddr, elf + phdr->p_offset, p_filesz);
 
     if (p_memsz > p_filesz) { // 这个是bss段
         memset((void *)(p_vaddr + p_filesz), 0, p_memsz - p_filesz);
     }
-    switch_context_directory(dir);
+    switch_memory_directory(dir);
 }
 
 bool mmap_phdr_segment(
@@ -129,7 +129,7 @@ void *load_executor_elf(
     }
     Elf64_Phdr *phdrs     = (Elf64_Phdr *)((char *)ehdr + ehdr->e_phoff);
     page_directory_t *cur = get_current_directory();
-    switch_context_directory(dir);
+    switch_memory_directory(dir);
     size_t load_size = 0;
     if (!mmap_phdr_segment(ehdr, phdrs, dir, true, offset, load_start, &load_size)) {
         logkf("exec: mmap phdr segment error.\n\r");
@@ -147,7 +147,7 @@ void *load_executor_elf(
         ld_so_vma->vm_name = strdup(process->name);
         vma_insert(&process->vma_manager, ld_so_vma);
     }
-    switch_context_directory(cur);
+    switch_memory_directory(cur);
     return (void *)ehdr->e_entry;
 }
 

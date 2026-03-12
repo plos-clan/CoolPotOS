@@ -62,10 +62,15 @@ void *cow_list_get(cow_arraylist *list, size_t index) {
 
     size_t block_index   = index / BLOCK_SIZE;
     size_t element_index = index % BLOCK_SIZE;
+    void *element        = NULL;
 
+    spin_lock(list->lock);
     cow_block *block = list->blocks[block_index];
-
-    return block->elements[element_index];
+    if (block != NULL) {
+        element = block->elements[element_index];
+    }
+    spin_unlock(list->lock);
+    return element;
 }
 
 int cow_list_set(cow_arraylist *list, size_t index, void *element) {
@@ -91,6 +96,45 @@ int cow_list_set(cow_arraylist *list, size_t index, void *element) {
     block_release(old_block);
     spin_unlock(list->lock);
     return 0;
+}
+
+void *cow_list_clear(cow_arraylist *list, size_t index) {
+    if (list == NULL || index >= list->size) {
+        return NULL;
+    }
+
+    size_t block_index   = index / BLOCK_SIZE;
+    size_t element_index = index % BLOCK_SIZE;
+    void *old_element    = NULL;
+
+    spin_lock(list->lock);
+
+    cow_block *old_block = list->blocks[block_index];
+    if (old_block == NULL) {
+        spin_unlock(list->lock);
+        return NULL;
+    }
+
+    old_element = old_block->elements[element_index];
+    if (old_element == NULL) {
+        spin_unlock(list->lock);
+        return NULL;
+    }
+
+    cow_block *new_block = (cow_block *)malloc(sizeof(cow_block));
+    if (new_block == NULL) {
+        spin_unlock(list->lock);
+        return old_element;
+    }
+
+    memcpy(new_block, old_block, sizeof(cow_block));
+    __atomic_store_n((size_t *)&new_block->ref_count, 1, __ATOMIC_RELEASE);
+    new_block->elements[element_index] = NULL;
+    list->blocks[block_index]          = new_block;
+    block_release(old_block);
+
+    spin_unlock(list->lock);
+    return old_element;
 }
 
 size_t cow_list_add(cow_arraylist *list, void *element) {

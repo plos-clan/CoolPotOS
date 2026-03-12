@@ -112,7 +112,7 @@ bool scheduler_add_task(tcb_t thread, uint64_t prio) {
     if (thread == NULL) {
         return false;
     }
-    cpu_local_t *local = NULL; // get_min_task_count_cpu();
+    cpu_local_t *local = get_min_task_count_cpu();
     local              = local == NULL ? arch_current_cpu() : local;
     if (local == NULL) {
         return false;
@@ -164,14 +164,14 @@ void scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu) {
 }
 
 void scheduler_set_cpu_idle(tcb_t thread, cpu_local_t *cpu) {
-    thread->prio      = NICE_TO_PRIO(-20);
-    cpu->idle_task    = thread;
-    cpu->current_task = thread;
-    cpu->is_yield     = false;
-    cpu->jiffies      = 0;
-    cpu->idle_jiffies = 0;
-    cpu->task_count   = 1;
-    thread->cpu_id    = cpu->id;
+    thread->prio        = NICE_TO_PRIO(-20);
+    cpu->idle_task      = thread;
+    cpu->current_task   = thread;
+    cpu->is_yield       = false;
+    cpu->jiffies        = 0;
+    cpu->idle_jiffies   = 0;
+    cpu->task_count     = 1;
+    thread->cpu_id      = cpu->id;
 #if EEVDF_SCHEDULER
     init_cpu_idle(cpu, thread);
 #else
