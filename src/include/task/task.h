@@ -103,7 +103,7 @@ struct process_control_block {
     size_t ppl_index;             // 子进程列表索引
     cow_arraylist *child_threads; // 子线程
     cow_arraylist *child_process; // 子进程
-    task_status status;           // 进程状态
+    _Atomic(task_status) status;  // 进程状态
 
     page_directory_t *directory; // 进程页表
     vma_manager_t vma_manager;   // VMA 内存管理器

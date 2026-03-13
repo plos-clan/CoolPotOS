@@ -650,19 +650,24 @@ static bool squashfs_close(void *current) {
 }
 
 static size_t squashfs_read(void *file, void *addr, size_t offset, size_t size) {
-    const squashfs_handle_t *handle = file;
+    squashfs_handle_t *handle = file;
+
+    spin_lock(handle->lock);
 
     if (handle == NULL || addr == NULL) {
+        spin_unlock(handle->lock);
         return (size_t)-1;
     }
 
     if (handle->inode->base.type != SQFS_INODE_FILE
         && handle->inode->base.type != SQFS_INODE_EXT_FILE) {
+        spin_unlock(handle->lock);
         return (size_t)-1;
     }
 
     const sqfs_s32 ret =
         sqfs_data_reader_read(handle->mount->data_reader, handle->inode, offset, addr, size);
+    spin_unlock(handle->lock);
     return ret < 0 ? (size_t)-1 : (size_t)ret;
 }
 

@@ -36,6 +36,7 @@ typedef struct retired_process_node {
 static retired_thread_node_t *retired_threads    = NULL;
 static retired_process_node_t *retired_processes = NULL;
 static spin_t retired_lock                       = SPIN_INIT;
+static spin_t task_exit_lock                     = SPIN_INIT;
 
 cow_arraylist *get_process_list() {
     return process_list;
@@ -340,6 +341,39 @@ static void kill_thread0(pcb_t parent, const tcb_t task) {
     enqueue_retired_thread(task);
 }
 
+static bool claim_thread_exit(const tcb_t task) {
+    spin_lock(task_exit_lock);
+    if (task->status == T_DEATH || task->status == T_OUT) {
+        spin_unlock(task_exit_lock);
+        return false;
+    }
+    task->status = T_DEATH;
+    spin_unlock(task_exit_lock);
+    return true;
+}
+
+static bool claim_process_zombie_exit(const pcb_t pcb) {
+    spin_lock(task_exit_lock);
+    if (pcb->status == T_DEATH || pcb->status == T_OUT || pcb->status == T_ZOMBIE) {
+        spin_unlock(task_exit_lock);
+        return false;
+    }
+    pcb->status = T_DEATH;
+    spin_unlock(task_exit_lock);
+    return true;
+}
+
+static bool claim_process_reap(const pcb_t pcb) {
+    spin_lock(task_exit_lock);
+    if (pcb->status != T_ZOMBIE) {
+        spin_unlock(task_exit_lock);
+        return false;
+    }
+    pcb->status = T_DEATH;
+    spin_unlock(task_exit_lock);
+    return true;
+}
+
 static void kill_proc0(const pcb_t pcb) {
     pcb->status = T_OUT;
     reparent_process_children(pcb);
@@ -367,8 +401,6 @@ static void kill_proc0(const pcb_t pcb) {
 
     lazy_free(pcb);
 
-    // 当前内核对 pcb/tcb 的读取没有引用计数保护，立即释放会产生跨 CPU 的 UAF。
-    // 先把对象从全局可见列表摘掉并标记失效，回收延后到将来引入 refcount/RCU 后再做。
     if (pcb->fdts) {
         free_fdt(pcb->fdts);
         pcb->fdts = NULL;
@@ -414,10 +446,9 @@ void kill_thread(const tcb_t task) {
     if (task == NULL) {
         return;
     }
-    if (task->status == T_DEATH || task->status == T_OUT) {
+    if (!claim_thread_exit(task)) {
         return;
     }
-    task->status = T_DEATH;
     if (task->tid_directory != NULL) {
         page_directory_t *directory = get_current_directory();
         switch_memory_directory(task->tid_directory);
@@ -443,12 +474,6 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
     if (pcb == NULL) {
         return;
     }
-    if (pcb->status == T_DEATH) {
-        return;
-    }
-    if (is_zombie && pcb->status == T_ZOMBIE) {
-        return;
-    }
     if (pcb->pid == kernel_process->pid) {
         kerror("Cannot kill System process.");
         return;
@@ -458,6 +483,9 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
     }
 
     if (is_zombie) {
+        if (!claim_process_zombie_exit(pcb)) {
+            return;
+        }
         scheduler_disable();
         for (size_t i = pcb->child_threads->size; i > 0; i--) {
             tcb_t tcb = cow_list_get(pcb->child_threads, i - 1);
@@ -488,12 +516,18 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
             if (handle != NULL) {
                 vfs_close(handle->node);
                 free(handle);
+                pcb->fdts->fds[i] = NULL;
             }
         }
 
+        spin_lock(task_exit_lock);
+        pcb->status = T_ZOMBIE;
+        spin_unlock(task_exit_lock);
         scheduler_enable();
     } else {
-        pcb->status = T_DEATH;
+        if (!claim_process_reap(pcb)) {
+            return;
+        }
         kill_proc0(pcb);
     }
 }

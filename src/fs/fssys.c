@@ -1386,6 +1386,44 @@ syscall_(readlink, char *path, char *buf, uint64_t size) {
     return vfs_readlink(node, buf, (size_t)size);
 }
 
+syscall_(lgetxattr, const char *path, const char *name, void *value, size_t size) {
+    if (path == NULL || name == NULL) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
+    if (value != NULL && size != 0 && check_user_overflow((uint64_t)value, size)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    char *npath     = vfs_cwd_path_build((char *)path);
+    vfs_node_t node = vfs_open_nofollow(npath);
+    free(npath);
+    if (node == NULL) {
+        return SYSCALL_FAULT_(ENOENT);
+    }
+
+    // The VFS currently has no extended attribute storage/query interface.
+    return SYSCALL_FAULT_(EOPNOTSUPP);
+}
+
+syscall_(llistxattr, const char *path, char *list, size_t size) {
+    if (path == NULL) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
+    if (list != NULL && size != 0 && check_user_overflow((uint64_t)list, size)) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
+    char *npath     = vfs_cwd_path_build((char *)path);
+    vfs_node_t node = vfs_open_nofollow(npath);
+    free(npath);
+    if (node == NULL) {
+        return SYSCALL_FAULT_(ENOENT);
+    }
+
+    // The VFS currently has no extended attribute storage/query interface.
+    return SYSCALL_FAULT_(EOPNOTSUPP);
+}
+
 syscall_(chmod, char *path, uint64_t mode) {
     if (unlikely(!path || check_user_overflow((uint64_t)path, strlen(path)))) {
         return SYSCALL_FAULT_(EFAULT);

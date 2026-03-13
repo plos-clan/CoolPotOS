@@ -77,7 +77,8 @@ void init_tty() {
     kernel_session = malloc(sizeof(tty_t));
 }
 
-static void tty_event_handle(indev_t *device, const intype type, const uint64_t code, uint8_t value) {
+static void
+tty_event_handle(indev_t *device, const intype type, const uint64_t code, uint8_t value) {
     if (type == EV_CHAR) {
         const char *ascii_code = (char *)code;
         const size_t length    = strlen(ascii_code);
@@ -143,11 +144,11 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         termios->c_cflag        = session->termios.c_cflag;
         termios->c_lflag        = session->termios.c_lflag;
 
-        termios->c_cc[VINTR]    = session->termios.c_cc[VINTR];  // Ctrl-C
-        termios->c_cc[VQUIT]    = session->termios.c_cc[VQUIT];  // Ctrl-\
+        termios->c_cc[VINTR]    = session->termios.c_cc[VINTR]; // Ctrl-C
+        termios->c_cc[VQUIT]    = session->termios.c_cc[VQUIT]; // Ctrl-\
         termios->c_cc[VERASE]   = session->termios.c_cc[VERASE]; // Backspace
-        termios->c_cc[VKILL]    = session->termios.c_cc[VKILL];  // Ctrl-U
-        termios->c_cc[VEOF]     = session->termios.c_cc[VEOF];   // Ctrl-D
+        termios->c_cc[VKILL]    = session->termios.c_cc[VKILL]; // Ctrl-U
+        termios->c_cc[VEOF]     = session->termios.c_cc[VEOF];  // Ctrl-D
         termios->c_cc[VTIME]    = session->termios.c_cc[VTIME];
         termios->c_cc[VMIN]     = session->termios.c_cc[VMIN];
         termios->c_cc[VSTART]   = session->termios.c_cc[VSTART];   // Ctrl-Q
@@ -174,11 +175,11 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         session->termios.c_cflag         = termios_sw->c_cflag;
         session->termios.c_line          = termios_sw->c_line;
 
-        session->termios.c_cc[VINTR]    = termios_sw->c_cc[VINTR];  // Ctrl-C
-        session->termios.c_cc[VQUIT]    = termios_sw->c_cc[VQUIT];  // Ctrl-\
+        session->termios.c_cc[VINTR]    = termios_sw->c_cc[VINTR]; // Ctrl-C
+        session->termios.c_cc[VQUIT]    = termios_sw->c_cc[VQUIT]; // Ctrl-\
         session->termios.c_cc[VERASE]   = termios_sw->c_cc[VERASE]; // Backspace
-        session->termios.c_cc[VKILL]    = termios_sw->c_cc[VKILL];  // Ctrl-U
-        session->termios.c_cc[VEOF]     = termios_sw->c_cc[VEOF];   // Ctrl-D
+        session->termios.c_cc[VKILL]    = termios_sw->c_cc[VKILL]; // Ctrl-U
+        session->termios.c_cc[VEOF]     = termios_sw->c_cc[VEOF];  // Ctrl-D
         session->termios.c_cc[VTIME]    = termios_sw->c_cc[VTIME];
         session->termios.c_cc[VMIN]     = termios_sw->c_cc[VMIN];
         session->termios.c_cc[VSTART]   = termios_sw->c_cc[VSTART];   // Ctrl-Q
@@ -321,6 +322,7 @@ static tty_t *alloc_tty_session(tty_device_t *device) {
     session->queue         = create_atom_queue(1024);
     session->tty_kbmode    = K_XLATE;
     session->tty_mode      = KD_TEXT;
+    session->lock          = SPIN_INIT;
     tty_session_ops_t *ops = &session->ops;
     ops->read              = stdin_read;
     ops->ioctl             = tty_ioctl;

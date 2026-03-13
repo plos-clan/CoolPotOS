@@ -106,7 +106,7 @@
 
 #include "atom_queue.h"
 #include "llist.h"
-#include "metadata.h"
+#include "lock.h"
 #include "types.h"
 
 enum tty_device_type {
@@ -197,6 +197,7 @@ typedef struct tty_session { // 一个 TTY 会话
     pid_t fgproc;         // 前台进程组ID
     tty_device_t *device; // 会话所属的TTY设备
     atom_queue *queue;    // 输入缓冲队列
+    spin_t lock;
     struct vt_mode vt_mode;
     int tty_mode;
     int tty_kbmode;

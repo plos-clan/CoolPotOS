@@ -3,6 +3,7 @@
 #include "krlibc.h"
 #include "lock.h"
 #include "mem/page.h"
+#include "task/scheduler.h"
 #include "term/klog.h"
 
 #if !(defined(__x86_64__) || defined(__amd64__))
@@ -289,6 +290,8 @@ static void heap_error_handler(const HeapError error, void *ptr) {
         logkf("out of bounds: %#p\n\r", ptr);
         break;
     }
+    arch_close_interrupt();
+    scheduler_disable();
 }
 
 #endif

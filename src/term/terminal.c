@@ -5,11 +5,15 @@
 #include "flanterm/flanterm_backends/fb.h"
 
 void terminal_flush(tty_t *session) {
+    spin_lock(session->lock);
     flanterm_flush(session->terminal);
+    spin_unlock(session->lock);
 }
 
 size_t terminal_write(tty_t *device, const char *buf, size_t offset, size_t count) {
+    spin_lock(device->lock);
     flanterm_write(device->terminal, buf, count);
+    spin_unlock(device->lock);
     return count;
 }
 

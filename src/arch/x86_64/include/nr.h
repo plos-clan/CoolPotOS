@@ -118,6 +118,8 @@
 #define SYSCALL_UMOUNT2       166
 #define SYSCALL_REBOOT        169
 #define SYSCALL_GET_TID       186
+#define SYSCALL_LGETXATTR     192
+#define SYSCALL_LLISTXATTR    195
 #define SYSCALL_S_AFFINITY    203
 #define SYSCALL_G_AFFINITY    204
 #define SYSCALL_FUTEX         202

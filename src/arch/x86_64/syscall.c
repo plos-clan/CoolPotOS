@@ -11,6 +11,8 @@
 
 syscall_(arch_prctl, uint64_t code, uint64_t addr); // prsys_x64.c
 syscall_(sched_getaffinity, pid_t pid, size_t cpusetsize, unsigned long *mask); // prsys.c
+syscall_(lgetxattr, const char *path, const char *name, void *value, size_t size); // fssys.c
+syscall_(llistxattr, const char *path, char *list, size_t size); // fssys.c
 
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
@@ -167,6 +169,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_LINK]          = (syscall_t)syscall_link,
     [SYSCALL_NANO_SLEEP]    = (syscall_t)syscall_nano_sleep,
     [SYSCALL_GET_TID]       = (syscall_t)syscall_get_tid,
+    [SYSCALL_LGETXATTR]     = (syscall_t)syscall_lgetxattr,
+    [SYSCALL_LLISTXATTR]    = (syscall_t)syscall_llistxattr,
     [SYSCALL_SELECT]        = (syscall_t)syscall_select,
     [SYSCALL_PSELECT6]      = (syscall_t)syscall_pselect6,
     [SYSCALL_GETDENTS64]    = (syscall_t)syscall_getdents,
