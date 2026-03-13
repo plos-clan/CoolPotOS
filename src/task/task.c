@@ -21,6 +21,22 @@ _Atomic volatile pid_t now_pid = 0;
 _Atomic volatile pid_t now_tid = 0;
 extern volatile bool smp_enable;
 
+typedef struct retired_thread_node {
+    tcb_t thread;
+    uint64_t epoch[MAX_CPU];
+    struct retired_thread_node *next;
+} retired_thread_node_t;
+
+typedef struct retired_process_node {
+    pcb_t process;
+    uint64_t epoch[MAX_CPU];
+    struct retired_process_node *next;
+} retired_process_node_t;
+
+static retired_thread_node_t *retired_threads    = NULL;
+static retired_process_node_t *retired_processes = NULL;
+static spin_t retired_lock                       = SPIN_INIT;
+
 cow_arraylist *get_process_list() {
     return process_list;
 }
@@ -55,6 +71,20 @@ pcb_t found_pcb(pid_t pid) {
     return NULL;
 }
 
+static void refresh_child_thread_links(const pcb_t process) {
+    if (process == NULL || process->child_threads == NULL) {
+        return;
+    }
+
+    for (size_t i = 0; i < process->child_threads->size; i++) {
+        tcb_t thread = cow_list_get(process->child_threads, i);
+        if (thread == NULL) {
+            continue;
+        }
+        thread->ct_index = i;
+    }
+}
+
 static void refresh_child_process_links(const pcb_t parent) {
     if (parent == NULL || parent->child_process == NULL) {
         return;
@@ -68,6 +98,216 @@ static void refresh_child_process_links(const pcb_t parent) {
         child->parent    = parent;
         child->ppl_index = i;
     }
+}
+
+static void capture_reclaim_epoch(uint64_t epoch[MAX_CPU]) {
+    memset(epoch, 0, sizeof(uint64_t) * MAX_CPU);
+    for (size_t i = 0; i < get_cpu_count(); i++) {
+        cpu_local_t *cpu = get_cpu_local_by_index(i);
+        if (cpu != NULL && cpu->enable) {
+            epoch[i] = cpu->jiffies;
+        }
+    }
+}
+
+static bool reclaim_epoch_elapsed(const uint64_t epoch[MAX_CPU]) {
+    for (size_t i = 0; i < get_cpu_count(); i++) {
+        cpu_local_t *cpu = get_cpu_local_by_index(i);
+        if (cpu == NULL || !cpu->enable) {
+            continue;
+        }
+        if (cpu->jiffies <= epoch[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool thread_reclaim_ready(tcb_t thread, const uint64_t epoch[MAX_CPU]) {
+    if (thread == NULL) {
+        return false;
+    }
+
+    cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
+    if (cpu != NULL && cpu->current_task == thread) {
+        return false;
+    }
+
+    return reclaim_epoch_elapsed(epoch);
+}
+
+static void enqueue_retired_thread(tcb_t thread) {
+    if (thread == NULL) {
+        return;
+    }
+
+    retired_thread_node_t *node = malloc(sizeof(retired_thread_node_t));
+    asserts(node, "enqueue_retired_thread: node is null.");
+    node->thread = thread;
+    node->next   = NULL;
+    capture_reclaim_epoch(node->epoch);
+
+    if (thread->process != NULL) {
+        __atomic_add_fetch(&thread->process->retired_threads_pending, 1, __ATOMIC_ACQ_REL);
+    }
+
+    spin_lock(retired_lock);
+    node->next      = retired_threads;
+    retired_threads = node;
+    spin_unlock(retired_lock);
+}
+
+static void enqueue_retired_process(pcb_t process) {
+    if (process == NULL) {
+        return;
+    }
+
+    retired_process_node_t *node = malloc(sizeof(retired_process_node_t));
+    asserts(node, "enqueue_retired_process: node is null.");
+    node->process = process;
+    node->next    = NULL;
+    capture_reclaim_epoch(node->epoch);
+
+    spin_lock(retired_lock);
+    node->next         = retired_processes;
+    retired_processes  = node;
+    spin_unlock(retired_lock);
+}
+
+static void destroy_thread(tcb_t thread) {
+    if (thread == NULL) {
+        return;
+    }
+
+    if (thread->syscall_stack != 0) {
+        free_frames(
+            virt_to_phys((void *)(thread->syscall_stack - MAX_STACK_SIZE)), MAX_STACK_SIZE / PAGE_SIZE
+        );
+        thread->syscall_stack = 0;
+    }
+    if (thread->signal_stack != 0) {
+        free_frames(
+            virt_to_phys((void *)(thread->signal_stack - MAX_STACK_SIZE)), MAX_STACK_SIZE / PAGE_SIZE
+        );
+        thread->signal_stack = 0;
+    }
+    if (thread->name != NULL) {
+        free(thread->name);
+        thread->name = NULL;
+    }
+
+    arch_context_free(thread);
+    free(thread);
+}
+
+static void destroy_process(pcb_t pcb) {
+    if (pcb == NULL) {
+        return;
+    }
+
+    if (pcb->child_threads != NULL) {
+        cow_list_destroy(pcb->child_threads);
+        pcb->child_threads = NULL;
+    }
+    if (pcb->child_process != NULL) {
+        cow_list_destroy(pcb->child_process);
+        pcb->child_process = NULL;
+    }
+
+    if (pcb->name != NULL) {
+        free(pcb->name);
+        pcb->name = NULL;
+    }
+    if (!pcb->vfork && pcb->directory != NULL) {
+        free_page_directory(pcb->directory);
+        pcb->directory = NULL;
+    }
+
+    free(pcb);
+}
+
+void task_reap_retired() {
+    while (true) {
+        retired_thread_node_t *prev = NULL;
+        retired_thread_node_t *node = NULL;
+
+        spin_lock(retired_lock);
+        for (retired_thread_node_t *it = retired_threads; it != NULL; it = it->next) {
+            if (thread_reclaim_ready(it->thread, it->epoch)) {
+                node = it;
+                break;
+            }
+            prev = it;
+        }
+
+        if (node != NULL) {
+            if (prev != NULL) {
+                prev->next = node->next;
+            } else {
+                retired_threads = node->next;
+            }
+        }
+        spin_unlock(retired_lock);
+
+        if (node == NULL) {
+            break;
+        }
+
+        pcb_t owner = node->thread->process;
+        destroy_thread(node->thread);
+        if (owner != NULL) {
+            __atomic_sub_fetch(&owner->retired_threads_pending, 1, __ATOMIC_ACQ_REL);
+        }
+        free(node);
+    }
+
+    while (true) {
+        retired_process_node_t *prev = NULL;
+        retired_process_node_t *node = NULL;
+
+        spin_lock(retired_lock);
+        for (retired_process_node_t *it = retired_processes; it != NULL; it = it->next) {
+            if (__atomic_load_n(&it->process->retired_threads_pending, __ATOMIC_ACQUIRE) == 0
+                && it->process->child_threads != NULL && it->process->child_threads->size == 0
+                && reclaim_epoch_elapsed(it->epoch)) {
+                node = it;
+                break;
+            }
+            prev = it;
+        }
+
+        if (node != NULL) {
+            if (prev != NULL) {
+                prev->next = node->next;
+            } else {
+                retired_processes = node->next;
+            }
+        }
+        spin_unlock(retired_lock);
+
+        if (node == NULL) {
+            break;
+        }
+
+        destroy_process(node->process);
+        free(node);
+    }
+}
+
+static void remove_thread_from_process(tcb_t task) {
+    if (task == NULL || task->process == NULL || task->process->child_threads == NULL) {
+        return;
+    }
+    if (task->ct_index >= task->process->child_threads->size) {
+        return;
+    }
+
+    if (cow_list_get(task->process->child_threads, task->ct_index) != task) {
+        return;
+    }
+
+    cow_list_remove(task->process->child_threads, task->ct_index);
+    refresh_child_thread_links(task->process);
 }
 
 static pcb_t get_reparent_target(const pcb_t pcb) {
@@ -97,6 +337,7 @@ static void reparent_process_children(const pcb_t pcb) {
 static void kill_thread0(pcb_t parent, const tcb_t task) {
     (void)parent;
     task->status = T_OUT;
+    enqueue_retired_thread(task);
 }
 
 static void kill_proc0(const pcb_t pcb) {
@@ -166,7 +407,7 @@ static void kill_proc0(const pcb_t pcb) {
         pcb->pid,
         pcb->vfork ? "true" : "false"
     );
-    pcb->vfork = false;
+    enqueue_retired_process(pcb);
 }
 
 void kill_thread(const tcb_t task) {
@@ -193,6 +434,9 @@ void kill_thread(const tcb_t task) {
     if (task->sched_handle != NULL) {
         scheduler_remove_task(task, get_cpu_local(task->cpu_id));
     }
+    remove_thread_from_process(task);
+    task->status = T_OUT;
+    enqueue_retired_thread(task);
 }
 
 void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
@@ -215,12 +459,14 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
 
     if (is_zombie) {
         scheduler_disable();
-        if (pcb->child_threads->size > 0) {
-            tcb_t tcb = NULL;
-            cow_foreach(pcb->child_threads, tcb) {
-                if (tcb->status == T_DEATH || tcb->status == T_OUT) {
-                    continue;
-                }
+        for (size_t i = pcb->child_threads->size; i > 0; i--) {
+            tcb_t tcb = cow_list_get(pcb->child_threads, i - 1);
+            if (tcb == NULL) {
+                cow_list_remove(pcb->child_threads, i - 1);
+                refresh_child_thread_links(pcb);
+                continue;
+            }
+            if (tcb->status != T_OUT) {
                 kill_thread(tcb);
             }
         }

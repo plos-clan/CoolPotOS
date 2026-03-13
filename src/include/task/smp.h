@@ -31,6 +31,7 @@ bool x2apic_mode_supported();
 void arch_ap_cpu_entry(uint64_t hartid);
 cpu_local_t *get_min_task_count_cpu();
 cpu_local_t *get_cpu_local(size_t id);
+cpu_local_t *get_cpu_local_by_index(size_t index);
 uint64_t get_bsp_cpu_id();
 size_t get_cpu_count();
 cpu_local_t *arch_current_cpu(); // 由架构具体实现

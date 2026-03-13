@@ -130,6 +130,7 @@ struct process_control_block {
     int rgid;
     int sgid;
     uint16_t umask;
+    size_t retired_threads_pending;
 };
 
 struct thread_control_block {
@@ -186,4 +187,5 @@ void kill_thread(tcb_t task);
 void kill_proc(pcb_t pcb, int exit_code, bool is_zombie);
 bool signals_pending_quick(tcb_t task); // signal.c
 pcb_t found_pcb(pid_t pid);
+void task_reap_retired();
 void setup_task();

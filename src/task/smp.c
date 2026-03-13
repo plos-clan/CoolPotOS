@@ -38,6 +38,13 @@ cpu_local_t *get_min_task_count_cpu() {
     return local;
 }
 
+cpu_local_t *get_cpu_local_by_index(size_t index) {
+    if (index >= cpu_count) {
+        return NULL;
+    }
+    return &cpu_local_infos[index];
+}
+
 uint64_t get_bsp_cpu_id() {
     return bsp_cpu_id;
 }

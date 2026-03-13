@@ -282,6 +282,7 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     }
     cpu->is_yield = false;
 
+    task_reap_retired();
     scheduler_check_sleep();
 
     const tcb_t current_thread = get_current_task();
@@ -303,4 +304,3 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     cpu->current_task      = next_thread;
     arch_task_switch(current_thread, next_thread, regs);
 }
-
