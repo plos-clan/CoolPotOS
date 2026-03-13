@@ -147,7 +147,7 @@ struct thread_control_block {
     uint64_t prio;                   // 任务优先级
     void *sched_handle;              // 调度器句柄
     size_t ct_index;                 // 子线程列表索引
-    task_status status;              // 线程状态
+    _Atomic(task_status) status;     // 线程状态
     uint64_t _start;                 // 线程入口函数
     uint64_t affinity_mask;          // 线程亲和性掩码
 

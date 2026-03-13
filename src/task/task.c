@@ -55,21 +55,55 @@ pcb_t found_pcb(pid_t pid) {
     return NULL;
 }
 
+static void refresh_child_process_links(const pcb_t parent) {
+    if (parent == NULL || parent->child_process == NULL) {
+        return;
+    }
+
+    for (size_t i = 0; i < parent->child_process->size; i++) {
+        pcb_t child = cow_list_get(parent->child_process, i);
+        if (child == NULL) {
+            continue;
+        }
+        child->parent    = parent;
+        child->ppl_index = i;
+    }
+}
+
+static pcb_t get_reparent_target(const pcb_t pcb) {
+    if (pcb == NULL || pcb->parent == NULL || pcb->parent->parent == NULL) {
+        return kernel_process;
+    }
+    return pcb->parent->parent;
+}
+
+static void reparent_process_children(const pcb_t pcb) {
+    if (pcb == NULL || pcb->child_process == NULL || pcb->child_process->size == 0) {
+        return;
+    }
+
+    pcb_t new_parent = get_reparent_target(pcb);
+    while (pcb->child_process->size > 0) {
+        pcb_t child = cow_list_get(pcb->child_process, 0);
+        cow_list_remove(pcb->child_process, 0);
+        if (child == NULL) {
+            continue;
+        }
+        child->parent    = new_parent;
+        child->ppl_index = cow_list_add(new_parent->child_process, child);
+    }
+}
+
 static void kill_thread0(pcb_t parent, const tcb_t task) {
     (void)parent;
     task->status = T_OUT;
-    page_directory_t *src_dir = get_current_directory();
-    switch_memory_directory(task->process->directory);
-    int *tid_addr = (int *)task->tid_address;
-    if (tid_addr != NULL) {
-        *tid_addr = 0;
-    }
-    switch_memory_directory(src_dir);
 }
 
 static void kill_proc0(const pcb_t pcb) {
     pcb->status = T_OUT;
+    reparent_process_children(pcb);
     cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
+    refresh_child_process_links(pcb->parent);
     while (pcb->child_threads->size > 0) {
         const tcb_t thread = cow_list_get(pcb->child_threads, 0);
         cow_list_remove(pcb->child_threads, 0);
@@ -84,6 +118,11 @@ static void kill_proc0(const pcb_t pcb) {
     cow_list_clear(process_list, pcb->pl_index);
 
     procfs_on_exit_task(pcb);
+    pcb->procfs_node = NULL;
+
+    if (!pcb->vfork) {
+        vma_manager_exit_cleanup(&pcb->vma_manager);
+    }
 
     lazy_free(pcb);
 
@@ -106,6 +145,10 @@ static void kill_proc0(const pcb_t pcb) {
     if (pcb->cwd) {
         vfs_close(pcb->cwd);
         pcb->cwd = NULL;
+    }
+    if (pcb->proc_root) {
+        vfs_close(pcb->proc_root);
+        pcb->proc_root = NULL;
     }
     if (pcb->exec) {
         vfs_close(pcb->exec);
@@ -181,6 +224,7 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
                 kill_thread(tcb);
             }
         }
+        reparent_process_children(pcb);
         pcb->status       = T_ZOMBIE;
         const ipc_message_t msg = malloc(sizeof(struct ipc_message));
         asserts(msg,"kill_proc: ipc_message is null.");
@@ -203,7 +247,6 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
 
         scheduler_enable();
     } else {
-        cow_list_remove(pcb->parent->child_process, pcb->ppl_index);
         pcb->status = T_DEATH;
         kill_proc0(pcb);
     }
