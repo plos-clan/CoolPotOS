@@ -249,7 +249,11 @@ void squashfs_mount_drop(squashfs_mount_t *mount) {
 }
 
 int squashfs_open_inode(squashfs_mount_t *mount, sqfs_u64 inode_ref, sqfs_inode_generic_t **out) {
-    return sqfs_dir_reader_get_inode(mount->dir_reader, inode_ref, out);
+    spin_lock(mount->lock);
+    const int ret = sqfs_dir_reader_get_inode(mount->dir_reader, inode_ref, out);
+    spin_unlock(mount->lock);
+
+    return ret;
 }
 
 static bool squashfs_child_exists(vfs_node_t node, const char *name) {
@@ -378,6 +382,7 @@ void squashfs_fill_node(vfs_node_t node, squashfs_handle_t *handle) {
 
 int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle) {
     sqfs_dir_reader_state_t state;
+    squashfs_mount_t *mount;
 
     if (node == NULL || handle == NULL || handle->inode == NULL) {
         return 0;
@@ -389,14 +394,21 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
         return 0;
     }
 
-    int ret = sqfs_dir_reader_open_dir(handle->mount->dir_reader, handle->inode, &state, 0);
+    mount = handle->mount;
+
+    spin_lock(mount->lock);
+    int ret = sqfs_dir_reader_open_dir(mount->dir_reader, handle->inode, &state, 0);
+    spin_unlock(mount->lock);
     if (ret != 0) {
         return ret;
     }
 
     for (;;) {
         sqfs_dir_node_t *ent = NULL;
-        ret                  = sqfs_dir_reader_read(handle->mount->dir_reader, &state, &ent);
+
+        spin_lock(mount->lock);
+        ret = sqfs_dir_reader_read(mount->dir_reader, &state, &ent);
+        spin_unlock(mount->lock);
         if (ret > 0) {
             break;
         }
@@ -449,7 +461,9 @@ int squashfs_lookup_child(
         *out = NULL;
     }
 
+    spin_lock(mount->lock);
     int ret = sqfs_dir_reader_open_dir(mount->dir_reader, parent, &state, 0);
+    spin_unlock(mount->lock);
     if (ret != 0) {
         return ret;
     }
@@ -458,7 +472,10 @@ int squashfs_lookup_child(
 
     for (;;) {
         sqfs_dir_node_t *ent = NULL;
-        ret                  = sqfs_dir_reader_read(mount->dir_reader, &state, &ent);
+
+        spin_lock(mount->lock);
+        ret = sqfs_dir_reader_read(mount->dir_reader, &state, &ent);
+        spin_unlock(mount->lock);
         if (ret != 0) {
             if (ret > 0) {
                 return SQFS_ERROR_NO_ENTRY;
@@ -651,6 +668,7 @@ static bool squashfs_close(void *current) {
 
 static size_t squashfs_read(void *file, void *addr, size_t offset, size_t size) {
     squashfs_handle_t *handle = file;
+    sqfs_s32 ret;
 
     spin_lock(handle->lock);
 
@@ -665,8 +683,9 @@ static size_t squashfs_read(void *file, void *addr, size_t offset, size_t size) 
         return (size_t)-1;
     }
 
-    const sqfs_s32 ret =
-        sqfs_data_reader_read(handle->mount->data_reader, handle->inode, offset, addr, size);
+    spin_lock(handle->mount->lock);
+    ret = sqfs_data_reader_read(handle->mount->data_reader, handle->inode, offset, addr, size);
+    spin_unlock(handle->mount->lock);
     spin_unlock(handle->lock);
     return ret < 0 ? (size_t)-1 : (size_t)ret;
 }

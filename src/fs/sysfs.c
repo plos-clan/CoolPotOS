@@ -1,4 +1,5 @@
 #include "fs/sysfs.h"
+#include "driver/drm/drm.h"
 #include "errno.h"
 #include "krlibc.h"
 #include "term/klog.h"
@@ -36,6 +37,7 @@ static errno_t sysfs_mount(const char *src, vfs_node_t node, void *data) {
 
     // /sys/bus/pci
     sysfs_child_append(sysfs_bus, "pci", true);
+    drm_sysfs_populate();
 
     return EOK;
 }

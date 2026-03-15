@@ -1130,7 +1130,10 @@ struct drm_device {
     drm_device_op_t *op;
     struct k_drm_event *drm_events[DRM_MAX_EVENTS_COUNT];
     uint64_t vblank_counter;
+    uint64_t dev_nr;
+    pci_device_t *pci_dev;
     drm_resource_manager_t resource_mgr;
 };
 
 drm_device_t *drm_regist_pci_dev(void *data, drm_device_op_t *op, pci_device_t *pci_dev);
+void drm_sysfs_populate();

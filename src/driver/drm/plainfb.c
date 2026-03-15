@@ -235,6 +235,9 @@ void drm_load_device(pci_device_t *device) {
 
 void drm_plainfb_init() {
     boot_framebuffer_t *fb = boot_get_framebuffer(0);
+    if (!fb) {
+        return;
+    }
 
     // Create GPU device structure
     plainfb_device_t *gpu_device = malloc(sizeof(plainfb_device_t));
@@ -267,7 +270,9 @@ void drm_plainfb_init() {
                .vsync_end   = fb->height + 10 + 2,
                .vtotal      = fb->height + 10 + 2 + 33,
                .vrefresh    = 60,
+               .type        = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
         };
+        snprintf(mode.name, sizeof(mode.name), "%ux%u", fb->width, fb->height);
         memcpy(gpu_device->connectors[i]->modes, &mode, sizeof(struct drm_mode_modeinfo));
         gpu_device->connectors[i]->count_modes = 1;
     }
@@ -287,10 +292,18 @@ void drm_plainfb_init() {
 
     memset(gpu_device->dumbbuffers, 0, sizeof(gpu_device->dumbbuffers));
 
-    pci_find_class(0x00020000, drm_load_device);
+    count = 0;
+    memset(vga_pci_devices, 0, sizeof(vga_pci_devices));
 
-    if (count > 0) {
-        // Register with DRM subsystem
-        drm_regist_pci_dev(gpu_device, &plainfb_drm_device_op, vga_pci_devices[0]);
+    pci_find_class(0x030000, drm_load_device);
+    if (count == 0) {
+        pci_find_class(0x038000, drm_load_device);
     }
+    if (count == 0) {
+        pci_find_class(0x000100, drm_load_device);
+    }
+
+    // Plain framebuffer only needs the boot framebuffer. Keep the DRM node
+    // available even when PCI display enumeration does not find a matching BDF.
+    drm_regist_pci_dev(gpu_device, &plainfb_drm_device_op, count > 0 ? vga_pci_devices[0] : NULL);
 }

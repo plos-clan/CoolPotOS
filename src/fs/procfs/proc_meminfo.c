@@ -2,7 +2,6 @@
 #include "mem/frame.h"
 #include "mem/memstat.h"
 #include "string_builder.h"
-#include "term/klog.h"
 
 static bool meminfo_append_kb(string_builder_t *builder, const char *key, uint64_t value_kb) {
     return string_builder_append(builder, "%s:%8llu kB\n", key, value_kb);
@@ -12,18 +11,17 @@ static bool meminfo_append_raw(string_builder_t *builder, const char *key, uint6
     return string_builder_append(builder, "%s:%8llu\n", key, value);
 }
 
-char *proc_gen_meminfo(size_t *context_len) {
+static char *proc_gen_meminfo(size_t *context_len) {
     string_builder_t *builder = create_string_builder(4096);
-    if (unlikely(builder == NULL))
+    if (unlikely(builder == NULL)) {
         return NULL;
+    }
 
     const uint64_t mem_total_kb     = get_origin_frames() * 4;
     const uint64_t mem_free_kb      = get_usable_frames() * 4;
     const uint64_t mem_available_kb = mem_free_kb;
     const uint64_t mem_used_kb      = mem_total_kb - mem_free_kb;
     const uint64_t bad_kb           = get_bad_memory() / 1024;
-
-    logkf("proc_meminfo: %llu %llu %llu\n\r", mem_total_kb, mem_free_kb, mem_used_kb);
 
     const uint64_t zero_kb         = 0;
     const uint64_t swap_total_kb   = 0;

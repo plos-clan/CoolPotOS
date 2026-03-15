@@ -19,6 +19,7 @@ typedef struct squashfs_handle squashfs_handle_t;
 
 struct squashfs_mount {
     size_t refcount;
+    spin_t lock;
     sqfs_file_t *image;
     sqfs_compressor_t *cmp;
     sqfs_id_table_t *ids;
