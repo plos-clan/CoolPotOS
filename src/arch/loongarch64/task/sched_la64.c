@@ -21,3 +21,7 @@ _Noreturn void arch_switch_to_user_mode() {
 void arch_context_free(tcb_t thread) {
     // TODO
 }
+
+bool arch_check_user_mode(const struct pt_regs *regs) {
+    return true; //TODO
+}

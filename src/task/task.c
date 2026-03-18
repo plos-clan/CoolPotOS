@@ -170,8 +170,8 @@ static void enqueue_retired_process(pcb_t process) {
     capture_reclaim_epoch(node->epoch);
 
     spin_lock(retired_lock);
-    node->next         = retired_processes;
-    retired_processes  = node;
+    node->next        = retired_processes;
+    retired_processes = node;
     spin_unlock(retired_lock);
 }
 
@@ -182,13 +182,15 @@ static void destroy_thread(tcb_t thread) {
 
     if (thread->syscall_stack != 0) {
         free_frames(
-            virt_to_phys((void *)(thread->syscall_stack - MAX_STACK_SIZE)), MAX_STACK_SIZE / PAGE_SIZE
+            virt_to_phys((void *)(thread->syscall_stack - MAX_STACK_SIZE)),
+            MAX_STACK_SIZE / PAGE_SIZE
         );
         thread->syscall_stack = 0;
     }
     if (thread->signal_stack != 0) {
         free_frames(
-            virt_to_phys((void *)(thread->signal_stack - MAX_STACK_SIZE)), MAX_STACK_SIZE / PAGE_SIZE
+            virt_to_phys((void *)(thread->signal_stack - MAX_STACK_SIZE)),
+            MAX_STACK_SIZE / PAGE_SIZE
         );
         thread->signal_stack = 0;
     }
@@ -499,17 +501,20 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
             }
         }
         reparent_process_children(pcb);
-        pcb->status       = T_ZOMBIE;
+        pcb->status             = T_ZOMBIE;
         const ipc_message_t msg = malloc(sizeof(struct ipc_message));
-        asserts(msg,"kill_proc: ipc_message is null.");
-        msg->pid          = pcb->pid;
-        msg->type         = IPC_MSG_TYPE_EPID;
-        msg->data[0]      = exit_code & 0xFF;
-        msg->data[1]      = exit_code >> 8 & 0xFF;
-        msg->data[2]      = exit_code >> 16 & 0xFF;
-        msg->data[3]      = exit_code >> 24 & 0xFF;
+        asserts(msg, "kill_proc: ipc_message is null.");
+        msg->pid     = pcb->pid;
+        msg->type    = IPC_MSG_TYPE_EPID;
+        msg->data[0] = exit_code & 0xFF;
+        msg->data[1] = exit_code >> 8 & 0xFF;
+        msg->data[2] = exit_code >> 16 & 0xFF;
+        msg->data[3] = exit_code >> 24 & 0xFF;
         ipc_send(pcb->parent->ipc_queue, msg);
         send_signal_to_process(pcb->parent, SIGCHLD);
+
+        pcb->parent->cutime += pcb->utime;
+        pcb->parent->cstime += pcb->cstime;
 
         for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
             fd_t *handle = pcb->fdts->fds[i];
@@ -627,15 +632,19 @@ pid_t create_kernel_thread(
 ) {
     const tcb_t thread = calloc(1, STACK_SIZE);
     asserts(thread, "create kernel thread null.");
-    thread->name          = strdup(name);
-    thread->tid           = alloc_tid();
-    thread->process       = process == NULL ? kernel_process : process;
-    thread->ct_index      = cow_list_add(thread->process->child_threads, thread);
-    thread->prio          = prio;
-    thread->_start        = (uint64_t)func;
-    thread->status        = T_CREATE;
-    thread->signal_stack  = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
-    thread->syscall_stack = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
+    thread->name     = strdup(name);
+    thread->tid      = alloc_tid();
+    thread->process  = process == NULL ? kernel_process : process;
+    thread->ct_index = cow_list_add(thread->process->child_threads, thread);
+    thread->prio     = prio;
+    thread->_start   = (uint64_t)func;
+    thread->status   = T_CREATE;
+    thread->signal_stack =
+        (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
+    ;
+    thread->syscall_stack =
+        (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
+    ;
     arch_context_init_thread(thread, arg);
     scheduler_add_task(thread, thread->prio);
     return thread->tid;
@@ -662,14 +671,18 @@ void setup_task() {
     kernel_process->vfork         = false;
     kernel_process->umask         = 0022;
 
-    bsp_idle_thread                = malloc(STACK_SIZE);
-    bsp_idle_thread->name          = strdup("bsp_idle");
-    bsp_idle_thread->process       = kernel_process;
-    bsp_idle_thread->tid           = alloc_tid();
-    bsp_idle_thread->ct_index      = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
-    bsp_idle_thread->status        = T_RUNNING;
-    bsp_idle_thread->signal_stack  = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
-    bsp_idle_thread->syscall_stack = (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
+    bsp_idle_thread           = malloc(STACK_SIZE);
+    bsp_idle_thread->name     = strdup("bsp_idle");
+    bsp_idle_thread->process  = kernel_process;
+    bsp_idle_thread->tid      = alloc_tid();
+    bsp_idle_thread->ct_index = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
+    bsp_idle_thread->status   = T_RUNNING;
+    bsp_idle_thread->signal_stack =
+        (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
+    ;
+    bsp_idle_thread->syscall_stack =
+        (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
+    ;
     arch_context_init(bsp_idle_thread, &bsp_idle_thread->context);
     kinfo("kernel process(%s) PID: %d ", kernel_process->name, kernel_process->pid);
 }

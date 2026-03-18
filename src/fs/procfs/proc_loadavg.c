@@ -11,7 +11,7 @@ static char *proc_gen_loadavg(size_t *context_len) {
     pcb_t proc = NULL;
     cow_foreach(get_process_list(), proc) {
         total++;
-        if (proc->status == T_RUNNING || proc->status == T_START) {
+        if (proc->status == T_RUNNING || proc->status == T_START || proc->status == T_IO_WAIT) {
             running++;
         }
         if (proc->pid > last_pid) {

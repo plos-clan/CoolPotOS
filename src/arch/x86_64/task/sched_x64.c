@@ -488,3 +488,7 @@ err:
 void arch_context_free(tcb_t thread) {
     free(thread->context.context);
 }
+
+bool arch_check_user_mode(const struct pt_regs *regs) {
+    return (regs->cs & 0x03) == 3;
+}

@@ -164,14 +164,14 @@ void scheduler_set_bsp_cpu(cpu_local_t *bsp_cpu) {
 }
 
 void scheduler_set_cpu_idle(tcb_t thread, cpu_local_t *cpu) {
-    thread->prio        = NICE_TO_PRIO(-20);
-    cpu->idle_task      = thread;
-    cpu->current_task   = thread;
-    cpu->is_yield       = false;
-    cpu->jiffies        = 0;
-    cpu->idle_jiffies   = 0;
-    cpu->task_count     = 1;
-    thread->cpu_id      = cpu->id;
+    thread->prio      = NICE_TO_PRIO(-20);
+    cpu->idle_task    = thread;
+    cpu->current_task = thread;
+    cpu->is_yield     = false;
+    cpu->jiffies      = 0;
+    cpu->idle_jiffies = 0;
+    cpu->task_count   = 1;
+    thread->cpu_id    = cpu->id;
 #if EEVDF_SCHEDULER
     init_cpu_idle(cpu, thread);
 #else
@@ -247,8 +247,9 @@ tcb_t scheduler_pick_next(const uint64_t cpu_id) {
 #else
         rrs_pick_next_task(cpu_local);
 #endif
-    if (next_thread == NULL)
+    if (next_thread == NULL) {
         next_thread = cpu_local->idle_task;
+    }
     return next_thread;
 }
 
@@ -274,6 +275,19 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
         return;
     }
 
+    const tcb_t current_thread = get_current_task();
+    if (unlikely(current_thread == NULL)) {
+        return;
+    }
+
+    if (current_thread->status != T_IO_WAIT) {
+        if (arch_check_user_mode(regs)) {
+            current_thread->process->utime++;
+        } else {
+            current_thread->process->stime++;
+        }
+    }
+
     if (!cpu->is_yield) {
         cpu->jiffies++;
         if (cpu->current_task == cpu->idle_task) {
@@ -285,10 +299,6 @@ void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {
     task_reap_retired();
     scheduler_check_sleep();
 
-    const tcb_t current_thread = get_current_task();
-    if (unlikely(current_thread == NULL)) {
-        return;
-    }
     const tcb_t next_thread = scheduler_pick_next(cpu->id);
 
     if (next_thread->process->parent == NULL || next_thread->process->parent->status == T_DEATH

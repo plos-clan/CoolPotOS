@@ -237,7 +237,10 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
 }
 
 static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size_t number) {
-
+    const tcb_t tcb = get_current_task() == NULL ? NULL : get_current_task();
+    if (tcb != NULL) {
+        tcb->status = T_IO_WAIT;
+    }
     size_t i = 0;
     for (; i < number; i++) {
         char c = (char)kernel_getch();
@@ -274,7 +277,9 @@ static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size
         }
         buffer[i] = c;
     }
-
+    if (tcb != NULL) {
+        tcb->status = T_RUNNING;
+    }
     return i;
 }
 

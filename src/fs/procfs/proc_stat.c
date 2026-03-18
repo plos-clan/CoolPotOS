@@ -3,11 +3,10 @@
 #include "task/smp.h"
 #include "string_builder.h"
 #include "timer.h"
-#include "metadata.h"
 
-char *proc_gen_stat(size_t *context_len) {
+static char *proc_gen_stat(size_t *context_len) {
     string_builder_t *builder = create_string_builder(4096);
-    size_t cpu_count          = get_cpu_count();
+    const size_t cpu_count    = get_cpu_count();
 
     uint64_t total_idle   = 0;
     uint64_t total_system = 0;
@@ -15,24 +14,29 @@ char *proc_gen_stat(size_t *context_len) {
     size_t procs_running  = 0;
 
     for (size_t i = 0; i < cpu_count; i++) {
-        cpu_local_t *info = get_cpu_local(i);
-        if (info == NULL || !info->enable)
+        const cpu_local_t *info = get_cpu_local(i);
+        if (info == NULL || !info->enable) {
             continue;
+        }
         total_system += info->jiffies - info->idle_jiffies;
         total_idle += info->idle_jiffies;
         processes_all += info->task_count;
-        if (info->current_task && info->current_task->status == T_RUNNING)
+        if (info->current_task
+            && (info->current_task->status == T_RUNNING
+                || info->current_task->status == T_IO_WAIT)) {
             procs_running++;
+        }
     }
 
     string_builder_append(builder, "cpu  0 0 %llu %llu 0 0 0 0 0 0\n", total_system, total_idle);
 
     for (size_t i = 0; i < cpu_count; i++) {
-        cpu_local_t *info = get_cpu_local(i);
-        if (info == NULL || !info->enable)
+        const cpu_local_t *info = get_cpu_local(i);
+        if (info == NULL || !info->enable) {
             continue;
-        uint64_t sys  = info->jiffies - info->idle_jiffies;
-        uint64_t idle = info->idle_jiffies;
+        }
+        const uint64_t sys  = info->jiffies - info->idle_jiffies;
+        const uint64_t idle = info->idle_jiffies;
         string_builder_append(
             builder, "cpu%llu 0 0 %llu %llu 0 0 0 0 0 0\n", (uint64_t)i, sys, idle
         );
@@ -41,9 +45,9 @@ char *proc_gen_stat(size_t *context_len) {
     string_builder_append(builder, "intr %llu\n", get_all_irq_count());
     string_builder_append(builder, "ctxt %llu\n", total_system + total_idle);
 
-    int64_t btime = mktime_universal();
+    const int64_t btime = mktime_universal();
     if (btime > 0) {
-        uint64_t uptime_sec = nano_time() / 1000000000ULL;
+        const uint64_t uptime_sec = nano_time() / 1000000000ULL;
         string_builder_append(builder, "btime %llu\n", (uint64_t)(btime - uptime_sec));
     } else {
         string_builder_append(builder, "btime 0\n");
@@ -61,12 +65,14 @@ char *proc_gen_stat(size_t *context_len) {
 }
 
 size_t proc_stat_stat(proc_handle_t *handle) {
+    (void *)handle;
     size_t length = 0;
     free(proc_gen_stat(&length));
     return length;
 }
 
-size_t proc_stat_read(proc_handle_t *handle, void *addr, size_t offset, size_t size) {
+size_t proc_stat_read(proc_handle_t *handle, void *addr, const size_t offset, const size_t size) {
+    (void *)handle;
     size_t fs_size;
     char *contect = proc_gen_stat(&fs_size);
     return procfs_node_read(fs_size, offset, size, addr, contect);

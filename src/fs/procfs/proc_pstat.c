@@ -1,18 +1,30 @@
 #include "fs/procfs.h"
+#include "mem/lazy_alloc.h"
+#include "term/klog.h"
 
-char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
-    char *buffer = malloc(PAGE_SIZE * 4);
-    int len      = sprintf(
+static size_t get_task_commit(const pcb_t task) {
+    size_t commit_sz = 0;
+    qlist_foreach(task->virt_queue, node) {
+        const mm_virtual_page_t *v_page = node->data;
+        commit_sz += v_page->count * PAGE_SIZE;
+    }
+    return commit_sz;
+}
+
+static char *proc_gen_stat_file(const pcb_t task, size_t *content_len) {
+    char *buffer  = malloc(PAGE_SIZE * 4UL);
+    const size_t v_size = task->vma_manager.vm_used + get_task_commit(task);
+    const int len = sprintf(
         buffer,
-        "%d (%s) %c %d %d %d %d %d %u %d %d %d %d %d %d %d %d %d %d "
-             "%ld %d %d %lu %d %d %d %d %d %d %d %d %d %d %d %d %d "
-             "%d %d %d %u %u %d %d %d %d %d %d %d %d %d %d %d\n",
+        "%d (%s) %c %d %d %d %d %d %u %d %d %d %d %lu %lu %d %d %d %d "
+        "%ld %d %d %lu %lu %d %d %d %d %d %d %d %d %d %d %d %d "
+        "%d %d %d %u %u %d %d %d %d %d %d %d %d %d %d %d\n",
         task->pid,  // pid
         task->name, // name
         task->status == T_RUNNING  ? 'R'
-             : task->status == T_ZOMBIE ? 'Z'
-             : task->status == T_FUTEX  ? 'S'
-                                        : 'T',              // state
+        : task->status == T_ZOMBIE ? 'Z'
+        : task->status == T_FUTEX  ? 'S'
+                                   : 'T',              // state
         task->parent->pid,                            // ppid
         0,                                            // pgrp
         task->uid,                                    // session
@@ -23,8 +35,8 @@ char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
         0,                                            // cminflt
         0,                                            // majflt
         0,                                            // cmajflt
-        0,                                            // utime
-        0,                                            // stime
+        task->utime,                                  // utime
+        task->stime,                                  // stime
         0,                                            // cutime
         0,                                            // cstime
         task->pid == 0 ? SCHED_IDLE : SCHED_DEADLINE, // priority
@@ -32,8 +44,8 @@ char *proc_gen_stat_file(pcb_t task, size_t *content_len) {
         task->child_threads->size,                    // num_threads
         0,                                            // itrealvalue
         0,                                            // starttime
-        task->vma_manager.vm_total,                   // vsize
-        0,                                            // rss
+        v_size,                                       // vsize
+        task->vma_manager.vm_used,                    // rss
         0,                                            // rsslim
         0,                                            // startcode
         0,                                            // endcode

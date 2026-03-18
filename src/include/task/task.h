@@ -87,8 +87,9 @@ typedef enum {
     T_START   = 4, // 准备调度
     T_FUTEX   = 5, // 被挂起(无法被调度, 线程状态为等待唤醒)
     T_OUT     = 6, // 已被处死(无法被调度)
+    T_IO_WAIT = 7, // IO 阻塞(调度器按RUNNING判断)
     T_ZOMBIE =
-        7, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
+        8, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
 } task_status;
 
 struct process_control_block {
@@ -104,6 +105,10 @@ struct process_control_block {
     cow_arraylist *child_threads; // 子线程
     cow_arraylist *child_process; // 子进程
     _Atomic(task_status) status;  // 进程状态
+    _Atomic(size_t) utime;        // 用户态时间
+    _Atomic(size_t) stime;        // 内核态时间
+    _Atomic(size_t) cutime;       // 累计用户态时间
+    _Atomic(size_t) cstime;       // 累计内核态时间
 
     page_directory_t *directory; // 进程页表
     vma_manager_t vma_manager;   // VMA 内存管理器
@@ -175,6 +180,7 @@ void arch_context_init(
 void arch_context_init_thread(tcb_t thread, void *arg); // 用于初始化线程上下文
 _Noreturn void arch_switch_to_user_mode();              // 架构实现切换至用户态
 void arch_context_free(tcb_t thread);                   // 架构实现释放上下文
+bool arch_check_user_mode(const struct pt_regs *regs);  // 架构实现中断前是否为用户态
 pid_t create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(
     const char *name, int (*func)(void *arg), void *arg, pcb_t process, uint64_t prio

@@ -362,3 +362,7 @@ err:
         arch_wait_for_interrupt();
     }
 }
+
+bool arch_check_user_mode(const struct pt_regs *regs) {
+    return true; //TODO
+}
