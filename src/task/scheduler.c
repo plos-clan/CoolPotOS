@@ -18,6 +18,7 @@ static _Atomic volatile bool scheduler_status = false;
 
 static cow_arraylist *sleep_list = NULL;
 static spin_t sleep_lock         = SPIN_INIT;
+static const int scheduler_block_pending = 0x7fffffff;
 
 static void sleep_block_task(tcb_t thread) {
     const cpu_local_t *cpu = get_cpu_local(thread->cpu_id);
@@ -35,6 +36,19 @@ static void sleep_wake_task(tcb_t thread) {
 #else
     add_rrs_entity(thread, cpu);
 #endif
+}
+
+static bool sleep_remove_task_locked(tcb_t thread) {
+    if (sleep_list == NULL) {
+        return false;
+    }
+    for (size_t i = 0; i < sleep_list->size; i++) {
+        if (cow_list_get(sleep_list, i) == thread) {
+            cow_list_remove(sleep_list, i);
+            return true;
+        }
+    }
+    return false;
 }
 
 bool scheduler_check_status() {
@@ -63,6 +77,9 @@ void scheduler_check_sleep() {
         if (wake) {
             cow_list_remove(sleep_list, i);
             thread->sleep_deadline = 0;
+            if (thread->block_code == scheduler_block_pending) {
+                thread->block_code = signals_pending_quick(thread) ? -EINTR : ETIMEDOUT;
+            }
             thread->status         = T_START;
             sleep_wake_task(thread);
         } else {
@@ -86,6 +103,7 @@ int scheduler_nano_sleep(const uint64_t nano) {
     }
 
     const tcb_t current     = get_current_task();
+    current->block_code     = scheduler_block_pending;
     current->sleep_deadline = nano_time() + nano;
     current->status         = T_WAIT;
 
@@ -102,10 +120,68 @@ int scheduler_nano_sleep(const uint64_t nano) {
     scheduler_yield();
 
     // 被唤醒后检查是否因信号中断
-    if (signals_pending_quick(current)) {
+    if (current->block_code == -EINTR || signals_pending_quick(current)) {
+        current->block_code = 0;
         return -EINTR;
     }
+    current->block_code = 0;
     return 0;
+}
+
+int scheduler_block_current(const uint64_t timeout_ns, const char *reason) {
+    (void)reason;
+    if (sleep_list == NULL) {
+        sleep_list = cow_list_create();
+    }
+
+    const tcb_t current = get_current_task();
+    if (current == NULL) {
+        return -EINVAL;
+    }
+
+    current->block_code = scheduler_block_pending;
+    current->sleep_deadline =
+        timeout_ns == (uint64_t)-1 ? (uint64_t)-1 : nano_time() + timeout_ns;
+    current->status = T_WAIT;
+
+    const bool int_enable = arch_check_interrupt();
+    arch_close_interrupt();
+    spin_lock(sleep_lock);
+    cow_list_add(sleep_list, current);
+    sleep_block_task(current);
+    spin_unlock(sleep_lock);
+    if (int_enable) {
+        arch_open_interrupt();
+    }
+
+    scheduler_yield();
+
+    const int ret     = current->block_code;
+    current->block_code = 0;
+    if (ret == scheduler_block_pending) {
+        return signals_pending_quick(current) ? -EINTR : ETIMEDOUT;
+    }
+    return ret;
+}
+
+void scheduler_unblock(tcb_t thread, const int code) {
+    if (thread == NULL) {
+        return;
+    }
+
+    const bool int_enable = arch_check_interrupt();
+    arch_close_interrupt();
+    spin_lock(sleep_lock);
+    if (sleep_remove_task_locked(thread)) {
+        thread->sleep_deadline = 0;
+        thread->block_code     = code;
+        thread->status         = T_START;
+        sleep_wake_task(thread);
+    }
+    spin_unlock(sleep_lock);
+    if (int_enable) {
+        arch_open_interrupt();
+    }
 }
 
 bool scheduler_add_task(tcb_t thread, uint64_t prio) {
@@ -191,12 +267,7 @@ void scheduler_remove_task(tcb_t thread, cpu_local_t *cpu) {
         const bool int_enable = arch_check_interrupt();
         arch_close_interrupt();
         spin_lock(sleep_lock);
-        for (size_t i = 0; i < sleep_list->size; i++) {
-            if (cow_list_get(sleep_list, i) == thread) {
-                cow_list_remove(sleep_list, i);
-                break;
-            }
-        }
+        sleep_remove_task_locked(thread);
         thread->sleep_deadline = 0;
         spin_unlock(sleep_lock);
         // 从等待队列移回运行队列再移除

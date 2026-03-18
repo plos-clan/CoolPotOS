@@ -182,7 +182,7 @@ syscall_(write, int fd, uint8_t *buffer, size_t size) {
     if (handle->node->type & file_pipe) {
         size_t ret = vfs_write(handle->node, buffer, 0, size);
         if (ret == (size_t)-1)
-            return SYSCALL_FAULT_(EIO);
+            return SYSCALL_FAULT_(EPIPE);
         return ret;
     }
     if (handle->node->type & file_socket) {
@@ -662,12 +662,10 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
 
     do {
         ready = 0;
-        // 清零所有 revents
         for (size_t i = 0; i < nfds; i++) {
             fds_user[i].revents = 0;
         }
 
-        // 检查每个文件描述符
         for (size_t i = 0; i < nfds; i++) {
             extern vfs_callback_t fs_callbacks[256];
             const fd_t *handle = get_fd(fdt, fds_user[i].fd);
@@ -676,6 +674,7 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
                 ready++;
                 continue;
             }
+
             vfs_node_t node = handle->node;
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
                 if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {
@@ -684,6 +683,7 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
                 }
                 continue;
             }
+
             int revents =
                 (int)epoll_to_poll_comp(vfs_poll(node, poll_to_epoll_comp(fds_user[i].events)));
             if (revents > 0) {
@@ -1200,6 +1200,8 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
     info->write_fds = 1;
     info->ptr       = 0;
     info->lock      = SPIN_INIT;
+    info->read_node = node_input;
+    info->write_node = node_output;
 
     pipe_specific_t *read_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));
     read_spec->write           = false;

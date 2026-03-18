@@ -23,6 +23,8 @@ typedef struct pipe_info {
 
     spin_t lock;
 
+    vfs_node_t read_node;
+    vfs_node_t write_node;
     task_block_list_t blocking_read;
     task_block_list_t blocking_write;
 } pipe_info_t;
@@ -35,5 +37,9 @@ struct pipe_specific {
     int active;
     bool free_pending;
 };
+
+extern vfs_node_t pipefs_root;
+extern int pipefs_id;
+extern int pipefd_id;
 
 void pipefs_regist();

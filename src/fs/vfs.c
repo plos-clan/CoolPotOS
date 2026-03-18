@@ -9,6 +9,8 @@
 #include "fs/pipefs.h"
 #include "fs/sockfs.h"
 #include "krlibc.h"
+#include "task/poll.h"
+#include "task/scheduler.h"
 #include "task/task.h"
 #include "term/klog.h"
 
@@ -68,38 +70,39 @@ static inline char *pathtok(char **sp) {
 char *at_resolve_pathname(int dirfd, char *pathname) {
     if (pathname[0] == '/') { // by absolute pathname
         return strdup(pathname);
-    } else if (pathname[0] != '/') {
+    }
+    if (pathname[0] != '/') {
         if (dirfd == AT_FDCWD) { // relative to cwd
             return vfs_cwd_path_build(pathname);
-        } else { // relative to dirfd, resolve accordingly
-            fd_t *fd = get_fd(get_current_task()->process->fdts, dirfd);
-            if (!fd)
-                return NULL;
-            vfs_node_t node = fd->node;
-            if (node->type != file_dir)
-                return NULL;
-
-            char *dirname = vfs_get_fullpath(node);
-
-            int dirLen      = strlen(dirname);
-            int pathnameLen = strlen(pathname) + 1;
-
-            char *out = malloc(dirLen + 1 + pathnameLen + 1);
-
-            memcpy(out, dirname, dirLen);
-            out[dirLen] = '/';
-            memcpy(&out[dirLen + 1], pathname, pathnameLen);
-
-            free(dirname);
-
-            return out;
         }
+        // relative to dirfd, resolve accordingly
+        fd_t *fd = get_fd(get_current_task()->process->fdts, dirfd);
+        if (!fd)
+            return NULL;
+        vfs_node_t node = fd->node;
+        if (node->type != file_dir)
+            return NULL;
+
+        char *dirname = vfs_get_fullpath(node);
+
+        int dirLen      = strlen(dirname);
+        int pathnameLen = strlen(pathname) + 1;
+
+        char *out = malloc(dirLen + 1 + pathnameLen + 1);
+
+        memcpy(out, dirname, dirLen);
+        out[dirLen] = '/';
+        memcpy(&out[dirLen + 1], pathname, pathnameLen);
+
+        free(dirname);
+
+        return out;
     }
 
     return NULL;
 }
 
-static inline void do_open(vfs_node_t file) {
+static void do_open(vfs_node_t file) {
     if (file->handle != NULL) {
         callbackof(file, stat)(file->handle, file);
     } else {
@@ -107,10 +110,23 @@ static inline void do_open(vfs_node_t file) {
     }
 }
 
-static inline void do_update(vfs_node_t file) {
+static void do_update(vfs_node_t file) {
     if (file->type & file_none || file->handle == NULL || file->type & file_dir
         || file->type & file_symlink || file->type & file_pipe || file->type & file_socket)
         do_open(file);
+}
+
+static void vfs_destroy_closed_node(vfs_node_t node) {
+    if (node == NULL) {
+        return;
+    }
+    list_free_with(node->child, (void (*)(void *))vfs_free);
+    callbackof(node, free)(node->handle);
+    free(node->name);
+    if (node->linkto_path) {
+        free(node->linkto_path);
+    }
+    free(node);
 }
 
 static vfs_node_t vfs_resolve_symlink_target(vfs_node_t link) {
@@ -193,9 +209,8 @@ errno_t vfs_mkdir(const char *name) {
             if (current->parent && current->type & file_dir) {
                 current = current->parent;
                 goto upd;
-            } else {
-                goto err;
             }
+            goto err;
         }
         current = vfs_child_find(current, buf);
 
@@ -382,8 +397,9 @@ errno_t vfs_mkfile(const char *name) {
 }
 
 errno_t vfs_mknod(const char *name, uint16_t mode, int dev) {
-    if (name[0] != '/')
+    if (name[0] != '/') {
         return -EINVAL;
+    }
 
     char *fullpath  = strdup(name);
     char *filename  = fullpath;
@@ -603,18 +619,20 @@ vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
     if (unlikely(node == NULL))
         return NULL;
     memset(node, 0, sizeof(struct vfs_node));
-    node->parent      = parent;
-    node->name        = name ? strdup(name) : NULL;
-    node->type        = file_none;
-    node->fsid        = parent ? parent->fsid : 0;
-    node->root        = parent ? parent->root : node;
-    node->dev         = parent ? parent->dev : 0;
-    node->refcount    = 1;
-    node->blksz       = PAGE_SIZE;
-    node->mode        = 0777;
-    node->inode       = inode_now++;
-    node->linkto      = NULL;
-    node->linkto_path = NULL;
+    node->parent            = parent;
+    node->name              = name ? strdup(name) : NULL;
+    node->type              = file_none;
+    node->fsid              = parent ? parent->fsid : 0;
+    node->root              = parent ? parent->root : node;
+    node->dev               = parent ? parent->dev : 0;
+    node->refcount          = 1;
+    node->blksz             = PAGE_SIZE;
+    node->mode              = 0777;
+    node->inode             = inode_now++;
+    node->linkto            = NULL;
+    node->linkto_path       = NULL;
+    node->poll_waiters_lock = SPIN_INIT;
+    llist_init_head(&node->poll_waiters);
     if (parent)
         list_prepend(parent->child, node);
     return node;
@@ -644,7 +662,7 @@ errno_t vfs_close(vfs_node_t node) {
         if (node->parent)
             list_delete(node->parent->child, node);
         node->handle = NULL;
-        vfs_free(node);
+        vfs_destroy_closed_node(node);
         return EOK;
     }
     if (node->type & file_socket) {
@@ -659,7 +677,7 @@ errno_t vfs_close(vfs_node_t node) {
         if (node->parent)
             list_delete(node->parent->child, node);
         node->handle = NULL;
-        vfs_free(node);
+        vfs_destroy_closed_node(node);
         return EOK;
     }
     if (node->type & file_dir) {
@@ -673,7 +691,7 @@ errno_t vfs_close(vfs_node_t node) {
         if (node->parent)
             list_delete(node->parent->child, node);
         node->handle = NULL;
-        vfs_free(node);
+        vfs_destroy_closed_node(node);
         return EOK;
     }
     if (node->refcount != 0)
@@ -684,7 +702,7 @@ errno_t vfs_close(vfs_node_t node) {
             return res;
         list_delete(node->parent->child, node);
         node->handle = NULL;
-        vfs_free(node);
+        vfs_destroy_closed_node(node);
     } else {
         void *file_handle = node->handle;
         bool close_drop   = callbackof(node, close)(file_handle);
@@ -792,6 +810,131 @@ errno_t vfs_poll(vfs_node_t node, size_t event) {
     if (node->type & file_dir)
         return -1;
     return callbackof(node, poll)(node->handle, event);
+}
+
+void vfs_poll_wait_init(vfs_poll_wait_t *wait, tcb_t task, uint32_t events) {
+    if (wait == NULL) {
+        return;
+    }
+    memset(wait, 0, sizeof(*wait));
+    wait->task   = task;
+    wait->events = events;
+    llist_init_head(&wait->node);
+}
+
+int vfs_poll_wait_arm(vfs_node_t node, vfs_poll_wait_t *wait) {
+    if (node == NULL || wait == NULL || wait->task == NULL) {
+        return -EINVAL;
+    }
+    if (wait->armed) {
+        return EOK;
+    }
+
+    wait->watch_node = node;
+    wait->revents    = 0;
+
+    spin_lock(node->poll_waiters_lock);
+    llist_append(&node->poll_waiters, &wait->node);
+    wait->armed = true;
+    spin_unlock(node->poll_waiters_lock);
+    return EOK;
+}
+
+void vfs_poll_wait_disarm(vfs_poll_wait_t *wait) {
+    if (wait == NULL || !wait->armed || wait->watch_node == NULL) {
+        return;
+    }
+
+    vfs_node_t node = wait->watch_node;
+    spin_lock(node->poll_waiters_lock);
+    if (wait->armed) {
+        llist_delete(&wait->node);
+        wait->armed = false;
+    }
+    spin_unlock(node->poll_waiters_lock);
+
+    wait->watch_node = NULL;
+    llist_init_head(&wait->node);
+}
+
+int vfs_poll_wait_sleep(
+    vfs_node_t node, vfs_poll_wait_t *wait, int64_t timeout_ns, const char *reason
+) {
+    if (node == NULL || wait == NULL || wait->task == NULL) {
+        return -EINVAL;
+    }
+
+    const uint32_t want         = wait->events | EPOLLERR | EPOLLHUP | EPOLLNVAL | EPOLLRDHUP;
+    const uint64_t start        = nano_time();
+    const bool infinite_timeout = timeout_ns < 0;
+    const uint64_t timeout      = infinite_timeout ? 0 : (uint64_t)timeout_ns;
+
+    for (;;) {
+        if (wait->revents & want) {
+            return EOK;
+        }
+
+        const uint32_t revents = (uint32_t)vfs_poll(node, want) & want;
+        if (revents) {
+            wait->revents |= revents;
+            return EOK;
+        }
+
+        int64_t block_ns = 10000000LL;
+        if (!infinite_timeout) {
+            const uint64_t elapsed = nano_time() - start;
+            if (elapsed >= timeout) {
+                return ETIMEDOUT;
+            }
+            const uint64_t remain = timeout - elapsed;
+            if (remain < (uint64_t)block_ns) {
+                block_ns = (int64_t)remain;
+            }
+        }
+
+        const int ret = scheduler_block_current((uint64_t)block_ns, reason);
+        if (ret == EOK || ret == ETIMEDOUT) {
+            if (ret == ETIMEDOUT && infinite_timeout) {
+                continue;
+            }
+            if (ret == ETIMEDOUT) {
+                const uint64_t elapsed = nano_time() - start;
+                if (elapsed >= timeout) {
+                    return ETIMEDOUT;
+                }
+            }
+            continue;
+        }
+        return ret;
+    }
+}
+
+void vfs_poll_notify(vfs_node_t node, uint32_t events) {
+    if (node == NULL || events == 0) {
+        return;
+    }
+
+    spin_lock(node->poll_waiters_lock);
+    if (llist_empty(&node->poll_waiters)) {
+        spin_unlock(node->poll_waiters_lock);
+        return;
+    }
+    vfs_poll_wait_t *wait, *tmp;
+    llist_for_each(wait, tmp, &node->poll_waiters, node) {
+        if (!wait->armed || wait->task == NULL) {
+            continue;
+        }
+
+        const uint32_t ready =
+            events & (wait->events | EPOLLERR | EPOLLHUP | EPOLLNVAL | EPOLLRDHUP);
+        if (!ready) {
+            continue;
+        }
+
+        wait->revents |= ready;
+        scheduler_unblock(wait->task, EOK);
+    }
+    spin_unlock(node->poll_waiters_lock);
 }
 
 errno_t vfs_unmount(const char *path) {

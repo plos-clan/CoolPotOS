@@ -3,9 +3,10 @@
 #include "krlibc.h"
 
 vma_t *vma_alloc(void) {
-    vma_t *vma = (vma_t *)malloc(sizeof(vma_t));
-    if (!vma)
+    vma_t *vma = malloc(sizeof(vma_t));
+    if (!vma) {
         return NULL;
+    }
 
     memset(vma, 0, sizeof(vma_t));
     vma->vm_fd  = -1;

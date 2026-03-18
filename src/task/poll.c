@@ -27,6 +27,9 @@ uint32_t epoll_to_poll_comp(const uint32_t epoll_events) {
     if (epoll_events & EPOLLHUP) {
         poll_events |= POLLHUP;
     }
+    if (epoll_events & EPOLLNVAL) {
+        poll_events |= POLLNVAL;
+    }
 
     return poll_events;
 }
@@ -48,6 +51,9 @@ uint32_t poll_to_epoll_comp(const uint32_t poll_events) {
     }
     if (poll_events & POLLHUP) {
         epoll_events |= EPOLLHUP;
+    }
+    if (poll_events & POLLNVAL) {
+        epoll_events |= EPOLLNVAL;
     }
 
     return epoll_events;
@@ -310,8 +316,8 @@ syscall_(
         return SYSCALL_FAULT_(EBADF);
     }
 
-    extern vfs_callback_t fs_callbacks[256];
     const uint64_t start_time = nano_time();
+    extern vfs_callback_t fs_callbacks[256];
     int ready                 = 0;
 
     arch_open_interrupt();
@@ -330,7 +336,6 @@ syscall_(
             uint32_t revents;
 
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
-                // Filesystem doesn't implement poll - assume ready
                 revents = ep->entries[i].events & (EPOLLIN | EPOLLOUT);
             } else {
                 revents = (uint32_t)vfs_poll(node, ep->entries[i].events | EPOLLERR | EPOLLHUP);

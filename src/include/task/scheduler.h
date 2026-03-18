@@ -30,6 +30,8 @@ void scheduler_remove_task(tcb_t thread, cpu_local_t *cpu);
 void scheduler_change_weight(tcb_t thread, uint64_t prio);
 void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs);
 int scheduler_nano_sleep(uint64_t nano);
+int scheduler_block_current(uint64_t timeout_ns, const char *reason);
+void scheduler_unblock(tcb_t thread, int code);
 void scheduler_check_sleep();
 void scheduler_enable();
 void scheduler_disable();

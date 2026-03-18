@@ -163,6 +163,7 @@ struct thread_control_block {
     uint64_t saved_sigmask;      // sigsuspend 保存的原始信号掩码
     bool has_saved_sigmask;      // 是否需要恢复 saved_sigmask
     altstack_t alt_stack;        // 信号备用栈
+    int block_code;              // 通用阻塞等待返回码
 
     size_t cpu_id; // 线程所属CPUID
     size_t futex_index;

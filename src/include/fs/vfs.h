@@ -25,6 +25,16 @@
 #include "types.h"
 
 typedef struct vfs_node *vfs_node_t;
+typedef struct thread_control_block *tcb_t;
+
+typedef struct vfs_poll_wait {
+    struct llist_header node;
+    tcb_t task;
+    vfs_node_t watch_node;
+    uint32_t events;
+    volatile uint32_t revents;
+    volatile bool armed;
+} vfs_poll_wait_t;
 
 typedef errno_t (*vfs_mount_t)(const char *src, vfs_node_t node, void *data);
 typedef void (*vfs_unmount_t)(void *root);
@@ -138,6 +148,8 @@ struct vfs_node {         // vfs节点
     uint64_t dev;         // 设备号
     uint64_t rdev;        // 真实设备号
     spin_t lock;          // 节点操作锁
+    spin_t poll_waiters_lock;
+    struct llist_header poll_waiters;
     char *linkto_path;    // 符号链接悬空指向的路径 (若指向文件存在该字段为NULL)
 };
 
@@ -263,6 +275,11 @@ void vfs_free_child(vfs_node_t vfs);
 errno_t vfs_delete(vfs_node_t node);
 errno_t vfs_rename(vfs_node_t node, const char *new);
 errno_t vfs_poll(vfs_node_t node, size_t event);
+void vfs_poll_wait_init(vfs_poll_wait_t *wait, tcb_t task, uint32_t events);
+int vfs_poll_wait_arm(vfs_node_t node, vfs_poll_wait_t *wait);
+void vfs_poll_wait_disarm(vfs_poll_wait_t *wait);
+int vfs_poll_wait_sleep(vfs_node_t node, vfs_poll_wait_t *wait, int64_t timeout_ns, const char *reason);
+void vfs_poll_notify(vfs_node_t node, uint32_t events);
 errno_t vfs_chmod(vfs_node_t node, uint16_t mode);
 void *vfs_map(
     vfs_node_t node, uint64_t addr, uint64_t len, uint64_t prot, uint64_t flags, uint64_t offset
