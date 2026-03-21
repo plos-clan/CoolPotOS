@@ -179,6 +179,10 @@
 #define RLIMIT_RTTIME     15
 #define RLIMIT_NLIMITS    16
 
+#define PRIO_PROCESS 0
+#define PRIO_PGRP    1
+#define PRIO_USER    2
+
 #define LINUX_REBOOT_MAGIC1  0xfee1dead
 #define LINUX_REBOOT_MAGIC2  672274793
 #define LINUX_REBOOT_MAGIC2A 85072278
@@ -458,7 +462,8 @@ syscall_(socket, int domain, int type, int protocol);
 syscall_(socketpair, int domain, int type, int protocol, int *sv);
 syscall_(bind, int sockfd, struct sockaddr *addr, uint64_t addrlen);
 syscall_(listen, int sockfd, int backlog);
-syscall_(accept, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
+syscall_(accept, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+syscall_(accept4, int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
 syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
 syscall_(
     sendto,
@@ -476,15 +481,15 @@ syscall_(
     size_t len,
     int flags,
     struct sockaddr *src_addr,
-    uint64_t *addrlen
+    socklen_t *addrlen
 );
 syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(shutdown, int sockfd, int how);
 syscall_(setsockopt, int sockfd, int level, int optname, const void *optval, uint64_t optlen);
-syscall_(getsockopt, int sockfd, int level, int optname, void *optval, uint64_t *optlen);
-syscall_(getsockname, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
-syscall_(getpeername, int sockfd, struct sockaddr *addr, uint64_t *addrlen);
+syscall_(getsockopt, int sockfd, int level, int optname, void *optval, socklen_t *optlen);
+syscall_(getsockname, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+syscall_(getpeername, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
 // epoll syscall
 syscall_(epoll_create1, int flags);
@@ -516,6 +521,7 @@ syscall_(getpgid, pid_t pid);
 syscall_(getsid, pid_t pid);
 syscall_(setsid);
 syscall_(getppid);
+syscall_(setpriority, int which, int who, int niceval);
 syscall_(ssetmask, int how, const sigset_t *nset, sigset_t *oset);
 syscall_(sigaltstack, altstack_t *old_stack, const altstack_t *new_stack);
 syscall_(sig_action, int sig, const sigaction_t *action, sigaction_t *oldaction);

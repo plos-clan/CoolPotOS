@@ -11,12 +11,7 @@ target_include_directories(fatfs PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_compile_options(fatfs PRIVATE
-        -fPIC
-        -fvisibility=hidden
-        -fno-stack-protector
-        -Wno-incompatible-library-redeclaration
-)
+target_apply_kernel_module_options(fatfs)
 
 target_link_options(fatfs PRIVATE
         -nostdlib

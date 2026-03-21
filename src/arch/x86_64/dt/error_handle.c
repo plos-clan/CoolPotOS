@@ -201,6 +201,7 @@ __IRQHANDLER void page_fault_(struct interrupt_frame *frame, uint64_t error_code
             faulting_address,
             frame->rip
         );
+        print_kernel_backtrace(frame, saved_rbp);
         pcb_t process = current_task->process;
         if (process->pid != 0) {
             kill_proc(process, -1, true);

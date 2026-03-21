@@ -61,14 +61,35 @@ set(LIMINE_SHARE_DIR "${LIMINE_TMP_DIR}/share/limine")
 set(ISO_FILE ${CMAKE_CURRENT_BINARY_DIR}/CoolPotOS.iso)
 set(ISO_DIR ${CMAKE_CURRENT_BINARY_DIR}/iso_dir)
 set(ROOTFS_IMAGE ${CMAKE_CURRENT_SOURCE_DIR}/assets/cp_rootfs.sfs)
+set(INITRAMFS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets/initramfs)
+set(INITRAMFS_IMAGE ${CMAKE_CURRENT_BINARY_DIR}/initramfs.img)
+set(INITRAMFS_SOURCE_DEPS
+        ${INITRAMFS_DIR}/init
+        ${INITRAMFS_DIR}/bin/busybox
+        ${INITRAMFS_DIR}/bin/zstd
+        ${INITRAMFS_DIR}/etc/passwd
+        ${INITRAMFS_DIR}/etc/securetty
+        ${INITRAMFS_DIR}/etc/shadow
+)
+
+add_custom_command(
+        OUTPUT ${INITRAMFS_IMAGE}
+        COMMAND ${CMAKE_COMMAND} -E env PATH=/usr/bin:/bin
+                ${CMAKE_COMMAND} -E chdir ${INITRAMFS_DIR} /bin/sh -c "/usr/bin/find . -print | /usr/bin/sort | /bin/cpio -o -H newc > '${INITRAMFS_IMAGE}'"
+        DEPENDS ${INITRAMFS_SOURCE_DEPS}
+        COMMENT "Packing initramfs image"
+        VERBATIM
+)
+
+add_custom_target(initramfs_image DEPENDS ${INITRAMFS_IMAGE})
 
 add_custom_target(iso ALL
-        DEPENDS kernel e1000 fatfs iso9660 zstd squashfs fetch_limine_binaries
+        DEPENDS kernel e1000 fatfs iso9660 zstd squashfs fetch_limine_binaries initramfs_image
 
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${ISO_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${ISO_DIR}/limine
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/readme.txt ${ISO_DIR}/readme.txt
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/initramfs.img ${ISO_DIR}/initramfs.img
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${INITRAMFS_IMAGE} ${ISO_DIR}/initramfs.img
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/limine.conf ${ISO_DIR}/limine.conf
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/background.jpg ${ISO_DIR}/background.jpg
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ROOTFS_IMAGE} ${ISO_DIR}/cp_rootfs.sfs

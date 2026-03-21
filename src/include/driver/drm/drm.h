@@ -61,6 +61,12 @@
 #define DRM_CONNECTOR_EDID_PROP_ID    0x201
 #define DRM_CONNECTOR_CRTC_ID_PROP_ID 0x202
 
+/* Framebuffer属性 */
+#define DRM_FB_WIDTH_PROP_ID  0x300
+#define DRM_FB_HEIGHT_PROP_ID 0x301
+#define DRM_FB_BPP_PROP_ID    0x302
+#define DRM_FB_DEPTH_PROP_ID  0x303
+
 /* DPMS状态 */
 #define DRM_MODE_DPMS_ON      0
 #define DRM_MODE_DPMS_STANDBY 1
@@ -783,6 +789,13 @@ struct drm_syncobj_timeline_array {
     __u32 flags;
 };
 
+struct drm_syncobj_eventfd {
+    __u32 handle;
+    __u32 flags;
+    __s32 fd;
+    __u32 pad;
+};
+
 /* Query current scanout sequence number */
 struct drm_crtc_get_sequence {
     __u32 crtc_id;     /* requested crtc_id */
@@ -945,6 +958,8 @@ extern "C" {
 #define DRM_IOCTL_SYNCOBJ_TIMELINE_SIGNAL DRM_IOWR(0xCD, struct drm_syncobj_timeline_array)
 
 #define DRM_IOCTL_MODE_GETFB2 DRM_IOWR(0xCE, struct drm_mode_fb_cmd2)
+#define DRM_IOCTL_SYNCOBJ_EVENTFD DRM_IOWR(0xCF, struct drm_syncobj_eventfd)
+#define DRM_IOCTL_MODE_CLOSEFB DRM_IOWR(0xD0, struct drm_mode_closefb)
 
 /**
  * Device specific ioctls should only be in their respective headers
@@ -1128,6 +1143,10 @@ struct drm_device {
     int id;
     void *data;
     drm_device_op_t *op;
+    char driver_name[32];
+    char driver_date[32];
+    char driver_desc[128];
+    spin_t event_lock;
     struct k_drm_event *drm_events[DRM_MAX_EVENTS_COUNT];
     uint64_t vblank_counter;
     uint64_t dev_nr;
@@ -1136,4 +1155,9 @@ struct drm_device {
 };
 
 drm_device_t *drm_regist_pci_dev(void *data, drm_device_op_t *op, pci_device_t *pci_dev);
+void drm_device_set_driver_info(
+    drm_device_t *dev, const char *name, const char *date, const char *desc
+);
+int drm_post_event(drm_device_t *dev, uint32_t type, uint64_t user_data);
+int drm_defer_event(drm_device_t *dev, uint32_t type, uint64_t user_data);
 void drm_sysfs_populate();

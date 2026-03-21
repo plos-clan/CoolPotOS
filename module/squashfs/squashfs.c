@@ -38,6 +38,42 @@ static void squashfs_handle_release(squashfs_handle_t *handle) {
     free(handle);
 }
 
+static sqfs_meta_reader_t *squashfs_create_inode_reader(const squashfs_mount_t *mount) {
+    if (mount == NULL || mount->image == NULL || mount->cmp == NULL) {
+        return NULL;
+    }
+
+    return sqfs_meta_reader_create(
+        mount->image, mount->cmp, mount->super.inode_table_start, mount->super.directory_table_start
+    );
+}
+
+static sqfs_u64 squashfs_directory_reader_limit(const squashfs_mount_t *mount) {
+    sqfs_u64 limit = mount->super.id_table_start;
+
+    if (mount->super.fragment_table_start < limit) {
+        limit = mount->super.fragment_table_start;
+    }
+    if (mount->super.export_table_start < limit) {
+        limit = mount->super.export_table_start;
+    }
+
+    return limit;
+}
+
+static sqfs_meta_reader_t *squashfs_create_directory_reader(const squashfs_mount_t *mount) {
+    if (mount == NULL || mount->image == NULL || mount->cmp == NULL) {
+        return NULL;
+    }
+
+    return sqfs_meta_reader_create(
+        mount->image,
+        mount->cmp,
+        mount->super.directory_table_start,
+        squashfs_directory_reader_limit(mount)
+    );
+}
+
 static int squashfs_image_read_at(sqfs_file_t *base, sqfs_u64 offset, void *buffer, size_t size) {
     squashfs_image_t *file = (squashfs_image_t *)base;
     size_t ret;
@@ -241,7 +277,6 @@ void squashfs_mount_drop(squashfs_mount_t *mount) {
     }
 
     sqfs_drop(mount->data_reader);
-    sqfs_drop(mount->dir_reader);
     sqfs_drop(mount->ids);
     sqfs_drop(mount->cmp);
     sqfs_drop(mount->image);
@@ -249,10 +284,24 @@ void squashfs_mount_drop(squashfs_mount_t *mount) {
 }
 
 int squashfs_open_inode(squashfs_mount_t *mount, sqfs_u64 inode_ref, sqfs_inode_generic_t **out) {
-    spin_lock(mount->lock);
-    const int ret = sqfs_dir_reader_get_inode(mount->dir_reader, inode_ref, out);
-    spin_unlock(mount->lock);
+    if (out != NULL) {
+        *out = NULL;
+    }
+    if (mount == NULL || out == NULL) {
+        return SQFS_ERROR_ARG_INVALID;
+    }
 
+    sqfs_meta_reader_t *inode_reader = squashfs_create_inode_reader(mount);
+    if (inode_reader == NULL) {
+        return SQFS_ERROR_ALLOC;
+    }
+
+    spin_lock(mount->lock);
+    const int ret = sqfs_meta_reader_read_inode(
+        inode_reader, &mount->super, inode_ref >> 16, inode_ref & 0x0FFFF, out
+    );
+    spin_unlock(mount->lock);
+    sqfs_drop(inode_reader);
     return ret;
 }
 
@@ -381,8 +430,11 @@ void squashfs_fill_node(vfs_node_t node, squashfs_handle_t *handle) {
 }
 
 int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle) {
-    sqfs_dir_reader_state_t state;
+    sqfs_readdir_state_t state;
     squashfs_mount_t *mount;
+    sqfs_meta_reader_t *dir_reader;
+    sqfs_u64 ent_ref;
+    int ret;
 
     if (node == NULL || handle == NULL || handle->inode == NULL) {
         return 0;
@@ -395,11 +447,16 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
     }
 
     mount = handle->mount;
+    dir_reader = squashfs_create_directory_reader(mount);
+    if (dir_reader == NULL) {
+        return SQFS_ERROR_ALLOC;
+    }
 
     spin_lock(mount->lock);
-    int ret = sqfs_dir_reader_open_dir(mount->dir_reader, handle->inode, &state, 0);
+    ret = sqfs_readdir_state_init(&state, &mount->super, handle->inode);
     spin_unlock(mount->lock);
     if (ret != 0) {
+        sqfs_drop(dir_reader);
         return ret;
     }
 
@@ -407,34 +464,23 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
         sqfs_dir_node_t *ent = NULL;
 
         spin_lock(mount->lock);
-        ret = sqfs_dir_reader_read(mount->dir_reader, &state, &ent);
+        ret = sqfs_meta_reader_readdir(dir_reader, &state, &ent, NULL, &ent_ref);
         spin_unlock(mount->lock);
         if (ret > 0) {
             break;
         }
-        if (ret < 0)
+        if (ret < 0) {
+            sqfs_drop(dir_reader);
             return ret;
+        }
 
         if (!squashfs_child_exists(node, (const char *)ent->name)) {
             const vfs_node_t child = vfs_child_append(node, (const char *)ent->name, NULL);
             if (child != NULL) {
-                sqfs_inode_generic_t *child_inode = NULL;
-                squashfs_handle_t *child_handle   = NULL;
-
                 child->fsid    = squashfs_id;
                 child->dev     = node->dev;
                 child->type    = squashfs_map_inode_type(ent->type);
                 child->visited = true;
-
-                if (squashfs_open_inode(handle->mount, state.ent_ref, &child_inode) == 0) {
-                    child_handle = squashfs_handle_create(handle->mount, child_inode, state.ent_ref);
-                    if (child_handle != NULL) {
-                        child->handle = child_handle;
-                        squashfs_fill_node(child, child_handle);
-                    } else {
-                        sqfs_free(child_inode);
-                    }
-                }
             }
         }
 
@@ -442,6 +488,7 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
     }
 
     ((squashfs_handle_t *)handle)->dir_populated = true;
+    sqfs_drop(dir_reader);
     return 0;
 }
 
@@ -452,7 +499,10 @@ int squashfs_lookup_child(
     sqfs_u64 *inode_ref,
     sqfs_inode_generic_t **out
 ) {
-    sqfs_dir_reader_state_t state;
+    sqfs_readdir_state_t state;
+    sqfs_meta_reader_t *dir_reader;
+    sqfs_u64 ent_ref = 0;
+    int ret;
 
     if (inode_ref != NULL) {
         *inode_ref = 0;
@@ -460,11 +510,20 @@ int squashfs_lookup_child(
     if (out != NULL) {
         *out = NULL;
     }
+    if (mount == NULL || parent == NULL) {
+        return SQFS_ERROR_ARG_INVALID;
+    }
+
+    dir_reader = squashfs_create_directory_reader(mount);
+    if (dir_reader == NULL) {
+        return SQFS_ERROR_ALLOC;
+    }
 
     spin_lock(mount->lock);
-    int ret = sqfs_dir_reader_open_dir(mount->dir_reader, parent, &state, 0);
+    ret = sqfs_readdir_state_init(&state, &mount->super, parent);
     spin_unlock(mount->lock);
     if (ret != 0) {
+        sqfs_drop(dir_reader);
         return ret;
     }
 
@@ -474,21 +533,29 @@ int squashfs_lookup_child(
         sqfs_dir_node_t *ent = NULL;
 
         spin_lock(mount->lock);
-        ret = sqfs_dir_reader_read(mount->dir_reader, &state, &ent);
+        ret = sqfs_meta_reader_readdir(dir_reader, &state, &ent, NULL, &ent_ref);
         spin_unlock(mount->lock);
         if (ret != 0) {
             if (ret > 0) {
+                sqfs_drop(dir_reader);
                 return SQFS_ERROR_NO_ENTRY;
             }
+            sqfs_drop(dir_reader);
             return ret;
         }
 
         if (ent->size + 1 == name_len && memcmp(ent->name, name, name_len) == 0) {
             if (inode_ref != NULL) {
-                *inode_ref = state.ent_ref;
+                *inode_ref = ent_ref;
             }
             sqfs_free(ent);
-            return out != NULL ? squashfs_open_inode(mount, state.ent_ref, out) : 0;
+            if (out == NULL) {
+                sqfs_drop(dir_reader);
+                return 0;
+            }
+
+            sqfs_drop(dir_reader);
+            return squashfs_open_inode(mount, ent_ref, out);
         }
 
         sqfs_free(ent);
@@ -547,12 +614,6 @@ int squashfs_create_mount(
     if (ret != 0)
         goto fail;
 
-    mount->dir_reader = sqfs_dir_reader_create(&mount->super, mount->cmp, mount->image, 0);
-    if (mount->dir_reader == NULL) {
-        ret = SQFS_ERROR_ALLOC;
-        goto fail;
-    }
-
     mount->data_reader =
         sqfs_data_reader_create(mount->image, mount->super.block_size, mount->cmp, 0);
     if (mount->data_reader == NULL) {
@@ -569,7 +630,7 @@ int squashfs_create_mount(
         *root_ref = mount->super.root_inode_ref;
     }
     if (root_inode != NULL) {
-        ret = sqfs_dir_reader_get_root_inode(mount->dir_reader, root_inode);
+        ret = squashfs_open_inode(mount, mount->super.root_inode_ref, root_inode);
         if (ret != 0) {
             goto fail;
         }

@@ -7,6 +7,12 @@
 #define POLLERR  0x0008 // 错误（不需要设置，由内核返回）
 #define POLLHUP  0x0010 // 挂起（对端关闭）
 #define POLLNVAL 0x0020 // fd 无效（文件描述符非法）
+#define POLLRDNORM 0x0040
+#define POLLRDBAND 0x0080
+#define POLLWRNORM 0x0100
+#define POLLWRBAND 0x0200
+#define POLLMSG    0x0400
+#define POLLRDHUP  0x2000
 
 #define EPOLLIN        0x001
 #define EPOLLPRI       0x002

@@ -11,6 +11,7 @@ typedef struct plainfb_device {
     // Framebuffer management
     struct plainfb_dumbbuffer {
         bool used;
+        bool direct_backed;
         uint64_t addr;
         uint32_t width;
         uint32_t height;

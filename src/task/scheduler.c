@@ -19,6 +19,16 @@ static _Atomic volatile bool scheduler_status = false;
 static cow_arraylist *sleep_list = NULL;
 static spin_t sleep_lock         = SPIN_INIT;
 static const int scheduler_block_pending = 0x7fffffff;
+static uint64_t xorg_last_rip            = 0;
+static size_t xorg_rip_hits             = 0;
+static int xorg_rip_logs                = 0;
+
+static bool scheduler_trace_xorg(tcb_t thread) {
+    if (thread == NULL || thread->process == NULL || thread->process->name == NULL) {
+        return false;
+    }
+    return strstr(thread->process->name, "Xorg") != NULL;
+}
 
 static void sleep_block_task(tcb_t thread) {
     const cpu_local_t *cpu = get_cpu_local(thread->cpu_id);

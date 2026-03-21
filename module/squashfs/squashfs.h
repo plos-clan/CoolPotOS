@@ -23,7 +23,6 @@ struct squashfs_mount {
     sqfs_file_t *image;
     sqfs_compressor_t *cmp;
     sqfs_id_table_t *ids;
-    sqfs_dir_reader_t *dir_reader;
     sqfs_data_reader_t *data_reader;
     sqfs_super_t super;
 };

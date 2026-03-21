@@ -87,6 +87,21 @@ SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 						     sqfs_u64 limit);
 
 /**
+ * @brief Validate a meta reader instance before dereferencing it.
+ *
+ * @memberof sqfs_meta_reader_t
+ *
+ * This is primarily intended for kernel-side hardening so a corrupted
+ * reader pointer is turned into a regular error path instead of a page fault.
+ *
+ * @param m A pointer to a meta data reader.
+ * @param where Short call-site context for diagnostics.
+ *
+ * @return Zero if the reader looks valid, an error code otherwise.
+ */
+SQFS_API int sqfs_meta_reader_check(const sqfs_meta_reader_t *m, const char *where);
+
+/**
  * @brief Seek to a specific meta data block and offset.
  *
  * @memberof sqfs_meta_reader_t

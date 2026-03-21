@@ -12,14 +12,17 @@
 uint32_t epoll_to_poll_comp(const uint32_t epoll_events) {
     uint32_t poll_events = 0;
 
-    if (epoll_events & EPOLLIN) {
-        poll_events |= POLLIN;
+    if (epoll_events & (EPOLLIN | EPOLLRDNORM)) {
+        poll_events |= POLLIN | POLLRDNORM;
     }
-    if (epoll_events & EPOLLOUT) {
-        poll_events |= POLLOUT;
+    if (epoll_events & (EPOLLPRI | EPOLLRDBAND)) {
+        poll_events |= POLLPRI | POLLRDBAND;
     }
-    if (epoll_events & EPOLLPRI) {
-        poll_events |= POLLPRI;
+    if (epoll_events & (EPOLLOUT | EPOLLWRNORM)) {
+        poll_events |= POLLOUT | POLLWRNORM;
+    }
+    if (epoll_events & EPOLLWRBAND) {
+        poll_events |= POLLWRBAND;
     }
     if (epoll_events & EPOLLERR) {
         poll_events |= POLLERR;
@@ -30,6 +33,9 @@ uint32_t epoll_to_poll_comp(const uint32_t epoll_events) {
     if (epoll_events & EPOLLNVAL) {
         poll_events |= POLLNVAL;
     }
+    if (epoll_events & EPOLLRDHUP) {
+        poll_events |= POLLRDHUP;
+    }
 
     return poll_events;
 }
@@ -37,14 +43,17 @@ uint32_t epoll_to_poll_comp(const uint32_t epoll_events) {
 uint32_t poll_to_epoll_comp(const uint32_t poll_events) {
     uint32_t epoll_events = 0;
 
-    if (poll_events & POLLIN) {
-        epoll_events |= EPOLLIN;
+    if (poll_events & (POLLIN | POLLRDNORM)) {
+        epoll_events |= EPOLLIN | EPOLLRDNORM;
     }
-    if (poll_events & POLLOUT) {
-        epoll_events |= EPOLLOUT;
+    if (poll_events & (POLLPRI | POLLRDBAND)) {
+        epoll_events |= EPOLLPRI | EPOLLRDBAND;
     }
-    if (poll_events & POLLPRI) {
-        epoll_events |= EPOLLPRI;
+    if (poll_events & (POLLOUT | POLLWRNORM | POLLWRBAND)) {
+        epoll_events |= EPOLLOUT | EPOLLWRNORM;
+        if (poll_events & POLLWRBAND) {
+            epoll_events |= EPOLLWRBAND;
+        }
     }
     if (poll_events & POLLERR) {
         epoll_events |= EPOLLERR;
@@ -54,6 +63,9 @@ uint32_t poll_to_epoll_comp(const uint32_t poll_events) {
     }
     if (poll_events & POLLNVAL) {
         epoll_events |= EPOLLNVAL;
+    }
+    if (poll_events & POLLRDHUP) {
+        epoll_events |= EPOLLRDHUP;
     }
 
     return epoll_events;

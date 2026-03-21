@@ -667,10 +667,11 @@ errno_t vfs_close(vfs_node_t node) {
     }
     if (node->type & file_socket) {
         socket_specific_t *spec = node->handle;
+        bool active             = spec ? spec->active > 0 : false;
         callbackof(node, close)(node->handle);
         if (node->refcount != 0)
             return EOK;
-        if (spec && spec->active > 0) {
+        if (active) {
             spec->free_pending = true;
             return EOK;
         }
@@ -805,11 +806,43 @@ errno_t vfs_ioctl(vfs_node_t device, size_t options, void *arg) {
     return callbackof(device, ioctl)(device->handle, options, arg);
 }
 
+static uint32_t vfs_poll_normalize_events(uint32_t events) {
+    if (events & EPOLLRDNORM) {
+        events |= EPOLLIN;
+    }
+    if (events & EPOLLRDBAND) {
+        events |= EPOLLPRI;
+    }
+    if (events & EPOLLWRNORM) {
+        events |= EPOLLOUT;
+    }
+    return events;
+}
+
+static uint32_t vfs_poll_restore_aliases(uint32_t requested, uint32_t revents) {
+    if ((requested & EPOLLRDNORM) && (revents & EPOLLIN)) {
+        revents |= EPOLLRDNORM;
+    }
+    if ((requested & EPOLLRDBAND) && (revents & EPOLLPRI)) {
+        revents |= EPOLLRDBAND;
+    }
+    if ((requested & EPOLLWRNORM) && (revents & EPOLLOUT)) {
+        revents |= EPOLLWRNORM;
+    }
+    return revents;
+}
+
 errno_t vfs_poll(vfs_node_t node, size_t event) {
     do_update(node);
     if (node->type & file_dir)
         return -1;
-    return callbackof(node, poll)(node->handle, event);
+    const uint32_t requested  = (uint32_t)event;
+    const uint32_t normalized = vfs_poll_normalize_events(requested);
+    const errno_t ret         = callbackof(node, poll)(node->handle, normalized);
+    if (ret < 0) {
+        return ret;
+    }
+    return (errno_t)vfs_poll_restore_aliases(requested, (uint32_t)ret);
 }
 
 void vfs_poll_wait_init(vfs_poll_wait_t *wait, tcb_t task, uint32_t events) {

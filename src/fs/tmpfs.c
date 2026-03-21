@@ -98,28 +98,32 @@ size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
 }
 
 errno_t tmpfs_stat(void *file, vfs_node_t node) {
-    tmpfs_file_t *file0 = (tmpfs_file_t *)file;
-    if (file0 == NULL)
+    const tmpfs_file_t *file0 = file;
+    if (file0 == NULL) {
         return -ENOENT;
-    node->type = file0->type == tp_file_symlink ? file_symlink
-                 : file0->type == tp_file_dir   ? file_dir
-                 : file0->type == tp_file_blk   ? file_block
-                 : file0->type == tp_file_char  ? file_stream
-                                                : file_none;
+    }
+    node->type = file0->type == tp_file_symlink  ? file_symlink
+                 : file0->type == tp_file_dir    ? file_dir
+                 : file0->type == tp_file_blk    ? file_block
+                 : file0->type == tp_file_char   ? file_stream
+                 : file0->type == tp_file_socket ? file_socket
+                                                 : file_none;
     node->size = file0->type == file_dir ? 0 : file0->size;
     return EOK;
 }
 
 errno_t tmpfs_delete(void *parent, vfs_node_t node) {
-    tmpfs_file_t *f = (tmpfs_file_t *)node->handle;
-    if (f == NULL)
+    tmpfs_file_t *f = node->handle;
+    if (f == NULL) {
         return EOK;
+    }
     if (f->link_count > 1) {
         f->link_count--;
         return EOK;
     }
-    if (f->data != NULL)
+    if (f->data != NULL) {
         free(f->data);
+    }
     free(f);
     return EOK;
 }
@@ -134,12 +138,14 @@ errno_t tmpfs_rename(void *current, const char *new_name) {
 }
 
 int tmpfs_poll(void *file, size_t events) {
-    tmpfs_file_t *f = (tmpfs_file_t *)file;
-    int revents     = 0;
-    if (events & POLLIN)
+    (tmpfs_file_t *)file;
+    int revents = 0;
+    if (events & POLLIN) {
         revents |= POLLIN;
-    if (events & POLLOUT)
+    }
+    if (events & POLLOUT) {
         revents |= POLLOUT;
+    }
     return revents;
 }
 
@@ -154,8 +160,9 @@ void *tmpfs_map(void *file, void *addr, size_t offset, size_t size, size_t prot,
 vfs_node_t tmpfs_dup(vfs_node_t node) {
     vfs_node_t copy    = vfs_node_alloc(node->parent, node->name);
     tmpfs_file_t *file = node->handle;
-    if (file != NULL)
+    if (file != NULL) {
         file->link_count++;
+}
     copy->handle      = node->handle;
     copy->type        = node->type;
     copy->size        = node->size;
@@ -234,10 +241,12 @@ errno_t tmpfs_mknod(void *parent, const char *name, vfs_node_t node, uint16_t mo
     if ((mode & S_IFMT) == S_IFBLK) {
         node->type   = file_block;
         handle->type = tp_file_blk;
-    }
-    else if ((mode & S_IFMT) == S_IFCHR) {
+    } else if ((mode & S_IFMT) == S_IFCHR) {
         node->type   = file_stream;
         handle->type = tp_file_char;
+    } else if ((mode & S_IFMT) == S_IFSOCK) {
+        node->type   = file_socket;
+        handle->type = tp_file_socket;
     } else {
         node->type   = file_none;
         handle->type = tp_file_file;

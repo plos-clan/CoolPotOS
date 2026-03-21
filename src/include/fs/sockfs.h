@@ -35,6 +35,7 @@
 #define SO_DOMAIN    39
 #define SO_PASSCRED  16
 #define SO_PEERCRED  17
+#define SO_ACCEPTCONN 30
 
 // MSG flags
 #define MSG_PEEK     0x02
@@ -55,14 +56,22 @@ struct sockaddr_un {
     char sun_path[UNIX_PATH_MAX];
 };
 
+typedef uint32_t socklen_t;
+
 struct msghdr {
     void *msg_name;
-    uint32_t msg_namelen;
+    socklen_t msg_namelen;
     struct iovec *msg_iov;
     size_t msg_iovlen;
     void *msg_control;
     size_t msg_controllen;
     int msg_flags;
+};
+
+struct ucred {
+    int32_t pid;
+    uint32_t uid;
+    uint32_t gid;
 };
 
 typedef enum {
@@ -92,7 +101,17 @@ typedef struct socket_info {
     // AF_UNIX addressing
     char bound_path[UNIX_PATH_MAX];
     bool is_bound;
+    bool bound_abstract;
+    bool bound_registered;
     vfs_node_t bound_node;
+    vfs_node_t endpoint_node;
+    struct ucred cred;
+    struct ucred peer_cred;
+    bool has_peer_cred;
+    bool shut_rd;
+    bool shut_wr;
+    bool closed;
+    int passcred;
 
     // SOCK_STREAM connection
     struct socket_info *peer;
@@ -118,8 +137,6 @@ typedef struct socket_specific {
     vfs_node_t node;
     int active;
     bool free_pending;
-    bool shut_rd;
-    bool shut_wr;
 } socket_specific_t;
 
 // Ring buffer operations
@@ -134,3 +151,10 @@ void sockfs_regist();
 
 // Helper to create a socket VFS node
 vfs_node_t sockfs_create_node(socket_info_t *info);
+errno_t sockfs_bind_endpoint(socket_info_t *info, const struct sockaddr_un *sun, uint64_t addrlen);
+errno_t sockfs_lookup_bound(
+    const struct sockaddr_un *sun, uint64_t addrlen, socket_info_t **out_info, bool *path_exists
+);
+void sockfs_unbind_endpoint(socket_info_t *info);
+void sockfs_fill_sockaddr(const socket_info_t *info, struct sockaddr_un *sun, socklen_t *addrlen);
+void sockfs_notify(socket_info_t *info, uint32_t events);

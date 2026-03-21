@@ -95,6 +95,10 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 	size_t count;
 	int ret;
 
+	ret = sqfs_meta_reader_check(m, "readdir:entry");
+	if (ret != 0)
+		return ret;
+
 	if (it->entries == 0) {
 		sqfs_dir_header_t hdr;
 
@@ -105,7 +109,15 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 		if (ret != 0)
 			return ret;
 
+		ret = sqfs_meta_reader_check(m, "readdir:after_seek_header");
+		if (ret != 0)
+			return ret;
+
 		ret = sqfs_meta_reader_read_dir_header(m, &hdr);
+		if (ret != 0)
+			return ret;
+
+		ret = sqfs_meta_reader_check(m, "readdir:after_read_header");
 		if (ret != 0)
 			return ret;
 
@@ -124,9 +136,20 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 	if (ret != 0)
 		return ret;
 
+	ret = sqfs_meta_reader_check(m, "readdir:after_seek_entry");
+	if (ret != 0)
+		return ret;
+
 	ret = sqfs_meta_reader_read_dir_ent(m, ent);
 	if (ret)
 		return ret;
+
+	ret = sqfs_meta_reader_check(m, "readdir:after_read_entry");
+	if (ret != 0) {
+		sqfs_free(*ent);
+		*ent = NULL;
+		return ret;
+	}
 
 	sqfs_meta_reader_get_position(m, &it->block, &it->offset);
 

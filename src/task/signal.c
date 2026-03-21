@@ -1,11 +1,19 @@
 #include "task/signal.h"
 #include "cow_arraylist.h"
 #include "errno.h"
+#include "krlibc.h"
 #include "task/signal_arch.h"
 #include "task/task.h"
 #include "term/klog.h"
 
 static signal_internal_t signal_internal_decisions[MAXSIG] = { 0 };
+
+static bool signal_trace_process(const pcb_t process) {
+    if (process == NULL || process->name == NULL) {
+        return false;
+    }
+    return strstr(process->name, "xinit") || strstr(process->name, "Xorg") || strstr(process->name, "xkbcomp");
+}
 
 bool signals_pending_quick(const tcb_t task) {
     const sigset_t pending_list   = task->signal;
@@ -29,43 +37,43 @@ bool signals_pending_quick(const tcb_t task) {
 }
 
 void signal_init() {
-    signal_internal_decisions[SIGABRT] = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGALRM] = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGBUS]  = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGCHLD] = SIGNAL_INTERNAL_IGN;
+    signal_internal_decisions[SIGABRT - 1] = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGALRM - 1] = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGBUS - 1]  = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGCHLD - 1] = SIGNAL_INTERNAL_IGN;
     // signal_internal_decisions[SIGCLD] = SIGNAL_INTERNAL_IGN;
-    signal_internal_decisions[SIGCONT] = SIGNAL_INTERNAL_CONT;
+    signal_internal_decisions[SIGCONT - 1] = SIGNAL_INTERNAL_CONT;
     // signal_internal_decisions[SIGEMT] = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGFPE]  = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGHUP]  = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGILL]  = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGINT]  = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGIO]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGIOT]  = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGKILL] = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGFPE - 1]  = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGHUP - 1]  = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGILL - 1]  = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGINT - 1]  = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGIO - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGIOT - 1]  = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGKILL - 1] = SIGNAL_INTERNAL_TERM;
     // signal_internal_decisions[SIGLOST] = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGPIPE]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGPOLL]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGPROF]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGPWR]    = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGQUIT]   = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGSEGV]   = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGSTKFLT] = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGSTOP]   = SIGNAL_INTERNAL_STOP;
-    signal_internal_decisions[SIGTSTP]   = SIGNAL_INTERNAL_STOP;
-    signal_internal_decisions[SIGSYS]    = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGTERM]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGTRAP]   = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGTTIN]   = SIGNAL_INTERNAL_STOP;
-    signal_internal_decisions[SIGTTOU]   = SIGNAL_INTERNAL_STOP;
-    signal_internal_decisions[SIGUNUSED] = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGURG]    = SIGNAL_INTERNAL_IGN;
-    signal_internal_decisions[SIGUSR1]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGUSR2]   = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGVTALRM] = SIGNAL_INTERNAL_TERM;
-    signal_internal_decisions[SIGXCPU]   = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGXFSZ]   = SIGNAL_INTERNAL_CORE;
-    signal_internal_decisions[SIGWINCH]  = SIGNAL_INTERNAL_IGN;
+    signal_internal_decisions[SIGPIPE - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGPOLL - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGPROF - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGPWR - 1]    = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGQUIT - 1]   = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGSEGV - 1]   = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGSTKFLT - 1] = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGSTOP - 1]   = SIGNAL_INTERNAL_STOP;
+    signal_internal_decisions[SIGTSTP - 1]   = SIGNAL_INTERNAL_STOP;
+    signal_internal_decisions[SIGSYS - 1]    = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGTERM - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGTRAP - 1]   = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGTTIN - 1]   = SIGNAL_INTERNAL_STOP;
+    signal_internal_decisions[SIGTTOU - 1]   = SIGNAL_INTERNAL_STOP;
+    signal_internal_decisions[SIGUNUSED - 1] = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGURG - 1]    = SIGNAL_INTERNAL_IGN;
+    signal_internal_decisions[SIGUSR1 - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGUSR2 - 1]   = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGVTALRM - 1] = SIGNAL_INTERNAL_TERM;
+    signal_internal_decisions[SIGXCPU - 1]   = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGXFSZ - 1]   = SIGNAL_INTERNAL_CORE;
+    signal_internal_decisions[SIGWINCH - 1]  = SIGNAL_INTERNAL_IGN;
 }
 
 int send_signal_to_process(const pcb_t process, const int sig) {
@@ -85,6 +93,18 @@ int send_signal_to_process(const pcb_t process, const int sig) {
     }
 
     target->signal |= SIGMASK(sig);
+
+    if (signal_trace_process(process)) {
+        logkf(
+            "[sig-dbg] queue sig=%d proc=%s pid=%d blocked=0x%lx pending=0x%lx status=%d\n",
+            sig,
+            process->name,
+            process->pid,
+            (unsigned long)target->blocked,
+            (unsigned long)target->signal,
+            target->status
+        );
+    }
 
     if (target->status == T_WAIT) {
         target->status = T_RUNNING;
@@ -126,6 +146,18 @@ void do_signal(struct syscall_regs *regs) {
 
         sigaction_t *action  = &task->actions[sig];
         const sighandler_t handler = action->sa_handler;
+
+        if (signal_trace_process(task->process)) {
+            logkf(
+                "[sig-dbg] deliver sig=%d proc=%s pid=%d handler=%p blocked=0x%lx pending=0x%lx\n",
+                sig,
+                task->process->name,
+                task->process->pid,
+                handler,
+                (unsigned long)task->blocked,
+                (unsigned long)task->signal
+            );
+        }
 
         if (sig == SIGKILL) {
             task->signal &= ~SIGMASK(sig);

@@ -13,6 +13,10 @@ syscall_(arch_prctl, uint64_t code, uint64_t addr); // prsys_x64.c
 syscall_(sched_getaffinity, pid_t pid, size_t cpusetsize, unsigned long *mask); // prsys.c
 syscall_(lgetxattr, const char *path, const char *name, void *value, size_t size); // fssys.c
 syscall_(llistxattr, const char *path, char *list, size_t size); // fssys.c
+syscall_(setuid, int uid); // prsys.c
+syscall_(setgid, int gid); // prsys.c
+syscall_(setpriority, int which, int who, int niceval); // prsys.c
+syscall_(membarrier, int cmd, int flags, int cpu_id); // prsys.c
 
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
@@ -213,6 +217,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_G_AFFINITY]    = (syscall_t)syscall_sched_getaffinity,
     [SYSCALL_CAPGET]        = (syscall_t)syscall_capget,
     [SYSCALL_CAPSET]        = (syscall_t)syscall_capset,
+    [SYSCALL_SETUID]        = (syscall_t)syscall_setuid,
+    [SYSCALL_SETGID]        = (syscall_t)syscall_setgid,
+    [SYSCALL_SETPRIORITY]   = (syscall_t)syscall_setpriority,
     [SYSCALL_CHOWN]         = (syscall_t)syscall_chown,
     [SYSCALL_FCHOWN]        = (syscall_t)syscall_fchown,
     [SYSCALL_LCHOWN]        = (syscall_t)syscall_lchown,
@@ -223,6 +230,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_SYNC]          = (syscall_t)syscall_sync,
     [SYSCALL_REBOOT]        = (syscall_t)syscall_reboot,
     [SYSCALL_GETRANDOM]     = (syscall_t)syscall_getrandom,
+    [324]                   = (syscall_t)syscall_membarrier,
     [SYSCALL_SOCKET]        = (syscall_t)syscall_socket,
     [SYSCALL_SOCKETPAIR]    = (syscall_t)syscall_socketpair,
     [SYSCALL_BIND]          = (syscall_t)syscall_bind,
@@ -242,6 +250,7 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EPOLL_CTL]     = (syscall_t)syscall_epoll_ctl,
     [SYSCALL_EPOLL_WAIT]    = (syscall_t)syscall_epoll_wait,
     [SYSCALL_EPOLL_PWAIT]   = (syscall_t)syscall_epoll_pwait,
+    [SYSCALL_ACCEPT4]       = (syscall_t)syscall_accept4,
     [SYSCALL_EVENTFD2]      = (syscall_t)syscall_eventfd2,
 };
 
@@ -266,7 +275,13 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
         );
         arch_close_interrupt();
     } else {
-        logkf("Syscall(%d) cannot implemented.\n", syscall_id);
+        const tcb_t current = get_current_task();
+        logkf(
+            "Syscall(%d) cannot implemented. proc=%s pid=%d\n",
+            syscall_id,
+            current && current->process && current->process->name ? current->process->name : "<none>",
+            current && current->process ? current->process->pid : -1
+        );
         regs->rax = -ENOSYS;
     }
 

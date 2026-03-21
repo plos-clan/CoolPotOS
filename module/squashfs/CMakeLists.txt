@@ -33,12 +33,7 @@ target_compile_definitions(squashfs PRIVATE
     NO_CUSTOM_ALLOC
 )
 
-target_compile_options(squashfs PRIVATE
-    -fPIC
-    -fvisibility=hidden
-    -fno-stack-protector
-    -Wno-incompatible-library-redeclaration
-)
+target_apply_kernel_module_options(squashfs)
 
 target_link_options(squashfs PRIVATE
     -nostdlib

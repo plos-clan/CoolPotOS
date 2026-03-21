@@ -25,10 +25,11 @@ static void free_private_open_node(vfs_node_t node) {
 }
 
 static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
-    if (node == NULL || node->fsid != dev_tmpfs_id)
+    if (node == NULL || node->fsid != dev_tmpfs_id) {
         return node;
+    }
 
-    dtmp_handle_t *template = (dtmp_handle_t *)node->handle;
+    const dtmp_handle_t *template = node->handle;
     if (template == NULL || template->type != dtp_file_device || template->open_t == NULL) {
         return node;
     }
@@ -81,7 +82,6 @@ static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
         free_private_open_node(private_node);
         return NULL;
     }
-
     return private_node;
 }
 
@@ -119,9 +119,9 @@ syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
                 }
                 goto next;
             }
-        } else
-        err:
-            free(normalized_path);
+        }
+    err:
+        free(normalized_path);
         return SYSCALL_FAULT_(ENOENT);
     }
 
@@ -158,6 +158,19 @@ syscall_(close, int fd) {
     fd_t *handle = (fd_t *)get_fd(fdt, fd);
     if (handle == NULL)
         return SYSCALL_FAULT_(EBADF);
+    if ((handle->node->type & file_socket) && get_current_task()->process
+        && get_current_task()->process->name
+        && (strstr(get_current_task()->process->name, "xinit")
+            || strstr(get_current_task()->process->name, "Xorg"))) {
+        logkf(
+            "[fd-dbg] proc=%s pid=%d close fd=%d node=%p ref=%d\n",
+            get_current_task()->process->name,
+            get_current_task()->process->pid,
+            fd,
+            handle->node,
+            handle->node ? (int)handle->node->refcount : -1
+        );
+    }
     vfs_close(handle->node);
     remove_fd(fdt, fd);
     return EOK;
@@ -186,10 +199,8 @@ syscall_(write, int fd, uint8_t *buffer, size_t size) {
         return ret;
     }
     if (handle->node->type & file_socket) {
-        size_t ret = vfs_write(handle->node, buffer, 0, size);
-        if (ret == (size_t)-1)
-            return SYSCALL_FAULT_(EPIPE);
-        return ret;
+        const int send_flags = handle->flags & O_NONBLOCK ? MSG_DONTWAIT : 0;
+        return syscall_sendto(fd, buffer, size, send_flags, NULL, 0, regs);
     }
     // Streaming devices (terminals, PTY, eventfd) don't use file offsets
     if (handle->node->type & (file_stream | file_ptmx | file_pts | file_eventfd)) {
@@ -237,10 +248,8 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
         return ret;
     }
     if (handle->node->type & file_socket) {
-        size_t ret = vfs_read(handle->node, buffer, 0, size);
-        if (ret == (size_t)-1)
-            return SYSCALL_FAULT_(EPIPE);
-        return ret;
+        const int recv_flags = handle->flags & O_NONBLOCK ? MSG_DONTWAIT : 0;
+        return syscall_recvfrom(fd, buffer, size, recv_flags, NULL, NULL, regs);
     }
     // Streaming devices (terminals, PTY, eventfd) don't use file offsets
     if (handle->node->type & (file_stream | file_ptmx | file_pts | file_eventfd)) {
@@ -269,15 +278,40 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
     if (iovcnt == 0)
         return EOK;
     fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (handle == NULL) {
+        return SYSCALL_FAULT_(EBADF);
+    }
+    if (handle->node->type & file_socket) {
+        const int send_flags = handle->flags & O_NONBLOCK ? MSG_DONTWAIT : 0;
+        size_t total         = 0;
+        for (int i = 0; i < iovcnt; i++) {
+            if (iov[i].iov_len == 0)
+                continue;
+            size_t status = syscall_sendto(fd, iov[i].iov_base, iov[i].iov_len, send_flags, NULL, 0, regs);
+            if ((int64_t)status < 0)
+                return total ? total : status;
+            total += status;
+            if (status < iov[i].iov_len)
+                break;
+        }
+        return total;
+    }
+    const bool no_offset = !!(handle->node->type
+                              & (file_pipe | file_socket | file_stream | file_ptmx | file_pts
+                                 | file_eventfd));
     size_t total = 0;
     for (int i = 0; i < iovcnt; i++) {
-        size_t status = vfs_write(handle->node, iov[i].iov_base, handle->offset, iov[i].iov_len);
+        if (iov[i].iov_len == 0)
+            continue;
+        size_t status = vfs_write(handle->node, iov[i].iov_base, no_offset ? 0 : handle->offset, iov[i].iov_len);
         if (status == (size_t)-1)
-            return total;
-        if (!(handle->node->type & file_pipe) && handle->node->size != (uint64_t)-1) {
+            return total ? total : SYSCALL_FAULT_(EIO);
+        if (!no_offset && handle->node->size != (uint64_t)-1) {
             handle->offset += status;
         }
-        total += iov[i].iov_len;
+        total += status;
+        if (status < iov[i].iov_len)
+            break;
     }
     return total;
 }
@@ -293,12 +327,45 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
         return 0;
     if (handle == NULL)
         return SYSCALL_FAULT_(EBADF);
+    if (handle->node->type & file_socket) {
+        const int recv_flags = handle->flags & O_NONBLOCK ? MSG_DONTWAIT : 0;
+        size_t total         = 0;
+        for (size_t i = 0; i < iovcnt; i++) {
+            if (iov[i].iov_len == 0)
+                continue;
+            size_t status =
+                syscall_recvfrom(fd, iov[i].iov_base, iov[i].iov_len, recv_flags, NULL, NULL, regs);
+            if ((int64_t)status < 0)
+                return total ? total : status;
+            total += status;
+            if (status < iov[i].iov_len)
+                break;
+        }
+        return total;
+    }
+    const bool no_offset = !!(handle->node->type
+                              & (file_pipe | file_socket | file_stream | file_ptmx | file_pts
+                                 | file_eventfd));
+    if (no_offset) {
+        size_t total = 0;
+        for (size_t i = 0; i < iovcnt; i++) {
+            if (iov[i].iov_len == 0)
+                continue;
+            size_t status = vfs_read(handle->node, iov[i].iov_base, 0, iov[i].iov_len);
+            if (status == (size_t)-1)
+                return total ? total : SYSCALL_FAULT_(EIO);
+            total += status;
+            if (status < iov[i].iov_len)
+                break;
+        }
+        return total;
+    }
     size_t buf_len = 0;
     for (size_t i = 0; i < iovcnt; i++) {
         buf_len += iov[i].iov_len;
     }
     uint8_t *buf = (uint8_t *)malloc(buf_len);
-    if (!(handle->node->type & file_pipe) && handle->node->size != (uint64_t)-1) {
+    if (handle->node->size != (uint64_t)-1) {
         if (handle->offset > handle->node->size) {
             free(buf);
             return EOK;
@@ -309,7 +376,7 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
         free(buf);
         return SYSCALL_FAULT_(EIO);
     }
-    if (!(handle->node->type & file_pipe) && handle->node->size != (uint64_t)-1) {
+    if (handle->node->size != (uint64_t)-1) {
         handle->offset += status;
     }
     size_t copied = 0;
@@ -634,7 +701,7 @@ syscall_(mount, char *dev_name, char *dir_name, char *type, uint64_t flags, void
 
     if (type == NULL) {
         return SYSCALL_FAULT_(EINVAL);
-}
+    }
 
     char *ndev_name = vfs_cwd_path_build(dev_name);
     errno_t mret    = EOK;
@@ -645,7 +712,7 @@ mount:
         free(ndev_name);
         if (mret < 0) {
             return (uint64_t)mret;
-}
+        }
         return SYSCALL_FAULT_(EIO);
     }
     free(ndir_name);
@@ -654,9 +721,9 @@ mount:
 }
 
 syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
-    int ready           = 0;
+    int ready                 = 0;
     const uint64_t start_time = nano_time();
-    bool sigexit        = false;
+    bool sigexit              = false;
     const tcb_t current       = get_current_task();
     const fdt_t *fdt          = current->process->fdts;
 
@@ -1195,12 +1262,12 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
 
     pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));
     memset(info, 0, sizeof(pipe_info_t));
-    info->buf       = calloc(1, PIPE_BUFF);
-    info->read_fds  = 1;
-    info->write_fds = 1;
-    info->ptr       = 0;
-    info->lock      = SPIN_INIT;
-    info->read_node = node_input;
+    info->buf        = calloc(1, PIPE_BUFF);
+    info->read_fds   = 1;
+    info->write_fds  = 1;
+    info->ptr        = 0;
+    info->lock       = SPIN_INIT;
+    info->read_node  = node_input;
     info->write_node = node_output;
 
     pipe_specific_t *read_spec = (pipe_specific_t *)malloc(sizeof(pipe_specific_t));

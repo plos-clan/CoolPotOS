@@ -49,6 +49,58 @@ static uint64_t default_affinity_mask(void) {
     return (1ULL << cpu_count) - 1ULL;
 }
 
+static int clamp_nice_value(int niceval) {
+    if (niceval < MIN_NICE) {
+        return MIN_NICE;
+    }
+    if (niceval > MAX_NICE) {
+        return MAX_NICE;
+    }
+    return niceval;
+}
+
+static bool setpriority_apply_thread(tcb_t thread, int niceval) {
+    if (thread == NULL || thread->process == NULL || thread == get_bsp_idle_thread()) {
+        return false;
+    }
+
+    const uint64_t prio = NICE_TO_PRIO(clamp_nice_value(niceval));
+    thread->prio        = prio;
+    scheduler_change_weight(thread, prio);
+    return true;
+}
+
+static bool setpriority_apply_process(pcb_t process, int niceval) {
+    if (process == NULL || process == get_kernel_process() || process->child_threads == NULL) {
+        return false;
+    }
+
+    bool matched = false;
+    tcb_t thread = NULL;
+    cow_foreach(process->child_threads, thread) {
+        matched |= setpriority_apply_thread(thread, niceval);
+    }
+    return matched;
+}
+
+static bool process_uid_matches(pcb_t process, int uid) {
+    if (process == NULL) {
+        return false;
+    }
+    return process->uid == uid || process->ruid == uid || process->euid == uid;
+}
+
+enum {
+    MEMBARRIER_CMD_QUERY                              = 0,
+    MEMBARRIER_CMD_GLOBAL                             = 1 << 0,
+    MEMBARRIER_CMD_GLOBAL_EXPEDITED                   = 1 << 1,
+    MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED          = 1 << 2,
+    MEMBARRIER_CMD_PRIVATE_EXPEDITED                  = 1 << 3,
+    MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED         = 1 << 4,
+    MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE        = 1 << 5,
+    MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE = 1 << 6,
+};
+
 _Noreturn syscall_(exit, const int exit_code) {
     const tcb_t exit_thread = get_current_task();
     logkf(
@@ -75,6 +127,31 @@ syscall_(set_tid_address, const int *tidptr) {
     thread->tid_address   = (uint64_t)tidptr;
     thread->tid_directory = get_current_directory();
     return thread->tid;
+}
+
+syscall_(membarrier, const int cmd, const int flags, const int cpu_id) {
+    (void)cpu_id;
+    if (flags != 0) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
+
+    switch (cmd) {
+    case MEMBARRIER_CMD_QUERY:
+        return MEMBARRIER_CMD_GLOBAL | MEMBARRIER_CMD_GLOBAL_EXPEDITED
+               | MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED | MEMBARRIER_CMD_PRIVATE_EXPEDITED
+               | MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED | MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE
+               | MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE;
+    case MEMBARRIER_CMD_GLOBAL:
+    case MEMBARRIER_CMD_GLOBAL_EXPEDITED:
+    case MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED:
+    case MEMBARRIER_CMD_PRIVATE_EXPEDITED:
+    case MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED:
+    case MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE:
+    case MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE:
+        return EOK;
+    default:
+        return SYSCALL_FAULT_(EINVAL);
+    }
 }
 
 syscall_(getpid) {
@@ -104,6 +181,80 @@ syscall_(getuid) {
 
 syscall_(getgid) {
     return get_current_task()->process->rgid;
+}
+
+syscall_(setuid, const int uid) {
+    pcb_t process = get_current_task()->process;
+    process->uid  = uid;
+    process->euid = uid;
+    process->ruid = uid;
+    return EOK;
+}
+
+syscall_(setgid, const int gid) {
+    pcb_t process  = get_current_task()->process;
+    process->egid  = gid;
+    process->rgid  = gid;
+    process->sgid  = gid;
+    return EOK;
+}
+
+syscall_(setpriority, const int which, const int who, const int niceval) {
+    const pcb_t current = get_current_task()->process;
+    const int clamped_nice = clamp_nice_value(niceval);
+    bool matched = false;
+
+    switch (which) {
+    case PRIO_PROCESS: {
+        if (who == 0) {
+            matched = setpriority_apply_process(current, clamped_nice);
+            break;
+        }
+
+        const pcb_t process = found_pcb(who);
+        if (process != NULL) {
+            matched = setpriority_apply_process(process, clamped_nice);
+            break;
+        }
+
+        const tcb_t thread = find_task_by_id(who);
+        matched = setpriority_apply_thread(thread, clamped_nice);
+        break;
+    }
+
+    case PRIO_PGRP: {
+        const pid_t pgid = who == 0 ? current->pgid : who;
+        pcb_t process = NULL;
+        cow_foreach(get_process_list(), process) {
+            if (process == NULL || process->status == T_DEATH || process->status == T_OUT) {
+                continue;
+            }
+            if (process->pgid == pgid) {
+                matched |= setpriority_apply_process(process, clamped_nice);
+            }
+        }
+        break;
+    }
+
+    case PRIO_USER: {
+        const int uid = who == 0 ? current->euid : who;
+        pcb_t process = NULL;
+        cow_foreach(get_process_list(), process) {
+            if (process == NULL || process->status == T_DEATH || process->status == T_OUT) {
+                continue;
+            }
+            if (process_uid_matches(process, uid)) {
+                matched |= setpriority_apply_process(process, clamped_nice);
+            }
+        }
+        break;
+    }
+
+    default:
+        return SYSCALL_FAULT_(EINVAL);
+    }
+
+    return matched ? EOK : SYSCALL_FAULT_(ESRCH);
 }
 
 syscall_(yield) {
@@ -231,6 +382,19 @@ syscall_(sig_action, const int sig, const sigaction_t *action, sigaction_t *olda
 
     if (action) {
         *ptr = *action;
+        if ((sig == SIGUSR1 || sig == SIGCHLD) && get_current_task()->process
+            && get_current_task()->process->name
+            && strstr(get_current_task()->process->name, "xinit")) {
+            logkf(
+                "[sig-dbg] sigaction proc=%s pid=%d sig=%d handler=%p flags=0x%lx mask=0x%lx\n",
+                get_current_task()->process->name,
+                get_current_task()->process->pid,
+                sig,
+                action->sa_handler,
+                action->sa_flags,
+                (unsigned long)action->sa_mask
+            );
+        }
     }
 
     if (ptr->sa_flags & SIG_NOMASK) {
@@ -351,15 +515,39 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     const sigset_t old  = task->blocked;
     const sigset_t temp = (uint64_t)*mask & ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
 
+    if (task->process && task->process->name && strstr(task->process->name, "xinit")) {
+        logkf(
+            "[sig-dbg] sigsuspend-enter proc=%s pid=%d old=0x%lx temp=0x%lx pending=0x%lx\n",
+            task->process->name,
+            task->process->pid,
+            (unsigned long)old,
+            (unsigned long)temp,
+            (unsigned long)task->signal
+        );
+    }
+
     task->blocked = temp;
-    while (!(task->signal & ~task->blocked)) {
-        scheduler_yield();
+    if (!signals_pending_quick(task)) {
+        const int wait_ret = scheduler_block_current((uint64_t)-1, "sigsuspend");
+        if (wait_ret != -EINTR) {
+            task->blocked = old;
+            return wait_ret < 0 ? SYSCALL_FAULT_(-wait_ret) : wait_ret;
+        }
     }
 
     // Don't restore old mask here. Save it for sigreturn to restore.
     // This ensures do_signal() can deliver the signal with the temporary mask.
     task->saved_sigmask     = old;
     task->has_saved_sigmask = true;
+    if (task->process && task->process->name && strstr(task->process->name, "xinit")) {
+        logkf(
+            "[sig-dbg] sigsuspend-exit proc=%s pid=%d blocked=0x%lx pending=0x%lx\n",
+            task->process->name,
+            task->process->pid,
+            (unsigned long)task->blocked,
+            (unsigned long)task->signal
+        );
+    }
     return SYSCALL_FAULT_(EINTR);
 }
 
@@ -376,16 +564,24 @@ syscall_(signal, const int sig, void *handler) {
 }
 
 syscall_(sigret) {
+    const tcb_t task = get_current_task();
+    if (task && task->process && task->process->name && strstr(task->process->name, "xinit")) {
+        logkf(
+            "[sig-dbg] sigret proc=%s pid=%d user_rsp=%p\n",
+            task->process->name,
+            task->process->pid,
+            task->syscall_stack_user
+        );
+    }
     return arch_signal_sigreturn(regs);
 }
 
 syscall_(getegid) {
-    // TODO EGID获取不支持
-    return 0;
+    return get_current_task()->process->egid;
 }
 
 syscall_(geteuid) {
-    return get_current_task()->process->uid;
+    return get_current_task()->process->euid;
 }
 
 syscall_(waitpid, const pid_t pid, int *status, const uint64_t options, struct rusage *rusage) {

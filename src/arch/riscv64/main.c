@@ -8,6 +8,7 @@
 #include "exec/elf_load.h"
 #include "fs/cpio.h"
 #include "fs/devtmpfs.h"
+#include "fs/overlayfs.h"
 #include "fs/pipefs.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
@@ -55,6 +56,7 @@ USED _Noreturn void kmain() {
 
     tmpfs_regist();
     devtmpfs_regist();
+    overlayfs_regist();
     pipefs_regist();
 
     signal_init();

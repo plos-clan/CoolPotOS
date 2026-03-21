@@ -34,6 +34,61 @@ else ()
     message(STATUS "Building for TARGET_ARCH=${TARGET_ARCH}")
 endif ()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(COMPILE_MODE
+            -g0
+            -O3
+    )
+else ()
+    set(COMPILE_MODE
+            -g3
+            -O0
+            -fno-omit-frame-pointer
+    )
+endif ()
+
+function(target_apply_kernel_module_options target_name)
+    target_compile_options(${target_name} PRIVATE
+            -ffreestanding
+            -fPIC
+            -fvisibility=hidden
+            -fno-stack-protector
+            -Wno-incompatible-library-redeclaration
+            ${COMPILE_MODE}
+    )
+
+    if (TARGET_ARCH STREQUAL "x86_64")
+        target_compile_options(${target_name} PRIVATE
+                -target x86_64-freestanding
+                -mno-80387 -mno-mmx -mno-sse -mno-sse2
+                -mno-red-zone -msoft-float
+        )
+        target_link_options(${target_name} PRIVATE
+                -target x86_64-freestanding
+        )
+    elseif (TARGET_ARCH STREQUAL "riscv64")
+        target_compile_options(${target_name} PRIVATE
+                -target riscv64-freestanding
+                -march=rv64gc -mabi=lp64d -mcmodel=medany -mno-relax
+        )
+        target_link_options(${target_name} PRIVATE
+                -target riscv64-freestanding
+                -mabi=lp64d
+        )
+    elseif (TARGET_ARCH STREQUAL "loongarch64")
+        target_compile_options(${target_name} PRIVATE
+                -target loongarch64-freestanding
+                -march=loongarch64 -mabi=lp64d
+                -mcmodel=medium
+                -static
+        )
+        target_link_options(${target_name} PRIVATE
+                -target loongarch64-freestanding
+                -static
+        )
+    endif ()
+endfunction()
+
 include(tools/bootloader.cmake)
 
 add_subdirectory(module/e1000)
@@ -48,19 +103,6 @@ add_executable(kernel)
 include(tools/gen_ecc_keys.cmake)
 message(STATUS "[ECC] Public key header: ${PUB_HEADER}")
 target_include_directories(kernel PRIVATE "${CMAKE_BINARY_DIR}/keys")
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(COMPILE_MODE
-            -g0
-            -O3
-    )
-else ()
-    set(COMPILE_MODE
-            -g3
-            -O0
-            -fno-omit-frame-pointer
-    )
-endif ()
 
 
 file(GLOB_RECURSE FS_SOURCES "src/fs/*.c")

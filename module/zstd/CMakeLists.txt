@@ -32,11 +32,9 @@ target_compile_definitions(zstd PRIVATE
         ZSTD_NO_INTRINSICS
 )
 
+target_apply_kernel_module_options(zstd)
+
 target_compile_options(zstd PRIVATE
-        -fPIC
-        -fvisibility=hidden
-        -fno-stack-protector
-        -Wno-incompatible-library-redeclaration
         -Wno-unused-function
         -Wno-unused-parameter
 )

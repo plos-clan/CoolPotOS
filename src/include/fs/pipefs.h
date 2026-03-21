@@ -1,6 +1,7 @@
 #pragma once
 
-#define PIPE_BUFF 8192 // 管道缓冲区大小
+#define PIPE_BUFF (64*1024) // 管道缓冲区大小
+#define PIPE_ATOMIC_MAX MIN(PIPE_BUFF, PAGE_SIZE)
 
 #include "lock.h"
 #include "task/task.h"

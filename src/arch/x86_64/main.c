@@ -22,6 +22,7 @@
 #include "fpu.h"
 #include "fs/cpio.h"
 #include "fs/devtmpfs.h"
+#include "fs/overlayfs.h"
 #include "fs/pipefs.h"
 #include "fs/procfs.h"
 #include "fs/sockfs.h"
@@ -115,6 +116,7 @@ USED _Noreturn void kmain() {
     acpi_namespace_setup();
     tmpfs_regist();
     devtmpfs_regist();
+    overlayfs_regist();
     pipefs_regist();
     sockfs_regist();
     epollfs_regist();

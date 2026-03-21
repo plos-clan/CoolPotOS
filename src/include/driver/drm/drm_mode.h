@@ -716,6 +716,11 @@ struct drm_mode_destroy_dumb {
     __u32 handle;
 };
 
+struct drm_mode_closefb {
+    __u32 fb_id;
+    __u32 pad;
+};
+
 /* page-flip flags are valid, plus: */
 #define DRM_MODE_ATOMIC_TEST_ONLY     0x0100
 #define DRM_MODE_ATOMIC_NONBLOCK      0x0200

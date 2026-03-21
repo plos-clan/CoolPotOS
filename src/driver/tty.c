@@ -12,6 +12,57 @@ static struct llist_header tty_device_list;
 static tty_t *kernel_session  = NULL; // 内核会话
 static tty_t *current_session = NULL; // 当前会话
 
+static bool tty_debug_user_process(void) {
+    const tcb_t current = get_current_task();
+    if (current == NULL || current->process == NULL || current->process->name == NULL) {
+        return false;
+    }
+    return strstr(current->process->name, "Xorg") != NULL || strstr(current->process->name, "xinit") != NULL;
+}
+
+static const char *tty_ioctl_name(const size_t req) {
+    switch (req) {
+    case TIOCGWINSZ:
+        return "TIOCGWINSZ";
+    case TCGETS:
+        return "TCGETS";
+    case TCSETS:
+        return "TCSETS";
+    case TCSETSF:
+        return "TCSETSF";
+    case TCSETSW:
+        return "TCSETSW";
+    case TIOCGPGRP:
+        return "TIOCGPGRP";
+    case TIOCSPGRP:
+        return "TIOCSPGRP";
+    case TIOCSCTTY:
+        return "TIOCSCTTY";
+    case KDGETMODE:
+        return "KDGETMODE";
+    case KDSETMODE:
+        return "KDSETMODE";
+    case KDGKBMODE:
+        return "KDGKBMODE";
+    case KDSKBMODE:
+        return "KDSKBMODE";
+    case VT_OPENQRY:
+        return "VT_OPENQRY";
+    case VT_GETMODE:
+        return "VT_GETMODE";
+    case VT_SETMODE:
+        return "VT_SETMODE";
+    case VT_GETSTATE:
+        return "VT_GETSTATE";
+    case VT_ACTIVATE:
+        return "VT_ACTIVATE";
+    case VT_WAITACTIVE:
+        return "VT_WAITACTIVE";
+    default:
+        return "UNKNOWN";
+    }
+}
+
 tty_t *get_kernel_session() {
     return kernel_session;
 }
@@ -121,6 +172,17 @@ static void termios_init(termios_t *termios) {
 }
 
 static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
+    if (tty_debug_user_process()) {
+        const tcb_t current = get_current_task();
+        logkf(
+            "[tty-ioctl] pid=%d proc=%s req=%s(%#lx)\n",
+            current->process->pid,
+            current->process->name,
+            tty_ioctl_name(req),
+            req
+        );
+    }
+
     switch (req) {
     case TIOCGWINSZ:;
         struct winsize *ws = arg;
@@ -222,15 +284,53 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         src->frsig          = session->vt_mode.frsig;
         break;
     }
+    case VT_GETSTATE: {
+        struct vt_state *state = arg;
+        if (state != NULL) {
+            state->v_active = 1;
+            state->v_state  = 1;
+        }
+        break;
+    }
     case VT_OPENQRY:
         *(int *)arg = 1;
         return 0;
-    case TIOCSCTTY:
+    case VT_ACTIVATE:
+    case VT_WAITACTIVE:
+        return 0;
+    case TIOCSCTTY: {
+        const tcb_t thread = get_current_task();
+        pcb_t proc         = thread == NULL ? NULL : thread->process;
+        if (proc == NULL) {
+            return -EINVAL;
+        }
+        proc->tty = session;
+        if (proc->ctty_path) {
+            free(proc->ctty_path);
+        }
+        char buf[64];
+        snprintf(buf, sizeof(buf), "/dev/%s", session->device ? session->device->name : "tty0");
+        proc->ctty_path = strdup(buf);
+        session->fgproc = proc->pgid;
         break;
+    }
     case TIOCSPGRP:
-        session->fgproc = get_current_task()->process->pid;
+        if (arg == NULL) {
+            return -EINVAL;
+        }
+        session->fgproc = *(pid_t *)arg;
         break;
     default:
+        if (tty_debug_user_process()) {
+            const tcb_t current = get_current_task();
+            logkf(
+                "[tty-ioctl] pid=%d proc=%s unhandled req=%s(%#lx)\n",
+                current->process->pid,
+                current->process->name,
+                tty_ioctl_name(req),
+                req
+            );
+        }
         return -ENOTTY;
     }
     return EOK;

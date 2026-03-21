@@ -131,87 +131,64 @@ out:
     return ret;
 }
 
-static size_t pipe_write_inner(pipe_specific_t *spec, const void *addr, size_t size) {
-    if (!spec || !spec->write)
-        return (size_t)-1;
+static size_t pipe_write_inner(pipe_specific_t *spec, const void *addr, size_t size,bool atomic, bool allow_wait) {
     pipe_info_t *pipe = spec->info;
-    if (!pipe)
-        return (size_t)-1;
 
-    for (;;) {
+    while (true) {
         spin_lock(pipe->lock);
+
         if (pipe->read_fds == 0) {
             spin_unlock(pipe->lock);
-            return (size_t)-1;
+            return -EPIPE;
         }
 
-        if ((PIPE_BUFF - pipe->ptr) >= size) {
-            memcpy(&pipe->buf[pipe->ptr], addr, size);
-            pipe->ptr += size;
-            pipe->assigned = (int)pipe->ptr;
-            pipefs_update_nodes(pipe);
+        size_t available = PIPE_BUFF - pipe->ptr;
+        if (available > 0 && (!atomic || available >= size)) {
+            size_t to_write = atomic ? size : MIN(size, available);
+            memcpy(&pipe->buf[pipe->ptr], addr, to_write);
+            pipe->ptr += to_write;
             spin_unlock(pipe->lock);
-            if (pipe->read_node) {
+            if (pipe->read_node)
                 vfs_poll_notify(pipe->read_node, EPOLLIN);
-            }
-            return size;
+            return to_write;
         }
+
         spin_unlock(pipe->lock);
 
-        scheduler_yield();
+        if (!allow_wait)
+            return 0;
+        // if (fd_get_flags(fd) & O_NONBLOCK)
+        //     return -EWOULDBLOCK;
+
+        vfs_poll_wait_t wait;
+        vfs_poll_wait_init(&wait, get_current_task(), EPOLLOUT | EPOLLHUP | EPOLLERR);
+        vfs_poll_wait_arm(spec->node, &wait);
+        int reason = vfs_poll_wait_sleep(spec->node, &wait, -1, "pipe_write");
+        vfs_poll_wait_disarm(&wait);
+        if (reason != EOK)
+            return -EINTR;
     }
 }
 
 size_t pipefs_write(void *file, const void *addr, size_t offset, size_t size) {
     (void)offset;
-    pipe_specific_t *spec = file;
-    if (!spec || !spec->write)
-        return (size_t)-1;
-    pipe_info_t *pipe = spec->info;
-    if (!pipe)
-        return (size_t)-1;
-    const uint8_t *src = (const uint8_t *)addr;
-    size_t ret         = 0;
-    const size_t chunks    = size / PIPE_BUFF;
-    const size_t remainder = size % PIPE_BUFF;
+    const char *data = addr;
+    size_t written = 0;
+    // POSIX only requires atomicity for short pipe writes.
+    const bool atomic = size <= PIPE_ATOMIC_MAX;
 
-    spin_lock(pipe->lock);
-    spec->active++;
-    pipe->active++;
-    spin_unlock(pipe->lock);
+    while (written < size) {
+        ssize_t ret = pipe_write_inner(file, data + written, size - written,
+                                       atomic, written == 0);
+        if (ret < 0)
+            return written ? (ssize_t)written : ret;
+        if (ret == 0)
+            break;
 
-    if (chunks)
-        for (size_t i = 0; i < chunks; i++) {
-            size_t cycle = 0;
-            while (cycle != PIPE_BUFF) {
-                const size_t ret1 = pipe_write_inner(spec, src + i * PIPE_BUFF + cycle,
-                                                     PIPE_BUFF - cycle);
-                if (ret1 == (size_t)-1) {
-                    ret = (size_t)-1;
-                    goto out;
-                }
-                cycle += ret1;
-            }
-            ret += cycle;
-        }
-
-    if (remainder) {
-        size_t cycle = 0;
-        while (cycle != remainder) {
-            const size_t ret0 =
-                pipe_write_inner(spec, src + chunks * PIPE_BUFF + cycle, remainder - cycle);
-            if (ret0 == (size_t)-1) {
-                ret = (size_t)-1;
-                goto out;
-            }
-            cycle += ret0;
-        }
-        ret += cycle;
+        written += ret;
     }
 
-out:
-    pipefs_leave(spec);
-    return ret;
+    return written;
 }
 
 int pipefs_ioctl(void *file, ssize_t cmd, ssize_t arg) {

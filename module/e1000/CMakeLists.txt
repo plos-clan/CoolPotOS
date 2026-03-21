@@ -11,12 +11,7 @@ target_include_directories(e1000 PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_compile_options(e1000 PRIVATE
-        -fPIC
-        -fvisibility=hidden
-        -fno-stack-protector
-        -Wno-incompatible-library-redeclaration
-)
+target_apply_kernel_module_options(e1000)
 
 target_link_options(e1000 PRIVATE
         -nostdlib

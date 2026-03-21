@@ -8,6 +8,7 @@ enum tmpfs_type {
     tp_file_symlink,
     tp_file_char,
     tp_file_blk,
+    tp_file_socket,
 };
 
 typedef struct tmpfs_file {

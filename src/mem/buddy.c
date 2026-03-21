@@ -31,11 +31,11 @@ static size_t early_last_alloc_pos = 0;
 
 bool percpu_pagecache_initialized = false;
 
-static inline per_cpu_pages_t *zone_pcp(zone_t *zone, int cpu) {
+static per_cpu_pages_t *zone_pcp(zone_t *zone, int cpu) {
     return &zone->per_cpu_pageset[cpu];
 }
 
-static inline per_cpu_pages_t *this_cpu_zone_pcp(zone_t *zone) {
+static per_cpu_pages_t *this_cpu_zone_pcp(zone_t *zone) {
     return zone_pcp(zone, arch_current_cpu()->id);
 }
 
