@@ -114,6 +114,7 @@ file(GLOB_RECURSE MEM_SOURCES "src/mem/*.c")
 file(GLOB_RECURSE TASK_SOURCES "src/task/*.c")
 file(GLOB_RECURSE INT_SOURCES "src/int/*.c")
 file(GLOB_RECURSE LIB_SOURCES "src/lib/*.c")
+file(GLOB_RECURSE NET_SOURCES "src/net/*.c")
 
 # Exclude ACPICA debugger/disassembler sources for kernel build.
 list(FILTER LIB_SOURCES EXCLUDE REGEX "acpica/components/debugger/.*")

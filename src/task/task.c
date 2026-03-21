@@ -476,17 +476,6 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
     if (pcb == NULL) {
         return;
     }
-    if (pcb->name && (strstr(pcb->name, "xinit") || strstr(pcb->name, "Xorg") || strstr(pcb->name, "xkbcomp"))) {
-        logkf(
-            "[proc-dbg] kill_proc proc=%s pid=%d code=%d zombie=%d status=%d parent=%d\n",
-            pcb->name,
-            pcb->pid,
-            exit_code,
-            is_zombie,
-            pcb->status,
-            pcb->parent ? pcb->parent->pid : -1
-        );
-    }
     if (pcb->pid == kernel_process->pid) {
         kerror("Cannot kill System process.");
         return;

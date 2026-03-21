@@ -2,6 +2,7 @@
 #include "fs/vfs.h"
 #include "io.h"
 #include "krlibc.h"
+#include "mem/frame.h"
 #include "mem/page.h"
 #include "task/smp.h"
 #include "task/task.h"
@@ -95,6 +96,8 @@ static uint64_t build_user_stack(
     uint64_t link_start,
     uint8_t *link_data,
     size_t link_size,
+    uint64_t link_phys,
+    size_t link_pages,
     uint8_t *src_data,
     uint64_t load_start
 ) {
@@ -233,7 +236,11 @@ static uint64_t build_user_stack(
     free(tmp);
     free(envps);
     free(argvps);
-    free(link_data);
+    if (link_phys != 0) {
+        free_frames(link_phys, link_pages);
+    } else {
+        free(link_data);
+    }
     free_argv(argv);
 
     return tmp_stack;
@@ -292,13 +299,17 @@ _Noreturn void arch_switch_to_user_mode() {
         void *linker_main     = NULL;
         uint8_t *link_data    = NULL;
         size_t link_size      = 0;
+        uint64_t link_phys    = 0;
+        size_t link_pages     = 0;
 
         linker_main = load_interpreter_elf(
             data,
             get_current_directory(),
             &linker_start,
             &link_data,
-            &link_size
+            &link_size,
+            &link_phys,
+            &link_pages
         );
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n");
@@ -327,12 +338,15 @@ _Noreturn void arch_switch_to_user_mode() {
             linker_start,
             link_data,
             link_size,
+            link_phys,
+            link_pages,
             data,
             load_start
         );
         entry = linker_main;
     } else {
-        user_sp = build_user_stack(current, user_sp, (uint64_t)entry, 0, NULL, 0, data, load_start);
+        user_sp =
+            build_user_stack(current, user_sp, (uint64_t)entry, 0, NULL, 0, 0, 0, data, load_start);
     }
     free(data);
 

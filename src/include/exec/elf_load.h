@@ -31,6 +31,8 @@ void *load_interpreter_elf(
     page_directory_t *dir,
     uint64_t *load_start,
     uint8_t **link_data,
-    size_t *link_size
+    size_t *link_size,
+    uint64_t *link_phys,
+    size_t *link_pages
 );
 void launch_init_process();

@@ -37,6 +37,7 @@ target_sources(kernel PRIVATE
         ${TASK_SOURCES}
         ${INT_SOURCES}
         ${LIB_SOURCES}
+        ${NET_SOURCES}
 )
 
 target_include_directories(kernel PUBLIC

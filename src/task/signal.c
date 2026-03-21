@@ -1,19 +1,11 @@
 #include "task/signal.h"
 #include "cow_arraylist.h"
 #include "errno.h"
-#include "krlibc.h"
 #include "task/signal_arch.h"
 #include "task/task.h"
 #include "term/klog.h"
 
 static signal_internal_t signal_internal_decisions[MAXSIG] = { 0 };
-
-static bool signal_trace_process(const pcb_t process) {
-    if (process == NULL || process->name == NULL) {
-        return false;
-    }
-    return strstr(process->name, "xinit") || strstr(process->name, "Xorg") || strstr(process->name, "xkbcomp");
-}
 
 bool signals_pending_quick(const tcb_t task) {
     const sigset_t pending_list   = task->signal;
@@ -22,7 +14,7 @@ bool signals_pending_quick(const tcb_t task) {
         if (!(unblocked_list & SIGMASK(i))) {
             continue;
         }
-        const sigaction_t *action       = &task->actions[i];
+        const sigaction_t *action       = &task->actions[i - 1];
         const sighandler_t user_handler = action->sa_handler;
         if (user_handler == SIG_IGN) {
             continue;
@@ -94,18 +86,6 @@ int send_signal_to_process(const pcb_t process, const int sig) {
 
     target->signal |= SIGMASK(sig);
 
-    if (signal_trace_process(process)) {
-        logkf(
-            "[sig-dbg] queue sig=%d proc=%s pid=%d blocked=0x%lx pending=0x%lx status=%d\n",
-            sig,
-            process->name,
-            process->pid,
-            (unsigned long)target->blocked,
-            (unsigned long)target->signal,
-            target->status
-        );
-    }
-
     if (target->status == T_WAIT) {
         target->status = T_RUNNING;
     }
@@ -144,20 +124,8 @@ void do_signal(struct syscall_regs *regs) {
             continue;
         }
 
-        sigaction_t *action  = &task->actions[sig];
+        sigaction_t *action  = &task->actions[sig - 1];
         const sighandler_t handler = action->sa_handler;
-
-        if (signal_trace_process(task->process)) {
-            logkf(
-                "[sig-dbg] deliver sig=%d proc=%s pid=%d handler=%p blocked=0x%lx pending=0x%lx\n",
-                sig,
-                task->process->name,
-                task->process->pid,
-                handler,
-                (unsigned long)task->blocked,
-                (unsigned long)task->signal
-            );
-        }
 
         if (sig == SIGKILL) {
             task->signal &= ~SIGMASK(sig);

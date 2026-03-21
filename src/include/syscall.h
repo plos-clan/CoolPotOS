@@ -206,10 +206,13 @@
 
 struct iovec {
     void *iov_base;
-    size_t iov_len;
+    union {
+        size_t iov_len;
+        size_t len;
+    };
 };
 
-#include "fs/sockfs.h"
+#include "net/socket.h"
 
 struct stat {
     long st_dev;
@@ -465,29 +468,13 @@ syscall_(listen, int sockfd, int backlog);
 syscall_(accept, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 syscall_(accept4, int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
 syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
-syscall_(
-    sendto,
-    int sockfd,
-    const void *buf,
-    size_t len,
-    int flags,
-    struct sockaddr *dest_addr,
-    uint64_t addrlen
-);
-syscall_(
-    recvfrom,
-    int sockfd,
-    void *buf,
-    size_t len,
-    int flags,
-    struct sockaddr *src_addr,
-    socklen_t *addrlen
-);
-syscall_(sendmsg, int sockfd, struct msghdr *msg, int flags);
+syscall_(sendto, int sockfd, void *buff, size_t len, int flags, struct sockaddr *dest_addr, socklen_t addrlen);
+syscall_(recvfrom, int sockfd, void *buff, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+syscall_(sendmsg, int sockfd, const struct msghdr *msg, int flags);
 syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags);
-syscall_(shutdown, int sockfd, int how);
-syscall_(setsockopt, int sockfd, int level, int optname, const void *optval, uint64_t optlen);
-syscall_(getsockopt, int sockfd, int level, int optname, void *optval, socklen_t *optlen);
+syscall_(shutdown, uint64_t fd, uint64_t how);
+syscall_(setsockopt, int fd, int level, int optname, const void *optval, socklen_t optlen);
+syscall_(getsockopt, int fd, int level, int optname, void *optval, socklen_t *optlen);
 syscall_(getsockname, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 syscall_(getpeername, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
@@ -551,6 +538,8 @@ syscall_(get_rlimit, uint64_t resource, struct rlimit *lim);
 syscall_(
     prlimit64, uint64_t pid, int resource, const struct rlimit *new_rlim, struct rlimit *old_rlim
 );
+syscall_(setresuid, int ruid, int euid, int suid);
+syscall_(setresgid, int rgid, int egid, int sgid);
 syscall_(getresgid, int *rgid, int *egid, int *sgid);
 syscall_(getresuid, int *ruid, int *euid, int *suid);
 syscall_(kill, int pid, int sig);
@@ -587,3 +576,7 @@ syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg);
 syscall_(getrandom, void *buffer, size_t len, uint32_t flags);
 syscall_(times, struct tms *buf);
 syscall_(getrusage, int who, struct rusage *usage);
+
+bool check_unmapped(uint64_t addr, uint64_t len);
+bool copy_from_user(void *dst, const void *src, size_t size);
+bool copy_to_user(void *dst, const void *src, size_t size);

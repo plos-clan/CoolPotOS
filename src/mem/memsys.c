@@ -9,6 +9,109 @@
 
 spin_t mm_op_lock = SPIN_INIT;
 
+static bool
+validate_user_range(const uintptr_t addr, const size_t size, const unsigned long required_flags) {
+    if (check_user_overflow(addr, size)) {
+        return false;
+    }
+
+    const tcb_t current = get_current_task();
+    if (!current || !current->process) {
+        return false;
+    }
+
+    vma_manager_t *mgr  = &get_current_task()->process->vma_manager;
+    const uintptr_t end = addr + size;
+    uintptr_t cursor    = addr;
+
+    spin_lock(mgr->lock);
+    while (cursor < end) {
+        const uintptr_t page_end = MIN(end, PADDING_UP(cursor + 1, PAGE_SIZE));
+
+        vma_t *vma = vma_find(mgr, cursor);
+        if (!vma) {
+            spin_unlock(mgr->lock);
+            return false;
+        }
+
+        if ((vma->vm_flags & required_flags) != required_flags) {
+            spin_unlock(mgr->lock);
+            return false;
+        }
+
+        if (arch_virt_to_phys(cursor) == 0) {
+            spin_unlock(mgr->lock);
+            return false;
+        }
+
+        cursor = page_end;
+    }
+    spin_unlock(mgr->lock);
+    return true;
+}
+
+bool check_unmapped(const uint64_t addr, const uint64_t len) {
+    if (len == 0) {
+        return false;
+    }
+    if (!get_current_task()) {
+        return true;
+    }
+    if (check_user_overflow(addr, len)) {
+        return true;
+    }
+
+    const uint64_t end = addr + len;
+    vma_manager_t *mgr = &get_current_task()->process->vma_manager;
+    uint64_t cursor    = addr;
+
+    spin_lock(mgr->lock);
+    while (cursor < end) {
+        uint64_t chunk_end = MIN(end, PADDING_UP(cursor + 1, PAGE_SIZE));
+        if (arch_virt_to_phys(cursor)) {
+            cursor = chunk_end;
+            continue;
+        }
+
+        vma_t *vma = vma_find(mgr, cursor);
+        if (!vma) {
+            spin_unlock(mgr->lock);
+            return true;
+        }
+
+        cursor = MIN(end, vma->vm_end);
+    }
+    spin_unlock(mgr->lock);
+
+    return false;
+}
+
+bool copy_from_user(void *dst, const void *src, size_t size) {
+    if (size == 0) {
+        return true;
+    }
+
+    if (!validate_user_range((uintptr_t)src, size, VMA_READ)) {
+        return false;
+    }
+
+    memcpy(dst, src, size);
+    return true;
+}
+
+bool copy_to_user(void *dst, const void *src, size_t size) {
+    if (size == 0) {
+        return true;
+    }
+
+    if (!validate_user_range((uintptr_t)dst, size, VMA_WRITE)) {
+        return false;
+    }
+
+    memcpy(dst, src, size);
+    return true;
+}
+
 syscall_(
     mmap, uint64_t addr, size_t length, uint64_t prot, uint64_t flags, int fd, uint64_t offset
 ) {

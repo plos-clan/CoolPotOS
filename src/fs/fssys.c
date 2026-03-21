@@ -158,19 +158,6 @@ syscall_(close, int fd) {
     fd_t *handle = (fd_t *)get_fd(fdt, fd);
     if (handle == NULL)
         return SYSCALL_FAULT_(EBADF);
-    if ((handle->node->type & file_socket) && get_current_task()->process
-        && get_current_task()->process->name
-        && (strstr(get_current_task()->process->name, "xinit")
-            || strstr(get_current_task()->process->name, "Xorg"))) {
-        logkf(
-            "[fd-dbg] proc=%s pid=%d close fd=%d node=%p ref=%d\n",
-            get_current_task()->process->name,
-            get_current_task()->process->pid,
-            fd,
-            handle->node,
-            handle->node ? (int)handle->node->refcount : -1
-        );
-    }
     vfs_close(handle->node);
     remove_fd(fdt, fd);
     return EOK;
@@ -1300,8 +1287,8 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
     handle_out->flags  = flags;
     handle_out->fd     = add_fd(fd_table, handle_out);
 
-    pipefd[0] = (int)handle_in->fd;
-    pipefd[1] = (int)handle_out->fd;
+    pipefd[0] = handle_in->fd;
+    pipefd[1] = handle_out->fd;
 
     return EOK;
 }

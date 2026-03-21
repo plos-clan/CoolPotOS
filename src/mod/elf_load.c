@@ -9,6 +9,28 @@
 #include "task/task.h"
 #include "term/klog.h"
 
+static uint8_t *alloc_exec_temp_buffer(size_t size, uint64_t *phys, size_t *pages) {
+    size_t page_count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    if (page_count == 0) {
+        page_count = 1;
+    }
+
+    uint64_t frame = alloc_frames(page_count);
+    if (frame == 0) {
+        return NULL;
+    }
+
+    uint8_t *buffer = phys_to_virt(frame);
+    memset(buffer, 0, page_count * PAGE_SIZE);
+    if (phys != NULL) {
+        *phys = frame;
+    }
+    if (pages != NULL) {
+        *pages = page_count;
+    }
+    return buffer;
+}
+
 void load_segment(
     Elf64_Phdr *phdr,
     void *elf,
@@ -156,8 +178,22 @@ void *load_interpreter_elf(
     page_directory_t *dir,
     uint64_t *load_start,
     uint8_t **link_data,
-    size_t *link_size
+    size_t *link_size,
+    uint64_t *link_phys,
+    size_t *link_pages
 ) {
+    if (link_data != NULL) {
+        *link_data = NULL;
+    }
+    if (link_size != NULL) {
+        *link_size = 0;
+    }
+    if (link_phys != NULL) {
+        *link_phys = 0;
+    }
+    if (link_pages != NULL) {
+        *link_pages = 0;
+    }
 
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)data;
     if (!arch_elf_test_head(ehdr)) {
@@ -180,20 +216,33 @@ void *load_interpreter_elf(
         logkf("exec: libc open error [%s].\n\r", interpreter_name);
         return NULL;
     }
-    Elf64_Ehdr *inter_ehdr = malloc(inter_file->size);
+    uint64_t inter_phys  = 0;
+    size_t inter_pages   = 0;
+    Elf64_Ehdr *inter_ehdr =
+        (Elf64_Ehdr *)alloc_exec_temp_buffer(inter_file->size, &inter_phys, &inter_pages);
+    if (inter_ehdr == NULL) {
+        vfs_close(inter_file);
+        logkf("exec: libc alloc error\n\r");
+        return NULL;
+    }
     if (vfs_read(inter_file, inter_ehdr, 0, inter_file->size) == (size_t)-1) {
         vfs_close(inter_file);
-        free(inter_ehdr);
-        *link_data = NULL;
-        *link_size = 0;
+        free_frames(inter_phys, inter_pages);
         logkf("exec: libc read error\n\r");
         return NULL;
     }
 
     void *start =
         load_executor_elf((uint8_t *)inter_ehdr, dir, INTERPRETER_BASE_ADDR, load_start, NULL);
+    if (start == NULL) {
+        vfs_close(inter_file);
+        free_frames(inter_phys, inter_pages);
+        return NULL;
+    }
     *link_data = (uint8_t *)inter_ehdr;
     *link_size = inter_file->size;
+    *link_phys = inter_phys;
+    *link_pages = inter_pages;
     vfs_close(inter_file);
     return start;
 }

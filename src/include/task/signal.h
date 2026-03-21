@@ -54,8 +54,8 @@
 #define MINSIG 1
 #define MAXSIG 32
 
-#define HAS_SIGNAL(sigset, signum) (sigset & (1ULL << signum))
-#define SIGMASK(sig)               (1 << (sig))
+#define HAS_SIGNAL(sigset, signum) ((sigset) & (1ULL << (signum)))
+#define SIGMASK(sig)               (1ULL << (sig))
 
 #define SIG_DFL ((sighandler_t)0) // 默认的信号处理程序（信号句柄）
 #define SIG_IGN ((sighandler_t)1) // 忽略信号的处理程序
@@ -66,7 +66,7 @@
 
 typedef struct signal_block signal_block_t;
 typedef uint64_t sigset_t;
-typedef void (*sighandler_t)(void);
+typedef void (*sighandler_t)(int);
 
 typedef struct sigaction {
     sighandler_t sa_handler;

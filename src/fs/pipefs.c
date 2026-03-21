@@ -267,7 +267,7 @@ bool pipefs_close(void *current) {
         vfs_poll_notify(read_node, EPOLLHUP);
     }
     if (notify_write_hup && write_node) {
-        vfs_poll_notify(write_node, EPOLLHUP);
+        vfs_poll_notify(write_node, EPOLLERR);
     }
 
     if (free_spec) {
@@ -295,18 +295,22 @@ int pipefs_poll(void *file, size_t events) {
     int out = 0;
 
     spin_lock(pipe->lock);
-    if (!spec->write && !pipe->write_fds)
-        out |= EPOLLHUP;
-    if (events & EPOLLIN) {
-        if (pipe->ptr > 0)
+    if (!spec->write) {
+        const bool eof = pipe->write_fds == 0;
+        if (eof) {
+            out |= EPOLLHUP;
+        }
+        if ((events & EPOLLIN) && (pipe->ptr > 0 || eof)) {
             out |= EPOLLIN;
-    }
-
-    if (spec->write && !pipe->read_fds)
-        out |= EPOLLHUP;
-    if (events & EPOLLOUT) {
-        if (pipe->ptr < PIPE_BUFF)
+        }
+    } else {
+        const bool broken = pipe->read_fds == 0;
+        if (broken) {
+            out |= EPOLLERR;
+        }
+        if ((events & EPOLLOUT) && !broken && pipe->ptr < PIPE_BUFF) {
             out |= EPOLLOUT;
+        }
     }
     spin_unlock(pipe->lock);
     return out;

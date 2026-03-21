@@ -9,6 +9,7 @@
 #define VMA_SHM    0x20
 
 #include "types.h"
+#include "lock.h"
 
 // VMA类型
 typedef enum {
@@ -36,6 +37,7 @@ typedef struct {
     vma_t *vma_list;        // VMA链表头
     unsigned long vm_total; // 总虚拟内存大小
     unsigned long vm_used;  // 已使用虚拟内存
+    spin_t lock;            // 同步锁
 } vma_manager_t;
 
 vma_t *vma_alloc(void);

@@ -12,7 +12,7 @@ bool arch_signal_setup(tcb_t task, int signum, sigaction_t *action, struct sysca
     // Compute frame location on user stack (16-byte aligned)
     uint64_t user_rsp = task->syscall_stack_user;
     user_rsp -= sizeof(struct signal_frame);
-    user_rsp &= ~0xFULL; // 16-byte align
+    user_rsp &= ~0xFULL; // Keep the embedded FPU frame 16-byte aligned for fxsave/fxrstor.
 
     struct signal_frame *frame = (struct signal_frame *)user_rsp;
 

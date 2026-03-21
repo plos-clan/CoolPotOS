@@ -7,6 +7,7 @@
 #include "krlibc.h"
 #include "apic.h"
 #include "lock.h"
+#include "mem/frame.h"
 #include "mem/page.h"
 #include "ptrace.h"
 #include "task/smp.h"
@@ -212,6 +213,8 @@ static uint64_t build_user_stack(
     uint64_t link_start,
     uint8_t *link_data,
     size_t link_size,
+    uint64_t link_phys,
+    size_t link_pages,
     uint8_t *src_data,
     uint64_t load_start
 ) {
@@ -353,7 +356,11 @@ static uint64_t build_user_stack(
     free(tmp);
     free(envps);
     free(argvps);
-    free(link_data);
+    if (link_phys != 0) {
+        free_frames(link_phys, link_pages);
+    } else {
+        free(link_data);
+    }
     free_argv(argv);
 
 
@@ -366,15 +373,32 @@ _Noreturn void arch_switch_to_user_mode() {
     tcb_t current                = get_current_task();
     current->context.regs.rflags = 0 << 12 | 0b10 | 1 << 9;
 
-    pcb_t process = current->process;
+    pcb_t process   = current->process;
+    uint64_t data_phys = 0;
+    size_t data_pages  = 0;
+    uint8_t *data      = NULL;
     if (process->exec == NULL) {
         ulog("process exec file handle is null.\n");
         goto err;
     }
-    uint8_t *data = malloc(process->exec->size);
+    data_pages = (process->exec->size + PAGE_SIZE - 1) / PAGE_SIZE;
+    if (data_pages == 0) {
+        data_pages = 1;
+    }
+    data_phys = alloc_frames(data_pages);
+    if (data_phys == 0) {
+        ulog(
+            "cannot allocate exec buffer, size=%llu pages=%llu.\n",
+            process->exec->size,
+            (uint64_t)data_pages
+        );
+        goto err;
+    }
+    data = phys_to_virt(data_phys);
+    memset(data, 0, data_pages * PAGE_SIZE);
     if (vfs_read(process->exec, data, 0, process->exec->size) == -1) {
         ulog("process exec read file null.\n");
-        goto err;
+        goto err_free_data;
     }
 
     Elf64_Ehdr *ehdr        = (Elf64_Ehdr *)data;
@@ -387,7 +411,7 @@ _Noreturn void arch_switch_to_user_mode() {
     }
     if (entry == NULL) {
         ulog("cannot load process exec file.\n");
-        goto err;
+        goto err_free_data;
     }
 
     current->context.user_stack = page_alloc_random(
@@ -417,17 +441,15 @@ _Noreturn void arch_switch_to_user_mode() {
         void *linker_main     = NULL;
         uint8_t *link_data    = NULL;
         size_t link_size      = 0;
+        uint64_t link_phys    = 0;
+        size_t link_pages     = 0;
 
         linker_main = load_interpreter_elf(
-            data, process->directory, &linker_start, &link_data, &link_size
+            data, process->directory, &linker_start, &link_data, &link_size, &link_phys, &link_pages
         );
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n\r");
-            arch_close_interrupt();
-            kill_proc(process, -1, true);
-            arch_open_interrupt();
-            for (;;)
-                arch_wait_for_interrupt();
+            goto err_free_data;
         }
 
         uintptr_t lm_offset = (uintptr_t)linker_main + linker_start;
@@ -451,13 +473,22 @@ _Noreturn void arch_switch_to_user_mode() {
         // 如未实现 VMA 可以直接去掉这段代码
 
         rsp = build_user_stack(
-            current, rsp, (uint64_t)entry, linker_start, link_data, link_size, data, load_start
+            current,
+            rsp,
+            (uint64_t)entry,
+            linker_start,
+            link_data,
+            link_size,
+            link_phys,
+            link_pages,
+            data,
+            load_start
         );
         entry = linker_main;
     } else {
-        rsp = build_user_stack(current, rsp, (uint64_t)entry, 0, NULL, 0, data, load_start);
+        rsp = build_user_stack(current, rsp, (uint64_t)entry, 0, NULL, 0, 0, 0, data, load_start);
     }
-    free(data);
+    free_frames(data_phys, data_pages);
     arch_close_interrupt();
     __asm__ volatile("mov %0, %%es\n"
                      "mov %0, %%ds\n"
@@ -475,6 +506,10 @@ _Noreturn void arch_switch_to_user_mode() {
                        "r"(entry),
                        "r"((uint64_t)0x1b)
                      : "memory");
+err_free_data:
+    if (data_phys != 0) {
+        free_frames(data_phys, data_pages);
+    }
 err:
     arch_open_interrupt();
     if (process->child_threads->size <= 1) {

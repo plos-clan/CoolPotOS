@@ -441,12 +441,12 @@ shebang_retry:;
     // SIG_IGN and SIG_DFL are preserved; blocked mask is preserved
     {
         for (int i = MINSIG; i <= MAXSIG; i++) {
-            if (current->actions[i].sa_handler != SIG_IGN
-                && current->actions[i].sa_handler != SIG_DFL) {
-                current->actions[i].sa_handler  = SIG_DFL;
-                current->actions[i].sa_flags    = 0;
-                current->actions[i].sa_mask     = 0;
-                current->actions[i].sa_restorer = NULL;
+            sigaction_t *action = &current->actions[i - 1];
+            if (action->sa_handler != SIG_IGN && action->sa_handler != SIG_DFL) {
+                action->sa_handler  = SIG_DFL;
+                action->sa_flags    = 0;
+                action->sa_mask     = 0;
+                action->sa_restorer = NULL;
             }
         }
         current->signal = 0; // clear pending signals

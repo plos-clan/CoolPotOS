@@ -199,6 +199,43 @@ syscall_(setgid, const int gid) {
     return EOK;
 }
 
+syscall_(setresuid, const int ruid, const int euid, const int suid) {
+    if (ruid < -1 || euid < -1 || suid < -1) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
+
+    pcb_t process = get_current_task()->process;
+    if (ruid != -1) {
+        process->uid  = ruid;
+        process->ruid = ruid;
+    }
+    if (euid != -1) {
+        process->euid = euid;
+    }
+    if (suid != -1) {
+        process->uid = suid;
+    }
+    return EOK;
+}
+
+syscall_(setresgid, const int rgid, const int egid, const int sgid) {
+    if (rgid < -1 || egid < -1 || sgid < -1) {
+        return SYSCALL_FAULT_(EINVAL);
+    }
+
+    pcb_t process = get_current_task()->process;
+    if (rgid != -1) {
+        process->rgid = rgid;
+    }
+    if (egid != -1) {
+        process->egid = egid;
+    }
+    if (sgid != -1) {
+        process->sgid = sgid;
+    }
+    return EOK;
+}
+
 syscall_(setpriority, const int which, const int who, const int niceval) {
     const pcb_t current = get_current_task()->process;
     const int clamped_nice = clamp_nice_value(niceval);
@@ -375,26 +412,13 @@ syscall_(sig_action, const int sig, const sigaction_t *action, sigaction_t *olda
         return SYSCALL_FAULT_(EINVAL);
     }
 
-    sigaction_t *ptr = &get_current_task()->actions[sig];
+    sigaction_t *ptr = &get_current_task()->actions[sig - 1];
     if (oldaction) {
         *oldaction = *ptr;
     }
 
     if (action) {
         *ptr = *action;
-        if ((sig == SIGUSR1 || sig == SIGCHLD) && get_current_task()->process
-            && get_current_task()->process->name
-            && strstr(get_current_task()->process->name, "xinit")) {
-            logkf(
-                "[sig-dbg] sigaction proc=%s pid=%d sig=%d handler=%p flags=0x%lx mask=0x%lx\n",
-                get_current_task()->process->name,
-                get_current_task()->process->pid,
-                sig,
-                action->sa_handler,
-                action->sa_flags,
-                (unsigned long)action->sa_mask
-            );
-        }
     }
 
     if (ptr->sa_flags & SIG_NOMASK) {
@@ -515,17 +539,6 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     const sigset_t old  = task->blocked;
     const sigset_t temp = (uint64_t)*mask & ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
 
-    if (task->process && task->process->name && strstr(task->process->name, "xinit")) {
-        logkf(
-            "[sig-dbg] sigsuspend-enter proc=%s pid=%d old=0x%lx temp=0x%lx pending=0x%lx\n",
-            task->process->name,
-            task->process->pid,
-            (unsigned long)old,
-            (unsigned long)temp,
-            (unsigned long)task->signal
-        );
-    }
-
     task->blocked = temp;
     if (!signals_pending_quick(task)) {
         const int wait_ret = scheduler_block_current((uint64_t)-1, "sigsuspend");
@@ -539,15 +552,6 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     // This ensures do_signal() can deliver the signal with the temporary mask.
     task->saved_sigmask     = old;
     task->has_saved_sigmask = true;
-    if (task->process && task->process->name && strstr(task->process->name, "xinit")) {
-        logkf(
-            "[sig-dbg] sigsuspend-exit proc=%s pid=%d blocked=0x%lx pending=0x%lx\n",
-            task->process->name,
-            task->process->pid,
-            (unsigned long)task->blocked,
-            (unsigned long)task->signal
-        );
-    }
     return SYSCALL_FAULT_(EINTR);
 }
 
@@ -564,15 +568,6 @@ syscall_(signal, const int sig, void *handler) {
 }
 
 syscall_(sigret) {
-    const tcb_t task = get_current_task();
-    if (task && task->process && task->process->name && strstr(task->process->name, "xinit")) {
-        logkf(
-            "[sig-dbg] sigret proc=%s pid=%d user_rsp=%p\n",
-            task->process->name,
-            task->process->pid,
-            task->syscall_stack_user
-        );
-    }
     return arch_signal_sigreturn(regs);
 }
 

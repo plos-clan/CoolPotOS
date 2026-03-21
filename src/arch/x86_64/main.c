@@ -38,6 +38,8 @@
 #include "mem/heap.h"
 #include "mem/page.h"
 #include "mod/module.h"
+#include "net/real_socket.h"
+#include "net/rtnl.h"
 #include "security.h"
 #include "syscall.h"
 #include "task/futex.h"
@@ -47,10 +49,9 @@
 #include "task/smp.h"
 #include "task/task.h"
 #include "term/klog.h"
-
-#include <driver/ahci.h>
-#include <driver/usb/xhci/core/xhci.h>
-#include <driver/usb/xhci/init.h>
+#include "driver/ahci.h"
+#include "driver/usb/xhci/core/xhci.h"
+#include "driver/usb/xhci/init.h"
 
 extern void kallsyms_init_from_elf();
 extern void zero_setup();
@@ -61,6 +62,7 @@ static _Noreturn void bsp_idle_loop(void *arg) {
     arch_open_interrupt();
     scheduler_enable();
     start_all_kernel_module();
+    real_socket_init();
 
     extern void mount_modfs();
     extern errno_t mount_boot_rootfs();
@@ -118,6 +120,7 @@ USED _Noreturn void kmain() {
     devtmpfs_regist();
     overlayfs_regist();
     pipefs_regist();
+    rtnl_init();
     sockfs_regist();
     epollfs_regist();
     eventfdfs_regist();

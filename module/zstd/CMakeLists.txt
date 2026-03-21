@@ -28,6 +28,7 @@ target_compile_definitions(zstd PRIVATE
         __CPOS_MODULE__
         DEBUGLEVEL=0
         ZSTD_TRACE=0
+        ZSTD_HEAPMODE=0
         ZSTD_DISABLE_ASM
         ZSTD_NO_INTRINSICS
 )
