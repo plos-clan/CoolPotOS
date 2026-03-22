@@ -459,6 +459,7 @@ syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int 
 syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
 syscall_(umask, uint64_t mask);
 syscall_(sync);
+syscall_(memfd_create, const char *name, unsigned int flags);
 
 // socket syscall
 syscall_(socket, int domain, int type, int protocol);

@@ -108,7 +108,6 @@ size_t procfs_self_readlink(vfs_node_t file, void *addr, size_t offset, size_t s
         return 0;
     if (offset >= strlen(file->linkto->name))
         return 0;
-    logkf("procfs: readlink offset:%llu size:%llu", offset, size);
     char *ptr   = file->linkto->name + offset;
     ssize_t len = strlen(ptr);
     len         = MIN(len, (ssize_t)size);

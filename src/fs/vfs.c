@@ -614,7 +614,7 @@ void vfs_deinit() {
 static _Atomic size_t inode_now = 0;
 
 vfs_node_t vfs_node_alloc(vfs_node_t parent, const char *name) {
-    vfs_node_t node = malloc(sizeof(struct vfs_node));
+    const vfs_node_t node = malloc(sizeof(struct vfs_node));
     not_null_assert(node, "vfs alloc null");
     if (unlikely(node == NULL))
         return NULL;
@@ -1098,7 +1098,7 @@ void *general_map(
 
     ssize_t ret = read_callback(file, (void *)addr, offset, len);
     if (ret < 0)
-        return (void *)-ENOMEM;
+        return (void*)ret;
 
     if ((uint64_t)ret < len) {
         memset((void *)(addr + (uint64_t)ret), 0, len - (uint64_t)ret);

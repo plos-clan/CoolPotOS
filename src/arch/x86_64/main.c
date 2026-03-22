@@ -29,6 +29,7 @@
 #include "fs/sysfs.h"
 #include "fs/tmpfs.h"
 #include "fs/vfs.h"
+#include "fs/memfd.h"
 #include "fsgsbase.h"
 #include "hpet.h"
 #include "intctl.h"
@@ -124,6 +125,7 @@ USED _Noreturn void kmain() {
     sockfs_regist();
     epollfs_regist();
     eventfdfs_regist();
+    memfd_setup();
     sysfs_regist();
 
     // 率先将调度器 IRQ 注册进去, 防止驱动程序IRQ分配占用

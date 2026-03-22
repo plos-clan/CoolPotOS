@@ -153,6 +153,7 @@
 #define SYSCALL_PIPE2         293
 #define SYSCALL_PRLIMIT64     302
 #define SYSCALL_GETRANDOM     318
+#define SYSCALL_MEMFD_CREATE  319
 #define SYSCALL_CP_F_RANGE    326
 #define SYSCALL_STATX         332
 #define SYSCALL_FSOPEN        430

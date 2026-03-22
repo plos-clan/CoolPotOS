@@ -254,6 +254,8 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EPOLL_PWAIT]   = (syscall_t)syscall_epoll_pwait,
     [SYSCALL_ACCEPT4]       = (syscall_t)syscall_accept4,
     [SYSCALL_EVENTFD2]      = (syscall_t)syscall_eventfd2,
+    [SYSCALL_FTRUNCATE]     = (syscall_t)syscall_ftruncate,
+    [SYSCALL_MEMFD_CREATE]  = (syscall_t)syscall_memfd_create,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理

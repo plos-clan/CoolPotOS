@@ -6,6 +6,8 @@
 #include "task/scheduler.h"
 #include "term/klog.h"
 
+static uint64_t base_addr = KERNEL_HEAP_START;
+
 #if !(defined(__x86_64__) || defined(__amd64__))
 
 static void *heap_alloc(void *ptr, size_t size);
@@ -281,6 +283,15 @@ void *pvalloc(size_t size) {
 
 #else
 
+static MemorySpan heap_oom_alloc(size_t size) {
+    const size_t allocate_size = MAX(PADDING_UP(size, PAGE_SIZE), KERNEL_HEAP_SIZE);
+    const uint64_t ptr         = base_addr;
+    base_addr += allocate_size;
+    page_map_range_to_random(get_kernel_pagedir(), ptr, allocate_size, KERNEL_PTE_FLAGS);
+    logkf("oom alloc: size=%llu %#p\n\r", allocate_size, ptr);
+    return (MemorySpan){ .ptr = (uint8_t *)ptr, .size = allocate_size };
+}
+
 static void heap_error_handler(const HeapError error, void *ptr) {
     switch (error) {
     case InvalidFree:
@@ -297,12 +308,13 @@ static void heap_error_handler(const HeapError error, void *ptr) {
 #endif
 
 void init_heap() {
-    uint64_t base_addr = KERNEL_HEAP_START;
     logkf("kernel_heap: init heap at %p - size: %llu\n", base_addr, KERNEL_HEAP_SIZE);
     page_map_range_to_random(get_kernel_pagedir(), base_addr, KERNEL_HEAP_SIZE, KERNEL_PTE_FLAGS);
 #if defined(__x86_64__) || defined(__amd64__)
     heap_init((void *)base_addr, KERNEL_HEAP_SIZE);
     heap_onerror(heap_error_handler);
+    heap_set_oom_handler(heap_oom_alloc);
+    base_addr += KERNEL_HEAP_SIZE;
 #else
     mpool_init(&pool, (void *)base_addr, KERNEL_HEAP_SIZE);
 #endif
