@@ -8,7 +8,7 @@
 #include "term/klog.h"
 
 module_t boot_modules[MAX_LOAD_MODULE];
-size_t modules_count = 0;
+static size_t modules_count = 0;
 
 static const char *find_boot_rootfs_name(void) {
     module_t *mod = get_module("cp_rootfs");
@@ -48,6 +48,14 @@ void extract_name(const char *input, char *output, size_t output_size) {
     }
 }
 
+size_t get_modules_count() {
+    return modules_count;
+}
+
+module_t *get_modules_array() {
+    return boot_modules;
+}
+
 module_t *get_module(const char *module_name) {
     if (module_name == NULL)
         return NULL;
@@ -78,6 +86,7 @@ void load_module() {
         boot_modules[i].path = strdup(boot_modules0[i]->path);
         boot_modules[i].size = boot_modules0[i]->size;
         boot_modules[i].data = malloc(boot_modules[i].size);
+        boot_modules[i].state = M_LOADING;
         memcpy(boot_modules[i].data, boot_modules0[i]->data, boot_modules[i].size);
         extract_name(boot_modules[i].path, boot_modules[i].name, sizeof(char) * 20);
     }

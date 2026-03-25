@@ -447,38 +447,267 @@ static int drm_mode_resolve_obj_type(drm_device_t *dev, uint32_t obj_id, uint32_
     return 0;
 }
 
-static void drm_sysfs_write_file(vfs_node_t parent, const char *name, const char *content) {
-    vfs_node_t node;
-    sysfs_handle_t *handle;
-    size_t len;
+typedef enum drm_sysfs_attr {
+    DRM_SYSFS_ATTR_VERSION,
+    DRM_SYSFS_ATTR_DEV,
+    DRM_SYSFS_ATTR_MODES,
+    DRM_SYSFS_ATTR_UEVENT,
+} drm_sysfs_attr_t;
 
-    if (!parent || !name || !content) {
+typedef struct drm_sysfs_file {
+    sysfs_handle_t handle;
+    drm_device_t *dev;
+    drm_sysfs_attr_t attr;
+} drm_sysfs_file_t;
+
+static char *drm_sysfs_join_path(vfs_node_t parent, const char *name) {
+    if (parent == NULL || name == NULL) {
+        return NULL;
+    }
+
+    char *base = vfs_get_fullpath(parent);
+    if (base == NULL) {
+        return NULL;
+    }
+
+    size_t base_len = strlen(base);
+    size_t name_len = strlen(name);
+    size_t path_len = base_len + name_len + 2;
+    char *path      = malloc(path_len);
+    if (path == NULL) {
+        free(base);
+        return NULL;
+    }
+
+    if (strcmp(base, "/") == 0) {
+        sprintf(path, "/%s", name);
+    } else {
+        sprintf(path, "%s/%s", base, name);
+    }
+
+    free(base);
+    return path;
+}
+
+static vfs_node_t drm_sysfs_lookup_child(vfs_node_t parent, const char *name) {
+    char *path = drm_sysfs_join_path(parent, name);
+    if (path == NULL) {
+        return NULL;
+    }
+
+    vfs_node_t node = vfs_open(path);
+    free(path);
+    return node;
+}
+
+static void drm_sysfs_release_handle(vfs_node_t node) {
+    if (node == NULL || node->handle == NULL) {
         return;
     }
 
-    node = sysfs_child_append(parent, name, false);
-    if (!node) {
+    sysfs_header_t *header = node->handle;
+    if (header->type == SYSFS_NONE) {
+        sysfs_handle_t *handle = node->handle;
+        if (handle->data != NULL) {
+            free(handle->data);
+        }
+    }
+
+    free(node->handle);
+    node->handle = NULL;
+}
+
+static size_t drm_sysfs_format_modes_text(
+    drm_device_t *drm_dev, char *buffer, size_t buffer_size
+) {
+    uint32_t width  = 1024;
+    uint32_t height = 768;
+    uint32_t bpp    = 32;
+
+    for (size_t i = 0; i < DRM_MAX_CONNECTORS_PER_DEVICE; i++) {
+        drm_connector_t *connector = drm_dev->resource_mgr.connectors[i];
+        if (connector == NULL || connector->modes == NULL || connector->count_modes == 0) {
+            continue;
+        }
+
+        width  = connector->modes[0].hdisplay;
+        height = connector->modes[0].vdisplay;
+        goto out;
+    }
+
+    if (drm_dev->op && drm_dev->op->get_display_info) {
+        drm_dev->op->get_display_info(drm_dev, &width, &height, &bpp);
+    }
+
+out:
+    snprintf(buffer, buffer_size, "%ux%u\n", width, height);
+    return strlen(buffer);
+}
+
+static size_t drm_sysfs_format_dev_text(drm_device_t *drm_dev, char *buffer, size_t buffer_size) {
+    int major = (drm_dev->dev_nr >> 8) & 0xff;
+    int minor = drm_dev->dev_nr & 0xff;
+
+    snprintf(buffer, buffer_size, "%d:%d\n", major, minor);
+    return strlen(buffer);
+}
+
+static size_t drm_sysfs_format_uevent_text(
+    drm_device_t *drm_dev, char *buffer, size_t buffer_size
+) {
+    int minor = drm_dev->dev_nr & 0xff;
+    int major = (drm_dev->dev_nr >> 8) & 0xff;
+    char dev_name[32];
+
+    snprintf(dev_name, sizeof(dev_name), "card%d", minor);
+    snprintf(
+        buffer,
+        buffer_size,
+        "MAJOR=%d\nMINOR=%d\nDEVNAME=dri/%s\nDEVTYPE=drm_minor\nSUBSYSTEM=drm\n",
+        major,
+        minor,
+        dev_name
+    );
+    return strlen(buffer);
+}
+
+static size_t drm_sysfs_format_attr(
+    drm_sysfs_file_t *handle, char *buffer, size_t buffer_size
+) {
+    if (handle == NULL || buffer == NULL || buffer_size == 0) {
+        return 0;
+    }
+
+    switch (handle->attr) {
+    case DRM_SYSFS_ATTR_VERSION:
+        snprintf(buffer, buffer_size, "drm 1.1.0 20060810\n");
+        return strlen(buffer);
+    case DRM_SYSFS_ATTR_DEV:
+        return drm_sysfs_format_dev_text(handle->dev, buffer, buffer_size);
+    case DRM_SYSFS_ATTR_MODES:
+        return drm_sysfs_format_modes_text(handle->dev, buffer, buffer_size);
+    case DRM_SYSFS_ATTR_UEVENT:
+        return drm_sysfs_format_uevent_text(handle->dev, buffer, buffer_size);
+    default:
+        return 0;
+    }
+}
+
+static size_t drm_sysfs_attr_read(void *file, void *addr, size_t offset, size_t size) {
+    drm_sysfs_file_t *handle = file;
+    if (handle == NULL || handle->dev == NULL || addr == NULL) {
+        return 0;
+    }
+
+    char content[256];
+    size_t len = drm_sysfs_format_attr(handle, content, sizeof(content));
+    if (len == 0 || offset >= len) {
+        return 0;
+    }
+
+    size_t actual = len - offset;
+    if (actual > size) {
+        actual = size;
+    }
+
+    memcpy(addr, content + offset, actual);
+    return actual;
+}
+
+static size_t drm_sysfs_attr_write(void *file, const void *addr, size_t offset, size_t size) {
+    drm_sysfs_file_t *handle = file;
+    UNUSED(addr, offset);
+
+    if (handle == NULL) {
+        return 0;
+    }
+
+    return handle->attr == DRM_SYSFS_ATTR_UEVENT ? size : 0;
+}
+
+static void drm_sysfs_install_attr_file(
+    vfs_node_t parent, const char *name, drm_device_t *drm_dev, drm_sysfs_attr_t attr
+) {
+    vfs_node_t node = drm_sysfs_lookup_child(parent, name);
+    if (node == NULL) {
+        node = sysfs_child_append(parent, name, SYSFS_NONE);
+    }
+    if (node == NULL) {
         return;
     }
 
-    handle = node->handle;
-    len    = strlen(content);
-    handle->data = strdup(content);
-    handle->size = len;
-    handle->capacity = len + 1;
-    node->size = len;
+    drm_sysfs_release_handle(node);
+
+    drm_sysfs_file_t *handle = calloc(1, sizeof(drm_sysfs_file_t));
+    strncpy(handle->handle.name, name, sizeof(handle->handle.name) - 1);
+    handle->handle.header.node  = node;
+    handle->handle.header.type  = SYSFS_NONE;
+    handle->handle.header.read  = drm_sysfs_attr_read;
+    handle->handle.header.write = drm_sysfs_attr_write;
+    handle->dev                 = drm_dev;
+    handle->attr                = attr;
+
+    node->handle = handle;
+    char content[256];
+    node->size = drm_sysfs_format_attr(handle, content, sizeof(content));
+    node->mode   = attr == DRM_SYSFS_ATTR_UEVENT ? 0644 : 0444;
+}
+
+static void drm_sysfs_ensure_symlink(vfs_node_t parent, const char *name, const char *target) {
+    if (parent == NULL || name == NULL || target == NULL) {
+        return;
+    }
+
+    if (drm_sysfs_lookup_child(parent, name) != NULL) {
+        return;
+    }
+
+    sysfs_child_append_symlink(parent, name, target);
+}
+
+static void drm_sysfs_ensure_symlink_node(vfs_node_t parent, const char *name, vfs_node_t target) {
+    if (parent == NULL || name == NULL || target == NULL) {
+        return;
+    }
+
+    if (drm_sysfs_lookup_child(parent, name) != NULL) {
+        return;
+    }
+
+    sysfs_child_append_symlink_node(parent, name, target);
+}
+
+static vfs_node_t drm_sysfs_get_device_root(drm_device_t *drm_dev, const char *dev_name) {
+    if (drm_dev->pci_dev != NULL) {
+        return sysfs_get_pci_device_node(
+            drm_dev->pci_dev->segment,
+            drm_dev->pci_dev->bus,
+            drm_dev->pci_dev->slot,
+            drm_dev->pci_dev->func
+        );
+    }
+
+    vfs_node_t system_root = sysfs_ensure_dir(sysfs_get_devices_root(), "system");
+    if (system_root == NULL) {
+        return NULL;
+    }
+
+    vfs_node_t display_root = sysfs_ensure_dir(system_root, "display");
+    if (display_root == NULL) {
+        return NULL;
+    }
+
+    char device_name[48];
+    snprintf(device_name, sizeof(device_name), "%s-device", dev_name);
+    return sysfs_ensure_dir(display_root, device_name);
 }
 
 static void drm_sysfs_register_device(drm_device_t *drm_dev) {
-    vfs_node_t dev_char_dir;
-    vfs_node_t dev_root;
     vfs_node_t device_dir;
     vfs_node_t drm_dir;
     vfs_node_t card_dir;
-    vfs_node_t class_dir;
     vfs_node_t class_drm_dir;
     char dev_name[32];
-    char path[256];
     char content[128];
     int major;
     int minor;
@@ -487,88 +716,42 @@ static void drm_sysfs_register_device(drm_device_t *drm_dev) {
         return;
     }
 
-    dev_char_dir = vfs_open("/sys/dev/char");
-    if (!dev_char_dir) {
-        return;
-    }
-    vfs_close(dev_char_dir);
-
     major = (drm_dev->dev_nr >> 8) & 0xff;
     minor = drm_dev->dev_nr & 0xff;
-    sprintf(dev_name, "card%d", minor);
+    snprintf(dev_name, sizeof(dev_name), "card%d", minor);
 
-    sprintf(content, "SUBSYSTEM=drm\n");
-    dev_root = sysfs_regist_dev('c', major, minor, "", dev_name, content);
-    if (!dev_root) {
-        return;
-    }
-
-    device_dir = sysfs_child_append(dev_root, "device", true);
+    device_dir = drm_sysfs_get_device_root(drm_dev, dev_name);
     if (!device_dir) {
         return;
     }
 
-    drm_dir = sysfs_child_append(device_dir, "drm", true);
+    drm_dir = sysfs_ensure_dir(device_dir, "drm");
     if (!drm_dir) {
         return;
     }
 
-    card_dir = sysfs_child_append(drm_dir, dev_name, true);
+    card_dir = sysfs_ensure_dir(drm_dir, dev_name);
     if (!card_dir) {
         return;
     }
 
-    if (drm_dev->pci_dev) {
-        sprintf(
-            content,
-            "PCI_SLOT_NAME=%04x:%02x:%02x.%u\n",
-            drm_dev->pci_dev->segment,
-            drm_dev->pci_dev->bus,
-            drm_dev->pci_dev->slot,
-            drm_dev->pci_dev->func
-        );
-    } else {
-        sprintf(content, "PCI_SLOT_NAME=0000:00:00.0\n");
+    drm_sysfs_install_attr_file(drm_dir, "version", drm_dev, DRM_SYSFS_ATTR_VERSION);
+    drm_sysfs_install_attr_file(card_dir, "dev", drm_dev, DRM_SYSFS_ATTR_DEV);
+    drm_sysfs_install_attr_file(card_dir, "modes", drm_dev, DRM_SYSFS_ATTR_MODES);
+    drm_sysfs_install_attr_file(card_dir, "uevent", drm_dev, DRM_SYSFS_ATTR_UEVENT);
+    drm_sysfs_ensure_symlink(card_dir, "subsystem", "/sys/class/drm");
+    drm_sysfs_ensure_symlink_node(card_dir, "device", device_dir);
+
+    class_drm_dir = sysfs_ensure_dir(sysfs_get_class_root(), "drm");
+    if (class_drm_dir) {
+        drm_sysfs_ensure_symlink_node(class_drm_dir, dev_name, card_dir);
     }
-    drm_sysfs_write_file(device_dir, "uevent", content);
-    sprintf(content, "0x%04x\n", drm_dev->pci_dev ? drm_dev->pci_dev->vendor_id : 0);
-    drm_sysfs_write_file(device_dir, "vendor", content);
-    sprintf(content, "0x%04x\n", drm_dev->pci_dev ? drm_dev->pci_dev->device_id : 0);
-    drm_sysfs_write_file(device_dir, "device", content);
-    sprintf(
-        content,
-        "0x%04x\n",
-        drm_dev->pci_dev ? drm_dev->pci_dev->subsystem_vendor_id : 0
-    );
-    drm_sysfs_write_file(device_dir, "subsystem_vendor", content);
-    sprintf(
-        content,
-        "0x%04x\n",
-        drm_dev->pci_dev ? drm_dev->pci_dev->subsystem_device_id : 0
-    );
-    drm_sysfs_write_file(device_dir, "subsystem_device", content);
-    sprintf(content, "0x%02x\n", drm_dev->pci_dev ? drm_dev->pci_dev->revision_id : 0);
-    drm_sysfs_write_file(device_dir, "revision", content);
-    drm_sysfs_write_file(drm_dir, "version", "drm 1.1.0 20060810\n");
 
-    sprintf(content, "MAJOR=%d\nMINOR=%d\nDEVNAME=dri/%s\nSUBSYSTEM=drm\n", major, minor, dev_name);
-    drm_sysfs_write_file(card_dir, "uevent", content);
-
-    sysfs_child_append_symlink(card_dir, "subsystem", "/sys/class/drm");
-    sysfs_child_append_symlink(device_dir, "subsystem", "/sys/bus/pci");
-
-    class_dir = vfs_open("/sys/class");
-    if (class_dir) {
-        class_drm_dir = vfs_open("/sys/class/drm");
-        if (!class_drm_dir) {
-            class_drm_dir = sysfs_child_append(class_dir, "drm", true);
-        }
-        if (class_drm_dir) {
-            sprintf(path, "/sys/dev/char/%d:%d/device/drm/%s", major, minor, dev_name);
-            sysfs_child_append_symlink(class_drm_dir, dev_name, path);
-            vfs_close(class_drm_dir);
-        }
-        vfs_close(class_dir);
+    drm_sysfs_format_uevent_text(drm_dev, content, sizeof(content));
+    char *card_path = vfs_get_fullpath(card_dir);
+    if (card_path != NULL) {
+        sysfs_regist_dev('c', major, minor, card_path, dev_name, content);
+        free(card_path);
     }
 }
 

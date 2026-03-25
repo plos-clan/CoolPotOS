@@ -339,6 +339,17 @@ pci_device_t *pci_find_bdfs(uint8_t bus, uint8_t slot, uint8_t func, uint16_t se
     return NULL;
 }
 
+pci_device_t *pci_get_device_by_index(size_t index) {
+    if (index >= pci_device_number) {
+        return NULL;
+    }
+    return pci_devices[index];
+}
+
+size_t pci_get_device_count() {
+    return pci_device_number;
+}
+
 void pci_scan_function(uint16_t segment_group, uint8_t bus, uint8_t device, uint8_t function) {
     uint32_t id_value  = pci_read(bus, device, function, segment_group, 0x00);
     uint16_t vendor_id = (uint16_t)(id_value & 0xFFFF);

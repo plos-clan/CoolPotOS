@@ -435,12 +435,6 @@ static void kill_proc0(const pcb_t pcb) {
     }
     free(pcb->ctty_path);
     pcb->ctty_path = NULL;
-    logkf(
-        "task: Freeing process %s (PID: %d) vfork: %s\n",
-        pcb->name,
-        pcb->pid,
-        pcb->vfork ? "true" : "false"
-    );
     enqueue_retired_process(pcb);
 }
 

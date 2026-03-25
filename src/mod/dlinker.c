@@ -318,21 +318,24 @@ static bool ends_with_km(const char *str) {
     return strcmp(str + len - 3, ".km") == 0;
 }
 
-extern module_t boot_modules[256];
-extern size_t modules_count;
-
 void load_all_kernel_module() {
-    for (size_t i = 0; i < modules_count; i++) {
-        if (ends_with_km(boot_modules[i].path)) {
-            module_t *mod = &boot_modules[i];
-            if (!mod_check_signature(mod, mod->data, mod->size))
+    for (size_t i = 0; i < get_modules_count(); i++) {
+        if (ends_with_km(get_modules_array()[i].path)) {
+            module_t *mod = &get_modules_array()[i];
+            if (!mod_check_signature(mod, mod->data, mod->size)) {
+                mod->state = M_ERROR;
                 continue;
+            }
             kernel_mode_t *kmod = calloc(1, sizeof(kernel_mode_t));
             kmod->name          = strdup(mod->name);
             kmod->data          = mod->data;
             kmod->data_len      = mod->size;
             dlinker_load(kmod);
             kmod->lists_index = cow_list_add(kmod_lists, kmod);
+            mod->state        = M_RUNNING;
+        }else {
+            module_t *mod = &get_modules_array()[i];
+            mod->state = M_NO_EXEC;
         }
     }
 }
