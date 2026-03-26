@@ -58,6 +58,4 @@ void smp_init() {
     arch_bsp_cpu_init();
     smp_enable = true;
     kinfo("%d processors have been enabled.", cpu_count);
-    percpu_pagecache_init();
-    kinfo("buddy per-cpu page cache enable.");
 }

@@ -20,3 +20,5 @@ void bitmap_set_range(Bitmap *bitmap, size_t start, size_t end, bool value);
 size_t bitmap_find_range(Bitmap *bitmap, size_t length, bool value);
 
 size_t bitmap_find_range_from(Bitmap *bitmap, size_t length, bool value, size_t start_from);
+
+Bitmap *get_usable_regions();

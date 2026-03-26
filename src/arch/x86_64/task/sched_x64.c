@@ -70,19 +70,22 @@ void calibrate_tsc_with_hpet() {
     uint64_t ns_end    = nano_time();
     uint64_t delta_tsc = tsc_end - tsc_start;
     uint64_t delta_ns  = ns_end - ns_start;
-    if (delta_tsc == 0 || delta_ns == 0)
+    if (delta_tsc == 0 || delta_ns == 0) {
         return;
+    }
     arch_current_cpu()->arch_data.tsc_conv_shift = 22;
     arch_current_cpu()->arch_data.tsc_conv_mul =
         (uint32_t)((delta_ns << arch_current_cpu()->arch_data.tsc_conv_shift) / delta_tsc);
     arch_current_cpu()->arch_data.tsc_base_tsc = read_tsc();
     arch_current_cpu()->arch_data.tsc_base_ns  = nano_time();
     uint64_t freq_hz                           = (delta_tsc * 1000000000ull) / delta_ns;
-    if (is_bsp)
+    if (is_bsp) {
         kinfo("Estimated TSC frequency: %llu MHz", freq_hz / 1000 / 1000);
+    }
 end:
-    if (is_bsp)
+    if (is_bsp) {
         kinfo("%s clock time %llu", cpu_has_rdtsc() ? "TSC" : "HPET", sched_clock());
+    }
     spin_unlock(tsc_lock);
 }
 
