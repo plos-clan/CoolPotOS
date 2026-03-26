@@ -5,7 +5,6 @@
 #include "intctl.h"
 #include "io.h"
 #include "krlibc.h"
-#include "apic.h"
 #include "lock.h"
 #include "mem/frame.h"
 #include "mem/page.h"
@@ -19,14 +18,12 @@ spin_t tsc_lock = SPIN_INIT;
 
 __attribute__((naked, noreturn)) void
 arch_run_on_kernel_stack(uint64_t stack_top, arch_stack_entry_t entry, void *arg) {
-    __asm__ volatile(
-        "mov %rdi, %rsp\n\t"
-        "andq $-16, %rsp\n\t"
-        "xorq %rbp, %rbp\n\t"
-        "mov %rdx, %rdi\n\t"
-        "call *%rsi\n\t"
-        "ud2\n\t"
-    );
+    __asm__ volatile("mov %rdi, %rsp\n\t"
+                     "andq $-16, %rsp\n\t"
+                     "xorq %rbp, %rbp\n\t"
+                     "mov %rdx, %rdi\n\t"
+                     "call *%rsi\n\t"
+                     "ud2\n\t");
 }
 
 void cpuid(uint32_t code, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d) {
@@ -90,15 +87,15 @@ end:
 }
 
 void arch_context_init(tcb_t thread, struct arch_context_ *context) {
-    context->kernel_stack = (uint64_t)thread + STACK_SIZE;
-    context->user_stack   = context->kernel_stack;
+    context->kernel_stack   = (uint64_t)thread + STACK_SIZE;
+    context->user_stack     = context->kernel_stack;
     context->user_stack_top = context->kernel_stack;
-    context->regs.rsp     = context->kernel_stack;
-    context->regs.rflags  = get_rflags();
-    context->regs.cs      = 0x8;
-    context->regs.ss      = 0x10;
-    context->regs.es      = 0x10;
-    context->regs.ds      = 0x10;
+    context->regs.rsp       = context->kernel_stack;
+    context->regs.rflags    = get_rflags();
+    context->regs.cs        = 0x8;
+    context->regs.ss        = 0x10;
+    context->regs.es        = 0x10;
+    context->regs.ds        = 0x10;
     set_kernel_stack(context->kernel_stack);
     context->fs_base = read_fsbase();
     context->gs_base = read_gsbase();
@@ -201,7 +198,7 @@ void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
 static uint64_t push_slice(uint64_t ustack, uint8_t *slice, uint64_t len) {
     uint64_t tmp_stack = ustack;
     tmp_stack -= len;
-    tmp_stack -= (tmp_stack % 0x08);
+    tmp_stack -= tmp_stack % 0x08;
     memcpy((void *)tmp_stack, slice, len);
     return tmp_stack;
 }
@@ -231,9 +228,9 @@ static uint64_t build_user_stack(
 
     uint64_t execfn_ptr = tmp_stack;
 
-    uint64_t *envps = (uint64_t *)malloc(1024);
+    uint64_t *envps = malloc(1024);
     memset(envps, 0, 1024);
-    uint64_t *argvps = (uint64_t *)malloc(1024);
+    uint64_t *argvps = malloc(1024);
     memset(argvps, 0, 1024);
 
     if (envp != NULL) {
@@ -254,35 +251,18 @@ static uint64_t build_user_stack(
     tmp_stack -= (tmp_stack - total_length) % 0x10;
 
     uint8_t random_bytes[16];
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 16; i++) {
         random_bytes[i] = (uint8_t)(i * 17 + 42);
+    }
     tmp_stack            = push_slice(tmp_stack, random_bytes, 16);
     uint64_t random_addr = tmp_stack;
 
     // push auxv
-    uint8_t *tmp = (uint8_t *)malloc(2 * sizeof(uint64_t));
+    uint8_t *tmp = malloc(2 * sizeof(uint64_t));
     memset(tmp, 0, 2 * sizeof(uint64_t));
     tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
-    page_map_range_to_random(
-        task->process->directory,
-        EHDR_START_ADDR,
-        task->process->exec->size,
-        PTE_PRESENT | PTE_WRITEABLE | PTE_USER
-    );
-    memcpy((void *)EHDR_START_ADDR, src_data, task->process->exec->size);
-
-    if (link_data != NULL) {
-        page_map_range_to_random(
-            task->process->directory,
-            INTERPRETER_EHDR_ADDR,
-            link_size,
-            PTE_PRESENT | PTE_WRITEABLE | PTE_USER
-        );
-        memcpy((void *)INTERPRETER_EHDR_ADDR, link_data, link_size);
-    }
-
-    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)EHDR_START_ADDR;
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)src_data;
     // CP_Kernel 将用户程序本体从 0 地址加载故不加phdrs的偏移
     Elf64_Phdr *phdrs = (Elf64_Phdr *)(ehdr->e_phoff + load_start);
 
@@ -363,7 +343,6 @@ static uint64_t build_user_stack(
     }
     free_argv(argv);
 
-
     return tmp_stack;
 }
 
@@ -373,7 +352,7 @@ _Noreturn void arch_switch_to_user_mode() {
     tcb_t current                = get_current_task();
     current->context.regs.rflags = 0 << 12 | 0b10 | 1 << 9;
 
-    pcb_t process   = current->process;
+    pcb_t process      = current->process;
     uint64_t data_phys = 0;
     size_t data_pages  = 0;
     uint8_t *data      = NULL;
@@ -404,8 +383,7 @@ _Noreturn void arch_switch_to_user_mode() {
     Elf64_Ehdr *ehdr        = (Elf64_Ehdr *)data;
     uint64_t executor_start = ehdr->e_type == ET_DYN ? EXECUTOR_BASE_ADDR : 0;
     uint64_t load_start     = 0;
-    void *entry =
-        load_executor_elf(data, process->directory, executor_start, &load_start, process);
+    void *entry = load_executor_elf(data, process->directory, executor_start, &load_start, process);
     if (entry != NULL && ehdr->e_type == ET_DYN) {
         entry = (void *)((uint64_t)entry + load_start);
     }
