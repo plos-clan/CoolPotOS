@@ -10,7 +10,6 @@
 #include "driver/fb.h"
 #include "driver/gop.h"
 #include "driver/input_device.h"
-#include "driver/nvme.h"
 #include "driver/pci/pci.h"
 #include "driver/power/power.h"
 #include "driver/pty.h"
@@ -151,7 +150,6 @@ USED _Noreturn void kmain() {
     urandom_init();
     // usb_init();
     ahci_setup();
-    nvme_setup();
     drm_plainfb_init();
 
     cpio_init();

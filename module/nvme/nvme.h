@@ -1,9 +1,5 @@
 #pragma once
 
-#include "driver/pci/pci.h"
-#include "lock.h"
-#include "types.h"
-
 #define NVME_REG_CAP   0x00
 #define NVME_REG_VS    0x08
 #define NVME_REG_INTMS 0x0C
@@ -53,6 +49,9 @@
 #define NVME_MAX_REQUESTS   256
 #define NVME_MAX_NAMESPACES 256
 #define NVME_MAX_IO_QUEUES  1
+
+#include "driver_subsystem.h"
+#include "lock.h"
 
 typedef struct {
     uint32_t cdw0;
@@ -305,6 +304,25 @@ typedef struct {
     int (*log)(const char *fmt, ...);
 } nvme_platform_ops_t;
 
+typedef struct {
+    nvme_controller_t *ctrl;
+    nvme_namespace_t *ns;
+} nvme_ns_t;
+
+typedef struct {
+    bool done;
+    bool success;
+    uint32_t result;
+    volatile uint32_t refs;
+} admin_sync_ctx_t;
+
+typedef struct {
+    bool completed;
+    bool success;
+    uint32_t result;
+    volatile uint32_t refs;
+} nvme_callback_ctx_t;
+
 extern nvme_platform_ops_t *g_nvme_platform_ops;
 
 void nvme_probe(pci_device_t *device);
@@ -332,4 +350,3 @@ void nvme_process_completions(nvme_controller_t *ctrl);
 int nvme_get_namespace_info(
     nvme_controller_t *ctrl, uint32_t nsid, uint64_t *block_count, uint32_t *block_size
 );
-void nvme_setup(void);

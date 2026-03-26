@@ -2,6 +2,8 @@
 
 #define KERNEL_MODULES_SPACE_START 0xffffffffb0000000
 #define KERNEL_MODULES_SPACE_END   0xffffffffc0000000
+#define EXPORT_INITIAL_CAPACITY 4
+#define EXPORT_GROWTH_FACTOR    2
 
 #include "elf_load.h"
 #include "types.h"
@@ -25,5 +27,7 @@ typedef struct kernel_mode {
     char *name;
 } kernel_mode_t;
 
+void load_all_kmod_lib(kernel_mode_t *kernel);
+void dlfunc_register(kernel_mode_t *mode, char *name, void *func);
 void start_all_kernel_module();
 void kmodule_init();

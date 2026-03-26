@@ -4,9 +4,14 @@
 #define assert(expr)
 #endif
 
+#define ABS(x)    ((x) > 0 ? (x) : -(x))
+#define MAX(x, y) ((x > y) ? (x) : (y))
+#define MIN(x, y) ((x < y) ? (x) : (y))
+
 #include "types/stdbool.h"
 #include "types/stdint.h"
 #include "types/stddef.h"
+#include "types/stdarg.h"
 
 typedef int errno_t;
 typedef __INTPTR_TYPE__ ssize_t;
@@ -39,6 +44,7 @@ void    printk(const char *fmt, ...);
 
 int sprintf(char *buf, char const *fmt, ...);
 int snprintf(char *buf, int count, const char *fmt, ...);
+int vsnprintf(char *buf, int count, const char *fmt, va_list va);
 
 void qsort(void *base, size_t nel, size_t width, cmpfun cmp);
 
@@ -46,3 +52,5 @@ void *malloc(size_t size);
 void *calloc(size_t n, size_t size);
 void *realloc(void *ptr, size_t newsize);
 void free(void *ptr);
+
+void arch_pause();

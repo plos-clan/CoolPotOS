@@ -1,33 +1,14 @@
-#include "driver/nvme.h"
-#include "driver/blk_device.h"
-#include "krlibc.h"
-#include "lib/sprintf.h"
-#include "mem/frame.h"
-#include "mem/heap.h"
-#include "mem/page.h"
-#include "term/klog.h"
-#include "timer.h"
-
-typedef struct {
-    nvme_controller_t *ctrl;
-    nvme_namespace_t *ns;
-} nvme_ns_t;
-
-typedef struct {
-    bool done;
-    bool success;
-    uint32_t result;
-    volatile uint32_t refs;
-} admin_sync_ctx_t;
-
-typedef struct {
-    bool completed;
-    bool success;
-    uint32_t result;
-    volatile uint32_t refs;
-} nvme_callback_ctx_t;
+#include "nvme.h"
+#include "driver_subsystem.h"
+#include "cp_kernel.h"
+#include "errno.h"
+#include "mem_subsystem.h"
 
 static size_t nvme_controller_index = 0;
+
+static errno_t dummy() {
+    return 0;
+}
 
 static void *cpkrnl_dma_alloc(size_t size, uint64_t *phys_addr) {
     size_t bytes  = PADDING_UP(MAX(size, (size_t)1), PAGE_SIZE);
@@ -40,7 +21,7 @@ static void *cpkrnl_dma_alloc(size_t size, uint64_t *phys_addr) {
         return NULL;
     }
 
-    page_map_range(get_kernel_pagedir(), (uint64_t)virt, phys, bytes, KERNEL_PTE_FLAGS);
+    page_map_range(get_kernel_pagedir(), (uint64_t)virt, phys, bytes, get_kernel_pte_flags());
     memset(virt, 0, bytes);
 
     if (phys_addr) {
@@ -684,7 +665,7 @@ static int nvme_prepare_prp_list(nvme_request_t *req) {
     return 0;
 }
 
-static inline uint64_t nvme_translate_page_phys(uint64_t page_va) {
+static uint64_t nvme_translate_page_phys(uint64_t page_va) {
     return arch_virt_to_phys(page_va);
 }
 
@@ -1062,8 +1043,8 @@ static void nvme_register_namespace(
     strcpy(device->name, name_buf);
 
     size_t device_id = register_device(device);
-    kinfo(
-        "%s: blk_size=%u, blk=0..%llu, device_id=%llu",
+    printk(
+        "NVME: %s: blk_size=%u, blk=0..%llu, device_id=%llu\n",
         name_buf,
         ns_info->block_size,
         (unsigned long long)(ns_info->block_count ? ns_info->block_count - 1 : 0),
@@ -1103,7 +1084,7 @@ static int nvme_probe_device(pci_device_t *device) {
         (uint64_t)ctrl->bar0,
         device->bars[0].address,
         PADDING_UP(device->bars[0].size, PAGE_SIZE),
-        KERNEL_PTE_FLAGS
+        get_kernel_pte_flags()
     );
 
     uint64_t cap    = NVME_READ64(ctrl, NVME_REG_CAP);
@@ -1266,7 +1247,8 @@ int nvme_get_namespace_info(
     return 0;
 }
 
-void nvme_setup(void) {
+__attribute__((used)) __attribute__((visibility("default"))) int dlmain(void) {
     nvme_set_platform_ops(&cpkrnl_nvme_platform_ops);
     pci_find_class(0x00010802, nvme_probe);
+    return EOK;
 }

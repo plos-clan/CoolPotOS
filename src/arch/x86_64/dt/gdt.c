@@ -1,5 +1,4 @@
 #include "description_table.h"
-#include "../../../../module/all_include/mem_subsystem.h"
 #include "mem/frame.h"
 #include "task/smp.h"
 #include "term/klog.h"

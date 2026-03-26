@@ -96,6 +96,7 @@ add_subdirectory(module/fatfs)
 add_subdirectory(module/iso9660)
 add_subdirectory(module/squashfs)
 add_subdirectory(module/zstd)
+add_subdirectory(module/nvme)
 
 add_executable(kernel)
 
