@@ -38,9 +38,9 @@ static void load_blk_device(vfs_node_t node) {
         create_device_node(
             node,
             device->name,
-            device_block,
+            blk_device_is_stream(device) ? device_stream : device_block,
             device,
-            0,
+            blk_device_dev_number(device),
             (void *)blk_ioctl,
             (void *)blk_device_read,
             (void *)blk_device_write,
@@ -263,6 +263,10 @@ errno_t devtmpfs_stat(void *file, vfs_node_t node) {
         }
         if (file0->size_t)
             node->size = file0->size_t(file0->device_handle);
+        if (file0->dev_type == device_block && file0->device_handle != NULL) {
+            blk_device_t *device = file0->device_handle;
+            node->blksz          = device->block_size;
+        }
         return EOK;
     }
     node->type = file0->type == dtp_file_symlink ? file_symlink

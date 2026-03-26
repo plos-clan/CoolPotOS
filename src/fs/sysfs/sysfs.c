@@ -1,4 +1,5 @@
 #include "fs/sysfs.h"
+#include "driver/blk_device.h"
 #include "driver/drm/drm.h"
 #include "errno.h"
 #include "krlibc.h"
@@ -13,6 +14,7 @@ static vfs_node_t sysfs_class     = NULL;
 static vfs_node_t sysfs_devices   = NULL;
 static vfs_node_t sysfs_bus       = NULL;
 static vfs_node_t sysfs_dev       = NULL;
+static vfs_node_t sysfs_block     = NULL;
 static vfs_node_t sysfs_kernel    = NULL;
 static vfs_node_t sysfs_dev_char  = NULL;
 static vfs_node_t sysfs_dev_block = NULL;
@@ -38,17 +40,20 @@ static errno_t sysfs_mount(const char *src, vfs_node_t node, void *data) {
     sysfs_devices = sysfs_child_append(node, "devices", SYSFS_DIR);
     sysfs_bus     = sysfs_child_append(node, "bus", SYSFS_DIR);
     sysfs_dev     = sysfs_child_append(node, "dev", SYSFS_DIR);
+    sysfs_block   = sysfs_child_append(node, "block", SYSFS_DIR);
     sysfs_kernel  = sysfs_child_append(node, "kernel", SYSFS_DIR);
     sysfs_module  = sysfs_child_append(node, "module", SYSFS_DIR);
 
     sysfs_dev_char  = sysfs_child_append(sysfs_dev, "char", SYSFS_DIR);
     sysfs_dev_block = sysfs_child_append(sysfs_dev, "block", SYSFS_DIR);
+    sysfs_ensure_dir(sysfs_class, "block");
 
     sysfs_load_devices_system();
     sysfs_refresh_devices_system();
     sysfs_load_devices_pci();
     sysfs_load_module(sysfs_module);
     drm_sysfs_populate();
+    blk_sysfs_populate();
 
     return EOK;
 }
@@ -250,6 +255,10 @@ vfs_node_t sysfs_get_bus_root() {
 
 vfs_node_t sysfs_get_dev_root() {
     return sysfs_dev;
+}
+
+vfs_node_t sysfs_get_block_root() {
+    return sysfs_block;
 }
 
 vfs_node_t sysfs_get_module_root() {

@@ -40,18 +40,20 @@ endif()
 # 读取 xxd -i 输出内容
 file(READ "${TMP_BIN}" RAW_HEX)
 
-# 将变量名改成 cpos_signing_key_pub
-string(REPLACE "unsigned char" "const unsigned char" RAW_HEX "${RAW_HEX}")
-string(REPLACE "pubkey_raw_bin" "cpos_signing_key_pub" RAW_HEX "${RAW_HEX}")
-string(REPLACE "unsigned int cpos_signing_key_pub_len" "#define cpos_signing_key_pub_LEN" RAW_HEX "${RAW_HEX}")
+# 仅保留字节数组内容，去掉 xxd 自带的声明和长度变量
+string(REGEX REPLACE "unsigned char [^\\{]+\\{[ \t\r\n]*" "" RAW_HEX "${RAW_HEX}")
+string(REGEX REPLACE "\\}[ \t\r\n]*;[ \t\r\n]*unsigned int [^;]+;[ \t\r\n]*" "" RAW_HEX "${RAW_HEX}")
+string(STRIP "${RAW_HEX}" RAW_HEX)
+string(TIMESTAMP GEN_TIME "%Y-%m-%d %H:%M:%S")
 
 # 写入带注释的头文件
 file(WRITE "${PUB_HEADER}" "/*\n")
 file(APPEND "${PUB_HEADER}" " * ECC Public Key: cpos_signing_key_pub\n")
 file(APPEND "${PUB_HEADER}" " * Source File: ${PUB_KEY}\n")
-file(APPEND "${PUB_HEADER}" " * Generated on: ${CMAKE_TIME}\n")
+file(APPEND "${PUB_HEADER}" " * Generated on: ${GEN_TIME}\n")
 file(APPEND "${PUB_HEADER}" " */\n\n")
-file(APPEND "${PUB_HEADER}" " uint8_t cpos_signing_key_pub[] = {\n")
+file(APPEND "${PUB_HEADER}" "#define cpos_signing_key_pub_LEN 65\n\n")
+file(APPEND "${PUB_HEADER}" "const unsigned char cpos_signing_key_pub[] = {\n")
 file(APPEND "${PUB_HEADER}" "${RAW_HEX}")
 file(APPEND "${PUB_HEADER}" "};\n")
 

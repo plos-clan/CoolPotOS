@@ -458,8 +458,12 @@ syscall_(fchownat, int dirfd, const char *path, uint64_t uid, uint64_t gid, int 
 syscall_(utimensat, int dfd, const char *pathname, struct timespec *ntimes, int flags);
 syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes);
 syscall_(umask, uint64_t mask);
+syscall_(fadvise64, int fd, uint64_t offset, uint64_t len, int advice);
+syscall_(fsync, int fd);
+syscall_(fdatasync, int fd);
 syscall_(sync);
 syscall_(memfd_create, const char *name, unsigned int flags);
+syscall_(fsopen, const char *fs_name, uint64_t flags);
 
 // socket syscall
 syscall_(socket, int domain, int type, int protocol);

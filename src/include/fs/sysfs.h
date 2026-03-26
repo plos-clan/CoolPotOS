@@ -40,6 +40,7 @@ vfs_node_t sysfs_get_class_root();
 vfs_node_t sysfs_get_devices_root();
 vfs_node_t sysfs_get_bus_root();
 vfs_node_t sysfs_get_dev_root();
+vfs_node_t sysfs_get_block_root();
 vfs_node_t sysfs_get_module_root();
 vfs_node_t sysfs_get_dev_char_root();
 vfs_node_t sysfs_get_dev_block_root();

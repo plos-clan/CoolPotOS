@@ -389,6 +389,7 @@ sqfs_s32 sqfs_data_reader_read(
         i              = data->cached_block_index;
         off            = data->cached_disk_offset;
         file_block_off = data->cached_block_file_offset;
+        offset -= file_block_off;
     } else {
         i = 0;
     }

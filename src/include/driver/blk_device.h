@@ -48,9 +48,12 @@ size_t blk_device_write(const blk_device_t *device, const void *buffer, size_t o
 size_t blk_size_t(const blk_device_t *device);
 errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg);
 errno_t blk_poll(blk_device_t *device, size_t events);
+bool blk_device_is_stream(const blk_device_t *device);
+uint64_t blk_device_dev_number(const blk_device_t *device);
 
 errno_t delete_blk_device(size_t blk_id);
 size_t register_device(blk_device_t *device);
 cow_arraylist *get_block_device_list();
+void blk_sysfs_populate();
 
 void init_block_device_manager();

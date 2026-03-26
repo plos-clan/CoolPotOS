@@ -63,6 +63,8 @@
 #define SYSCALL_WAITPID       61
 #define SYSCALL_KILL          62
 #define SYSCALL_UNAME         63
+#define SYSCALL_FSYNC         74
+#define SYSCALL_FDATASYNC     75
 #define SYSCALL_FCNTL         72
 #define SYSCALL_FTRUNCATE     77
 #define SYSCALL_GETCWD        79
@@ -128,6 +130,7 @@
 #define SYSCALL_FUTEX         202
 #define SYSCALL_GETDENTS64    217
 #define SYSCALL_SETID_ADDR    218
+#define SYSCALL_FADVISE64     221
 #define SYSCALL_EXIT_GROUP    231
 #define SYSCALL_C_SETTIME     227
 #define SYSCALL_C_GETTIME     228

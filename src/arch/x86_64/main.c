@@ -151,7 +151,7 @@ USED _Noreturn void kmain() {
     urandom_init();
     // usb_init();
     ahci_setup();
-    // nvme_setup();
+    nvme_setup();
     drm_plainfb_init();
 
     cpio_init();

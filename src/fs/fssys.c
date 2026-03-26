@@ -1,4 +1,5 @@
 #define ALL_IMPLEMENTATION
+#include "driver/blk_device.h"
 #include "errno.h"
 #include "fs/devtmpfs.h"
 #include "fs/fds.h"
@@ -83,6 +84,28 @@ static vfs_node_t devtmpfs_make_per_open_node(vfs_node_t node) {
         return NULL;
     }
     return private_node;
+}
+
+static errno_t fd_sync(int fd) {
+    fd_t *handle = get_fd(get_current_task()->process->fdts, fd);
+    if (handle == NULL || handle->node == NULL) {
+        return -EBADF;
+    }
+
+    vfs_node_t node = handle->node;
+    if (node->type & (file_pipe | file_socket | file_epoll | file_eventfd)) {
+        return -EINVAL;
+    }
+
+    if (node->fsid == dev_tmpfs_id && (node->type & file_block)) {
+        dtmp_handle_t *dev_handle = node->handle;
+        if (dev_handle == NULL || dev_handle->type != dtp_file_device
+            || dev_handle->device_handle == NULL) {
+            return -EIO;
+        }
+    }
+
+    return EOK;
 }
 
 syscall_(open, char *path0, uint64_t flags, uint64_t mode) {
@@ -1697,6 +1720,22 @@ syscall_(futimensat, int dfd, const char *pathname, struct timeval *utimes) {
     return EOK;
 }
 
+syscall_(fadvise64, int fd, uint64_t offset, uint64_t len, int advice) {
+    return EOK;
+}
+
+syscall_(fsync, int fd) {
+    return fd_sync(fd);
+}
+
+syscall_(fdatasync, int fd) {
+    return fd_sync(fd);
+}
+
 syscall_(sync) {
     return EOK;
+}
+
+syscall_(fsopen, const char *fs_name, uint64_t flags) {
+    return SYSCALL_FAULT_(ENOSYS);
 }

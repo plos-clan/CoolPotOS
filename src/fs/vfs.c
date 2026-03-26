@@ -757,13 +757,14 @@ errno_t vfs_mount(const char *src, const char *type, vfs_node_t node, void *data
     if (fs == NULL) {
         return -ENODEV;
     }
-    if (fs->callback->mount(src, node, data) == 0) {
+    errno_t ret = fs->callback->mount(src, node, data);
+    if (ret == EOK) {
         node->fsid     = fs->fsid;
         node->root     = node;
         node->is_mount = true;
         return EOK;
     }
-    return -ENOENT;
+    return ret < 0 ? ret : -EIO;
 }
 
 size_t vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size) {

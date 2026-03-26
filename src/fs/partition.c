@@ -7,6 +7,57 @@
 partition_t partitions[MAX_PARTITIONS_NUM];
 size_t partition_num = 0;
 
+static size_t alloc_partition_slot(void) {
+    if (partition_num >= MAX_PARTITIONS_NUM) {
+        return MAX_PARTITIONS_NUM;
+    }
+
+    for (size_t i = 0; i < MAX_PARTITIONS_NUM; i++) {
+        if (!partitions[i].is_used) {
+            memset(&partitions[i], 0, sizeof(partitions[i]));
+            partition_num++;
+            return i;
+        }
+    }
+
+    return MAX_PARTITIONS_NUM;
+}
+
+static void free_partition_slot(partition_t *partition) {
+    if (partition == NULL) {
+        return;
+    }
+
+    if (partition->is_used && partition_num > 0) {
+        partition_num--;
+    }
+
+    memset(partition, 0, sizeof(*partition));
+}
+
+static void clear_disk_partitions(blk_device_t *disk) {
+    cow_arraylist *devices = get_block_device_list();
+    if (disk == NULL || devices == NULL) {
+        return;
+    }
+
+    size_t device_count = cow_list_size(devices);
+    for (size_t i = 0; i < device_count; i++) {
+        blk_device_t *device = cow_list_get(devices, i);
+        if (device == NULL || device->type != BLK_PARTITION) {
+            continue;
+        }
+
+        partition_t *partition = device->handle;
+        if (partition == NULL || partition->device != disk) {
+            continue;
+        }
+
+        delete_blk_device(i);
+        free_partition_slot(partition);
+    }
+}
+
 void format_guid(const uint8_t guid[16], char out[37]) {
     snprintf(
         out,
@@ -77,30 +128,32 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
         return false;
     }
 
+    size_t disk_partition_index = 0;
     for (size_t j = 0; j < gpt->num_partition_entries; j++) {
         struct GPT_DPTE *entry =
             (struct GPT_DPTE *)((uint8_t *)dptes + j * gpt->size_of_partition_entry);
         if (is_partition_used(entry)) {
-            if (partition_num >= MAX_PARTITIONS_NUM) {
+            size_t slot = alloc_partition_slot();
+            if (slot >= MAX_PARTITIONS_NUM) {
                 kwarn("Too many partitions, ignoring extra ones");
                 break;
             }
 
-            partition_t *partition  = &partitions[partition_num];
+            partition_t *partition  = &partitions[slot];
             partition->device       = disk;
             partition->starting_lba = entry->starting_lba;
             partition->ending_lba   = entry->ending_lba;
             partition->type         = GPT;
             partition->sector_size  = disk->block_size;
-            partition->is_used      = true;
             memcpy(partition->disk_guid, gpt->disk_guid, 16);
             memcpy(partition->partition_type_guid, entry->partition_type_guid, 16);
             memcpy(partition->unique_partition_guid, entry->unique_partition_guid, 16);
             memcpy(partition->partition_name, entry->partition_name, 36 * 2);
+            partition->is_used = true;
 
             char guid_str[37];
             format_guid(entry->unique_partition_guid, guid_str);
-            kinfo("GPT Partition(%s) %zu GUID: %s", disk->name, partition_num + 1, guid_str);
+            kinfo("GPT Partition(%s) %zu GUID: %s", disk->name, disk_partition_index + 1, guid_str);
 
             // 注册为块设备
             blk_device_t *part = (blk_device_t *)malloc(sizeof(blk_device_t));
@@ -115,11 +168,12 @@ static bool parse_gpt_partitions(blk_device_t *disk, struct GPT_DPT *gpt) {
                 part->ops.map    = (void *)dummy;
                 part->handle     = partition;
                 part->type       = BLK_PARTITION;
-                sprintf(part->name, "%sp%zu", disk->name, partition_num);
+                sprintf(part->name, "%sp%zu", disk->name, disk_partition_index + 1);
                 register_device(part);
+            } else {
+                free_partition_slot(partition);
             }
-
-            partition_num++;
+            disk_partition_index++;
         }
     }
 
@@ -180,6 +234,8 @@ bool parser_block_device(blk_device_t *disk) {
         return false;
     }
 
+    clear_disk_partitions(disk);
+
     if (mbr[0x1FE] == 0x55 && mbr[0x1FF] == 0xAA) {
         uint8_t part_type = mbr[0x1BE + 4]; // 第一个分区类型
 
@@ -192,14 +248,16 @@ bool parser_block_device(blk_device_t *disk) {
 
         // 普通 MBR
         struct MBR_DPT *boot_sector = (struct MBR_DPT *)mbr;
+        size_t disk_partition_index = 0;
         for (int j = 0; j < MBR_MAX_PARTITION_NUM; j++) {
             if (boot_sector->dpte[j].start_lba == 0 || boot_sector->dpte[j].sectors_limit == 0)
                 continue;
 
-            if (partition_num >= MAX_PARTITIONS_NUM)
+            size_t slot = alloc_partition_slot();
+            if (slot >= MAX_PARTITIONS_NUM)
                 break;
 
-            partition_t *partition  = &partitions[partition_num];
+            partition_t *partition  = &partitions[slot];
             partition->device       = disk;
             partition->starting_lba = boot_sector->dpte[j].start_lba;
             partition->ending_lba =
@@ -209,9 +267,9 @@ bool parser_block_device(blk_device_t *disk) {
             partition->is_used     = true;
 
             kinfo(
-                "MBR Partition(%s) %d lba=%llu..%llu %s",
+                "MBR Partition(%s) %zu lba=%llu..%llu %s",
                 disk->name,
-                j,
+                disk_partition_index + 1,
                 partition->starting_lba,
                 partition->ending_lba,
                 (boot_sector->dpte[j].flags & 0x80) ? "bootable" : ""
@@ -229,10 +287,12 @@ bool parser_block_device(blk_device_t *disk) {
                 part->ops.map    = (void *)dummy;
                 part->handle     = partition;
                 part->type       = BLK_PARTITION;
-                sprintf(part->name, "%sp%zu", disk->name, partition_num);
+                sprintf(part->name, "%sp%zu", disk->name, disk_partition_index + 1);
                 register_device(part);
+            } else {
+                free_partition_slot(partition);
             }
-            partition_num++;
+            disk_partition_index++;
         }
         free(mbr);
         return true;
