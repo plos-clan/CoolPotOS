@@ -313,14 +313,12 @@ typedef struct {
     bool done;
     bool success;
     uint32_t result;
-    volatile uint32_t refs;
 } admin_sync_ctx_t;
 
 typedef struct {
     bool completed;
     bool success;
     uint32_t result;
-    volatile uint32_t refs;
 } nvme_callback_ctx_t;
 
 extern nvme_platform_ops_t *g_nvme_platform_ops;
