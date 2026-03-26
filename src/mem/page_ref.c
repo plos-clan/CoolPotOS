@@ -7,7 +7,6 @@
 page_t *page_maps;
 
 extern uint64_t memory_size;
-extern Bitmap usable_regions;
 
 extern void *early_alloc(size_t size);
 
@@ -101,10 +100,10 @@ bool address_is_managed(uint64_t addr) {
         return false;
 
     size_t page_index = addr / PAGE_SIZE;
-    if (page_index >= usable_regions.length)
+    if (page_index >= get_usable_regions()->length)
         return false;
 
-    return bitmap_get(&usable_regions, page_index);
+    return bitmap_get(get_usable_regions(), page_index);
 }
 
 void address_release(uint64_t addr) {
