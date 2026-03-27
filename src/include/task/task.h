@@ -105,10 +105,11 @@ struct process_control_block {
     cow_arraylist *child_threads; // 子线程
     cow_arraylist *child_process; // 子进程
     _Atomic(task_status) status;  // 进程状态
-    _Atomic(size_t) utime;        // 用户态时间
-    _Atomic(size_t) stime;        // 内核态时间
-    _Atomic(size_t) cutime;       // 累计用户态时间
-    _Atomic(size_t) cstime;       // 累计内核态时间
+
+    _Atomic(size_t) utime;  // 用户态时间
+    _Atomic(size_t) stime;  // 内核态时间
+    _Atomic(size_t) cutime; // 累计用户态时间
+    _Atomic(size_t) cstime; // 累计内核态时间
 
     page_directory_t *directory; // 进程页表
     vma_manager_t vma_manager;   // VMA 内存管理器
@@ -127,6 +128,8 @@ struct process_control_block {
     bool vfork;             // 是否是 vfork 出来的进程
 
     int_timer_internal_t itimer_real;
+    kernel_timer_t *timers[MAX_TIMERS_NUM]; // 时间计数器
+    bool tick_work_active;
 
     int uid; // 用户会话ID
     int euid;
@@ -186,6 +189,7 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags);
 pid_t create_kernel_thread(
     const char *name, int (*func)(void *arg), void *arg, pcb_t process, uint64_t prio
 );
+void task_refresh_tick_work_state(pcb_t task);
 pcb_t get_kernel_process();
 cow_arraylist *get_process_list();
 tcb_t get_bsp_idle_thread();

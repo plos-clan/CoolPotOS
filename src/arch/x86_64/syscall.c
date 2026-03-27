@@ -9,14 +9,14 @@
 #include "task/task.h"
 #include "term/klog.h"
 
-syscall_(arch_prctl, uint64_t code, uint64_t addr); // prsys_x64.c
-syscall_(sched_getaffinity, pid_t pid, size_t cpusetsize, unsigned long *mask); // prsys.c
+syscall_(arch_prctl, uint64_t code, uint64_t addr);                                // prsys_x64.c
+syscall_(sched_getaffinity, pid_t pid, size_t cpusetsize, unsigned long *mask);    // prsys.c
 syscall_(lgetxattr, const char *path, const char *name, void *value, size_t size); // fssys.c
-syscall_(llistxattr, const char *path, char *list, size_t size); // fssys.c
-syscall_(setuid, int uid); // prsys.c
-syscall_(setgid, int gid); // prsys.c
-syscall_(setpriority, int which, int who, int niceval); // prsys.c
-syscall_(membarrier, int cmd, int flags, int cpu_id); // prsys.c
+syscall_(llistxattr, const char *path, char *list, size_t size);                   // fssys.c
+syscall_(setuid, int uid);                                                         // prsys.c
+syscall_(setgid, int gid);                                                         // prsys.c
+syscall_(setpriority, int which, int who, int niceval);                            // prsys.c
+syscall_(membarrier, int cmd, int flags, int cpu_id);                              // prsys.c
 
 __attribute__((naked)) void asm_syscall_handle() {
     __asm__ volatile(".intel_syntax noprefix\n\t"
@@ -260,6 +260,9 @@ syscall_t syscall_handlers[MAX_SYSCALLS] = {
     [SYSCALL_EVENTFD2]      = (syscall_t)syscall_eventfd2,
     [SYSCALL_FTRUNCATE]     = (syscall_t)syscall_ftruncate,
     [SYSCALL_MEMFD_CREATE]  = (syscall_t)syscall_memfd_create,
+    [SYSCALL_TIMER_CREATE]  = (syscall_t)syscall_timer_create,
+    [SYSCALL_TIMER_SETTIME] = (syscall_t)syscall_timer_settime,
+    [SYSCALL_FCHDIR]        = (syscall_t)syscall_fchdir,
 };
 
 USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // syscall 指令处理
@@ -287,7 +290,8 @@ USED void syscall_handler(struct syscall_regs *regs, uint64_t user_regs) { // sy
         logkf(
             "Syscall(%d) cannot implemented. proc=%s pid=%d\n",
             syscall_id,
-            current && current->process && current->process->name ? current->process->name : "<none>",
+            current && current->process && current->process->name ? current->process->name
+                                                                  : "<none>",
             current && current->process ? current->process->pid : -1
         );
         regs->rax = -ENOSYS;

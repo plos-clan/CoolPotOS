@@ -297,7 +297,8 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
         for (int i = 0; i < iovcnt; i++) {
             if (iov[i].iov_len == 0)
                 continue;
-            size_t status = syscall_sendto(fd, iov[i].iov_base, iov[i].iov_len, send_flags, NULL, 0, regs);
+            size_t status =
+                syscall_sendto(fd, iov[i].iov_base, iov[i].iov_len, send_flags, NULL, 0, regs);
             if ((int64_t)status < 0)
                 return total ? total : status;
             total += status;
@@ -306,14 +307,16 @@ syscall_(writev, int fd, struct iovec *iov, int iovcnt) {
         }
         return total;
     }
-    const bool no_offset = !!(handle->node->type
-                              & (file_pipe | file_socket | file_stream | file_ptmx | file_pts
-                                 | file_eventfd));
+    const bool no_offset =
+        !!(handle->node->type
+           & (file_pipe | file_socket | file_stream | file_ptmx | file_pts | file_eventfd));
     size_t total = 0;
     for (int i = 0; i < iovcnt; i++) {
         if (iov[i].iov_len == 0)
             continue;
-        size_t status = vfs_write(handle->node, iov[i].iov_base, no_offset ? 0 : handle->offset, iov[i].iov_len);
+        size_t status = vfs_write(
+            handle->node, iov[i].iov_base, no_offset ? 0 : handle->offset, iov[i].iov_len
+        );
         if (status == (size_t)-1)
             return total ? total : SYSCALL_FAULT_(EIO);
         if (!no_offset && handle->node->size != (uint64_t)-1) {
@@ -353,9 +356,9 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
         }
         return total;
     }
-    const bool no_offset = !!(handle->node->type
-                              & (file_pipe | file_socket | file_stream | file_ptmx | file_pts
-                                 | file_eventfd));
+    const bool no_offset =
+        !!(handle->node->type
+           & (file_pipe | file_socket | file_stream | file_ptmx | file_pts | file_eventfd));
     if (no_offset) {
         size_t total = 0;
         for (size_t i = 0; i < iovcnt; i++) {
@@ -1738,4 +1741,18 @@ syscall_(sync) {
 
 syscall_(fsopen, const char *fs_name, uint64_t flags) {
     return SYSCALL_FAULT_(ENOSYS);
+}
+
+syscall_(fchdir, uint64_t fd) {
+    const pcb_t process = get_current_task()->process;
+    fd_t *fdt           = get_fd(process->fdts, fd);
+    if (fdt == NULL) {
+        return SYSCALL_FAULT_(EBADF);
+    }
+    const vfs_node_t node = fdt->node;
+    if (!(node->type & file_dir)) {
+        return SYSCALL_FAULT_(ENOTDIR);
+    }
+    process->cwd = node;
+    return EOK;
 }

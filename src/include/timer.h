@@ -9,8 +9,11 @@
 #define DAYS_PER_YEAR      365
 
 #include "types.h"
+#include "task/signal.h"
 
 typedef uint64_t clock_t;
+typedef int clockid_t;
+typedef void *timer_t;
 
 struct timespec {
     uint64_t tv_sec;
@@ -31,6 +34,15 @@ typedef struct int_timer_internal {
     uint64_t at;
     uint64_t reset;
 } int_timer_internal_t;
+
+typedef struct kernel_timer {
+    clockid_t clock_type;
+    int sigev_signo;
+    union sigval sigev_value;
+    int sigev_notify;
+    uint64_t expires;
+    uint64_t interval;
+} kernel_timer_t;
 
 void arch_send_scheduler();
 size_t sched_clock();

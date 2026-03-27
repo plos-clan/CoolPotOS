@@ -62,6 +62,11 @@
 
 #define MAX_SIGNALS 64 // 最大支持信号个数
 
+#define SIGEV_SIGNAL    0 /* notify via signal */
+#define SIGEV_NONE      1 /* other notification: meaningless */
+#define SIGEV_THREAD    2 /* deliver via thread creation */
+#define SIGEV_THREAD_ID 4 /* deliver to thread */
+
 #include "types.h"
 
 typedef struct signal_block signal_block_t;
@@ -153,6 +158,25 @@ typedef struct {
         } _sigsys;
     } _sifields;
 } siginfo_t;
+
+typedef union sigval {
+    int sival_int;
+    void *sival_ptr;
+} sigval_t;
+
+struct sigevent {
+    union sigval sigev_value;
+    int sigev_signo;
+    int sigev_notify;
+    union {
+        char __pad[64 - 2 * sizeof(int) - sizeof(union sigval)];
+        int sigev_notify_thread_id;
+        struct {
+            void (*sigev_notify_function)(union sigval);
+            void *sigev_notify_attributes;
+        } __sev_thread;
+    } __sev_fields;
+};
 
 struct syscall_regs;
 typedef struct process_control_block *pcb_t;

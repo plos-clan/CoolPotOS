@@ -464,6 +464,7 @@ syscall_(fdatasync, int fd);
 syscall_(sync);
 syscall_(memfd_create, const char *name, unsigned int flags);
 syscall_(fsopen, const char *fs_name, uint64_t flags);
+syscall_(fchdir, uint64_t fd);
 
 // socket syscall
 syscall_(socket, int domain, int type, int protocol);
@@ -473,8 +474,24 @@ syscall_(listen, int sockfd, int backlog);
 syscall_(accept, int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 syscall_(accept4, int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
 syscall_(connect, int sockfd, struct sockaddr *addr, uint64_t addrlen);
-syscall_(sendto, int sockfd, void *buff, size_t len, int flags, struct sockaddr *dest_addr, socklen_t addrlen);
-syscall_(recvfrom, int sockfd, void *buff, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
+syscall_(
+    sendto,
+    int sockfd,
+    void *buff,
+    size_t len,
+    int flags,
+    struct sockaddr *dest_addr,
+    socklen_t addrlen
+);
+syscall_(
+    recvfrom,
+    int sockfd,
+    void *buff,
+    size_t len,
+    int flags,
+    struct sockaddr *src_addr,
+    socklen_t *addrlen
+);
 syscall_(sendmsg, int sockfd, const struct msghdr *msg, int flags);
 syscall_(recvmsg, int sockfd, struct msghdr *msg, int flags);
 syscall_(shutdown, uint64_t fd, uint64_t how);
@@ -571,7 +588,7 @@ syscall_(mincore, uint64_t addr, uint64_t size, uint64_t vec);
 // os syscall
 syscall_(uname, struct utsname *utsname);
 syscall_(clock_gettime, uint64_t arg0, struct timespec *ts);
-syscall_(clock_getres,uint64_t arg0, struct timespec *res);
+syscall_(clock_getres, uint64_t arg0, struct timespec *res);
 syscall_(getgroups, int count, int *gid_list);
 syscall_(nano_sleep, const void *time_handle);
 syscall_(sysinfo, struct sysinfo *info);
@@ -581,6 +598,10 @@ syscall_(reboot, int magic1, int magic2, uint32_t cmd, void *arg);
 syscall_(getrandom, void *buffer, size_t len, uint32_t flags);
 syscall_(times, struct tms *buf);
 syscall_(getrusage, int who, struct rusage *usage);
+syscall_(timer_create, clockid_t clockid, struct sigevent *sevp, timer_t *timerid);
+syscall_(
+    timer_settime, timer_t timerid, const struct itimerval *new_value, struct itimerval *old_value
+);
 
 bool check_unmapped(uint64_t addr, uint64_t len);
 bool copy_from_user(void *dst, const void *src, size_t size);

@@ -644,6 +644,31 @@ pid_t create_kernel_thread(
     return thread->tid;
 }
 
+void task_refresh_tick_work_state(pcb_t task) {
+    bool active = false;
+
+    if (!task) {
+        return;
+    }
+
+    if (task->itimer_real.at) {
+        active = true;
+        goto out;
+    }
+
+    for (int i = 0; i < MAX_TIMERS_NUM; i++) {
+        const kernel_timer_t *kt = task->timers[i];
+
+        if (kt && kt->expires) {
+            active = true;
+            break;
+        }
+    }
+
+out:
+    task->tick_work_active = active;
+}
+
 void setup_task() {
     process_list                  = cow_list_create();
     kernel_process                = calloc(1, sizeof(struct process_control_block));
