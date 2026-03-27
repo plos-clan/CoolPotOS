@@ -230,13 +230,14 @@ static size_t ptmx_write(void *file, const void *addr, size_t offset, size_t siz
         char c = input[i];
 
         // Input processing (ICRNL: convert CR to NL)
-        if ((pair->termios.c_iflag & ICRNL) && c == '\r') {
+        if (pair->termios.c_iflag & ICRNL && c == '\r') {
             c = '\n';
         }
 
         // Write to master_to_slave buffer (for the slave/shell to read)
-        if (pty_ringbuf_write(&pair->master_to_slave, &c, 1) == 0)
+        if (pty_ringbuf_write(&pair->master_to_slave, &c, 1) == 0) {
             break;
+        }
         nwritten++;
 
         // Line discipline: ECHO - echo characters back to master (slave_to_master)
