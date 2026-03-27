@@ -212,6 +212,11 @@ const char *kallsyms_lookup(uint64_t addr, uint64_t *sym_addr) {
 void print_kernel_backtrace(struct interrupt_frame *frame, uint64_t saved_rbp) {
     printk("Call Trace:\n");
 
+    if ((frame->cs & 0x03) == 3) {
+        printk("  <userspace> %p (RIP).\n", frame->rip);
+        return;
+    }
+
     uint64_t sym_addr = 0;
     const char *name  = kallsyms_lookup(frame->rip, &sym_addr);
     if (name) {

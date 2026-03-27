@@ -139,6 +139,7 @@ struct process_control_block {
     int sgid;
     uint16_t umask;
     size_t retired_threads_pending;
+    bool exit_fds_released;
 };
 
 struct thread_control_block {

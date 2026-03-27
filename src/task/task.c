@@ -203,10 +203,71 @@ static void destroy_thread(tcb_t thread) {
     free(thread);
 }
 
+static bool process_threads_reclaimed(const pcb_t pcb) {
+    if (pcb == NULL || pcb->child_threads == NULL) {
+        return false;
+    }
+
+    if (__atomic_load_n(&pcb->retired_threads_pending, __ATOMIC_ACQUIRE) != 0) {
+        return false;
+    }
+
+    return cow_list_size(pcb->child_threads) == 0;
+}
+
+static bool claim_process_fd_release(const pcb_t pcb) {
+    if (pcb == NULL) {
+        return false;
+    }
+
+    spin_lock(task_exit_lock);
+    if (pcb->exit_fds_released) {
+        spin_unlock(task_exit_lock);
+        return false;
+    }
+    pcb->exit_fds_released = true;
+    spin_unlock(task_exit_lock);
+    return true;
+}
+
+static void process_close_fds(const pcb_t pcb) {
+    if (pcb == NULL || pcb->fdts == NULL) {
+        return;
+    }
+
+    for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
+        fd_t *handle = pcb->fdts->fds[i];
+        if (handle == NULL) {
+            continue;
+        }
+
+        pcb->fdts->fds[i] = NULL;
+        vfs_close(handle->node);
+        free(handle);
+    }
+
+    free_fdt(pcb->fdts);
+    pcb->fdts = NULL;
+}
+
+static void release_process_fds_if_ready(const pcb_t pcb) {
+    if (!process_threads_reclaimed(pcb)) {
+        return;
+    }
+
+    if (!claim_process_fd_release(pcb)) {
+        return;
+    }
+
+    process_close_fds(pcb);
+}
+
 static void destroy_process(pcb_t pcb) {
     if (pcb == NULL) {
         return;
     }
+
+    process_close_fds(pcb);
 
     if (pcb->child_threads != NULL) {
         cow_list_destroy(pcb->child_threads);
@@ -264,6 +325,14 @@ void task_reap_retired() {
         free(node);
     }
 
+    pcb_t zombie = NULL;
+    cow_foreach(process_list, zombie) {
+        if (zombie->status != T_ZOMBIE) {
+            continue;
+        }
+        release_process_fds_if_ready(zombie);
+    }
+
     while (true) {
         retired_process_node_t *prev = NULL;
         retired_process_node_t *node = NULL;
@@ -292,6 +361,7 @@ void task_reap_retired() {
             break;
         }
 
+        release_process_fds_if_ready(node->process);
         destroy_process(node->process);
         free(node);
     }
@@ -403,10 +473,6 @@ static void kill_proc0(const pcb_t pcb) {
 
     lazy_free(pcb);
 
-    if (pcb->fdts) {
-        free_fdt(pcb->fdts);
-        pcb->fdts = NULL;
-    }
     if (pcb->ipc_queue) {
         ipc_queue_release(pcb->ipc_queue);
         pcb->ipc_queue = NULL;
@@ -509,15 +575,6 @@ void kill_proc(const pcb_t pcb, const int exit_code, const bool is_zombie) {
 
         pcb->parent->cutime += pcb->utime;
         pcb->parent->cstime += pcb->cstime;
-
-        for (size_t i = 0; i < pcb->fdts->fds_length; i++) {
-            fd_t *handle = pcb->fdts->fds[i];
-            if (handle != NULL) {
-                vfs_close(handle->node);
-                free(handle);
-                pcb->fdts->fds[i] = NULL;
-            }
-        }
 
         spin_lock(task_exit_lock);
         pcb->status = T_ZOMBIE;
