@@ -17,7 +17,8 @@ static bool tty_debug_user_process(void) {
     if (current == NULL || current->process == NULL || current->process->name == NULL) {
         return false;
     }
-    return strstr(current->process->name, "Xorg") != NULL || strstr(current->process->name, "xinit") != NULL;
+    return strstr(current->process->name, "Xorg") != NULL
+           || strstr(current->process->name, "xinit") != NULL;
 }
 
 static const char *tty_ioctl_name(const size_t req) {
@@ -232,6 +233,7 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
     case TCSETSW: {
         // 对 termios 设置支持，可选实现
         const struct termios *termios_sw = arg;
+        session->termios.c_iflag         = termios_sw->c_iflag;
         session->termios.c_lflag         = termios_sw->c_lflag;
         session->termios.c_oflag         = termios_sw->c_oflag;
         session->termios.c_cflag         = termios_sw->c_cflag;
@@ -336,46 +338,105 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
     return EOK;
 }
 
+static bool tty_is_erase_char(tty_t *session, const char c) {
+    return c == '\b' || c == (char)session->termios.c_cc[VERASE];
+}
+
+static void tty_echo_char(tty_t *session, const char c) {
+    if (!(session->termios.c_lflag & ECHO)) {
+        return;
+    }
+    session->ops.write(session, &c, 0, 1);
+}
+
 static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size_t number) {
     const tcb_t tcb = get_current_task() == NULL ? NULL : get_current_task();
     if (tcb != NULL) {
         tcb->status = T_IO_WAIT;
     }
+    if (number == 0) {
+        if (tcb != NULL) {
+            tcb->status = T_RUNNING;
+        }
+        return 0;
+    }
+
     size_t i = 0;
-    for (; i < number; i++) {
-        char c = (char)kernel_getch();
-        if (c == 0x7f) {
-            c = '\b';
-        }
-        if (c == 0x9) {
-            c = '\t';
-        }
-        if (c == '\b') {
-            if (session->termios.c_lflag & ECHO) {
-                session->ops.write(session, "\b \b", 0, 3);
+    const bool canonical = (session->termios.c_lflag & ICANON) != 0;
+
+    if (!canonical) {
+        size_t vmin = session->termios.c_cc[VMIN];
+        if (vmin == 0 && session->queue->size == 0) {
+            if (tcb != NULL) {
+                tcb->status = T_RUNNING;
             }
-            if (session->termios.c_lflag & ICANON) {
-                if (i > 0) {
-                    buffer[i--] = '\0';
-                    i--;
-                }
+            return 0;
+        }
+        if (vmin == 0) {
+            vmin = 1;
+        }
+
+        while (i < number) {
+            char c = (char)kernel_getch();
+
+            if ((session->termios.c_iflag & IGNCR) && c == '\r') {
                 continue;
             }
-            buffer[i] = session->termios.c_cc[VERASE];
+            if ((session->termios.c_iflag & ICRNL) && c == '\r') {
+                c = '\n';
+            } else if ((session->termios.c_iflag & INLCR) && c == '\n') {
+                c = '\r';
+            }
+
+            buffer[i] = c;
+            tty_echo_char(session, c);
+
+            if (i + 1 >= vmin) {
+                i++;
+                break;
+            }
+            i++;
+        }
+
+        if (tcb != NULL) {
+            tcb->status = T_RUNNING;
+        }
+        return i;
+    }
+
+    while (i < number) {
+        char c = (char)kernel_getch();
+
+        if ((session->termios.c_iflag & IGNCR) && c == '\r') {
             continue;
         }
-        if (session->termios.c_lflag & ECHO) {
-            printk("%c", c);
+        if ((session->termios.c_iflag & ICRNL) && c == '\r') {
+            c = '\n';
+        } else if ((session->termios.c_iflag & INLCR) && c == '\n') {
+            c = '\r';
         }
+
+        if (tty_is_erase_char(session, c)) {
+            if (i > 0) {
+                i--;
+                buffer[i] = '\0';
+                if (session->termios.c_lflag & ECHO) {
+                    session->ops.write(session, "\b \b", 0, 3);
+                }
+            }
+            continue;
+        }
+
         if (c == '\n' || c == '\r') {
             buffer[i] = 0x0a;
+            tty_echo_char(session, '\n');
             i++;
-            if (session->termios.c_lflag & ECHO && c == '\r') {
-                session->ops.write(session, "\n", 0, 1);
-            }
             break;
         }
+
         buffer[i] = c;
+        tty_echo_char(session, c);
+        i++;
     }
     if (tcb != NULL) {
         tcb->status = T_RUNNING;

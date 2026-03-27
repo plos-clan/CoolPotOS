@@ -223,7 +223,7 @@ static size_t ptmx_write(void *file, const void *addr, size_t offset, size_t siz
         return -EIO;
     }
 
-    const char *input = (const char *)addr;
+    const char *input = addr;
     size_t nwritten   = 0;
 
     for (size_t i = 0; i < size; i++) {
