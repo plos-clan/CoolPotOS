@@ -81,7 +81,7 @@ USED _Noreturn void kmain() {
 
     size_t boot_argc = boot_parse_cmdline(get_kernel_cmdline());
 
-    gop_clear(boot_get_framebuffer(0), 0xffffff);
+    gop_clear(boot_get_framebuffer(0), 0x050505);
     init_frame();
     init_page();
 #if KASAN_CHECK

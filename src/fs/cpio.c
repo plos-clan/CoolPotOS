@@ -12,7 +12,7 @@ static char *get_pdir_fpath(const char *path) {
         return strdup("/");
     }
 
-    const size_t len = strlen(path);
+    const size_t len       = strlen(path);
     const char *last_slash = strrchr(path, '/');
 
     if (last_slash == NULL) {
@@ -169,9 +169,15 @@ void cpio_init(void) {
             char *dirname      = get_pdir_fpath(filename);
             char *symlink_path = calloc(1, filesize + 1);
             strncpy(symlink_path, filedata, filesize);
-            sprintf(all_path, "%s/%s", dirname, symlink_path);
-            char *target_name = normalize_path(all_path);
-            status            = vfs_symlink(filename, target_name);
+
+            char *target_name;
+            if (symlink_path[0] == '/') {
+                target_name = strdup(symlink_path);
+            } else {
+                sprintf(all_path, "%s/%s", dirname, symlink_path);
+                target_name = normalize_path(all_path);
+            }
+            status = vfs_symlink(filename, target_name);
             free(all_path);
             free(target_name);
             free(dirname);
@@ -194,7 +200,9 @@ void cpio_init(void) {
                 free(filedata);
                 return;
             }
-            status = vfs_write(file, filedata, 0, filesize);
+            if (!(filedata == NULL && filesize == 0)) {
+                status = vfs_write(file, filedata, 0, filesize);
+            }
             if (status == -1) {
                 kerror("Cannot build initramfs, write error(%s): %d", filename, status);
                 free(filedata);

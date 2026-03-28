@@ -777,11 +777,13 @@ size_t vfs_read(vfs_node_t file, void *addr, size_t offset, size_t size) {
 }
 
 size_t vfs_write(vfs_node_t file, void *addr, size_t offset, size_t size) {
-    if (file == NULL || addr == NULL)
+    if (file == NULL || addr == NULL) {
         return -1;
+    }
     do_update(file);
-    if (file->type == file_dir)
+    if (file->type == file_dir) {
         return -1;
+    }
     size_t ret = callbackof(file, write)(file->handle, addr, offset, size);
     do_update(file);
     return ret;
@@ -1097,9 +1099,10 @@ void *general_map(
         pt_flags
     );
 
-    ssize_t ret = read_callback(file, (void *)addr, offset, len);
-    if (ret < 0)
-        return (void*)ret;
+    const ssize_t ret = read_callback(file, (void *)addr, offset, len);
+    if (ret < 0) {
+        return (void *)ret;
+    }
 
     if ((uint64_t)ret < len) {
         memset((void *)(addr + (uint64_t)ret), 0, len - (uint64_t)ret);

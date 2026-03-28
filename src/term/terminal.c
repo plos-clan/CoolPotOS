@@ -52,6 +52,7 @@ errno_t create_session_terminal(tty_t *session) {
     if (session->device->type != TTY_DEVICE_GRAPHI)
         return -EINVAL;
     struct tty_graphics_ *framebuffer   = session->device->private_data;
+    uint32_t background_color           = 0x050505;
     struct flanterm_context *fl_context = flanterm_fb_init(
         NULL,
         NULL,
@@ -68,7 +69,7 @@ errno_t create_session_terminal(tty_t *session) {
         NULL,
         NULL,
         NULL,
-        NULL,
+        &background_color,
         NULL,
         NULL,
         NULL,

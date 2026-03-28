@@ -80,7 +80,10 @@ size_t tmpfs_read(void *file, void *addr, size_t offset, size_t size) {
 }
 
 size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
-    tmpfs_file_t *f = (tmpfs_file_t *)file;
+    if (unlikely(size == 0)) {
+        return 0;
+    }
+    tmpfs_file_t *f = file;
     size_t end      = offset + size;
     if (end > f->capacity) {
         size_t new_cap = end + PAGE_SIZE;
@@ -162,7 +165,7 @@ vfs_node_t tmpfs_dup(vfs_node_t node) {
     tmpfs_file_t *file = node->handle;
     if (file != NULL) {
         file->link_count++;
-}
+    }
     copy->handle      = node->handle;
     copy->type        = node->type;
     copy->size        = node->size;
