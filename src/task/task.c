@@ -248,6 +248,11 @@ static void process_close_fds(const pcb_t pcb) {
 
     free_fdt(pcb->fdts);
     pcb->fdts = NULL;
+
+    if (pcb->exec) {
+        vfs_close(pcb->exec);
+        pcb->exec = NULL;
+    }
 }
 
 static void release_process_fds_if_ready(const pcb_t pcb) {
@@ -491,10 +496,7 @@ static void kill_proc0(const pcb_t pcb) {
         vfs_close(pcb->proc_root);
         pcb->proc_root = NULL;
     }
-    if (pcb->exec) {
-        vfs_close(pcb->exec);
-        pcb->exec = NULL;
-    }
+
     if (pcb->envp) {
         free_envp(pcb->envp);
         pcb->envp = NULL;
@@ -754,11 +756,11 @@ void setup_task() {
     bsp_idle_thread->ct_index = cow_list_add(kernel_process->child_threads, bsp_idle_thread);
     bsp_idle_thread->status   = T_RUNNING;
     bsp_idle_thread->signal_stack =
-        (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
-    ;
+        (uint64_t)phys_to_virt(alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE);
+
     bsp_idle_thread->syscall_stack =
-        (uint64_t)phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));
-    ;
+        (uint64_t)phys_to_virt(alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE);
+
     arch_context_init(bsp_idle_thread, &bsp_idle_thread->context);
     kinfo("kernel process(%s) PID: %d ", kernel_process->name, kernel_process->pid);
 }

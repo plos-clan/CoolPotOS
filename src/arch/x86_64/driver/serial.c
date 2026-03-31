@@ -141,6 +141,10 @@ char read_serial(const uint16_t port) {
     return (char)io_in8(port);
 }
 
+bool serial_has_data(const uint16_t port) {
+    return (io_in8(port + SERIAL_REG_LSR) & 1) != 0;
+}
+
 void write_serial(const char ch) {
     if (s_port[0]) {
         write_serial0(SERIAL_PORT_1, ch);

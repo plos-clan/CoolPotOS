@@ -9,7 +9,8 @@
 #include "task/task.h"
 #include "term/klog.h"
 
-static uint64_t process_fork(const struct syscall_regs *reg,const bool is_vfork, const uint64_t user_stack) {
+static uint64_t
+process_fork(const struct syscall_regs *reg, const bool is_vfork, const uint64_t user_stack) {
     const cpu_local_t *current_cpu = arch_current_cpu();
 
     const tcb_t current     = get_current_task();
@@ -66,7 +67,7 @@ static uint64_t process_fork(const struct syscall_regs *reg,const bool is_vfork,
     new_task->status                 = T_START;
     new_task->context.user_stack     = parent_task->context.user_stack;
     new_task->context.user_stack_top = parent_task->context.user_stack_top;
-    new_task->context.kernel_stack   = ((uint64_t)new_task) + STACK_SIZE;
+    new_task->context.kernel_stack   = (uint64_t)new_task + STACK_SIZE;
     new_task->_start                 = parent_task->_start;
     new_task->name                   = strdup(parent_task->name);
 
@@ -111,10 +112,10 @@ static uint64_t process_fork(const struct syscall_regs *reg,const bool is_vfork,
     new_task->tid_address   = parent_task->tid_address;
     new_task->tid_directory = parent_task->tid_directory;
 
-    void *signal_stack  = phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
-    void *syscall_stack = phys_to_virt((alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE));;
-    memset((void *)(signal_stack - STACK_SIZE), 0, STACK_SIZE);
-    memset((void *)(syscall_stack - MAX_STACK_SIZE), 0, MAX_STACK_SIZE);
+    void *signal_stack  = phys_to_virt(alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE);
+    void *syscall_stack = phys_to_virt(alloc_frames(MAX_STACK_SIZE / PAGE_SIZE) + MAX_STACK_SIZE);
+    memset(signal_stack - STACK_SIZE, 0, STACK_SIZE);
+    memset(syscall_stack - MAX_STACK_SIZE, 0, MAX_STACK_SIZE);
     new_task->signal_stack  = (uint64_t)signal_stack;
     new_task->syscall_stack = (uint64_t)syscall_stack;
 
@@ -151,9 +152,10 @@ uint64_t thread_clone(
 
     tcb_t parent_task = get_current_task();
 
-    tcb_t new_task = (tcb_t)malloc(STACK_SIZE);
-    if (new_task == NULL)
+    tcb_t new_task = malloc(STACK_SIZE);
+    if (new_task == NULL) {
         return SYSCALL_FAULT_(ENOMEM);
+    }
     memset(new_task, 0, sizeof(struct thread_control_block));
     new_task->cpu_id                 = arch_current_cpu()->id;
     new_task->status                 = T_START;
@@ -403,7 +405,6 @@ shebang_retry:;
     strncpy(process->name, norm_path, 50);
 
     char **old_envp = process->envp;
-    size_t old_envc = process->envc;
     process->envp   = copy_envp(envp);
     process->envc   = envp_length(envp);
 
@@ -427,6 +428,7 @@ shebang_retry:;
     process->directory = get_current_directory();
     process->vfork     = false;
 
+    vfs_close(process->exec);
     process->exec = node;
 
     for (size_t i = 0; i < process->fdts->fds_length; i++) {
@@ -460,18 +462,16 @@ shebang_retry:;
     //    process->ipc_queue = ipc_queue_init();
 
     free(norm_path);
-    for (size_t i = 0; i < shebang_argc; i++)
-        free(shebang_argv[i]);
+    for (size_t i = 0; i < shebang_argc; i++) {
+        if (shebang_argv[i] != NULL) {
+            free(shebang_argv[i]);
+        }
+    }
     free(shebang_argv);
     free_envp(old_envp);
 
-    uint64_t stack = page_alloc_random(
-        get_current_directory(), BIG_USER_STACK, PTE_PRESENT | PTE_WRITEABLE | PTE_USER
-    );
-    current->context.user_stack     = stack;
-    current->context.user_stack_top = stack + BIG_USER_STACK;
-    current->tid_directory          = NULL;
-    current->tid_address            = 0;
+    current->tid_directory = NULL;
+    current->tid_address   = 0;
 
     scheduler_enable();
     arch_open_interrupt();

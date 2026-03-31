@@ -44,6 +44,8 @@ int init_serial();
 
 char read_serial(uint16_t port);
 
+bool serial_has_data(uint16_t port);
+
 void write_serial(char ch);
 
 void write_serial0(uint16_t port, char a);

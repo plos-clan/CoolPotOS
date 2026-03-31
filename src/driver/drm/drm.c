@@ -13,16 +13,16 @@
 #include "term/klog.h"
 #include "timer.h"
 
-#define HZ 60
-#define DRM_MAX_USER_BLOBS    256
-#define DRM_USER_BLOB_MAX_SIZE (64 * 1024)
-#define DRM_BLOB_ID_CRTC_MODE_BASE      0x10000000U
-#define DRM_BLOB_ID_CONNECTOR_EDID_BASE 0x20000000U
+#define HZ                                60
+#define DRM_MAX_USER_BLOBS                256
+#define DRM_USER_BLOB_MAX_SIZE            (64 * 1024)
+#define DRM_BLOB_ID_CRTC_MODE_BASE        0x10000000U
+#define DRM_BLOB_ID_CONNECTOR_EDID_BASE   0x20000000U
 #define DRM_BLOB_ID_PLANE_IN_FORMATS_BASE 0x28000000U
-#define DRM_BLOB_ID_USER_BASE           0x30000000U
-#define DRM_BLOB_ID_USER_LAST           0x3fffffffU
+#define DRM_BLOB_ID_USER_BASE             0x30000000U
+#define DRM_BLOB_ID_USER_LAST             0x3fffffffU
 
-static int drm_id = 0;
+static int drm_id                     = 0;
 static uint32_t drm_user_blob_next_id = DRM_BLOB_ID_USER_BASE + 1;
 static spin_t drm_user_blobs_lock     = SPIN_INIT;
 
@@ -68,9 +68,8 @@ static void drm_fill_display_mode(
     sprintf(mode->name, "%dx%d", width, height);
 }
 
-static void drm_copy_property_enum(
-    struct drm_mode_property_enum *dst, uint64_t value, const char *name
-) {
+static void
+drm_copy_property_enum(struct drm_mode_property_enum *dst, uint64_t value, const char *name) {
     dst->value = value;
     memset(dst->name, 0, sizeof(dst->name));
     drm_copy_string(dst->name, sizeof(dst->name), name);
@@ -98,7 +97,8 @@ static bool drm_mode_blob_to_crtc_id(uint32_t blob_id, uint32_t *crtc_id) {
 }
 
 static bool drm_blob_to_connector_edid_id(uint32_t blob_id, uint32_t *connector_id) {
-    if (blob_id <= DRM_BLOB_ID_CONNECTOR_EDID_BASE || blob_id >= DRM_BLOB_ID_PLANE_IN_FORMATS_BASE) {
+    if (blob_id <= DRM_BLOB_ID_CONNECTOR_EDID_BASE
+        || blob_id >= DRM_BLOB_ID_PLANE_IN_FORMATS_BASE) {
         return false;
     }
 
@@ -143,7 +143,7 @@ static int drm_user_blob_generate_id_locked(uint32_t *blob_id) {
         }
 
         if (!exists) {
-            *blob_id             = candidate;
+            *blob_id              = candidate;
             drm_user_blob_next_id = candidate + 1;
             if (drm_user_blob_next_id > DRM_BLOB_ID_USER_LAST) {
                 drm_user_blob_next_id = DRM_BLOB_ID_USER_BASE + 1;
@@ -160,17 +160,16 @@ static int drm_user_blob_generate_id_locked(uint32_t *blob_id) {
     return -ENOSPC;
 }
 
-static void drm_fill_crtc_modeinfo(
-    drm_device_t *dev, drm_crtc_t *crtc, struct drm_mode_modeinfo *mode
-) {
+static void
+drm_fill_crtc_modeinfo(drm_device_t *dev, drm_crtc_t *crtc, struct drm_mode_modeinfo *mode) {
     if (crtc && crtc->mode_valid && crtc->mode.hdisplay > 0 && crtc->mode.vdisplay > 0) {
         memcpy(mode, &crtc->mode, sizeof(*mode));
         return;
     }
 
-    uint32_t width = 0;
+    uint32_t width  = 0;
     uint32_t height = 0;
-    uint32_t bpp = 0;
+    uint32_t bpp    = 0;
     memset(mode, 0, sizeof(*mode));
 
     if (dev->op->get_display_info && dev->op->get_display_info(dev, &width, &height, &bpp) == 0
@@ -200,7 +199,11 @@ static void drm_edid_set_descriptor_text(uint8_t *desc, uint8_t tag, const char 
 }
 
 static void drm_edid_fill_dtd(
-    uint8_t *dtd, uint32_t width, uint32_t height, uint32_t mm_width, uint32_t mm_height,
+    uint8_t *dtd,
+    uint32_t width,
+    uint32_t height,
+    uint32_t mm_width,
+    uint32_t mm_height,
     uint32_t refresh_hz
 ) {
     uint32_t hblank            = 160;
@@ -226,7 +229,7 @@ static void drm_edid_fill_dtd(
     dtd[9]  = hsync_pulse & 0xff;
     dtd[10] = ((vsync_offset & 0xf) << 4) | (vsync_pulse & 0xf);
     dtd[11] = ((hsync_offset >> 8) & 0x3) << 6 | ((hsync_pulse >> 8) & 0x3) << 4
-            | ((vsync_offset >> 4) & 0x3) << 2 | ((vsync_pulse >> 4) & 0x3);
+              | ((vsync_offset >> 4) & 0x3) << 2 | ((vsync_pulse >> 4) & 0x3);
     dtd[12] = mm_width & 0xff;
     dtd[13] = mm_height & 0xff;
     dtd[14] = ((mm_width >> 8) & 0xf) << 4 | ((mm_height >> 8) & 0xf);
@@ -243,10 +246,10 @@ static void drm_edid_set_default_chromaticity(uint8_t edid[128]) {
     const uint16_t white_x = 320;
     const uint16_t white_y = 337;
 
-    edid[25] = ((red_x & 0x3) << 6) | ((red_y & 0x3) << 4) | ((green_x & 0x3) << 2)
-             | (green_y & 0x3);
-    edid[26] = ((blue_x & 0x3) << 6) | ((blue_y & 0x3) << 4) | ((white_x & 0x3) << 2)
-             | (white_y & 0x3);
+    edid[25] =
+        ((red_x & 0x3) << 6) | ((red_y & 0x3) << 4) | ((green_x & 0x3) << 2) | (green_y & 0x3);
+    edid[26] =
+        ((blue_x & 0x3) << 6) | ((blue_y & 0x3) << 4) | ((white_x & 0x3) << 2) | (white_y & 0x3);
     edid[27] = (uint8_t)(red_x >> 2);
     edid[28] = (uint8_t)(red_y >> 2);
     edid[29] = (uint8_t)(green_x >> 2);
@@ -296,31 +299,31 @@ static void drm_build_connector_edid(drm_device_t *dev, drm_connector_t *conn, u
     }
 
     memset(edid, 0, 128);
-    edid[0]   = 0x00;
-    edid[1]   = 0xff;
-    edid[2]   = 0xff;
-    edid[3]   = 0xff;
-    edid[4]   = 0xff;
-    edid[5]   = 0xff;
-    edid[6]   = 0xff;
-    edid[7]   = 0x00;
-    edid[8]   = 0x38;
-    edid[9]   = 0x2f;
-    edid[10]  = 0x01;
-    edid[11]  = 0x00;
-    edid[12]  = 0x01;
-    edid[13]  = 0x00;
-    edid[14]  = 0x00;
-    edid[15]  = 0x00;
-    edid[16]  = 0x01;
-    edid[17]  = 34;
-    edid[18]  = 0x01;
-    edid[19]  = 0x04;
-    edid[20]  = 0x80;
-    edid[21]  = width & 0xff;
-    edid[22]  = height & 0xff;
-    edid[23]  = 0x78;
-    edid[24]  = 0x0a;
+    edid[0]  = 0x00;
+    edid[1]  = 0xff;
+    edid[2]  = 0xff;
+    edid[3]  = 0xff;
+    edid[4]  = 0xff;
+    edid[5]  = 0xff;
+    edid[6]  = 0xff;
+    edid[7]  = 0x00;
+    edid[8]  = 0x38;
+    edid[9]  = 0x2f;
+    edid[10] = 0x01;
+    edid[11] = 0x00;
+    edid[12] = 0x01;
+    edid[13] = 0x00;
+    edid[14] = 0x00;
+    edid[15] = 0x00;
+    edid[16] = 0x01;
+    edid[17] = 34;
+    edid[18] = 0x01;
+    edid[19] = 0x04;
+    edid[20] = 0x80;
+    edid[21] = width & 0xff;
+    edid[22] = height & 0xff;
+    edid[23] = 0x78;
+    edid[24] = 0x0a;
 
     drm_edid_set_default_chromaticity(edid);
 
@@ -343,8 +346,8 @@ static void drm_build_connector_edid(drm_device_t *dev, drm_connector_t *conn, u
 }
 
 static size_t drm_fill_plane_in_formats_blob(drm_plane_t *plane, uint8_t *blob, size_t blob_size) {
-    size_t formats_size = (size_t)plane->count_format_types * sizeof(uint32_t);
-    size_t total_size   = sizeof(struct drm_format_modifier_blob) + formats_size;
+    size_t formats_size                    = (size_t)plane->count_format_types * sizeof(uint32_t);
+    size_t total_size                      = sizeof(struct drm_format_modifier_blob) + formats_size;
     struct drm_format_modifier_blob header = {
         .version          = FORMAT_BLOB_CURRENT,
         .flags            = 0,
@@ -416,7 +419,8 @@ static int drm_mode_resolve_obj_type(drm_device_t *dev, uint32_t obj_id, uint32_
     }
 
     for (int idx = 0; idx < DRM_MAX_FRAMEBUFFERS_PER_DEVICE; idx++) {
-        if (!dev->resource_mgr.framebuffers[idx] || dev->resource_mgr.framebuffers[idx]->id != obj_id) {
+        if (!dev->resource_mgr.framebuffers[idx]
+            || dev->resource_mgr.framebuffers[idx]->id != obj_id) {
             continue;
         }
 
@@ -517,9 +521,7 @@ static void drm_sysfs_release_handle(vfs_node_t node) {
     node->handle = NULL;
 }
 
-static size_t drm_sysfs_format_modes_text(
-    drm_device_t *drm_dev, char *buffer, size_t buffer_size
-) {
+static size_t drm_sysfs_format_modes_text(drm_device_t *drm_dev, char *buffer, size_t buffer_size) {
     uint32_t width  = 1024;
     uint32_t height = 768;
     uint32_t bpp    = 32;
@@ -552,9 +554,8 @@ static size_t drm_sysfs_format_dev_text(drm_device_t *drm_dev, char *buffer, siz
     return strlen(buffer);
 }
 
-static size_t drm_sysfs_format_uevent_text(
-    drm_device_t *drm_dev, char *buffer, size_t buffer_size
-) {
+static size_t
+drm_sysfs_format_uevent_text(drm_device_t *drm_dev, char *buffer, size_t buffer_size) {
     int minor = drm_dev->dev_nr & 0xff;
     int major = (drm_dev->dev_nr >> 8) & 0xff;
     char dev_name[32];
@@ -571,9 +572,7 @@ static size_t drm_sysfs_format_uevent_text(
     return strlen(buffer);
 }
 
-static size_t drm_sysfs_format_attr(
-    drm_sysfs_file_t *handle, char *buffer, size_t buffer_size
-) {
+static size_t drm_sysfs_format_attr(drm_sysfs_file_t *handle, char *buffer, size_t buffer_size) {
     if (handle == NULL || buffer == NULL || buffer_size == 0) {
         return 0;
     }
@@ -650,7 +649,7 @@ static void drm_sysfs_install_attr_file(
     node->handle = handle;
     char content[256];
     node->size = drm_sysfs_format_attr(handle, content, sizeof(content));
-    node->mode   = attr == DRM_SYSFS_ATTR_UEVENT ? 0644 : 0444;
+    node->mode = attr == DRM_SYSFS_ATTR_UEVENT ? 0644 : 0444;
 }
 
 static void drm_sysfs_ensure_symlink(vfs_node_t parent, const char *name, const char *target) {
@@ -795,10 +794,10 @@ int drm_post_event(drm_device_t *dev, uint32_t type, uint64_t user_data) {
         return -ENOMEM;
     }
 
-    uint64_t now            = nano_time();
-    event->type             = type;
-    event->user_data        = user_data;
-    event->timestamp.tv_sec = now / 1000000000ULL;
+    uint64_t now             = nano_time();
+    event->type              = type;
+    event->user_data         = user_data;
+    event->timestamp.tv_sec  = now / 1000000000ULL;
     event->timestamp.tv_nsec = now % 1000000000ULL;
 
     spin_lock(dev->event_lock);
@@ -840,9 +839,9 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
     switch (drm_cmd) {
     case DRM_IOCTL_VERSION: {
         struct drm_version *version = (struct drm_version *)arg;
-        const char *driver_name = dev->driver_name[0] ? dev->driver_name : DRM_NAME;
-        const char *driver_date = dev->driver_date[0] ? dev->driver_date : "20060810";
-        const char *driver_desc = dev->driver_desc[0] ? dev->driver_desc : "CoolPotOS DRM";
+        const char *driver_name     = dev->driver_name[0] ? dev->driver_name : DRM_NAME;
+        const char *driver_date     = dev->driver_date[0] ? dev->driver_date : "20060810";
+        const char *driver_desc     = dev->driver_desc[0] ? dev->driver_desc : "CoolPotOS DRM";
 
         version->version_major      = 1;
         version->version_minor      = 0;
@@ -888,7 +887,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
             cap->value = 1;
             return 0;
         default:
-            printk("drm: Unsupported capability %d\n", cap->capability);
+            logkf("drm: Unsupported capability %d\n", cap->capability);
             cap->value = 0;
             return 0;
         }
@@ -896,12 +895,12 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
     case DRM_IOCTL_MODE_GETRESOURCES: {
         struct drm_mode_card_res *res = (struct drm_mode_card_res *)arg;
-        uint32_t req_fbs        = res->count_fbs;
-        uint32_t req_crtcs      = res->count_crtcs;
-        uint32_t req_connectors = res->count_connectors;
-        uint32_t req_encoders   = res->count_encoders;
-        uint32_t count_fbs      = 0;
-        uint32_t count_crtcs    = 0;
+        uint32_t req_fbs              = res->count_fbs;
+        uint32_t req_crtcs            = res->count_crtcs;
+        uint32_t req_connectors       = res->count_connectors;
+        uint32_t req_encoders         = res->count_encoders;
+        uint32_t count_fbs            = 0;
+        uint32_t count_crtcs          = 0;
         uint32_t count_connectors;
         uint32_t count_encoders;
 
@@ -1064,8 +1063,8 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
             return -ENOENT;
         }
 
-        req_modes = conn->count_modes;
-        req_props = conn->count_props;
+        req_modes    = conn->count_modes;
+        req_props    = conn->count_props;
         req_encoders = conn->count_encoders;
 
         conn->encoder_id        = connector->encoder_id;
@@ -1074,10 +1073,10 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         conn->mm_width          = connector->mm_width;
         conn->mm_height         = connector->mm_height;
         conn->subpixel          = connector->subpixel;
-        conn->connection     = connector->connection;
-        conn->count_modes    = connector->count_modes;
-        conn->count_props    = 3;
-        conn->count_encoders = connector->encoder_id ? 1 : 0;
+        conn->connection        = connector->connection;
+        conn->count_modes       = connector->count_modes;
+        conn->count_props       = 3;
+        conn->count_encoders    = connector->encoder_id ? 1 : 0;
 
         // Fill modes if pointer provided
         struct drm_mode_modeinfo *mode = (struct drm_mode_modeinfo *)(uintptr_t)conn->modes_ptr;
@@ -1171,9 +1170,9 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
         // Update CRTC state
         uint32_t old_fb_id = crtc->fb_id;
-        crtc->fb_id = crtc_cmd->fb_id;
-        crtc->x     = crtc_cmd->x;
-        crtc->y     = crtc_cmd->y;
+        crtc->fb_id        = crtc_cmd->fb_id;
+        crtc->x            = crtc_cmd->x;
+        crtc->y            = crtc_cmd->y;
         if (crtc_cmd->mode_valid) {
             memcpy(&crtc->mode, &crtc_cmd->mode, sizeof(struct drm_mode_modeinfo));
         }
@@ -1234,7 +1233,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         // Fill format types if pointer provided
         if (plane_cmd->format_type_ptr && plane->count_format_types > 0 && plane->format_types) {
             uint32_t *formats = (uint32_t *)(uintptr_t)plane_cmd->format_type_ptr;
-            uint32_t count     = MIN(plane_cmd->count_format_types, plane->count_format_types);
+            uint32_t count    = MIN(plane_cmd->count_format_types, plane->count_format_types);
             plane_cmd->count_format_types = plane->count_format_types;
             for (uint32_t i = 0; i < count; i++) {
                 formats[i] = plane->format_types[i];
@@ -1259,8 +1258,8 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
         // Update plane state
         uint32_t old_fb_id = plane->fb_id;
-        plane->crtc_id = plane_cmd->crtc_id;
-        plane->fb_id   = plane_cmd->fb_id;
+        plane->crtc_id     = plane_cmd->crtc_id;
+        plane->fb_id       = plane_cmd->fb_id;
 
         // Call driver to set plane (if supported)
         if (dev->op->set_plane) {
@@ -1467,10 +1466,10 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
     case DRM_IOCTL_MODE_GETPROPBLOB: {
         struct drm_mode_get_blob *blob = (struct drm_mode_get_blob *)arg;
-        uint32_t req_length          = blob->length;
-        uint32_t crtc_id             = 0;
-        uint32_t connector_id        = 0;
-        uint32_t plane_id            = 0;
+        uint32_t req_length            = blob->length;
+        uint32_t crtc_id               = 0;
+        uint32_t connector_id          = 0;
+        uint32_t plane_id              = 0;
 
         if (blob->blob_id == 0) {
             blob->length = 0;
@@ -1511,7 +1510,9 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
             blob->length = sizeof(edid);
             if (blob->data) {
-                memcpy((void *)(uintptr_t)blob->data, edid, MIN(req_length, (uint32_t)sizeof(edid)));
+                memcpy(
+                    (void *)(uintptr_t)blob->data, edid, MIN(req_length, (uint32_t)sizeof(edid))
+                );
             }
             return 0;
         }
@@ -1522,7 +1523,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
                 return -ENOENT;
             }
 
-            size_t blob_size = drm_fill_plane_in_formats_blob(plane, NULL, 0);
+            size_t blob_size    = drm_fill_plane_in_formats_blob(plane, NULL, 0);
             uint8_t *plane_blob = malloc(blob_size);
             if (!plane_blob) {
                 drm_plane_free(&dev->resource_mgr, plane->id);
@@ -1534,7 +1535,9 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
             blob->length = (uint32_t)blob_size;
             if (blob->data) {
-                memcpy((void *)(uintptr_t)blob->data, plane_blob, MIN(req_length, (uint32_t)blob_size));
+                memcpy(
+                    (void *)(uintptr_t)blob->data, plane_blob, MIN(req_length, (uint32_t)blob_size)
+                );
             }
             free(plane_blob);
             return 0;
@@ -1575,7 +1578,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         }
         memcpy(blob_data, (void *)(uintptr_t)create_blob->data, create_blob->length);
 
-        int free_slot  = -1;
+        int free_slot    = -1;
         uint32_t blob_id = 0;
 
         spin_lock(drm_user_blobs_lock);
@@ -1652,7 +1655,8 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         case DRM_MODE_OBJECT_PLANE: {
             drm_plane_t *plane = NULL;
             for (int idx = 0; idx < DRM_MAX_PLANES_PER_DEVICE; idx++) {
-                if (dev->resource_mgr.planes[idx] && dev->resource_mgr.planes[idx]->id == props->obj_id) {
+                if (dev->resource_mgr.planes[idx]
+                    && dev->resource_mgr.planes[idx]->id == props->obj_id) {
                     plane = dev->resource_mgr.planes[idx];
                     break;
                 }
@@ -1663,35 +1667,29 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
             props->count_props = 12;
             if (props->props_ptr) {
-                uint32_t *prop_ids = (uint32_t *)(uintptr_t)props->props_ptr;
+                uint32_t *prop_ids  = (uint32_t *)(uintptr_t)props->props_ptr;
                 uint32_t copy_props = MIN(req_props, props->count_props);
-                uint32_t ids[12] = {
-                    DRM_PROPERTY_ID_PLANE_TYPE,
-                    DRM_PROPERTY_ID_IN_FORMATS,
-                    DRM_PROPERTY_ID_FB_ID,
-                    DRM_PROPERTY_ID_CRTC_ID,
-                    DRM_PROPERTY_ID_SRC_X,
-                    DRM_PROPERTY_ID_SRC_Y,
-                    DRM_PROPERTY_ID_SRC_W,
-                    DRM_PROPERTY_ID_SRC_H,
-                    DRM_PROPERTY_ID_CRTC_X,
-                    DRM_PROPERTY_ID_CRTC_Y,
-                    DRM_PROPERTY_ID_CRTC_W,
-                    DRM_PROPERTY_ID_CRTC_H,
+                uint32_t ids[12]    = {
+                    DRM_PROPERTY_ID_PLANE_TYPE, DRM_PROPERTY_ID_IN_FORMATS, DRM_PROPERTY_ID_FB_ID,
+                    DRM_PROPERTY_ID_CRTC_ID,    DRM_PROPERTY_ID_SRC_X,      DRM_PROPERTY_ID_SRC_Y,
+                    DRM_PROPERTY_ID_SRC_W,      DRM_PROPERTY_ID_SRC_H,      DRM_PROPERTY_ID_CRTC_X,
+                    DRM_PROPERTY_ID_CRTC_Y,     DRM_PROPERTY_ID_CRTC_W,     DRM_PROPERTY_ID_CRTC_H,
                 };
                 memcpy(prop_ids, ids, copy_props * sizeof(uint32_t));
             }
             if (props->prop_values_ptr) {
                 uint64_t *prop_values = (uint64_t *)(uintptr_t)props->prop_values_ptr;
                 uint32_t copy_props   = MIN(req_props, props->count_props);
-                uint64_t values[12]   = {0};
+                uint64_t values[12]   = { 0 };
                 values[0]             = plane->plane_type;
                 values[1]             = drm_plane_in_formats_blob_id(plane->id);
                 values[2]             = plane->fb_id;
                 values[3]             = plane->crtc_id;
 
-                drm_crtc_t *crtc = plane->crtc_id ? drm_crtc_get(&dev->resource_mgr, plane->crtc_id) : NULL;
-                drm_framebuffer_t *fb = plane->fb_id ? drm_framebuffer_get(&dev->resource_mgr, plane->fb_id) : NULL;
+                drm_crtc_t *crtc =
+                    plane->crtc_id ? drm_crtc_get(&dev->resource_mgr, plane->crtc_id) : NULL;
+                drm_framebuffer_t *fb =
+                    plane->fb_id ? drm_framebuffer_get(&dev->resource_mgr, plane->fb_id) : NULL;
                 if (fb) {
                     values[6] = ((uint64_t)fb->width) << 16;
                     values[7] = ((uint64_t)fb->height) << 16;
@@ -1716,7 +1714,8 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         case DRM_MODE_OBJECT_CRTC: {
             drm_crtc_t *crtc = NULL;
             for (int idx = 0; idx < DRM_MAX_CRTCS_PER_DEVICE; idx++) {
-                if (dev->resource_mgr.crtcs[idx] && dev->resource_mgr.crtcs[idx]->id == props->obj_id) {
+                if (dev->resource_mgr.crtcs[idx]
+                    && dev->resource_mgr.crtcs[idx]->id == props->obj_id) {
                     crtc = dev->resource_mgr.crtcs[idx];
                     break;
                 }
@@ -1758,9 +1757,9 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
             props->count_props = 4;
             if (props->props_ptr && req_props > 0) {
-                uint32_t *prop_ids = (uint32_t *)(uintptr_t)props->props_ptr;
+                uint32_t *prop_ids  = (uint32_t *)(uintptr_t)props->props_ptr;
                 uint32_t copy_props = MIN(req_props, props->count_props);
-                uint32_t ids[4] = {
+                uint32_t ids[4]     = {
                     DRM_FB_WIDTH_PROP_ID,
                     DRM_FB_HEIGHT_PROP_ID,
                     DRM_FB_BPP_PROP_ID,
@@ -1771,7 +1770,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
             if (props->prop_values_ptr && req_props > 0) {
                 uint64_t *prop_values = (uint64_t *)(uintptr_t)props->prop_values_ptr;
                 uint32_t copy_props   = MIN(req_props, props->count_props);
-                uint64_t values[4]    = {fb->width, fb->height, fb->bpp, fb->depth};
+                uint64_t values[4]    = { fb->width, fb->height, fb->bpp, fb->depth };
                 memcpy(prop_values, values, copy_props * sizeof(uint64_t));
             }
             return 0;
@@ -1968,13 +1967,13 @@ size_t drm_size_t(void *data) {
 
 size_t drm_read(void *data, void *buf, uint64_t offset, uint64_t len) {
     UNUSED(offset);
-    drm_device_t *dev = data;
+    drm_device_t *dev         = data;
     struct k_drm_event *event = NULL;
 
     while (!event) {
         spin_lock(dev->event_lock);
         if (dev->drm_events[0]) {
-            event = dev->drm_events[0];
+            event              = dev->drm_events[0];
             dev->drm_events[0] = NULL;
             memmove(
                 &dev->drm_events[0],
@@ -2057,8 +2056,8 @@ drm_device_t *drm_regist_pci_dev(void *data, drm_device_op_t *op, pci_device_t *
     drm_resource_manager_init(&drm_dev->resource_mgr);
     drm_dev->event_lock = SPIN_INIT;
 
-    drm_dev->data = data;
-    drm_dev->op   = op;
+    drm_dev->data    = data;
+    drm_dev->op      = op;
     drm_dev->pci_dev = pci_dev;
     drm_device_set_driver_info(drm_dev, DRM_NAME, "20060810", "CoolPotOS DRM");
 
@@ -2210,7 +2209,7 @@ drm_device_t *drm_regist_pci_dev(void *data, drm_device_op_t *op, pci_device_t *
     uint64_t dev_nr = drm_device_install(
         DEV_CHAR, drm_dev, dev_name, 0, drm_ioctl, drm_poll, drm_read, NULL, drm_map
     );
-    drm_dev->dev_nr   = dev_nr;
+    drm_dev->dev_nr = dev_nr;
     drm_sysfs_register_device(drm_dev);
 
     drm_id++;

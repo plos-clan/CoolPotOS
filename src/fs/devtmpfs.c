@@ -16,6 +16,8 @@ int dev_tmpfs_id                          = 0;
 static _Atomic volatile size_t dev_id_now = 0;
 
 static void load_tty_device(vfs_node_t node) {
+    int tty_id = 1;
+
     tty_t *kernel_session = get_kernel_session();
     create_device_node(
         node,
@@ -30,6 +32,34 @@ static void load_tty_device(vfs_node_t node) {
         NULL,
         (void *)kernel_session->ops.size_t
     );
+
+    tty_t *pos = NULL;
+    tty_t *n   = NULL;
+    llist_for_each(pos, n, get_tty_session_list(), list_node) {
+        if (pos == kernel_session) {
+            continue;
+        }
+        char name[10];
+        if (pos->device->type == TTY_DEVICE_SERIAL) {
+            sprintf(name, "ttyS%d", tty_id++);
+        } else {
+            sprintf(name, "tty%d", tty_id++);
+        }
+
+        create_device_node(
+            node,
+            name,
+            device_stream,
+            pos,
+            0,
+            (void *)pos->ops.ioctl,
+            (void *)pos->ops.read,
+            (void *)pos->ops.write,
+            (void *)pos->ops.poll,
+            NULL,
+            (void *)pos->ops.size_t
+        );
+    }
 }
 
 static void load_blk_device(vfs_node_t node) {
@@ -83,7 +113,7 @@ static void load_drm_device(vfs_node_t node) {
 
 errno_t devtmpfs_mount(const char *handle, vfs_node_t node, void *data) {
     node->fsid                = dev_tmpfs_id;
-    dtmp_handle_t *tmpfs_root = (dtmp_handle_t *)malloc(sizeof(dtmp_handle_t));
+    dtmp_handle_t *tmpfs_root = malloc(sizeof(dtmp_handle_t));
     tmpfs_root->type          = dtp_file_dir;
     tmpfs_root->node          = node;
     tmpfs_root->root          = node;

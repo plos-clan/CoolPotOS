@@ -18,14 +18,32 @@ static void page_table_clear(page_table_t *table) {
     }
 }
 
-page_table_t *page_table_create(page_table_entry_t *entry) {
+static uint64_t page_table_entry_flags(uint64_t leaf_flags) {
+    uint64_t flags = ARCH_PT_TABLE_FLAGS;
+
+    // On x86_64, user access requires the U/S bit on every paging level.
+    if (leaf_flags & PTE_USER) {
+        flags |= PTE_USER;
+    }
+
+    return flags;
+}
+
+page_table_t *page_table_create(page_table_entry_t *entry, uint64_t leaf_flags) {
+    const uint64_t entry_flags = page_table_entry_flags(leaf_flags);
+
     if (entry->value == 0) {
         uint64_t frame      = alloc_frames(1);
-        entry->value        = frame | PTE_PRESENT | PTE_WRITEABLE | PTE_USER;
+        entry->value        = frame | entry_flags;
         page_table_t *table = phys_to_virt(entry->value & PTE_FRAME_MASK);
         page_table_clear(table);
         return table;
     }
+
+    if (entry_flags & PTE_USER && !(entry->value & PTE_USER)) {
+        entry->value |= PTE_USER;
+    }
+
     page_table_t *table = phys_to_virt(entry->value & PTE_FRAME_MASK);
     return table;
 }
@@ -37,9 +55,9 @@ void page_map_to(page_directory_t *directory, uint64_t addr, uint64_t frame, uin
     uint64_t l1_index = (((addr >> 12)) & 0x1FF);
 
     page_table_t *l4_table = directory->table;
-    page_table_t *l3_table = page_table_create(&(l4_table->entries[l4_index]));
-    page_table_t *l2_table = page_table_create(&(l3_table->entries[l3_index]));
-    page_table_t *l1_table = page_table_create(&(l2_table->entries[l2_index]));
+    page_table_t *l3_table = page_table_create(&(l4_table->entries[l4_index]), flags);
+    page_table_t *l2_table = page_table_create(&(l3_table->entries[l3_index]), flags);
+    page_table_t *l1_table = page_table_create(&(l2_table->entries[l2_index]), flags);
 
     l1_table->entries[l1_index].value = (frame & PTE_FRAME_MASK) | flags;
 

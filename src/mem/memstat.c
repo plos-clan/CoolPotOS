@@ -3,24 +3,24 @@
 #include "mem/buddy.h"
 #include "mem/page.h"
 
-static inline uint64_t memstat_cap_bytes(void) {
+static uint64_t memstat_cap_bytes(void) {
     return get_total_frames() * PAGE_SIZE;
 }
 
-static inline uint64_t memstat_align_up(uint64_t value) {
-    return (value + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+static uint64_t memstat_align_up(const uint64_t value) {
+    return value + PAGE_SIZE - 1 & ~(PAGE_SIZE - 1);
 }
 
-static inline uint64_t memstat_align_down(uint64_t value) {
+static uint64_t memstat_align_down(const uint64_t value) {
     return value & ~(PAGE_SIZE - 1);
 }
 
-static inline void memstat_sum_zone_pages(size_t *managed_pages, size_t *free_pages) {
+static void memstat_sum_zone_pages(size_t *managed_pages, size_t *free_pages) {
     size_t managed = 0;
     size_t free    = 0;
 
     for (int i = 0; i < nr_zones; i++) {
-        zone_t *zone = zones[i];
+        const zone_t *zone = zones[i];
         if (zone == NULL) {
             continue;
         }
@@ -37,7 +37,7 @@ static inline void memstat_sum_zone_pages(size_t *managed_pages, size_t *free_pa
 }
 
 static uint64_t memstat_bad_frames(void) {
-    boot_memory_map_t *memory_map = boot_get_memory_map();
+    const boot_memory_map_t *memory_map = boot_get_memory_map();
     if (memory_map == NULL) {
         return 0;
     }
@@ -51,8 +51,8 @@ static uint64_t memstat_bad_frames(void) {
             continue;
         }
 
-        uint64_t start = memstat_align_up(entry->base);
-        uint64_t end   = memstat_align_down(entry->base + entry->length);
+        const uint64_t start = memstat_align_up(entry->base);
+        uint64_t end         = memstat_align_down(entry->base + entry->length);
         if (start >= cap) {
             continue;
         }
@@ -102,7 +102,7 @@ size_t get_total_frames() {
     size_t total = 0;
 
     for (int i = 0; i < nr_zones; i++) {
-        zone_t *zone = zones[i];
+        const zone_t *zone = zones[i];
         if (zone == NULL || zone->zone_end_pfn <= zone->zone_start_pfn) {
             continue;
         }

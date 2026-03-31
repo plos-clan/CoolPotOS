@@ -5,8 +5,8 @@
 void *virt_copy(void *ptr) {
     if (ptr == NULL)
         return NULL;
-    mm_virtual_page_t *src_page = (mm_virtual_page_t *)ptr;
-    mm_virtual_page_t *new_page = (mm_virtual_page_t *)malloc(sizeof(mm_virtual_page_t));
+    mm_virtual_page_t *src_page = ptr;
+    mm_virtual_page_t *new_page = malloc(sizeof(mm_virtual_page_t));
     new_page->start             = src_page->start;
     new_page->flags             = src_page->flags;
     new_page->count             = src_page->count;

@@ -8,61 +8,14 @@
 #include "term/klog.h"
 #include "term/terminal.h"
 
+#if defined(__x86_64__) || defined(__amd64__)
+#    include "driver/serial.h"
+#endif
+
 static struct llist_header tty_device_list;
+static struct llist_header tty_session_list;
 static tty_t *kernel_session  = NULL; // 内核会话
 static tty_t *current_session = NULL; // 当前会话
-
-static bool tty_debug_user_process(void) {
-    const tcb_t current = get_current_task();
-    if (current == NULL || current->process == NULL || current->process->name == NULL) {
-        return false;
-    }
-    return strstr(current->process->name, "Xorg") != NULL
-           || strstr(current->process->name, "xinit") != NULL;
-}
-
-static const char *tty_ioctl_name(const size_t req) {
-    switch (req) {
-    case TIOCGWINSZ:
-        return "TIOCGWINSZ";
-    case TCGETS:
-        return "TCGETS";
-    case TCSETS:
-        return "TCSETS";
-    case TCSETSF:
-        return "TCSETSF";
-    case TCSETSW:
-        return "TCSETSW";
-    case TIOCGPGRP:
-        return "TIOCGPGRP";
-    case TIOCSPGRP:
-        return "TIOCSPGRP";
-    case TIOCSCTTY:
-        return "TIOCSCTTY";
-    case KDGETMODE:
-        return "KDGETMODE";
-    case KDSETMODE:
-        return "KDSETMODE";
-    case KDGKBMODE:
-        return "KDGKBMODE";
-    case KDSKBMODE:
-        return "KDSKBMODE";
-    case VT_OPENQRY:
-        return "VT_OPENQRY";
-    case VT_GETMODE:
-        return "VT_GETMODE";
-    case VT_SETMODE:
-        return "VT_SETMODE";
-    case VT_GETSTATE:
-        return "VT_GETSTATE";
-    case VT_ACTIVATE:
-        return "VT_ACTIVATE";
-    case VT_WAITACTIVE:
-        return "VT_WAITACTIVE";
-    default:
-        return "UNKNOWN";
-    }
-}
 
 tty_t *get_kernel_session() {
     return kernel_session;
@@ -72,7 +25,7 @@ tty_t *get_current_session() {
     return current_session;
 }
 
-int kernel_getch() {
+int terminal_getch() {
     int ch;
     const bool int_status = arch_check_interrupt();
     arch_open_interrupt();
@@ -110,6 +63,10 @@ errno_t delete_tty_device(tty_device_t *device) {
     return EOK;
 }
 
+struct llist_header *get_tty_session_list() {
+    return &tty_session_list;
+}
+
 tty_device_t *get_tty_device(const char *name) {
     if (name == NULL) {
         return NULL;
@@ -126,6 +83,7 @@ tty_device_t *get_tty_device(const char *name) {
 
 void init_tty() {
     llist_init_head(&tty_device_list);
+    llist_init_head(&tty_session_list);
     kernel_session = malloc(sizeof(tty_t));
 }
 
@@ -173,17 +131,6 @@ static void termios_init(termios_t *termios) {
 }
 
 static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
-    if (tty_debug_user_process()) {
-        const tcb_t current = get_current_task();
-        logkf(
-            "[tty-ioctl] pid=%d proc=%s req=%s(%#lx)\n",
-            current->process->pid,
-            current->process->name,
-            tty_ioctl_name(req),
-            req
-        );
-    }
-
     switch (req) {
     case TIOCGWINSZ:;
         struct winsize *ws = arg;
@@ -323,16 +270,6 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         session->fgproc = *(pid_t *)arg;
         break;
     default:
-        if (tty_debug_user_process()) {
-            const tcb_t current = get_current_task();
-            logkf(
-                "[tty-ioctl] pid=%d proc=%s unhandled req=%s(%#lx)\n",
-                current->process->pid,
-                current->process->name,
-                tty_ioctl_name(req),
-                req
-            );
-        }
         return -ENOTTY;
     }
     return EOK;
@@ -349,6 +286,31 @@ static void tty_echo_char(tty_t *session, const char c) {
     session->ops.write(session, &c, 0, 1);
 }
 
+static bool tty_serial_has_input(tty_t *session) {
+    if (session == NULL || session->device == NULL || session->device->type != TTY_DEVICE_SERIAL) {
+        return false;
+    }
+
+#if defined(__x86_64__) || defined(__amd64__)
+    const struct tty_serial_ *data = session->device->private_data;
+    return data != NULL && serial_has_data(data->port);
+#else
+    return false;
+#endif
+}
+
+static int tty_serial_getch(tty_t *session) {
+    if (session == NULL || session->device == NULL || session->device->ops.read == NULL) {
+        return -1;
+    }
+
+    char c = 0;
+    if (session->device->ops.read(session->device, &c, 1) != 1) {
+        return -1;
+    }
+    return (unsigned char)c;
+}
+
 static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size_t number) {
     const tcb_t tcb = get_current_task() == NULL ? NULL : get_current_task();
     if (tcb != NULL) {
@@ -361,7 +323,7 @@ static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size
         return 0;
     }
 
-    size_t i = 0;
+    size_t i             = 0;
     const bool canonical = (session->termios.c_lflag & ICANON) != 0;
 
     if (!canonical) {
@@ -377,7 +339,7 @@ static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size
         }
 
         while (i < number) {
-            char c = (char)kernel_getch();
+            char c = (char)terminal_getch();
 
             if ((session->termios.c_iflag & IGNCR) && c == '\r') {
                 continue;
@@ -405,7 +367,7 @@ static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size
     }
 
     while (i < number) {
-        char c = (char)kernel_getch();
+        char c = (char)terminal_getch();
 
         if ((session->termios.c_iflag & IGNCR) && c == '\r') {
             continue;
@@ -447,7 +409,9 @@ static size_t stdin_read(tty_t *session, char *buffer, size_t offset, const size
 static errno_t tty_poll(tty_t *session, const size_t events) {
     ssize_t revents = 0;
     // if (events & EPOLLERR || events & EPOLLPRI) return 0;
-    if (events & EPOLLIN && (session->queue->size > 0)) {
+    if (events & EPOLLIN
+        && ((session->device->type == TTY_DEVICE_SERIAL && tty_serial_has_input(session))
+            || session->queue->size > 0)) {
         revents |= EPOLLIN;
     }
     if (events & EPOLLOUT) {
@@ -457,8 +421,107 @@ static errno_t tty_poll(tty_t *session, const size_t events) {
 }
 
 static size_t tty_serial_read(tty_t *session, char *buffer, size_t offset, const size_t count) {
-    tty_device_t *device = session->device;
-    return device->ops.read(device, buffer, count);
+    const tcb_t tcb = get_current_task() == NULL ? NULL : get_current_task();
+    if (tcb != NULL) {
+        tcb->status = T_IO_WAIT;
+    }
+    if (count == 0) {
+        if (tcb != NULL) {
+            tcb->status = T_RUNNING;
+        }
+        return 0;
+    }
+
+    size_t i             = 0;
+    const bool canonical = (session->termios.c_lflag & ICANON) != 0;
+
+    if (!canonical) {
+        size_t vmin = session->termios.c_cc[VMIN];
+        if (vmin == 0 && !tty_serial_has_input(session)) {
+            if (tcb != NULL) {
+                tcb->status = T_RUNNING;
+            }
+            return 0;
+        }
+        if (vmin == 0) {
+            vmin = 1;
+        }
+
+        while (i < count) {
+            int ch = tty_serial_getch(session);
+            if (ch < 0) {
+                continue;
+            }
+            char c = (char)ch;
+
+            if ((session->termios.c_iflag & IGNCR) && c == '\r') {
+                continue;
+            }
+            if ((session->termios.c_iflag & ICRNL) && c == '\r') {
+                c = '\n';
+            } else if ((session->termios.c_iflag & INLCR) && c == '\n') {
+                c = '\r';
+            }
+
+            buffer[i] = c;
+            tty_echo_char(session, c);
+
+            if (i + 1 >= vmin) {
+                i++;
+                break;
+            }
+            i++;
+        }
+
+        if (tcb != NULL) {
+            tcb->status = T_RUNNING;
+        }
+        return i;
+    }
+
+    while (i < count) {
+        int ch = tty_serial_getch(session);
+        if (ch < 0) {
+            continue;
+        }
+        char c = (char)ch;
+
+        if ((session->termios.c_iflag & IGNCR) && c == '\r') {
+            continue;
+        }
+        if ((session->termios.c_iflag & ICRNL) && c == '\r') {
+            c = '\n';
+        } else if ((session->termios.c_iflag & INLCR) && c == '\n') {
+            c = '\r';
+        }
+
+        if (tty_is_erase_char(session, c)) {
+            if (i > 0) {
+                i--;
+                buffer[i] = '\0';
+                if (session->termios.c_lflag & ECHO) {
+                    session->ops.write(session, "\b \b", 0, 3);
+                }
+            }
+            continue;
+        }
+
+        if (c == '\n' || c == '\r') {
+            buffer[i] = 0x0a;
+            tty_echo_char(session, '\n');
+            i++;
+            break;
+        }
+
+        buffer[i] = c;
+        tty_echo_char(session, c);
+        i++;
+    }
+
+    if (tcb != NULL) {
+        tcb->status = T_RUNNING;
+    }
+    return i;
 }
 
 static size_t
@@ -510,11 +573,28 @@ static tty_t *alloc_tty_session(tty_device_t *device) {
 }
 
 void init_tty_session() {
-    tty_device_t *device = get_tty_device(boot_get_cmdline_param("console"));
-    device = device == NULL ? container_of(tty_device_list.prev, tty_device_t, node) : device;
-    not_null_assert(device, "no tty device error.");
-    kernel_session  = alloc_tty_session(device);
-    current_session = kernel_session;
+    tty_device_t *pos = NULL;
+    tty_device_t *n   = NULL;
+    llist_for_each(pos, n, &tty_device_list, node) {
+        tty_t *session = alloc_tty_session(pos);
+        llist_append(&tty_session_list, &session->list_node);
+        if (streq(pos->name, boot_get_cmdline_param("console"))) {
+            kernel_session  = session;
+            current_session = session;
+        }
+    }
+
+    if (kernel_session->device->type == TTY_DEVICE_GRAPHI) {
+        const struct tty_graphics_ *handle = kernel_session->device->private_data;
+        kinfo(
+            "TTY(graphics): %dx%d bpp=%d pitch=%d addr=%#p",
+            handle->width,
+            handle->height,
+            handle->bpp,
+            handle->pitch,
+            handle->address
+        );
+    }
 
     input_handler_t *handler = malloc(sizeof(input_handler_t));
     handler->disconnect      = NULL;

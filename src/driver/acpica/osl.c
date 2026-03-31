@@ -213,12 +213,15 @@ void AcpiOsFree(void *Memory) {
 }
 
 void *AcpiOsMapMemory(const ACPI_PHYSICAL_ADDRESS Where, const ACPI_SIZE Length) {
-    void *vaddr = phys_to_virt(Where);
+    const uint64_t phys_base = (uint64_t)Where & ~(PAGE_SIZE - 1);
+    const uint64_t offset    = (uint64_t)Where - phys_base;
+    const uint64_t map_len   = (offset + (uint64_t)Length + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+    void *vaddr              = phys_to_virt(Where);
     page_map_range(
         get_kernel_pagedir(),
         (uint64_t)vaddr & ~(PAGE_SIZE - 1),
-        Where & ~(PAGE_SIZE - 1),
-        Length,
+        phys_base,
+        map_len,
         KERNEL_PTE_FLAGS
     );
     return vaddr;
@@ -368,7 +371,8 @@ ACPI_THREAD_ID AcpiOsGetThreadId(void) {
     return (ACPI_THREAD_ID)task->tid;
 }
 
-ACPI_STATUS AcpiOsExecute(const ACPI_EXECUTE_TYPE Type, const ACPI_OSD_EXEC_CALLBACK Function, void *Context) {
+ACPI_STATUS
+AcpiOsExecute(const ACPI_EXECUTE_TYPE Type, const ACPI_OSD_EXEC_CALLBACK Function, void *Context) {
 
     (void)Type;
     if (!Function) {
@@ -464,7 +468,8 @@ ACPI_STATUS AcpiOsWritePort(const ACPI_IO_ADDRESS Address, const UINT32 Value, c
 #endif
 }
 
-ACPI_STATUS AcpiOsReadMemory(const ACPI_PHYSICAL_ADDRESS Address, UINT64 *Value, const UINT32 Width) {
+ACPI_STATUS
+AcpiOsReadMemory(const ACPI_PHYSICAL_ADDRESS Address, UINT64 *Value, const UINT32 Width) {
     volatile void *ptr = phys_to_virt(Address);
 
     if (!ptr || !Value) {
@@ -489,7 +494,8 @@ ACPI_STATUS AcpiOsReadMemory(const ACPI_PHYSICAL_ADDRESS Address, UINT64 *Value,
     }
 }
 
-ACPI_STATUS AcpiOsWriteMemory(const ACPI_PHYSICAL_ADDRESS Address, const UINT64 Value, const UINT32 Width) {
+ACPI_STATUS
+AcpiOsWriteMemory(const ACPI_PHYSICAL_ADDRESS Address, const UINT64 Value, const UINT32 Width) {
     volatile void *ptr = phys_to_virt(Address);
 
     if (!ptr) {
@@ -515,7 +521,9 @@ ACPI_STATUS AcpiOsWriteMemory(const ACPI_PHYSICAL_ADDRESS Address, const UINT64 
 }
 
 ACPI_STATUS
-AcpiOsReadPciConfiguration(ACPI_PCI_ID *PciId, const UINT32 Reg, UINT64 *Value, const UINT32 Width) {
+AcpiOsReadPciConfiguration(
+    ACPI_PCI_ID *PciId, const UINT32 Reg, UINT64 *Value, const UINT32 Width
+) {
 
     if (!PciId || !Value) {
         return AE_BAD_PARAMETER;
@@ -549,7 +557,9 @@ AcpiOsReadPciConfiguration(ACPI_PCI_ID *PciId, const UINT32 Reg, UINT64 *Value, 
 }
 
 ACPI_STATUS
-AcpiOsWritePciConfiguration(ACPI_PCI_ID *PciId, const UINT32 Reg, const UINT64 Value, const UINT32 Width) {
+AcpiOsWritePciConfiguration(
+    ACPI_PCI_ID *PciId, const UINT32 Reg, const UINT64 Value, const UINT32 Width
+) {
     uint32_t shift;
 
     if (!PciId) {
@@ -616,7 +626,8 @@ ACPI_STATUS AcpiOsSignal(const UINT32 Function, const void *Info) {
     return AE_OK;
 }
 
-ACPI_STATUS AcpiOsEnterSleep(const UINT8 SleepState, const UINT32 RegaValue, const UINT32 RegbValue) {
+ACPI_STATUS
+AcpiOsEnterSleep(const UINT8 SleepState, const UINT32 RegaValue, const UINT32 RegbValue) {
     (void)SleepState;
     (void)RegaValue;
     (void)RegbValue;
@@ -657,7 +668,7 @@ ACPI_STATUS AcpiOsGetLine(char *Buffer, const UINT32 BufferLength, UINT32 *Bytes
     }
 
     while (count + 1 < BufferLength) {
-        const int ch = kernel_getch();
+        const int ch = terminal_getch(get_kernel_session());
         if (ch < 0) {
             continue;
         }
@@ -689,7 +700,9 @@ ACPI_STATUS AcpiOsNotifyCommandComplete(void) {
     return AE_OK;
 }
 
-void AcpiOsTracePoint(const ACPI_TRACE_EVENT_TYPE Type, const BOOLEAN Begin, UINT8 *Aml, char *Pathname) {
+void AcpiOsTracePoint(
+    const ACPI_TRACE_EVENT_TYPE Type, const BOOLEAN Begin, UINT8 *Aml, char *Pathname
+) {
     (void)Type;
     (void)Begin;
     (void)Aml;
@@ -698,7 +711,9 @@ void AcpiOsTracePoint(const ACPI_TRACE_EVENT_TYPE Type, const BOOLEAN Begin, UIN
 
 ACPI_STATUS AcpiOsGetTableByName(
     char *Signature,
-    const UINT32 Instance, ACPI_TABLE_HEADER **Table, ACPI_PHYSICAL_ADDRESS *Address
+    const UINT32 Instance,
+    ACPI_TABLE_HEADER **Table,
+    ACPI_PHYSICAL_ADDRESS *Address
 ) {
 
     if (!Signature || !Table) {
@@ -746,7 +761,8 @@ ACPI_STATUS AcpiOsGetTableByIndex(
     return AE_OK;
 }
 
-ACPI_STATUS AcpiOsGetTableByAddress(const ACPI_PHYSICAL_ADDRESS Address, ACPI_TABLE_HEADER **Table) {
+ACPI_STATUS
+AcpiOsGetTableByAddress(const ACPI_PHYSICAL_ADDRESS Address, ACPI_TABLE_HEADER **Table) {
     UINT32 index = 0;
 
     if (!Table) {
