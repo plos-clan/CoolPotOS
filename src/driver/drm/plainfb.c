@@ -15,9 +15,31 @@ static bool plainfb_handle_to_index(uint32_t handle, uint32_t *idx) {
     return true;
 }
 
+static int plainfb_get_dumbbuffer(plainfb_device_t *gpu_dev, uint32_t handle, uint32_t *idx_out) {
+    uint32_t idx = 0;
+    if (!gpu_dev || !plainfb_handle_to_index(handle, &idx) || !gpu_dev->dumbbuffers[idx].used) {
+        return -EINVAL;
+    }
+
+    if (idx_out) {
+        *idx_out = idx;
+    }
+    return 0;
+}
+
+static int plainfb_ref_dumbbuffer(plainfb_device_t *gpu_dev, uint32_t handle) {
+    uint32_t idx = 0;
+    int ret      = plainfb_get_dumbbuffer(gpu_dev, handle, &idx);
+    if (ret != 0) {
+        return ret;
+    }
+
+    gpu_dev->dumbbuffers[idx].refcount++;
+    return 0;
+}
+
 static int plainfb_present_dumbbuffer(
-    plainfb_device_t *gpu_dev, uint32_t idx, uint32_t x, uint32_t y, uint32_t width,
-    uint32_t height
+    plainfb_device_t *gpu_dev, uint32_t idx, uint32_t x, uint32_t y, uint32_t width, uint32_t height
 ) {
     if (!gpu_dev || !gpu_dev->framebuffer || idx >= 32 || !gpu_dev->dumbbuffers[idx].used) {
         return -EINVAL;
@@ -62,9 +84,9 @@ static int plainfb_present_dumbbuffer(
 
     size_t row_bytes = (size_t)width * bytes_per_pixel;
     uint8_t *src     = (uint8_t *)(uintptr_t)phys_to_virt(gpu_dev->dumbbuffers[idx].addr)
-                   + ((size_t)y * src_pitch) + ((size_t)x * bytes_per_pixel);
-    uint8_t *dst = (uint8_t *)(uintptr_t)gpu_dev->framebuffer->address
-                 + ((size_t)y * dst_pitch) + ((size_t)x * bytes_per_pixel);
+                       + ((size_t)y * src_pitch) + ((size_t)x * bytes_per_pixel);
+    uint8_t *dst     = (uint8_t *)(uintptr_t)gpu_dev->framebuffer->address + ((size_t)y * dst_pitch)
+                       + ((size_t)x * bytes_per_pixel);
 
     if (x == 0 && row_bytes == src_pitch && row_bytes == dst_pitch) {
         memcpy(dst, src, row_bytes * (size_t)height);
@@ -122,6 +144,7 @@ int plainfb_create_dumb(drm_device_t *drm_dev, struct drm_mode_create_dumb *args
             gpu_dev->dumbbuffers[i].width         = args->width;
             gpu_dev->dumbbuffers[i].height        = args->height;
             gpu_dev->dumbbuffers[i].pitch         = args->pitch;
+            gpu_dev->dumbbuffers[i].size          = args->size;
             gpu_dev->dumbbuffers[i].refcount      = 1;
             gpu_dev->dumbbuffers[i].direct_backed = false;
             gpu_dev->dumbbuffers[i].addr = alloc_frames((args->size + PAGE_SIZE - 1) / PAGE_SIZE);
@@ -152,11 +175,17 @@ static int plainfb_destroy_dumb(drm_device_t *drm_dev, uint32_t handle) {
     }
 
     if (--gpu_dev->dumbbuffers[idx].refcount == 0) {
-        free_frames(
-            gpu_dev->dumbbuffers[idx].addr,
-            (gpu_dev->dumbbuffers[idx].pitch * gpu_dev->dumbbuffers[idx].height + PAGE_SIZE - 1)
-                / PAGE_SIZE
-        );
+        if (!gpu_dev->dumbbuffers[idx].direct_backed) {
+            free_frames(
+                gpu_dev->dumbbuffers[idx].addr,
+                (gpu_dev->dumbbuffers[idx].size + PAGE_SIZE - 1) / PAGE_SIZE
+            );
+        }
+        gpu_dev->dumbbuffers[idx].addr          = 0;
+        gpu_dev->dumbbuffers[idx].size          = 0;
+        gpu_dev->dumbbuffers[idx].width         = 0;
+        gpu_dev->dumbbuffers[idx].height        = 0;
+        gpu_dev->dumbbuffers[idx].pitch         = 0;
         gpu_dev->dumbbuffers[idx].direct_backed = false;
         gpu_dev->dumbbuffers[idx].used          = false;
     }
@@ -170,16 +199,27 @@ static int plainfb_add_fb(drm_device_t *drm_dev, struct drm_mode_fb_cmd *fb_cmd)
         return -ENODEV;
     }
 
+    uint32_t idx = 0;
+    if (fb_cmd->handle == 0 || fb_cmd->width == 0 || fb_cmd->height == 0
+        || plainfb_get_dumbbuffer(device, fb_cmd->handle, &idx) != 0) {
+        return -EINVAL;
+    }
+
     drm_framebuffer_t *fb = drm_framebuffer_alloc(&device->resource_mgr, device);
     if (!fb) {
         return -ENOMEM;
     }
 
+    if (plainfb_ref_dumbbuffer(device, fb_cmd->handle) != 0) {
+        drm_framebuffer_free(&device->resource_mgr, fb->id);
+        return -EINVAL;
+    }
+
     fb->width  = fb_cmd->width;
     fb->height = fb_cmd->height;
-    fb->pitch  = fb_cmd->pitch;
-    fb->bpp    = fb_cmd->bpp;
-    fb->depth  = fb_cmd->depth;
+    fb->pitch  = fb_cmd->pitch ? fb_cmd->pitch : device->dumbbuffers[idx].pitch;
+    fb->bpp    = fb_cmd->bpp ? fb_cmd->bpp : 32;
+    fb->depth  = fb_cmd->depth ? fb_cmd->depth : 24;
     fb->handle = fb_cmd->handle;
     fb->format = DRM_FORMAT_XRGB8888;
 
@@ -208,14 +248,14 @@ static int plainfb_dirty_fb(drm_device_t *drm_dev, struct drm_mode_fb_dirty_cmd 
     if (cmd->num_clips == 0 || cmd->clips_ptr == 0) {
         ret = plainfb_present_dumbbuffer(gpu_dev, idx, 0, 0, 0, 0);
     } else {
-        uint32_t clips_count      = MIN(cmd->num_clips, DRM_MODE_FB_DIRTY_MAX_CLIPS);
-        drm_clip_rect_t *clips    = (drm_clip_rect_t *)(uintptr_t)cmd->clips_ptr;
-        uint32_t bbox_x1          = UINT32_MAX;
-        uint32_t bbox_y1          = UINT32_MAX;
-        uint32_t bbox_x2          = 0;
-        uint32_t bbox_y2          = 0;
-        uint64_t clip_area        = 0;
-        uint32_t valid_clips      = 0;
+        uint32_t clips_count   = MIN(cmd->num_clips, DRM_MODE_FB_DIRTY_MAX_CLIPS);
+        drm_clip_rect_t *clips = (drm_clip_rect_t *)(uintptr_t)cmd->clips_ptr;
+        uint32_t bbox_x1       = UINT32_MAX;
+        uint32_t bbox_y1       = UINT32_MAX;
+        uint32_t bbox_x2       = 0;
+        uint32_t bbox_y2       = 0;
+        uint64_t clip_area     = 0;
+        uint32_t valid_clips   = 0;
 
         for (uint32_t i = 0; i < clips_count; i++) {
             uint32_t x1 = clips[i].x1;
@@ -287,16 +327,21 @@ static int plainfb_add_fb2(drm_device_t *drm_dev, struct drm_mode_fb_cmd2 *fb_cm
         return -ENOMEM;
     }
 
-    fb->width    = fb_cmd->width;
-    fb->height   = fb_cmd->height;
-    fb->pitch    = fb_cmd->pitches[0] ? fb_cmd->pitches[0] : device->dumbbuffers[idx].pitch;
-    fb->bpp      = 32;
-    fb->depth    = (fb_cmd->pixel_format == DRM_FORMAT_ARGB8888
-                 || fb_cmd->pixel_format == DRM_FORMAT_ABGR8888
-                 || fb_cmd->pixel_format == DRM_FORMAT_RGBA8888
-                 || fb_cmd->pixel_format == DRM_FORMAT_BGRA8888)
-                 ? 32
-                 : 24;
+    if (plainfb_ref_dumbbuffer(device, fb_cmd->handles[0]) != 0) {
+        drm_framebuffer_free(&device->resource_mgr, fb->id);
+        return -EINVAL;
+    }
+
+    fb->width  = fb_cmd->width;
+    fb->height = fb_cmd->height;
+    fb->pitch  = fb_cmd->pitches[0] ? fb_cmd->pitches[0] : device->dumbbuffers[idx].pitch;
+    fb->bpp    = 32;
+    fb->depth =
+        (fb_cmd->pixel_format == DRM_FORMAT_ARGB8888 || fb_cmd->pixel_format == DRM_FORMAT_ABGR8888
+         || fb_cmd->pixel_format == DRM_FORMAT_RGBA8888
+         || fb_cmd->pixel_format == DRM_FORMAT_BGRA8888)
+            ? 32
+            : 24;
     fb->handle   = fb_cmd->handles[0];
     fb->format   = fb_cmd->pixel_format;
     fb->modifier = fb_cmd->modifier[0];
@@ -328,12 +373,12 @@ int plainfb_atomic_commit(drm_device_t *drm_dev, struct drm_mode_atomic *atomic)
         return -EINVAL;
     }
 
-    bool test_only              = (atomic->flags & DRM_MODE_ATOMIC_TEST_ONLY) != 0;
-    uint64_t prop_idx           = 0;
-    uint32_t committed_fb_id    = 0;
-    bool has_committed_fb       = false;
-    uint32_t stale_fb_ids[DRM_MAX_PLANES_PER_DEVICE] = {0};
-    uint32_t stale_fb_count     = 0;
+    bool test_only           = (atomic->flags & DRM_MODE_ATOMIC_TEST_ONLY) != 0;
+    uint64_t prop_idx        = 0;
+    uint32_t committed_fb_id = 0;
+    bool has_committed_fb    = false;
+    uint32_t stale_fb_ids[DRM_MAX_PLANES_PER_DEVICE] = { 0 };
+    uint32_t stale_fb_count                          = 0;
 
     for (uint32_t i = 0; i < atomic->count_objs; i++) {
         uint32_t obj_id = obj_ids[i];
@@ -439,7 +484,7 @@ int plainfb_atomic_commit(drm_device_t *drm_dev, struct drm_mode_atomic *atomic)
                     plane->fb_id = (uint32_t)value;
                 }
 
-                committed_fb_id = (uint32_t)value;
+                committed_fb_id  = (uint32_t)value;
                 has_committed_fb = value != 0;
                 break;
 
@@ -572,8 +617,42 @@ int plainfb_map_dumb(drm_device_t *drm_dev, struct drm_mode_map_dumb *args) {
         return -EINVAL;
     }
 
+    args->pad    = 0;
     args->offset = gpu_dev->dumbbuffers[idx].addr;
     return 0;
+}
+
+static int plainfb_set_plane(drm_device_t *drm_dev, struct drm_mode_set_plane *plane_cmd) {
+    plainfb_device_t *gpu_dev = drm_dev ? drm_dev->data : NULL;
+    if (!gpu_dev || !gpu_dev->framebuffer || !plane_cmd) {
+        return -ENODEV;
+    }
+
+    if (plane_cmd->fb_id == 0) {
+        return 0;
+    }
+
+    drm_framebuffer_t *fb = drm_framebuffer_get(&gpu_dev->resource_mgr, plane_cmd->fb_id);
+    if (!fb) {
+        return -ENOENT;
+    }
+
+    uint32_t idx = 0;
+    if (!plainfb_handle_to_index(fb->handle, &idx) || !gpu_dev->dumbbuffers[idx].used) {
+        drm_framebuffer_free(&gpu_dev->resource_mgr, fb->id);
+        return -EINVAL;
+    }
+
+    int ret = plainfb_present_dumbbuffer(
+        gpu_dev,
+        idx,
+        plane_cmd->crtc_x < 0 ? 0 : (uint32_t)plane_cmd->crtc_x,
+        plane_cmd->crtc_y < 0 ? 0 : (uint32_t)plane_cmd->crtc_y,
+        plane_cmd->crtc_w,
+        plane_cmd->crtc_h
+    );
+    drm_framebuffer_free(&gpu_dev->resource_mgr, fb->id);
+    return ret;
 }
 
 static int plainfb_set_crtc(drm_device_t *drm_dev, struct drm_mode_crtc *crtc) {
@@ -644,9 +723,8 @@ static int plainfb_page_flip(drm_device_t *drm_dev, struct drm_mode_crtc_page_fl
     return 0;
 }
 
-static int plainfb_get_connectors(
-    drm_device_t *drm_dev, drm_connector_t **connectors, uint32_t *count
-) {
+static int
+plainfb_get_connectors(drm_device_t *drm_dev, drm_connector_t **connectors, uint32_t *count) {
     plainfb_device_t *gpu_dev = drm_dev ? drm_dev->data : NULL;
     if (!gpu_dev) {
         *count = 0;
@@ -680,9 +758,7 @@ static int plainfb_get_crtcs(drm_device_t *drm_dev, drm_crtc_t **crtcs, uint32_t
     return 0;
 }
 
-static int plainfb_get_encoders(
-    drm_device_t *drm_dev, drm_encoder_t **encoders, uint32_t *count
-) {
+static int plainfb_get_encoders(drm_device_t *drm_dev, drm_encoder_t **encoders, uint32_t *count) {
     plainfb_device_t *gpu_dev = drm_dev ? drm_dev->data : NULL;
     if (!gpu_dev) {
         *count = 0;
@@ -740,7 +816,7 @@ drm_device_op_t plainfb_drm_device_op = {
     .dirty_fb         = plainfb_dirty_fb,
     .add_fb           = plainfb_add_fb,
     .add_fb2          = plainfb_add_fb2,
-    .set_plane        = NULL,
+    .set_plane        = plainfb_set_plane,
     .atomic_commit    = plainfb_atomic_commit,
     .map_dumb         = plainfb_map_dumb,
     .set_crtc         = plainfb_set_crtc,
@@ -841,13 +917,16 @@ void drm_plainfb_init() {
         pci_find_class(0x000100, drm_load_device);
     }
 
-    drm_device_t *drm_dev =
-        drm_regist_pci_dev(gpu_device, &plainfb_drm_device_op, count > 0 ? vga_pci_devices[0] : NULL);
+    drm_device_t *drm_dev = drm_regist_pci_dev(
+        gpu_device, &plainfb_drm_device_op, count > 0 ? vga_pci_devices[0] : NULL
+    );
     if (drm_dev && count > 0) {
         const char *driver_name = "simpledrm";
         if (vga_pci_devices[0]->vendor_id == 0x1234 && vga_pci_devices[0]->device_id == 0x1111) {
             driver_name = "bochs-drm";
         }
-        drm_device_set_driver_info(drm_dev, driver_name, "20260320", "CoolPotOS plain framebuffer DRM");
+        drm_device_set_driver_info(
+            drm_dev, driver_name, "20260320", "CoolPotOS plain framebuffer DRM"
+        );
     }
 }

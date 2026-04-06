@@ -30,7 +30,7 @@ char *proc_gen_maps_file(pcb_t task, size_t *content_len) {
         return strdup("");
     }
 
-    vma_t *vma                = task->vma_manager.vma_list;
+    vma_t *vma                = task->mm->vma_manager.vma_list;
     fdt_t *fdt                = task->fdts;
     string_builder_t *builder = create_string_builder(4096);
     if (builder == NULL) {

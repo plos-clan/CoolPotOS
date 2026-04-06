@@ -13,6 +13,7 @@ typedef struct plainfb_device {
         bool used;
         bool direct_backed;
         uint64_t addr;
+        uint64_t size;
         uint32_t width;
         uint32_t height;
         uint32_t pitch;

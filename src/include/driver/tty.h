@@ -1,6 +1,6 @@
 #pragma once
 
-#define NCCS 32
+#define NCCS 19
 
 #define EPOLLIN        0x001
 #define EPOLLPRI       0x002

@@ -38,6 +38,66 @@ static retired_process_node_t *retired_processes = NULL;
 static spin_t retired_lock                       = SPIN_INIT;
 static spin_t task_exit_lock                     = SPIN_INIT;
 
+mm_t *mm_create(page_directory_t *directory) {
+    mm_t *mm = calloc(1, sizeof(mm_t));
+    if (mm == NULL) {
+        return NULL;
+    }
+
+    mm->directory = directory;
+    __atomic_store_n(&mm->ref_count, 1, __ATOMIC_RELAXED);
+    return mm;
+}
+
+mm_t *mm_clone(const mm_t *src) {
+    if (src == NULL || src->directory == NULL) {
+        return NULL;
+    }
+
+    page_directory_t *directory = clone_page_directory(src->directory, false);
+    if (directory == NULL) {
+        return NULL;
+    }
+
+    mm_t *mm = mm_create(directory);
+    if (mm == NULL) {
+        free_page_directory(directory);
+        return NULL;
+    }
+
+    if (!vma_manager_clone((vma_manager_t *)&src->vma_manager, &mm->vma_manager)) {
+        free_page_directory(directory);
+        free(mm);
+        return NULL;
+    }
+
+    return mm;
+}
+
+void mm_retain(mm_t *mm) {
+    if (mm == NULL) {
+        return;
+    }
+
+    __atomic_add_fetch(&mm->ref_count, 1, __ATOMIC_ACQ_REL);
+}
+
+void mm_release(mm_t *mm) {
+    if (mm == NULL) {
+        return;
+    }
+
+    if (__atomic_sub_fetch(&mm->ref_count, 1, __ATOMIC_ACQ_REL) != 0) {
+        return;
+    }
+
+    vma_manager_exit_cleanup(&mm->vma_manager);
+    if (mm->directory != NULL && mm->directory != get_kernel_pagedir()) {
+        free_page_directory(mm->directory);
+    }
+    free(mm);
+}
+
 cow_arraylist *get_process_list() {
     return process_list;
 }
@@ -287,9 +347,9 @@ static void destroy_process(pcb_t pcb) {
         free(pcb->name);
         pcb->name = NULL;
     }
-    if (!pcb->vfork && pcb->directory != NULL) {
-        free_page_directory(pcb->directory);
-        pcb->directory = NULL;
+    if (pcb->mm != NULL) {
+        mm_release(pcb->mm);
+        pcb->mm = NULL;
     }
 
     free(pcb);
@@ -471,10 +531,6 @@ static void kill_proc0(const pcb_t pcb) {
 
     procfs_on_exit_task(pcb);
     pcb->procfs_node = NULL;
-
-    if (!pcb->vfork) {
-        vma_manager_exit_cleanup(&pcb->vma_manager);
-    }
 
     lazy_free(pcb);
 
@@ -673,9 +729,30 @@ pid_t create_process(const char *name, pcb_t parent, uint64_t flags) {
     new_pgb->vfork         = false;
     new_pgb->proc_root     = get_rootdir();
     if (flags & CLONE_VM) {
-        new_pgb->directory = clone_page_directory(new_pgb->parent->directory, false);
+        new_pgb->mm = new_pgb->parent->mm;
+        mm_retain(new_pgb->mm);
     } else {
-        new_pgb->directory = new_pgb->parent->directory;
+        new_pgb->mm = mm_clone(new_pgb->parent->mm);
+    }
+    if (new_pgb->mm == NULL) {
+        cow_list_remove(new_pgb->parent->child_process, new_pgb->ppl_index);
+        refresh_child_process_links(new_pgb->parent);
+        cow_list_clear(process_list, new_pgb->pl_index);
+        cow_list_destroy(new_pgb->child_threads);
+        cow_list_destroy(new_pgb->child_process);
+        ipc_queue_release(new_pgb->ipc_queue);
+        free_llist_queue(new_pgb->virt_queue, NULL, NULL);
+        free_fdt(new_pgb->fdts);
+        if (new_pgb->cwd != NULL) {
+            vfs_close(new_pgb->cwd);
+        }
+        if (new_pgb->proc_root != NULL) {
+            vfs_close(new_pgb->proc_root);
+        }
+        free(new_pgb->ctty_path);
+        free(new_pgb->name);
+        free((void *)new_pgb);
+        return -ENOMEM;
     }
     return new_pgb->pid;
 }
@@ -737,7 +814,7 @@ void setup_task() {
     kernel_process->pl_index      = cow_list_add(process_list, kernel_process);
     kernel_process->cwd           = get_rootdir();
     kernel_process->child_threads = cow_list_create();
-    kernel_process->directory     = get_kernel_pagedir();
+    kernel_process->mm            = mm_create(get_kernel_pagedir());
     kernel_process->tty           = get_kernel_session();
     kernel_process->ctty_path     = strdup("/dev/tty0");
     kernel_process->status        = T_RUNNING;
@@ -748,6 +825,7 @@ void setup_task() {
     kernel_process->ipc_queue     = ipc_queue_init();
     kernel_process->vfork         = false;
     kernel_process->umask         = 0022;
+    asserts(kernel_process->mm != NULL, "setup_task: kernel mm is null.");
 
     bsp_idle_thread           = malloc(STACK_SIZE);
     bsp_idle_thread->name     = strdup("bsp_idle");

@@ -21,8 +21,11 @@
 #define FBIOGETCMAP         0x4604
 #define FBIOPUTCMAP         0x4605
 #define FBIOPAN_DISPLAY     0x4606
+#define FBIOBLANK           0x4611
+#define FBIOGET_VBLANK      0x4612
 
-#define FB_MAJOR 29
+#define FB_MAJOR       29
+#define FB_DEVICE_NAME "CPOS-FBDEV"
 
 #define TTY_CHARACTER_WIDTH  8
 #define TTY_CHARACTER_HEIGHT 16
@@ -99,3 +102,4 @@ struct fb_var_screeninfo {
 };
 
 void fb_setup(vfs_node_t dev_root);
+void fb_sysfs_populate(void);

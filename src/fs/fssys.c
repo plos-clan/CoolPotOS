@@ -204,8 +204,12 @@ syscall_(write, int fd, uint8_t *buffer, size_t size) {
         return SYSCALL_FAULT_(EBADF);
     if (handle->node->type & file_pipe) {
         size_t ret = vfs_write(handle->node, buffer, 0, size);
-        if (ret == (size_t)-1)
+        if (ret == (size_t)-EPIPE)
             return SYSCALL_FAULT_(EPIPE);
+        if (ret == (size_t)-EWOULDBLOCK)
+            return SYSCALL_FAULT_(EWOULDBLOCK);
+        if (ret == (size_t)-1)
+            return SYSCALL_FAULT_(EIO);
         return ret;
     }
     if (handle->node->type & file_socket) {
@@ -253,6 +257,8 @@ syscall_(read, int fd, uint8_t *buffer, size_t size) {
         // logkf("[fd-dbg] pid=%d read(%d) = %d\n",
         //       get_current_task()->process->pid, fd, (int)ret);
 
+        if (ret == (size_t)-EWOULDBLOCK)
+            return SYSCALL_FAULT_(EWOULDBLOCK);
         if (ret == (size_t)-1)
             return SYSCALL_FAULT_(EIO);
         return ret;
@@ -411,20 +417,20 @@ syscall_(readv, int fd, struct iovec *iov, int iovcnt0) {
 }
 
 static inline void vfs_fill_stat(vfs_node_t node, struct stat *buf) {
-    buf->st_gid  = (int)node->group;
-    buf->st_uid  = (int)node->owner;
-    buf->st_ino  = node->inode;
-    buf->st_size = (long long int)node->size;
-    buf->st_mode = node->mode
-                   | (node->type == file_symlink  ? S_IFLNK
-                      : node->type == file_dir    ? S_IFDIR
-                      : node->type == file_block  ? S_IFBLK
-                      : node->type == file_socket ? S_IFSOCK
-                      : node->type == file_none   ? S_IFREG
-                      : node->type == file_stream ? S_IFCHR
-                      : node->type == file_ptmx   ? S_IFCHR
-                      : node->type == file_pts    ? S_IFCHR
-                                                  : S_IFREG);
+    buf->st_gid   = (int)node->group;
+    buf->st_uid   = (int)node->owner;
+    buf->st_ino   = node->inode;
+    buf->st_size  = (long long int)node->size;
+    buf->st_mode  = node->mode
+                    | (node->type == file_symlink  ? S_IFLNK
+                       : node->type == file_dir    ? S_IFDIR
+                       : node->type == file_block  ? S_IFBLK
+                       : node->type == file_socket ? S_IFSOCK
+                       : node->type == file_none   ? S_IFREG
+                       : node->type == file_stream ? S_IFCHR
+                       : node->type == file_ptmx   ? S_IFCHR
+                       : node->type == file_pts    ? S_IFCHR
+                                                   : S_IFREG);
     buf->st_nlink = 1;
     buf->st_dev   = (long)node->dev;
     buf->st_rdev  = (long)node->rdev;
@@ -798,18 +804,18 @@ syscall_(fstat, int fd, struct stat *buf) {
     buf->st_uid     = (int)node->owner;
     buf->st_size    = node->size == (uint64_t)-1 ? 0 : (long long int)node->size;
     buf->st_mode    = node->type
-                   | (node->type == file_symlink  ? S_IFLNK
-                      : node->type == file_dir    ? S_IFDIR
-                      : node->type == file_block  ? S_IFBLK
-                      : node->type == file_socket ? S_IFSOCK
-                      : node->type == file_none   ? S_IFREG
-                      : node->type == file_stream ? S_IFCHR
-                      : node->type == file_ptmx   ? S_IFCHR
-                      : node->type == file_pts    ? S_IFCHR
-                                                  : 0);
-    buf->st_nlink = 1;
-    buf->st_dev   = node->dev;
-    buf->st_rdev  = node->rdev;
+                      | (node->type == file_symlink  ? S_IFLNK
+                         : node->type == file_dir    ? S_IFDIR
+                         : node->type == file_block  ? S_IFBLK
+                         : node->type == file_socket ? S_IFSOCK
+                         : node->type == file_none   ? S_IFREG
+                         : node->type == file_stream ? S_IFCHR
+                         : node->type == file_ptmx   ? S_IFCHR
+                         : node->type == file_pts    ? S_IFCHR
+                                                     : 0);
+    buf->st_nlink   = 1;
+    buf->st_dev     = node->dev;
+    buf->st_rdev    = node->rdev;
     buf->st_ctim = buf->st_atim = buf->st_ctim = buf->st_mtim =
         (struct timespec){ .tv_sec  = node->createtime / 1000000000ULL,
                            .tv_nsec = node->createtime % 1000000000ULL };
@@ -1265,12 +1271,14 @@ syscall_(pipe2, int *pipefd, uint64_t flags) {
     vfs_node_t node_input = vfs_node_alloc(pipefs_root, buf);
     node_input->type      = file_pipe;
     node_input->fsid      = pipefs_id;
+    node_input->flags     = flags;
     pipefs_root->mode     = 0700;
 
     sprintf(buf, "pipe%d", pipefd_id++);
     vfs_node_t node_output = vfs_node_alloc(pipefs_root, buf);
     node_output->type      = file_pipe;
     node_output->fsid      = pipefs_id;
+    node_output->flags     = flags;
     pipefs_root->mode      = 0700;
 
     pipe_info_t *info = (pipe_info_t *)malloc(sizeof(pipe_info_t));

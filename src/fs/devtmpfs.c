@@ -122,7 +122,7 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node, void *data) {
 
     load_tty_device(node);
     load_blk_device(node);
-    load_drm_device(node);
+    // load_drm_device(node);
     fb_setup(node);
     evdev_setup(node);
 

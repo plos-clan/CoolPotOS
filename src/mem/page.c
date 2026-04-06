@@ -84,11 +84,11 @@ void switch_page_directory(page_directory_t *dir) {
 
 page_directory_t *switch_context_directory(page_directory_t *directory) {
     tcb_t thread = get_current_task();
-    if (thread == NULL)
+    if (thread == NULL || thread->process == NULL || thread->process->mm == NULL)
         return NULL;
     arch_close_interrupt();
-    page_directory_t *ret      = thread->process->directory;
-    thread->process->directory = directory;
+    page_directory_t *ret          = thread->process->mm->directory;
+    thread->process->mm->directory = directory;
     switch_page_directory(directory);
     arch_open_interrupt();
     return ret;

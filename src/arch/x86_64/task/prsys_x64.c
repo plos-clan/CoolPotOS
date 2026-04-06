@@ -25,18 +25,22 @@ process_fork(const struct syscall_regs *reg, const bool is_vfork, const uint64_t
     new_pcb->pgid   = current_pcb->pgid;
     new_pcb->sid    = current_pcb->sid;
 
-    new_pcb->directory =
-        is_vfork ? current_pcb->directory : clone_page_directory(current_pcb->directory, false);
-    if (!vma_manager_clone(&current_pcb->vma_manager, &new_pcb->vma_manager)) {
-        logkf("task: cannot clone process vma information.\n");
-        free(new_pcb->name);
-        free(new_pcb);
-        return -ENOMEM;
+    if (is_vfork) {
+        new_pcb->mm = current_pcb->mm;
+        mm_retain(new_pcb->mm);
+    } else {
+        new_pcb->mm = mm_clone(current_pcb->mm);
+        if (new_pcb->mm == NULL) {
+            logkf("task: cannot clone process mm information.\n");
+            free(new_pcb->name);
+            free(new_pcb);
+            return -ENOMEM;
+        }
     }
     tcb_t parent_task = current;
     tcb_t new_task    = malloc(STACK_SIZE);
     if (new_task == NULL) {
-        vma_manager_exit_cleanup(&new_pcb->vma_manager);
+        mm_release(new_pcb->mm);
         free(new_pcb->name);
         free(new_pcb);
         return SYSCALL_FAULT_(ENOMEM);
@@ -408,13 +412,45 @@ shebang_retry:;
     process->envp   = copy_envp(envp);
     process->envc   = envp_length(envp);
 
-    if (!process->vfork)
-        vma_manager_exit_cleanup(&process->vma_manager);
-    page_directory_t *old_page_dir = process->directory;
-    switch_context_directory(clone_page_directory(get_kernel_pagedir(), false));
+    page_directory_t *new_directory = clone_page_directory(get_kernel_pagedir(), false);
+    if (new_directory == NULL) {
+        free(norm_path);
+        for (size_t i = 0; i < shebang_argc; i++) {
+            if (shebang_argv[i] != NULL) {
+                free(shebang_argv[i]);
+            }
+        }
+        free(shebang_argv);
+        scheduler_enable();
+        arch_open_interrupt();
+        free_envp(old_envp);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
+
+    mm_t *new_mm = mm_create(new_directory);
+    if (new_mm == NULL) {
+        free_page_directory(new_directory);
+        free(norm_path);
+        for (size_t i = 0; i < shebang_argc; i++) {
+            if (shebang_argv[i] != NULL) {
+                free(shebang_argv[i]);
+            }
+        }
+        free(shebang_argv);
+        scheduler_enable();
+        arch_open_interrupt();
+        free_envp(old_envp);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
+
+    mm_t *old_mm = process->mm;
+    process->mm  = new_mm;
+    switch_page_directory(new_mm->directory);
 
     if (old_cmdline)
         free(old_cmdline);
+
+    mm_release(old_mm);
 
     if (process->vfork) {
         ipc_message_t message = calloc(1, sizeof(struct ipc_message));
@@ -422,11 +458,7 @@ shebang_retry:;
         message->pid          = process->pid;
         ipc_send(process->parent->ipc_queue, message);
     }
-
-    if (!process->vfork)
-        free_page_directory(old_page_dir);
-    process->directory = get_current_directory();
-    process->vfork     = false;
+    process->vfork = false;
 
     vfs_close(process->exec);
     process->exec = node;

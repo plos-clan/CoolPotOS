@@ -59,9 +59,9 @@ void arch_context_init(tcb_t thread, struct arch_context_ *context) {
 }
 
 USED void __switch_to(tcb_t current, tcb_t next) {
-    const page_directory_t *dir = current->process->directory;
-    if (dir != next->process->directory) {
-        switch_page_directory(next->process->directory);
+    const page_directory_t *dir = current->process->mm->directory;
+    if (dir != next->process->mm->directory) {
+        switch_page_directory(next->process->mm->directory);
     }
 
     if (current->context.ctx->sstatus & 1UL << 63) {
@@ -108,11 +108,11 @@ static uint64_t build_user_stack(
     char **argv = restore_argv(task->process->cmdline, task->process->cl_length, &argc);
     char **envp = task->process->envp;
 
-    uint64_t tmp_stack = sp;
-    tmp_stack          = push_slice(tmp_stack, (uint8_t *)task->name, strlen(task->name) + 1);
+    uint64_t tmp_stack  = sp;
+    tmp_stack           = push_slice(tmp_stack, (uint8_t *)task->name, strlen(task->name) + 1);
     uint64_t execfn_ptr = tmp_stack;
 
-    uint64_t *envps = malloc(1024);
+    uint64_t *envps  = malloc(1024);
     uint64_t *argvps = malloc(1024);
     memset(envps, 0, 1024);
     memset(argvps, 0, 1024);
@@ -129,9 +129,9 @@ static uint64_t build_user_stack(
         argvps[argv_i] = tmp_stack;
     }
 
-    size_t total_length = 2 * sizeof(uint64_t) + 7 * 2 * sizeof(uint64_t)
-                          + env_i * sizeof(uint64_t) + sizeof(uint64_t)
-                          + argv_i * sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint64_t);
+    size_t total_length = 2 * sizeof(uint64_t) + 7 * 2 * sizeof(uint64_t) + env_i * sizeof(uint64_t)
+                          + sizeof(uint64_t) + argv_i * sizeof(uint64_t) + sizeof(uint64_t)
+                          + sizeof(uint64_t);
     tmp_stack -= (tmp_stack - total_length) % 0x10;
 
     uint8_t *tmp = malloc(2 * sizeof(uint64_t));
@@ -139,7 +139,7 @@ static uint64_t build_user_stack(
     tmp_stack = push_slice(tmp_stack, tmp, 2 * sizeof(uint64_t));
 
     page_map_range_to_random(
-        task->process->directory,
+        task->process->mm->directory,
         EHDR_START_ADDR,
         task->process->exec->size,
         ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER
@@ -148,7 +148,7 @@ static uint64_t build_user_stack(
 
     if (link_data != NULL) {
         page_map_range_to_random(
-            task->process->directory,
+            task->process->mm->directory,
             INTERPRETER_EHDR_ADDR,
             link_size,
             ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER
@@ -263,7 +263,7 @@ _Noreturn void arch_switch_to_user_mode() {
     }
 
     uint64_t load_start = 0;
-    void *entry         = load_executor_elf(data, process->directory, 0, &load_start, process);
+    void *entry         = load_executor_elf(data, process->mm->directory, 0, &load_start, process);
     if (entry == NULL) {
         logkf("cannot load process exec file.\n");
         free(data);
@@ -271,14 +271,14 @@ _Noreturn void arch_switch_to_user_mode() {
     }
 
     current->context.user_stack = page_alloc_random(
-        process->directory,
+        process->mm->directory,
         BIG_USER_STACK + PAGE_SIZE,
         ARCH_PT_FLAG_VALID | ARCH_PT_FLAG_WRITE | ARCH_PT_FLAG_READ | ARCH_PT_FLAG_USER
     );
     current->context.user_stack_top = current->context.user_stack + BIG_USER_STACK;
     uint64_t user_sp                = current->context.user_stack_top;
 
-    vma_t *stack_vma = vma_alloc();
+    vma_t *stack_vma    = vma_alloc();
     stack_vma->vm_start = current->context.user_stack;
     stack_vma->vm_end   = current->context.user_stack_top;
     stack_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
@@ -286,12 +286,10 @@ _Noreturn void arch_switch_to_user_mode() {
     stack_vma->vm_name = strdup("[stack]");
 
     vma_t *region = vma_find_intersection(
-        &process->vma_manager,
-        current->context.user_stack,
-        current->context.user_stack_top
+        &process->mm->vma_manager, current->context.user_stack, current->context.user_stack_top
     );
     if (!region) {
-        vma_insert(&process->vma_manager, stack_vma);
+        vma_insert(&process->mm->vma_manager, stack_vma);
     }
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
@@ -319,16 +317,18 @@ _Noreturn void arch_switch_to_user_mode() {
 
         linker_main = (void *)((uintptr_t)linker_main + linker_start);
 
-        vma_t *ld_so_vma = vma_alloc();
+        vma_t *ld_so_vma    = vma_alloc();
         ld_so_vma->vm_start = linker_start;
         ld_so_vma->vm_end   = linker_start + link_size;
         ld_so_vma->vm_flags |= VMA_READ | VMA_WRITE | VMA_EXEC;
         ld_so_vma->vm_type = VMA_TYPE_ANON;
         ld_so_vma->vm_name = strdup("[libc]");
 
-        region = vma_find_intersection(&process->vma_manager, linker_start, linker_start + link_size);
+        region = vma_find_intersection(
+            &process->mm->vma_manager, linker_start, linker_start + link_size
+        );
         if (!region) {
-            vma_insert(&process->vma_manager, ld_so_vma);
+            vma_insert(&process->mm->vma_manager, ld_so_vma);
         }
 
         user_sp = build_user_stack(
@@ -363,7 +363,9 @@ _Noreturn void arch_switch_to_user_mode() {
 
     arch_close_interrupt();
     __asm__ volatile("mv sp, %0\n\t"
-                     "j ret_from_trap_handler\n\t" : : "r"(context->ctx));
+                     "j ret_from_trap_handler\n\t"
+                     :
+                     : "r"(context->ctx));
 
 err:
     arch_open_interrupt();
@@ -378,5 +380,5 @@ err:
 }
 
 bool arch_check_user_mode(const struct pt_regs *regs) {
-    return true; //TODO
+    return true; // TODO
 }

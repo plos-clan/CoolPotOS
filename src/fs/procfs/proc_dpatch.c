@@ -39,7 +39,7 @@ static void create_procfs_handle(
 static void
 create_procfs_node(char *name, const read_entry_t read_entry, const stat_entry_t stat_entry) {
     create_procfs_handle(name, read_entry, stat_entry);
-    const vfs_node_t node        = vfs_node_alloc(procfs_root, name);
+    const vfs_node_t node  = vfs_node_alloc(procfs_root, name);
     node->type             = file_none;
     node->mode             = 0700;
     proc_handle_t *handle0 = malloc(sizeof(proc_handle_t));
@@ -51,6 +51,7 @@ create_procfs_node(char *name, const read_entry_t read_entry, const stat_entry_t
 void load_procfs_root() {
     create_procfs_node("cmdline", proc_cmdline_read, proc_cmdline_stat);
     create_procfs_node("mounts", proc_mounts_read, proc_mounts_stat);
+    create_procfs_node("fb", proc_fb_read, proc_fb_stat);
     create_procfs_node("interrupts", proc_interrupts_read, proc_interrupts_stat);
     create_procfs_node("filesystems", proc_filesystems_read, proc_filesystems_stat);
     create_procfs_node("kmsg", proc_kmsg_read, proc_kmsg_stat);

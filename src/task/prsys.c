@@ -91,13 +91,13 @@ static bool process_uid_matches(pcb_t process, int uid) {
 }
 
 enum {
-    MEMBARRIER_CMD_QUERY                              = 0,
-    MEMBARRIER_CMD_GLOBAL                             = 1 << 0,
-    MEMBARRIER_CMD_GLOBAL_EXPEDITED                   = 1 << 1,
-    MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED          = 1 << 2,
-    MEMBARRIER_CMD_PRIVATE_EXPEDITED                  = 1 << 3,
-    MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED         = 1 << 4,
-    MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE        = 1 << 5,
+    MEMBARRIER_CMD_QUERY                                = 0,
+    MEMBARRIER_CMD_GLOBAL                               = 1 << 0,
+    MEMBARRIER_CMD_GLOBAL_EXPEDITED                     = 1 << 1,
+    MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED            = 1 << 2,
+    MEMBARRIER_CMD_PRIVATE_EXPEDITED                    = 1 << 3,
+    MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED           = 1 << 4,
+    MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE          = 1 << 5,
     MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE = 1 << 6,
 };
 
@@ -139,7 +139,8 @@ syscall_(membarrier, const int cmd, const int flags, const int cpu_id) {
     case MEMBARRIER_CMD_QUERY:
         return MEMBARRIER_CMD_GLOBAL | MEMBARRIER_CMD_GLOBAL_EXPEDITED
                | MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED | MEMBARRIER_CMD_PRIVATE_EXPEDITED
-               | MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED | MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE
+               | MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED
+               | MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE
                | MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE;
     case MEMBARRIER_CMD_GLOBAL:
     case MEMBARRIER_CMD_GLOBAL_EXPEDITED:
@@ -192,10 +193,10 @@ syscall_(setuid, const int uid) {
 }
 
 syscall_(setgid, const int gid) {
-    pcb_t process  = get_current_task()->process;
-    process->egid  = gid;
-    process->rgid  = gid;
-    process->sgid  = gid;
+    pcb_t process = get_current_task()->process;
+    process->egid = gid;
+    process->rgid = gid;
+    process->sgid = gid;
     return EOK;
 }
 
@@ -237,9 +238,9 @@ syscall_(setresgid, const int rgid, const int egid, const int sgid) {
 }
 
 syscall_(setpriority, const int which, const int who, const int niceval) {
-    const pcb_t current = get_current_task()->process;
+    const pcb_t current    = get_current_task()->process;
     const int clamped_nice = clamp_nice_value(niceval);
-    bool matched = false;
+    bool matched           = false;
 
     switch (which) {
     case PRIO_PROCESS: {
@@ -255,13 +256,13 @@ syscall_(setpriority, const int which, const int who, const int niceval) {
         }
 
         const tcb_t thread = find_task_by_id(who);
-        matched = setpriority_apply_thread(thread, clamped_nice);
+        matched            = setpriority_apply_thread(thread, clamped_nice);
         break;
     }
 
     case PRIO_PGRP: {
         const pid_t pgid = who == 0 ? current->pgid : who;
-        pcb_t process = NULL;
+        pcb_t process    = NULL;
         cow_foreach(get_process_list(), process) {
             if (process == NULL || process->status == T_DEATH || process->status == T_OUT) {
                 continue;
@@ -312,7 +313,8 @@ syscall_(sched_getaffinity, const pid_t pid, const size_t cpusetsize, unsigned l
         return SYSCALL_FAULT_(ESRCH);
     }
 
-    const uint64_t affinity = task->affinity_mask != 0 ? task->affinity_mask : default_affinity_mask();
+    const uint64_t affinity =
+        task->affinity_mask != 0 ? task->affinity_mask : default_affinity_mask();
     memset(mask, 0, cpusetsize);
 
     const size_t copy_size = cpusetsize < sizeof(affinity) ? cpusetsize : sizeof(affinity);
@@ -708,8 +710,8 @@ syscall_(get_rlimit, const uint64_t resource, struct rlimit *lim) {
     switch (resource) {
     case RLIMIT_STACK:
         *lim = (struct rlimit){
-            .rlim_max = STACK_SIZE,
-            .rlim_cur = STACK_SIZE,
+            .rlim_max = BIG_USER_STACK,
+            .rlim_cur = BIG_USER_STACK,
         };
         break;
     case RLIMIT_NPROC:
@@ -726,8 +728,8 @@ syscall_(get_rlimit, const uint64_t resource, struct rlimit *lim) {
         break;
     case RLIMIT_AS:
         *lim = (struct rlimit){
-            .rlim_cur = process->vma_manager.vm_used,
-            .rlim_max = process->vma_manager.vm_total,
+            .rlim_cur = process->mm->vma_manager.vm_used,
+            .rlim_max = process->mm->vma_manager.vm_total,
         };
         break;
     case RLIMIT_CORE:

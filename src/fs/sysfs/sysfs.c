@@ -1,5 +1,6 @@
 #include "fs/sysfs.h"
 #include "driver/blk_device.h"
+#include "driver/fb.h"
 #include "driver/drm/drm.h"
 #include "errno.h"
 #include "krlibc.h"
@@ -52,8 +53,9 @@ static errno_t sysfs_mount(const char *src, vfs_node_t node, void *data) {
     sysfs_refresh_devices_system();
     sysfs_load_devices_pci();
     sysfs_load_module(sysfs_module);
-    drm_sysfs_populate();
+    // drm_sysfs_populate();
     blk_sysfs_populate();
+    fb_sysfs_populate();
 
     return EOK;
 }
@@ -326,7 +328,7 @@ vfs_node_t sysfs_create_file(vfs_node_t parent, const char *name, const char *co
         return NULL;
     }
 
-    char *path = sysfs_join_path(parent, name);
+    char *path      = sysfs_join_path(parent, name);
     vfs_node_t node = path ? vfs_open(path) : NULL;
     free(path);
 
@@ -342,11 +344,11 @@ vfs_node_t sysfs_create_file(vfs_node_t parent, const char *name, const char *co
         if (handle->data != NULL) {
             free(handle->data);
         }
-        size_t len             = strlen(content);
-        handle->data           = strdup(content);
-        handle->size           = len;
-        handle->capacity       = len + 1;
-        node->size             = len;
+        size_t len       = strlen(content);
+        handle->data     = strdup(content);
+        handle->size     = len;
+        handle->capacity = len + 1;
+        node->size       = len;
     } else {
         node->size = 0;
     }
@@ -479,9 +481,9 @@ vfs_node_t sysfs_regist_dev(
     char dev_nr_name[32];
     sprintf(dev_nr_name, "%d:%d", major, minor);
 
-    vfs_node_t dev_root = has_real_device_path
-                              ? sysfs_child_append_symlink(dev_parent, dev_nr_name, real_device_path)
-                              : sysfs_child_append(dev_parent, dev_nr_name, SYSFS_DIR);
+    vfs_node_t dev_root =
+        has_real_device_path ? sysfs_child_append_symlink(dev_parent, dev_nr_name, real_device_path)
+                             : sysfs_child_append(dev_parent, dev_nr_name, SYSFS_DIR);
     if (dev_root == NULL) {
         return NULL;
     }

@@ -9,6 +9,24 @@
 
 spin_t mm_op_lock = SPIN_INIT;
 
+#if defined(__x86_64__) || defined(__amd64__)
+static uint64_t mm_x86_64_pt_flags_from_prot(const uint64_t prot) {
+    uint64_t pt_flags = PTE_USER;
+
+    if (prot != PROT_NONE) {
+        pt_flags |= PTE_PRESENT;
+    }
+    if (prot & PROT_WRITE) {
+        pt_flags |= PTE_WRITEABLE;
+    }
+    if (!(prot & PROT_EXEC)) {
+        pt_flags |= PTE_NO_EXECUTE;
+    }
+
+    return pt_flags;
+}
+#endif
+
 static bool
 validate_user_range(const uintptr_t addr, const size_t size, const unsigned long required_flags) {
     if (check_user_overflow(addr, size)) {
@@ -20,7 +38,7 @@ validate_user_range(const uintptr_t addr, const size_t size, const unsigned long
         return false;
     }
 
-    vma_manager_t *mgr  = &get_current_task()->process->vma_manager;
+    vma_manager_t *mgr  = &get_current_task()->process->mm->vma_manager;
     const uintptr_t end = addr + size;
     uintptr_t cursor    = addr;
 
@@ -62,7 +80,7 @@ bool check_unmapped(const uint64_t addr, const uint64_t len) {
     }
 
     const uint64_t end = addr + len;
-    vma_manager_t *mgr = &get_current_task()->process->vma_manager;
+    vma_manager_t *mgr = &get_current_task()->process->mm->vma_manager;
     uint64_t cursor    = addr;
 
     spin_lock(mgr->lock);
@@ -129,7 +147,7 @@ syscall_(
     }
     pcb_t process = get_current_task()->process;
 
-    vma_manager_t *mgr  = &process->vma_manager;
+    vma_manager_t *mgr  = &process->mm->vma_manager;
     uint64_t start_addr = 0;
     if (flags & MAP_FIXED) {
         if (!addr)
@@ -217,14 +235,7 @@ syscall_(
 
     uint64_t pt_flags =
 #if defined(__x86_64__) || defined(__amd64__)
-        PTE_USER;
-
-    if (prot & PROT_READ)
-        pt_flags |= PTE_PRESENT;
-    if (prot & PROT_WRITE)
-        pt_flags |= PTE_WRITEABLE;
-    if (!(prot & PROT_EXEC))
-        pt_flags |= PTE_NO_EXECUTE;
+        mm_x86_64_pt_flags_from_prot(prot);
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_USER;
 
@@ -258,7 +269,7 @@ syscall_(munmap, uint64_t addr, size_t size) {
 
     tcb_t current      = get_current_task();
     pcb_t process      = current->process;
-    vma_manager_t *mgr = &process->vma_manager;
+    vma_manager_t *mgr = &process->mm->vma_manager;
     vma_t *vma         = mgr->vma_list;
     vma_t *next        = NULL;
 
@@ -316,7 +327,7 @@ syscall_(
     old_size = (old_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
     new_size = (new_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1));
 
-    vma_manager_t *mgr = &get_current_task()->process->vma_manager;
+    vma_manager_t *mgr = &get_current_task()->process->mm->vma_manager;
 
     vma_t *vma = vma_find(mgr, (unsigned long)old_addr);
     if (!vma || vma->vm_start != (unsigned long)old_addr) {
@@ -435,14 +446,7 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
 
     uint64_t pt_flags =
 #if defined(__x86_64__) || defined(__amd64__)
-        PTE_USER;
-
-    if (prot & PROT_READ)
-        pt_flags |= PTE_PRESENT;
-    if (prot & PROT_WRITE)
-        pt_flags |= PTE_WRITEABLE;
-    if (!(prot & PROT_EXEC))
-        pt_flags |= PTE_NO_EXECUTE;
+        mm_x86_64_pt_flags_from_prot(prot);
 #elif defined(__riscv) || defined(__riscv__) || defined(__RISCV_ARCH_RISCV64)
         ARCH_PT_FLAG_USER;
 
@@ -459,13 +463,76 @@ syscall_(mprotect, uint64_t addr, size_t length, uint64_t prot) {
     if (prot != PROT_NONE) {
         for (uint64_t a = addr; a < addr + length; a += PAGE_SIZE) {
             if (arch_virt_to_phys(a) == 0) {
-                page_map_to(get_current_directory(), a, alloc_frames(1), pt_flags);
-                memset((void *)a, 0, PAGE_SIZE);
+                tcb_t current = get_current_task();
+                pcb_t process = current ? current->process : NULL;
+                vma_t *vma    = process ? vma_find(&process->mm->vma_manager, a) : NULL;
+
+                if (vma && vma->vm_type == VMA_TYPE_FILE && vma->vm_fd >= 0) {
+                    fd_t *fd = get_fd(process->fdts, vma->vm_fd);
+                    if (fd == NULL) {
+                        return SYSCALL_FAULT_(EBADF);
+                    }
+
+                    uint64_t page_base   = a & ~(PAGE_SIZE - 1);
+                    uint64_t file_offset = (uint64_t)vma->vm_offset + (page_base - vma->vm_start);
+                    void *mapped =
+                        vfs_map(fd->node, page_base, PAGE_SIZE, prot, MAP_FIXED, file_offset);
+                    if ((intptr_t)mapped < 0) {
+                        return (intptr_t)mapped;
+                    }
+                } else {
+                    page_map_to(get_current_directory(), a, alloc_frames(1), pt_flags);
+                    memset((void *)a, 0, PAGE_SIZE);
+                }
             }
         }
     }
 
     map_change_attribute_range(get_current_directory(), addr, length, pt_flags);
+
+    pcb_t process = get_current_task() ? get_current_task()->process : NULL;
+    if (process != NULL) {
+        vma_manager_t *mgr = &process->mm->vma_manager;
+        spin_lock(mgr->lock);
+
+        vma_t *vma = mgr->vma_list;
+        while (vma) {
+            vma_t *next = vma->vm_next;
+
+            if (!(vma->vm_end <= addr || vma->vm_start >= addr + length)) {
+                if (vma->vm_start < addr && vma->vm_end > addr) {
+                    if (vma_split(vma, addr) == 0) {
+                        next = vma->vm_next;
+                    }
+                }
+
+                if (next && next->vm_start < addr + length && next->vm_end > addr + length) {
+                    vma_split(next, addr + length);
+                } else if (
+                    vma->vm_start < addr + length && vma->vm_end > addr + length
+                    && vma->vm_start >= addr
+                ) {
+                    vma_split(vma, addr + length);
+                }
+            }
+
+            vma = next;
+        }
+
+        for (vma_t *cur = mgr->vma_list; cur; cur = cur->vm_next) {
+            if (cur->vm_start >= addr && cur->vm_end <= addr + length) {
+                cur->vm_flags &= ~(VMA_READ | VMA_WRITE | VMA_EXEC);
+                if (prot & PROT_READ)
+                    cur->vm_flags |= VMA_READ;
+                if (prot & PROT_WRITE)
+                    cur->vm_flags |= VMA_WRITE;
+                if (prot & PROT_EXEC)
+                    cur->vm_flags |= VMA_EXEC;
+            }
+        }
+
+        spin_unlock(mgr->lock);
+    }
 
     return EOK;
 }

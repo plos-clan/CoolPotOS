@@ -20,6 +20,18 @@ static void pipefs_update_nodes(pipe_info_t *pipe) {
     }
 }
 
+static void pipefs_enter(pipe_specific_t *spec) {
+    if (spec == NULL || spec->info == NULL) {
+        return;
+    }
+
+    pipe_info_t *pipe = spec->info;
+    spin_lock(pipe->lock);
+    spec->active++;
+    pipe->active++;
+    spin_unlock(pipe->lock);
+}
+
 static void pipefs_release_node(vfs_node_t node) {
     if (node == NULL) {
         return;
@@ -91,10 +103,7 @@ size_t pipefs_read(void *file, void *addr, size_t offset, size_t size) {
     if (!pipe)
         return (size_t)-1;
 
-    spin_lock(pipe->lock);
-    spec->active++;
-    pipe->active++;
-    spin_unlock(pipe->lock);
+    pipefs_enter(spec);
 
     size_t ret = (size_t)-1;
     for (;;) {
@@ -122,8 +131,23 @@ size_t pipefs_read(void *file, void *addr, size_t offset, size_t size) {
             goto out;
         }
 
+        if (spec->node && (spec->node->flags & O_NONBLOCK)) {
+            spin_unlock(pipe->lock);
+            ret = -EWOULDBLOCK;
+            goto out;
+        }
+
         spin_unlock(pipe->lock);
-        scheduler_yield();
+
+        vfs_poll_wait_t wait;
+        vfs_poll_wait_init(&wait, get_current_task(), EPOLLIN | EPOLLHUP | EPOLLERR);
+        vfs_poll_wait_arm(spec->node, &wait);
+        int reason = vfs_poll_wait_sleep(spec->node, &wait, -1, "pipe_read");
+        vfs_poll_wait_disarm(&wait);
+        if (reason != EOK) {
+            ret = -EINTR;
+            goto out;
+        }
     }
 
 out:
@@ -131,7 +155,9 @@ out:
     return ret;
 }
 
-static size_t pipe_write_inner(pipe_specific_t *spec, const void *addr, size_t size,bool atomic, bool allow_wait) {
+static size_t pipe_write_inner(
+    pipe_specific_t *spec, const void *addr, size_t size, bool atomic, bool allow_wait
+) {
     pipe_info_t *pipe = spec->info;
 
     while (true) {
@@ -147,6 +173,8 @@ static size_t pipe_write_inner(pipe_specific_t *spec, const void *addr, size_t s
             size_t to_write = atomic ? size : MIN(size, available);
             memcpy(&pipe->buf[pipe->ptr], addr, to_write);
             pipe->ptr += to_write;
+            pipe->assigned = (int)pipe->ptr;
+            pipefs_update_nodes(pipe);
             spin_unlock(pipe->lock);
             if (pipe->read_node)
                 vfs_poll_notify(pipe->read_node, EPOLLIN);
@@ -156,9 +184,7 @@ static size_t pipe_write_inner(pipe_specific_t *spec, const void *addr, size_t s
         spin_unlock(pipe->lock);
 
         if (!allow_wait)
-            return 0;
-        // if (fd_get_flags(fd) & O_NONBLOCK)
-        //     return -EWOULDBLOCK;
+            return -EWOULDBLOCK;
 
         vfs_poll_wait_t wait;
         vfs_poll_wait_init(&wait, get_current_task(), EPOLLOUT | EPOLLHUP | EPOLLERR);
@@ -172,23 +198,34 @@ static size_t pipe_write_inner(pipe_specific_t *spec, const void *addr, size_t s
 
 size_t pipefs_write(void *file, const void *addr, size_t offset, size_t size) {
     (void)offset;
+    pipe_specific_t *spec = (pipe_specific_t *)file;
+    if (!spec || spec->info == NULL || !spec->write) {
+        return (size_t)-1;
+    }
+
     const char *data = addr;
-    size_t written = 0;
+    size_t written   = 0;
     // POSIX only requires atomicity for short pipe writes.
-    const bool atomic = size <= PIPE_ATOMIC_MAX;
+    const bool atomic   = size <= PIPE_ATOMIC_MAX;
+    const bool nonblock = spec->node && (spec->node->flags & O_NONBLOCK);
+
+    pipefs_enter(spec);
 
     while (written < size) {
-        ssize_t ret = pipe_write_inner(file, data + written, size - written,
-                                       atomic, written == 0);
+        ssize_t ret = pipe_write_inner(spec, data + written, size - written, atomic, !nonblock);
         if (ret < 0)
-            return written ? (ssize_t)written : ret;
+            break;
         if (ret == 0)
             break;
 
         written += ret;
     }
 
-    return written;
+    pipefs_leave(spec);
+    if (written != 0) {
+        return written;
+    }
+    return (size_t)-EWOULDBLOCK;
 }
 
 int pipefs_ioctl(void *file, ssize_t cmd, ssize_t arg) {
@@ -217,9 +254,9 @@ bool pipefs_close(void *current) {
         return true;
     }
 
-    bool free_spec = false;
-    bool free_pipe = false;
-    bool notify_read_hup = false;
+    bool free_spec        = false;
+    bool free_pipe        = false;
+    bool notify_read_hup  = false;
     bool notify_write_hup = false;
     vfs_node_t read_node  = NULL;
     vfs_node_t write_node = NULL;
@@ -233,7 +270,7 @@ bool pipefs_close(void *current) {
             pipe->write_fds--;
         if (pipe->write_fds == 0) {
             pipe->write_node = NULL;
-            notify_read_hup = true;
+            notify_read_hup  = true;
             if (spec->active == 0) {
                 free_spec = true;
             } else {
@@ -244,7 +281,7 @@ bool pipefs_close(void *current) {
         if (pipe->read_fds > 0)
             pipe->read_fds--;
         if (pipe->read_fds == 0) {
-            pipe->read_node = NULL;
+            pipe->read_node  = NULL;
             notify_write_hup = true;
             if (spec->active == 0) {
                 free_spec = true;

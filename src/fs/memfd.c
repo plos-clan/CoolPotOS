@@ -51,7 +51,7 @@ memfd_map(void *file, void *addr, size_t offset, size_t size, size_t prot, size_
     }
     const struct memfd_ctx *ctx = file;
     page_map_range(
-        get_current_task()->process->directory,
+        get_current_task()->process->mm->directory,
         (uint64_t)addr,
         virt_to_phys((void *)ctx->data + offset),
         size,
@@ -111,7 +111,7 @@ syscall_(memfd_create, const char *name, const unsigned int flags) {
     ctx->len      = PAGE_SIZE;
 
     const uint64_t phys_addr = alloc_frames(1);
-    ctx->data          = phys_to_virt(phys_addr);
+    ctx->data                = phys_to_virt(phys_addr);
     page_map_range(
         get_kernel_pagedir(), (uint64_t)ctx->data, phys_addr, ctx->len, KERNEL_PTE_FLAGS
     );

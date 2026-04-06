@@ -48,6 +48,8 @@ size_t proc_mounts_stat(proc_handle_t *handle);
 size_t proc_mounts_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 size_t proc_interrupts_stat(proc_handle_t *handle);
 size_t proc_interrupts_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
+size_t proc_fb_stat(proc_handle_t *handle);
+size_t proc_fb_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 size_t proc_kmsg_stat(proc_handle_t *handle);
 size_t proc_kmsg_read(proc_handle_t *handle, void *addr, size_t offset, size_t size);
 size_t proc_pcmdline_stat(proc_handle_t *handle);

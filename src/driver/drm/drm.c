@@ -883,8 +883,17 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         case DRM_CAP_DUMB_PREFER_SHADOW:
             cap->value = 1;
             return 0;
+        case DRM_CAP_PRIME:
+            cap->value = 0;
+            return 0;
+        case DRM_CAP_ASYNC_PAGE_FLIP:
+            cap->value = 0;
+            return 0;
+        case DRM_CAP_PAGE_FLIP_TARGET:
+            cap->value = 0;
+            return 0;
         case DRM_CAP_ATOMIC_ASYNC_PAGE_FLIP:
-            cap->value = 1;
+            cap->value = 0;
             return 0;
         default:
             logkf("drm: Unsupported capability %d\n", cap->capability);
@@ -942,8 +951,8 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         uint32_t width, height, bpp;
         dev->op->get_display_info(dev, &width, &height, &bpp);
 
-        res->min_width  = width;
-        res->min_height = height;
+        res->min_width  = 0;
+        res->min_height = 0;
         res->max_width  = width;
         res->max_height = height;
         // Fill encoder IDs if pointer provided
@@ -1005,7 +1014,7 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         drm_fill_crtc_modeinfo(dev, crtc_obj, &mode);
 
         crtc->gamma_size = 0;
-        crtc->mode_valid = 1;
+        crtc->mode_valid = crtc_obj->mode_valid ? 1 : 0;
         memcpy(&crtc->mode, &mode, sizeof(struct drm_mode_modeinfo));
         crtc->fb_id = crtc_obj->fb_id;
         crtc->x     = crtc_obj->x;
@@ -1137,6 +1146,30 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         drm_framebuffer_free(&dev->resource_mgr, fb->id);
         return 0;
     }
+    case DRM_IOCTL_MODE_GETFB2: {
+        struct drm_mode_fb_cmd2 *fb_cmd = (struct drm_mode_fb_cmd2 *)arg;
+
+        drm_framebuffer_t *fb = drm_framebuffer_get(&dev->resource_mgr, fb_cmd->fb_id);
+        if (!fb) {
+            return -ENOENT;
+        }
+
+        memset(fb_cmd->handles, 0, sizeof(fb_cmd->handles));
+        memset(fb_cmd->pitches, 0, sizeof(fb_cmd->pitches));
+        memset(fb_cmd->offsets, 0, sizeof(fb_cmd->offsets));
+        memset(fb_cmd->modifier, 0, sizeof(fb_cmd->modifier));
+
+        fb_cmd->width        = fb->width;
+        fb_cmd->height       = fb->height;
+        fb_cmd->pixel_format = fb->format ? fb->format : DRM_FORMAT_XRGB8888;
+        fb_cmd->flags        = fb->modifier ? DRM_MODE_FB_MODIFIERS : 0;
+        fb_cmd->handles[0]   = fb->handle;
+        fb_cmd->pitches[0]   = fb->pitch;
+        fb_cmd->modifier[0]  = fb->modifier;
+
+        drm_framebuffer_free(&dev->resource_mgr, fb->id);
+        return 0;
+    }
     case DRM_IOCTL_MODE_ADDFB: {
         struct drm_mode_fb_cmd *fb_cmd = (struct drm_mode_fb_cmd *)arg;
 
@@ -1148,7 +1181,11 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         return dev->op->add_fb2(dev, fb_cmd);
     }
     case DRM_IOCTL_MODE_RMFB: {
-        return 0;
+        unsigned int *fb_id = (unsigned int *)arg;
+        if (!fb_id || *fb_id == 0) {
+            return -EINVAL;
+        }
+        return drm_framebuffer_close(dev, *fb_id);
     }
 
     case DRM_IOCTL_MODE_CLOSEFB: {
@@ -1175,6 +1212,24 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
         crtc->y            = crtc_cmd->y;
         if (crtc_cmd->mode_valid) {
             memcpy(&crtc->mode, &crtc_cmd->mode, sizeof(struct drm_mode_modeinfo));
+        }
+
+        if (crtc_cmd->count_connectors > 0 && crtc_cmd->set_connectors_ptr) {
+            uint32_t *connector_ids = (uint32_t *)(uintptr_t)crtc_cmd->set_connectors_ptr;
+            for (uint32_t i = 0; i < DRM_MAX_CONNECTORS_PER_DEVICE; i++) {
+                drm_connector_t *connector = dev->resource_mgr.connectors[i];
+                if (!connector) {
+                    continue;
+                }
+
+                connector->crtc_id = 0;
+                for (uint32_t j = 0; j < crtc_cmd->count_connectors; j++) {
+                    if (connector_ids[j] == connector->id) {
+                        connector->crtc_id = crtc->id;
+                        break;
+                    }
+                }
+            }
         }
 
         // Call driver to set CRTC
@@ -1937,6 +1992,14 @@ size_t drm_ioctl(void *data, size_t cmd, size_t arg) {
 
     case DRM_IOCTL_SET_VERSION: {
         return 0;
+    }
+
+    case DRM_IOCTL_GEM_CLOSE: {
+        struct drm_gem_close *gem_close = (struct drm_gem_close *)arg;
+        if (!gem_close || gem_close->handle == 0 || !dev->op->destroy_dumb) {
+            return -EINVAL;
+        }
+        return dev->op->destroy_dumb(dev, gem_close->handle);
     }
 
     case DRM_IOCTL_GET_MAGIC: {

@@ -12,9 +12,9 @@ static size_t get_task_commit(const pcb_t task) {
 }
 
 static char *proc_gen_stat_file(const pcb_t task, size_t *content_len) {
-    char *buffer  = malloc(PAGE_SIZE * 4UL);
-    const size_t v_size = task->vma_manager.vm_used + get_task_commit(task);
-    const int len = sprintf(
+    char *buffer        = malloc(PAGE_SIZE * 4UL);
+    const size_t v_size = task->mm->vma_manager.vm_used + get_task_commit(task);
+    const int len       = sprintf(
         buffer,
         "%d (%s) %c %d %d %d %d %d %u %d %d %d %d %lu %lu %d %d %d %d "
         "%ld %d %d %lu %lu %d %d %d %d %d %d %d %d %d %d %d %d "
@@ -24,7 +24,7 @@ static char *proc_gen_stat_file(const pcb_t task, size_t *content_len) {
         task->status == T_RUNNING  ? 'R'
         : task->status == T_ZOMBIE ? 'Z'
         : task->status == T_FUTEX  ? 'S'
-                                   : 'T',              // state
+                                   : 'T',             // state
         task->parent->pid,                            // ppid
         0,                                            // pgrp
         task->uid,                                    // session
@@ -45,7 +45,7 @@ static char *proc_gen_stat_file(const pcb_t task, size_t *content_len) {
         0,                                            // itrealvalue
         0,                                            // starttime
         v_size,                                       // vsize
-        task->vma_manager.vm_used,                    // rss
+        task->mm->vma_manager.vm_used,                // rss
         0,                                            // rsslim
         0,                                            // startcode
         0,                                            // endcode

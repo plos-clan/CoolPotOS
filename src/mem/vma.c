@@ -281,21 +281,7 @@ bool vma_manager_clone(vma_manager_t *src_mgr, vma_manager_t *dst_mgr) {
         new_vma->shm_id    = src_vma->shm_id;
 
         // 链表指针在 vma_alloc 中初始化为 NULL，在 vma_insert 中设置
-
-        // 3.3. 深拷贝 vm_name
-        if (src_vma->vm_name) {
-            size_t name_len  = strlen(src_vma->vm_name) + 1;
-            new_vma->vm_name = (char *)malloc(name_len);
-            if (!new_vma->vm_name) {
-                // 如果名称分配失败，清理并退出
-                vma_free(new_vma);
-                vma_manager_exit_cleanup(dst_mgr);
-                return false;
-            }
-            memcpy(new_vma->vm_name, src_vma->vm_name, name_len);
-        } else {
-            new_vma->vm_name = NULL;
-        }
+        new_vma->vm_name = src_vma->vm_name ? strdup(src_vma->vm_name) : NULL;
 
         if (vma_insert(dst_mgr, new_vma) != 0) {
             // 这不应该发生，除非 vm_start/vm_end 出错

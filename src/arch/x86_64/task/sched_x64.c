@@ -135,9 +135,9 @@ void arch_context_init_thread(tcb_t new_task, void *args) {
 }
 
 void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs) {
-    page_directory_t *dir = current->process->directory;
-    if (dir != next->process->directory) {
-        switch_page_directory(next->process->directory);
+    page_directory_t *dir = current->process->mm->directory;
+    if (dir != next->process->mm->directory) {
+        switch_page_directory(next->process->mm->directory);
     }
 
     __asm__ __volatile__("movq %0, %%fs\n\t" ::"r"(next->context.fs));
@@ -386,7 +386,8 @@ _Noreturn void arch_switch_to_user_mode() {
     Elf64_Ehdr *ehdr        = (Elf64_Ehdr *)data;
     uint64_t executor_start = ehdr->e_type == ET_DYN ? EXECUTOR_BASE_ADDR : 0;
     uint64_t load_start     = 0;
-    void *entry = load_executor_elf(data, process->directory, executor_start, &load_start, process);
+    void *entry =
+        load_executor_elf(data, process->mm->directory, executor_start, &load_start, process);
     if (entry != NULL && ehdr->e_type == ET_DYN) {
         entry = (void *)((uint64_t)entry + load_start);
     }
@@ -395,9 +396,10 @@ _Noreturn void arch_switch_to_user_mode() {
         goto err_free_data;
     }
 
-    current->context.user_stack = page_alloc_random(
-        process->directory, BIG_USER_STACK + PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER
+    uint64_t user_stack_region = page_alloc_random(
+        process->mm->directory, BIG_USER_STACK + PAGE_SIZE, PTE_PRESENT | PTE_WRITEABLE | PTE_USER
     );
+    current->context.user_stack     = user_stack_region + PAGE_SIZE;
     current->context.user_stack_top = current->context.user_stack + BIG_USER_STACK;
     uint64_t rsp                    = current->context.user_stack_top;
 
@@ -411,10 +413,10 @@ _Noreturn void arch_switch_to_user_mode() {
     stack_vma->vm_name = strdup("[stack]");
 
     vma_t *region = vma_find_intersection(
-        &process->vma_manager, current->context.user_stack, current->context.user_stack_top
+        &process->mm->vma_manager, current->context.user_stack, current->context.user_stack_top
     );
     if (!region) {
-        vma_insert(&process->vma_manager, stack_vma);
+        vma_insert(&process->mm->vma_manager, stack_vma);
     }
 
     if (is_dynamic((Elf64_Ehdr *)data)) {
@@ -426,7 +428,13 @@ _Noreturn void arch_switch_to_user_mode() {
         size_t link_pages     = 0;
 
         linker_main = load_interpreter_elf(
-            data, process->directory, &linker_start, &link_data, &link_size, &link_phys, &link_pages
+            data,
+            process->mm->directory,
+            &linker_start,
+            &link_data,
+            &link_size,
+            &link_phys,
+            &link_pages
         );
         if (linker_main == NULL) {
             logkf("elf_load: Cannot load libc module.\n\r");
@@ -446,10 +454,11 @@ _Noreturn void arch_switch_to_user_mode() {
         ld_so_vma->vm_type = VMA_TYPE_ANON;
         ld_so_vma->vm_name = strdup("[libc]");
 
-        vma_t *region =
-            vma_find_intersection(&process->vma_manager, linker_start, linker_start + link_size);
+        vma_t *region = vma_find_intersection(
+            &process->mm->vma_manager, linker_start, linker_start + link_size
+        );
         if (!region) {
-            vma_insert(&process->vma_manager, ld_so_vma);
+            vma_insert(&process->mm->vma_manager, ld_so_vma);
         }
         // 如未实现 VMA 可以直接去掉这段代码
 

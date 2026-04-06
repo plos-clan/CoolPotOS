@@ -70,7 +70,7 @@ void load_segment(
     } else
         for (size_t i = lo; i < hi; i += 0x1000) {
             page_map_to(directory, i, alloc_frames(1), flags);
-    }
+        }
     uint64_t p_vaddr      = (uint64_t)phdr->p_vaddr + offset;
     uint64_t p_filesz     = (uint64_t)phdr->p_filesz;
     uint64_t p_memsz      = (uint64_t)phdr->p_memsz;
@@ -167,7 +167,7 @@ void *load_executor_elf(
 
         ld_so_vma->vm_type = VMA_TYPE_ANON;
         ld_so_vma->vm_name = strdup(process->name);
-        vma_insert(&process->vma_manager, ld_so_vma);
+        vma_insert(&process->mm->vma_manager, ld_so_vma);
     }
     switch_memory_directory(cur);
     return (void *)ehdr->e_entry;
@@ -216,8 +216,8 @@ void *load_interpreter_elf(
         logkf("exec: libc open error [%s].\n\r", interpreter_name);
         return NULL;
     }
-    uint64_t inter_phys  = 0;
-    size_t inter_pages   = 0;
+    uint64_t inter_phys = 0;
+    size_t inter_pages  = 0;
     Elf64_Ehdr *inter_ehdr =
         (Elf64_Ehdr *)alloc_exec_temp_buffer(inter_file->size, &inter_phys, &inter_pages);
     if (inter_ehdr == NULL) {
@@ -239,9 +239,9 @@ void *load_interpreter_elf(
         free_frames(inter_phys, inter_pages);
         return NULL;
     }
-    *link_data = (uint8_t *)inter_ehdr;
-    *link_size = inter_file->size;
-    *link_phys = inter_phys;
+    *link_data  = (uint8_t *)inter_ehdr;
+    *link_size  = inter_file->size;
+    *link_phys  = inter_phys;
     *link_pages = inter_pages;
     vfs_close(inter_file);
     return start;

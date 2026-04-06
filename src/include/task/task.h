@@ -35,18 +35,18 @@
 #define PR_GET_SPECULATION_CTRL     52
 #define PR_SET_SPECULATION_CTRL     53
 
-#define CLONE_VM             0x00000100 /* set if VM shared between processes */
-#define CLONE_FS             0x00000200 /* set if fs info shared between processes */
-#define CLONE_FILES          0x00000400 /* set if open files shared between processes */
-#define CLONE_SIGHAND        0x00000800 /* set if signal handlers and blocked signals shared */
-#define CLONE_PIDFD          0x00001000 /* set if a pidfd should be placed in parent */
-#define CLONE_PTRACE         0x00002000 /* set if we want to let tracing continue on the child too */
-#define CLONE_VFORK          0x00004000 /* set if the parent wants the child to wake it up on mm_release */
-#define CLONE_PARENT         0x00008000 /* set if we want to have the same parent as the cloner */
-#define CLONE_THREAD         0x00010000 /* Same thread group? */
-#define CLONE_NEWNS          0x00020000 /* New mount namespace group */
-#define CLONE_SYSVSEM        0x00040000 /* share system V SEM_UNDO semantics */
-#define CLONE_SETTLS         0x00080000 /* create a new TLS for the child */
+#define CLONE_VM      0x00000100 /* set if VM shared between processes */
+#define CLONE_FS      0x00000200 /* set if fs info shared between processes */
+#define CLONE_FILES   0x00000400 /* set if open files shared between processes */
+#define CLONE_SIGHAND 0x00000800 /* set if signal handlers and blocked signals shared */
+#define CLONE_PIDFD   0x00001000 /* set if a pidfd should be placed in parent */
+#define CLONE_PTRACE  0x00002000 /* set if we want to let tracing continue on the child too */
+#define CLONE_VFORK   0x00004000 /* set if the parent wants the child to wake it up on mm_release */
+#define CLONE_PARENT  0x00008000 /* set if we want to have the same parent as the cloner */
+#define CLONE_THREAD  0x00010000 /* Same thread group? */
+#define CLONE_NEWNS   0x00020000 /* New mount namespace group */
+#define CLONE_SYSVSEM 0x00040000 /* share system V SEM_UNDO semantics */
+#define CLONE_SETTLS  0x00080000 /* create a new TLS for the child */
 #define CLONE_PARENT_SETTID  0x00100000 /* set the TID in the parent */
 #define CLONE_CHILD_CLEARTID 0x00200000 /* clear the TID in the child */
 #define CLONE_DETACHED       0x00400000 /* Unused, ignored */
@@ -92,6 +92,12 @@ typedef enum {
         8, // 僵尸进程(无法被调度, 进程已终止, 但其父进程尚未调用 wait/waitpid 获取其退出状态)
 } task_status;
 
+typedef struct mm_struct {
+    page_directory_t *directory; // 进程页表
+    vma_manager_t vma_manager;   // VMA 内存管理器
+    volatile size_t ref_count;   // 共享地址空间引用计数
+} mm_t;
+
 struct process_control_block {
     pid_t pid;                    // 进程ID
     pid_t pgid;                   // 进程组ID
@@ -111,9 +117,8 @@ struct process_control_block {
     _Atomic(size_t) cutime; // 累计用户态时间
     _Atomic(size_t) cstime; // 累计内核态时间
 
-    page_directory_t *directory; // 进程页表
-    vma_manager_t vma_manager;   // VMA 内存管理器
-    list_queue_t *virt_queue;    // 懒分配器队列
+    mm_t *mm;                 // 进程地址空间
+    list_queue_t *virt_queue; // 懒分配器队列
 
     ipc_queue_t *ipc_queue; // 进程消息队列
     tty_t *tty;             // 进程占用的TTY会话
@@ -177,6 +182,10 @@ struct thread_control_block {
 pid_t alloc_pid();
 pid_t alloc_tid();
 tcb_t get_current_task();
+mm_t *mm_create(page_directory_t *directory);
+mm_t *mm_clone(const mm_t *src);
+void mm_retain(mm_t *mm);
+void mm_release(mm_t *mm);
 void arch_task_switch(tcb_t current, tcb_t next, struct pt_regs *regs);
 void arch_context_init(
     tcb_t thread,
