@@ -740,13 +740,23 @@ mount:
 }
 
 syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
-    int ready                 = 0;
-    const uint64_t start_time = nano_time();
-    bool sigexit              = false;
-    const tcb_t current       = get_current_task();
-    const fdt_t *fdt          = current->process->fdts;
+    const tcb_t current         = get_current_task();
+    const fdt_t *fdt            = current->process->fdts;
+    const uint64_t start_time   = nano_time();
+    const bool infinite_timeout = ((int64_t)timeout < 0);
+    const uint64_t timeout_ns   = infinite_timeout ? 0 : timeout * 1000000ULL;
+    vfs_poll_wait_t *waits      = NULL;
+    int ready                   = 0;
+    bool sigexit                = false;
 
-    do {
+    if (nfds > 0) {
+        waits = calloc(nfds, sizeof(*waits));
+        if (!waits) {
+            return SYSCALL_FAULT_(ENOMEM);
+        }
+    }
+
+    while (true) {
         ready = 0;
         for (size_t i = 0; i < nfds; i++) {
             fds_user[i].revents = 0;
@@ -761,17 +771,29 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
                 continue;
             }
 
-            vfs_node_t node = handle->node;
+            vfs_node_t node       = handle->node;
+            uint32_t query_events = poll_to_epoll_comp(fds_user[i].events) | EPOLLERR | EPOLLHUP
+                                    | EPOLLNVAL | EPOLLRDHUP;
+
             if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
-                if (fds_user[i].events & POLLIN || fds_user[i].events & POLLOUT) {
-                    fds_user[i].revents = fds_user[i].events & POLLIN ? POLLIN : POLLOUT;
+                int revents = 0;
+                if (fds_user[i].events & POLLIN)
+                    revents |= POLLIN;
+                if (fds_user[i].events & POLLOUT)
+                    revents |= POLLOUT;
+                if (revents) {
+                    fds_user[i].revents = (short)revents;
                     ready++;
                 }
                 continue;
             }
 
-            int revents =
-                (int)epoll_to_poll_comp(vfs_poll(node, poll_to_epoll_comp(fds_user[i].events)));
+            int polled = (int)vfs_poll(node, query_events);
+            if (polled < 0)
+                polled = 0;
+
+            int revents = (int)epoll_to_poll_comp((uint32_t)polled);
+            revents &= (int)(fds_user[i].events | POLLERR | POLLHUP | POLLNVAL | POLLRDHUP);
             if (revents > 0) {
                 fds_user[i].revents = (short)revents;
                 ready++;
@@ -779,13 +801,79 @@ syscall_(poll, struct pollfd *fds_user, size_t nfds, size_t timeout) {
         }
 
         sigexit = signals_pending_quick(current);
-
         if (ready > 0 || sigexit)
             break;
+        if (!infinite_timeout && timeout == 0)
+            break;
 
-        scheduler_yield();
-    } while (timeout != 0
-             && ((int)timeout == -1 || (nano_time() - start_time) < timeout * 1000000ULL));
+        for (size_t i = 0; i < nfds; i++) {
+            extern vfs_callback_t fs_callbacks[256];
+            const fd_t *handle = get_fd(fdt, fds_user[i].fd);
+            if (!handle || !handle->node)
+                continue;
+            if (fs_callbacks[handle->node->fsid]->poll == (void *)dummy)
+                continue;
+
+            uint32_t query_events = poll_to_epoll_comp(fds_user[i].events) | EPOLLERR | EPOLLHUP
+                                    | EPOLLNVAL | EPOLLRDHUP;
+            vfs_poll_wait_init(&waits[i], current, query_events);
+            vfs_poll_wait_arm(handle->node, &waits[i]);
+        }
+
+        bool disarm_now = false;
+        for (size_t i = 0; i < nfds; i++) {
+            if (waits[i].armed) {
+                disarm_now = true;
+                break;
+            }
+        }
+
+        if (disarm_now) {
+            ready = 0;
+            for (size_t i = 0; i < nfds; i++) {
+                extern vfs_callback_t fs_callbacks[256];
+                const fd_t *handle = get_fd(fdt, fds_user[i].fd);
+                if (!handle || !handle->node)
+                    continue;
+                if (fs_callbacks[handle->node->fsid]->poll == (void *)dummy)
+                    continue;
+
+                uint32_t query_events = poll_to_epoll_comp(fds_user[i].events) | EPOLLERR | EPOLLHUP
+                                        | EPOLLNVAL | EPOLLRDHUP;
+                int polled            = (int)vfs_poll(handle->node, query_events);
+                if (polled > 0) {
+                    ready = 1;
+                    break;
+                }
+            }
+            if (!ready && !signals_pending_quick(current)) {
+                int64_t wait_ns = -1;
+                if (!infinite_timeout) {
+                    uint64_t elapsed = nano_time() - start_time;
+                    if (elapsed >= timeout_ns) {
+                        wait_ns = 0;
+                    } else {
+                        wait_ns = (int64_t)(timeout_ns - elapsed);
+                    }
+                }
+
+                int64_t block_ns = wait_ns;
+                if (block_ns < 0 || block_ns > 10000000LL)
+                    block_ns = 10000000LL;
+                scheduler_block_current((uint64_t)block_ns, "poll_wait");
+            }
+        }
+
+        for (size_t i = 0; i < nfds; i++) {
+            if (waits[i].armed)
+                vfs_poll_wait_disarm(&waits[i]);
+        }
+
+        if (!infinite_timeout && (nano_time() - start_time) >= timeout_ns)
+            break;
+    }
+
+    free(waits);
 
     if (!ready && sigexit)
         return (size_t)-EINTR;
@@ -1059,24 +1147,40 @@ syscall_(
         return res;
     }
 
+    uint8_t *ready_map = calloc((size_t)toZero, 1);
+    if (!ready_map) {
+        free(comp);
+        return SYSCALL_FAULT_(ENOMEM);
+    }
+
     size_t verify = 0;
     for (size_t i = 0; i < compIndex; i++) {
         if (!comp[i].revents)
             continue;
         if (comp[i].events & POLLIN && comp[i].revents & POLLIN) {
             select_bitmap_set(read, comp[i].fd);
-            verify++;
+            if (!select_bitmap(ready_map, comp[i].fd)) {
+                select_bitmap_set(ready_map, comp[i].fd);
+                verify++;
+            }
         }
         if (comp[i].events & POLLOUT && comp[i].revents & POLLOUT) {
             select_bitmap_set(write, comp[i].fd);
-            verify++;
+            if (!select_bitmap(ready_map, comp[i].fd)) {
+                select_bitmap_set(ready_map, comp[i].fd);
+                verify++;
+            }
         }
         if ((comp[i].events & POLLPRI && comp[i].revents & POLLPRI)) {
             select_bitmap_set(except, comp[i].fd);
-            verify++;
+            if (!select_bitmap(ready_map, comp[i].fd)) {
+                select_bitmap_set(ready_map, comp[i].fd);
+                verify++;
+            }
         }
     }
 
+    free(ready_map);
     free(comp);
     return verify;
 }
@@ -1099,9 +1203,9 @@ syscall_(
     if (exceptfds && check_user_overflow((uint64_t)exceptfds, sizeof(fd_set) * nfds)) {
         return SYSCALL_FAULT_(EFAULT);
     }
-    size_t sigsetsize = weirdPselect6->ss_len;
-    sigset_t *sigmask = weirdPselect6->ss;
-    if (sigsetsize < sizeof(sigset_t)) {
+    size_t sigsetsize = weirdPselect6 ? weirdPselect6->ss_len : 0;
+    sigset_t *sigmask = weirdPselect6 ? weirdPselect6->ss : NULL;
+    if (sigmask && sigsetsize < sizeof(sigset_t)) {
         return SYSCALL_FAULT_(EINVAL);
     }
     sigset_t origmask = 0;

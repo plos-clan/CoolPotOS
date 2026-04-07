@@ -353,10 +353,16 @@ uintptr_t buddy_alloc_zone(zone_t *zone, size_t count) {
     if (!count_to_order(count, &order, &required_pages))
         return 0;
 
+    bool irq = arch_check_interrupt();
+
+    arch_close_interrupt();
+
     spin_lock(zone->allocator.lock);
 
     if (zone->free_pages < required_pages) {
         spin_unlock(zone->allocator.lock);
+        if (irq)
+            arch_open_interrupt();
         return 0;
     }
 
@@ -365,6 +371,8 @@ uintptr_t buddy_alloc_zone(zone_t *zone, size_t count) {
         zone->free_pages -= required_pages;
 
     spin_unlock(zone->allocator.lock);
+    if (irq)
+        arch_open_interrupt();
     return addr;
 }
 
@@ -393,7 +401,7 @@ static void create_zone(enum zone_type type, uint64_t start_pfn, uint64_t end_pf
     }
 
     zone_t *zone = early_alloc(sizeof(zone_t));
-    asserts(zone != NULL,"create_zone: zone is null.");
+    asserts(zone != NULL, "create_zone: zone is null.");
 
     init_zone(zone, type, start_pfn, end_pfn);
     zones[type] = zone;
@@ -405,7 +413,7 @@ void buddy_init(void) {
     nr_zones           = 0;
     metadata_free_list = 0;
     metadata_pool_used = 0;
-    metadata_lock = SPIN_INIT;
+    metadata_lock      = SPIN_INIT;
 
     size_t total_frames = memory_size / PAGE_SIZE;
     size_t head_pages   = ORDER_COUNT * __MAX_NR_ZONES;
@@ -590,15 +598,23 @@ static void free_frames_common(uintptr_t addr, size_t count, bool refs_already_r
         || start_page_index + required_pages > get_usable_regions()->length)
         return;
 
+    bool irq = arch_check_interrupt();
+
+    arch_close_interrupt();
+
     spin_lock(zone->allocator.lock);
 
     for (size_t offset = 0; offset < required_pages; offset++) {
         if (!bitmap_get(&using_regions, start_page_index + offset)) {
             spin_unlock(zone->allocator.lock);
+            if (irq)
+                arch_open_interrupt();
             return;
         }
         if (!bitmap_get(get_usable_regions(), start_page_index + offset)) {
             spin_unlock(zone->allocator.lock);
+            if (irq)
+                arch_open_interrupt();
             return;
         }
     }
@@ -606,11 +622,15 @@ static void free_frames_common(uintptr_t addr, size_t count, bool refs_already_r
     if (refs_already_released) {
         if (!pages_are_unreferenced(addr, required_pages)) {
             spin_unlock(zone->allocator.lock);
+            if (irq)
+                arch_open_interrupt();
             return;
         }
     } else {
         if (!claim_last_page_refs(addr, required_pages)) {
             spin_unlock(zone->allocator.lock);
+            if (irq)
+                arch_open_interrupt();
             return;
         }
     }
@@ -619,6 +639,9 @@ static void free_frames_common(uintptr_t addr, size_t count, bool refs_already_r
     buddy_free_zone_locked(zone, addr, required_order);
 
     spin_unlock(zone->allocator.lock);
+
+    if (irq)
+        arch_open_interrupt();
 }
 
 void free_frames(uintptr_t addr, size_t count) {

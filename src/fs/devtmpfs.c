@@ -16,34 +16,16 @@ int dev_tmpfs_id                          = 0;
 static _Atomic volatile size_t dev_id_now = 0;
 
 static void load_tty_device(vfs_node_t node) {
-    int tty_id = 1;
-
-    tty_t *kernel_session = get_kernel_session();
-    create_device_node(
-        node,
-        "tty0",
-        device_stream,
-        kernel_session,
-        0,
-        (void *)kernel_session->ops.ioctl,
-        (void *)kernel_session->ops.read,
-        (void *)kernel_session->ops.write,
-        (void *)kernel_session->ops.poll,
-        NULL,
-        (void *)kernel_session->ops.size_t
-    );
-
-    tty_t *pos = NULL;
-    tty_t *n   = NULL;
+    int graphics_id = 1;
+    int serial_id   = 1;
+    tty_t *pos      = NULL;
+    tty_t *n        = NULL;
     llist_for_each(pos, n, get_tty_session_list(), list_node) {
-        if (pos == kernel_session) {
-            continue;
-        }
         char name[10];
         if (pos->device->type == TTY_DEVICE_SERIAL) {
-            sprintf(name, "ttyS%d", tty_id++);
+            sprintf(name, "ttyS%d", serial_id++);
         } else {
-            sprintf(name, "tty%d", tty_id++);
+            sprintf(name, "tty%d", graphics_id++);
         }
 
         create_device_node(
@@ -59,6 +41,10 @@ static void load_tty_device(vfs_node_t node) {
             NULL,
             (void *)pos->ops.size_t
         );
+    }
+
+    if (graphics_id > 1) {
+        vfs_symlink("/dev/tty0", "/dev/tty1");
     }
 }
 

@@ -376,11 +376,10 @@ syscall_(getppid) {
 syscall_(ssetmask, const int how, const sigset_t *nset, sigset_t *oset) {
     const tcb_t thread = get_current_task();
     if (oset) {
-        *oset = thread->blocked;
+        *oset = sigset_kernel_to_user(thread->blocked);
     }
     if (nset) {
-        uint64_t safe = *nset;
-        safe &= ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
+        uint64_t safe = sigset_user_to_kernel(*nset);
         switch (how) {
         case SIG_BLOCK:
             thread->blocked |= safe;
@@ -410,23 +409,19 @@ syscall_(sigaltstack, altstack_t *old_stack, const altstack_t *new_stack) {
 }
 
 syscall_(sig_action, const int sig, const sigaction_t *action, sigaction_t *oldaction) {
-    if (sig < MINSIG || sig > MAXSIG || sig == SIGKILL) {
+    if (!signal_sig_in_range(sig) || sig == SIGKILL || sig == SIGSTOP) {
         return SYSCALL_FAULT_(EINVAL);
     }
 
     sigaction_t *ptr = &get_current_task()->actions[sig - 1];
     if (oldaction) {
-        *oldaction = *ptr;
+        *oldaction         = *ptr;
+        oldaction->sa_mask = sigset_kernel_to_user(oldaction->sa_mask);
     }
 
     if (action) {
-        *ptr = *action;
-    }
-
-    if (ptr->sa_flags & SIG_NOMASK) {
-        ptr->sa_mask = 0;
-    } else {
-        ptr->sa_mask |= SIGMASK(sig);
+        *ptr         = *action;
+        ptr->sa_mask = sigset_user_to_kernel(ptr->sa_mask);
     }
 
     return EOK;
@@ -448,7 +443,7 @@ syscall_(sigpending, sigset_t *set, const size_t sigsetsize) {
     if (sigsetsize < sizeof(sigset_t)) {
         return SYSCALL_FAULT_(EINVAL);
     }
-    *set = get_current_task()->signal;
+    *set = sigset_kernel_to_user(get_current_task()->signal);
     return EOK;
 }
 
@@ -466,7 +461,7 @@ syscall_(
         return SYSCALL_FAULT_(EINVAL);
     }
 
-    const sigset_t mask = *set;
+    const sigset_t mask = sigset_user_to_kernel(*set);
     if (mask == 0) {
         return SYSCALL_FAULT_(EINVAL);
     }
@@ -487,12 +482,21 @@ syscall_(
         const sigset_t pending = thread->signal & mask;
         if (pending) {
             const int signum = pick_pending_signal(pending);
-            if (signum > 0) {
-                thread->signal &= ~SIGMASK(signum);
-            }
             if (info) {
-                memset(info, 0, sizeof(*info));
-                info->si_signo = signum;
+                if (signum > 0 && signal_sig_maskable(signum)
+                    && (thread->pending_siginfo_mask & signal_sigbit(signum))) {
+                    *info = thread->pending_siginfo[signum];
+                } else {
+                    memset(info, 0, sizeof(*info));
+                    info->si_signo = signum;
+                }
+            }
+            if (signum > 0 && signal_sig_maskable(signum)) {
+                thread->signal &= ~SIGMASK(signum);
+                thread->pending_siginfo_mask &= ~signal_sigbit(signum);
+                memset(
+                    &thread->pending_siginfo[signum], 0, sizeof(thread->pending_siginfo[signum])
+                );
             }
             return signum > 0 ? signum : SYSCALL_FAULT_(EAGAIN);
         }
@@ -509,7 +513,7 @@ syscall_(
 }
 
 syscall_(sigqueueinfo, const pid_t pid, const int sig, const siginfo_t *info) {
-    if (sig < MINSIG || sig > MAXSIG) {
+    if (!signal_sig_in_range(sig)) {
         return SYSCALL_FAULT_(EINVAL);
     }
     const pcb_t process = found_pcb(pid);
@@ -525,9 +529,10 @@ syscall_(sigqueueinfo, const pid_t pid, const int sig, const siginfo_t *info) {
         return SYSCALL_FAULT_(ESRCH);
     }
 
-    target->signal |= SIGMASK(sig);
-    (void)info;
-    return EOK;
+    if (info) {
+        return send_signal_to_process_info(process, sig, info) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+    }
+    return send_signal_to_process(process, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
 }
 
 syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
@@ -539,7 +544,7 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
     }
     const tcb_t task    = get_current_task();
     const sigset_t old  = task->blocked;
-    const sigset_t temp = (uint64_t)*mask & ~(SIGMASK(SIGKILL) | SIGMASK(SIGSTOP));
+    const sigset_t temp = sigset_user_to_kernel(*mask);
 
     task->blocked = temp;
     if (!signals_pending_quick(task)) {
@@ -558,15 +563,19 @@ syscall_(sigsuspend, const sigset_t *mask, size_t sigsetsize) {
 }
 
 syscall_(signal, const int sig, void *handler) {
-    if (sig < 0 || sig >= MAX_SIGNALS) {
+    if (!signal_sig_in_range(sig) || sig == SIGKILL || sig == SIGSTOP) {
         return SYSCALL_FAULT_(EINVAL);
     }
-    if (handler == NULL) {
-        return SYSCALL_FAULT_(EINVAL);
-    }
-    logkf("Signal syscall: %p\n", handler);
-    // TODO register_signal(get_current_task()->process, sig, handler);
-    return EOK;
+
+    sigaction_t *action   = &get_current_task()->actions[sig - 1];
+    sighandler_t previous = action->sa_handler;
+
+    action->sa_handler  = (sighandler_t)handler;
+    action->sa_flags    = SA_RESTART;
+    action->sa_mask     = 0;
+    action->sa_restorer = NULL;
+
+    return (uint64_t)previous;
 }
 
 syscall_(sigret) {
@@ -614,7 +623,6 @@ syscall_(
     futex, int *uaddr, const int op, const int val, const struct timespec *time, const int timeout
 ) {
     const tcb_t thread = get_current_task();
-    (void)time;
     (void)timeout;
     if (uaddr == NULL) {
         return SYSCALL_FAULT_(EINVAL);
@@ -635,9 +643,39 @@ syscall_(
         if (observed != val) {
             return SYSCALL_FAULT_(EAGAIN);
         }
+
+        int64_t timeout_ns = -1;
+        if (time) {
+            if (time->tv_sec < 0 || time->tv_nsec < 0 || time->tv_nsec >= 1000000000L) {
+                return SYSCALL_FAULT_(EINVAL);
+            }
+            timeout_ns = (int64_t)time->tv_sec * 1000000000LL + (int64_t)time->tv_nsec;
+            if (timeout_ns == 0) {
+                return SYSCALL_FAULT_(ETIMEDOUT);
+            }
+        }
+
         thread->status = T_FUTEX; // 挂起当前线程
         futex_add((void *)futex_key, thread);
-        scheduler_yield();
+        const uint64_t start_time = nano_time();
+
+        while (thread->status == T_FUTEX) {
+            if (signals_pending_quick(thread)) {
+                futex_unblock((void *)futex_key, thread);
+                return SYSCALL_FAULT_(EINTR);
+            }
+
+            if (timeout_ns >= 0) {
+                uint64_t elapsed = nano_time() - start_time;
+                if (elapsed >= (uint64_t)timeout_ns) {
+                    futex_unblock((void *)futex_key, thread);
+                    return SYSCALL_FAULT_(ETIMEDOUT);
+                }
+            }
+
+            scheduler_yield();
+        }
+
         return EOK;
     }
     case FUTEX_WAKE:
@@ -798,29 +836,54 @@ syscall_(kill, const int pid, const int sig) {
         if (process == NULL) {
             return SYSCALL_FAULT_(ESRCH);
         }
-        return send_signal_to_process(process, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+        siginfo_t info;
+        memset(&info, 0, sizeof(info));
+        info.si_signo               = sig;
+        info.si_code                = 0;
+        info._sifields._kill.si_pid = get_current_task()->process->pid;
+        info._sifields._kill.si_uid = get_current_task()->process->uid;
+        return send_signal_to_process_info(process, sig, &info) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
     }
     if (pid == 0) {
         // Send to caller's process group
         const pcb_t self = get_current_task()->process;
-        return send_signal_to_pgroup(self->pgid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+        siginfo_t info;
+        memset(&info, 0, sizeof(info));
+        info.si_signo               = sig;
+        info.si_code                = 0;
+        info._sifields._kill.si_pid = self->pid;
+        info._sifields._kill.si_uid = self->uid;
+        return send_signal_to_pgroup_info(self->pgid, sig, &info) == 0 ? EOK
+                                                                       : SYSCALL_FAULT_(ESRCH);
     }
     if (pid == -1) {
         // Send to all processes (simplified: skip kernel process)
         pcb_t process = NULL;
         int sent      = 0;
+        siginfo_t info;
+        memset(&info, 0, sizeof(info));
+        info.si_signo               = sig;
+        info.si_code                = 0;
+        info._sifields._kill.si_pid = get_current_task()->process->pid;
+        info._sifields._kill.si_uid = get_current_task()->process->uid;
         cow_foreach(get_process_list(), process) {
             if (process->pid == get_kernel_process()->pid) {
                 continue;
             }
-            if (send_signal_to_process(process, sig) == 0) {
+            if (send_signal_to_process_info(process, sig, &info) == 0) {
                 sent++;
             }
         }
         return sent > 0 ? EOK : SYSCALL_FAULT_(ESRCH);
     }
     // pid < -1: send to process group |pid|
-    return send_signal_to_pgroup(-pid, sig) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
+    siginfo_t info;
+    memset(&info, 0, sizeof(info));
+    info.si_signo               = sig;
+    info.si_code                = 0;
+    info._sifields._kill.si_pid = get_current_task()->process->pid;
+    info._sifields._kill.si_uid = get_current_task()->process->uid;
+    return send_signal_to_pgroup_info(-pid, sig, &info) == 0 ? EOK : SYSCALL_FAULT_(ESRCH);
 }
 
 syscall_(times, struct tms *buf) {

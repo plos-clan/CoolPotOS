@@ -70,6 +70,34 @@ int futex_wake(void *phys_addr, int count) {
     return woken;
 }
 
+bool futex_unblock(void *phys_addr, tcb_t thread) {
+    cow_arraylist *queue = (cow_arraylist *)map_get(futex_map, phys_addr);
+    if (queue == NULL || thread == NULL) {
+        return false;
+    }
+
+    for (size_t index = 0; index < queue->size; index++) {
+        tcb_t item = (tcb_t)cow_list_get(queue, index);
+        if (item != thread) {
+            continue;
+        }
+
+        cow_list_remove(queue, index);
+        if (thread->status == T_FUTEX) {
+            thread->status = T_START;
+            futex_wake_task(thread);
+        }
+
+        if (queue->size == 0) {
+            map_remove(futex_map, phys_addr);
+            cow_list_destroy(queue);
+        }
+        return true;
+    }
+
+    return false;
+}
+
 void futex_free(tcb_t thread) {
     if (thread == NULL) {
         return;

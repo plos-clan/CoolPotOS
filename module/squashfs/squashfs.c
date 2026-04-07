@@ -5,7 +5,7 @@ static errno_t squashfs_id         = -1;
 static sqfs_u64 squashfs_mount_dev = 1;
 errno_t errno                      = EOK;
 
-#define SQUASHFS_IMAGE_CACHE_SIZE 262144ULL
+#define SQUASHFS_IMAGE_CACHE_SIZE  262144ULL
 #define SQUASHFS_IMAGE_CACHE_ALIGN 4096ULL
 
 typedef struct {
@@ -25,8 +25,9 @@ typedef struct {
 } squashfs_compressor_stub_t;
 
 static void squashfs_open(void *parent, const char *name, vfs_node_t node);
-static squashfs_handle_t *
-squashfs_handle_create(squashfs_mount_t *mount, sqfs_inode_generic_t *inode, const sqfs_u64 inode_ref);
+static squashfs_handle_t *squashfs_handle_create(
+    squashfs_mount_t *mount, sqfs_inode_generic_t *inode, const sqfs_u64 inode_ref
+);
 
 static void squashfs_handle_release(squashfs_handle_t *handle) {
     if (handle == NULL) {
@@ -446,7 +447,7 @@ int squashfs_populate_dir(const vfs_node_t node, const squashfs_handle_t *handle
         return 0;
     }
 
-    mount = handle->mount;
+    mount      = handle->mount;
     dir_reader = squashfs_create_directory_reader(mount);
     if (dir_reader == NULL) {
         return SQFS_ERROR_ALLOC;
@@ -731,12 +732,11 @@ static size_t squashfs_read(void *file, void *addr, size_t offset, size_t size) 
     squashfs_handle_t *handle = file;
     sqfs_s32 ret;
 
-    spin_lock(handle->lock);
-
     if (handle == NULL || addr == NULL) {
-        spin_unlock(handle->lock);
         return (size_t)-1;
     }
+
+    spin_lock(handle->lock);
 
     if (handle->inode->base.type != SQFS_INODE_FILE
         && handle->inode->base.type != SQFS_INODE_EXT_FILE) {

@@ -16,12 +16,12 @@
 
 static _Atomic volatile bool scheduler_status = false;
 
-static cow_arraylist *sleep_list = NULL;
-static spin_t sleep_lock         = SPIN_INIT;
+static cow_arraylist *sleep_list         = NULL;
+static spin_t sleep_lock                 = SPIN_INIT;
 static const int scheduler_block_pending = 0x7fffffff;
 static uint64_t xorg_last_rip            = 0;
-static size_t xorg_rip_hits             = 0;
-static int xorg_rip_logs                = 0;
+static size_t xorg_rip_hits              = 0;
+static int xorg_rip_logs                 = 0;
 
 static bool scheduler_trace_xorg(tcb_t thread) {
     if (thread == NULL || thread->process == NULL || thread->process->name == NULL) {
@@ -90,7 +90,7 @@ void scheduler_check_sleep() {
             if (thread->block_code == scheduler_block_pending) {
                 thread->block_code = signals_pending_quick(thread) ? -EINTR : ETIMEDOUT;
             }
-            thread->status         = T_START;
+            thread->status = T_START;
             sleep_wake_task(thread);
         } else {
             i++;
@@ -149,10 +149,9 @@ int scheduler_block_current(const uint64_t timeout_ns, const char *reason) {
         return -EINVAL;
     }
 
-    current->block_code = scheduler_block_pending;
-    current->sleep_deadline =
-        timeout_ns == (uint64_t)-1 ? (uint64_t)-1 : nano_time() + timeout_ns;
-    current->status = T_WAIT;
+    current->block_code     = scheduler_block_pending;
+    current->sleep_deadline = timeout_ns == (uint64_t)-1 ? (uint64_t)-1 : nano_time() + timeout_ns;
+    current->status         = T_WAIT;
 
     const bool int_enable = arch_check_interrupt();
     arch_close_interrupt();
@@ -166,12 +165,12 @@ int scheduler_block_current(const uint64_t timeout_ns, const char *reason) {
 
     scheduler_yield();
 
-    const int ret     = current->block_code;
-    current->block_code = 0;
-    if (ret == scheduler_block_pending) {
-        return signals_pending_quick(current) ? -EINTR : ETIMEDOUT;
-    }
-    return ret;
+    // const int ret     = current->block_code;
+    // current->block_code = 0;
+    // if (ret == scheduler_block_pending) {
+    //     return signals_pending_quick(current) ? -EINTR : ETIMEDOUT;
+    // }
+    return 0;
 }
 
 void scheduler_unblock(tcb_t thread, const int code) {
@@ -341,10 +340,17 @@ void scheduler_yield() {
     }
     cpu->is_yield = true;
 
+    bool irq = arch_check_interrupt();
+
+    arch_open_interrupt();
+
 #if EEVDF_SCHEDULER
     set_entity_yield(get_current_task());
 #endif
     arch_send_scheduler();
+
+    if (!irq)
+        arch_close_interrupt();
 }
 
 void scheduler_handler(uint64_t irq_num, void *data, struct pt_regs *regs) {

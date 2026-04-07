@@ -17,6 +17,45 @@ static struct llist_header tty_session_list;
 static tty_t *kernel_session  = NULL; // 内核会话
 static tty_t *current_session = NULL; // 当前会话
 
+static void tty_session_node_name(const tty_t *session, char *buf, size_t buf_len) {
+    if (!buf || buf_len == 0) {
+        return;
+    }
+
+    buf[0] = '\0';
+    if (!session || !session->device) {
+        return;
+    }
+
+    int graphics_idx = 1;
+    int serial_idx   = 1;
+    tty_t *pos       = NULL;
+    tty_t *n         = NULL;
+    llist_for_each(pos, n, &tty_session_list, list_node) {
+        if (!pos || !pos->device) {
+            continue;
+        }
+
+        if (pos->device->type == TTY_DEVICE_SERIAL) {
+            if (pos == session) {
+                snprintf(buf, buf_len, "ttyS%d", serial_idx);
+                return;
+            }
+            serial_idx++;
+            continue;
+        }
+
+        if (pos == session) {
+            snprintf(buf, buf_len, "tty%d", graphics_idx);
+            return;
+        }
+        graphics_idx++;
+    }
+
+    strncpy(buf, session->device->name, buf_len - 1);
+    buf[buf_len - 1] = '\0';
+}
+
 tty_t *get_kernel_session() {
     return kernel_session;
 }
@@ -257,9 +296,11 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         if (proc->ctty_path) {
             free(proc->ctty_path);
         }
-        char buf[64];
-        snprintf(buf, sizeof(buf), "/dev/%s", session->device ? session->device->name : "tty0");
-        proc->ctty_path = strdup(buf);
+        char tty_name[32];
+        char path[64];
+        tty_session_node_name(session, tty_name, sizeof(tty_name));
+        snprintf(path, sizeof(path), "/dev/%s", tty_name[0] ? tty_name : "tty1");
+        proc->ctty_path = strdup(path);
         session->fgproc = proc->pgid;
         break;
     }
@@ -606,16 +647,16 @@ void init_tty_session() {
 
 void init_console_symlink() {
     const char *console = boot_get_cmdline_param("console");
-    if (console == NULL) {
-        console = "tty0";
-    }
-
     char buf[50];
-    sprintf(buf, "/dev/%s", console);
+    if (console == NULL || streq(console, "tty0")) {
+        strcpy(buf, "/dev/tty1");
+    } else {
+        sprintf(buf, "/dev/%s", console);
+    }
 
     const vfs_node_t console_node = vfs_open(buf);
     if (console_node == NULL) {
-        strcpy(buf, "/dev/tty0");
+        strcpy(buf, "/dev/tty1");
     } else {
         vfs_close(console_node);
     }

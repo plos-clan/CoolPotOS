@@ -9,6 +9,100 @@
 #include "term/klog.h"
 #include "timer.h"
 
+#define EPOLL_ALWAYS_EVENTS (EPOLLERR | EPOLLHUP | EPOLLNVAL)
+
+static inline uint32_t epoll_filter_events(uint32_t events) {
+    return events & ~(EPOLLET | EPOLLONESHOT | EPOLLWAKEUP | EPOLLEXCLUSIVE);
+}
+
+static uint32_t epoll_query_ready_events(epoll_entry_t *entry, fd_t *handle) {
+    if (!entry || !handle || !handle->node) {
+        return EPOLLNVAL;
+    }
+
+    extern vfs_callback_t fs_callbacks[256];
+    const vfs_node_t node   = handle->node;
+    uint32_t request_events = entry->events | EPOLL_ALWAYS_EVENTS;
+
+    if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
+        return request_events & (EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP | EPOLLNVAL);
+    }
+
+    uint32_t revents = (uint32_t)vfs_poll(node, request_events);
+    revents |= (uint32_t)vfs_poll(node, EPOLL_ALWAYS_EVENTS) & EPOLL_ALWAYS_EVENTS;
+    return revents;
+}
+
+static bool epoll_should_emit(epoll_entry_t *entry, uint32_t ready_events) {
+    if (!entry || entry->disabled || !ready_events) {
+        return false;
+    }
+
+    if (entry->edge_trigger) {
+        uint32_t state_events = ready_events & ~EPOLL_ALWAYS_EVENTS;
+        uint32_t raised       = state_events & ~entry->last_events;
+        entry->last_events    = state_events;
+        return raised != 0 || (ready_events & EPOLL_ALWAYS_EVENTS) != 0;
+    }
+
+    entry->last_events = ready_events & ~EPOLL_ALWAYS_EVENTS;
+    return true;
+}
+
+static bool epoll_would_emit(const epoll_entry_t *entry, uint32_t ready_events) {
+    if (!entry || entry->disabled || !ready_events) {
+        return false;
+    }
+
+    if (entry->edge_trigger) {
+        uint32_t state_events = ready_events & ~EPOLL_ALWAYS_EVENTS;
+        uint32_t raised       = state_events & ~entry->last_events;
+        return raised != 0 || (ready_events & EPOLL_ALWAYS_EVENTS) != 0;
+    }
+
+    return true;
+}
+
+static size_t epoll_arm_waiters_locked(
+    epoll_instance_t *ep, const fdt_t *fdt, tcb_t current, vfs_poll_wait_t *waits, size_t max_waits
+) {
+    size_t count = 0;
+
+    if (!ep || !fdt || !current || !waits || max_waits == 0) {
+        return 0;
+    }
+
+    for (int i = 0; i < ep->count && count < max_waits; i++) {
+        if (ep->entries[i].disabled) {
+            continue;
+        }
+
+        fd_t *handle = get_fd(fdt, ep->entries[i].fd);
+        if (!handle || !handle->node) {
+            continue;
+        }
+
+        vfs_poll_wait_init(&waits[count], current, ep->entries[i].events | EPOLL_ALWAYS_EVENTS);
+        if (vfs_poll_wait_arm(handle->node, &waits[count]) == EOK) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+static void epoll_disarm_waiters(vfs_poll_wait_t *waits, size_t count) {
+    if (!waits) {
+        return;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        if (waits[i].armed) {
+            vfs_poll_wait_disarm(&waits[i]);
+        }
+    }
+}
+
 uint32_t epoll_to_poll_comp(const uint32_t epoll_events) {
     uint32_t poll_events = 0;
 
@@ -71,8 +165,9 @@ uint32_t poll_to_epoll_comp(const uint32_t poll_events) {
     return epoll_events;
 }
 
-struct pollfd *
-select_add(struct pollfd **comp, size_t *compIndex, size_t *complength, const int fd, const int events) {
+struct pollfd *select_add(
+    struct pollfd **comp, size_t *compIndex, size_t *complength, const int fd, const int events
+) {
     if ((*compIndex + 1) * sizeof(struct pollfd) >= *complength) {
         *complength *= 2;
         *comp = realloc(*comp, *complength);
@@ -126,20 +221,17 @@ static int epollfs_poll(void *file, size_t events) {
 
     spin_lock(ep->lock);
     for (int i = 0; i < ep->count; i++) {
+        if (ep->entries[i].disabled) {
+            continue;
+        }
+
         fd_t *handle = get_fd(fdt, ep->entries[i].fd);
         if (!handle) {
             continue;
         }
-        const vfs_node_t node = handle->node;
-        if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
-            if (events & EPOLLIN) {
-                out |= EPOLLIN;
-                break;
-            }
-            continue;
-        }
-        int revents = vfs_poll(node, ep->entries[i].events);
-        if (revents > 0) {
+
+        uint32_t revents = epoll_query_ready_events(&ep->entries[i], handle);
+        if (revents > 0 && epoll_would_emit(&ep->entries[i], revents)) {
             if (events & EPOLLIN) {
                 out |= EPOLLIN;
             }
@@ -217,9 +309,9 @@ syscall_(epoll_create1, const int flags) {
     handle->offset = 0;
     handle->flags  = flags & O_CLOEXEC ? O_CLOEXEC : 0;
 
-    fdt_t *fdt = get_current_task()->process->fdts;
-    const int fd     = add_fd(fdt, handle);
-    handle->fd = fd;
+    fdt_t *fdt   = get_current_task()->process->fdts;
+    const int fd = add_fd(fdt, handle);
+    handle->fd   = fd;
 
     return (uint64_t)fd;
 }
@@ -251,6 +343,10 @@ syscall_(epoll_ctl, const int epfd, const int op, const int fd, const struct epo
         return SYSCALL_FAULT_(EINVAL);
     }
 
+    if ((op == EPOLL_CTL_ADD || op == EPOLL_CTL_MOD) && !event) {
+        return SYSCALL_FAULT_(EFAULT);
+    }
+
     spin_lock(ep->lock);
 
     // Find existing entry for this fd
@@ -272,9 +368,13 @@ syscall_(epoll_ctl, const int epfd, const int op, const int fd, const struct epo
             spin_unlock(ep->lock);
             return SYSCALL_FAULT_(ENOMEM);
         }
-        ep->entries[ep->count].fd     = fd;
-        ep->entries[ep->count].events = event->events;
-        ep->entries[ep->count].data   = event->data;
+        ep->entries[ep->count].fd           = fd;
+        ep->entries[ep->count].events       = epoll_filter_events(event->events);
+        ep->entries[ep->count].data         = event->data;
+        ep->entries[ep->count].last_events  = 0;
+        ep->entries[ep->count].edge_trigger = !!(event->events & EPOLLET);
+        ep->entries[ep->count].one_shot     = !!(event->events & EPOLLONESHOT);
+        ep->entries[ep->count].disabled     = false;
         ep->count++;
         break;
 
@@ -293,8 +393,12 @@ syscall_(epoll_ctl, const int epfd, const int op, const int fd, const struct epo
             spin_unlock(ep->lock);
             return SYSCALL_FAULT_(ENOENT);
         }
-        ep->entries[found].events = event->events;
-        ep->entries[found].data   = event->data;
+        ep->entries[found].events       = epoll_filter_events(event->events);
+        ep->entries[found].data         = event->data;
+        ep->entries[found].last_events  = 0;
+        ep->entries[found].edge_trigger = !!(event->events & EPOLLET);
+        ep->entries[found].one_shot     = !!(event->events & EPOLLONESHOT);
+        ep->entries[found].disabled     = false;
         break;
 
     default:
@@ -328,9 +432,15 @@ syscall_(
         return SYSCALL_FAULT_(EBADF);
     }
 
-    const uint64_t start_time = nano_time();
-    extern vfs_callback_t fs_callbacks[256];
-    int ready                 = 0;
+    const uint64_t start_time   = nano_time();
+    const bool infinite_timeout = timeout < 0;
+    const uint64_t timeout_ns   = infinite_timeout ? 0 : (uint64_t)timeout * 1000000ULL;
+    vfs_poll_wait_t *waits      = calloc(EPOLL_MAX_ENTRIES, sizeof(*waits));
+    int ready                   = 0;
+
+    if (!waits) {
+        return SYSCALL_FAULT_(ENOMEM);
+    }
 
     arch_open_interrupt();
     scheduler_enable();
@@ -339,34 +449,37 @@ syscall_(
         spin_lock(ep->lock);
 
         for (int i = 0; i < ep->count && ready < maxevents; i++) {
+            if (ep->entries[i].disabled) {
+                continue;
+            }
+
             fd_t *handle = get_fd(fdt, ep->entries[i].fd);
             if (!handle) {
                 continue;
             }
 
-            const vfs_node_t node = handle->node;
-            uint32_t revents;
-
-            if (fs_callbacks[node->fsid]->poll == (void *)dummy) {
-                revents = ep->entries[i].events & (EPOLLIN | EPOLLOUT);
-            } else {
-                revents = (uint32_t)vfs_poll(node, ep->entries[i].events | EPOLLERR | EPOLLHUP);
-            }
-
-            if (revents > 0) {
+            uint32_t revents = epoll_query_ready_events(&ep->entries[i], handle);
+            if (revents > 0 && epoll_should_emit(&ep->entries[i], revents)) {
                 events[ready].events = revents;
                 events[ready].data   = ep->entries[i].data;
+                if (ep->entries[i].one_shot) {
+                    ep->entries[i].disabled = true;
+                }
                 ready++;
+            } else if (ep->entries[i].edge_trigger && revents == 0) {
+                ep->entries[i].last_events = 0;
             }
         }
 
         spin_unlock(ep->lock);
 
         if (ready > 0) {
+            free(waits);
             return (uint64_t)ready;
         }
 
         if (signals_pending_quick(current)) {
+            free(waits);
             return SYSCALL_FAULT_(EINTR);
         }
 
@@ -374,9 +487,72 @@ syscall_(
             break;
         }
 
-        scheduler_yield();
-    } while (timeout < 0 || nano_time() - start_time < (uint64_t)timeout * 1000000ULL);
+        size_t wait_count = 0;
+        spin_lock(ep->lock);
+        wait_count = epoll_arm_waiters_locked(ep, fdt, current, waits, EPOLL_MAX_ENTRIES);
+        spin_unlock(ep->lock);
+
+        if (wait_count > 0) {
+            ready = 0;
+            spin_lock(ep->lock);
+            for (int i = 0; i < ep->count && ready < maxevents; i++) {
+                if (ep->entries[i].disabled) {
+                    continue;
+                }
+
+                fd_t *handle = get_fd(fdt, ep->entries[i].fd);
+                if (!handle) {
+                    continue;
+                }
+
+                uint32_t revents = epoll_query_ready_events(&ep->entries[i], handle);
+                if (revents > 0 && epoll_should_emit(&ep->entries[i], revents)) {
+                    events[ready].events = revents;
+                    events[ready].data   = ep->entries[i].data;
+                    if (ep->entries[i].one_shot) {
+                        ep->entries[i].disabled = true;
+                    }
+                    ready++;
+                } else if (ep->entries[i].edge_trigger && revents == 0) {
+                    ep->entries[i].last_events = 0;
+                }
+            }
+            spin_unlock(ep->lock);
+
+            if (ready == 0 && !signals_pending_quick(current)) {
+                int64_t wait_ns = -1;
+                if (!infinite_timeout) {
+                    uint64_t elapsed = nano_time() - start_time;
+                    if (elapsed >= timeout_ns) {
+                        wait_ns = 0;
+                    } else {
+                        wait_ns = (int64_t)(timeout_ns - elapsed);
+                    }
+                }
+
+                int64_t block_ns = wait_ns;
+                if (block_ns < 0 || block_ns > 10000000LL) {
+                    block_ns = 10000000LL;
+                }
+                scheduler_block_current((uint64_t)block_ns, "epoll_wait");
+            }
+
+            epoll_disarm_waiters(waits, wait_count);
+
+            if (ready > 0) {
+                free(waits);
+                return (uint64_t)ready;
+            }
+            if (signals_pending_quick(current)) {
+                free(waits);
+                return SYSCALL_FAULT_(EINTR);
+            }
+        } else {
+            scheduler_yield();
+        }
+    } while (infinite_timeout || nano_time() - start_time < timeout_ns);
     arch_close_interrupt();
+    free(waits);
 
     return 0;
 }
@@ -394,7 +570,7 @@ syscall_(
     const sigset_t old_mask = thread->blocked;
 
     if (sigmask && sigsetsize == sizeof(sigset_t)) {
-        thread->blocked = *sigmask;
+        thread->blocked = sigset_user_to_kernel(*sigmask);
     }
 
     const uint64_t ret = syscall_epoll_wait(epfd, events, maxevents, timeout, 0, 0, regs);

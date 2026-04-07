@@ -1,4 +1,5 @@
 #include "task/task.h"
+#include "bootarg.h"
 #include "cow_arraylist.h"
 #include "errno.h"
 #include "fs/procfs.h"
@@ -806,6 +807,8 @@ out:
 }
 
 void setup_task() {
+    const char *console           = boot_get_cmdline_param("console");
+    char ctty_path_buf[64]        = "/dev/tty1";
     process_list                  = cow_list_create();
     kernel_process                = calloc(1, sizeof(struct process_control_block));
     kernel_process->name          = strdup("System");
@@ -816,7 +819,10 @@ void setup_task() {
     kernel_process->child_threads = cow_list_create();
     kernel_process->mm            = mm_create(get_kernel_pagedir());
     kernel_process->tty           = get_kernel_session();
-    kernel_process->ctty_path     = strdup("/dev/tty0");
+    if (console != NULL && strcmp(console, "tty0") != 0) {
+        snprintf(ctty_path_buf, sizeof(ctty_path_buf), "/dev/%s", console);
+    }
+    kernel_process->ctty_path     = strdup(ctty_path_buf);
     kernel_process->status        = T_RUNNING;
     kernel_process->exec          = NULL;
     kernel_process->virt_queue    = create_llist_queue();

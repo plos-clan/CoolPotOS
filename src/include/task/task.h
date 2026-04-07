@@ -168,11 +168,13 @@ struct thread_control_block {
 
     sigaction_t actions[MAXSIG]; // 信号处理器回调
     uint64_t signal;             // 信号位图
-    uint64_t blocked;            // 屏蔽位图
-    uint64_t saved_sigmask;      // sigsuspend 保存的原始信号掩码
-    bool has_saved_sigmask;      // 是否需要恢复 saved_sigmask
-    altstack_t alt_stack;        // 信号备用栈
-    int block_code;              // 通用阻塞等待返回码
+    siginfo_t pending_siginfo[MAXSIG + 1];
+    uint64_t pending_siginfo_mask;
+    uint64_t blocked;       // 屏蔽位图
+    uint64_t saved_sigmask; // sigsuspend 保存的原始信号掩码
+    bool has_saved_sigmask; // 是否需要恢复 saved_sigmask
+    altstack_t alt_stack;   // 信号备用栈
+    int block_code;         // 通用阻塞等待返回码
 
     size_t cpu_id; // 线程所属CPUID
     size_t futex_index;

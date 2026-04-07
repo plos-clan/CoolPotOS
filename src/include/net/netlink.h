@@ -53,7 +53,6 @@ struct netlink_sock {
     vfs_node_t node;
     struct sockaddr_nl *bind_addr;
     struct netlink_buffer *buffer;
-    struct sock_fprog *filter;
     spin_t lock;
     socket_t *refinfo;
 };

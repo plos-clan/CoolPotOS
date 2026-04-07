@@ -3,8 +3,8 @@
 #include "types.h"
 
 typedef enum HeapError {
-  InvalidFree,
-  LayoutError,
+    InvalidFree,
+    LayoutError,
 } HeapError;
 
 /**
@@ -13,16 +13,16 @@ typedef enum HeapError {
 typedef void (*ErrorHandler)(enum HeapError error, void *ptr);
 
 typedef struct MemorySpan {
-  /**
-   * Pointer to the start of the new memory block.
-   * Must be non-null and properly aligned if the system requires it.
-   */
-  uint8_t *ptr;
-  /**
-   * The size of the memory block in bytes.
-   * If `size` is 0, the allocator considers the OOM handling failed.
-   */
-  size_t size;
+    /**
+     * Pointer to the start of the new memory block.
+     * Must be non-null and properly aligned if the system requires it.
+     */
+    uint8_t *ptr;
+    /**
+     * The size of the memory block in bytes.
+     * If `size` is 0, the allocator considers the OOM handling failed.
+     */
+    size_t size;
 } MemorySpan;
 
 typedef struct MemorySpan (*OomCallback)(size_t);
@@ -90,8 +90,8 @@ void heap_set_oom_handler(OomCallback callback);
 
 /**
  * Returns the usable size of the memory block pointed to by `ptr`.
- * This corresponds to the size originally requested during allocation (`malloc`, `aligned_alloc`, `realloc`).
- * Returns 0 if `ptr` is null.
+ * This corresponds to the size originally requested during allocation (`malloc`, `aligned_alloc`,
+ * `realloc`). Returns 0 if `ptr` is null.
  *
  * # Safety
  * - `ptr` must be null or a pointer previously returned by `malloc`, `realloc`,
@@ -101,6 +101,12 @@ void heap_set_oom_handler(OomCallback callback);
  * - The behavior is undefined if the metadata preceding `ptr` has been corrupted.
  */
 size_t usable_size(void *ptr);
+
+void *liballoc_malloc(size_t size);
+void *liballoc_calloc(size_t nmemb, size_t size);
+void *liballoc_aligned_alloc(size_t alignment, size_t size);
+void liballoc_free(void *ptr);
+void *liballoc_realloc(void *ptr, size_t size);
 
 /**
  * Allocates memory with default alignment (`align_of::<usize>`).
@@ -158,5 +164,5 @@ void free(void *ptr);
 void *realloc(void *ptr, size_t size);
 
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+} // extern "C"
+#endif // __cplusplus

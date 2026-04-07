@@ -483,7 +483,9 @@ shebang_retry:;
                 action->sa_restorer = NULL;
             }
         }
-        current->signal = 0; // clear pending signals
+        current->signal               = 0; // clear pending signals
+        current->pending_siginfo_mask = 0;
+        memset(current->pending_siginfo, 0, sizeof(current->pending_siginfo));
     }
 
     // 根据 POSIX 的 execve 规范定义, 内核对象不变, 故懒分配器, IPC等不动

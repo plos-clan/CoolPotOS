@@ -37,3 +37,6 @@ assets/*.elf
 # AI Agent Cache
 .codex
 AGENTS.md
+
+# Log files
+*.log

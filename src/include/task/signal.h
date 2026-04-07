@@ -178,6 +178,11 @@ struct sigevent {
     } __sev_fields;
 };
 
+#define SI_USER   0
+#define SI_KERNEL 0x80
+#define SI_QUEUE  -1
+#define SI_TKILL  -6
+
 struct syscall_regs;
 typedef struct process_control_block *pcb_t;
 
@@ -185,3 +190,10 @@ void signal_init();
 void do_signal(struct syscall_regs *regs);
 int send_signal_to_process(pcb_t process, int sig);
 int send_signal_to_pgroup(pid_t pgid, int sig);
+int send_signal_to_process_info(pcb_t process, int sig, const siginfo_t *info);
+int send_signal_to_pgroup_info(pid_t pgid, int sig, const siginfo_t *info);
+bool signal_sig_in_range(int sig);
+bool signal_sig_maskable(int sig);
+sigset_t signal_sigbit(int sig);
+sigset_t sigset_user_to_kernel(sigset_t user_mask);
+sigset_t sigset_kernel_to_user(sigset_t kernel_mask);

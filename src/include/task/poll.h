@@ -4,9 +4,9 @@
 #define POLLPRI 0x0002 // 有紧急数据可读（如 socket 的带外数据）
 #define POLLOUT 0x0004 // 写操作不会阻塞（可写）
 
-#define POLLERR  0x0008 // 错误（不需要设置，由内核返回）
-#define POLLHUP  0x0010 // 挂起（对端关闭）
-#define POLLNVAL 0x0020 // fd 无效（文件描述符非法）
+#define POLLERR    0x0008 // 错误（不需要设置，由内核返回）
+#define POLLHUP    0x0010 // 挂起（对端关闭）
+#define POLLNVAL   0x0020 // fd 无效（文件描述符非法）
 #define POLLRDNORM 0x0040
 #define POLLRDBAND 0x0080
 #define POLLWRNORM 0x0100
@@ -56,6 +56,10 @@ typedef struct epoll_entry {
     int fd;
     uint32_t events;
     uint64_t data;
+    uint32_t last_events;
+    bool edge_trigger;
+    bool one_shot;
+    bool disabled;
 } epoll_entry_t;
 
 // Internal: epoll instance (stored in vfs_node->handle)
