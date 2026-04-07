@@ -2,6 +2,8 @@
 #include <mem/alloc.h>
 #include <lock.h>
 
+#if (defined(__x86_64__) || defined(__amd64__))
+
 spin_t heap_lock = SPIN_INIT;
 
 void *malloc(size_t size) {
@@ -58,3 +60,5 @@ void free(void *ptr) {
     if (irq)
         arch_open_interrupt();
 }
+
+#endif
