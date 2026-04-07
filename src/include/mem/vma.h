@@ -44,7 +44,7 @@ vma_t *vma_alloc(void);
 void vma_free(vma_t *vma);
 vma_t *vma_find(vma_manager_t *mgr, unsigned long addr);
 vma_t *vma_find_intersection(vma_manager_t *mgr, unsigned long start, unsigned long end);
-int vma_insert(vma_manager_t *mgr, vma_t *vma);
+int vma_insert(vma_manager_t *mgr, vma_t *new_vma);
 int vma_remove(vma_manager_t *mgr, vma_t *vma);
 int vma_split(vma_t *vma, unsigned long addr);
 int vma_merge(vma_t *vma1, vma_t *vma2);

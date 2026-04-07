@@ -16,8 +16,9 @@ vma_t *vma_alloc(void) {
 
 void vma_free(vma_t *vma) {
     if (vma) {
-        if (vma->vm_name)
+        if (vma->vm_name) {
             free(vma->vm_name);
+        }
         free(vma);
     }
 }
@@ -48,8 +49,9 @@ vma_t *vma_find_intersection(vma_manager_t *mgr, unsigned long start, unsigned l
 
 // 插入VMA到链表（保持地址排序）
 int vma_insert(vma_manager_t *mgr, vma_t *new_vma) {
-    if (!new_vma)
+    if (!new_vma) {
         return -1;
+    }
 
     // 检查是否有重叠
     if (vma_find_intersection(mgr, new_vma->vm_start, new_vma->vm_end)) {
@@ -85,8 +87,9 @@ int vma_insert(vma_manager_t *mgr, vma_t *new_vma) {
 
 // 从链表中移除VMA
 int vma_remove(vma_manager_t *mgr, vma_t *vma) {
-    if (!vma)
+    if (!vma) {
         return -1;
+    }
 
     if (vma->vm_prev) {
         vma->vm_prev->vm_next = vma->vm_next;
@@ -103,18 +106,20 @@ int vma_remove(vma_manager_t *mgr, vma_t *vma) {
 }
 
 // VMA分割
-int vma_split(vma_t *vma, unsigned long addr) {
+int vma_split(vma_t *vma, const unsigned long addr) {
     if (!vma || addr <= vma->vm_start || addr >= vma->vm_end) {
         return -1;
     }
 
     // 创建新的VMA
     vma_t *new_vma = vma_alloc();
-    if (!new_vma)
+    if (!new_vma) {
         return -1;
+    }
 
     // 复制属性
     *new_vma          = *vma;
+    new_vma->vm_name  = strdup(vma->vm_name);
     new_vma->vm_start = addr;
     new_vma->vm_next  = vma->vm_next;
     new_vma->vm_prev  = vma;
@@ -151,6 +156,7 @@ int vma_merge(vma_t *vma1, vma_t *vma2) {
     // 合并VMA
     vma1->vm_end  = vma2->vm_end;
     vma1->vm_next = vma2->vm_next;
+    free(vma2->vm_name);
 
     if (vma2->vm_next) {
         vma2->vm_next->vm_prev = vma1;
@@ -162,10 +168,9 @@ int vma_merge(vma_t *vma1, vma_t *vma2) {
 
 int vma_unmap_range(vma_manager_t *mgr, uintptr_t start, uintptr_t end) {
     vma_t *vma = mgr->vma_list;
-    vma_t *next;
 
     while (vma) {
-        next = vma->vm_next;
+        vma_t *next = vma->vm_next;
 
         // 完全包含在要取消映射的范围内
         if (vma->vm_start >= start && vma->vm_end <= end) {
@@ -203,16 +208,16 @@ int vma_unmap_range(vma_manager_t *mgr, uintptr_t start, uintptr_t end) {
 }
 
 void vma_manager_exit_cleanup(vma_manager_t *mgr) {
-    if (!mgr)
+    if (!mgr) {
         return;
+    }
 
-    vma_t *vma = mgr->vma_list;
-    vma_t *next;
+    vma_t *vma        = mgr->vma_list;
     int cleaned_count = 0;
 
     // 遍历并清理所有VMA
     while (vma) {
-        next = vma->vm_next;
+        vma_t *next = vma->vm_next;
 
         // 从链表中移除
         if (vma->vm_prev) {
@@ -254,8 +259,8 @@ bool vma_manager_clone(vma_manager_t *src_mgr, vma_manager_t *dst_mgr) {
     dst_mgr->vm_total = src_mgr->vm_total;
     dst_mgr->vm_used  = 0; // vm_used 将在插入 VMA 时更新
 
-    vma_t *src_vma = src_mgr->vma_list;
-    vma_t *new_vma = NULL;
+    const vma_t *src_vma = src_mgr->vma_list;
+    vma_t *new_vma       = NULL;
 
     // 3. 遍历源 VMA 链表并深拷贝
     while (src_vma) {
