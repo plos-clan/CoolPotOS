@@ -167,9 +167,7 @@ static size_t blk_sysfs_partition_index(const blk_device_t *device) {
     return strtoul(suffix + 1, NULL, 10);
 }
 
-static void blk_sysfs_format_uevent(
-    const blk_device_t *device, char *buffer, size_t buffer_size
-) {
+static void blk_sysfs_format_uevent(const blk_device_t *device, char *buffer, size_t buffer_size) {
     uint32_t major = blk_device_major(device);
     uint32_t minor = blk_device_minor(device);
 
@@ -444,7 +442,8 @@ static void blk_publish_device_node(blk_device_t *device) {
         (void *)blk_device_write,
         (void *)blk_poll,
         NULL,
-        (void *)blk_size_t
+        (void *)blk_size_t,
+        device->dev
     );
     vfs_close(dev_root);
 }
@@ -499,7 +498,7 @@ static inline void blk_free_frames_bytes(void *ptr, size_t size) {
     free_frames(virt_to_phys(ptr), pages);
 }
 
-#define BLK_DMA_ALIGN PAGE_SIZE
+#define BLK_DMA_ALIGN       PAGE_SIZE
 #define BLK_IS_DMA_BUF(ptr) ((((uintptr_t)(ptr)) & (BLK_DMA_ALIGN - 1)) == 0)
 
 static bool blk_buffer_is_userspace(const void *buf, size_t len) {
@@ -547,14 +546,13 @@ size_t blk_device_read(
     }
 
     const uint64_t block_size = device->block_size;
-    const uint64_t max_sec =
-        device->max_size >= block_size ? device->max_size / block_size : 1;
-    uint8_t *dst       = buffer;
-    uint64_t sector    = offset / block_size;
-    uint64_t block_off = offset % block_size;
-    uint64_t remaining = length;
-    uint64_t total     = 0;
-    bool dst_is_userspace = blk_buffer_is_userspace(buffer, length);
+    const uint64_t max_sec    = device->max_size >= block_size ? device->max_size / block_size : 1;
+    uint8_t *dst              = buffer;
+    uint64_t sector           = offset / block_size;
+    uint64_t block_off        = offset % block_size;
+    uint64_t remaining        = length;
+    uint64_t total            = 0;
+    bool dst_is_userspace     = blk_buffer_is_userspace(buffer, length);
 
     if (!dst_is_userspace && block_off == 0 && (length % block_size) == 0 && BLK_IS_DMA_BUF(dst)) {
         uint64_t secs_left = length / block_size;
@@ -574,7 +572,7 @@ size_t blk_device_read(
     }
 
     if (block_off != 0) {
-        uint64_t head = MIN(block_size - block_off, remaining);
+        uint64_t head   = MIN(block_size - block_off, remaining);
         uint8_t *bounce = blk_alloc_frames_bytes(block_size);
         if (bounce == NULL) {
             return (uint64_t)-1;
@@ -612,8 +610,8 @@ size_t blk_device_read(
             mid_secs -= n;
         }
     } else if (mid_secs > 0) {
-        uint64_t bn  = MIN(mid_secs, max_sec);
-        uint64_t bsz = bn * block_size;
+        uint64_t bn     = MIN(mid_secs, max_sec);
+        uint64_t bsz    = bn * block_size;
         uint8_t *bounce = blk_alloc_frames_bytes(bsz);
         if (bounce == NULL) {
             return (uint64_t)-1;
@@ -679,14 +677,13 @@ size_t blk_device_write(
     }
 
     const uint64_t block_size = device->block_size;
-    const uint64_t max_sec =
-        device->max_size >= block_size ? device->max_size / block_size : 1;
-    const uint8_t *src = buffer;
-    uint64_t sector    = offset / block_size;
-    uint64_t block_off = offset % block_size;
-    uint64_t remaining = length;
-    uint64_t total     = 0;
-    bool src_is_userspace = blk_buffer_is_userspace(buffer, length);
+    const uint64_t max_sec    = device->max_size >= block_size ? device->max_size / block_size : 1;
+    const uint8_t *src        = buffer;
+    uint64_t sector           = offset / block_size;
+    uint64_t block_off        = offset % block_size;
+    uint64_t remaining        = length;
+    uint64_t total            = 0;
+    bool src_is_userspace     = blk_buffer_is_userspace(buffer, length);
 
     if (!src_is_userspace && block_off == 0 && (length % block_size) == 0 && BLK_IS_DMA_BUF(src)) {
         uint64_t secs_left = length / block_size;
@@ -710,7 +707,7 @@ size_t blk_device_write(
             return (uint64_t)-1;
         }
 
-        uint64_t head = MIN(block_size - block_off, remaining);
+        uint64_t head   = MIN(block_size - block_off, remaining);
         uint8_t *bounce = blk_alloc_frames_bytes(block_size);
         if (bounce == NULL) {
             return (uint64_t)-1;
@@ -752,8 +749,8 @@ size_t blk_device_write(
             mid_secs -= n;
         }
     } else if (mid_secs > 0) {
-        uint64_t bn  = MIN(mid_secs, max_sec);
-        uint64_t bsz = bn * block_size;
+        uint64_t bn     = MIN(mid_secs, max_sec);
+        uint64_t bsz    = bn * block_size;
         uint8_t *bounce = blk_alloc_frames_bytes(bsz);
         if (bounce == NULL) {
             return (uint64_t)-1;

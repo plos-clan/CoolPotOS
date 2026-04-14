@@ -181,6 +181,17 @@ typedef struct termios {
     uint8_t c_cc[NCCS]; /* control characters */
 } termios_t;
 
+struct termios2 {
+    uint32_t c_iflag;   /* input mode flags */
+    uint32_t c_oflag;   /* output mode flags */
+    uint32_t c_cflag;   /* control mode flags */
+    uint32_t c_lflag;   /* local mode flags */
+    uint8_t c_line;     /* line discipline */
+    uint8_t c_cc[NCCS]; /* control characters */
+    uint32_t c_ispeed;  /* input speed */
+    uint32_t c_ospeed;  /* output speed */
+};
+
 typedef struct tty_session_ops {
     size_t (*write)(tty_t *device, const char *buf, size_t offset, size_t count);
     size_t (*read)(tty_t *device, char *buf, size_t offset, size_t count);
@@ -195,6 +206,7 @@ typedef struct tty_session { // 一个 TTY 会话
     termios_t termios;
     tty_session_ops_t ops;
     pid_t fgproc;         // 前台进程组ID
+    pid_t sid;            // 控制终端所属会话ID
     tty_device_t *device; // 会话所属的TTY设备
     atom_queue *queue;    // 输入缓冲队列
     spin_t lock;

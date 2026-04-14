@@ -6,6 +6,14 @@
 #define PCI_CONF_STATUS   0x6 // Status
 #define PCI_CONF_REVISION 0x8 // revision ID
 
+#define MINORBITS 20
+#define MINORMASK ((1U << MINORBITS) - 1) // 0x000FFFFF
+
+#define MKDEV(ma, mi) (((ma) << MINORBITS) | (mi))
+
+#define MAJOR(dev) ((unsigned int)((dev) >> MINORBITS))
+#define MINOR(dev) ((unsigned int)((dev) & MINORMASK))
+
 #include "cp_kernel.h"
 
 typedef struct {
@@ -52,7 +60,6 @@ typedef struct {
     void *desc;
 } pci_device_t;
 
-
 typedef struct block_device blk_device_t;
 
 enum blk_type {
@@ -83,6 +90,7 @@ struct block_device {
     size_t size;       // 块设备大小
     size_t block_size; // 块大小
     size_t max_size;   // 最大读取缓冲区
+    uint64_t dev;      // 设备号
     char name[20];
 
     struct hd_geometry geometry;
@@ -94,4 +102,3 @@ struct block_device {
 void pci_find_class(uint32_t class_code, void (*load_device)(pci_device_t *device));
 size_t register_device(blk_device_t *device);
 uint64_t nano_time();
-

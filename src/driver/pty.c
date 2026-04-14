@@ -631,7 +631,8 @@ static void ptmx_device_open(void *parent, const char *name, vfs_node_t node) {
             pts_device_write,
             ptmx_device_poll,
             NULL,
-            ptmx_size_func
+            ptmx_size_func,
+            MKDEV(136, pair->index)
         );
         vfs_close(pts_root);
 
@@ -727,7 +728,8 @@ void ptmx_init() {
         ptmx_device_write,
         ptmx_device_poll,
         NULL,
-        ptmx_size_func
+        ptmx_size_func,
+        MKDEV(5, 2)
     );
 
     vfs_close(dev_root);

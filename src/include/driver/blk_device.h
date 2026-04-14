@@ -33,6 +33,7 @@ struct block_device {
     size_t size;       // 块设备大小
     size_t block_size; // 块大小
     size_t max_size;   // 最大读取缓冲区
+    uint64_t dev;      // 设备号
     char name[20];
 
     struct hd_geometry geometry;
@@ -44,7 +45,8 @@ struct block_device {
 void zero_setup();
 
 size_t blk_device_read(const blk_device_t *device, void *buffer, size_t offset, size_t length);
-size_t blk_device_write(const blk_device_t *device, const void *buffer, size_t offset, size_t length);
+size_t
+blk_device_write(const blk_device_t *device, const void *buffer, size_t offset, size_t length);
 size_t blk_size_t(const blk_device_t *device);
 errno_t blk_ioctl(blk_device_t *device, size_t cmd, void *arg);
 errno_t blk_poll(blk_device_t *device, size_t events);

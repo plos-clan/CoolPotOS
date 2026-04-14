@@ -17,14 +17,17 @@ static _Atomic volatile size_t dev_id_now = 0;
 
 static void load_tty_device(vfs_node_t node) {
     int graphics_id = 1;
-    int serial_id   = 1;
+    int serial_id   = 0;
     tty_t *pos      = NULL;
     tty_t *n        = NULL;
     llist_for_each(pos, n, get_tty_session_list(), list_node) {
         char name[10];
+        int id = 0;
         if (pos->device->type == TTY_DEVICE_SERIAL) {
+            id = 64 + serial_id;
             sprintf(name, "ttyS%d", serial_id++);
         } else {
+            id = graphics_id;
             sprintf(name, "tty%d", graphics_id++);
         }
 
@@ -39,12 +42,27 @@ static void load_tty_device(vfs_node_t node) {
             (void *)pos->ops.write,
             (void *)pos->ops.poll,
             NULL,
-            (void *)pos->ops.size_t
+            (void *)pos->ops.size_t,
+            OLD_MKDEV(4, id)
         );
     }
 
     if (graphics_id > 1) {
-        vfs_symlink("/dev/tty0", "/dev/tty1");
+        tty_t *tty0 = get_current_session();
+        create_device_node(
+            node,
+            "tty0",
+            device_stream,
+            tty0,
+            0,
+            (void *)tty0->ops.ioctl,
+            (void *)tty0->ops.read,
+            (void *)tty0->ops.write,
+            (void *)tty0->ops.poll,
+            NULL,
+            (void *)tty0->ops.size_t,
+            OLD_MKDEV(4, 0)
+        );
     }
 }
 
@@ -62,7 +80,8 @@ static void load_blk_device(vfs_node_t node) {
             (void *)blk_device_write,
             (void *)blk_poll,
             NULL,
-            (void *)blk_size_t
+            (void *)blk_size_t,
+            device->dev
         );
     }
 }
@@ -87,7 +106,8 @@ static void load_drm_device(vfs_node_t node) {
             device->write,
             device->poll,
             device->map,
-            drm_size_t
+            drm_size_t,
+            device->dev
         );
     }
 
@@ -108,7 +128,7 @@ errno_t devtmpfs_mount(const char *handle, vfs_node_t node, void *data) {
 
     load_tty_device(node);
     load_blk_device(node);
-    // load_drm_device(node);
+    load_drm_device(node);
     fb_setup(node);
     evdev_setup(node);
 
@@ -303,10 +323,24 @@ errno_t create_device_node(
     vfs_write_t write,
     vfs_poll_t poll,
     vfs_mapfile_t map,
-    size_t (*size_t)(void *handle)
+    size_t (*size_t)(void *handle),
+    uint64_t rdev
 ) {
     return create_device_node_ex(
-        root, name, type, handle, dev_number, NULL, NULL, ioctl, read, write, poll, map, size_t
+        root,
+        name,
+        type,
+        handle,
+        dev_number,
+        NULL,
+        NULL,
+        ioctl,
+        read,
+        write,
+        poll,
+        map,
+        size_t,
+        rdev
     );
 }
 
@@ -323,12 +357,15 @@ errno_t create_device_node_ex(
     vfs_write_t write,
     vfs_poll_t poll,
     vfs_mapfile_t map,
-    size_t (*size_t)(void *handle)
+    size_t (*size_t)(void *handle),
+    uint64_t rdev
 ) {
-    if (root == NULL)
+    if (root == NULL) {
         return -EINVAL;
-    if (root->fsid != dev_tmpfs_id)
+    }
+    if (root->fsid != dev_tmpfs_id) {
         return -ENODEV;
+    }
     char *full_path  = vfs_get_fullpath(root);
     char *creat_path = calloc(1, strlen(full_path) + strlen(name) + 5);
     sprintf(creat_path, "%s/%s", full_path, name);
@@ -361,7 +398,7 @@ errno_t create_device_node_ex(
     fs_handle->size_t = size_t;
     node->size        = size_t ? size_t(open_t ? NULL : handle) : 0;
     node->dev         = dev_number ? dev_number : dev_id_now++;
-    node->rdev        = node->dev;
+    node->rdev        = rdev;
     node->type        = fs_handle->dev_type == device_stream ? file_stream : file_block;
     vfs_close(node);
     free(creat_path);

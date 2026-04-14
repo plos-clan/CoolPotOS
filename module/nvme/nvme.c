@@ -886,9 +886,9 @@ static size_t nvme_read(void *data, uint8_t *buffer, size_t size, size_t lba) {
         return 0;
     }
 
-    nvme_ns_t *ns               = data;
-    nvme_queue_t *queue         = nvme_pick_io_queue(ns->ctrl);
-    nvme_callback_ctx_t cb_ctx = {0};
+    nvme_ns_t *ns              = data;
+    nvme_queue_t *queue        = nvme_pick_io_queue(ns->ctrl);
+    nvme_callback_ctx_t cb_ctx = { 0 };
 
     if (nvme_read_async(
             ns->ctrl, ns->ns->nsid, lba, (uint32_t)size, buffer, 0, nvme_io_callback, &cb_ctx
@@ -906,9 +906,9 @@ static size_t nvme_write(void *data, uint8_t *buffer, size_t size, size_t lba) {
         return 0;
     }
 
-    nvme_ns_t *ns               = data;
-    nvme_queue_t *queue         = nvme_pick_io_queue(ns->ctrl);
-    nvme_callback_ctx_t cb_ctx = {0};
+    nvme_ns_t *ns              = data;
+    nvme_queue_t *queue        = nvme_pick_io_queue(ns->ctrl);
+    nvme_callback_ctx_t cb_ctx = { 0 };
 
     if (nvme_write_async(
             ns->ctrl, ns->ns->nsid, lba, (uint32_t)size, buffer, 0, nvme_io_callback, &cb_ctx
@@ -990,6 +990,7 @@ static void nvme_register_namespace(
     device->ops.map          = (void *)dummy;
     device->geometry.heads   = 64;
     device->geometry.sectors = 32;
+    device->dev              = MKDEV(259, ns_info->nsid);
 
     uint64_t cyls =
         ns_info->block_count / ((uint64_t)(device->geometry.heads * device->geometry.sectors));

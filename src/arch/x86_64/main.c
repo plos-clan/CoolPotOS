@@ -107,7 +107,7 @@ USED _Noreturn void kmain() {
     cpu_features_setup();
     load_module();
     init_block_device_manager();
-    // drm_device_setup();
+    drm_device_setup();
     fsgsbase_init();
     vfs_init();
     intctl_init();
@@ -150,7 +150,7 @@ USED _Noreturn void kmain() {
     urandom_init();
     // usb_init();
     ahci_setup();
-    // drm_plainfb_init();
+    drm_plainfb_init();
 
     cpio_init();
     procfs_setup();

@@ -10,7 +10,7 @@
 #include <mem/page.h>
 
 static uint64_t fb_phys_addr(const boot_framebuffer_t *fb) {
-    return arch_virt_to_phys((uint64_t)fb->address);
+    return arch_virt_to_phys(fb->address);
 }
 
 static uint32_t fb_alpha_offset(const boot_framebuffer_t *fb) {
@@ -82,9 +82,9 @@ fb_fill_var_screeninfo(const boot_framebuffer_t *framebuffer, struct fb_var_scre
 
     const uint32_t alpha_length = fb_alpha_length(framebuffer);
     fb_var->transp              = (struct fb_bitfield){
-        .offset    = alpha_length == 0 ? 0 : fb_alpha_offset(framebuffer),
-        .length    = alpha_length,
-        .msb_right = 0,
+                     .offset    = alpha_length == 0 ? 0 : fb_alpha_offset(framebuffer),
+                     .length    = alpha_length,
+                     .msb_right = 0,
     };
 
     fb_var->height = (uint32_t)-1;
@@ -327,7 +327,8 @@ void fb_setup(const vfs_node_t dev_root) {
         (vfs_write_t)fb_dev_write,
         fb_dev_poll,
         fb_dev_map,
-        fb_dev_size
+        fb_dev_size,
+        MKDEV(29, 0)
     );
 
     fb_sysfs_publish();

@@ -1,5 +1,14 @@
 #pragma once
 
+#define MINORBITS 20
+#define MINORMASK ((1U << MINORBITS) - 1)
+
+#define MAJOR(dev)    ((unsigned int)((dev) >> MINORBITS))
+#define MINOR(dev)    ((unsigned int)((dev) & MINORMASK))
+#define MKDEV(ma, mi) (((ma) << MINORBITS) | (mi))
+
+#define OLD_MKDEV(ma, mi) (((ma) << 8) | (mi))
+
 #include "fs/vfs.h"
 
 enum devtmpfs_type {
@@ -50,7 +59,8 @@ errno_t create_device_node(
     vfs_write_t write,
     vfs_poll_t poll,
     vfs_mapfile_t map,
-    size_t (*size_t)(void *handle)
+    size_t (*size_t)(void *handle),
+    uint64_t rdev
 );
 
 errno_t create_device_node_ex(
@@ -66,7 +76,8 @@ errno_t create_device_node_ex(
     vfs_write_t write,
     vfs_poll_t poll,
     vfs_mapfile_t map,
-    size_t (*size_t)(void *handle)
+    size_t (*size_t)(void *handle),
+    uint64_t rdev
 );
 
 extern int dev_tmpfs_id;

@@ -324,7 +324,8 @@ void evdev_setup(const vfs_node_t dev_root) {
         (vfs_write_t)evdev_write,
         evdev_poll,
         NULL,
-        NULL
+        NULL,
+        MKDEV(13, 64)
     );
 
     vfs_close(input_dir);

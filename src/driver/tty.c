@@ -3,6 +3,7 @@
 #include "driver/input_device.h"
 #include "driver/ioctl.h"
 #include "errno.h"
+#include "syscall.h"
 #include "mem/heap.h"
 #include "task/task.h"
 #include "term/klog.h"
@@ -211,12 +212,19 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         termios->c_line = session->termios.c_line;
         break;
     case TIOCGPGRP:;
+        if (arg == NULL) {
+            return -EINVAL;
+        }
         pid_t *pid = arg;
         *pid       = session->fgproc;
         break;
-    case TCSETS:
-    case TCSETSF:
-    case TCSETSW: {
+    case TIOCGSID:
+        if (arg == NULL) {
+            return -EINVAL;
+        }
+        *(pid_t *)arg = session->sid;
+        break;
+    case TCSETSF: {
         // 对 termios 设置支持，可选实现
         const struct termios *termios_sw = arg;
         session->termios.c_iflag         = termios_sw->c_iflag;
@@ -246,13 +254,13 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         *(int *)arg = session->tty_mode;
         break;
     case KDSETMODE:
-        session->tty_mode = *(int *)arg;
+        session->tty_mode = (int)arg;
         break;
     case KDGKBMODE:
         *(int *)arg = session->tty_kbmode;
         break;
     case KDSKBMODE:
-        session->tty_kbmode = *(int *)arg;
+        session->tty_kbmode = (int)arg;
         break;
     case VT_SETMODE: {
         const struct vt_mode *src = arg;
@@ -276,16 +284,55 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         struct vt_state *state = arg;
         if (state != NULL) {
             state->v_active = 1;
-            state->v_state  = 1;
+            state->v_state  = 0;
         }
         break;
     }
+    case TCSETSW:
+    case TCSETS:
+        if (!arg || copy_from_user(&session->termios, arg, sizeof(termios))) {
+            return -EFAULT;
+        }
+        return EOK;
+    case TCSETS2: {
+        struct termios2 t2_set;
+        if (!arg || copy_from_user(&t2_set, arg, sizeof(struct termios2))) {
+            return -EFAULT;
+        }
+        memcpy(&session->termios.c_iflag, &t2_set.c_iflag, sizeof(uint32_t));
+        memcpy(&session->termios.c_oflag, &t2_set.c_oflag, sizeof(uint32_t));
+        memcpy(&session->termios.c_cflag, &t2_set.c_cflag, sizeof(uint32_t));
+        memcpy(&session->termios.c_lflag, &t2_set.c_lflag, sizeof(uint32_t));
+        session->termios.c_line = t2_set.c_line;
+        memcpy(session->termios.c_cc, t2_set.c_cc, sizeof(t2_set.c_cc));
+        return EOK;
+    }
+    case TCGETS2: {
+        struct termios2 t2 = { 0 };
+        memcpy(&t2.c_iflag, &session->termios.c_iflag, sizeof(uint32_t));
+        memcpy(&t2.c_oflag, &session->termios.c_oflag, sizeof(uint32_t));
+        memcpy(&t2.c_cflag, &session->termios.c_cflag, sizeof(uint32_t));
+        memcpy(&t2.c_lflag, &session->termios.c_lflag, sizeof(uint32_t));
+        t2.c_line = session->termios.c_line;
+        memcpy(t2.c_cc, session->termios.c_cc, sizeof(t2.c_cc));
+        t2.c_ispeed = 0; // Not supported
+        t2.c_ospeed = 0; // Not supported
+        if (!arg || copy_to_user((void *)arg, &t2, sizeof(struct termios2)))
+            return -EFAULT;
+        return 0;
+    }
     case VT_OPENQRY:
         *(int *)arg = 1;
-        return 0;
+        return EOK;
     case VT_ACTIVATE:
     case VT_WAITACTIVE:
-        return 0;
+        return EOK;
+    case TCSBRK:
+    case TCXONC:
+    case TCFLSH:
+    case TIOCNXCL:
+    case TIOCSWINSZ:
+        return EOK;
     case TIOCSCTTY: {
         const tcb_t thread = get_current_task();
         pcb_t proc         = thread == NULL ? NULL : thread->process;
@@ -302,6 +349,7 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         snprintf(path, sizeof(path), "/dev/%s", tty_name[0] ? tty_name : "tty1");
         proc->ctty_path = strdup(path);
         session->fgproc = proc->pgid;
+        session->sid    = proc->sid;
         break;
     }
     case TIOCSPGRP:
@@ -310,8 +358,12 @@ static errno_t tty_ioctl(tty_t *session, const size_t req, void *arg) {
         }
         session->fgproc = *(pid_t *)arg;
         break;
+    case TIOCNOTTY: {
+        return EOK;
+    }
     default:
-        return -ENOTTY;
+        logkf("no impl tty ioctl: %d\n", req);
+        return -EINVAL;
     }
     return EOK;
 }
@@ -649,7 +701,7 @@ void init_console_symlink() {
     const char *console = boot_get_cmdline_param("console");
     char buf[50];
     if (console == NULL || streq(console, "tty0")) {
-        strcpy(buf, "/dev/tty1");
+        strcpy(buf, "/dev/tty0");
     } else {
         sprintf(buf, "/dev/%s", console);
     }
