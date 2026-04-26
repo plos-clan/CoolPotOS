@@ -53,7 +53,7 @@ static errno_t sysfs_mount(const char *src, vfs_node_t node, void *data) {
     sysfs_refresh_devices_system();
     sysfs_load_devices_pci();
     sysfs_load_module(sysfs_module);
-    // drm_sysfs_populate();
+    drm_sysfs_populate();
     blk_sysfs_populate();
     fb_sysfs_populate();
 

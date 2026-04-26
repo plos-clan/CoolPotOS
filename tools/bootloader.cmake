@@ -17,7 +17,7 @@ else ()
 endif ()
 
 set(FETCHCONTENT_QUIET FALSE)
-set(LIMINE_REPO_URL "https://codeberg.org/Limine/Limine.git")
+set(LIMINE_REPO_URL "git@github.com:Limine-Bootloader/Limine.git")
 set(LIMINE_NAME limine)
 set(LIMINE_BRANCH "v9.x-binary")
 

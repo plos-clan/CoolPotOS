@@ -8,7 +8,8 @@
  *
  * ARCH_HAS_OPTIMIZED_MEMCPY 该架构有 memcpy 高速指令集优化, 取消 krlibc 原版实现
  * ARCH_HAS_OPTIMIZED_MEMSET 该架构有 memset 高速指令集优化
- *
+ * ARCH_HAS_OPTIMIZED_MEMCMP memcmp
+ * ARCH_HAS_OPTIMIZED_MEMMOVE memmove
  */
 
 #define KERNEL_NAME_   "CP_Kernel"

@@ -1,5 +1,6 @@
 #include "fs/tmpfs.h"
 #include "errno.h"
+#include "mem/frame.h"
 #include "krlibc.h"
 #include "mem/page.h"
 #include "task/poll.h"
@@ -7,6 +8,75 @@
 
 static int tmpfs_id              = 0;
 static _Atomic int mount_dev_now = 0;
+
+static bool tmpfs_size_to_pages(size_t size, size_t *pages_out) {
+    if (pages_out == NULL)
+        return false;
+    if (size == 0) {
+        *pages_out = 0;
+        return true;
+    }
+    if (size > (size_t)-1 - (PAGE_SIZE - 1))
+        return false;
+    *pages_out = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    return true;
+}
+
+static void tmpfs_release_pages(tmpfs_file_t *file) {
+    if (file == NULL)
+        return;
+    if (file->data != NULL && file->page_num != 0) {
+        free_frames(virt_to_phys(file->data), file->page_num);
+    }
+    file->data     = NULL;
+    file->page_num = 0;
+    file->capacity = 0;
+}
+
+static bool tmpfs_ensure_capacity(tmpfs_file_t *file, size_t end) {
+    if (file == NULL)
+        return false;
+    if (end <= file->capacity)
+        return true;
+
+    size_t need_pages = 0;
+    if (!tmpfs_size_to_pages(end, &need_pages) || need_pages == 0)
+        return false;
+
+    size_t new_pages = file->page_num != 0 ? file->page_num : 1;
+    while (new_pages < need_pages) {
+        if (new_pages > (size_t)-1 / 2) {
+            new_pages = need_pages;
+            break;
+        }
+        new_pages *= 2;
+    }
+
+    if (new_pages > (size_t)-1 / PAGE_SIZE)
+        return false;
+
+    uint64_t phys = alloc_frames(new_pages);
+    if (phys == 0)
+        return false;
+
+    char *new_data = phys_to_virt(phys);
+    if (new_data == NULL) {
+        free_frames(phys, new_pages);
+        return false;
+    }
+
+    size_t new_capacity = new_pages * PAGE_SIZE;
+    memset(new_data, 0, new_capacity);
+    if (file->data != NULL && file->size != 0) {
+        memcpy(new_data, file->data, file->size);
+    }
+
+    tmpfs_release_pages(file);
+    file->data     = new_data;
+    file->page_num = new_pages;
+    file->capacity = new_capacity;
+    return true;
+}
 
 errno_t tmpfs_mount(const char *handle, vfs_node_t node, void *data) {
     node->fsid               = tmpfs_id;
@@ -84,14 +154,17 @@ size_t tmpfs_write(void *file, const void *addr, size_t offset, size_t size) {
         return 0;
     }
     tmpfs_file_t *f = file;
-    size_t end      = offset + size;
-    if (end > f->capacity) {
-        size_t new_cap = end + PAGE_SIZE;
-        char *new_buf  = realloc(f->data, new_cap);
-        if (!new_buf)
-            return 0;
-        f->data     = new_buf;
-        f->capacity = new_cap;
+    size_t end      = 0;
+
+    if (__builtin_add_overflow(offset, size, &end))
+        return 0;
+
+    if (!tmpfs_ensure_capacity(f, end)) {
+        return 0;
+    }
+
+    if (offset > f->size) {
+        memset(f->data + f->size, 0, offset - f->size);
     }
     memcpy(f->data + offset, addr, size);
     if (end > f->size)
@@ -124,9 +197,7 @@ errno_t tmpfs_delete(void *parent, vfs_node_t node) {
         f->link_count--;
         return EOK;
     }
-    if (f->data != NULL) {
-        free(f->data);
-    }
+    tmpfs_release_pages(f);
     free(f);
     return EOK;
 }
@@ -222,8 +293,8 @@ errno_t tmpfs_free(void *handle) {
         file->link_count--;
         return EOK;
     }
-    if (file->type == tp_file_file && file->data != NULL)
-        free(file->data);
+    if (file->type == tp_file_file)
+        tmpfs_release_pages(file);
     free(file);
     return EOK;
 }
