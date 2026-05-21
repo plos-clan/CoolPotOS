@@ -1,0 +1,8 @@
+timeout: 0
+verbose: yes
+
+/CoolPotOS-CP_Kernel-${arch}
+    protocol: limine
+    kernel_path: boot():/${kernel}
+    kernel_cmdline: console=tty0 mem=default init=/bin/sh
+    kaslr: no
