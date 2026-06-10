@@ -40,3 +40,4 @@ typedef struct boot_module {
 } boot_module_t;
 
 size_t boot_get_hhdm_offset();
+boot_memory_map_t *boot_get_memory_map();
