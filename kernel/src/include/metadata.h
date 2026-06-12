@@ -55,8 +55,9 @@
     (KERNEL_NAME_ "-" KERNEL_ARCH "-" KERNEL_VERSION "." KERNEL_ARCH_VERSION "_(git:" GIT_VERSION  \
                   ")_{" COMPILER_NAME " " COMPILER_VERSION "}")
 
-#define KERNEL_STACK_SIZE 0x8000             // 内核栈大小
-#define KERNEL_AREA_MEM   0xf000000000000000 // 内核地址空间起始
-#define SLUB_POOL_SIZE    (2 * 1024 * 1024)
-#define SLUB_POOL_PAGES   (SLUB_POOL_SIZE / 4096)
+#define KERNEL_STACK_SIZE 0x8000               // 内核栈大小
+#define KERNEL_AREA_MEM   0xf000000000000000   // 内核地址空间起始
+#define SLUB_POOL_SIZE    (2 * 1024 * 1024)    // slub 分配区大小
 #define SLUB_POOL_BASE    0xffff900000000000UL // slub 分配区起始地址
+#define MAX_FRAMEBUFFER   10                   // 最大帧缓冲区个数识别
+#define MAX_CPU_NUM       256                  // 最大支持 CPU 核心数

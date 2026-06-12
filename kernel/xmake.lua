@@ -56,7 +56,7 @@ target("kernel")
     end)
 
     add_cflags("-ffreestanding", "-nostdlib", "-fno-builtin", "-fno-stack-protector")
-    add_cflags("-mcmodel=kernel", "-fno-pie", "-fno-pic")
-    add_ldflags("-nostdlib","-nostdinc", "-static")
+    add_cflags("-mcmodel=kernel", "-fno-pie", "-fno-pic", "-mno-sse")
+    add_ldflags("-nostdlib","-nostdinc", "-static", "-mno-sse")
 
     set_targetdir("$(builddir)/kernel")

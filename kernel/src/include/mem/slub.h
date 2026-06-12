@@ -1,5 +1,7 @@
 #pragma once
 
+#define SLUB_POOL_PAGES (SLUB_POOL_SIZE / 4096)
+
 #include "types.h"
 
 void slub_init(void);

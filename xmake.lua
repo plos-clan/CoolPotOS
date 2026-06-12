@@ -69,6 +69,9 @@ target("os-pipeline")
             table.insert(qemu_cmd, "$(builddir)/CoolPotOS.iso")
         end
 
+        table.insert(qemu_cmd, "-S")
+        table.insert(qemu_cmd, "-s")
+
         print("Running: " .. table.concat(qemu_cmd, " "))
         os.exec(table.concat(qemu_cmd, " "))
     end)

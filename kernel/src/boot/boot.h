@@ -39,5 +39,8 @@ typedef struct boot_module {
     size_t size;
 } boot_module_t;
 
+size_t boot_framebuffer_count();
+boot_framebuffer_t *boot_get_framebuffer(size_t index);
 size_t boot_get_hhdm_offset();
 boot_memory_map_t *boot_get_memory_map();
+char *boot_get_cmdline();

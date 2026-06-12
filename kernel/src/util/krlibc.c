@@ -126,6 +126,23 @@ int strcmp(const char *s1, const char *s2) {
     return (int)(*s1 - *s2);
 }
 
+char *strdup(const char *str) {
+    if (str == NULL) {
+        return NULL;
+    }
+
+    char *strat = (char *)str;
+    int len     = 0;
+    while (*str++ != '\0')
+        len++;
+    char *ret = (char *)malloc(len + 1);
+
+    while ((*ret++ = *strat++) != '\0') {
+    }
+
+    return ret - (len + 1);
+}
+
 _Noreturn void panic(const char *file, int line, const char *func, const char *cond) {
     printk("assert failed! %s\n", cond);
     printk("file: %s\nline %d\nfunc: %s\n", file, line, func);

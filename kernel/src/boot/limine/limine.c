@@ -27,6 +27,15 @@ LIMINE_REQUEST struct limine_memmap_request memmap_request = {
     .revision = 0,
 };
 
+LIMINE_REQUEST struct limine_executable_cmdline_request cmdline_request = {
+    .id       = LIMINE_EXECUTABLE_CMDLINE_REQUEST_ID,
+    .revision = 0,
+};
+
+LIMINE_REQUEST struct limine_framebuffer_request framebuffer_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST_ID, .revision = 0
+};
+
 __attribute__((
     used, section(".limine_requests_end")
 )) static volatile uint64_t requests_end_marker[4] = LIMINE_REQUESTS_END_MARKER;
@@ -62,4 +71,37 @@ boot_memory_map_t *boot_get_memory_map() {
 
 size_t boot_get_hhdm_offset() {
     return hhdm_request.response->offset;
+}
+
+char *boot_get_cmdline() {
+    return cmdline_request.response->cmdline;
+}
+
+size_t boot_framebuffer_count() {
+    return framebuffer_request.response->framebuffer_count;
+}
+
+static boot_framebuffer_t limine_boot_fb[MAX_FRAMEBUFFER];
+
+boot_framebuffer_t *boot_get_framebuffer(size_t index) {
+    limine_boot_fb[index].address =
+        (uintptr_t)framebuffer_request.response->framebuffers[0]->address;
+    limine_boot_fb[index].width  = framebuffer_request.response->framebuffers[0]->width;
+    limine_boot_fb[index].height = framebuffer_request.response->framebuffers[0]->height;
+    limine_boot_fb[index].bpp    = framebuffer_request.response->framebuffers[0]->bpp;
+    limine_boot_fb[index].pitch  = framebuffer_request.response->framebuffers[0]->pitch;
+    limine_boot_fb[index].red_mask_shift =
+        framebuffer_request.response->framebuffers[0]->red_mask_shift;
+    limine_boot_fb[index].red_mask_size =
+        framebuffer_request.response->framebuffers[0]->red_mask_size;
+    limine_boot_fb[index].blue_mask_shift =
+        framebuffer_request.response->framebuffers[0]->blue_mask_shift;
+    limine_boot_fb[index].blue_mask_size =
+        framebuffer_request.response->framebuffers[0]->blue_mask_size;
+    limine_boot_fb[index].green_mask_shift =
+        framebuffer_request.response->framebuffers[0]->green_mask_shift;
+    limine_boot_fb[index].green_mask_size =
+        framebuffer_request.response->framebuffers[0]->green_mask_size;
+
+    return &limine_boot_fb[index];
 }

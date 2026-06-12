@@ -1,6 +1,8 @@
 #include "krlibc.h"
 #include "arch.h"
 #include "serial.h"
+#include "cpu_local.h"
+#include "cpu/fsgsbase.h"
 
 // x86 fast impl
 __attribute__((naked)) static void *__memcpy_asm(void *dest, const void *src, size_t n) {
@@ -177,4 +179,6 @@ uintptr_t arch_get_return_address(uint32_t level) {
 
 void arch_init() {
     init_serial();
+    arch_bsp_cpu_setup();
+    fsgsbase_init();
 }

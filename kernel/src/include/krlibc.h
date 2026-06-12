@@ -62,6 +62,7 @@ int strncmp(const char *s1, const char *s2, size_t n);
 char *strchr(const char *s, int c);
 char *strcpy(char *dest, const char *src);
 int strcmp(const char *s1, const char *s2);
+char *strdup(const char *str);
 
 void *malloc(size_t size);
 void free(void *ptr);

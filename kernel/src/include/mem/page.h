@@ -80,4 +80,9 @@ void arch_flush_tlb_all();
 page_directory_t get_kernel_page_dir();
 void set_kernel_dir(page_directory_t directory);
 
+bool copy_to_user(void *dst, const void *src, size_t size);
+bool copy_from_user(void *dst, const void *src, size_t size);
+
+page_directory_t get_current_page_dir(bool user);
+
 void page_init();
