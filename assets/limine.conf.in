@@ -1,8 +1,8 @@
-timeout: 0
-verbose: yes
+timeout: 0 #启动菜单等待时间
+verbose: yes #详细日志输出
 
 /CoolPotOS-CP_Kernel-${arch}
-    protocol: limine
-    kernel_path: boot():/${kernel}
-    kernel_cmdline: console=tty0 mem=default init=/bin/sh
-    kaslr: no
+    protocol: limine #协议类型
+    kernel_path: boot():/${kernel #内核文件路径
+    kernel_cmdline: console=tty0 mem=default init=/bin/sh #使用tty0作为主控制台输出
+    kaslr: no 
