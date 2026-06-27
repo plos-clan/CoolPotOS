@@ -52,27 +52,39 @@ int printk(const char *fmt, ...) {
 
     spin_unlock(printk_lock);
 
+    /* 输出到终端 */
     const device_t *tty = device_find(DEV_TTY, 0);
     if (tty) {
         device_write(tty->dev, buf, 0, len);
     }
+
+    /* 同时输出到串口 */
+    logk(buf);
 
     return len;
 }
 
 void color_printk(const size_t fcolor, const size_t bcolor, const char *fmt, ...) {
     spin_lock(printk_lock);
-    memset(buf, 0, 4096);
-    add_color(buf, fcolor, false);
-    add_color(buf, bcolor, true);
+    memset(buf, 0, sizeof(buf));
+
+    // 构建 ANSI 颜色前缀: "\033[3X;4Xm"
+    char *cursor = buf;
+    strcat(cursor, "\033[");
+    strcat(cursor, "3");
+    strcat(cursor, color_codes[fcolor]);
+    strcat(cursor, ";4");
+    strcat(cursor, color_codes[bcolor]);
+    strcat(cursor, "m");
+    int prefix_len = strlen(cursor);
 
     va_list args;
     va_start(args, fmt);
-    stbsp_vsprintf(buf + 11, fmt, args);
+    int msg_len = stbsp_vsprintf(cursor + prefix_len, fmt, args);
     va_end(args);
 
-    strcat(buf, buf + 11);
-    strcat(buf, "\033[0m");
+    // 追加 ANSI 重置码
+    strcat(cursor + prefix_len + msg_len, "\033[0m");
 
     spin_unlock(printk_lock);
 

@@ -135,24 +135,32 @@ uint64_t device_install(
 }
 
 device_t *device_find(int subtype, uint64_t idx) {
+    spin_lock(device_lock);
     uint64_t nr = 0;
     device_t *ptr, *tmp;
     llist_for_each(ptr, tmp, &device_list, node) {
         if (ptr->subtype != subtype)
             continue;
-        if (nr == idx)
+        if (nr == idx) {
+            spin_unlock(device_lock);
             return ptr;
+        }
         nr++;
     }
+    spin_unlock(device_lock);
     return NULL;
 }
 
 device_t *device_get(uint64_t dev) {
+    spin_lock(device_lock);
     device_t *ptr, *tmp;
     llist_for_each(ptr, tmp, &device_list, node) {
-        if (ptr->dev == dev)
+        if (ptr->dev == dev) {
+            spin_unlock(device_lock);
             return ptr;
+        }
     }
+    spin_unlock(device_lock);
     return NULL;
 }
 

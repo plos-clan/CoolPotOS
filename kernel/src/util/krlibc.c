@@ -97,11 +97,10 @@ char *strchr(const char *s, int c) {
 }
 
 char *strcpy(char *dest, const char *src) {
-    do {
-        *dest++ = *src++;
-    } while (*src != 0);
-    *dest = 0;
-    return dest;
+    char *ret = dest;
+    while ((*dest++ = *src++) != '\0')
+        ;
+    return ret;
 }
 
 int strcmp(const char *s1, const char *s2) {
@@ -136,6 +135,7 @@ char *strdup(const char *str) {
     while (*str++ != '\0')
         len++;
     char *ret = (char *)malloc(len + 1);
+    if (!ret) return NULL;
 
     while ((*ret++ = *strat++) != '\0') {
     }

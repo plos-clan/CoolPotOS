@@ -18,14 +18,14 @@ tty_device_t *alloc_tty_device(enum tty_device_type type) {
 
 uint64_t register_tty_device(tty_device_t *device) {
     if (device->private_data == NULL)
-        return -EINVAL;
+        return (uint64_t)-EINVAL;
     llist_append(&tty_device_list, &device->node);
     return EOK;
 }
 
 uint64_t delete_tty_device(tty_device_t *device) {
     if (device == NULL)
-        return -EINVAL;
+        return (uint64_t)-EINVAL;
     free(device->private_data);
     llist_delete(&device->node);
     free(device);
@@ -110,7 +110,7 @@ void tty_init() {
     }
     tty_device_t *device   = get_tty_device(console);
     kernel_session->device = device;
-    if (device->type == TTY_DEVICE_GRAPHI) {
+    if (device && device->type == TTY_DEVICE_GRAPHI) {
         create_session_terminal(kernel_session);
     }
 
