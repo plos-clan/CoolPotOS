@@ -11,8 +11,9 @@ cpu_local_t *get_current_cpu() {
 }
 
 void x64_cpu_local_init(size_t cpu_id, size_t lapic_id) {
-    if (cpu_id >= MAX_CPU_NUM)
+    if (cpu_id >= MAX_CPU_NUM) {
         return;
+    }
     cpu_local_t *local              = &local_infos[cpu_id];
     x86_64_local_info_t *arch_local = &arch_local_infos[cpu_id];
     memset(local, 0, sizeof(*local));
